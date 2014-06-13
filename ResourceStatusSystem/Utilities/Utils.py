@@ -1,7 +1,9 @@
 # $HeadURL:  $
-''' Utils
+''' 
+:mod: Utils
+===========
 
-  Module that collects utility functions.
+Module that collects utility functions.
 
 '''
 
@@ -76,11 +78,12 @@ def getCSTree( csPath = '' ):
 
 def configMatch( candidateParams, configParams ):
   '''
-    For a given configuration, the candidate will be rejected if:
-    
-     - it is missing at least one of the params in the config
-     - if a param of the candidate does not match the config params  
-     - if a candidate param is None, is considered as wildcard
+  For a given configuration, the candidate will be rejected if:
+
+    - it is missing at least one of the params in the config
+    - if a param of the candidate does not match the config params  
+    - if a candidate param is None, is considered as wildcard
+  
   '''
 
   for key in candidateParams:

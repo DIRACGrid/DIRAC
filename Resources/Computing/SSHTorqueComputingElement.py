@@ -59,35 +59,6 @@ class SSHTorqueComputingElement( SSHComputingElement ):
 
 
   #############################################################################
-  def getCEStatus( self ):
-    """ Method to return information on running and pending jobs.
-    """
-
-    result = S_OK()
-    result['SubmittedJobs'] = self.submittedJobs
-
-    ssh = SSH( parameters = self.ceParameters )
-
-    user = self.ceParameters['SSHUser']
-    cmd = ["qselect", "-u", user, "-s", "QW", "-q", self.execQueue, "|", "wc", "-l"]
-    cmd += [';'] + ["qselect", "-u", user, "-s", "R", "-q", self.execQueue, "|", "wc", "-l"]
-    ret = self.__execRemoteSSH( ssh, cmd )
-    if not ret['OK'] :
-      self.log.error( ret['Message'] )
-      return ret
-    resultList = ret['Value'].split() 
-    
-    waitingJobs = int(resultList[0])
-    runningJobs = int(resultList[1])
-
-    result['WaitingJobs'] = waitingJobs
-    result['RunningJobs'] = runningJobs
-
-    self.log.verbose( 'Waiting Jobs: ', waitingJobs )
-    self.log.verbose( 'Running Jobs: ', runningJobs )
-
-    return result
-
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """

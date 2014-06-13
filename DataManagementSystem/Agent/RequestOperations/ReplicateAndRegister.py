@@ -24,6 +24,7 @@ __RCSID__ = "$Id $"
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
+from DIRAC.Core.Utilities.Adler import compareAdler
 
 from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
@@ -34,7 +35,6 @@ from DIRAC.Resources.Catalog.FileCatalog                                        
 
 def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   """ filter out banned/invalid source SEs """
-  from DIRAC.Core.Utilities.Adler import compareAdler
 
   if not logger:
     logger = gLogger
@@ -67,7 +67,9 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
 
     pfn = repSE.getPfnForLfn( opFile.LFN )
     if not pfn["OK"] or opFile.LFN not in pfn['Value']['Successful']:
-      log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN, repSEName, pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) ) ) )
+      log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN,
+                                                                repSEName,
+                                                                pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) ) ) )
       ret["NoPFN"].append( repSEName )
     else:
       pfn = pfn["Value"]['Successful'][ opFile.LFN ]
@@ -87,9 +89,9 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
         seChecksum = repSEMetadata.get( "Checksum" )
         if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
           log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
-                                                               opFile.Checksum,
-                                                               repSE,
-                                                               seChecksum ) )
+                                                          opFile.Checksum,
+                                                          repSE,
+                                                          seChecksum ) )
           ret["Bad"].append( repSEName )
         else:
           # # if we're here repSE is OK
@@ -305,7 +307,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         for opFile in self.operation:
           if fileID == opFile.FileID:
             opFile.Status = "Scheduled"
-            self.log.always( "%s has been scheduled for FTS" % opFile.LFN )
+            self.log.debug( "%s has been scheduled for FTS" % opFile.LFN )
+      self.log.info( "%d files have been scheduled to FTS" % len( ftsSchedule['Successful'] ) )
 
       for fileID in ftsSchedule["Failed"]:
         gMonitor.addMark( "FTSScheduleFail", 1 )

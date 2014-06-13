@@ -98,7 +98,7 @@ class BaseReporter( DBUtils ):
                                                                             reportRequest[ 'reportName' ],
                                                                             reportGenerationTime,
                                                                             plotGenerationTime,
-                                                                            ( reportGenerationTime * 100 / plotGenerationTime ) ) )
+                                                                            ( ( reportGenerationTime * 100 / plotGenerationTime )  if plotGenerationTime else 0. ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     plotDict = retVal[ 'Value' ]

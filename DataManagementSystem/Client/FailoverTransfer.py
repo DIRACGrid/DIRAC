@@ -27,6 +27,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
@@ -63,7 +64,8 @@ class FailoverTransfer( object ):
                                lfn,
                                destinationSEList,
                                fileMetaDict,
-                               fileCatalog = None ):
+                               fileCatalog = None,
+                               masterCatalogOnly = False ):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
@@ -76,7 +78,7 @@ class FailoverTransfer( object ):
                                                                                                fileGUID,
                                                                                                fileCatalog ) )
 
-      result = DataManager( catalogs = fileCatalog ).putAndRegister( lfn, localPath, se, guid = fileGUID )
+      result = DataManager( catalogs = fileCatalog, masterCatalogOnly = masterCatalogOnly ).putAndRegister( lfn, localPath, se, guid = fileGUID )
       self.log.verbose( result )
       if not result['OK']:
         self.log.error( 'dm.putAndRegister failed with message', result['Message'] )
@@ -100,6 +102,9 @@ class FailoverTransfer( object ):
       # Therefore the registration failed but the upload was successful
       if not fileCatalog:
         fileCatalog = ''
+
+      if masterCatalogOnly:
+        fileCatalog = FileCatalog().getMasterCatalogNames()['Value']
 
       result = self._setRegistrationRequest( lfn, se, fileMetaDict, fileCatalog )
       if not result['OK']:
@@ -126,11 +131,12 @@ class FailoverTransfer( object ):
                                        targetSE,
                                        failoverSEList,
                                        fileMetaDict,
-                                       fileCatalog = None ):
+                                       fileCatalog = None,
+                                       masterCatalogOnly = False ):
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
-    failover = self.transferAndRegisterFile( fileName, localPath, lfn, failoverSEList, fileMetaDict, fileCatalog )
+    failover = self.transferAndRegisterFile( fileName, localPath, lfn, failoverSEList, fileMetaDict, fileCatalog, masterCatalogOnly = masterCatalogOnly )
     if not failover['OK']:
       self.log.error( 'Could not upload file to failover SEs', failover['Message'] )
       return failover
@@ -174,13 +180,17 @@ class FailoverTransfer( object ):
   def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
     """ Sets a registration request.
     """
-    self.log.info( 'Setting replication request for %s to %s' % ( lfn, targetSE ) )
+    self.log.info( 'Setting replication and registration requests for %s to %s' % ( lfn, targetSE ) )
 
     transfer = Operation()
-    transfer.Type = "ReplicateAndRegister"
+    transfer.Type = "ReplicateFile"
     transfer.TargetSE = targetSE
     if sourceSE:
       transfer.SourceSE = sourceSE
+
+    register = Operation()
+    register.Type = "RegisterFile"
+    register.TargetSE = targetSE
 
     trFile = File()
     trFile.LFN = lfn
@@ -197,9 +207,19 @@ class FailoverTransfer( object ):
     if guid:
       trFile.GUID = guid
 
+    se = StorageElement( targetSE )
+    pfn = se.getPfnForLfn( lfn )
+    if not pfn['OK'] or lfn not in pfn['Value']['Successful']:
+      self.log.error( "unable to get PFN for LFN: %s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
+      return pfn
+
+    trFile.PFN = pfn["Value"]['Successful'][lfn]
+
     transfer.addFile( trFile )
+    register.addFile( trFile )
 
     self.request.addOperation( transfer )
+    self.request.addOperation( register )
 
     return S_OK()
 

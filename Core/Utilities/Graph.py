@@ -8,9 +8,7 @@
 :mod: Graph
 
 .. module: Graph
-
 :synopsis: graph
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 graph
@@ -30,14 +28,18 @@ class DynamicProps( type ):
   metaclass allowing to create properties on the fly
   """
   def __new__( cls, name, bases, classdict ):
-    """ new operator """
+    """
+    new operator 
+    """
 
     def makeProperty( self, name, value, readOnly = False ):
-      """ add property :name: to class
+      """ 
+      Add property :name: to class
 
-      this also creates a private :_name: attribute
-      if you want to make read only property, set :readOnly: flag to True
-      :warn: could raise AttributeError if :name: of :_name: is already defined as an attribute
+      This also creates a private :_name: attribute
+      If you want to make read only property, set :readOnly: flag to True
+      :warn: could raise AttributeError if :name: of :_name: is already 
+      defined as an attribute
       """
       if hasattr( self, "_" + name ) or hasattr( self, name ):
         raise AttributeError( "_%s or %s is already defined as a member" % ( name, name ) )
@@ -47,11 +49,15 @@ class DynamicProps( type ):
       setattr( self.__class__, name, property( fget = fget, fset = fset ) )
 
     def _setProperty( self, name, value ):
-      """ property setter """
+      """
+      property setter 
+      """
       setattr( self, '_' + name, value )
 
     def _getProperty( self, name ):
-      """ propery getter """
+      """ 
+      property getter 
+      """
       return getattr( self, '_' + name )
 
     classdict["makeProperty"] = makeProperty
@@ -68,7 +74,8 @@ class Node( object ):
   __metaclass__ = DynamicProps
 
   def __init__( self, name, rwAttrs = None, roAttrs = None ):
-    """ c'tor
+    """ 
+    c'tor
 
     :param str name: node name
     :param dict rwAttrs: read/write properties dict
@@ -85,28 +92,39 @@ class Node( object ):
       self.makeProperty( attr, value, True )
 
   def __contains__( self, edge ):
-    """ in operator for edges """
+    """
+    in operator for edges 
+    """
     if not isinstance( edge, Edge ):
       raise TypeError( "edge should be an instance or subclass of Edge" )
     return edge in self.__edges
 
   def __iter__( self ):
-    """ edges iterator """
+    """
+    edges iterator 
+    """
     return self.__edges.__iter__()
 
   def edges( self ):
-    """ get edges """
+    """ 
+    get edges
+    """
     return self.__edges
 
   def addEdge( self, edge ):
-    """ add edge to the node """
+    """ 
+    Add edge to the node 
+    """
     if not isinstance( edge, Edge ):
       raise TypeError( "supplied edge argument should be an Edge instance or subclass" )
     if edge not in self:
       self.__edges.append( edge )
 
   def connect( self, other, rwAttrs = None, roAttrs = None ):
-    """ connect self to Node :other: with edge attibutes rw :rwAttrs: and ro :roAttrs:"""
+    """ 
+    Connect self to Node :other: with edge attibutes rw :rwAttrs: and 
+    ro :roAttrs:
+    """
     if not isinstance( other, Node ):
       raise TypeError( "argument other should be a Node instance!" )
     edge = Edge( self, other, rwAttrs, roAttrs )
@@ -118,12 +136,13 @@ class Edge( object ):
   """
   .. class:: Edge
 
-  directed link between two nodes
+  Directed link between two nodes
   """
   __metaclass__ = DynamicProps
 
   def __init__( self, fromNode, toNode, rwAttrs = None, roAttrs = None ):
-    """ c'tor
+    """
+    c'tor
 
     :param Node fromNode: edge start
     :param Node toNode: edge end
@@ -148,11 +167,15 @@ class Edge( object ):
       self.fromNode.addEdge( self )
 
   def __str__( self ):
-    """ str representation of an object """
+    """
+    str representation of an object 
+    """
     return self.name
 
   def __repr__( self ):
-    """ repr operator for dot format """
+    """
+    repr operator for dot format 
+    """
     return "'%s' -> '%s';" % ( self.fromNode.name, self.toNode.name )
 
 ########################################################################
@@ -160,7 +183,7 @@ class Graph( object ):
   """
   .. class:: Graph
 
-  a generic directed graph with attributes attached to its nodes and edges
+  A generic directed graph with attributes attached to its nodes and edges
   """
   # # metaclass
   __metaclass__ = DynamicProps
@@ -170,7 +193,8 @@ class Graph( object ):
   __POSTORDER = False
 
   def __init__( self, name, nodes = None, edges = None ):
-    """c'tor
+    """
+    c'tor
 
     :param self: self reference
     :param str name: graph name
@@ -190,52 +214,72 @@ class Graph( object ):
         self.addNode( node )
 
   def __contains__( self, obj ):
-    """ in operator for edges and nodes """
+    """
+    In operator for edges and nodes 
+    """
     return bool( obj in self.__nodes or obj in self.__edges )
 
   def nodes( self ):
-    """ get nodes dict """
+    """ 
+    Get nodes dict 
+    """
     return self.__nodes
 
   def getNode( self, nodeName ):
-    """ get node :nodeName: """
+    """
+    Get node :nodeName: 
+    """
     for node in self.__nodes:
       if node.name == nodeName:
         return node
 
   def edges( self ):
-    """ get edges dict """
+    """
+    Get edges dict 
+    """
     return self.__edges
 
   def getEdge( self, edgeName ):
-    """ get edge :edgeName: """
+    """ 
+    Get edge :edgeName: 
+    """
     for edge in self.__edges:
       if edge.name == edgeName:
         return edge
   @property
   def PREORDER( self ):
-    """ PREORDER getter """
+    """ 
+    PREORDER getter 
+    """
     return self.__PREORDER
 
   @PREORDER.setter
   def PREORDER( self, flag = True ):
-    """ PREORDER setter """
+    """ 
+    PREORDER setter 
+    """
     self.__PREORDER = bool( flag )
     self.__POSTORDER = not self.__PREORDER
 
   @property
   def POSTORDER( self ):
-    """ POSTORDER getter """
+    """ 
+    POSTORDER getter 
+    """
     return self.__POSTORDER
 
   @POSTORDER.setter
   def POSTORDER( self, flag = True ):
-    """ POSTORDER setter """
+    """ 
+    POSTORDER setter 
+    """
     self.__POSTORDER = bool( flag )
     self.__PREORDER = not self.__POSTORDER
 
   def connect( self, fromNode, toNode, rwAttrs = None, roAttrs = None ):
-    """ connect :fromNode: to :toNode: with edge of attributes """
+    """
+    Connect :fromNode: to :toNode: with edge of attributes 
+    """
     edge = fromNode.connect( toNode, rwAttrs, roAttrs )
     self.addEdge( edge )
     self.addNode( fromNode )
@@ -243,9 +287,11 @@ class Graph( object ):
     return edge
 
   def addNode( self, node ):
-    """ add Node :node: to graph """
+    """ 
+    Add Node :node: to graph 
+    """
     if not isinstance( node, Node ):
-      raise TypeError( "supplied argument should be a Node instance" )
+      raise TypeError( "Supplied argument should be a Node instance" )
     if node not in self:
       self.__nodes.append( node )
       if not hasattr( node, "graph" ):
@@ -259,9 +305,11 @@ class Graph( object ):
           self.addNode( edge.toNode )
 
   def addEdge( self, edge ):
-    """ add edge :edge: to the graph """
+    """ 
+    Add edge :edge: to the graph 
+    """
     if not isinstance( edge, Edge ):
-      raise TypeError( "supplied edge argument should be an Edge instance" )
+      raise TypeError( "Supplied edge argument should be an Edge instance" )
     if edge.fromNode not in self:
       self.addNode( edge.fromNode )
     if edge.toNode not in self:
@@ -274,15 +322,19 @@ class Graph( object ):
       edge.graph = self
 
   def reset( self ):
-    """ set visited for all nodes to False """
+    """ 
+    Set visited for all nodes to False 
+    """
     for node in self.__nodes:
       node.visited = False
     for edge in self.__edges:
       edge.visited = False
 
   def walkAll( self, nodeFcn = None, edgeFcn = None, res = None ):
-    """ wall all nodes excuting :nodeFcn: on each node and :edgeFcn: on each edge
-    result is a dict { Node.name : result from :nodeFcn:, Edge.name : result from edgeFcn }
+    """ 
+    Wall all nodes excuting :nodeFcn: on each node and :edgeFcn: on each 
+    edge result is a dict { Node.name : result from :nodeFcn:, 
+    Edge.name : result from edgeFcn }
     """
     if not any( ( self.PREORDER, self.POSTORDER ) ):
       self.PREORDER = True
@@ -294,7 +346,9 @@ class Graph( object ):
     return res
 
   def walkNode( self, node, nodeFcn = None, edgeFcn = None, res = None ):
-    """ walk through the graph calling nodeFcn on nodes and edgeFcn on edges """
+    """ 
+    Walk through the graph calling nodeFcn on nodes and edgeFcn on edges 
+    """
     res = res if res else {}
     # # already visited, return
     if node.visited:
@@ -327,7 +381,9 @@ class Graph( object ):
       return res
 
   def __repr__( self ):
-    """ repr operator creating dot string """
+    """ 
+    Repr operator creating dot string 
+    """
     out = [ "digraph '%s' {" % self.name ]
     for node in self.nodes():
       out.append( "%s;" % node.name )
@@ -338,7 +394,9 @@ class Graph( object ):
 
 
   def explore( self, node, preVisit = None, postVisit = None ):
-    """ explore node """
+    """ 
+    Explore node 
+    """
     node.visited = True
     if callable( preVisit ):
       preVisit( node )
@@ -349,7 +407,9 @@ class Graph( object ):
       postVisit( node )
 
   def dfs( self, preVisit = None, postVisit = None ):
-    """ dfs recursive walk """
+    """ 
+    dfs recursive walk 
+    """
     self.reset()
     nodes = list( self.nodes() )
     nodes.sort( key = lambda node: len( node.edges() ), reverse = True )
@@ -358,7 +418,9 @@ class Graph( object ):
         self.explore( node, preVisit, postVisit )
 
   def bfs( self, preVisit = None, postVisit = None ):
-    """ bfs walk """
+    """ 
+    bfs walk 
+    """
     self.reset()
     nodes = list( self.nodes() )
     nodes.sort( key = lambda node: len( node.edges() ), reverse = True )
@@ -376,7 +438,9 @@ class Graph( object ):
     return nodes
 
   def dfsIter( self, preVisit = None, postVisit = None ):
-    """ iterative dfs - no recursion """
+    """ 
+    Iterative dfs - no recursion 
+    """
     nodes = list( self.nodes() )
     nodes.sort( key = lambda node: len( node.edges() ), reverse = True )
     for node in nodes:

@@ -2081,8 +2081,8 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict = self.__createQuery(' '.join(argss))
     else:
       metaDict = {}    
-    print "Query:",metaDict
-          
+    if verbose: print "Query:",metaDict
+
     result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
@@ -2092,6 +2092,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print dir_
     else:
       print "No matching data found"      
+
     if verbose and "QueryTime" in result:
       print "QueryTime %.2f sec" % result['QueryTime']  
 

@@ -312,6 +312,85 @@ class RequestDB( DB ):
 
     return S_OK( request )
 
+
+
+  def getBulkRequests( self, numberOfRequest = 10, assigned = True ):
+    """ read as many requests as requested for execution
+
+    :param int numberOfRequest: Number of Request we want (default 10)
+    :param bool assigned: if True, the status of the selected requests are set to assign
+
+    :returns a dictionary of Request objects indexed on the RequestID
+
+    """
+
+    # r_RequestID : RequestID, r_LastUpdate : LastUpdate...
+    requestAttrDict = dict ( ("r_%s"%r, r) for r in Request.tableDesc()["Fields"])
+    # o_RequestID : RequestID, o_OperationID : OperationID...
+    operationAttrDict = dict ( ("o_%s"%o, o) for o in Operation.tableDesc()["Fields"])
+    # f_OperationID : OperationID, f_FileID : FileID...
+    fileAttrDict = dict ( ("f_%s"%f, f) for f in File.tableDesc()["Fields"])
+
+    # o.OperationID as o_OperationID, ..., r_RequestID, ..., f_FileID, ...
+    allFieldsStr = ",".join([ "o.%s as %s"%(operationAttrDict[o], o) for o in operationAttrDict]\
+                            + requestAttrDict.keys() + fileAttrDict.keys())
+
+    # RequestID as r_RequestID, LastUpdate as r_LastUpdate, ...
+    requestAttrStr = ",".join([ "%s as %s"%(requestAttrDict[r], r) for r in requestAttrDict])
+
+    # OperationID as f_OperationID, FileID as f_FileID...
+    fileAttrStr = ",".join([ "%s as %s"%(fileAttrDict[f], f) for f in fileAttrDict])
+
+
+    # Selects all the Request (limited to numberOfRequest, sorted by LastUpdate) , Operation and File information.
+    # The entries are sorted by the LastUpdate of the Requests, RequestID if several requests were update the last time
+    # at the same time, and finally according to the Operation Order
+    query = "SELECT %s FROM Operation o \
+            INNER JOIN (SELECT %s FROM Request WHERE Status = 'Waiting' ORDER BY `LastUpdate` ASC limit %s) r\
+            ON r_RequestID = o.RequestID\
+            INNER JOIN (SELECT %s from File) f ON f_OperationId = o.OperationId\
+            ORDER BY r_LastUpdate, r_RequestId, o_Order;"\
+             % ( allFieldsStr, requestAttrStr, numberOfRequest, fileAttrStr )
+
+    queryResult = self._transaction( query )
+    if not queryResult["OK"]:
+      self.log.error( "RequestDB.getRequests: %s" % queryResult["Message"] )
+      return queryResult
+
+    allResults = queryResult["Value"][query]
+
+    # We now construct a dict of Request indexed by their ID, and the same for Operation
+
+    requestDict = {}
+    operationDict = {}
+    for entry in allResults:
+      requestID = int( entry["r_RequestID"] )
+      # If the object already exists, we get it, otherwise we create it and assign it
+      requestObj = requestDict.setdefault( requestID, Request( dict( ( requestAttrDict[r], entry[r] ) for r in requestAttrDict ) ) )
+
+      operationID = int( entry["o_OperationID"] )
+      operationObj = operationDict.get( operationID, None )
+
+      # If the Operation object does not exist yet, we create it, and add it to the Request
+      if not operationObj:
+        operationObj = Operation( dict( ( operationAttrDict[o], entry[o] ) for o in operationAttrDict ) )
+        operationDict[operationID ] = operationObj
+        requestObj.addOperation( operationObj )
+
+      fileObj = File( dict( ( fileAttrDict[f], entry[f] ) for f in fileAttrDict ) )
+      operationObj.addFile( fileObj )
+
+
+    if assigned and len( requestDict ):
+      listOfReqId = ",".join( str( rId ) for rId in requestDict )
+      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID IN (%s);" % listOfReqId )
+      if not setAssigned["OK"]:
+        self.log.error( "getRequests: %s" % setAssigned["Message"] )
+        return setAssigned
+
+    return S_OK( requestDict )
+
+
   def peekRequest( self, requestName ):
     """ get request (ro), no update on states
 
@@ -319,12 +398,14 @@ class RequestDB( DB ):
     """
     return self.getRequest( requestName, False )
 
-  def getRequestNamesList( self, statusList = None, limit = None ):
+  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
     """ select requests with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
+    sinceReq = " AND LastUpdate > %s " % since  if since else ""
+    untilReq = " AND LastUpdate < %s " % until if until else ""
     query = "SELECT `RequestName`, `Status`, `LastUpdate` FROM `Request` WHERE "\
-      " `Status` IN (%s) ORDER BY `LastUpdate` ASC LIMIT %s;" % ( stringListToString( statusList ), limit )
+      " `Status` IN (%s) %s %s ORDER BY `LastUpdate` ASC LIMIT %s;" % ( stringListToString( statusList ), sinceReq, untilReq, limit )
     reqNamesList = self._query( query )
     if not reqNamesList["OK"]:
       self.log.error( "getRequestNamesList: %s" % reqNamesList["Message"] )

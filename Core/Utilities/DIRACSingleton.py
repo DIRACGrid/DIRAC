@@ -9,10 +9,8 @@
 :mod: DIRACSingleton 
  
 .. module: DIRACSingleton
-
 :synopsis: metaclass singleton implementation
-
-.. moduleauthor: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 metaclass singleton implementation
 
@@ -27,7 +25,20 @@ __RCSID__ = "$Id $"
 # @brief Definition of DIRACSingleton class.
 
 class DIRACSingleton( type ):
+<<<<<<< HEAD
   """ Simple singleton pattern using metaclass
+=======
+  """ 
+  Simple singleton pattern using metaclass
+
+  If you want make your class a singleton, just set its  __metaclass__ to 
+  DIRACSingleton, i.e.::
+
+    from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+    class CheesShop( object ):
+      __metaclass__ = DIRACSingleton
+      ...
+>>>>>>> rel-v6r11
 
 If you want to make your class a singleton, just set its  __metaclass__ to 
 DIRACSingleton, i.e.::
@@ -50,7 +61,8 @@ DIRACSingleton, i.e.::
     cls.instance = None
 
   def __call__( cls, *args, **kwargs ):
-    """ get the only one instance of cls
+    """
+    Get the only one instance of cls
     
     :param cls: class def
     :param list args: anon args list

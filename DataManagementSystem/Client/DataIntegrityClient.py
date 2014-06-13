@@ -1,5 +1,7 @@
-""" This is the Data Integrity Client which allows the simple reporting of problematic file
-    and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.
+""" 
+This is the Data Integrity Client which allows the simple reporting of 
+problematic file and replicas to the IntegrityDB and their status 
+correctly updated in the FileCatalog.
 """
 
 __RCSID__ = "$Id$"
@@ -15,7 +17,8 @@ import re, os, types
 
 class DataIntegrityClient( Client ):
 
-  """  The following methods are supported in the service but are not mentioned explicitly here
+  """  
+  The following methods are supported in the service but are not mentioned explicitly here:
 
           getProblematic()
              Obtains a problematic file from the IntegrityDB based on the LastUpdate time
@@ -46,6 +49,7 @@ class DataIntegrityClient( Client ):
 
           insertProblematic(sourceComponent,fileMetadata)
             Inserts file with supplied metadata into the integrity DB
+ 
   """
 
   def __init__( self, **kwargs ):

@@ -54,6 +54,13 @@ class FileCatalog( object ):
 
   def getWriteCatalogs( self ):
     return self.writeCatalogs
+  
+  def getMasterCatalogNames( self ):
+    """ Returns the list of names of the Master catalogs """
+
+    masterNames = [catalogName for catalogName, oCatalog, master in self.writeCatalogs if master]
+    return S_OK( masterNames )
+    
 
   def __getattr__( self, name ):
     self.call = name

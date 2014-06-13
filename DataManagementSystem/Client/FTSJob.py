@@ -117,7 +117,7 @@ class FTSJob( Record ):
                "FTSServer" : "VARCHAR(255) NOT NULL",
                "TargetToken": "VARCHAR(255)",
                "SourceToken": "VARCHAR(255)",
-               "Size": "INTEGER NOT NULL",
+               "Size": "BIGINT NOT NULL",
                "Files": "INTEGER NOT NULL",
                "Completeness": "INTEGER NOT NULL DEFAULT 0",
                "FailedFiles": "INTEGER DEFAULT 0",

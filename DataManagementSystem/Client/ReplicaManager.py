@@ -2,7 +2,6 @@
 :mod: ReplicaManager
 
 .. module: ReplicaManager
-
 :synopsis: ReplicaManager links the functionalities of StorageElement and FileCatalog.
 
 This module consists ReplicaManager and related classes.

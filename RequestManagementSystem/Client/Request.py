@@ -8,8 +8,7 @@
 :mod: Request
 
 .. module: Request
-
-:synopsis: request implementation
+  :synopsis: request implementation
 
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
@@ -499,3 +498,74 @@ class Request( Record ):
       digest.append( ":".join( opDigest ) )
     return S_OK( "\n".join( digest ) )
 
+
+
+  def optimize( self ):
+    """ Merges together the operations that can be merged. They need to have the following arguments equal:
+        * Type
+        * Arguments
+        * SourceSE
+        * TargetSE
+        * Catalog
+        It also makes sure that the maximum number of Files in an Operation is never overcome.
+
+        CAUTION: this method is meant to be called before inserting into the DB.
+                So if the RequestId is not 0, we don't touch
+
+        :return S_ERROR if the Request should not be optimized (because already in the DB
+                S_OK(True) if a optimization was carried out
+                S_OK(False) if no optimization were carried out
+    """
+
+    # Set to True if the request could be optimized
+    optimized = False
+
+    # List of attributes that must be equal for operations to be merged
+    attrList = ["Type", "Arguments", "SourceSE", "TargetSE", "Catalog" ]
+    i = 0
+
+    # If the RequestID is not the default one (0), it probably means
+    # the Request is already in the DB, so we don't touch anything
+    if self.RequestID != 0:
+      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
+
+    # We could do it with a single loop (the 2nd one), but by doing this,
+    # we can replace
+    #   i += 1
+    #   continue
+    #
+    # with
+    #   break
+    #
+    # which is nicer in my opinion
+    while i < len( self.__operations__ ):
+      while  ( i + 1 ) < len( self.__operations__ ):
+        # Some attributes need to be the same
+        attrMismatch = False
+        for attr in attrList:
+          if getattr( self.__operations__[i], attr ) != getattr( self.__operations__[i + 1], attr ):
+            attrMismatch = True
+            break
+
+        if attrMismatch:
+          break
+
+        # We do not do the merge if there are common files in the operations
+        fileSetA = set( list( f.LFN for f in self.__operations__[i] ) )
+        fileSetB = set( list( f.LFN for f in self.__operations__[i + 1] ) )
+        if len( fileSetA & fileSetB ):
+          break
+
+        # There is a maximum number of files one can add into an operation
+        try:
+          while len( self.__operations__[i + 1] ):
+            self.__operations__[i] += self.__operations__[i + 1][0]
+            del self.__operations__[i + 1][0]
+            optimized = True
+          del self.__operations__[i + 1]
+        except RuntimeError:
+          i += 1
+      i += 1
+
+
+    return S_OK( optimized )

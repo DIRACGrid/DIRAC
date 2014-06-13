@@ -2,10 +2,9 @@
 :mod: DataManager
 
 .. module: DataManager
-
 :synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
 
-This module consists DataManager and related classes.
+This module consists of DataManager and related classes.
 
 """
 
@@ -41,13 +40,21 @@ class DataManager( object ):
 
   A DataManager is taking all the actions that impact or require the FileCatalog and the StorageElement together
   """
-  def __init__( self, catalogs = [] ):
+  def __init__( self, catalogs = [], masterCatalogOnly = False ):
     """ c'tor
 
     :param self: self reference
+    :param catalogs: the list of catalog in which to perform the operations. This
+                    list will be ignored if masterCatalogOnly is set to True
+    :param masterCatalogOnly: if set to True, the operations will be performed only on the master catalog.
+                              The catalogs parameter will be ignored.
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
-    self.fc = FileCatalog( catalogs )
+
+
+    catalogsToUse = FileCatalog().getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
+
+    self.fc = FileCatalog( catalogsToUse )
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
@@ -700,7 +707,7 @@ class DataManager( object ):
     ###########################################################
     # Get the LFN replicas from the file catalogue
     self.log.debug( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
-    res = self.fc.getReplicas( lfn )
+    res = self.getReplicas( lfn )
     if not res[ 'OK' ]:
       errStr = "%s Completely failed to get replicas for LFN." % logStr
       self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
@@ -756,6 +763,7 @@ class DataManager( object ):
 
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
+    # It's not really the best, but the one authorized
 
     logStr = "__resolveBestReplicas:"
 
@@ -783,6 +791,7 @@ class DataManager( object ):
             res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
+              # print pfn, sourcePfn
               self.log.debug( "%s Attempting to get source file size." % logStr )
               res = storageElement.getFileSize( sourcePfn )
               if res['OK']:
@@ -797,7 +806,7 @@ class DataManager( object ):
                     self.log.debug( errStr, "%s %s" % ( diracSE, sourcePfn ) )
                 else:
                   errStr = "%s Failed to get physical file size." % logStr
-                  self.log.debug( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
+                  self.log.always( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
               else:
                 errStr = "%s Completely failed to get physical file size." % logStr
                 self.log.debug( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Message'] ) )
@@ -1111,7 +1120,7 @@ class DataManager( object ):
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
 
     if not res['OK']:
-      errStr = "__removeReplica: Failed to remove catalog replicas."
+      errStr = "__removeReplica: Failed to remove physical replicas."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
 
@@ -1297,6 +1306,8 @@ class DataManager( object ):
                                                         len( pfnsToRemove ) )
     oDataOperation.setStartTime()
     start = time.time()
+    ret = storageElement.getFileSize( pfnsToRemove )
+    deletedSizes = ret.get( 'Value', {} ).get( 'Successful', {} )
     res = storageElement.removeFile( pfnsToRemove )
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', time.time() - start )
@@ -1319,8 +1330,7 @@ class DataManager( object ):
         else:
           res['Value']['Successful'][surl] = ret['Value']
 
-      ret = storageElement.getFileSize( res['Value']['Successful'] )
-      deletedSize = sum( ret.get( 'Value', {} ).get( 'Successful', {} ).values() )
+      deletedSize = sum( [size for pfn, size in deletedSizes.items() if pfn in res['Value']['Successful']] )
       oDataOperation.setValueByKey( 'TransferOK', deletedSize )
 
       gDataStoreClient.addRegister( oDataOperation )
@@ -1483,7 +1493,7 @@ class DataManager( object ):
   def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
     res = self.fc.getReplicas( lfns, allStatus = allStatus )
-    
+
     if not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}

@@ -565,6 +565,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             replicas[se] = pfn
       if replicas:
         successful[lfn] = replicas
+      elif lfn not in failed:
+        failed[lfn] = 'No active replica'
     if created:
       self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}

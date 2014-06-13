@@ -313,6 +313,11 @@ if os.environ.has_key( 'PBS_JOBID' ):
   cliParams.flavour = 'SSHTorque'
   pilotRef = 'sshtorque://'+cliParams.ceName+'/'+os.environ['PBS_JOBID']
   cliParams.queueName = os.environ['PBS_QUEUE']
+  
+# Take the reference from the OAR batch system  
+if os.environ.has_key( 'OAR_JOB_ID' ):
+  cliParams.flavour = 'SSHOAR'
+  pilotRef = 'sshoar://'+cliParams.ceName+'/'+os.environ['OAR_JOB_ID']
 
 # Grid Engine
 if os.environ.has_key( 'JOB_ID' ):

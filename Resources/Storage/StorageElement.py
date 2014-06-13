@@ -20,8 +20,32 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus 
 from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.DictCache import DictCache
 
-class StorageElement:
+
+
+
+
+class StorageElementCache:
+
+  def __init__( self ):
+    self.seCache = DictCache()
+
+  def __call__( self, name, protocols = None, vo = None ):
+    self.seCache.purgeExpired( expiredInSeconds = 60 )
+    argTuple = ( name, protocols, vo )
+    seObj = self.seCache.get( argTuple )
+
+    if not seObj:
+      seObj = StorageElementItem( name, protocols, vo )
+      # Add the StorageElement to the cache for 1/2 hour
+      self.seCache.add( argTuple, 1800, seObj )
+
+    return seObj
+
+
+
+class StorageElementItem:
   """
   .. class:: StorageElement
 
@@ -735,7 +759,7 @@ class StorageElement:
     if len( args ):
       self.log.verbose( "StorageElement.__executeMethod: args should be empty!%s" % args )
       # because there is normaly normaly only one kw argument, I can move it from args to kwargs
-      methDefaultArgs = StorageElement.__defaultsArguments.get( self.methodName, {} ).keys()
+      methDefaultArgs = StorageElementItem.__defaultsArguments.get( self.methodName, {} ).keys()
       if len( methDefaultArgs ):
         kwargs[methDefaultArgs[0] ] = args[0]
         args = args[1:]
@@ -743,7 +767,7 @@ class StorageElement:
 
 
     # We check the deprecated arguments
-    for depArg in StorageElement.__deprecatedArguments:
+    for depArg in StorageElementItem.__deprecatedArguments:
       if depArg in kwargs:
         self.log.verbose( "StorageElement.__executeMethod: %s is not an allowed argument anymore. Please change your code!" % depArg )
         removedArgs[depArg] = kwargs[depArg]
@@ -752,7 +776,7 @@ class StorageElement:
 
 
     # Set default argument if any
-    methDefaultArgs = StorageElement.__defaultsArguments.get( self.methodName, {} )
+    methDefaultArgs = StorageElementItem.__defaultsArguments.get( self.methodName, {} )
     for argName in methDefaultArgs:
       if argName not in kwargs:
         self.log.debug( "StorageElement.__executeMethod : default argument %s for %s not present.\
@@ -866,7 +890,7 @@ class StorageElement:
   def __getattr__( self, name ):
     """ Forwards the equivalent Storage calls to StorageElement.__executeMethod"""
     # We take either the equivalent name, or the name itself
-    self.methodName = StorageElement.__equivalentMethodNames.get( name, None )
+    self.methodName = StorageElementItem.__equivalentMethodNames.get( name, None )
 
     if self.methodName:
       return self.__executeMethod
@@ -874,6 +898,8 @@ class StorageElement:
     raise AttributeError
 
 
+
+StorageElement = StorageElementCache()
 
 
 

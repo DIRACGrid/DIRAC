@@ -7,6 +7,8 @@
 The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC                                                     import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
@@ -23,6 +25,8 @@ import DIRAC.Core.Utilities.Time as Time
 
 import time
 import os
+
+
 
 REMOVE_STATUS_DELAY = { 'Done':7,
                         'Killed':1,

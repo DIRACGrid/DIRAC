@@ -17,14 +17,12 @@ from DIRAC.Core.Utilities.Devloader import Devloader
 
 class LocalConfiguration:
   """
-    Main class to interface with Configuration of a running DIRAC Component.
+  Main class to interface with Configuration of a running DIRAC Component.
 
-    For most cases this is handled via
-    
+  For most cases this is handled via
     - DIRAC.Core.Base.Script class for scripts
     - dirac-agent for agents
     - dirac-service for services
-    
   """
 
   def __init__( self, defaultSectionPath = "" ):
@@ -200,9 +198,9 @@ class LocalConfiguration:
     This is the magic method that reads the command line and processes it
     It is used by the Script Base class and the dirac-service and dirac-agent scripts
     Before being called:
-    - any additional switches to be processed
-    - mandatory and default configuration configuration options must be defined.
-    
+      - any additional switches to be processed
+      - mandatory and default configuration configuration options must be defined.
+
     """
     if self.initialized:
       return S_OK()
@@ -363,7 +361,8 @@ class LocalConfiguration:
   def syncRemoteConfiguration( self, strict = False ):
     """
     Force a Resync with Configuration Server
-    Under normal conditions this is triggered by an access to any configuration data
+    Under normal conditions this is triggered by an access to any 
+    configuration data.
     """
     if self.componentName == "Configuration/Server" :
       if gConfigurationData.isMaster():

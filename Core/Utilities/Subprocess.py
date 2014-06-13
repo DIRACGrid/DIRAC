@@ -3,30 +3,28 @@
 DIRAC Wrapper to execute python and system commands with a wrapper, that might
 set a timeout.
 3 FUNCTIONS are provided:
-- shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
+   
+     - shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
+       it uses subprocess.Popen class with "shell = True".
+       If cmdSeq is a string, it specifies the command string to execute through
+       the shell.  If cmdSeq is a sequence, the first item specifies the command
+       string, and any additional items will be treated as additional shell arguments.
 
-  it uses subprocess.Popen class with "shell = True".
-  If cmdSeq is a string, it specifies the command string to execute through
-  the shell.  If cmdSeq is a sequence, the first item specifies the command
-  string, and any additional items will be treated as additional shell arguments.
+     - systemCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
+       it uses subprocess.Popen class with "shell = False".
+       cmdSeq should be a string, or a sequence of program arguments.
 
-- systemCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
+       stderr and stdout are piped. callbackFunction( pipeId, line ) can be
+       defined to process the stdout (pipeId = 0) and stderr (pipeId = 1) as
+       they are produced
+       
+       They return a DIRAC.ReturnValue dictionary with a tuple in Value
+       ( returncode, stdout, stderr ) the tuple will also be available upon
+       timeout error or buffer overflow error.
 
-  it uses subprocess.Popen class with "shell = False".
-  cmdSeq should be a string, or a sequence of program arguments.
-  
-  stderr and stdout are piped. callbackFunction( pipeId, line ) can be
-  defined to process the stdout (pipeId = 0) and stderr (pipeId = 1) as
-  they are produced
-  
-  They return a DIRAC.ReturnValue dictionary with a tuple in Value
-  ( returncode, stdout, stderr ) the tuple will also be available upon
-  timeout error or buffer overflow error.
-
-- pythonCall( iTimeOut, function, \*stArgs, \**stKeyArgs )
-
-  calls function with given arguments within a timeout Wrapper
-  should be used to wrap third party python functions
+     - pythonCall( iTimeOut, function, *stArgs, **stKeyArgs )
+       calls function with given arguments within a timeout Wrapper
+       should be used to wrap third party python functions
 
 """
 __RCSID__ = "$Id$"

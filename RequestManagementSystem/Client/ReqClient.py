@@ -2,8 +2,8 @@
 :mod:  ReqClient
 
 .. module:  ReqClient
+  :synopsis: implementation of client for RequestDB using DISET framework
 
-:synopsis: implementation of client for RequestDB using DISET framework
 """
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+import datetime
 
 class ReqClient( Client ):
   """
@@ -124,6 +125,30 @@ class ReqClient( Client ):
       return getRequest
     return S_OK( Request( getRequest["Value"] ) )
 
+  def getBulkRequests( self, numberOfRequest = 10 ):
+    """ get bulk requests from RequestDB
+
+    :param self: self reference
+    :param str numberOfRequest: size of the bulk (default 10)
+
+    :return: S_OK( Successful : { requestID, RequestInstance }, Failed : message  ) or S_ERROR
+    """
+    self.log.debug( "getRequests: attempting to get request." )
+    getRequests = self.requestManager().getBulkRequests( numberOfRequest )
+    if not getRequests["OK"]:
+      self.log.error( "getRequests: unable to get '%s' requests: %s" % ( numberOfRequest, getRequests["Message"] ) )
+      return getRequests
+    # No Request returned
+    if not getRequests["Value"]:
+      return getRequests
+    # No successful Request
+    if not getRequests["Value"]["Successful"]:
+      return getRequests
+
+    jsonReq = getRequests["Value"]["Successful"]
+    reqInstances = dict( ( rId, Request( jsonReq[rId] ) ) for rId in jsonReq )
+    return S_OK( {"Successful" : reqInstances, "Failed" : getRequests["Value"]["Failed"] } )
+
   def peekRequest( self, requestName ):
     """ peek request """
     self.log.debug( "peekRequest: attempting to get request." )
@@ -158,11 +183,14 @@ class ReqClient( Client ):
                                                                              deleteRequest["Message"] ) )
     return deleteRequest
 
-  def getRequestNamesList( self, statusList = None, limit = None ):
+  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
     """ get at most :limit: request names with statuses in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
-    return self.requestManager().getRequestNamesList( statusList, limit )
+    since = since.strftime( '%Y-%m-%d' ) if since else ""
+    until = until.strftime( '%Y-%m-%d' ) if until else ""
+
+    return self.requestManager().getRequestNamesList( statusList, limit, since, until )
 
   def getScheduledRequest( self, operationID ):
     """ get scheduled request given its scheduled OperationID """
@@ -460,7 +488,7 @@ def recoverableRequest( request ):
   excludedErrors = ( 'File does not exist', 'No such file or directory',
                      'sourceSURL equals to targetSURL',
                      'Max attempts limit reached', 'Max attempts reached' )
-  operationErrorsOK = ( 'is banned for', )
+  operationErrorsOK = ( 'is banned for', 'Failed to perform exists from any catalog' )
   for op in request:
     if op.Status == 'Failed' and ( not op.Error or not [errStr for errStr in operationErrorsOK if errStr in op.Error] ):
       for f in op:

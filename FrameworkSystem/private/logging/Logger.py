@@ -337,7 +337,7 @@ class Logger:
     stack_list = traceback.extract_stack()
     return ''.join( traceback.format_list( stack_list[:-2] ) )
 
-  def flushAllMessages( self, exitCode ):
+  def flushAllMessages( self, exitCode=0 ):
     for backend in self._backendsDict:
       self._backendsDict[ backend ].flush()
 

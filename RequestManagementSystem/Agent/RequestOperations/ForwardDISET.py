@@ -23,10 +23,11 @@ __RCSID__ = "$Id $"
 # @brief Definition of ForwardDISET class.
 
 # # imports
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 ########################################################################
 class ForwardDISET( OperationHandlerBase ):
@@ -63,6 +64,7 @@ class ForwardDISET( OperationHandlerBase ):
       decode[0][1].pop('delegatedGroup')
     
     forward = executeRPCStub( decode )
+    
     if not forward["OK"]:
       self.log.error( "unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
       self.operation.Error = forward["Message"]

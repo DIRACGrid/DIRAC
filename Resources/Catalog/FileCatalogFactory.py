@@ -1,7 +1,5 @@
-########################################################################
-# $HeadURL$
-########################################################################
 __RCSID__ = "$Id$"
+
 '''
 FileCatalogFactory class to create file catalog client objects according to the 
 configuration description
@@ -53,7 +51,8 @@ class FileCatalogFactory:
     catalogClass = result['Value']
 
     try:
-      if catalogType in ['LcgFileCatalogCombined', 'LcgFileCatalog']:
+      # FIXME: is it really needed? This is the factory, can't this be moved out?
+      if catalogType in [ 'LcgFileCatalogCombined', 'LcgFileCatalog' ]:
         # The LFC special case
         infoSys = catConfig.get( 'LcgGfalInfosys', '' )
         host = catConfig.get( 'MasterHost', '' )
