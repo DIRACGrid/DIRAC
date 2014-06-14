@@ -148,7 +148,6 @@ class WorkingProcess( multiprocessing.Process ):
   
   """
 
-<<<<<<< HEAD
   def __init__( self, pendingQueue, resultsQueue, stopEvent, keepRunning ):
     """ c'tor
 
@@ -159,14 +158,6 @@ class WorkingProcess( multiprocessing.Process ):
     :type multiprocessing.Queue 
     :param  stopEvent: event to stop processing
     :type multiprocessing.Event
-=======
-  def __init__( self, pendingQueue, resultsQueue, stopEvent ):
-    """
-    :param self: self reference
-    :param multiprocessing.Queue pendingQueue: queue storing ProcessTask before execution
-    :param multiprocessing.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
-    :param multiprocessing.Event stopEvent: event to stop processing
->>>>>>> rel-v6r11
     """
     multiprocessing.Process.__init__( self )
     ## daemonize
@@ -566,12 +557,7 @@ class ProcessPool( object ):
   or alternatively ask for daemon mode processing, when this function is called again and again in 
   separate background thread.
 
-<<<<<<< HEAD
   Finalisation
-=======
-  Finalization
-  ------------
->>>>>>> rel-v6r11
 
   Finsalization fo task processing is done in several steps:
   
@@ -587,15 +573,10 @@ class ProcessPool( object ):
   
   """
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
-<<<<<<< HEAD
                 strictLimits = True, poolCallback=None, poolExceptionCallback=None,
                 keepProcessesRunning=True ):
     """ c'tor
 
-=======
-                strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
-    """
->>>>>>> rel-v6r11
     :param self: self reference
     :param int minSize: minimal number of simultaniously executed tasks
     :param int maxSize: maximal number of simultaniously executed tasks
@@ -723,12 +704,7 @@ class ProcessPool( object ):
     return counter
 
   def getFreeSlots( self ):
-<<<<<<< HEAD
     """ get number of free slots available for workers
-=======
-    """ 
-    Get number of free slots available for workers
->>>>>>> rel-v6r11
 
     :param self: self reference
     """
