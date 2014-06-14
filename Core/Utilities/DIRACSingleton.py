@@ -25,9 +25,6 @@ __RCSID__ = "$Id $"
 # @brief Definition of DIRACSingleton class.
 
 class DIRACSingleton( type ):
-<<<<<<< HEAD
-  """ Simple singleton pattern using metaclass
-=======
   """ 
   Simple singleton pattern using metaclass
 
@@ -38,16 +35,6 @@ class DIRACSingleton( type ):
     class CheesShop( object ):
       __metaclass__ = DIRACSingleton
       ...
->>>>>>> rel-v6r11
-
-If you want to make your class a singleton, just set its  __metaclass__ to 
-DIRACSingleton, i.e.::
-    
-          from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-          class CheesShop( object ):
-          
-            __metaclass__ = DIRACSingleton
-            ...
   """
   def __init__( cls, name, bases, dic ):
     """ c'tor
