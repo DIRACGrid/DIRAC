@@ -7,12 +7,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule                         import AgentModule
-from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getUserOption
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB            import SystemLoggingDB
 from DIRAC.FrameworkSystem.Client.NotificationClient     import NotificationClient
-from DIRAC.Core.Utilities                                import List
 
 AGENT_NAME = 'Logging/ErrorMessageMonitor'
 
