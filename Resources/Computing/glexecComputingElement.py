@@ -1,9 +1,3 @@
-########################################################################
-# $Id$
-# File :   glexecComputingElement.py
-# Author : Stuart Paterson
-########################################################################
-
 """ A computing element class that attempts to use glexec if available then
     defaults to the standard InProcess Computing Element behaviour.
 """

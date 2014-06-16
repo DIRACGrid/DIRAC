@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL: $
-# File :   JobSchedulingAgent.py
-########################################################################
-
 """   The Job Scheduling Agent takes the information gained from all previous
       optimizers and makes a scheduling decision for the jobs.  Subsequent to this
       jobs are added into a Task Queue by the next optimizer and pilot agents can

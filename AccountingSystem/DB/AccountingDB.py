@@ -275,6 +275,11 @@ class AccountingDB( DB ):
     """
     Register a new type
     """
+    gMonitor.registerActivity( "registerwaiting:%s" % name,
+                               "Records waiting for insertion for %s" % " ".join( name.split( "_" ) ),
+                               "Accounting",
+                               "records",
+                               gMonitor.OP_MEAN )
     gMonitor.registerActivity( "registeradded:%s" % name,
                                "Register added for %s" % " ".join( name.split( "_" ) ),
                                "Accounting",
@@ -1006,10 +1011,16 @@ class AccountingDB( DB ):
     #Calculate time conditions
     sqlTimeCond = []
     if startTime:
+      if tableType == 'bucket':
+        #HACK because MySQL and UNIX do not start epoch at the same time
+        startTime = startTime + 3600
+        startTime = self.calculateBuckets( typeName, startTime, startTime )[0][0]
       sqlTimeCond.append( "`%s`.`startTime` >= %s" % ( tableName, startTime ) )
     if endTime:
       if tableType == "bucket":
         endTimeSQLVar = "startTime"
+        endTime = endTime + 3600
+        endTime = self.calculateBuckets( typeName, endTime, endTime )[0][0]
       else:
         endTimeSQLVar = "endTime"
       sqlTimeCond.append( "`%s`.`%s` <= %s" % ( tableName, endTimeSQLVar, endTime ) )
