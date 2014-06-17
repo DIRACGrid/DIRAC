@@ -22,7 +22,7 @@ class FileManager(FileManagerBase):
   # The all important _findFiles and _getDirectoryFiles methods
   #
 
-  def _findFiles(self,lfns,metadata=['FileID'],connection=False):
+  def _findFiles( self, lfns, metadata = ['FileID'], allStatus = False, connection = False ):
     """ Find file ID if it exists for the given list of LFNs """
     
     connection = self._getConnection(connection)
@@ -43,7 +43,7 @@ class FileManager(FileManagerBase):
     successful = {}
     for dirPath in directoryIDs:
       fileNames = dirDict[dirPath]
-      res = self._getDirectoryFiles(directoryIDs[dirPath],fileNames,metadata,connection=connection)
+      res = self._getDirectoryFiles( directoryIDs[dirPath], fileNames, metadata, allStatus = allStatus, connection = connection )
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
         for fileName in fileNames:
@@ -172,7 +172,7 @@ class FileManager(FileManagerBase):
           groupDict[gid] = group  
         files[fileName]['OwnerGroup'] = group    
       if 'Status' in metadata:
-        files[fileName]['Status'] = status      
+        files[fileName]['Status'] = self._getIntStatus( status ).get( "Value", status )
     for element in ['FileID','Size','DirID','UID','GID','Status']:
       if element in metadata:
         metadata.remove(element)    
@@ -198,7 +198,7 @@ class FileManager(FileManagerBase):
       return result
     resultDict = {}
     for fileID, size, uid, gid, status in result['Value']:
-      resultDict[fileID] = { "Size": int(size), "UID": int(uid), "GID": int(gid), "Status": status }
+      resultDict[fileID] = { "Size": int( size ), "UID": int( uid ), "GID": int( gid ), "Status": self._getIntStatus( status ).get( "Value", status ) }
       
     req = "SELECT FileID,GUID,CreationDate from FC_FileInfo WHERE FileID in ( %s )" % stringIDs  
     result = self.db._query(req,connection)
@@ -449,6 +449,7 @@ class FileManager(FileManagerBase):
     for repID,fileID,seID in res['Value']:
       replicaDict.setdefault( fileID, {} )
       replicaDict[fileID][seID] = repID
+
     return S_OK(replicaDict)  
 
   ######################################################
@@ -458,9 +459,17 @@ class FileManager(FileManagerBase):
   
   def _deleteReplicas(self,lfns,connection=False):
     connection = self._getConnection(connection)
+    failed = {}
     successful = {}
     res = self._findFiles(lfns.keys(),['DirID','FileID','Size'],connection=connection)
-    failed = res['Value']['Failed']
+
+    # If the file does not exist we consider the deletion successful
+    for lfn, error in res['Value']['Failed'].items():
+      if error == 'No such file or directory':
+        successful[lfn] = True
+      else:
+        failed[lfn] = error
+
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
     directorySESizeDict = {}
@@ -534,6 +543,8 @@ class FileManager(FileManagerBase):
     res = self.__getRepIDForReplica(fileID,se,connection=connection)
     if not res['OK']:
       return res
+    if not res["Exists"]:
+      return S_ERROR( "Replica does not exist" )
     if not res['Value']:
       return res
     repID = res['Value']
@@ -566,13 +577,10 @@ class FileManager(FileManagerBase):
     req = "UPDATE FC_ReplicaInfo SET %s='%s', ModificationDate = UTC_TIMESTAMP() WHERE RepID IN (%d)" % (paramName,paramValue,repID)
     return self.db._update(req,connection)
 
-  def _setFileParameter(self,fileID,paramName,paramValue,connection=False):
+  def _setFileParameter( self, fileID, paramName, paramValue, connection = False ):
     connection = self._getConnection(connection)
     if type(fileID) not in [TupleType,ListType]:
       fileID = [fileID]
-      
-    if paramName == 'Status' and not paramValue in self.db.validFileStatus:
-      return S_ERROR( 'Invalid file status %s' % paramValue )   
       
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
@@ -608,12 +616,12 @@ class FileManager(FileManagerBase):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas(self,fileIDs,fields_input=['PFN'],allStatus=False,connection=False):
+  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], allStatus = False, connection = False ):
     """ Get replicas for the given list of files specified by their fileIDs
     """
     fields = list(fields_input)
     connection = self._getConnection(connection)
-    res = self.__getFileIDReplicas(fileIDs,allStatus=allStatus,connection=connection)
+    res = self.__getFileIDReplicas( fileIDs, allStatus = allStatus, connection = connection )
     if not res['OK']:
       return res
     fileIDDict = res['Value']
