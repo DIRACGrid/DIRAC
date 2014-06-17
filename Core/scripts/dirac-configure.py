@@ -28,6 +28,7 @@
   -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
   -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
   -F --ForceUpdate                                 Forces the update of dirac.cfg, even if it does already exists (use with care)
+  -x --VoFlag                                      Set the voFlag extension
 
   Other arguments will take proper defaults if not defined.
   
@@ -81,6 +82,8 @@ localSE = None
 ceName = None
 vo = None
 update = False
+configPath = False
+voFlag = False
 
 def setGateway( optionValue ):
   global gatewayServer
@@ -88,6 +91,14 @@ def setGateway( optionValue ):
   setServer( gatewayServer + '/Configuration/Server' )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Gateway' ), gatewayServer )
   return DIRAC.S_OK()
+
+
+def setvoFlag( optionValue ):
+  global voFlag
+  voFlag = True
+  print voFlag
+  return DIRAC.S_OK()
+
 
 
 def setServer( optionValue ):
@@ -200,6 +211,8 @@ Script.registerSwitch( "A:", "Architecture=", "Configure /Architecture=<architec
 Script.registerSwitch( "L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
 
 Script.registerSwitch( "F", "ForceUpdate", "Force Update of dirac.cfg (otherwise nothing happens if dirac.cfg already exists)", forceUpdate )
+
+Script.registerSwitch ( "x", "voFlag", "Set the voFlag extension", setvoFlag )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     '\nUsage:',
@@ -320,6 +333,9 @@ else:
     DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
 if not skipCADownload:
   Script.enableCS()
+  if voFlag:
+      DIRAC.rootPath = os.getcwd()
+      DIRAC.gLogger.verbose( 'Change rootPath to', DIRAC.rootPath )
   try:
     dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
     if not os.path.exists( dirName ):
@@ -395,6 +411,11 @@ if gatewayServer:
   Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
 
 # Create the local dirac.cfg if it is not yet there
+if voFlag:
+  DIRAC.gConfig.setOptionValue( '/LocalSite/InstancePath', DIRAC.rootPath )
+  Script.localCfg.addDefaultEntry( '/LocalSite/InstancePath', DIRAC.rootPath )
+  DIRAC.gConfig.diracConfigFilePath = os.path.join(DIRAC.rootPath,'etc','dirac.cfg')
+  os.environ['DIRACSYSCONFIG']=os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
 if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
   configDir = os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
   if not os.path.exists( configDir ):
