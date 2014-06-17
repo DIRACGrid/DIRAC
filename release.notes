@@ -1,3 +1,17 @@
+[v6r11p3]
+
+FIX: import gMonitor from it is original location
+
+*Core
+FIX: FC.Utilities - treat properly the LFN names starting with /grid ( /gridpp case )
+
+*Configuration
+FIX: LocalConfiguration - added exitCode optional argument to showHelp(), closes #1821
+
+*WMS
+FIX: StalledJobAgent - extra checks when failing Completed jobs, closes #1944
+FIX: JobState - added protection against absent job in getStatus(), closes #1853
+
 [v6r11p2]
 
 *Core
