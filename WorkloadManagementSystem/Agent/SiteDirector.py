@@ -614,7 +614,7 @@ class SiteDirector( AgentModule ):
     pilotOptions, pilotsToSubmit = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
-    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
+    executable = self._writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
@@ -645,12 +645,20 @@ class SiteDirector( AgentModule ):
       self.log.info( 'DIRAC project will be installed by pilots' )
 
     #Request a release
+    # diracVersion = opsHelper.getValue( "Pilot/Version", [] )
+    # if not diracVersion:
+    #  self.log.error( 'Pilot/Version is not defined in the configuration' )
+    #  return [ None, None ]
+    # diracVersion is a list of accepted releases. Just take the first one
+    # pilotOptions.append( '-r %s' % diracVersion[0] )
+
+    # Request the list of accepted release --> needed to check correct release with SetupProject
     diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
       self.log.error( 'Pilot/Version is not defined in the configuration' )
       return [ None, None ]
-    #diracVersion is a list of accepted releases. Just take the first one
-    pilotOptions.append( '-r %s' % diracVersion[0] )
+    # diracVersion is a list of accepted releases
+    pilotOptions.append( '-r %s' % ','.join( str( it ) for it in diracVersion ) )
 
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
@@ -733,10 +741,10 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
-
+    
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
