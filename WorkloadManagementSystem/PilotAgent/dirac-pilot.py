@@ -247,6 +247,7 @@ class ConfigureDIRAC( object ):
     self.dryRun = False
     self.testVOMSOK = False
     self.site = ""
+    self.executeCmd = False
  
   def setInProcessOpts( self ):
 
@@ -315,6 +316,8 @@ class ConfigureDIRAC( object ):
         self.configureOpts.append( '-C "%s"' % v )
       elif o in ( '-G', '--Group' ):
         self.userGroup = v
+      elif o in ( '-x', '--execute' ):
+        self.executeCmd = v
       elif o in ( '-O', '--OwnerDN' ):
         self.userDN = v
       elif o == '-t' or o == '--test':
@@ -749,10 +752,10 @@ class ConfigureDIRAC( object ):
       if os.path.isfile( cfg ): #and re.search( '.cfg&', cfg ):
         extraCFG.append( cfg )
 
-    #if cliParams.executeCmd:
+    if self.executeCmd:
       # Execute user command
-      #logINFO( "Executing user defined command: %s" % cliParams.executeCmd )
-      #sys.exit( os.system( "source bashrc; %s" % cliParams.executeCmd ) / 256 )
+      logINFO( "Executing user defined command: %s" % self.executeCmd )
+      sys.exit( os.system( "source bashrc; %s" % self.executeCmd ) / 256 )
 
     logINFO( 'Starting JobAgent' )
     os.environ['PYTHONUNBUFFERED'] = 'yes'
