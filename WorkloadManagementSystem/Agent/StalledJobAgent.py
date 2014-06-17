@@ -511,11 +511,13 @@ finalization of the job execution.
 
     # Remove those with Minor Status "Pending Requests"
     for jobID in jobIDs:
-      result = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
+      result = self.jobDB.getJobAttributes( jobID, ['Status','MinorStatus'] )
       if not result['OK']:
         self.log.error( result['Message'] )
         continue
-      if result['Value'] == "Pending Requests":
+      if result['Value']['Status'] != "Completed":
+        continue
+      if result['Value']['MinorStatus'] == "Pending Requests":
         continue
 
       result = self.__updateJobStatus( jobID, 'Failed',
