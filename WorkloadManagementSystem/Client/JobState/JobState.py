@@ -260,7 +260,10 @@ class JobState( object ):
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
-    return S_OK( ( data[ 'Status' ], data[ 'MinorStatus' ] ) )
+    if data:
+      return S_OK( ( data[ 'Status' ], data[ 'MinorStatus' ] ) )
+    else:
+      return S_ERROR( 'Job %d not found in the JobDB' % int( self.__jid ) )
 
   right_setAppStatus = RIGHT_GET_INFO
   @RemoteMethod

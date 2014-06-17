@@ -248,8 +248,7 @@ class LocalConfiguration:
       # x = option "-k" not recognized
       # print help information and exit
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( x ) )
-      self.showHelp()
-      sys.exit( 2 )
+      self.showHelp( exitCode = 2 )
 
     for o, v in opts:
       if o in ( '-h', '--help' ):
@@ -465,7 +464,7 @@ class LocalConfiguration:
       sys.stdout.write( "Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n" )
     DIRAC.exit(0)
 
-  def showHelp( self, dummy = False ):
+  def showHelp( self, dummy = False, exitCode = 0 ):
     """
     Printout help message including a Usage message if defined via setUsageMessage method
     """
@@ -505,7 +504,7 @@ class LocalConfiguration:
           gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
 
     gLogger.notice( "" )
-    DIRAC.exit( 0 )
+    DIRAC.exit( exitCode )
 
   def deleteOption( self, optionPath ):
     """
