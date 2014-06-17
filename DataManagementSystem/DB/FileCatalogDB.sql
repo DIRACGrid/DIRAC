@@ -1,4 +1,4 @@
--- $HeaderURL: $
+-- $HeaderURL $
 -- ------------------------------------------------------------------------------
 DROP DATABASE IF EXISTS FileCatalogDB;
 -- ------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ CREATE TABLE FC_Files(
     INDEX (UID,GID),
     INDEX (Status),
     INDEX (FileName),
-    INDEX (DirID,FileName),
+    INDEX (DirID,FileName)
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------

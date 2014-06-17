@@ -15,7 +15,7 @@ DEBUG = 0
 import os
 from types import ListType, TupleType, StringTypes
 
-class FileManager(FileManagerBase):
+class FileManager( FileManagerBase ):
 
   ######################################################
   #

@@ -13,8 +13,10 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.DirectoryClosure      import DirectoryClosure
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.FileManagerPs           import FileManagerPs
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
@@ -24,16 +26,17 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             i
 #############################################################################
 class FileCatalogDB(DB):
 
-  def __init__( self, databaseLocation='DataManagement/FileCatalogDB', maxQueueSize=10 ):
+  def __init__( self, databaseLocation = 'DataManagement/FileCatalogDB', maxQueueSize = 10 ):
     """ Standard Constructor
     """
-    
+
     # The database location can be specified in System/Database form or in just the Database name
     # in the DataManagement system 
     db = databaseLocation
     if db.find('/') == -1:
       db = 'DataManagement/' + db
-    DB.__init__(self,'FileCatalogDB',db,maxQueueSize)
+
+    DB.__init__( self, 'FileCatalogDB', db, maxQueueSize )
 
   def setConfig(self,databaseConfig):
 
