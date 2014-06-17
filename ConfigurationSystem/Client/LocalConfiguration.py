@@ -241,8 +241,7 @@ class LocalConfiguration:
       # x = option "-k" not recognized
       # print help information and exit
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( x ) )
-      self.showHelp()
-      sys.exit( 2 )
+      self.showHelp( exitCode = 2 )
 
     self.cliAdditionalCFGFiles = [ arg for arg in args if arg[-4:] == ".cfg" ]
     self.commandArgList = [ arg for arg in args if not arg[-4:] == ".cfg" ]
@@ -431,7 +430,7 @@ class LocalConfiguration:
   def getDebugMode( self ):
     return self.__debugMode
 
-  def showHelp( self, dummy = False ):
+  def showHelp( self, dummy = False, exitCode = 0 ):
     """
     Printout help message including a Usage message if defined via setUsageMessage method
     """
@@ -471,7 +470,7 @@ class LocalConfiguration:
           gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
 
     gLogger.notice( "" )
-    DIRAC.exit( 0 )
+    DIRAC.exit( exitCode )
 
   def deleteOption( self, optionPath ):
     """
