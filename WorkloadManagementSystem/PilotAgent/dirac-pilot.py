@@ -83,10 +83,6 @@ class InstallDIRAC( object ):
     self.rootPath = ''
 
   def setInstallOpt( self ):
-<<<<<<< HEAD
-=======
-
->>>>>>> Cleaning of the code
     """Setup installation parameters"""
 
     global rootPath
@@ -136,13 +132,7 @@ class InstallDIRAC( object ):
     if self.platform:
       self.installOpts.append( '-p "%s"' % self.platform )
 
-<<<<<<< HEAD
     logDEBUG( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
-    
-=======
-
-    logDEBUG( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
->>>>>>> Cleaning of the code
     
     
   def execute( self ):
@@ -199,7 +189,6 @@ class InstallDIRAC( object ):
       pass
     logINFO( "Version %s" % __RCSID__ )
 
-    
     
 
 
@@ -534,6 +523,7 @@ class ConfigureDIRAC( object ):
     self.configureOpts.append( '-I' )
 
     # just for test when normal installation
+
     # __result__ = os.system( "cp /home/dirac/test/dirac-configure.py /home/dirac/test/DIRAC/Core/scripts/dirac-configure.py" )
 
     # for test when cvmfs
@@ -752,6 +742,7 @@ class ConfigureDIRAC( object ):
       if os.path.isfile( cfg ): #and re.search( '.cfg&', cfg ):
         extraCFG.append( cfg )
 
+
     if self.executeCmd:
       # Execute user command
       logINFO( "Executing user defined command: %s" % self.executeCmd )
@@ -860,4 +851,3 @@ def logINFO( msg ):
 if __name__ == "__main__":
     main()
 
-  
