@@ -1324,7 +1324,8 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = ret['Value']
 
       deletedSize = sum( [size for pfn, size in deletedSizes.items() if pfn in res['Value']['Successful']] )
-      oDataOperation.setValueByKey( 'TransferOK', deletedSize )
+      oDataOperation.setValueByKey( 'TransferSize', deletedSize )
+      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
