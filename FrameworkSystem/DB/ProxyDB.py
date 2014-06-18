@@ -854,7 +854,7 @@ class ProxyDB( DB ):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Timestamp ) > 15552000"
+    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
     return self._update( cmd )
 
   def getLogsContent( self, selDict, sortList, start = 0, limit = 0 ):
