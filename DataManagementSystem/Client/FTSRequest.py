@@ -815,12 +815,13 @@ class FTSRequest( object ):
         continue
       pfn = res['Value']['Successful'][lfn]
       res = self.oTargetSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True )
-      if not res['OK'] or lfn not in res['Value']['Successful']:
-        gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) ) )
-        self.__setFileParameter( lfn, 'Reason', res['Message'] )
+      if not res['OK'] or pfn not in res['Value']['Successful']:
+        reason = res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
+        gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, reason ) )
+        self.__setFileParameter( lfn, 'Reason', reason )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      pfn = res['Value']['Successful'][lfn]
+      pfn = res['Value']['Successful'][pfn]
       res = self.setTargetSURL( lfn, pfn )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
@@ -1103,8 +1104,6 @@ class FTSRequest( object ):
     res = self.__isSummaryValid()
     if not res['OK']:
       return res
-    if not self.fileDict:
-      return S_ERROR( "Files not set" )
     return S_OK()
 
   def __parseOutput( self, full = False ):
