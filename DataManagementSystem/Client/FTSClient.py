@@ -4,7 +4,7 @@
 # Date: 2013/04/08 14:29:43
 ########################################################################
 
-""" 
+"""
 :mod: FTSClient
 ===============
 
@@ -244,7 +244,7 @@ class FTSClient( Client ):
     ftsFiles = []
 
     # # this will be returned on success
-    ret = { "Successful": [], "Failed": {} }
+    result = { "Successful": [], "Failed": {} }
 
     for fileJSON, sourceSEs, targetSEs in opFileList:
 
@@ -260,12 +260,12 @@ class FTSClient( Client ):
       res = self.dataManager.getActiveReplicas( lfn )
       if not res['OK']:
         self.log.error( "ftsSchedule: %s" % res['Message'] )
-        ret["Failed"][fileID] = res['Message']
+        result["Failed"][fileID] = res['Message']
         continue
       replicaDict = res['Value']
 
       if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
-        ret["Failed"][fileID] = "no active replicas found"
+        result["Failed"][fileID] = "no active replicas found"
         continue
       replicaDict = replicaDict["Successful"].get( lfn, {} )
       # # use valid replicas only
@@ -273,13 +273,13 @@ class FTSClient( Client ):
 
       if not validReplicasDict:
         self.log.warn( "No active replicas found in sources" )
-        ret["Failed"][fileID] = "no active replicas found in sources"
+        result["Failed"][fileID] = "no active replicas found in sources"
         continue
 
       tree = self.ftsManager.getReplicationTree( sourceSEs, targetSEs, size )
       if not tree['OK']:
         self.log.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
-        ret["Failed"][fileID] = tree['Message']
+        result["Failed"][fileID] = tree['Message']
         continue
       tree = tree['Value']
 
@@ -292,12 +292,12 @@ class FTSClient( Client ):
                                                                                 repDict["TargetSE"] ) )
         transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, validReplicasDict )
         if not transferSURLs['OK']:
-          ret["Failed"][fileID] = transferSURLs['Message']
+          result["Failed"][fileID] = transferSURLs['Message']
           continue
 
         sourceSURL, targetSURL, fileStatus = transferSURLs['Value']
         if sourceSURL == targetSURL:
-          ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
+          result["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
           continue
 
         self.log.verbose( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
@@ -317,7 +317,7 @@ class FTSClient( Client ):
 
     if not ftsFiles:
       self.log.info( "ftsSchedule: no FTSFiles to put for request %d" % requestID )
-      return S_OK( ret )
+      return S_OK( result )
 
     ftsFilesJSONList = [ftsFile.toJSON()['Value'] for ftsFile in ftsFiles]
     res = self.ftsManager.putFTSFileList( ftsFilesJSONList )
@@ -325,10 +325,10 @@ class FTSClient( Client ):
       self.log.error( "ftsSchedule: %s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
 
-    ret['Successful'] += [ fileID for fileID in fileIDs if fileID not in ret['Failed']]
+    result['Successful'] += [ fileID for fileID in fileIDs if fileID not in result['Failed']]
 
     # # if we land here some files have been properly scheduled
-    return S_OK( ret )
+    return S_OK( result )
 
   ################################################################################################################
   # Some utilities function
