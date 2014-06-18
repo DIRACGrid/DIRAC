@@ -583,9 +583,10 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer, 'submittedFiles' : self.submittedFiles }
-    # print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
-    if monitor:
-      self.monitor( untilTerminal = True, printOutput = printOutput )
+    if monitor or printOutput:
+      gLogger.always( "Submitted %s@%s" % ( self.ftsGUID, self.ftsServer ) )
+      if monitor:
+        self.monitor( untilTerminal = True, printOutput = printOutput )
     return S_OK( resDict )
 
   def __isSubmissionValid( self ):
@@ -1001,7 +1002,7 @@ class FTSRequest( object ):
     :param bool printOutput: flag to print out monitoring information to the stdout
     """
     while not self.isTerminal:
-      res = self.__parseOutput()
+      res = self.__parseOutput( full = True )
       if not res['OK']:
         return res
       if untilTerminal:
