@@ -31,7 +31,7 @@ class ProxyManagerHandler( RequestHandler ):
       return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeLogs )
+    gThreadScheduler.addPeriodicTask( 86400, cls.__proxyDB.purgeLogs )
     gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeExpiredProxies )
     gLogger.info( "MyProxy: %s\n MyProxy Server: %s" % ( useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
     return S_OK()
