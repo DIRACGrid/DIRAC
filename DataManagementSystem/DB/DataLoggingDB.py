@@ -108,11 +108,13 @@ class DataLoggingDB( DB ):
     :param str source: source setting the new status
     """
     self.gLogger.info( "Entering records for %s lfns: %s/%s from source %s" % ( len( lfns ), status, minor, source ) )
-    _date = date
     if not date:
       _date = Time.dateTime()
-    if type( date ) in StringTypes:
-      _date = Time.fromString( date )
+    else:
+      if type( date ) in StringTypes:
+        _date = Time.fromString( date )
+      else:
+        _date = date
 
     try:
       time_order = Time.to2K( _date ) - NEW_MAGIC_EPOCH_2K
