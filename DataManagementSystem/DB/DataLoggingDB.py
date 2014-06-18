@@ -41,7 +41,7 @@ class DataLoggingDB( DB ):
     Status VARCHAR(255) NOT NULL,
     MinorStatus VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     StatusTime DATETIME,
-    StatusTimeOrder DOUBLE(11,3) NOT NULL,
+    StatusTimeOrder DOUBLE(12,3) NOT NULL,
     Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY (FileID),
     INDEX (LFN)
@@ -55,7 +55,7 @@ class DataLoggingDB( DB ):
                                           'Status': 'VARCHAR(255) NOT NULL',
                                           'MinorStatus': 'VARCHAR(255) NOT NULL DEFAULT "Unknown" ',
                                           'StatusTime':'DATETIME NOT NULL',
-                                          'StatusTimeOrder': 'DOUBLE(11,3) NOT NULL',
+                                          'StatusTimeOrder': 'DOUBLE(12,3) NOT NULL',
                                           'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
                                          },
                              'PrimaryKey': 'FileID',
