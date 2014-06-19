@@ -239,14 +239,18 @@ class ComputingElement:
 
 
   #############################################################################
-  def available( self, requirements = {} ):
-    """This method returns True if CE is available and false if not.  The CE
+  def available( self, jobIDList = [] ):
+    """This method returns the number of available slots in the target CE. The CE
        instance polls for waiting and running jobs and compares to the limits
        in the CE parameters.
+
+       :param list jobIDList: list of already existing job IDs to be checked against
     """
-    # FIXME: need to take into account the possible requirements from the pilots,
-    #        so far the cputime
-    result = self.getCEStatus()
+    result = self.__getParameters( 'CEType' )
+    if result['OK'] and result['Value'] == 'CREAM':
+      result = self.getCEStatus( jobIDList )
+    else:  
+      result = self.getCEStatus()
     if not result['OK']:
       #self.log.warn( 'Could not obtain CE dynamic information' )
       #self.log.warn( result['Message'] )

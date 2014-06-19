@@ -156,8 +156,10 @@ class CREAMComputingElement( ComputingElement ):
     return S_OK()
 
 #############################################################################
-  def getCEStatus( self ):
+  def getCEStatus( self, jobIDList = [] ):
     """ Method to return information on running and pending jobs.
+    
+        :param list jobIDList: list of job IDs to be considered
     """
     statusList = ['REGISTERED', 'PENDING', 'IDLE', 'RUNNING', 'REALLY-RUNNING']
     cmd = ['glite-ce-job-status', '-n', '-a', '-e',
@@ -191,16 +193,21 @@ class CREAMComputingElement( ComputingElement ):
 
     running = 0
     waiting = 0
+    statusDict = {}
     for ref, status in resultDict.items():
+      if jobIDList and not ref in jobIDList:
+        continue
       if status == 'Scheduled':
         waiting += 1
       if status == 'Running':
         running += 1
+      statusDict[ref] = status  
 
     result = S_OK()
     result['RunningJobs'] = running
     result['WaitingJobs'] = waiting
     result['SubmittedJobs'] = 0
+    result['JobStatusDict'] = statusDict
     return result
 
   def getJobStatus( self, jobIDList ):

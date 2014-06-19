@@ -573,13 +573,25 @@ class SiteDirector( AgentModule ):
     ce = self.queueDict[queue]['CE']
     ceName = self.queueDict[queue]['CEName']
     queueName = self.queueDict[queue]['QueueName']
+    ceType = self.queueDict[queue]['CEType']
 
     self.queueSlots.setdefault( queue, {} )
     totalSlots = self.queueSlots[queue].get( 'AvailableSlots', 0 )
     availableSlotsCount = self.queueSlots[queue].setdefault( 'AvailableSlotsCount', 0 )
     if totalSlots == 0:
       if availableSlotsCount % 10 == 0:
-        result = ce.available()
+        
+        # Get the list of already existing pilots for this queue if CREAM CE
+        if ceType == 'CREAM':
+          result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                                'Queue':queueName } )
+          if result['OK'] and result['Value']:
+            jobIDList = result['Value']
+            result = ce.available( jobIDList )
+          else:  
+            result = ce.available()
+        else:
+          result = ce.available()
         if not result['OK']:
           self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
           self.failedQueues[queue] += 1
