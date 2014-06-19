@@ -120,12 +120,12 @@ class DataLoggingDB( DB ):
       time_order = Time.to2K( _date ) - NEW_MAGIC_EPOCH_2K
     except AttributeError:
       gLogger.error( 'Wrong date argument given using current time stamp' )
-      date = Time.dateTime()
-      time_order = Time.to2K( date ) - NEW_MAGIC_EPOCH_2K
+      dateNow = Time.dateTime()
+      time_order = Time.to2K( dateNow ) - NEW_MAGIC_EPOCH_2K
 
     inDict = { 'Status': status,
                'MinorStatus': minor,
-               'StatusTime': date,
+               'StatusTime': _date,
                'StatusTimeOrder': time_order,
                'Source': source
               }
