@@ -584,7 +584,8 @@ class SiteDirector( AgentModule ):
         # Get the list of already existing pilots for this queue if CREAM CE
         if ceType == 'CREAM':
           result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
-                                                'Queue':queueName } )
+                                                'Queue':queueName,
+                                                'Status':['Running','Submitted','Scheduled'] } )
           if result['OK'] and result['Value']:
             jobIDList = result['Value']
             result = ce.available( jobIDList )
