@@ -466,11 +466,7 @@ class FileMetadata:
         fileList = mList
         first = False
       else:
-        newList = []
-        for f in fileList:
-          if f in mList:
-            newList.append( f )
-        fileList = newList
+        fileList = list( set( fileList ) & set( mList ) )
 
     return S_OK( fileList )
 
