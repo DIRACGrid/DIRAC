@@ -61,7 +61,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
 import sys, os
@@ -423,32 +423,18 @@ if update:
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 
 
-#Do the vomsdir magic
+#Do the vomsdir/vomses magic
 # This has to be done for all VOs in the installation
 
-newVOMSLocation = False
-result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers" )
+result = Registry.getVOMSServerInfo()
 if not result['OK']:
-  # will try the new location
-  result = DIRAC.gConfig.getSections( "/Registry/VO" )
-  if not result['OK']:
-    sys.exit( 0 )
-  newVOMSLocation = True
+  sys.exit( 1 )
 
-voList = result[ 'Value' ]
 error = ''
-for voName in voList:
-  if newVOMSLocation:
-    vomsPath = "/Registry/VO/%s/VOMSServers/" % voName
-  else:
-    vomsPath = "/Registry/VOMS/Servers/%s" % voName
-  result = DIRAC.gConfig.getSections( vomsPath )
-  if not result[ 'OK' ]:
-    error = 'No VOMS server define for %s' % voName
-    DIRAC.gLogger.error( error )
-    continue
-  DIRAC.gLogger.notice( "Creating VOMSDIR/VOMSES files for", voName )
-  vomsDirHosts = result[ 'Value' ]
+vomsDict = result['Value']
+for vo in vomsDict:
+  voName = vomsDict[vo]['VOMSName']
+  vomsDirHosts = vomsDict[vo]['Servers'].keys()
   vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
   vomsesDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomses' )
   for path in ( vomsDirPath, vomsesDirPath ):
@@ -462,22 +448,23 @@ for voName in voList:
   for vomsHost in vomsDirHosts:
     hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
     try:
-      DN = DIRAC.gConfig.getValue( "%s/%s/DN" % ( vomsPath, vomsHost ), "" )
-      CA = DIRAC.gConfig.getValue( "%s/%s/CA" % ( vomsPath, vomsHost ), "" )
-      Port = DIRAC.gConfig.getValue( "%s/%s/Port" % ( vomsPath, vomsHost ), 0 )
-      if not DN or not CA or not Port:
+      DN = vomsDict[vo]['Servers'][vomsHost]['DN']
+      CA = vomsDict[vo]['Servers'][vomsHost]['CA']
+      port = vomsDict[vo]['Servers'][vomsHost]['Port']
+      if not DN or not CA or not port:
         DIRAC.gLogger.error( 'DN = %s' % DN )
         DIRAC.gLogger.error( 'CA = %s' % CA )
-        DIRAC.gLogger.error( 'Port = %s' % Port )
+        DIRAC.gLogger.error( 'Port = %s' % port )
         DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
         continue
       fd = open( hostFilePath, "wb" )
       fd.write( "%s\n%s\n" % ( DN, CA ) )
       fd.close()
-      vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, Port, DN, voName ) )
+      vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, port, DN, voName ) )
       DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
     except:
       DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
+      error = "Could not generate vomsdir file for VO %s, host %s" % ( voName, vomsHost )
 
   try:
     vomsesFilePath = os.path.join( vomsesDirPath, voName )
@@ -487,6 +474,7 @@ for voName in voList:
     DIRAC.gLogger.notice( "Created vomses file %s" % vomsesFilePath )
   except:
     DIRAC.gLogger.exception( "Could not generate vomses file" )
+    error = "Could not generate vomses file for VO %s" % voName
 
 if error:
   sys.exit( 1 )
