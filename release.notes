@@ -1,3 +1,8 @@
+[v6r10p24]
+
+*DMS
+FIX: FC.FileMetadata - optimized queries for list interception evaluation
+
 [v6r10p23]
 
 *Resoures
