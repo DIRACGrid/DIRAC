@@ -20,6 +20,8 @@ import os, urllib
 import shutil, tempfile
 from types import StringTypes
 
+__RCSID__ = "$Id$"
+
 CE_NAME = 'SSH'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 

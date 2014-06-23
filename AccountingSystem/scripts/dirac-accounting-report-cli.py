@@ -14,7 +14,6 @@ import sys
 import signal
 import datetime
 import pprint
-import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI, List

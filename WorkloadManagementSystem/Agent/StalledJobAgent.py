@@ -494,9 +494,9 @@ used to fail jobs due to the optimizer chain.
 
   def __failCompletedJobs( self ):
     """ Failed Jobs stuck in Completed Status for a long time.
-They are due to pilots being killed during the
-finalization of the job execution.
-"""
+      They are due to pilots being killed during the
+      finalization of the job execution.
+    """
 
     # Get old Completed Jobs
     checkTime = str( dateTime() - self.completedTime * second )

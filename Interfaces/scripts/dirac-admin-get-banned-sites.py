@@ -5,12 +5,13 @@
 # Author :  Stuart Paterson
 ########################################################################
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 
@@ -19,7 +20,7 @@ if result['OK']:
   banned_sites = result['Value']
 else:
   print result['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 
 for site in banned_sites:
   result = diracAdmin.getSiteMaskLogging( site )
@@ -29,5 +30,5 @@ for site in banned_sites:
   else:
     print '%-30s %s' % ( site, result['Message'] )
 
-DIRAC.exit( 0 )
+DIRACExit( 0 )
 
