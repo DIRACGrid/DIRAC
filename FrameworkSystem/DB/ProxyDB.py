@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
@@ -95,13 +92,16 @@ class ProxyDB( DB ):
                                      }
 
     if 'ProxyDB_Log' not in tablesInDB:
-      tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'IssuerDN' : 'VARCHAR(255) NOT NULL',
+      tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'ID': 'BIGINT NOT NULL AUTOINCREMENT',
+                                                'IssuerDN' : 'VARCHAR(255) NOT NULL',
                                                 'IssuerGroup' : 'VARCHAR(255) NOT NULL',
                                                 'TargetDN' : 'VARCHAR(255) NOT NULL',
                                                 'TargetGroup' : 'VARCHAR(255) NOT NULL',
                                                 'Action' : 'VARCHAR(128) NOT NULL',
                                                 'Timestamp' : 'DATETIME',
-                                              }
+                                              },
+                                    'PrimaryKey': 'ID',
+                                    'Indexes' : { 'Timestamp' : [ 'Timestamp' ]}
                                   }
 
     if 'ProxyDB_Tokens' not in tablesInDB:
@@ -854,7 +854,7 @@ class ProxyDB( DB ):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 15552000"
+    cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
     return self._update( cmd )
 
   def getLogsContent( self, selDict, sortList, start = 0, limit = 0 ):
