@@ -129,6 +129,11 @@ FIX: RequestTask - always execute operations with owner proxy
 *SMS
 FIX: few minor fixes to avoid pylint warnings
 
+[v6r10p24]
+
+*DMS
+FIX: FC.FileMetadata - optimized queries for list interception evaluation
+
 [v6r10p23]
 
 *Resoures
