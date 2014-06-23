@@ -587,6 +587,7 @@ class WorkflowTasks( TaskBase ):
     else:
       self.log.error( "No valid job description found" )
       return S_ERROR( "No valid job description found" )
+    # the WMSClient expects to find the jobDescription.xml file in the local directory to be added to the InputSandbox
     workflowFile = open( "jobDescription.xml", 'w' )
     workflowFile.write( oJob._toXML() )
     workflowFile.close()
