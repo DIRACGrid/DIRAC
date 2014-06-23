@@ -1,3 +1,24 @@
+[v6r11p4]
+
+*Framework
+NEW: ProxyDB - added primary key to ProxyDB_Log table
+CHANGE: ProxyManagerHandler - purge logs once in 6 hours
+
+*DMS
+FIX: DataManager - fix in the accounting report for deletion operation
+CHANGE: FTSRequest - print FTS GUID when submitting request
+FIX: dirac-dms-fts-monitor - fix for using the new FTS structure
+FIX: DataLoggingDB - fix type of the StatusTimeOrder field
+FIX: DataLoggingDB - take into account empty date argument in addFileRecord()
+
+*WMS
+NEW: SiteDirector - pass the list of already registered pilots to the CE.available() query
+FIX: JobCleaningAgent - do not attempt job removal if no eligible jobs
+
+*Resources
+FIX: LcgFileCatalogClient - if replica already exists while registration, reregister
+NEW: CREAM, SSH, ComputingElement - consider only registered pilots to evaluate queue occupancy
+
 [v6r11p3]
 
 FIX: import gMonitor from it is original location
