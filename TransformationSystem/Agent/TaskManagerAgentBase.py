@@ -3,11 +3,10 @@
 """
 
 import datetime
-from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
+from DIRAC import S_OK, gMonitor, gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 __RCSID__ = "$Id$"
 
@@ -27,24 +26,19 @@ class TaskManagerAgentBase( AgentModule ):
 
     self.taskManager = None
     self.shifterProxy = ''
-    self.transClient = TransformationClient()
+    self.transClient = None
     self.transType = []
 
   #############################################################################
 
   def initialize( self ):
-    """ agent initialization
+    """ Agent initialization. This agent is extended in WorkflowTaskAgent and RequestTaskAgent.
+        The extensions MUST provide in the initialize method the following data members:
+        a taskManager object (self.taskManager)
+        a TransformationClient objects (self.transClient),
+        a shifterProxy (self.shifterProxy) as string
+        a list of transformation types to be looked (self.transType)
     """
-    if not self.taskManager:
-      return S_ERROR( 'No task manager provided!' )
-
-    if not self.shifterProxy:
-      return S_ERROR( 'No shifter proxy provided!' )
-    self.am_setOption( 'shifterProxy', self.shifterProxy )
-
-    if not self.transType:
-      return S_ERROR( 'No transformation types to look for!' )
-    gLogger.info( "Looking for %s" % self.transType )
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
