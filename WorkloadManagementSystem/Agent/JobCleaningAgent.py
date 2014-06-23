@@ -89,9 +89,12 @@ class JobCleaningAgent( AgentModule ):
     result = self.__getAllowedJobTypes()
     if not result[ 'OK' ]:
       return result
-    baseCond = {}
-    if result[ 'Value' ]:
-      baseCond = { 'JobType' : result[ 'Value' ] }
+    
+    # No jobs in the system subject to removal
+    if not result['Value']:
+      return S_OK()
+    
+    baseCond = { 'JobType' : result[ 'Value' ] }
     # Remove jobs with final status
     for status in REMOVE_STATUS_DELAY:
       delay = REMOVE_STATUS_DELAY[ status ]
