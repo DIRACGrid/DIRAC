@@ -23,14 +23,13 @@ CREATE TABLE FC_Files(
     UID SMALLINT UNSIGNED NOT NULL,
     GID TINYINT UNSIGNED NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
---    Status ENUM ('AprioriGood','Good','Trash','Deleting','Problematic','Checking','Bad') NOT NULL DEFAULT 'AprioriGood', 
     FileName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
     INDEX (DirID),
     INDEX (UID,GID),
     INDEX (Status),
     INDEX (FileName),
-    INDEX (DirID,FileName)
-);
+    INDEX (DirID,FileName),
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_FileInfo;
@@ -45,7 +44,7 @@ CREATE TABLE FC_FileInfo (
     CreationDate DATETIME,
     ModificationDate DATETIME,
     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775
-);
+) ENGINE = INNODB;
 
 -- Make additions to the FC_Files table to include the FC_FileInfo information
 -- ALTER TABLE FC_Files ADD COLUMN GUID CHAR(36) NOT NULL AFTER FileName;
@@ -64,7 +63,7 @@ CREATE TABLE FC_Statuses (
     Status VARCHAR(32),
     INDEX(Status),
     INDEX(StatusID)
-);
+) ENGINE = INNODB;
 
 -- -----------------------------------------------------------------------------
 drop table if exists FC_Replicas;
@@ -77,7 +76,7 @@ CREATE TABLE FC_Replicas (
     INDEX (SEID),
     UNIQUE INDEX (FileID,SEID),
     INDEX (Status)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_ReplicaInfo;
@@ -88,7 +87,7 @@ CREATE TABLE FC_ReplicaInfo (
     ModificationDate DATETIME,
     PFN VARCHAR(1024),
     PRIMARY KEY (RepID)
-);
+) ENGINE = INNODB;
 
 -- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
 -- ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER Status;
@@ -104,7 +103,7 @@ CREATE TABLE FC_Groups (
     GroupName VARCHAR(127) NOT NULL,
     PRIMARY KEY (GID),
     UNIQUE KEY (GroupName)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_Users;
@@ -113,7 +112,7 @@ CREATE TABLE FC_Users (
     UserName VARCHAR(127) NOT NULL,
     PRIMARY KEY (UID),
     UNIQUE KEY (UserName)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 
@@ -123,7 +122,7 @@ CREATE TABLE FC_StorageElements (
     SEName VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
     AliasName VARCHAR(127) DEFAULT '',
     UNIQUE KEY (SEName)
-);
+) ENGINE = INNODB;
 
 -- -----------------------------------------------------------------------------
 
@@ -137,24 +136,24 @@ CREATE TABLE FC_DirectoryInfo (
     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
     Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (DirID)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS DirectoryInfo;
-CREATE TABLE DirectoryInfo(
-  DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
-  Parent INTEGER NOT NULL,
-  Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  DirName VARCHAR(1024) NOT NULL,
-  CreationDate DATETIME,
-  ModificationDate DATETIME,
-  UID CHAR(8) NOT NULL,
-  GID CHAR(8) NOT NULL,
-  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-  INDEX(Parent),
-  INDEX(Status),
-  INDEX(DirName)
-);
+-- DROP TABLE IF EXISTS DirectoryInfo;
+-- CREATE TABLE DirectoryInfo(
+--   DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
+--   Parent INTEGER NOT NULL,
+--   Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+--   DirName VARCHAR(1024) NOT NULL,
+--   CreationDate DATETIME,
+--   ModificationDate DATETIME,
+--   UID CHAR(8) NOT NULL,
+--   GID CHAR(8) NOT NULL,
+--   Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+--   INDEX(Parent),
+--   INDEX(Status),
+--   INDEX(DirName)
+-- );
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_DirMeta;
@@ -163,7 +162,7 @@ CREATE TABLE FC_DirMeta (
     MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (DirID,MetaKey)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_FileMeta;
@@ -172,7 +171,7 @@ CREATE TABLE FC_FileMeta (
     MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (FileID,MetaKey)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryTree;
@@ -182,7 +181,7 @@ CREATE TABLE FC_DirectoryTree (
  Parent INT NOT NULL DEFAULT 0,
  INDEX (Parent),
  INDEX (DirName)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryTreeM;
@@ -194,7 +193,7 @@ CREATE TABLE FC_DirectoryTreeM (
  INDEX (Level),
  INDEX (Parent),
  INDEX (DirName)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryLevelTree;
@@ -203,27 +202,28 @@ CREATE TABLE FC_DirectoryLevelTree (
  DirName VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
  Parent INT NOT NULL DEFAULT 0,
  Level INT NOT NULL,
- LPATH1 SMALLINT NOT NULL DEFAULT 0,
- LPATH2 SMALLINT NOT NULL DEFAULT 0,
- LPATH3 SMALLINT NOT NULL DEFAULT 0,
- LPATH4 SMALLINT NOT NULL DEFAULT 0,
- LPATH5 SMALLINT NOT NULL DEFAULT 0,
- LPATH6 SMALLINT NOT NULL DEFAULT 0,
- LPATH7 SMALLINT NOT NULL DEFAULT 0,
- LPATH8 SMALLINT NOT NULL DEFAULT 0,
- LPATH9 SMALLINT NOT NULL DEFAULT 0,
- LPATH10 SMALLINT NOT NULL DEFAULT 0,
- LPATH11 SMALLINT NOT NULL DEFAULT 0,
- LPATH12 SMALLINT NOT NULL DEFAULT 0,
- LPATH13 SMALLINT NOT NULL DEFAULT 0,
- LPATH14 SMALLINT NOT NULL DEFAULT 0,
- LPATH15 SMALLINT NOT NULL DEFAULT 0,
+ LPATH1 INT NOT NULL DEFAULT 0,
+ LPATH2 INT NOT NULL DEFAULT 0,
+ LPATH3 INT NOT NULL DEFAULT 0,
+ LPATH4 INT NOT NULL DEFAULT 0,
+ LPATH5 INT NOT NULL DEFAULT 0,
+ LPATH6 INT NOT NULL DEFAULT 0,
+ LPATH7 INT NOT NULL DEFAULT 0,
+ LPATH8 INT NOT NULL DEFAULT 0,
+ LPATH9 INT NOT NULL DEFAULT 0,
+ LPATH10 INT NOT NULL DEFAULT 0,
+ LPATH11 INT NOT NULL DEFAULT 0,
+ LPATH12 INT NOT NULL DEFAULT 0,
+ LPATH13 INT NOT NULL DEFAULT 0,
+ LPATH14 INT NOT NULL DEFAULT 0,
+ LPATH15 INT NOT NULL DEFAULT 0,
  INDEX (Level),
  INDEX (Parent),
  UNIQUE INDEX (DirName)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
+
 DROP TABLE IF EXISTS FC_DirectoryUsage;
 CREATE TABLE FC_DirectoryUsage(
    DirID INTEGER NOT NULL,
@@ -234,7 +234,7 @@ CREATE TABLE FC_DirectoryUsage(
    SEFiles BIGINT NOT NULL,
    LastUpdate DATETIME NOT NULL,
    PRIMARY KEY (DirID,SEID)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_MetaFields;
@@ -242,7 +242,7 @@ CREATE TABLE FC_MetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   MetaType VARCHAR(128) NOT NULL
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_FileMetaFields;
@@ -250,7 +250,7 @@ CREATE TABLE FC_FileMetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   MetaType VARCHAR(128) NOT NULL
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_MetaSetNames;
@@ -258,7 +258,7 @@ CREATE TABLE FC_MetaSetNames (
   MetaSetID INT AUTO_INCREMENT PRIMARY KEY,
   MetaSetName VARCHAR(64)  NOT NULL,
   UNIQUE INDEX (MetaSetName)
-);
+) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_FileAncestors;
@@ -270,4 +270,5 @@ CREATE TABLE FC_FileAncestors (
   INDEX (AncestorID),
   INDEX (AncestorDepth),
   UNIQUE INDEX (FileID,AncestorID)
-);
+) ENGINE = INNODB;
+

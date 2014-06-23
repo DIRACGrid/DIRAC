@@ -18,6 +18,9 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool, ThreadedJob
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC import gConfig, S_OK, S_ERROR
 
+from multiprocessing import Queue, Process, Value, Manager
+
+
 import time, sys, random
 
 dirCount = 0
@@ -26,6 +29,17 @@ globalStart = time.time()
 
 dnCache = {}
 roleCache = {}
+
+def writer( filename, writerQueue, stopFlag ):
+  print "entering writer"
+  outputFile = open( filename, 'w' )
+
+  while not stopFlag.value or not writerQueue.empty():
+    outputFile.write( writerQueue.get() )
+
+  outputFile.close()
+  print "exciting writer stopValue %s" % stopFlag.value
+  
 
 def getUserNameAndGroup(info):
   """ Get the user name and group from the DN and VOMS role
@@ -58,7 +72,7 @@ def getUserNameAndGroup(info):
 
   return owner
 
-def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
+def processDir( initPath, writerQueue, recursive = False, host = None, fcInit = None, dfcInit = None ):
   """ Process one directory,  possibly recursively 
   """
 
@@ -76,6 +90,7 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
   start = time.time()
 
   resultList = fc.listDirectory(initPath,True)
+
   if not resultList['OK']:
     result = S_ERROR("Failed LFC lookup for %s" % initPath)
     result['Path'] = initPath
@@ -89,7 +104,9 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
   # Add directories
 
     if resultList['Value']['Failed']:
-      return S_ERROR("Path %s failed: %s" % (initPath,resultList['Value']['Failed'][initPath]))
+      result = S_ERROR( "Path %s failed: %s" % ( initPath, resultList['Value']['Failed'][initPath] ) )
+      return result
+
 
     dirDict = resultList['Value']['Successful'][initPath]['SubDirs']
     paths = {}
@@ -104,10 +121,10 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
     s = time.time()
     nDir = len(paths)
     if nDir:
-      #print "Adding %d directories in %s" % (nDir,initPath)
+      # print "Adding %d directories in %s" % ( nDir, initPath )
       result = dfc.createDirectory(paths)
       if not result['OK']:
-        print "Error adding directories:",result['Message']
+        print "Error adding directories:%s" % result['Message']
 
 
     e_dirs = time.time() - s
@@ -147,7 +164,7 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
         if 'SE' in lfns[lfn]:
           nRep += len(lfns[lfn]['SE'])
 
-      #print "Adding %d files in %s" % (nFile,initPath)
+      # print "Adding %d files in %s" % ( nFile, initPath )
       
       done = False
       count = 0
@@ -156,9 +173,9 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
         count += 1
         result = dfc.addFile(lfns)
         if not result['OK']:
-          print "Error adding files %d:" % count,result['Message']
+          print "Error adding files %d:" % count, result['Message']
           if count > 10:
-            print "Completely failed path", initPath
+            print "Completely failed path %s" % initPath
             break
           error = True
           time.sleep(2)
@@ -175,16 +192,17 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
     total_time = time.time() - globalStart
 
     format = "== %s: time lfc/dfc %.2f/%.2f, files %d, dirs %d, reps %d, time: %.2f/%.2f/%.2f/%.2f %.2f \n"
-    outputFile = open('lfc_dfc.out','a')
-    outputFile.write( format % (initPath,lfc_time,dfc_time,nFile,nDir,nRep,p_dirs,e_dirs,p_files,e_files,total_time) )
-    outputFile.close()
+    writerQueue.put( format % ( initPath, lfc_time, dfc_time, nFile, nDir, nRep, p_dirs, e_dirs, p_files, e_files, total_time ) )
+#     outputFile = open('lfc_dfc.out','a')
+#     outputFile.write( format % (initPath,lfc_time,dfc_time,nFile,nDir,nRep,p_dirs,e_dirs,p_files,e_files,total_time) )
+#     outputFile.close()
 
 #    print format % (initPath,lfc_time,dfc_time,nFile,fileCount,nDir,dirCount,p_dirs,e_dirs,p_files,e_files,total_time)
 
     # Go into directories
     if recursive:
       for path in paths:
-        result = processDir(path,True,host=host,fcInit=fc,dfcInit=dfc)
+        result = processDir( path , writerQueue, recursive = True, host = host, fcInit = fc, dfcInit = dfc )
         if result['OK']:
           nFile += result['Value'].get('NumberOfFiles',0)
           nDir += result['Value'].get('NumberOfDirectories',0)
@@ -199,13 +217,17 @@ def processDir(initPath,recursive=False,host=None,fcInit=None,dfcInit=None):
 
     #print "AT >>> processDir",initPath,"done %.2f" % (time.time()-start)
 
-    return S_OK(resultDict)
+    toRet = S_OK( resultDict )
+    toRet['writerQueue'] = writerQueue
+
+    return toRet
 
 def finalizeDirectory(task,result):
 
   global lfcHosts, pPool
 
   if result['OK']:
+    writerQueue = result['writerQueue']
     print "Finished directory %(Path)s, dirs: %(NumberOfDirectories)s, files: %(NumberOfFiles)s, replicas: %(NumberOfReplicas)s" % result['Value']
     print "%d active tasks remaining" % pPool.getNumWorkingProcesses()
 
@@ -214,41 +236,47 @@ def finalizeDirectory(task,result):
       for path in result['Value']['Directories']:
         random.shuffle(lfcHosts)
         #print pPool.getNumWorkingProcesses(), pPool.hasPendingTasks()
-        print "Queueing task for directory %s, lfc %s" % (path,lfcHosts[0])
-        result = pPool.createAndQueueTask( processDir,[path,False,lfcHosts[0]],callback=finalizeDirectory ) 
+        print "Queueing task for directory %s, lfc %s" % ( path, lfcHosts[0] )
+        result = pPool.createAndQueueTask( processDir, [path , writerQueue, False, lfcHosts[0]], callback = finalizeDirectory )
         if not result['OK']:
-          print "Failed queueing", path
+          print "Failed queueing %s" % path
   else:
     print "Task failed: %s" % result['Message']
     if 'Path' in result:
       random.shuffle(lfcHosts)
-      print "Requeueing task for directory %s, lfc %s" % (result['Path'],lfcHosts[0]) 
+      print "Requeueing task for directory %s, lfc %s" % ( result['Path'], lfcHosts[0] )
 
 #########################################################################
 
 pPool = ProcessPool(30,40,0)
+
+manager = Manager()
+writerQueue = manager.Queue()
+stopFlag = Value( 'i', 0 )
+
 #pPool.daemonize()
 
-lfcHosts = ['lfc-lhcb-ro.cern.ch',
-            'lfc-lhcb-ro.cr.cnaf.infn.it',
-            'lhcb-lfc-fzk.gridka.de',
-            'lfc-lhcb-ro.in2p3.fr',
-            'lfc-lhcb.grid.sara.nl',
-            'lfclhcb.pic.es',
-            'lhcb-lfc.gridpp.rl.ac.uk']
-
-#for user in users:
-#  path = "/lhcb/user/%s/%s" % (user[0],user)
-#  random.shuffle(lfcHosts)
-#  print "Queueing user", user, pPool.getFreeSlots(),pPool.getNumWorkingProcesses(),pPool.hasPendingTasks(),pPool.getNumIdleProcesses(), lfcHosts[0]
-#  result = pPool.createAndQueueTask( processDir,[path,True,lfcHosts[0]],callback=finalizeDirectory ) 
-#  if not result['OK']:
-#    print "Failed queueing", path
+# lfcHosts = ['lfc-lhcb-ro.cern.ch',
+#             'lfc-lhcb-ro.cr.cnaf.infn.it',
+#             'lhcb-lfc-fzk.gridka.de',
+#             'lfc-lhcb-ro.in2p3.fr',
+#             'lfc-lhcb.grid.sara.nl',
+#             'lfclhcb.pic.es',
+#             'lhcb-lfc.gridpp.rl.ac.uk']
+lfcHosts = ['prod-lfc-lhcb-ro.cern.ch']
 
 
-path = "/lhcb/LHCb"
+# path = "/lhcb/LHCb"
+path = '/lhcb/user/c/chaen'
 print "Queueing task for directory", path, lfcHosts[0]
-result = pPool.createAndQueueTask( processDir,[path,False,lfcHosts[0]],callback=finalizeDirectory ) 
+
+
+writerProc = Process( target = writer, args = ( 'lfc_dfc.out', writerQueue, stopFlag ) )
+
+writerProc.start()
+
+
+result = pPool.createAndQueueTask( processDir, [path , writerQueue, False, lfcHosts[0]], callback = finalizeDirectory )
 if not result['OK']:
   print "Failed queueing", path
 
@@ -256,4 +284,9 @@ for i in range(20):
   pPool.processResults()
   time.sleep(1)
 
-pPool.processAllResults()
+pPool.processAllResults( timeout = 300 )
+
+stopFlag.value = 1
+writerQueue.put( "Exit" )
+writerProc.join()
+
