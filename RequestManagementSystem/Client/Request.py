@@ -159,6 +159,7 @@ class Request( Record ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
           rStatus = "Done"
+
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -415,6 +416,12 @@ class Request( Record ):
     """ status setter """
     if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
+
+    # If the status moved to Failed or Done, update the lastUpdate time
+    if value in ( 'Done', 'Failed' ):
+      if value != self.__data__["Status"]:
+        self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
     if value == 'Done':
       self.__data__['Error'] = ''
     self.__data__["Status"] = value
@@ -442,8 +449,8 @@ class Request( Record ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column not in  ( "RequestID", "LastUpdate" ) ]
-    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+                if value and column not in  ( "RequestID" ) ]
+    # colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.RequestID:
       query.append( "UPDATE `Request` SET " )
