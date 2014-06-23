@@ -239,27 +239,35 @@ class ComputingElement:
 
 
   #############################################################################
-  def available( self, jobIDList = [] ):
+  def available( self, jobIDList = None ):
     """This method returns the number of available slots in the target CE. The CE
        instance polls for waiting and running jobs and compares to the limits
        in the CE parameters.
 
        :param list jobIDList: list of already existing job IDs to be checked against
     """
-    result = self.__getParameters( 'CEType' )
-    if result['OK'] and result['Value'] == 'CREAM':
-      result = self.getCEStatus( jobIDList )
+    
+    # If there are no already registered jobs
+    if jobIDList is not None and len( jobIDList ) == 0:
+      runningJobs = 0
+      waitingJobs = 0
+      submittedJobs = 0
+      ceInfoDict = {}
     else:  
-      result = self.getCEStatus()
-    if not result['OK']:
-      #self.log.warn( 'Could not obtain CE dynamic information' )
-      #self.log.warn( result['Message'] )
-      return result
-    else:
-      runningJobs = result['RunningJobs']
-      waitingJobs = result['WaitingJobs']
-      submittedJobs = result['SubmittedJobs']
-      ceInfoDict = dict(result)
+      result = self.__getParameters( 'CEType' )
+      if result['OK'] and result['Value'] == 'CREAM':
+        result = self.getCEStatus( jobIDList )
+      else:  
+        result = self.getCEStatus()
+      if not result['OK']:
+        #self.log.warn( 'Could not obtain CE dynamic information' )
+        #self.log.warn( result['Message'] )
+        return result
+      else:
+        runningJobs = result['RunningJobs']
+        waitingJobs = result['WaitingJobs']
+        submittedJobs = result['SubmittedJobs']
+        ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
     ceInfoDict['MaxTotalJobs'] = maxTotalJobs

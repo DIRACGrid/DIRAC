@@ -156,7 +156,7 @@ class CREAMComputingElement( ComputingElement ):
     return S_OK()
 
 #############################################################################
-  def getCEStatus( self, jobIDList = [] ):
+  def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
     
         :param list jobIDList: list of job IDs to be considered
@@ -195,7 +195,7 @@ class CREAMComputingElement( ComputingElement ):
     waiting = 0
     statusDict = {}
     for ref, status in resultDict.items():
-      if jobIDList and not ref in jobIDList:
+      if jobIDList is not None and not ref in jobIDList:
         continue
       if status == 'Scheduled':
         waiting += 1
