@@ -60,8 +60,8 @@ class TaskManagerAgentBase( AgentModule ):
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption( 'MonitorTasks', '' )
     if not enableTaskMonitor:
-      gLogger.info( "execute: Monitoring of tasks is disabled." )
-      gLogger.info( "execute: To enable create the 'MonitorTasks' option" )
+      gLogger.verbose( "execute: Monitoring of tasks is disabled." )
+      gLogger.verbose( "execute: To enable create the 'MonitorTasks' option" )
     else:
       res = self.updateTaskStatus()
       if not res['OK']:
@@ -70,8 +70,8 @@ class TaskManagerAgentBase( AgentModule ):
     # Determine whether the task files status is to be monitored and updated
     enableFileMonitor = self.am_getOption( 'MonitorFiles', '' )
     if not enableFileMonitor:
-      gLogger.info( "execute: Monitoring of files is disabled." )
-      gLogger.info( "execute: To enable create the 'MonitorFiles' option" )
+      gLogger.verbose( "execute: Monitoring of files is disabled." )
+      gLogger.verbose( "execute: To enable create the 'MonitorFiles' option" )
     else:
       res = self.updateFileStatus()
       if not res['OK']:
@@ -80,8 +80,8 @@ class TaskManagerAgentBase( AgentModule ):
     # Determine whether the checking of reserved tasks is to be performed
     enableCheckReserved = self.am_getOption( 'CheckReserved', '' )
     if not enableCheckReserved:
-      gLogger.info( "execute: Checking of reserved tasks is disabled." )
-      gLogger.info( "execute: To enable create the 'CheckReserved' option" )
+      gLogger.verbose( "execute: Checking of reserved tasks is disabled." )
+      gLogger.verbose( "execute: To enable create the 'CheckReserved' option" )
     else:
       res = self.checkReservedTasks()
       if not res['OK']:
@@ -90,8 +90,8 @@ class TaskManagerAgentBase( AgentModule ):
     # Determine whether the submission of tasks is to be executed
     enableSubmission = self.am_getOption( 'SubmitTasks', '' )
     if not enableSubmission:
-      gLogger.info( "execute: Submission of tasks is disabled." )
-      gLogger.info( "execute: To enable create the 'SubmitTasks' option" )
+      gLogger.verbose( "execute: Submission of tasks is disabled." )
+      gLogger.verbose( "execute: To enable create the 'SubmitTasks' option" )
     else:
       res = self.submitTasks()
       if not res['OK']:
