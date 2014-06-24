@@ -173,11 +173,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       selectCond['AgentType'] = agentType
     res = self.transClient.getTransformations( condDict = selectCond )
     if not res['OK']:
-      self.log.error( "Failed to get transformations: %s" % res['Message'], method = '_selectTransformations' )
+      self.log.error( "Failed to get transformations: %s" % res['Message'] )
     elif not res['Value']:
-      self.log.verbose( "No transformations found", method = '_selectTransformations' )
+      self.log.verbose( "No transformations found" )
     else:
-      self.log.verbose( "Obtained %d transformations" % len( res['Value'] ), method = '_selectTransformations' )
+      self.log.verbose( "Obtained %d transformations" % len( res['Value'] ) )
     return res
 
   def _fillTheQueue( self, transformations, operation, body = False ):
