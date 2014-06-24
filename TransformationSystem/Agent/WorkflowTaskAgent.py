@@ -6,9 +6,6 @@ from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.TaskManager          import WorkflowTasks
-from DIRAC.WorkloadManagementSystem.Client.WMSClient        import WMSClient
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 __RCSID__ = "$Id$"
 
@@ -22,9 +19,6 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
     """
     TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
-    self.taskManager = None
-    self.transClient = None
-    self.shifterProxy = 'ProductionManager'
     self.transType = []
 
   def initialize( self ):
@@ -33,10 +27,6 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
     res = TaskManagerAgentBase.initialize( self )
     if not res['OK']:
       return res
-
-    # clients
-    self.taskManager = WorkflowTasks( transClient = self.transClient, submissionClient = WMSClient() )
-    self.transClient = TransformationClient()
 
     agentTSTypes = self.am_getOption( 'TransType', [] )
     if agentTSTypes:

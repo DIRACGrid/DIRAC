@@ -5,7 +5,6 @@
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager          import RequestTasks
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 __RCSID__ = "$Id$"
 
@@ -19,9 +18,6 @@ class RequestTaskAgent( TaskManagerAgentBase ):
     """
     TaskManagerAgentBase.__init__( self, *args, **kwargs )
 
-    self.taskManager = None
-    self.transClient = None
-    self.shifterProxy = 'ProductionManager'
     self.transType = []
 
   def initialize( self ):
@@ -33,7 +29,6 @@ class RequestTaskAgent( TaskManagerAgentBase ):
 
     # clients
     self.taskManager = RequestTasks( transClient = self.transClient )
-    self.transClient = TransformationClient()
 
     agentTSTypes = self.am_getOption( 'TransType', [] )
     if agentTSTypes:
@@ -41,3 +36,10 @@ class RequestTaskAgent( TaskManagerAgentBase ):
     else:
       self.transType = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
     
+  def _getClients( self ):
+    """ Here the taskManager becomes a RequestTasks object
+    """
+    res = TaskManagerAgentBase._getClients( self )
+    threadTaskManager = RequestTasks()
+    res.update( {'TaskManager': threadTaskManager} )
+    return res
