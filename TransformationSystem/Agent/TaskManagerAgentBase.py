@@ -108,52 +108,52 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption( 'MonitorTasks', '' )
     if not enableTaskMonitor:
-      self._logVerbose( "Monitoring of tasks is disabled. To enable it, create the 'MonitorTasks' option" )
+      self.log.verbose( "Monitoring of tasks is disabled. To enable it, create the 'MonitorTasks' option" )
     else:
       # Get the transformations for which the tasks have to be updated
       status = self.am_getOption( 'UpdateTasksStatus', ['Active', 'Completing', 'Stopped'] )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
-        self._logWarn( "Could not select transformations: %s" % transformations['Message'] )
+        self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
         self._fillTheQueue( transformations, 'updateTaskStatus' )
 
     # Determine whether the task files status is to be monitored and updated
     enableFileMonitor = self.am_getOption( 'MonitorFiles', '' )
     if not enableFileMonitor:
-      self._logVerbose( "Monitoring of files is disabled. To enable it, create the 'MonitorFiles' option" )
+      self.log.verbose( "Monitoring of files is disabled. To enable it, create the 'MonitorFiles' option" )
     else:
       # Get the transformations for which the files have to be updated
       status = self.am_getOption( 'UpdateFilesStatus', ['Active', 'Completing', 'Stopped'] )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
-        self._logWarn( "Could not select transformations: %s" % transformations['Message'] )
+        self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
         self._fillTheQueue( transformations, 'updateFileStatus' )
 
     # Determine whether the checking of reserved tasks is to be performed
     enableCheckReserved = self.am_getOption( 'CheckReserved', '' )
     if not enableCheckReserved:
-      self._logVerbose( "Checking of reserved tasks is disabled. To enable it, create the 'CheckReserved' option" )
+      self.log.verbose( "Checking of reserved tasks is disabled. To enable it, create the 'CheckReserved' option" )
     else:
       # Get the transformations for which the check of reserved tasks have to be performed
       status = self.am_getOption( 'CheckReservedStatus', ['Active', 'Completing', 'Stopped'] )
       transformations = self._selectTransformations( transType = self.transType, status = status, agentType = [] )
       if not transformations['OK']:
-        self._logWarn( "Could not select transformations: %s" % transformations['Message'] )
+        self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
         self._fillTheQueue( transformations, 'checkReservedTasks' )
 
     # Determine whether the submission of tasks is to be performed
     enableSubmission = self.am_getOption( 'SubmitTasks', '' )
     if not enableSubmission:
-      self._logVerbose( "Submission of tasks is disabled. To enable it, create the 'SubmitTasks' option" )
+      self.log.verbose( "Submission of tasks is disabled. To enable it, create the 'SubmitTasks' option" )
     else:
       # Get the transformations for which the check of reserved tasks have to be performed
       status = self.am_getOption( 'SubmitStatus', ['Active', 'Completing'] )
       transformations = self._selectTransformations( transType = self.transType, status = status )
       if not transformations['OK']:
-        self._logWarn( "Could not select transformations: %s" % transformations['Message'] )
+        self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption( 'TasksPerLoop', self.tasksPerLoop )
@@ -173,11 +173,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       selectCond['AgentType'] = agentType
     res = self.transClient.getTransformations( condDict = selectCond )
     if not res['OK']:
-      self._logEerror( "Failed to get transformations: %s" % res['Message'], method = '_selectTransformations' )
+      self.log.error( "Failed to get transformations: %s" % res['Message'], method = '_selectTransformations' )
     elif not res['Value']:
-      self._logVerbose( "No transformations found", method = '_selectTransformations' )
+      self.log.verbose( "No transformations found", method = '_selectTransformations' )
     else:
-      self._logVerbose( "Obtained %d transformations" % len( res['Value'] ), method = '_selectTransformations' )
+      self.log.verbose( "Obtained %d transformations" % len( res['Value'] ), method = '_selectTransformations' )
     return res
 
   def _fillTheQueue( self, transformations, operation, body = False ):
@@ -198,7 +198,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
           operationOnTransToQueue + "$$$%s" % transformationBodies[transID]
         self.transQueue.put( operationOnTransToQueue )
 
-    self._logInfo( "Out of %d transformations, for operation %s, %d put in thread queue" % ( len( transformationIDs ),
+    self.log.info( "Out of %d transformations, for operation %s, %d put in thread queue" % ( len( transformationIDs ),
                                                                                              operation, count ) )
 
   #############################################################################
