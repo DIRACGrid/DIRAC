@@ -166,15 +166,14 @@ class FTSAgent( AgentModule ):
 
   @classmethod
   def getRequest( cls, reqName ):
-    """ keep Requests in cache """
-    if reqName not in cls.__reqCache:
-      getRequest = cls.requestClient().getRequest( reqName )
-      if not getRequest["OK"]:
-        return getRequest
-      getRequest = getRequest["Value"]
-      if not getRequest:
-        return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
-      cls.__reqCache[reqName] = getRequest
+    """ get Requests systematically and refresh cache """
+    getRequest = cls.requestClient().getRequest( reqName )
+    if not getRequest["OK"]:
+      return getRequest
+    getRequest = getRequest["Value"]
+    if not getRequest:
+      return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
+    cls.__reqCache[reqName] = getRequest
 
     return S_OK( cls.__reqCache[reqName] )
 
@@ -201,9 +200,6 @@ class FTSAgent( AgentModule ):
     # # del request from cache if needed
     if clearCache:
       cls.__reqCache.pop( request.RequestName, None )
-    else:
-      # get back the request in order to set it Assigned in the DB
-      cls.requestClient().getRequest( request.RequestName )
     return S_OK()
 
   @classmethod
@@ -491,7 +487,7 @@ class FTSAgent( AgentModule ):
         for opFile in operation:
           # Actually the condition below should never happen... Change printout for checking
           if opFile.LFN not in missingReplicas and opFile.Status not in ( 'Done', 'Failed' ):
-            log.warn( "Should be set! %s is replicated at all targets" % opFile.LFN )
+            log.warn( "File should be set Done! %s is replicated at all targets" % opFile.LFN )
             opFile.Status = "Done"
 
       toFail = ftsFilesDict.get( "toFail", [] )
@@ -529,12 +525,12 @@ class FTSAgent( AgentModule ):
       # # PHASE FOUR - add 'RegisterReplica' Operations
       if toRegister:
         log.info( "==> found %d Files waiting for registration, adding 'RegisterReplica' operations" % len( toRegister ) )
-        registerFiles = self.__register( request, operation, toRegister )
+        registerFiles = self.__insertRegisterOperation( request, operation, toRegister )
         if not registerFiles["OK"]:
           log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
-        if request.Status == "Waiting":
-          log.info( "request is in 'Waiting' state, will put it back to RMS" )
-          return self.putRequest( request )
+        # if request.Status == "Waiting":
+        #  log.info( "request is in 'Waiting' state, will put it back to RMS" )
+        #  return self.putRequest( request )
 
       # # PHASE FIVE - reschedule operation files
       if toReschedule:
@@ -542,23 +538,29 @@ class FTSAgent( AgentModule ):
         rescheduleFiles = self.__reschedule( request, operation, toReschedule )
         if not rescheduleFiles["OK"]:
           log.error( rescheduleFiles["Message"] )
-        if request.Status == "Waiting":
-          log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
-          return self.putRequest( request )
+        # if request.Status == "Waiting":
+        #  log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
+        #  return self.putRequest( request )
 
-      # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs
-      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting" ] )
+      # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
+      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed" ] )
       if not ftsFiles["OK"]:
         log.error( ftsFiles["Message"] )
       else:
-        retryIds = list( set ( [ ftsFile.FTSFileID for ftsFile in toSubmit ] ) )
+        retryIds = set ( [ ftsFile.FTSFileID for ftsFile in toSubmit ] )
         for ftsFile in ftsFiles["Value"]:
           if ftsFile.FTSFileID not in retryIds:
-            toSubmit.append( ftsFile )
-            retryIds.append( ftsFile.FTSFileID )
+            if ftsFile.Status == 'Failed':
+              # If the file was not unrecoverable failed and is not yet set toSubmit
+              _reschedule, submit, _fail = self.__checkFailed( ftsFile )
+            else:
+              submit = True
+            if submit:
+              toSubmit.append( ftsFile )
+              retryIds.add( ftsFile.FTSFileID )
 
       # # submit new ftsJobs
-      if operation.Status == "Scheduled" and toSubmit:
+      if toSubmit:
         log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
         submit = self.__submit( request, operation, toSubmit )
         if not submit["OK"]:
@@ -568,7 +570,7 @@ class FTSAgent( AgentModule ):
 
       # # status change? - put back request
       if request.Status != "Scheduled":
-        log.info( "request no longer in 'Scheduled' state, will put it back to ReqDB" )
+        log.info( "request no longer in 'Scheduled' state (%s), will put it back to ReqDB" % request.Status )
         put = self.putRequest( request )
         if not put["OK"]:
           log.error( "unable to put back request: %s" % put["Message"] )
@@ -838,6 +840,20 @@ class FTSAgent( AgentModule ):
 
     return S_OK( ftsFilesDict )
 
+  def __checkFailed( self, ftsFile ):
+    reschedule = False
+    submit = False
+    fail = False
+    if ftsFile.Status == "Failed":
+      if ftsFile.Error == "MissingSource":
+        reschedule = True
+      else:
+        if ftsFile.Attempt < self.MAX_ATTEMPT:
+          submit = True
+        else:
+          fail = True
+    return reschedule, submit, fail
+
   def __filterFiles( self, ftsJob ):
     """ process ftsFiles from finished ftsJob
 
@@ -858,15 +874,13 @@ class FTSAgent( AgentModule ):
           toRegister.append( ftsFile )
         toUpdate.append( ftsFile )
         continue
-      if ftsFile.Status == "Failed":
-        if ftsFile.Error == "MissingSource":
-          toReschedule.append( ftsFile )
-        else:
-          if ftsFile.Attempt < self.MAX_ATTEMPT:
-            toSubmit.append( ftsFile )
-          else:
-            toFail.append( ftsFile )
-            ftsFile.Error = "Max attempts reached"
+      reschedule, submit, fail = self.__checkFailed( ftsFile )
+      if reschedule:
+        toReschedule.append( ftsFile )
+      elif submit:
+        toSubmit.append( ftsFile )
+      elif fail:
+        toFail.append( ftsFile )
 
     return S_OK( { "toUpdate": toUpdate,
                    "toSubmit": toSubmit,
@@ -874,7 +888,7 @@ class FTSAgent( AgentModule ):
                    "toReschedule": toReschedule,
                    "toFail": toFail } )
 
-  def __register( self, request, operation, toRegister ):
+  def __insertRegisterOperation( self, request, operation, toRegister ):
     """ add RegisterReplica operation
 
     :param Request request: request instance
@@ -1000,4 +1014,4 @@ class FTSAgent( AgentModule ):
   def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
     from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
-    return filterReplicas( opFile, logger = self.log, datamanager = self.dataManager, seCache = self.getSEcache() )
+    return filterReplicas( opFile, logger = self.log, dataManager = self.dataManager, seCache = self.getSECache() )
