@@ -358,15 +358,15 @@ class FTSAgent( AgentModule ):
 
   def finalize( self ):
     """ finalize processing """
-    log = self.log.getSubLogger( "finalize" )
-    if self.__reqCache:
-      log.info( 'putting back %d requests from cache' % len( self.__reqCache ) )
-    else:
-      log.info( 'no requests to put back' )
-    for request in self.__reqCache.values():
-      put = self.requestClient().putRequest( request )
-      if not put["OK"]:
-        log.error( "unable to put back request '%s': %s" % ( request.RequestName, put["Message"] ) )
+    # log = self.log.getSubLogger( "finalize" )
+    # if self.__reqCache:
+    #  log.info( 'putting back %d requests from cache' % len( self.__reqCache ) )
+    # else:
+    #  log.info( 'no requests to put back' )
+    # for request in self.__reqCache.values():
+    #  put = self.requestClient().putRequest( request )
+    #  if not put["OK"]:
+    #    log.error( "unable to put back request '%s': %s" % ( request.RequestName, put["Message"] ) )
     return S_OK()
 
   def execute( self ):
@@ -570,13 +570,12 @@ class FTSAgent( AgentModule ):
 
       # # status change? - put back request
       if request.Status != "Scheduled":
-        log.info( "request no longer in 'Scheduled' state (%s), will put it back to ReqDB" % request.Status )
-        put = self.putRequest( request )
-        if not put["OK"]:
-          log.error( "unable to put back request: %s" % put["Message"] )
-          return put
+        log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
+      put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
+      if not put["OK"]:
+          log.error( "unable to put back request:", put["Message"] )
+      return put
 
-      return self.putRequest( request, clearCache = False ) if request.Status == 'Scheduled' else S_OK()
     except:
       pass
     finally:
