@@ -1,13 +1,11 @@
 import re
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
-from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
+from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 
 class PlottersList:
 
   def __init__( self ):
-    objectsLoaded = loadObjects( "AccountingSystem/private/Plotters",
-                                 re.compile( ".*[a-z1-9]Plotter\.py$" ),
-                                 myBaseReporter )
+    objectsLoaded = TypeLoader.getTypes()
     self.__plotters = {}
     for objName in objectsLoaded:
       self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
