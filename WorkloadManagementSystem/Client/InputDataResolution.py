@@ -42,6 +42,8 @@ class InputDataResolution( object ):
     resolvedInputData = self.__resolveInputData()
     if not resolvedInputData['OK']:
       self.log.error( 'InputData resolution failed with result:\n%s' % ( resolvedInputData['Message'] ) )
+      return resolvedInputData
+    resolvedInputData = resolvedInputData['Value']
 
     # For local running of this module we can expose an option to ignore missing files
     ignoreMissing = self.arguments.get( 'IgnoreMissing', False )
