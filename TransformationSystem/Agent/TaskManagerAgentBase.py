@@ -30,7 +30,6 @@ AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
   """ To be extended. The extension needs to:
       - provide a taskManager object as data member
-      - provide a shifterProxy (string) as data member
       - provide a transType (list of strings) as data member
   """
 
@@ -40,7 +39,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     AgentModule.__init__( self, *args, **kwargs )
     TransformationAgentsUtilities.__init__( self )
 
-    self.shifterProxy = 'ProductionManager'
     self.transClient = None
     self.transType = []
 
@@ -58,12 +56,14 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
         The extensions MUST provide in the initialize method the following data members:
         - TransformationClient objects (self.transClient),
-        - shifterProxy (self.shifterProxy) as string
+        - set the shifterProxy if different from the defuaut one set here ('ProductionManager')
         - list of transformation types to be looked (self.transType)
     """
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
+
+    self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     # getting the credentials for submission
     res = getProxyInfo( False, False )
