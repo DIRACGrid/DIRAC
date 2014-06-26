@@ -52,12 +52,10 @@ class InputDataResolution( object ):
     failedReplicas = resolvedInputData.get( 'Failed', {} )
     if failedReplicas and not ignoreMissing:
       self.log.error( 'Failed to obtain access to the following files:\n%s'
-                      % ( '\n'.join( failedReplicas ) ) )
-      return S_ERROR( 'Failed to access all of requested input data' )
+                      % ( '\n'.join( sorted( failedReplicas ) ) ) )
+      return S_ERROR( 'Failed to access some of requested input data' )
 
-    if 'Successful' not in resolvedInputData:
-      return resolvedInputData
-    if not resolvedInputData['Successful']:
+    if not resolvedInputData.get( 'Successful' ):
       return S_ERROR( 'Could not access any requested input data' )
 
     if CREATE_CATALOG:
