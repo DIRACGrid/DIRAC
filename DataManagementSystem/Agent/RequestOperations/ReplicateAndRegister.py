@@ -388,13 +388,14 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         sourceSE = replicas["Valid"][0]
 
       # # loop over targetSE
+      catalog = self.operation.Catalog
       for targetSE in self.operation.targetSEList:
 
         # # call DataManager
         if targetSE == sourceSE:
           self.log.warn( "Request to replicate %s to the source SE: %s" % ( lfn, sourceSE ) )
           continue
-        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE, catalog = catalog )
         if res["OK"]:
 
           if lfn in res["Value"]["Successful"]:
@@ -433,7 +434,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
             gMonitor.addMark( "ReplicateFail", 1 )
             reason = res["Value"]["Failed"][lfn]
-            self.log.error( "failed to replicate and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
+            self.log.error( "failed to replicate and register file %s at %s:" % ( lfn, targetSE ), reason )
             opFile.Error = reason
 
         else:
