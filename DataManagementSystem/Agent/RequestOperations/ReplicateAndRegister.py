@@ -46,7 +46,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   log = logger.getSubLogger( "filterReplicas" )
   ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[], 'NoPFN':[] }
 
-  replicas = dataManager.getReplicas( opFile.LFN, allStatus = False )
+  replicas = dataManager.getActiveReplicas( opFile.LFN )
   if not replicas["OK"]:
     log.error( replicas["Message"] )
     return replicas
