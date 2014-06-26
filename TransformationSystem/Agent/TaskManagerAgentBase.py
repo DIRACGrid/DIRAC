@@ -65,17 +65,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
-    # getting the credentials for submission
-    res = getProxyInfo( False, False )
-    if not res['OK']:
-      self.log.error( "Failed to determine credentials for submission", res['Message'] )
-      return res
-    proxyInfo = res['Value']
-    self.owner = proxyInfo['username']
-    self.ownerGroup = proxyInfo['group']
-    self.ownerDN = proxyInfo['identity']
-    self.log.info( "Tasks will be submitted with the credentials %s:%s" % ( self.owner, self.ownerGroup ) )
-
     # Default clients
     self.transClient = TransformationClient()
 
@@ -149,6 +138,16 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     if not enableSubmission:
       self.log.verbose( "Submission of tasks is disabled. To enable it, create the 'SubmitTasks' option" )
     else:
+      # getting the credentials for submission
+      res = getProxyInfo( False, False )
+      if not res['OK']:
+        self.log.error( "Failed to determine credentials for submission", res['Message'] )
+        return res
+      proxyInfo = res['Value']
+      self.owner = proxyInfo['username']
+      self.ownerGroup = proxyInfo['group']
+      self.ownerDN = proxyInfo['identity']
+      self.log.info( "Tasks will be submitted with the credentials %s:%s" % ( self.owner, self.ownerGroup ) )
       # Get the transformations for which the check of reserved tasks have to be performed
       status = self.am_getOption( 'SubmitStatus', ['Active', 'Completing'] )
       transformations = self._selectTransformations( transType = self.transType, status = status )
