@@ -42,20 +42,19 @@ class InputDataResolution( object ):
     resolvedInputData = self.__resolveInputData()
     if not resolvedInputData['OK']:
       self.log.error( 'InputData resolution failed with result:\n%s' % ( resolvedInputData['Message'] ) )
+      return resolvedInputData
 
     # For local running of this module we can expose an option to ignore missing files
     ignoreMissing = self.arguments.get( 'IgnoreMissing', False )
 
     # Missing some of the input files is a fatal error unless ignoreMissing option is defined
-    failedReplicas = resolvedInputData.get( 'Failed', {} )
+    failedReplicas = resolvedInputData['Value'].get( 'Failed', {} )
     if failedReplicas and not ignoreMissing:
       self.log.error( 'Failed to obtain access to the following files:\n%s'
-                      % ( '\n'.join( failedReplicas ) ) )
-      return S_ERROR( 'Failed to access all of requested input data' )
+                      % ( '\n'.join( sorted( failedReplicas ) ) ) )
+      return S_ERROR( 'Failed to access some of requested input data' )
 
-    if 'Successful' not in resolvedInputData:
-      return resolvedInputData
-    if not resolvedInputData['Successful']:
+    if not resolvedInputData['Value'].get( 'Successful' ):
       return S_ERROR( 'Could not access any requested input data' )
 
     if CREATE_CATALOG:

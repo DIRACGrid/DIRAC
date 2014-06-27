@@ -583,9 +583,10 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     resDict = { 'ftsGUID' : self.ftsGUID, 'ftsServer' : self.ftsServer, 'submittedFiles' : self.submittedFiles }
-    # print "Submitted %s @ %s" % ( self.ftsGUID, self.ftsServer )
-    if monitor:
-      self.monitor( untilTerminal = True, printOutput = printOutput )
+    if monitor or printOutput:
+      gLogger.always( "Submitted %s@%s" % ( self.ftsGUID, self.ftsServer ) )
+      if monitor:
+        self.monitor( untilTerminal = True, printOutput = printOutput )
     return S_OK( resDict )
 
   def __isSubmissionValid( self ):
@@ -815,12 +816,13 @@ class FTSRequest( object ):
         continue
       pfn = res['Value']['Successful'][lfn]
       res = self.oTargetSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True )
-      if not res['OK'] or lfn not in res['Value']['Successful']:
-        gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) ) )
-        self.__setFileParameter( lfn, 'Reason', res['Message'] )
+      if not res['OK'] or pfn not in res['Value']['Successful']:
+        reason = res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
+        gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, reason ) )
+        self.__setFileParameter( lfn, 'Reason', reason )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      pfn = res['Value']['Successful'][lfn]
+      pfn = res['Value']['Successful'][pfn]
       res = self.setTargetSURL( lfn, pfn )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
@@ -1000,7 +1002,7 @@ class FTSRequest( object ):
     :param bool printOutput: flag to print out monitoring information to the stdout
     """
     while not self.isTerminal:
-      res = self.__parseOutput()
+      res = self.__parseOutput( full = True )
       if not res['OK']:
         return res
       if untilTerminal:
@@ -1103,8 +1105,6 @@ class FTSRequest( object ):
     res = self.__isSummaryValid()
     if not res['OK']:
       return res
-    if not self.fileDict:
-      return S_ERROR( "Files not set" )
     return S_OK()
 
   def __parseOutput( self, full = False ):

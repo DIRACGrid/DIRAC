@@ -487,7 +487,7 @@ class SSHComputingElement( ComputingElement ):
     
     return S_OK( resultDict )
 
-  def getCEStatus( self ):
+  def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()

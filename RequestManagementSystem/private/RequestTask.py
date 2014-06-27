@@ -244,7 +244,7 @@ class RequestTask( object ):
     if not setupProxy["OK"]:
       self.log.error( setupProxy["Message"] )
       self.request.Error = setupProxy["Message"]
-      return self.updateRequest()
+      return S_ERROR( 'Change proxy error' )
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
@@ -347,4 +347,3 @@ class RequestTask( object ):
             break
 
     return S_OK()
-  
