@@ -10,7 +10,7 @@
 
   To be used by VO specific scripts to configure new DIRAC installations
 
-  There are 2 mandatories arguments:
+  There are 2 mandatory arguments:
 
   -S --Setup=<setup>                               To define the DIRAC setup for the current installation
   -C --ConfigurationServer=<server>|-W --Gateway   To define the reference Configuration Servers/Gateway for the current installation
@@ -24,11 +24,12 @@
   -U  --UseServerCertificate                       To use Server Certificate for all clients
   -H  --SkipCAChecks                               To skip check of CAs for all clients
   -D  --SkipCADownload                             To skip download of CAs 
+  -M  --SkipVOMSDownload                           To skip download of VOMS info
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
   -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
   -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
   -F --ForceUpdate                                 Forces the update of dirac.cfg, even if it does already exists (use with care)
-  -x --VoFlag                                      Set the voFlag extension
+  -O --Output                                      define output configuration file
 
   Other arguments will take proper defaults if not defined.
   
@@ -82,8 +83,8 @@ localSE = None
 ceName = None
 vo = None
 update = False
-configPath = False
-voFlag = False
+outputFile = ''
+skipVOMSDownload = False
 
 def setGateway( optionValue ):
   global gatewayServer
@@ -93,12 +94,10 @@ def setGateway( optionValue ):
   return DIRAC.S_OK()
 
 
-def setvoFlag( optionValue ):
-  global voFlag
-  voFlag = True
-  print voFlag
+def setOutput( optionValue ):
+  global outputFile
+  outputFile = optionValue
   return DIRAC.S_OK()
-
 
 
 def setServer( optionValue ):
@@ -157,6 +156,12 @@ def setSkipCADownload( optionValue ):
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SkipCADownload' ), skipCADownload )
   return DIRAC.S_OK()
 
+def setSkipVOMSDownload( optionValue ):
+  global skipVOMSDownload
+  skipVOMSDownload = True
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SkipVOMSDownload' ), skipVOMSDownload )
+  return DIRAC.S_OK()
+
 def setUseVersionsDir( optionValue ):
   global useVersionsDir
   useVersionsDir = True
@@ -204,6 +209,7 @@ Script.registerSwitch( "W:", "gateway=", "Configure <gateway> as DIRAC Gateway f
 Script.registerSwitch( "U", "UseServerCertificate", "Configure to use Server Certificate", setServerCert )
 Script.registerSwitch( "H", "SkipCAChecks", "Configure to skip check of CAs", setSkipCAChecks )
 Script.registerSwitch( "D", "SkipCADownload", "Configure to skip download of CAs", setSkipCADownload )
+Script.registerSwitch( "M", "SkipVOMSDownload", "Configure to skip download of VOMS info", setSkipVOMSDownload )
 
 Script.registerSwitch( "v", "UseVersionsDir", "Use versions directory", setUseVersionsDir )
 
@@ -212,7 +218,7 @@ Script.registerSwitch( "L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>"
 
 Script.registerSwitch( "F", "ForceUpdate", "Force Update of dirac.cfg (otherwise nothing happens if dirac.cfg already exists)", forceUpdate )
 
-Script.registerSwitch ( "x", "voFlag", "Set the voFlag extension", setvoFlag )
+Script.registerSwitch ( "O:", "output=", "output configuration file", setOutput )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     '\nUsage:',
@@ -333,9 +339,6 @@ else:
     DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
 if not skipCADownload:
   Script.enableCS()
-  if voFlag:
-      DIRAC.rootPath = os.getcwd()
-      DIRAC.gLogger.verbose( 'Change rootPath to', DIRAC.rootPath )
   try:
     dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
     if not os.path.exists( dirName ):
@@ -411,17 +414,15 @@ if gatewayServer:
   Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
 
 # Create the local dirac.cfg if it is not yet there
-if voFlag:
-  DIRAC.gConfig.setOptionValue( '/LocalSite/InstancePath', DIRAC.rootPath )
-  Script.localCfg.addDefaultEntry( '/LocalSite/InstancePath', DIRAC.rootPath )
-  DIRAC.gConfig.diracConfigFilePath = os.path.join(DIRAC.rootPath,'etc','dirac.cfg')
-  os.environ['DIRACSYSCONFIG']=os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
-if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
-  configDir = os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
+if not outputFile:
+  outputFile = DIRAC.gConfig.diracConfigFilePath
+outputFile = os.path.abspath( outputFile )  
+if not os.path.exists( outputFile ):
+  configDir = os.path.dirname( outputFile )
   if not os.path.exists( configDir ):
     os.makedirs( configDir )
   update = True
-  DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+  DIRAC.gConfig.dumpLocalCFGToFile( outputFile )
 
 # We need user proxy or server certificate to continue
 if not useServerCert:
@@ -441,11 +442,14 @@ if includeAllServers:
   DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
 
 if update:
-  DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+  DIRAC.gConfig.dumpLocalCFGToFile( outputFIle )
 
 
 #Do the vomsdir/vomses magic
 # This has to be done for all VOs in the installation
+
+if skipVOMSDownload:
+  sys.exit( 0 )
 
 result = Registry.getVOMSServerInfo()
 if not result['OK']:

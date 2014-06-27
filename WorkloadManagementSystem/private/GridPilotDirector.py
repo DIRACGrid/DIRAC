@@ -295,7 +295,7 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
     pilotJDL += 'StdOutput     = "%s";\n' % outputSandboxFiles[0]
     pilotJDL += 'StdError      = "%s";\n' % outputSandboxFiles[1]
 
-    pilotJDL += 'InputSandbox  = { "%s" };\n' % '", "'.join( [ self.install, executable ] )
+    pilotJDL += 'InputSandbox  = { "%s" };\n' % '", "'.join( [ self.install, executable ] + self.extraModules )
 
     pilotJDL += 'OutputSandbox = { %s };\n' % ', '.join( [ '"%s"' % f for f in outputSandboxFiles ] )
 
