@@ -635,7 +635,7 @@ class DirectoryMetadata:
       dirSelect = True
       finalList = dirList
       if pathDirList:
-        finalList = [ d for d in dirList if d in pathDirList ]
+        finalList = list( set( dirList ) & set( pathDirList ) )
     else:
       if pathDirList:
         dirSelect = True
