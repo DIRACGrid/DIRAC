@@ -85,13 +85,24 @@ class FTSClient( Client ):
     getFTSJobList = getFTSJobList['Value']
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
 
-  def getFTSFilesForRequest( self, requestID, operationID = None ):
+  def getFTSFilesForRequest( self, requestID, statusList = None ):
     """ read FTSFiles for a given :requestID:
 
     :param int requestID: ReqDB.Request.RequestID
-    :param int operationID: ReqDB.Operation.OperationID
+    :param list statusList: List of statuses (default: Waiting)
     """
-    ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, operationID )
+    ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, statusList )
+    if not ftsFiles['OK']:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      return ftsFiles
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles['Value'] ] )
+
+  def getAllFTSFilesForRequest( self, requestID ):
+    """ read FTSFiles for a given :requestID:
+
+    :param int requestID: ReqDB.Request.RequestID
+    """
+    ftsFiles = self.ftsManager.getAllFTSFilesForRequest( requestID )
     if not ftsFiles['OK']:
       self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
       return ftsFiles
