@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.DictCache import DictCache    
 from DIRAC.DataManagementSystem.private.HttpStorageAccessHandler import HttpStorageAccessHandler
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 ## globals
 BASE_PATH = ""
@@ -154,7 +155,7 @@ class StorageElementProxyHandler(RequestHandler):
       return S_ERROR(errStr)
     putFileDir = "%s/putFile" % BASE_PATH
     localFileName = "%s/%s" % ( putFileDir, os.path.basename(pfn) )
-    res = storageElement.putFile( { pfn : localFileName }, True )
+    res = returnSingleResult( storageElement.putFile( { pfn : localFileName } ) )
     if not res['OK']:
       gLogger.error("prepareFile: Failed to put local file to storage.", res['Message'] )
     # Clear the local cache
@@ -197,7 +198,7 @@ class StorageElementProxyHandler(RequestHandler):
       errStr = "prepareFile: Exception while instantiating the Storage Element."
       gLogger.exception( errStr, se, str(x) )
       return S_ERROR(errStr)
-    res = storageElement.getFile( pfn, localPath = "%s/getFile" % BASE_PATH, singleFile = True )
+    res = returnSingleResult( storageElement.getFile( pfn, localPath = "%s/getFile" % BASE_PATH ) )
     if not res['OK']:
       gLogger.error( "prepareFile: Failed to get local copy of file.", res['Message'] )
       return res

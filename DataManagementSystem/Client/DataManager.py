@@ -1389,7 +1389,7 @@ class DataManager( object ):
     ##########################################################
     #  Perform the put here.
     startTime = time.time()
-    res = storageElement.putFile( fileDict, singleFile = True )
+    res = returnSingleResult( storageElement.putFile( fileDict ) )
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "put: Failed to put file to Storage Element."
