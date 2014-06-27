@@ -4,9 +4,11 @@
 CHANGE: ProcessPool - do not stop working processes by default
 NEW: ReturnValue - added returnSingleResult() utility 
 FIX: MySQL - correctly parse BooleanType
+FIX: dirac-install - use python 2.7 by default
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
+CHANGE: Accounting - use TypeLoader to load plotters
 
 *Framework
 FIX: Logger - fix FileBackend implementation
@@ -31,6 +33,9 @@ NEW: ReqClient, RequestDB - added getBulkRequest() interface. RequestExecutingAg
      can use it controlled by a special flag     
 FIX: Operation, Request - set LastUpdate time stamp when reaching final state
 FIX: OperationHandlerBase - don't erase the original message when reaching the max attempts      
+
+*TMS
+NEW: WorkflowTaskAgent is now multi-threaded
 
 [v6r11p3]
 
