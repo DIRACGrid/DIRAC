@@ -10,6 +10,8 @@ CHANGE: FTSRequest - print FTS GUID when submitting request
 FIX: dirac-dms-fts-monitor - fix for using the new FTS structure
 FIX: DataLoggingDB - fix type of the StatusTimeOrder field
 FIX: DataLoggingDB - take into account empty date argument in addFileRecord()
+FIX: ReplicateAndRegister - use active replicas
+FIX: FTS related modules - multiple fixes
 
 *WMS
 NEW: SiteDirector - pass the list of already registered pilots to the CE.available() query
