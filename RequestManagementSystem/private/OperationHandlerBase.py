@@ -201,7 +201,7 @@ class OperationHandlerBase( object ):
       maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 1024
       if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
-        opFile.Error = "Max attempts limit reached"
+        opFile.Error = "Max attempts limit reached (%s)" % opFile.Error
     return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
 
   def rssSEStatus( self, se, status, retries = 2 ):

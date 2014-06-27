@@ -108,14 +108,17 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre3]
+[v6r12-pre4]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
 NEW: ReturnValue - added returnSingleResult() utility 
+FIX: MySQL - correctly parse BooleanType
+FIX: dirac-install - use python 2.7 by default
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
+CHANGE: Accounting - use TypeLoader to load plotters
 
 *Framework
 FIX: Logger - fix FileBackend implementation
@@ -127,7 +130,10 @@ CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
 *ResourceStatus
 NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
 
-*DMS: DataManager - add masterCatalogOnly flag in the constructor
+*DMS
+NEW: DataManager - add masterCatalogOnly flag in the constructor
+CHANGE: FC.DirectoryLevelTree - use SELECT ... FOR UPDATE lock in makeDir()
+FIX: FileCatalog - fixes in using file and replica status
 
 *RMS
 NEW: Added 'since' and 'until' parameters for getting requests
@@ -135,6 +141,34 @@ NEW: Request - added optimize() method to merge similar operations when
      first inserting the request
 NEW: ReqClient, RequestDB - added getBulkRequest() interface. RequestExecutingAgent
      can use it controlled by a special flag     
+FIX: Operation, Request - set LastUpdate time stamp when reaching final state
+FIX: OperationHandlerBase - don't erase the original message when reaching the max attempts      
+
+*TMS
+NEW: WorkflowTaskAgent is now multi-threaded
+
+[v6r11p4]
+
+*Framework
+NEW: ProxyDB - added primary key to ProxyDB_Log table
+CHANGE: ProxyManagerHandler - purge logs once in 6 hours
+
+*DMS
+FIX: DataManager - fix in the accounting report for deletion operation
+CHANGE: FTSRequest - print FTS GUID when submitting request
+FIX: dirac-dms-fts-monitor - fix for using the new FTS structure
+FIX: DataLoggingDB - fix type of the StatusTimeOrder field
+FIX: DataLoggingDB - take into account empty date argument in addFileRecord()
+FIX: ReplicateAndRegister - use active replicas
+FIX: FTS related modules - multiple fixes
+
+*WMS
+NEW: SiteDirector - pass the list of already registered pilots to the CE.available() query
+FIX: JobCleaningAgent - do not attempt job removal if no eligible jobs
+
+*Resources
+FIX: LcgFileCatalogClient - if replica already exists while registration, reregister
+NEW: CREAM, SSH, ComputingElement - consider only registered pilots to evaluate queue occupancy
 
 [v6r11p3]
 
@@ -245,6 +279,11 @@ FIX: RequestTask - always execute operations with owner proxy
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p24]
+
+*DMS
+FIX: FC.FileMetadata - optimized queries for list interception evaluation
 
 [v6r10p23]
 

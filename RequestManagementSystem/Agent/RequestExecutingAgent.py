@@ -196,31 +196,29 @@ class RequestExecutingAgent( AgentModule ):
     self.__requestCache[ request.RequestName ] = request
     return S_OK()
 
-  def resetRequest( self, requestName ):
+  def putRequest( self, requestName ):
     """ put back :requestName: to RequestClient
 
     :param str requestName: request's name
     """
     if requestName in self.__requestCache:
-      reset = self.requestClient().putRequest( self.__requestCache[requestName] )
-      del self.__requestCache[requestName]
+      reset = self.requestClient().putRequest( self.__requestCache.pop( requestName ) )
       if not reset["OK"]:
-        return S_ERROR( "resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
     return S_OK()
 
-  def resetAllRequests( self ):
+  def putAllRequests( self ):
     """ put back all requests without callback called into requestClient
 
     :param self: self reference
     """
-    self.log.info( "resetAllRequests: will put %s back requests" % len( self.__requestCache ) )
-    for requestName, request in self.__requestCache.items():
-      reset = self.requestClient().putRequest( request )
-      del self.__requestCache[requestName]
+    self.log.info( "putAllRequests: will put %s back requests" % len( self.__requestCache ) )
+    for requestName in self.__requestCache:
+      reset = self.requestClient().putRequest( self.__requestCache.pop( requestName ) )
       if not reset["OK"]:
-        self.log.error( "resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        self.log.error( "putAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
-      self.log.debug( "resetAllRequests: request %s has been put back with its initial state" % requestName )
+      self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()
 
   def initialize( self ):
@@ -335,7 +333,7 @@ class RequestExecutingAgent( AgentModule ):
     """ agent finalization """
     if self.__processPool:
       self.processPool().finalize( timeout = self.__poolTimeout )
-    self.resetAllRequests()
+    self.putAllRequests()
     return S_OK()
 
   def resultCallback( self, taskID, taskResult ):
@@ -348,11 +346,11 @@ class RequestExecutingAgent( AgentModule ):
                                                       "S_OK" if taskResult["OK"] else "S_ERROR",
                                                       taskResult["Value"] if taskResult["OK"] else taskResult["Message"] ) )
 
-    if not taskResult["OK"]:
-      if taskResult["Message"] == "Timed out":
-        self.resetRequest( taskID )
-    # # clean cache
-    self.cleanCache( taskID )
+    if not taskResult["OK"] and taskResult["Message"] in ( "Timed out", 'Change proxy error' ):
+      self.putRequest( taskID )
+    else:
+      # # clean cache
+      self.cleanCache( taskID )
 
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
@@ -361,4 +359,4 @@ class RequestExecutingAgent( AgentModule ):
     :param Exception taskException: Exception instance
     """
     self.log.error( "exceptionCallback: %s was hit by exception %s" % ( taskID, taskException ) )
-    self.resetRequest( taskID )
+    self.putRequest( taskID )

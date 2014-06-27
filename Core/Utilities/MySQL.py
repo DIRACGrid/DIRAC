@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
     keeping used connections in a python Queue for further reuse.
@@ -180,7 +177,7 @@ gDebugFile = None
 import collections
 import time
 import threading
-from types import StringTypes, DictType, ListType, TupleType
+from types import StringTypes, DictType, ListType, TupleType, BooleanType
 
 MAXCONNECTRETRY = 10
 
@@ -561,7 +558,9 @@ class MySQL:
           if not retDict['OK']:
             return retDict
           tupleValues.append( retDict['Value'] )
-        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' ) 
+      elif type( value ) == BooleanType:
+        inEscapeValues = [str( value )]
       else:
         retDict = self.__escapeString( str( value ) )
         if not retDict['OK']:
@@ -1186,11 +1185,10 @@ class MySQL:
             escapeInValues = retDict['Value']
             multiValue = ', '.join( escapeInValues )
             condition = ' %s %s %s IN ( %s )' % ( condition,
-                                                    conjunction,
-                                                    attrName,
-                                                    multiValue )
+                                                  conjunction,
+                                                  attrName,
+                                                  multiValue )
             conjunction = "AND"
-
         else:
           retDict = self._escapeValues( [ attrValue ] )
           if not retDict['OK']:
@@ -1199,9 +1197,9 @@ class MySQL:
           else:
             escapeInValue = retDict['Value'][0]
             condition = ' %s %s %s = %s' % ( condition,
-                                               conjunction,
-                                               attrName,
-                                               escapeInValue )
+                                             conjunction,
+                                             attrName,
+                                             escapeInValue )
             conjunction = "AND"
 
     if timeStamp:

@@ -97,7 +97,13 @@ def addReplica( guid, pfn, se, master ):
   poolname = ''
   fs = ''
   error = lfc.lfc_addreplica( guid, fid, se, pfn, status, f_type, poolname, fs )
-  return returnCode( error and lfc.sstrerror( lfc.cvar.serrno ) != "File exists" )
+  # If replica exists, re-register it as one may have changed some parameters (status, se)
+  if lfc.sstrerror( lfc.cvar.serrno ) == "File exists":
+    retCode = removeReplica( pfn )
+    if not retCode['OK']:
+      return retCode
+    error = lfc.lfc_addreplica( guid, fid, se, pfn, status, f_type, poolname, fs )
+  return returnCode( error )
 
 def removeReplica( pfn ):
   fid = lfc.lfc_fileid()

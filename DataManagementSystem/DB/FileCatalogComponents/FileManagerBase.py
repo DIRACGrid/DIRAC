@@ -127,12 +127,16 @@ class FileManagerBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
-  def _findFiles( self, lfns, metadata = ["FileID"], connection = False ):
+  def _findFiles( self, lfns, metadata = ["FileID"], allStatus = False, connection = False ):
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
 
+<<<<<<< HEAD
   def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], connection = False ):
+=======
+  def _getFileReplicas( self, fileIDs, fields = ['PFN'], allStatus = False, connection = False ):
+>>>>>>> rel-v6r12
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
@@ -278,6 +282,13 @@ class FileManagerBase:
       directories = self._getFileDirectories( masterLfns.keys() )
       for directory, fileNames in directories.items():
         res = self.db.dtree.makeDirectories( directory, credDict )
+        if not res['OK']:
+          for fileName in fileNames:
+            lfn = os.path.join( directory, fileName )
+            failed[lfn] = res['Message']
+            masterLfns.pop( lfn )
+          continue
+
         for fileName in fileNames:
           lfn = "%s/%s" % ( directory, fileName )
           lfn = lfn.replace( '//', '/' )
@@ -723,30 +734,38 @@ class FileManagerBase:
     connection = self._getConnection( connection )
     return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
   
-  def _setFileStatus( self, fileID, status, connection = False ):
-    """ Set file status
-    """
-    connection = self._getConnection( connection )
-    return self._setFileParameter( fileID, 'Status', status, connection = connection )
-  
+
   def setFileStatus( self, lfns, connection = False ):
-    """ Set the status of the given files
-    """
+    """ Get set the group for the supplied files """
+    connection = self._getConnection( connection )
+    res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
     successful = {}
-    failed = {}
-    for lfn,status in lfns.items():
-      result = self._findFiles( [lfn], ['FileID'], connection = connection )
-      if not result['Value']['Successful'].has_key( lfn ):
-        failed[lfn] = result['Value']['Failed'][lfn]
-        continue
-      fileID = result['Value']['Successful'][lfn]['FileID']
-      result = self._setFileStatus( fileID, status, connection )
-      if not result['OK']:
-        failed[lfn] = result['Message']
+    for lfn in res['Value']['Successful'].keys():
+      status = lfns[lfn]
+      fileID = res['Value']['Successful'][lfn]['FileID']
+      res = self._setFileStatus( fileID, status, connection = connection )
+      if not res['OK']:
+        failed[lfn] = res['Message']
       else:
-        successful['lfn'] = True  
-      
-    return S_OK( {'Successful':successful, 'Failed':failed} )  
+        successful[lfn] = True
+    return S_OK( {'Successful':successful, 'Failed':failed} )
+
+
+
+  def _setFileStatus( self, fileID, status, connection = False ):
+    """ Set the file owner """
+    connection = self._getConnection( connection )
+    if type( status ) in StringTypes:
+      if not status in self.db.validFileStatus:
+        return S_ERROR( 'Invalid file status %s' % status )
+      result = self._getStatusInt( status, connection = connection )
+      if not result['OK']:
+        return result
+      status = result['Value']
+    return self._setFileParameter( fileID, 'Status', status, connection = connection )
 
   ######################################################
   #
@@ -867,7 +886,7 @@ class FileManagerBase:
   def exists( self, lfns, connection = False ):
     """ Determine whether a file exists in the catalog """
     connection = self._getConnection( connection )
-    res = self._findFiles( lfns, connection = connection )
+    res = self._findFiles( lfns, allStatus = True, connection = connection )
     successful = dict.fromkeys( res['Value']['Successful'], True )
     failed = {}
     for lfn, error in res['Value']['Failed'].items():
@@ -1050,7 +1069,7 @@ class FileManagerBase:
       fileIDLFNs[fileID] = lfn
     successful = {}
     if fileIDLFNs:
-      res = self._getFileReplicas( fileIDLFNs.keys(), connection = connection )
+      res = self._getFileReplicas( fileIDLFNs.keys(), allStatus = True, connection = connection )
       if not res['OK']:
         return res
       for fileID, seDict in res['Value'].items():
@@ -1229,7 +1248,7 @@ class FileManagerBase:
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
-      group = lfns[lfn]['Group']
+      group = lfns[lfn]
       if type( group ) in StringTypes:
         groupRes = self.db.ugManager.findGroup( group )
         if not groupRes['OK']:
@@ -1256,7 +1275,7 @@ class FileManagerBase:
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
-      owner = lfns[lfn]['Owner']
+      owner = lfns[lfn]
       if type( owner ) in StringTypes:
         userRes = self.db.ugManager.findUser( owner )
         if not userRes['OK']:
@@ -1283,7 +1302,7 @@ class FileManagerBase:
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
-      mode = lfns[lfn]['Mode']
+      mode = lfns[lfn]
       currentMode = res['Value']['Successful'][lfn]['Mode']
       if int( currentMode ) == int( mode ):
         successful[lfn] = True

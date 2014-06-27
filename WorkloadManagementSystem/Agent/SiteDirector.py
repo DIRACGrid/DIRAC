@@ -586,7 +586,16 @@ class SiteDirector( AgentModule ):
     availableSlotsCount = self.queueSlots[queue].setdefault( 'AvailableSlotsCount', 0 )
     if totalSlots == 0:
       if availableSlotsCount % 10 == 0:
-        result = ce.available()
+        
+        # Get the list of already existing pilots for this queue
+        jobIDList = None
+        result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                              'Queue':queueName,
+                                              'Status':['Running','Submitted','Scheduled'] } )
+        if result['OK'] and result['Value']:
+          jobIDList = result['Value']
+          
+        result = ce.available( jobIDList )
         if not result['OK']:
           self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
           self.failedQueues[queue] += 1

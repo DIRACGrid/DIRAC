@@ -290,7 +290,18 @@ class FTSDB( DB ):
     if not ftsFiles['OK']:
       self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
       return ftsFiles
-    ftsFiles = ftsFiles['Value'][query] if query in ftsFiles['Value'] else []
+    ftsFiles = ftsFiles['Value'].get( query, [] )
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
+
+  def getAllFTSFilesForRequest( self, requestID ):
+    """ get FTSFiles with status in :statusList: for request given its :requestID: """
+    requestID = int( requestID )
+    query = "SELECT * FROM `FTSFile` WHERE `RequestID` = %s;" % ( requestID )
+    ftsFiles = self._transaction( [ query ] )
+    if not ftsFiles['OK']:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      return ftsFiles
+    ftsFiles = ftsFiles['Value'].get( query, [] )
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
 
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):

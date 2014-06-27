@@ -416,8 +416,8 @@ if update:
 result = Registry.getVOMSServerInfo()
 if not result['OK']:
   sys.exit( 1 )
-  
-error = ''  
+
+error = ''
 vomsDict = result['Value']
 for vo in vomsDict:
   voName = vomsDict[vo]['VOMSName']
@@ -431,7 +431,7 @@ for vo in vomsDict:
       except Exception, e:
         DIRAC.gLogger.error( "Could not create directory", str( e ) )
         sys.exit( 1 )
-  vomsesLines = []  
+  vomsesLines = []
   for vomsHost in vomsDirHosts:
     hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
     if "Servers" in vomsDict[vo]:
@@ -453,7 +453,6 @@ for vo in vomsDict:
       except:
         DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
         error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
-
   try:
     vomsesFilePath = os.path.join( vomsesDirPath, voName )
     fd = open( vomsesFilePath, "wb" )

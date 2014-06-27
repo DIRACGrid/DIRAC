@@ -26,7 +26,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 
 
 
-class StorageElementCache:
+class StorageElementCache( object ):
 
   def __init__( self ):
     self.seCache = DictCache()
@@ -45,7 +45,7 @@ class StorageElementCache:
 
 
 
-class StorageElementItem:
+class StorageElementItem( object ):
   """
   .. class:: StorageElement
 

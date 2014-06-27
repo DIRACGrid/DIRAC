@@ -64,7 +64,6 @@ class ForwardDISET( OperationHandlerBase ):
       decode[0][1].pop('delegatedGroup')
     
     forward = executeRPCStub( decode )
-    
     if not forward["OK"]:
       self.log.error( "unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
       self.operation.Error = forward["Message"]

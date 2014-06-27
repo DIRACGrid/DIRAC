@@ -354,7 +354,7 @@ class DirectoryMetadata:
         metaDict[key] = value
 
     return S_OK( metaDict )
-  
+
   def getDirectoryMetadata( self, path, credDict, inherited = True, owndata = True ):
     """ Get metadata for the given directory aggregating metadata for the directory itself
         and for all the parent directories if inherited flag is True. Get also the non-indexed
@@ -379,8 +379,8 @@ class DirectoryMetadata:
       pathIDs = pathIDs[-1:]
     if not owndata:
       pathIDs = pathIDs[:-1]
-    pathString = ','.join( [ str( x ) for x in pathIDs ] )  
-    
+    pathString = ','.join( [ str( x ) for x in pathIDs ] )
+
     for meta in metaFields:
       req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % ( meta, pathString )
       result = self.db._query( req )
@@ -598,7 +598,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     selectString = result['Value']
-     
+
     if selectString:
       req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % ( meta, selectString, pathString )
     else:
@@ -607,7 +607,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     elif not result['Value']:
-      return S_OK( None ) 
+      return S_OK( None )
     elif len( result['Value'] ) > 1:
       return S_ERROR( 'Conflict in the directory metadata hierarchy' )
     else:
@@ -630,12 +630,12 @@ class DirectoryMetadata:
       pathIDs = result['Value']
       pathDirID = pathIDs[-1]
       pathString = ','.join( [ str( x ) for x in pathIDs ] )
-      
+
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
     metaDict = result['Value']
-    
+
     # Now check the meta data for the requested directory and its parents
     finalMetaDict = dict( metaDict )
     for meta in metaDict.keys():
@@ -646,7 +646,7 @@ class DirectoryMetadata:
         # Some directory in the parent hierarchy is already conforming with the
         # given metadata, no need to check it further 
         del finalMetaDict[meta]
-    
+
     if finalMetaDict:
       pathSelection = ''
       if pathDirID:
@@ -797,10 +797,7 @@ class DirectoryMetadata:
     # Constrain the output to only those that are present in the input list  
     resDirs = parentDirs + subDirs + selectedDirs
     if fromDirs:
-      resDirs = []
-      for dir_ in parentDirs + subDirs + selectedDirs:
-        if dir_ in fromDirs:
-          resDirs.append( dir_ )
+      resDirs = list( set( resDirs ) & set( fromDirs ) )
 
     return S_OK( resDirs )
 

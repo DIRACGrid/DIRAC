@@ -1331,7 +1331,8 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = ret['Value']
 
       deletedSize = sum( [size for pfn, size in deletedSizes.items() if pfn in res['Value']['Successful']] )
-      oDataOperation.setValueByKey( 'TransferOK', deletedSize )
+      oDataOperation.setValueByKey( 'TransferSize', deletedSize )
+      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
@@ -1389,7 +1390,7 @@ class DataManager( object ):
     ##########################################################
     #  Perform the put here.
     startTime = time.time()
-    res = storageElement.putFile( fileDict, singleFile = True )
+    res = returnSingleResult( storageElement.putFile( fileDict ) )
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "put: Failed to put file to Storage Element."

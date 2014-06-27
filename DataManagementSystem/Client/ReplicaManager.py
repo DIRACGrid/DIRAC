@@ -6,6 +6,8 @@
 
 This module consists ReplicaManager and related classes.
 
+DO NOT USE THIS ANYMORE!!!! USE THE DATAMANAGER CLASS
+
 """
 
 # # imports
@@ -27,7 +29,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getS
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -623,7 +625,7 @@ class StorageBase( object ):
       return res
     retDict = { "Successful" : {}, "Failed" : {}}
     for pfn in pfns:
-      res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort ) )
+      res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort ) )
       if res["OK"]:
         retDict["Successful"][pfn] = res["Value"]
       else:
@@ -1838,7 +1840,7 @@ class ReplicaManager( CatalogToStorage ):
           #  pfn = storageElement.getPfnForLfn( lfn ).get( 'Value', pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols ) )
+            res = returnSingleResult( storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               self.log.verbose( "%s Attempting to get source file size." % logStr )
@@ -1923,7 +1925,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             pfn = physicalFile
           else:
@@ -1985,7 +1987,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -2378,7 +2380,7 @@ class ReplicaManager( CatalogToStorage ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False ) )
+        ret = returnSingleResult( storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:

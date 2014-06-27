@@ -39,7 +39,7 @@ class Params:
     self.installation = 'DIRAC'
     self.release = ""
     self.externalsType = 'client'
-    self.pythonVersion = '26'
+    self.pythonVersion = '27'
     self.platform = ""
     self.basePath = os.getcwd()
     self.targetPath = os.getcwd()
