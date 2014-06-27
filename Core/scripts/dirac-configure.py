@@ -442,7 +442,7 @@ if includeAllServers:
   DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
 
 if update:
-  DIRAC.gConfig.dumpLocalCFGToFile( outputFIle )
+  DIRAC.gConfig.dumpLocalCFGToFile( outputFile )
 
 
 #Do the vomsdir/vomses magic
