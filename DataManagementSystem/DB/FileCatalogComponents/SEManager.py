@@ -62,6 +62,7 @@ class SEManagerDB( SEManagerBase ):
         del self.db.seDefinitions[seId]
 
     for seid, seName in res['Value']:
+      self.getSEDefinition( seid )
       self.db.seNames[seName] = seid
       self.db.seids[seid] = seName
     gLogger.debug( "SEManager RefreshSEs lock released. Used %.3f seconds." % ( time.time() - waitTime ) )
@@ -215,5 +216,5 @@ class SEManagerCS( SEManagerBase ):
     return S_OK( se )
 
   def getSEDefinition( self, se ):
-    #TODO Think about using a cache for this information
+    # TODO Think about using a cache for this information
     return gConfig.getOptionsDict( '/Resources/StorageElements/%s/AccessProtocol.1' % se )
