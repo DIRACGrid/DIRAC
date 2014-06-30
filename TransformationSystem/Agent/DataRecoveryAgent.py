@@ -1,8 +1,7 @@
 """
 Data recovery agent: sets as unused files that are really undone.
-"""
 
-""" In general for data processing producitons we need to completely abandon the 'by hand'
+    In general for data processing productions we need to completely abandon the 'by hand'
     reschedule operation such that accidental reschedulings don't result in data being processed twice.
 
     For all above cases the following procedure should be used to achieve 100%:
@@ -38,23 +37,31 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 
-import string
 import datetime
 
 AGENT_NAME = 'ILCTransformation/DataRecoveryAgent'
 
 
 class DataRecoveryAgent(AgentModule):
+  """Data Recovery Agent"""
   def __init__(self, *args, **kwargs):
     AgentModule.__init__(self, *args, **kwargs)
     self.name = 'DataRecoveryAgent'
     self.log = gLogger
+    self.enableFlag = False
+    self.replicaManager = None
+    self.prodDB = None
+    self.requestClient = None
+    self.taskIDName = ''
+    self.externalStatus = ''
+    self.externalID = ''
+    self.ops = None
+    self.removalOKFlag = False
   #############################################################################
 
   def initialize(self):
     """Sets defaults
     """
-    self.enableFlag = ''  # defined below
     self.replicaManager = ReplicaManager()
     self.prodDB = TransformationClient()
     self.requestClient = RequestClient()
@@ -90,19 +97,15 @@ class DataRecoveryAgent(AgentModule):
         return S_ERROR('Could not obtain eligible transformations for status "%s"' % (transStatus))
 
       if not result['Value']:
-        self.log.info('No "%s" transformations of types %s to process.' %
-                      (transStatus, string.join(transformationTypes, ', ')))
+        self.log.info('No "%s" transformations of types %s to process.' % (transStatus, ", ".join(transformationTypes)))
         continue
 
       transformationDict.update(result['Value'])
-
-    self.log.info(
-        'Selected %s transformations of types %s' %
-        (len(
-            transformationDict.keys()), string.join(
-            transformationTypes, ', ')))
+    transformationTypesString = ', '.join(transformationTypes)
+    self.log.info('Selected %s transformations of types %s' %
+                  (len(transformationDict.keys())), transformationTypesString)
     self.log.verbose('The following transformations were selected out of %s:\n%s' %
-                     (string.join(transformationTypes, ', '), string.join(transformationDict.keys(), ', ')))
+                     (transformationTypesString, ', '.join(transformationDict.keys())))
 
     trans = []
     #initially this was useful for restricting the considered list
@@ -110,7 +113,7 @@ class DataRecoveryAgent(AgentModule):
     ignoreLessThan = self.ops.getValue("Transformations/IgnoreLessThan", '724')
 
     if trans:
-      self.log.info('Skipping all transformations except %s' % (string.join(trans, ', ')))
+      self.log.info('Skipping all transformations except %s' % (', '.join(trans)))
 
     for transformation, typeName in transformationDict.items():
       if trans:
@@ -134,7 +137,7 @@ class DataRecoveryAgent(AgentModule):
 
       if not result['Value']:
         self.log.info('No files in status %s selected for transformation %s' %
-                      (string.join(fileSelectionStatus, ', '), transformation))
+                      (', '.join(fileSelectionStatus), transformation))
         continue
 
       fileDict = result['Value']
@@ -259,21 +262,19 @@ class DataRecoveryAgent(AgentModule):
 
     jobFileDict = {}
     condDict = {'TransformationID': transformation, self.taskIDName: prodJobIDs}
-    delta = datetime.timedelta(hours=selectDelay)
-    now = dateTime()
-    olderThan = now - delta
+    olderThan = dateTime() - datetime.timedelta(hours=selectDelay)
 
     res = self.prodDB.getTransformationTasks(condDict=condDict, older=olderThan,
                                              timeStamp='LastUpdateTime', inputVector=True)
     self.log.debug(res)
     if not res['OK']:
-      self.log.error('getTransformationTasks returned an error:\n%s')
+      self.log.error('getTransformationTasks returned an error:\n%s' % res['Message'])
       return res
 
     for jobDict in res['Value']:
       missingKey = False
       for key in [self.taskIDName, self.externalID, 'LastUpdateTime', self.externalStatus, 'InputVector']:
-        if not jobDict.has_key(key):
+        if key not in jobDict:
           self.log.info('Missing key %s for job dictionary, the following is available:\n%s' % (key, jobDict))
           missingKey = True
           continue
@@ -298,7 +299,7 @@ class DataRecoveryAgent(AgentModule):
       #Exclude jobs not having appropriate WMS status - have to trust that production management status is correct
       if wmsStatus not in wmsStatusList:
         self.log.info('Job %s is in status %s, not %s so will be ignored' %
-                      (wmsID, wmsStatus, string.join(wmsStatusList, ', ')))
+                      (wmsID, wmsStatus, ', '.join(wmsStatusList)))
         continue
 
       finalJobData = []
@@ -360,9 +361,9 @@ class DataRecoveryAgent(AgentModule):
     files = []
     tasks_to_be_checked = {}
     for files in jobFileDict.values():
-      for f in files:
-        if f in filedict:
-          tasks_to_be_checked[f] = filedict[f]  # get the tasks that need to be checked
+      for myFile in files:
+        if myFile in filedict:
+          tasks_to_be_checked[myFile] = filedict[myFile]  # get the tasks that need to be checked
     for filep, task in tasks_to_be_checked.items():
       commons = {}
       commons['outputList'] = olist
@@ -387,9 +388,9 @@ class DataRecoveryAgent(AgentModule):
     for file_all in files:
       if file_all in fileprocessed:
         try:
-          final_list_unused.remove(filep)
+          final_list_unused.remove(file_all)
         except BaseException:
-          self.log.warn("Item not in list anymore")
+          self.log.warn("Item not in list anymore: %s", file_all)
 
     result = {'filesprocessed': fileprocessed, 'filesToMarkUnused': final_list_unused}
     return S_OK(result)
