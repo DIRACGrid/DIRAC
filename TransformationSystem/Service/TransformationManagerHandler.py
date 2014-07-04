@@ -626,7 +626,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     resultDict['ParameterNames'] = paramNames
     # Add the job states to the ParameterNames entry
     taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
-                      'Killed', 'Staging', 'Checking', 'Rescheduled']
+                      'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry
     fileStateNames = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
