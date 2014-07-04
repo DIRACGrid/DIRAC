@@ -1100,6 +1100,10 @@ class DataManager( object ):
     lfnDict = {}
     failed = {}
     se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
+    if se:
+      res = se.isValid( 'removeFile' )
+      if not res['OK']:
+        return res
     for lfn, pfn in fileTuple:
       res = self.__verifyOperationWritePermission( lfn )
       if not res['OK'] or not res['Value']:
