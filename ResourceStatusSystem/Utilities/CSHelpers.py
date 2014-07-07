@@ -230,11 +230,47 @@ def getFTS():
   '''
     Gets all storage elements from /Resources/FTSEndpoints
   '''
-  
-  _basePath = 'Resources/FTSEndpoints'
+
+  ftsEndpoints = []
+
+  fts2 = getFTS2()
+
+  if not fts2['OK']:
+    return fts2
+
+  ftsEndpoints += fts2['Value']
+
+  fts3 = getFTS3()
+
+  if not fts3['OK']:
+    return fts3
+
+  ftsEndpoints += fts3['Value']
+
+
     
+  return ftsEndpoints
+
+
+def getFTS2():
+  '''
+    Gets all storage elements from /Resources/FTSEndpoints
+  '''
+
+  _basePath = 'Resources/FTSEndpoints/FTS2'
+
   ftsEndpoints = gConfig.getOptions( _basePath )
   return ftsEndpoints 
+
+def getFTS3():
+  '''
+    Gets all storage elements from /Resources/FTSEndpoints
+  '''
+
+  _basePath = 'Resources/FTSEndpoints/FTS3'
+
+  ftsEndpoints = gConfig.getOptions( _basePath )
+  return ftsEndpoints
 
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''

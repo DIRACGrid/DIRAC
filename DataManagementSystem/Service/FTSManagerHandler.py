@@ -30,9 +30,8 @@ from DIRAC.Core.Utilities.ThreadScheduler               import gThreadScheduler
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob           import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile          import FTSFile
-from DIRAC.DataManagementSystem.private.FTSHistoryView  import FTSHistoryView
 # # for FTS scheduling
-from DIRAC.DataManagementSystem.private.FTSStrategy     import FTSStrategy
+from DIRAC.DataManagementSystem.private.FTSPlacement    import FTSPlacement
 # # for FTS objects validation
 from DIRAC.DataManagementSystem.private.FTSValidator    import FTSValidator
 # # FTS DB
@@ -47,73 +46,87 @@ class FTSManagerHandler( RequestHandler ):
 
   """
 
+  ftsDB = None
+  ftsValidator = None
+  ftsPlacement = None
+
   @classmethod
-  def initializeHandler( self, serviceInfoDict ):
+  def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
 
     try:
-      self.ftsDB = FTSDB()
+      cls.ftsDB = FTSDB()
     except RuntimeError, error:
       gLogger.exception( error )
       return S_ERROR( error )
 
-    self.ftsValidator = FTSValidator()
+    cls.ftsValidator = FTSValidator()
 
     # # create tables for empty db
-    getTables = self.ftsDB.getTables()
+    getTables = cls.ftsDB.getTables()
     if not getTables['OK']:
       gLogger.error( getTables['Message'] )
       return getTables
     getTables = getTables['Value']
-    toCreate = [ tab for tab in self.ftsDB.getTableMeta().keys() if tab not in getTables ]
+    toCreate = [ tab for tab in cls.ftsDB.getTableMeta().keys() if tab not in getTables ]
     if toCreate:
-      createTables = self.ftsDB.createTables( toCreate )
+      createTables = cls.ftsDB.createTables( toCreate )
       if not createTables['OK']:
         gLogger.error( createTables['Message'] )
         return createTables
     # # always re-create views
-    createViews = self.ftsDB.createViews( True )
+    createViews = cls.ftsDB.createViews( True )
     if not createViews['OK']:
       return createViews
 
     # # connect
-    connect = self.ftsDB._connect()
+    connect = cls.ftsDB._connect()
     if not connect['OK']:
       gLogger.error( connect['Message'] )
       return connect
 
-    # # get FTSStrategy
-    self.ftsStrategy = self.getFtsStrategy()
+    # # get ftsPlacement
+    cls.ftsPlacement = cls.getFTSPlacement()
     # # put DataManager proxy to env
-    dmProxy = self.refreshProxy()
+    dmProxy = cls.refreshProxy()
     if not dmProxy['OK']:
       return dmProxy
 
     # # every 10 minutes update RW access in FTSGraph
-    gThreadScheduler.addPeriodicTask( 600, self.updateRWAccess )
-    # # every hour replace FTSGraph
-    gThreadScheduler.addPeriodicTask( FTSHistoryView.INTERVAL , self.updateFTSStrategy )
+    gThreadScheduler.addPeriodicTask( 600, cls.refreshFTSPlacement )
     # # every 6 hours refresh DataManager proxy
-    gThreadScheduler.addPeriodicTask( 21600, self.refreshProxy )
+    gThreadScheduler.addPeriodicTask( 21600, cls.refreshProxy )
 
     return S_OK()
 
-  @classmethod
-  def getFtsStrategy( self ):
-    """ fts strategy getter """
-    csPath = getServiceSection( "DataManagement/FTSManager" )
-    csPath = "%s/%s" % ( csPath, "FTSStrategy" )
+#   @classmethod
+#   def getFtsStrategy( self ):
+#     """ fts strategy getter """
+#     csPath = getServiceSection( "DataManagement/FTSManager" )
+#     csPath = "%s/%s" % ( csPath, "FTSStrategy" )
+#
+#     ftsHistory = self.ftsDB.getFTSHistory()
+#     if not ftsHistory['OK']:
+#       gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory['Message'] )
+#       ftsHistory['Value'] = []
+#     ftsHistory = ftsHistory['Value']
+#
+#     return FTSStrategy( csPath, None, ftsHistory )
 
-    ftsHistory = self.ftsDB.getFTSHistory()
+  @classmethod
+  def getFTSPlacement( cls ):
+    """ fts placement getter """
+
+    ftsHistory = cls.ftsDB.getFTSHistory()
     if not ftsHistory['OK']:
-      gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory['Message'] )
+      gLogger.warn( "unable to get FTSHistory for FTSPlacement: %s" % ftsHistory['Message'] )
       ftsHistory['Value'] = []
     ftsHistory = ftsHistory['Value']
 
-    return FTSStrategy( csPath, None, ftsHistory )
+    return FTSPlacement( ftsHistoryViews = ftsHistory )
 
-  @classmethod
-  def refreshProxy( self ):
+  @staticmethod
+  def refreshProxy():
     """ setup DataManager shifter proxy in env """
     gLogger.info( "refreshProxy: getting proxy for DataManager..." )
     proxy = setupShifterProxyInEnv( "DataManager" )
@@ -121,25 +134,22 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( "refreshProxy: %s" % proxy['Message'] )
     return proxy
 
-  @classmethod
-  def updateFTSStrategy( self ):
-    """ update FTS graph in the FTSStrategy """
-    ftsHistory = self.ftsDB.getFTSHistory()
-    if not ftsHistory['OK']:
-      return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory['Message'] )
-    self.ftsStrategy.resetGraph( ftsHistory['Value'] )
-    return S_OK()
 
   @classmethod
-  def updateRWAccess( self ):
-    """ update RW access for SEs """
-    return self.ftsStrategy.updateRWAccess()
+  def refreshFTSPlacement( cls ):
+    """ Refresh the FTSPlacement """
+    ftsHistory = cls.ftsDB.getFTSHistory()
+    if not ftsHistory['OK']:
+      gLogger.warn( "unable to get FTSHistory for FTSPlacement: %s" % ftsHistory['Message'] )
+      ftsHistory['Value'] = []
+    ftsHistory = ftsHistory['Value']
+    return cls.ftsPlacement.refresh( ftsHistoryViews = ftsHistory )
 
   types_getReplicationTree = [ListType, ListType, ( IntType, LongType )]
   def export_getReplicationTree( self, sourceSEs, targetSEs, size ):
     """ return a replication tree with an up-to-date replication strategy
     """
-    return self.ftsStrategy.replicationTree( sourceSEs, targetSEs, size )
+    return self.ftsPlacement.getReplicationTree( sourceSEs, targetSEs, size )
 
 
   types_setFTSFilesWaiting = [ ( IntType, LongType ), StringTypes, ( NoneType, ListType ) ]

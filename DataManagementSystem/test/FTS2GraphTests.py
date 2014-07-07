@@ -24,7 +24,7 @@ parseCommandLine()
 # # imports
 import unittest
 # # SUT
-from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
+from DIRAC.DataManagementSystem.private.FTS2.FTS2Graph import FTS2Graph
 # # from DIRAC
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
@@ -54,9 +54,9 @@ class FTSGraphTests( unittest.TestCase ):
 
   def test( self ):
     """ test case """
-    graph = FTSGraph( "ftsGraph", self.ftsHistoryViews )
+    graph = FTS2Graph( "ftsGraph", self.ftsHistoryViews )
 
-    self.assertEqual( type( graph ), FTSGraph, "c'tor failed" )
+    self.assertEqual( type( graph ), FTS2Graph, "c'tor failed" )
 
     site = graph.findSiteForSE( "CERN-FOO" )
     self.assertEqual( site["OK"], False, "findSiteForSE call failed for unknown SE" )

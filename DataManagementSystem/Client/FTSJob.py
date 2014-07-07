@@ -40,6 +40,7 @@ from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+import fts3.rest.client.easy as fts3
 
 ########################################################################
 class FTSJob( Record ):
@@ -462,6 +463,7 @@ class FTSJob( Record ):
       ftsFile.Status = "Submitted"
     return S_OK()
 
+
   def monitorFTS2( self, full = False ):
     """ monitor fts job """
     if not self.FTSGUID:
@@ -529,6 +531,20 @@ class FTSJob( Record ):
       return self.finalize()
 
     return S_OK()
+
+  def submitFTS3( self, stageFiles = False ):
+    pass
+
+  def monitorFTS3( self, full = False ):
+    if not self.FTSGUID:
+      return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
+
+    # CHANGE THE PORT!!
+    try:
+      context = fts3.Context( endpoint = self.FTSServer )
+      jobStatus = fts3.get_job_status( context, self.FTSGUID, list_files = full )
+    except Exception, e:
+      return S_ERROR( str( e ) )
 
   def finalize( self ):
     """ register successfully transferred  files """

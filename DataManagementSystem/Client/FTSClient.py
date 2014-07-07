@@ -250,7 +250,6 @@ class FTSClient( Client ):
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
-
     ftsFiles = []
 
     # # this will be returned on success
