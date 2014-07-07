@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 # # from RSS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 # from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping, getSites, getFTSServersForSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping, getSites, getFTS2ServersForSites
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
@@ -83,7 +83,7 @@ class Route( Edge ):
       return waitingTransfers / float( transferSpeed )
     return 0.0
 
-class FTSGraph( Graph ):
+class FTS2Graph( Graph ):
   """
   .. class:: FTSGraph
 
@@ -153,7 +153,6 @@ class FTSGraph( Graph ):
       roAttrs = { "FTSServer": ftsSite.FTSServer,
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
-
       self.log.debug( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
       self.addNode( site )
 
@@ -247,15 +246,17 @@ class FTSGraph( Graph ):
       site.SEs = rwDict
     return S_OK()
 
-  def findSiteForSE( self, se ):
-    """ return FTSSite for a given SE """
-    for node in self.nodes():
-      if se in node:
-        return S_OK( node )
-    return S_ERROR( "StorageElement %s not found" % se )
+#   Seems useless
+#   def findSiteForSE( self, se ):
+#     """ return FTSSite for a given SE """
+#     for node in self.nodes():
+#       if se in node:
+#         return S_OK( node )
+#     return S_ERROR( "StorageElement %s not found" % se )
 
   def findRoute( self, fromSE, toSE ):
     """ find route between :fromSE: and :toSE: """
+
     for edge in self.edges():
       if fromSE in edge.fromNode.SEs and toSE in edge.toNode.SEs:
         return S_OK( edge )
@@ -267,7 +268,7 @@ class FTSGraph( Graph ):
     if not sites["OK"]:
       return sites
     sites = sites["Value"]
-    ftsServers = getFTSServersForSites( sites )
+    ftsServers = getFTS2ServersForSites( sites )
     if not ftsServers["OK"]:
       return ftsServers
     ftsServers = ftsServers["Value"]
