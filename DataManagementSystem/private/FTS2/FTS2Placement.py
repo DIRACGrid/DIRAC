@@ -6,9 +6,8 @@ from DIRAC.DataManagementSystem.private.FTS2.FTS2Strategy import FTS2Strategy
 
 
 class FTS2Placement(FTSAbstractPlacement):
-
   """
-  This class manages all the FTS strategies, routes and what not
+  This class manages all the FTS strategies, routes and what not.
   """
 
   def __init__( self, csPath = None, ftsHistoryViews = None ):
@@ -37,8 +36,7 @@ class FTS2Placement(FTSAbstractPlacement):
 
   def refresh( self, ftsHistoryViews ):
     """
-    Refresh, whatever that means... recalculate all what you need,
-    fetches the latest conf and what not.
+      Recreates the graph and update the rw access
     """
     super( FTS2Placement, self ).refresh( ftsHistoryViews = ftsHistoryViews )
     self.fts2Strategy.resetGraph( ftsHistoryViews )
@@ -68,8 +66,10 @@ class FTS2Placement(FTSAbstractPlacement):
     return S_OK( route )
 
   def isRouteValid( self, route ):
-    """ Check whether a given route is valid
-       (whatever that means here)
+    """
+       Check if the source is readable, the target writable,
+       and we don't have to many active jobs on that route
+
        :param route : FTSRoute
 
        :returns S_OK or S_ERROR(reason)

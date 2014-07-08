@@ -4,7 +4,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 class FTSRoute(object):
   """
-    This class represents the route of a transfer: soruce, dest and which server
+    This class represents the route of a transfer: source, dest and which server
   """
   
   def __init__( self, sourceSE, targetSE, ftsServer ):
@@ -26,7 +26,11 @@ class FTSAbstractPlacement( object ):
   """
   
   def __init__( self, csPath = None, ftsHistoryViews = None ):
-    """ Nothing special done here """
+    """
+       Nothing special done here
+       :param csPath : path of the CS
+       :param ftsHistoryViews : history view of the db (useful for FTS2)
+    """
     self.csPath = csPath
     self.ftsHistoryViews = ftsHistoryViews
 
