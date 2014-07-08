@@ -45,6 +45,8 @@ import re
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from CS
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
 # # from Core
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
@@ -104,6 +106,8 @@ class FTSAgent( AgentModule ):
 
   # # placeholder for FTS client
   __ftsClient = None
+  # # placeholder for the FTS version
+  __ftsVersion = None
   # # placeholder for request client
   __requestClient = None
   # # placeholder for resources helper
@@ -291,6 +295,8 @@ class FTSAgent( AgentModule ):
     log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
     log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
 
+    self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
+    log.info( "FTSVersion : %s" % self.__ftsVersion )
     log.info( "initialize: creation of FTSPlacement..." )
     createPlacement = self.resetFTSPlacement()
     if not createPlacement["OK"]:
@@ -302,6 +308,7 @@ class FTSAgent( AgentModule ):
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
     log.info( "will use DataManager proxy" )
+
 
     # # gMonitor stuff here
     gMonitor.registerActivity( "RequestsAtt", "Attempted requests executions",
@@ -699,7 +706,7 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submitFTS2( self.STAGE_FILES )
+        submit = ftsJob.submitFTS( self.__ftsVersion, self.STAGE_FILES )
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
@@ -725,7 +732,7 @@ class FTSAgent( AgentModule ):
     return S_OK( ftsJobs )
 
   def __monitorJob( self, request, ftsJob ):
-    """ execute FTSJob.monitorFTS2 for a given :ftsJob:
+    """ execute FTSJob.monitorFTS for a given :ftsJob:
         if ftsJob is in a final state, finalize it
 
     :param Request request: ReqDB.Request instance
@@ -737,7 +744,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2()
+    monitor = ftsJob.monitorFTS( self.__ftsVersion )
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
@@ -780,7 +787,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( full = True )
+    monitor = ftsJob.monitorFTS( self.__ftsVersion, full = True )
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor
