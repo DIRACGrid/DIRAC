@@ -123,3 +123,9 @@ class UserProfileClient:
 
   def retrieveAllHashTags( self ):
     return self.__getRPCClient().retrieveAllHashTags()
+  
+  def getUserProfileNames( self, permission = dict() ):
+    """
+    it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
+    """
+    return self.__getRPCClient().getUserProfileNames( permission )
