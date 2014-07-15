@@ -511,3 +511,38 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = pilotDB.getCounters( table, keys, condDict, newer=newer, timeStamp=timeStamp )
     return result
+  
+  ##############################################################################
+  types_getPilotStatistics = [ StringTypes, DictType ]
+  @staticmethod
+  def export_getPilotStatistics ( attribute, selectDict ):
+    """ Get pilot statistics distribution per attribute value with a given selection
+    """
+    
+    startDate = selectDict.get( 'FromDate', None )
+    if startDate:
+      del selectDict['FromDate']
+    
+    if startDate is None:
+      startDate = selectDict.get( 'LastUpdate', None )
+      if startDate:
+        del selectDict['LastUpdate']
+    endDate = selectDict.get( 'ToDate', None )
+    if endDate:
+      del selectDict['ToDate']
+      
+
+    result = pilotDB.getCounters( 'PilotAgents', [attribute], selectDict,
+                                  newer = startDate,
+                                  older = endDate,
+                                  timeStamp = 'LastUpdateTime' )
+    statistics = {}
+    if result['OK']:
+      for status, count in result['Value']:
+        if "OwnerDN" in status:
+          userName = getUsernameForDN( status['OwnerDN'] )
+          if userName['OK']:
+            status['OwnerDN'] = userName['Value'] 
+        statistics[status[selector]] = count
+        
+    return S_OK( statistics )

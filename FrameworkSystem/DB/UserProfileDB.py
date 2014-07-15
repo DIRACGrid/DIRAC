@@ -76,7 +76,7 @@ class UserProfileDB( DB ):
     """ Constructor
     """
     self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
-    self.__permAttrs = [ 'ReadAccess' ]
+    self.__permAttrs = [ 'ReadAccess', 'PublishAccess' ]
     DB.__init__( self, 'UserProfileDB', 'Framework/UserProfileDB', 10 )
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
@@ -620,6 +620,27 @@ class UserProfileDB( DB ):
       return self.retrieveAllHashTagsById( userIds )
     finally:
       pass
+  
+  def getUserProfileNames( self, permission ):
+    """
+    it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
+    """
+    result = None
+    
+    permissions = self.__parsePerms( permission, False )
+    if not permissions:
+      return S_OK()
+    
+    condition = ",".join( [ "%s='%s'" % ( k, permissions[k] ) for k in permissions ] )
+    
+    query = "SELECT distinct Profile from `up_ProfilesData` where %s" % condition 
+    retVal = self._query( query )
+    if retVal['OK']:
+      result = S_OK( [i[0] for i in retVal['Value']] )
+    else:
+      result = retVal
+    return result
+
 
 def testUserProfileDB():
   """ Some test cases
