@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The Notification service provides a toolkit to contact people via email
     (eventually SMS etc.) to trigger some actions.
 
@@ -19,7 +15,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import *
+from types import IntType, LongType, StringType, ListType, DictType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
