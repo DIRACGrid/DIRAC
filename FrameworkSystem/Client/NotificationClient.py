@@ -1,17 +1,14 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ DIRAC Notification Client class encapsulates the methods exposed
     by the Notification service.
 """
 
-import os
+__RCSID__ = "$Id$"
+
 import types
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_ERROR
 
 class NotificationClient:
 
