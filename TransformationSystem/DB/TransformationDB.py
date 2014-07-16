@@ -390,7 +390,7 @@ class TransformationDB( DB ):
     message = ''
     if paramName in self.TRANSPARAMS:
       res = self.__updateTransformationParameter( transID, paramName, paramValue, connection = connection )
-      if res['OK'] and ( paramName != 'Body' ):
+      if res['OK']:
         message = '%s updated to %s' % ( paramName, paramValue )
     else:
       res = self.__addAdditionalTransformationParameter( transID, paramName, paramValue, connection = connection )
