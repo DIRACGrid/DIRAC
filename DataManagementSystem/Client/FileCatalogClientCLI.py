@@ -2140,10 +2140,9 @@ File Catalog Client $Revision: 1.17 $Date:
         value = value.replace(contMode,'')
         contMode = False  
       
-      if value[0] == '"' or value[0] == "'":
-        if value[-1] != '"' and value != "'":
-          contMode = value[0]
-          continue 
+      if value[0] in ['"', "'"] and value[-1] not in ['"', "'"]:
+        contMode = value[0]
+        continue 
       
       if value.find(',') != -1:
         valueList = [ x.replace("'","").replace('"','') for x in value.split(',') ]
