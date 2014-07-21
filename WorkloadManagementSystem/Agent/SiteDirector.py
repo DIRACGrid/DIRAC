@@ -35,6 +35,8 @@ __RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
+DIRAC_MODULES = [ os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py' ),
+                  os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py' ) ]
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready', 'Unknown']
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
@@ -110,6 +112,7 @@ class SiteDirector( AgentModule ):
 
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
+    self.extraModules = self.am_getOption( 'ExtraPilotModules', [] ) + DIRAC_MODULES
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
     self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
@@ -614,7 +617,7 @@ class SiteDirector( AgentModule ):
     pilotOptions, pilotsToSubmit = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
-    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
+    executable = self._writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
@@ -645,12 +648,20 @@ class SiteDirector( AgentModule ):
       self.log.info( 'DIRAC project will be installed by pilots' )
 
     #Request a release
+    # diracVersion = opsHelper.getValue( "Pilot/Version", [] )
+    # if not diracVersion:
+    #  self.log.error( 'Pilot/Version is not defined in the configuration' )
+    #  return [ None, None ]
+    # diracVersion is a list of accepted releases. Just take the first one
+    # pilotOptions.append( '-r %s' % diracVersion[0] )
+
+    # Request the list of accepted release --> needed to check correct release with SetupProject
     diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
       self.log.error( 'Pilot/Version is not defined in the configuration' )
       return [ None, None ]
-    #diracVersion is a list of accepted releases. Just take the first one
-    pilotOptions.append( '-r %s' % diracVersion[0] )
+    # diracVersion is a list of accepted releases
+    pilotOptions.append( '-r %s' % ','.join( str( it ) for it in diracVersion ) )
 
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
@@ -733,10 +744,11 @@ class SiteDirector( AgentModule ):
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = None, httpProxy = '', pilotExecDir = '' ):
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None, 
+                         httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
-
+    
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
@@ -745,10 +757,22 @@ class SiteDirector( AgentModule ):
         proxyFlag = 'True'
       compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
       compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) )
+      compressedAndEncodedExtra = {}
+      for module in self.extraModules:
+        moduleName = os.path.basename( module )
+        compressedAndEncodedExtra[moduleName] = base64.encodestring( bz2.compress( open( module, "rb" ).read(), 9 ) )
     except:
       self.log.exception( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
       return S_ERROR( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
 
+    # Extra modules
+    mStringList = []
+    for moduleName in compressedAndEncodedExtra:
+      mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
+                ( moduleName, compressedAndEncodedExtra[moduleName] )
+      mStringList.append( mString )
+    extraModuleString = '  ' + '\n  '.join( mStringList ) 
+  
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
@@ -768,6 +792,7 @@ try:
   open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedInstall)s\"\"\" ) ) )
   os.chmod("%(pilotScript)s",0700)
   os.chmod("%(installScript)s",0700)
+  %(extraModuleString)s
   if "LD_LIBRARY_PATH" not in os.environ:
     os.environ["LD_LIBRARY_PATH"]=""
   if "%(httpProxy)s":
@@ -793,6 +818,7 @@ EOF
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
         'compressedAndEncodedPilot': compressedAndEncodedPilot,
         'compressedAndEncodedInstall': compressedAndEncodedInstall,
+        'extraModuleString': extraModuleString,
         'httpProxy': httpProxy,
         'pilotExecDir': pilotExecDir,
         'pilotScript': os.path.basename( self.pilot ),
