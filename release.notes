@@ -1,10 +1,12 @@
-[v6r12-pre4]
+[v6r12-pre5]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
 NEW: ReturnValue - added returnSingleResult() utility 
 FIX: MySQL - correctly parse BooleanType
 FIX: dirac-install - use python 2.7 by default
+NEW: dirac-configure - added --SkipVOMSDownload switch, added --Output switch
+     to define output configuration file
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
@@ -12,6 +14,10 @@ CHANGE: Accounting - use TypeLoader to load plotters
 
 *Framework
 FIX: Logger - fix FileBackend implementation
+
+*WMS
+NEW: Refactored pilots ( dirac-pilot-2 ) to become modular following RFC #18, 
+     added pilotCommands.py, SiteDirector modified accordingly 
 
 *Resources
 NEW: StorageElement - added a cache of already created SE objects
@@ -22,6 +28,7 @@ NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape st
 
 *DMS
 NEW: DataManager - add masterCatalogOnly flag in the constructor
+FIX: DataManager - fix to protect against non valid SE
 CHANGE: FC.DirectoryLevelTree - use SELECT ... FOR UPDATE lock in makeDir()
 FIX: FileCatalog - fixes in using file and replica status
 
@@ -33,6 +40,7 @@ NEW: ReqClient, RequestDB - added getBulkRequest() interface. RequestExecutingAg
      can use it controlled by a special flag     
 FIX: Operation, Request - set LastUpdate time stamp when reaching final state
 FIX: OperationHandlerBase - don't erase the original message when reaching the max attempts      
+FIX: removed some deprecated codes
 
 *TMS
 NEW: WorkflowTaskAgent is now multi-threaded
