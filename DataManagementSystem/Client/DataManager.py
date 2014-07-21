@@ -786,7 +786,13 @@ class DataManager( object ):
           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
           # pfn = returnSingleResult( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
-          if storageElement.getRemoteProtocols()['Value']:
+          remoteProtocols = storageElement.getRemoteProtocols()
+          if not remoteProtocols['OK']:
+            self.log.debug( "%s : could not get remote protocols %s" % ( diracSE, remoteProtocols['Message'] ) )
+            continue
+
+          remoteProtocols = remoteProtocols['Value']
+          if remoteProtocols:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
@@ -1100,6 +1106,10 @@ class DataManager( object ):
     lfnDict = {}
     failed = {}
     se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
+    if se:
+      res = se.isValid( 'removeFile' )
+      if not res['OK']:
+        return res
     for lfn, pfn in fileTuple:
       res = self.__verifyOperationWritePermission( lfn )
       if not res['OK'] or not res['Value']:

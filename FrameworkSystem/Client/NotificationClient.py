@@ -1,10 +1,8 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ DIRAC Notification Client class encapsulates the methods exposed
     by the Notification service.
 """
+
+__RCSID__ = "$Id$"
 
 import types
 

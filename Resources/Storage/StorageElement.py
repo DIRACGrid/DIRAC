@@ -151,9 +151,6 @@ class StorageElementItem( object ):
       useProxy = ( self.resources.getAccessProtocolValue( ap, "Protocol", "UnknownProtocol" )
                    in proxiedProtocols )
 
-    #print "Proxy", name, proxiedProtocols, \
-    #gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "xxx" )
-
     if not useProxy:
       useProxy = gConfig.getValue( '/LocalSite/StorageElements/%s/UseProxy' % name, False )
     if not useProxy:

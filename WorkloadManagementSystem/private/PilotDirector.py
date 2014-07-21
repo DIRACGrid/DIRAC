@@ -26,6 +26,8 @@ import DIRAC
 # Some reasonable Defaults
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
+DIRAC_MODULES = [ os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py' ),
+                  os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py' ) ]
 DIRAC_VERSION = 'Integration'
 DIRAC_PROJECT = ''
 DIRAC_INSTALLATION = ''
@@ -106,6 +108,7 @@ class PilotDirector:
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
+    self.extraModules = DIRAC_MODULES
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.targetGrids = [ self.gridMiddleware ]
 
@@ -146,6 +149,7 @@ class PilotDirector:
     self.log.info( ' Target Grids:   ', ', '.join( self.targetGrids ) )
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
+    self.log.info( ' Pilot modules', self.extraModules )
     self.log.info( ' Install Ver:    ', self.installVersion )
     if self.installProject:
       self.log.info( ' Project:        ', self.installProject )
@@ -180,6 +184,7 @@ class PilotDirector:
     self.installVersion = gConfig.getValue( mySection + '/Version'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
+    self.extraModules = gConfig.getValue( mySection + '/ExtraPilotModules'        , [] ) + self.extraModules
     self.installProject = gConfig.getValue( mySection + '/Project'        , self.installProject )
     self.installation = gConfig.getValue( mySection + '/Installation'        , self.installation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )

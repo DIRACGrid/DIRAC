@@ -32,7 +32,7 @@ from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
+from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 from DIRAC.Core.Base.AgentModule import AgentModule
 
 ########################################################################
