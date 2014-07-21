@@ -4,17 +4,16 @@
 
 '''
 
+__RCSID__ = '$Id: $'
+
 from datetime import datetime, timedelta
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
+from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-__RCSID__ = '$Id: $'
 AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 class TokenAgent( AgentModule ):
@@ -42,9 +41,6 @@ class TokenAgent( AgentModule ):
     self.adminMail = self.__adminMail
 
     self.rsClient = None
-    self.rmClient = None
-    self.noClient = None
-
     self.tokenDict = None
     self.diracAdmin = None
 
@@ -56,11 +52,7 @@ class TokenAgent( AgentModule ):
     self.notifyHours = self.am_getOption( 'notifyHours', self.notifyHours )
     self.adminMail   = self.am_getOption( 'adminMail', self.adminMail )
 
-
     self.rsClient = ResourceStatusClient()
-    self.rmClient = ResourceManagementClient()
-    self.noClient = NotificationClient()
-
     self.diracAdmin = DiracAdmin()
 
     return S_OK()
