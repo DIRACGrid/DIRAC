@@ -160,3 +160,10 @@ class UserProfileManagerHandler( RequestHandler ):
         if not result[ 'OK' ]:
           return result
     return S_OK()
+  
+  types_getUserProfileNames = [types.DictType]
+  def export_getUserProfileNames( self, permission ):
+    """
+    it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
+    """
+    return gUPDB.getUserProfileNames( permission )

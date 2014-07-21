@@ -45,6 +45,27 @@ FIX: removed some deprecated codes
 *TMS
 NEW: WorkflowTaskAgent is now multi-threaded
 
+[v6r11p5]
+
+FIX: Incorporated changes from v6r10p25 patch
+
+*Framework
+NEW: Added getUserProfileNames() interface
+
+*WMS
+NEW: WMSAdministrator - added getPilotStatistics() interface
+BUGFIX: JobWrapperTemplate - use sendJobAccounting() instead of sendWMSAccounting()
+FIX: JobCleaningAgent - skip if no jobs to remove
+
+*DMS
+BUGFIX: FileCatalogClientCLI - bug fix in the metaquery construction
+
+*Resources
+CHANGE: StorageElement - enable Storage Element proxy configuration by protocol name
+
+*TMS
+NEW: TransformationManager - add Scheduled to task state for monitoring
+
 [v6r11p4]
 
 *Framework
@@ -177,6 +198,11 @@ FIX: RequestTask - always execute operations with owner proxy
 
 *SMS
 FIX: few minor fixes to avoid pylint warnings
+
+[v6r10p25]
+
+*DMS
+CHANGE: FileCatalog - optimized file selection by metadata
 
 [v6r10p24]
 
