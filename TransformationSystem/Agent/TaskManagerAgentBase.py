@@ -94,6 +94,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
   def execute( self ):
     """ The TaskManagerBase execution method is just filling the Queues of transformations that need to be processed
     """
+    
+    operationsOnTransformationDict = {}
+    
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption( 'MonitorTasks', '' )
     if not enableTaskMonitor:
@@ -105,7 +108,15 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        self._fillTheQueue( transformations, 'updateTaskStatus' )
+        transformationIDsAndBodies = dict( [( transformation['TransformationID'], 
+                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        for transID, body in transformationIDsAndBodies:
+          operationsOnTransformationDict[transID] = {'Body': body}
+          operationsOnTransformationDict[transID].setDefault({'Operations':['UpdateTasksStatus']})
+        
+        
+        operationsOnTransformationDict.update([(transID, ['updateTaskStatus']) for transID in transformationIDs])
+#         self._fillTheQueue( transformations, 'updateTaskStatus' )
 
     # Determine whether the task files status is to be monitored and updated
     enableFileMonitor = self.am_getOption( 'MonitorFiles', '' )
@@ -118,7 +129,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        self._fillTheQueue( transformations, 'updateFileStatus' )
+        for 
+#         self._fillTheQueue( transformations, 'updateFileStatus' )
 
     # Determine whether the checking of reserved tasks is to be performed
     enableCheckReserved = self.am_getOption( 'CheckReserved', '' )
@@ -131,7 +143,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        self._fillTheQueue( transformations, 'checkReservedTasks' )
+#         self._fillTheQueue( transformations, 'checkReservedTasks' )
 
     # Determine whether the submission of tasks is to be performed
     enableSubmission = self.am_getOption( 'SubmitTasks', '' )
@@ -156,7 +168,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption( 'TasksPerLoop', self.tasksPerLoop )
-        self._fillTheQueue( transformations, 'submitTasks' )
+#         self._fillTheQueue( transformations, 'submitTasks' )
+
+    self._fillTheQueue(transformations, operation, body)
 
     return S_OK()
 
@@ -182,6 +196,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
   def _fillTheQueue( self, transformations, operation, body = False ):
     """ Just fill the queue with the operation to be done on a certain transformation
     """
+    #FIXME
     # fill the queue
     transformationIDs = [transformation['TransformationID'] for transformation in transformations['Value']]
     if body:
