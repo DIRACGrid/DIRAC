@@ -1,12 +1,16 @@
-""" The TaskManagerAgentBase is the base class to submit tasks to external systems,
-    monitor and update the tasks and file status in the transformation DB.
+""" NOTA BENE: This agent should NOT be run alone. Instead, it serves as a base class for extensions.
 
-    Nota bene: This agent should NOT be run alone. Instead, it serves as a base class for extensions.
+    The TaskManagerAgentBase is the base class to submit tasks to external systems,
+    monitor and update the tasks and file status in the transformation DB.
 
     This agent is extended in WorkflowTaskAgent and RequestTaskAgent.
     In case you want to further extend it you are required to follow the note on the
     initialize method and on the _getClients method.
 """
+
+__RCSID__ = "$Id$"
+
+AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
 import time
 import datetime
@@ -23,18 +27,14 @@ from DIRAC.TransformationSystem.Client.TaskManager                  import Workf
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 
-__RCSID__ = "$Id$"
-
-AGENT_NAME = 'Transformation/TaskManagerAgentBase'
-
 class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
-  """ To be extended. The extension needs to:
-      - provide a taskManager object as data member
-      - provide a transType (list of strings) as data member
+  """ To be extended. Please look at WorkflowTaskAgent and RequestTaskAgent.
   """
 
   def __init__( self, *args, **kwargs ):
     """ c'tor
+
+        Always call this in the extension agent
     """
     AgentModule.__init__( self, *args, **kwargs )
     TransformationAgentsUtilities.__init__( self )
@@ -56,7 +56,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
         The extensions MUST provide in the initialize method the following data members:
         - TransformationClient objects (self.transClient),
-        - set the shifterProxy if different from the defuaut one set here ('ProductionManager')
+        - set the shifterProxy if different from the default one set here ('ProductionManager')
         - list of transformation types to be looked (self.transType)
     """
 
@@ -378,7 +378,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     # For the tasks for which an associated request was found update the task details in the transformationDB
     for taskName, extTaskID in taskNameIDs.items():
       transID, taskID = taskName.split( '_' )
-      self._logInfo( "Resetting status of %s to Created with ID %s" % ( taskName, extTaskID ), 
+      self._logInfo( "Setting status of %s to Submitted with ID %s" % ( taskName, extTaskID ),
                      transID = transID, method = 'checkReservedTasks' )
       res = clients['TransformationClient'].setTaskStatusAndWmsID( int( transID ), int( taskID ), 
                                                                    'Submitted', str( extTaskID ) )
