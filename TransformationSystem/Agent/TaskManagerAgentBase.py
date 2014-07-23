@@ -111,12 +111,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
         transformationIDsAndBodies = dict( [( transformation['TransformationID'], 
                                               transformation['Body'] ) for transformation in transformations['Value']] )
         for transID, body in transformationIDsAndBodies:
-          operationsOnTransformationDict[transID] = {'Body': body}
-          operationsOnTransformationDict[transID].setDefault({'Operations':['UpdateTasksStatus']})
-        
-        
-        operationsOnTransformationDict.update([(transID, ['updateTaskStatus']) for transID in transformationIDs])
-#         self._fillTheQueue( transformations, 'updateTaskStatus' )
+          operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['updateTaskStatus']}
 
     # Determine whether the task files status is to be monitored and updated
     enableFileMonitor = self.am_getOption( 'MonitorFiles', '' )
@@ -129,8 +124,13 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        for 
-#         self._fillTheQueue( transformations, 'updateFileStatus' )
+        transformationIDsAndBodies = dict( [( transformation['TransformationID'], 
+                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        for transID, body in transformationIDsAndBodies:
+          if transID in operationsOnTransformationDict:
+            operationsOnTransformationDict[transID]['Operations'].append('updateFileStatus')
+          else:
+            operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['updateFileStatus']}
 
     # Determine whether the checking of reserved tasks is to be performed
     enableCheckReserved = self.am_getOption( 'CheckReserved', '' )
@@ -143,7 +143,13 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-#         self._fillTheQueue( transformations, 'checkReservedTasks' )
+        transformationIDsAndBodies = dict( [( transformation['TransformationID'],
+                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        for transID, body in transformationIDsAndBodies:
+          if transID in operationsOnTransformationDict:
+            operationsOnTransformationDict[transID]['Operations'].append( 'checkReservedTasks' )
+          else:
+            operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['checkReservedTasks']}
 
     # Determine whether the submission of tasks is to be performed
     enableSubmission = self.am_getOption( 'SubmitTasks', '' )
@@ -168,9 +174,15 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption( 'TasksPerLoop', self.tasksPerLoop )
-#         self._fillTheQueue( transformations, 'submitTasks' )
+        transformationIDsAndBodies = dict( [( transformation['TransformationID'],
+                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        for transID, body in transformationIDsAndBodies:
+          if transID in operationsOnTransformationDict:
+            operationsOnTransformationDict[transID]['Operations'].append( 'submitTasks' )
+          else:
+            operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['submitTasks']}
 
-    self._fillTheQueue(transformations, operation, body)
+    self._fillTheQueue( operationsOnTransformationDict )
 
     return S_OK()
 
@@ -193,27 +205,18 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self.log.verbose( "Obtained %d transformations" % len( res['Value'] ) )
     return res
 
-  def _fillTheQueue( self, transformations, operation, body = False ):
+  def _fillTheQueue( self, operationsOnTransformationsDict ):
     """ Just fill the queue with the operation to be done on a certain transformation
     """
-    #FIXME
-    # fill the queue
-    transformationIDs = [transformation['TransformationID'] for transformation in transformations['Value']]
-    if body:
-      transformationBodies = dict( [( transformation['TransformationID'], transformation['Body'] ) for transformation in transformations['Value']] )
-
     count = 0
-    for transID in transformationIDs:
+    for transID, bodyAndOps in operationsOnTransformationsDict.iteritems():
       if transID not in self.transInQueue:
         count += 1
         self.transInQueue.append( transID )
-        operationOnTransToQueue = '%s###%s' % ( operation, str( transID ) )
-        if body:
-          operationOnTransToQueue + "$$$%s" % transformationBodies[transID]
-        self.transQueue.put( operationOnTransToQueue )
+        self.transQueue.put( {transID: bodyAndOps} )
 
-    self.log.info( "Out of %d transformations, for operation %s, %d put in thread queue" % ( len( transformationIDs ),
-                                                                                             operation, count ) )
+    self.log.info( "Out of %d transformations, %d put in thread queue" % ( len( operationsOnTransformationsDict ),
+                                                                           count ) )
 
   #############################################################################
 
@@ -235,19 +238,21 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     clients = self._getClients()
 
     while True:
-      operationTransID = self.transQueue.get()
+      transIDOPBody = self.transQueue.get()
       try:
-        operation, transID = operationTransID.split( '###' )
-        transID = long( transID )
+        transID = transIDOPBody.keys()[0]
+        operations = transIDOPBody[transID]['Operations']
         if transID not in self.transInQueue:
+          self._logWarn( "Got a transf not in transInQueue...?", method = '_execute', transID = transID )
           break
         self.transInThread[transID] = ' [Thread%d] [%s] ' % ( threadID, str( transID ) )
-        self._logInfo( "Processing operation %s" % operation, method = '_execute', transID = transID )
-        startTime = datetime.datetime.utcnow()
-        res = getattr( self, operation )( transID, clients )
-        if not res['OK']:
-          self._logError( "Failed to %s: %s" % ( operation, res['Message'] ), method = '_execute', transID = transID )
-        self._logInfo( "Processed operation %s" % operation, method = '_execute', transID = transID )
+        for operation in operations:
+          self._logInfo( "Starting processing operation %s" % operation, method = '_execute', transID = transID )
+          startTime = datetime.datetime.utcnow()
+          res = getattr( self, operation )( transIDOPBody, clients )
+          if not res['OK']:
+            self._logError( "Failed to %s: %s" % ( operation, res['Message'] ), method = '_execute', transID = transID )
+          self._logInfo( "Processed operation %s" % operation, method = '_execute', transID = transID )
       except Exception, x:
         self._logException( '%s' % x, transID = transID )
       finally:
@@ -265,9 +270,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
   #############################################################################
   # real operations done
 
-  def updateTaskStatus( self, transID, clients ):
+  def updateTaskStatus( self, transIDOPBody, clients ):
     """ Updates the task status
     """
+    transID = transIDOPBody.keys()[0]
+
     # Get the tasks which are in an UPDATE state
     updateStatus = self.am_getOption( 'TaskUpdateStatus', ['Checking', 'Deleted', 'Killed', 'Staging', 'Stalled',
                                                            'Matched', 'Scheduled', 'Rescheduled', 'Completed',
@@ -313,9 +320,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     return S_OK()
 
-  def updateFileStatus( self, transID, clients ):
+  def updateFileStatus( self, transIDOPBody, clients ):
     """ Update the files status
     """
+    transID = transIDOPBody.keys()[0]
+
     timeStamp = str( datetime.datetime.utcnow() - datetime.timedelta( minutes = 10 ) )
     condDict = {'TransformationID' : transID, 'Status' : ['Assigned']}
     res = clients['TransformationClient'].getTransformationFiles( condDict = condDict,
@@ -352,9 +361,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     return S_OK()
 
-  def checkReservedTasks( self, transID, clients ):
+  def checkReservedTasks( self, transIDOPBody, clients ):
     """ Checking Reserved tasks
     """
+    transID = transIDOPBody.keys()[0]
+
     # Select the tasks which have been in Reserved status for more than 1 hour for selected transformations
     condDict = {"TransformationID":transID, "ExternalStatus":'Reserved'}
     time_stamp_older = str( datetime.datetime.utcnow() - datetime.timedelta( hours = 1 ) )
@@ -404,10 +415,12 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     return S_OK()
 
-  def submitTasks( self, transIDAndBody, clients ):
+  def submitTasks( self, transIDOPBody, clients ):
     """ Submit the tasks to an external system, using the taskManager provided
     """
-    transID, transBody = transIDAndBody.split( '$$$' )
+    transID = transIDOPBody.keys()[0]
+    transBody = transIDOPBody[transID]['Body']
+
     res = clients['TransformationClient'].getTasksToSubmit( transID, self.tasksPerLoop )
     self._logDebug( "getTasksToSubmit(%s, %s) return value: %s" % ( transID, self.tasksPerLoop, res ),
                    method = 'submitTasks', transID = transID )
