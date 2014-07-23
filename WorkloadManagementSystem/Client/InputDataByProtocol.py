@@ -77,23 +77,35 @@ class InputDataByProtocol:
 
     # If all replicas are requested, get results for other SEs
     seList = set()
-    for lfn in replicas:
-      seList.update( set( replicas[lfn] ) )
-    seList -= set( localSEList )
+    localSESet = set( localSEList )
+    for lfn in replicas.keys():
+      extraSEs = set( replicas[lfn] ) - localSESet
+      # If any extra SE, add it to the set, othewise don't consider that file
+      if extraSEs:
+        seList.update( extraSEs )
+      else:
+        replicas.pop( lfn )
     seList -= self.metaKeys
 
-    result = self.__resolveReplicas( seList, replicas, ignoreTape = True )
-    if not result['OK']:
-      return result
-    for lfn in result['Successful']:
-      success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
+    if seList:
+      result = self.__resolveReplicas( seList, replicas, ignoreTape = True )
+      if not result['OK']:
+        return result
+      for lfn in result['Successful']:
+        success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
     ret = S_OK()
-    ret.update( {'Successful': success, 'Failed':result['Failed']} )
+    # Only consider failed the files that are not successful as well
+    ret.update( {'Successful': success, 'Failed':[lfn for lfn in result['Failed'] if lfn not in success]} )
     return ret
 
   def __resolveReplicas( self, seList, replicas, ignoreTape = False ):
     diskSEs = set()
     tapeSEs = set()
+    if not seList:
+      ret = S_OK()
+      ret.update( {'Successful': [], 'Failed': []} )
+      return ret
+
     for localSE in seList:
       seStatus = self.__storageElement( localSE ).getStatus()['Value']
       if seStatus['Read'] and seStatus['DiskSE']:
@@ -122,7 +134,7 @@ class InputDataByProtocol:
     if failedReplicas:
       # in principle this is not a failure but depends on the policy of the VO
       # datasets could be downloaded from another site
-      self.log.info( 'The following file(s) were found not to have replicas for available LocalSEs:\n%s' % '\n'.join( sorted( failedReplicas ) ) )
+      self.log.info( 'The following file(s) were found not to have replicas on any of %s:\n%s' % ( str( seList ), '\n'.join( sorted( failedReplicas ) ) ) )
 
     # Need to group files by SE in order to stage optimally
     # we know from above that all remaining files have a replica
