@@ -307,7 +307,11 @@ class TransformationAgentSuccess( AgentsTestCase ):
     for getTFiles in [goodFiles, noFiles]:
       self.tc_mock.getTransformationFiles.return_value = getTFiles
 
-      transDict = {'TransformationID': 123, 'Status': 'Stopped' }
+      transDict = {'TransformationID': 123, 'Status': 'Stopped', 'Type': 'Replication' }
+      res = self.ta._getTransformationFiles( transDict, {'TransformationClient': self.tc_mock} )
+      self.assertTrue( res['OK'] )
+
+      transDict = {'TransformationID': 123, 'Status': 'Stopped', 'Type': 'Removal' }
       res = self.ta._getTransformationFiles( transDict, {'TransformationClient': self.tc_mock} )
       self.assertTrue( res['OK'] )
 

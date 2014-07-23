@@ -51,7 +51,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.replicaCacheValidity = None
     self.writingCache = False
 
-    self.noUnusedDelay = None
+    self.noUnusedDelay = 0
     self.unusedFiles = {}
     self.unusedTimeStamp = {}
 
