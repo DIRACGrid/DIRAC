@@ -110,7 +110,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       else:
         transformationIDsAndBodies = dict( [( transformation['TransformationID'], 
                                               transformation['Body'] ) for transformation in transformations['Value']] )
-        for transID, body in transformationIDsAndBodies:
+        for transID, body in transformationIDsAndBodies.iteritems():
           operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['updateTaskStatus']}
 
     # Determine whether the task files status is to be monitored and updated
@@ -126,7 +126,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       else:
         transformationIDsAndBodies = dict( [( transformation['TransformationID'], 
                                               transformation['Body'] ) for transformation in transformations['Value']] )
-        for transID, body in transformationIDsAndBodies:
+        for transID, body in transformationIDsAndBodies.iteritems():
           if transID in operationsOnTransformationDict:
             operationsOnTransformationDict[transID]['Operations'].append('updateFileStatus')
           else:
@@ -145,7 +145,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       else:
         transformationIDsAndBodies = dict( [( transformation['TransformationID'],
                                               transformation['Body'] ) for transformation in transformations['Value']] )
-        for transID, body in transformationIDsAndBodies:
+        for transID, body in transformationIDsAndBodies.iteritems():
           if transID in operationsOnTransformationDict:
             operationsOnTransformationDict[transID]['Operations'].append( 'checkReservedTasks' )
           else:
@@ -176,7 +176,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
         self.tasksPerLoop = self.am_getOption( 'TasksPerLoop', self.tasksPerLoop )
         transformationIDsAndBodies = dict( [( transformation['TransformationID'],
                                               transformation['Body'] ) for transformation in transformations['Value']] )
-        for transID, body in transformationIDsAndBodies:
+        for transID, body in transformationIDsAndBodies.iteritems():
           if transID in operationsOnTransformationDict:
             operationsOnTransformationDict[transID]['Operations'].append( 'submitTasks' )
           else:

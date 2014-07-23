@@ -606,7 +606,7 @@ class WorkflowTasks( TaskBase ):
       requestName = _requestName( transID, taskID )
       requestNames.append( requestName )
     res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
-    if not ['OK']:
+    if not res['OK']:
       self.log.info( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
       return res
     requestNameIDs = {}
