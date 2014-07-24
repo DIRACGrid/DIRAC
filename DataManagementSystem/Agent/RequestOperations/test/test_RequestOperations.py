@@ -1,6 +1,6 @@
 import unittest
 import datetime
-from mock import Mock
+from mock import MagicMock
 
 from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import ReplicateAndRegister
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -9,9 +9,10 @@ class ReqOpsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
   def setUp( self ):
-    self.rr = ReplicateAndRegister()
-    fcMock = Mock()
-    self.rr.fc = fcMock
+    fcMock = MagicMock()
+    ftsMock = MagicMock
+
+    self.rr = ReplicateAndRegister( fc = fcMock, ftsClient = ftsMock )
 
   def tearDown( self ):
     pass

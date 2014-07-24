@@ -108,7 +108,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
   ReplicateAndRegister operation handler
   """
 
-  def __init__( self, operation = None, csPath = None ):
+  def __init__( self, operation = None, csPath = None, fc = None, ftsClient = None ):
     """c'tor
 
     :param self: self reference
@@ -138,8 +138,15 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     self.seCache = {}
 
     # Clients
-    self.fc = FileCatalog()
-    self.ftsClient = FTSClient()
+    if fc:
+      self.fc = fc
+    else:
+      self.fc = FileCatalog()
+
+    if ftsClient:
+      self.ftsClient = ftsClient
+    else:
+      self.ftsClient = FTSClient()
 
   def __call__( self ):
     """ call me maybe """
