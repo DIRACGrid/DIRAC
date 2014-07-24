@@ -93,10 +93,8 @@ class InputDataByProtocol:
         return result
       for lfn in result['Successful']:
         success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
-    ret = S_OK()
     # Only consider failed the files that are not successful as well
-    ret.update( {'Successful': success, 'Failed':[lfn for lfn in result['Failed'] if lfn not in success]} )
-    return ret
+    return S_OK( {'Successful': success, 'Failed':[lfn for lfn in result['Failed'] if lfn not in success]} )
 
   def __resolveReplicas( self, seList, replicas, ignoreTape = False ):
     diskSEs = set()

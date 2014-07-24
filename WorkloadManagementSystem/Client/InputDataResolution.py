@@ -119,13 +119,13 @@ class InputDataResolution( object ):
 
     dataToResolve = []  # if none, all supplied input data is resolved
     successful = {}
-    failedReplicas = []
     for modulePath in policy:
       result = self.__runModule( modulePath, dataToResolve )
       if not result['OK']:
         self.log.warn( 'Problem during %s execution' % modulePath )
         return result
 
+      result = result['Value']
       successful.update( result.get( 'Successful', {} ) )
       dataToResolve = result.get( 'Failed', [] )
       if dataToResolve:
