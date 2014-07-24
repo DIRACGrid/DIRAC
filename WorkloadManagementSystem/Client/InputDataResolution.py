@@ -30,6 +30,7 @@ class InputDataResolution( object ):
     self.arguments = argumentsDict
     self.name = COMPONENT_NAME
     self.log = gLogger.getSubLogger( self.name )
+    self.arguments.setdefault( 'Configuration', {} )['AllReplicas'] = Operations().getValue( 'InputDataPolicy/AllReplicas', False )
 
     # By default put input data into the current directory
     self.arguments.setdefault( 'InputDataDirectory', 'CWD' )
@@ -118,13 +119,13 @@ class InputDataResolution( object ):
 
     dataToResolve = []  # if none, all supplied input data is resolved
     successful = {}
-    failedReplicas = []
     for modulePath in policy:
       result = self.__runModule( modulePath, dataToResolve )
       if not result['OK']:
         self.log.warn( 'Problem during %s execution' % modulePath )
         return result
 
+      result = result['Value']
       successful.update( result.get( 'Successful', {} ) )
       dataToResolve = result.get( 'Failed', [] )
       if dataToResolve:
