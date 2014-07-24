@@ -201,7 +201,7 @@ class InputDataByProtocol:
       if None in failedReps:
         failedReps.remove( None )
       if not failedReps:
-        self.log.info( 'Preliminary checks OK, getting TURLS for at %s:\n' % seName, '\n'.join( lfns ) )
+        self.log.info( 'Preliminary checks OK, getting TURLS at %s for:\n%s' % ( seName, '\n'.join( lfns ) ) )
       else:
         self.log.warn( "Errors during preliminary checks for %d files" % len( failedReps ) )
 
