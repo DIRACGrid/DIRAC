@@ -22,9 +22,6 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
 
-# FIXME: This should disappear!
-from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
-
 def _requestName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
@@ -200,11 +197,7 @@ class RequestTasks( TaskBase ):
     for taskDict in taskDicts:
       requestName = _requestName( taskDict['TransformationID'], taskDict['TaskID'] )
 
-      # FIXME: trying to see if it is in the old system
-      reqID = self.__getRequestIDOLDSystem( requestName )
-      # FIXME: and in the new, if it is not in the previous one
-      if not reqID:
-        reqID = self.__getRequestID( requestName )
+      reqID = self.__getRequestID( requestName )
 
       if reqID:
         requestNameIDs[requestName] = reqID
@@ -212,23 +205,9 @@ class RequestTasks( TaskBase ):
         noTasks.append( requestName )
     return S_OK( {'NoTasks':noTasks, 'TaskNameIDs':requestNameIDs} )
 
-  def __getRequestIDOLDSystem( self, requestName ):
-    """ for the OLD RMS
-    """
-    # FIXME: this should disappear
-    try:
-      res = RequestClient().getRequestInfo( requestName )
-      if res['OK']:
-        return res['Value'][0]
-      else:
-        return 0
-    except RuntimeError:
-      return 0
-
   def __getRequestID( self, requestName ):
     """ Getting the info from the new RMS
     """
-    # FIXME: this should stay
     res = self.requestClient.getRequestInfo( requestName )
     if res['OK']:
       return res['Value'][0]
@@ -244,11 +223,7 @@ class RequestTasks( TaskBase ):
       oldStatus = taskDict['ExternalStatus']
       requestName = _requestName( transID, taskID )
 
-      # FIXME: trying to see if it is in the old system
-      newStatus = self.__getRequestStatusOLDSystem( requestName )
-      # FIXME: and in the new, if it is not in the previous one
-      if not newStatus:
-        newStatus = self.__getRequestStatus( requestName )
+      newStatus = self.__getRequestStatus( requestName )
 
       if not newStatus:
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
@@ -256,23 +231,9 @@ class RequestTasks( TaskBase ):
         updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
-  def __getRequestStatusOLDSystem( self, requestName ):
-    """ for the OLD RMS
-    """
-    # FIXME: this should disappear
-    try:
-      res = RequestClient().getRequestStatus( requestName )
-      if res['OK']:
-        return res['Value']['RequestStatus']
-      else:
-        return ''
-    except RuntimeError:
-      return ''
-
   def __getRequestStatus( self, requestName ):
     """ Getting the Request status from the new RMS
     """
-    # FIXME: this should stay
     res = self.requestClient.getRequestStatus( requestName )
     if res['OK']:
       return res['Value']
@@ -305,11 +266,7 @@ class RequestTasks( TaskBase ):
     for requestName in sorted( taskFiles ):
       lfnDict = taskFiles[requestName]
 
-      # FIXME: trying to see if it is in the old system
-      statusDict = self.__getRequestFileStatusOLDSystem( requestName, lfnDict.keys() )
-      # FIXME: and in the new, if it is not in the previous one
-      if not statusDict:
-        statusDict = self.__getRequestFileStatus( requestName, lfnDict.keys() )
+      statusDict = self.__getRequestFileStatus( requestName, lfnDict.keys() )
 
       if not statusDict:
         self.log.warn( "getSubmittedFileStatus: Failed to get files status for request" )
@@ -324,23 +281,9 @@ class RequestTasks( TaskBase ):
           updateDict[lfn] = 'Problematic'
     return S_OK( updateDict )
 
-  def __getRequestFileStatusOLDSystem( self, requestName, lfns ):
-    """ for the OLD RMS
-    """
-    # FIXME: this should disappear
-    try:
-      res = RequestClient().getRequestFileStatus( requestName, lfns )
-      if res['OK']:
-        return res['Value']
-      else:
-        return {}
-    except RuntimeError:
-      return {}
-
   def __getRequestFileStatus( self, requestName, lfns ):
     """ Getting the Request status from the new RMS
     """
-    # FIXME: this should stay
     res = self.requestClient.getRequestFileStatus( requestName, lfns )
     if res['OK']:
       return res['Value']
