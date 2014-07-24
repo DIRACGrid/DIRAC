@@ -1,7 +1,4 @@
-import DIRAC
-from DIRAC import gLogger
 from DIRAC.Core.Base.Script import parseCommandLine
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.LoggerClient import LoggerClient
 
 parseCommandLine()
@@ -10,13 +7,6 @@ LClient = LoggerClient()
 retval = LClient.getSites()
 if not retval['OK']: print retval['Message']
 else: print retval['Value'][0:2]
-
-conditions = { 'SystemName': ['Framework/SecurityLog', 'DataManagement/TransferDBMonitoring']}
-retval = LClient.getMessages( conds = conditions, beginDate = '2008-10-06' )
-if not retval['OK']: print retval['Message']
-else:
-  print retval['Value']['ParameterNames'] 
-  print retval['Value']['Records'][0:2]
 
 retval = LClient.getSystems()
 if not retval['OK']: print retval['Message']
