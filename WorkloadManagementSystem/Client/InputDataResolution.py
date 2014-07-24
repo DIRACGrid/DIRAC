@@ -30,6 +30,7 @@ class InputDataResolution( object ):
     self.arguments = argumentsDict
     self.name = COMPONENT_NAME
     self.log = gLogger.getSubLogger( self.name )
+    self.arguments.setdefault( 'Configuration', {} )['AllReplicas'] = Operations().getValue( 'InputDataPolicy/AllReplicas', False )
 
     # By default put input data into the current directory
     self.arguments.setdefault( 'InputDataDirectory', 'CWD' )
