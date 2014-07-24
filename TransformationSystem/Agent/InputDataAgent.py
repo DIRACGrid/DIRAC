@@ -12,7 +12,6 @@ from DIRAC                                                                import
 from DIRAC.Core.Base.AgentModule                                          import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient               import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalogClient                            import FileCatalogClient
-from DIRAC.Core.Utilities.List                                            import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations                  import Operations
 
 __RCSID__ = "$Id$"
@@ -46,11 +45,11 @@ class InputDataAgent( AgentModule ):
     gMonitor.registerActivity( "Iteration", "Agent Loops", AGENT_NAME, "Loops/min", gMonitor.OP_SUM )
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
-      self.transformationTypes = sortList( agentTSTypes )
+      self.transformationTypes = sorted( agentTSTypes )
     else:
       dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
       dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
-      self.transformationTypes = sortList( dataProc + dataManip )
+      self.transformationTypes = sorted( dataProc + dataManip )
     extendables = Operations().getValue( 'Transformations/ExtendableTransfTypes', [])
     if extendables:
       for extendable in extendables:
@@ -127,7 +126,7 @@ class InputDataAgent( AgentModule ):
         gLogger.verbose( 'Processing %d lfns for transformation %d' % ( len( lfnList ), transID ) )
         # Add the files to the transformation
         gLogger.verbose( 'Adding %d lfns for transformation %d' % ( len( lfnList ), transID ) )
-        result = self.transClient.addFilesToTransformation( transID, sortList( lfnList ) )
+        result = self.transClient.addFilesToTransformation( transID, sorted( lfnList ) )
         if not result['OK']:
           gLogger.warn( "InputDataAgent.execute: failed to add lfns to transformation", result['Message'] )
           self.fileLog[transID] = 0

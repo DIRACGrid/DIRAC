@@ -2,7 +2,6 @@
 """
 from DIRAC                                                          import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
-from DIRAC.Core.Utilities.List                                      import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
@@ -20,9 +19,9 @@ class MCExtensionAgent( AgentModule ):
     self.transClient = TransformationClient()
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
-      self.transformationTypes = sortList( agentTSTypes )
+      self.transformationTypes = sorted( agentTSTypes )
     else:
-      self.transformationTypes = sortList( Operations().getValue( 'Transformations/ExtendableTransfTypes',
+      self.transformationTypes = sorted( Operations().getValue( 'Transformations/ExtendableTransfTypes',
                                                                   ['MCSimulation', 'Simulation'] ) )
     self.maxIterationTasks = self.am_getOption( 'TasksPerIteration', 50 )
     self.maxFailRate = self.am_getOption( 'MaxFailureRate', 30 )
@@ -74,7 +73,7 @@ class MCExtensionAgent( AgentModule ):
     else:
       statusDict = res['Value']
     gLogger.verbose( "Current task count for transformation %d" % transID )
-    for status in sortList( statusDict.keys() ):
+    for status in sorted( statusDict.keys() ):
       statusCount = statusDict[status]
       gLogger.verbose( "%s : %s" % ( status.ljust( 20 ), str( statusCount ).rjust( 8 ) ) )
     # Determine the number of tasks to be created
@@ -95,7 +94,6 @@ class MCExtensionAgent( AgentModule ):
     '''
     done = statusDict.get( 'Done', 0 )
     failed = statusDict.get( 'Failed', 0 )
-    running = statusDict.get( 'Running', 0 )
     waiting = statusDict.get( 'Waiting', 0 )
     total = statusDict.get( 'Created', 0 )
     # If the failure rate is higher than acceptable

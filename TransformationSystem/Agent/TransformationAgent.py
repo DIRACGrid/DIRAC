@@ -6,7 +6,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
-from DIRAC.Core.Utilities.List                                      import sortList, breakListIntoChunks
+from DIRAC.Core.Utilities.List                                      import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
@@ -69,11 +69,11 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
     if agentTSTypes:
-      self.transformationTypes = sortList( agentTSTypes )
+      self.transformationTypes = sorted( agentTSTypes )
     else:
       dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
       dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
-      self.transformationTypes = sortList( dataProc + dataManip )
+      self.transformationTypes = sorted( dataProc + dataManip )
 
 
 

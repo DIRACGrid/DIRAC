@@ -13,7 +13,7 @@ from DIRAC                                                import gLogger, S_OK, 
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
-from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList, breakListIntoChunks
+from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, breakListIntoChunks
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
@@ -999,7 +999,7 @@ class TransformationDB( DB ):
       return S_ERROR( "Input data query already exists for transformation" )
     if res['Message'] != 'No InputDataQuery found for transformation':
       return res
-    for parameterName in sortList( queryDict.keys() ):
+    for parameterName in sorted( queryDict.keys() ):
       parameterValue = queryDict[parameterName]
       if not parameterValue:
         continue
