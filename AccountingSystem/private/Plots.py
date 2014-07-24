@@ -1,8 +1,5 @@
 import cStringIO
-try:
-  from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, cumulativeGraph, qualityGraph, textGraph
-except Exception, plotException:
-  raise Exception( "Missing plotting lib: %s" % str( plotException ) )
+from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph
 
 from DIRAC import S_OK, S_ERROR
 
