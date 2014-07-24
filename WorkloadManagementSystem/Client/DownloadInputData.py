@@ -217,7 +217,8 @@ class DownloadInputData:
       report += '\nDownloaded %d / %d files from local Storage Elements on first attempt.' % ( localSECount, len( resolvedData ) )
       self.__setJobParam( COMPONENT_NAME, report )
 
-    return S_OK( {'Successful': resolvedData, 'Failed':[lfn for lfn in sorted( failedReplicas ) if lfn not in resolvedData]} )
+    failedReplicas = [lfn for lfn in sorted( failedReplicas ) if lfn not in resolvedData]
+    return S_OK( {'Successful': resolvedData, 'Failed':failedReplicas} )
 
   #############################################################################
   def __checkDiskSpace( self, totalSize ):
