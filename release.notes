@@ -1,3 +1,13 @@
+[v6r11p6]
+
+*WMS
+FIX: InpudDataResolution - fix the case when some files only have a local replica
+FIX: DownloadInputData, InputDataByProtocol - fix the return structure of the
+     execute() method
+     
+*Resources
+NEW: LocalComputingElement, CondorComputingElement      
+
 [v6r11p5]
 
 FIX: Incorporated changes from v6r10p25 patch
