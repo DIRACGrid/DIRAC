@@ -771,7 +771,7 @@ class SiteDirector( AgentModule ):
       mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
                 ( moduleName, compressedAndEncodedExtra[moduleName] )
       mStringList.append( mString )
-    extraModuleString = '  ' + '\n  '.join( mStringList ) 
+    extraModuleString = '\n  '.join( mStringList ) 
   
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF

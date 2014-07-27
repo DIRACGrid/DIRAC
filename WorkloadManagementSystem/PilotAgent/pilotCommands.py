@@ -17,7 +17,7 @@ class InstallDIRAC( CommandBase ):
 
   def __setInstallOptions( self ):
     """Setup installation parameters"""
-    for o, v in self.optList:
+    for o, v in self.pp.optList:
       if o in ( '-b', '--build' ):
         self.installOpts.append( '-b' )
       elif o == '-d' or o == '--debug':
@@ -592,12 +592,12 @@ class LaunchAgent( CommandBase ):
 
     diracAgentScript = os.path.join( self.pp.rootPath, "scripts", "dirac-agent" )
     extraCFG = []
-    for i in os.listdir( self.rootPath ):
-      cfg = os.path.join( self.rootPath, i )
+    for i in os.listdir( self.pp.rootPath ):
+      cfg = os.path.join( self.pp.rootPath, i )
       if os.path.isfile( cfg ) and re.search( '.cfg&', cfg ):
         extraCFG.append( cfg )
 
-    if self.executeCmd:
+    if self.pp.executeCmd:
       # Execute user command
       self.log.info( "Executing user defined command: %s" % self.pp.executeCmd )
       sys.exit( os.system( "source bashrc; %s" % self.pp.executeCmd ) / 256 )

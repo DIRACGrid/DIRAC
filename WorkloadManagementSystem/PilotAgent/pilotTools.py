@@ -74,6 +74,7 @@ class CommandBase( object ):
     self.pp = pilotParams
     self.commandName = name
     self.log = Logger( name )
+    self.debugFlag = False
     for o, _v in self.pp.optList:
       if o == '-d' or o == '--debug':
         self.log.setDebug()
