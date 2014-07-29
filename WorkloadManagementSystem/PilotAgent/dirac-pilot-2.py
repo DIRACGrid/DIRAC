@@ -10,9 +10,9 @@ __RCSID__ = "$Id$"
 import os
 import getopt
 import sys
+from types import ListType
 
-from pilotTools import Logger, pythonPathCheck, PilotParams
-from pilotCommands import InstallDIRAC, ConfigureDIRAC, LaunchAgent
+from pilotTools import Logger, pythonPathCheck, PilotParams, getCommands
 
 pilotParams = PilotParams()
 pilotParams.pilotRootPath = os.getcwd()
@@ -20,18 +20,21 @@ pilotParams.pilotScript = os.path.realpath( sys.argv[0] )
 pilotParams.pilotScriptName = os.path.basename( pilotParams.pilotScript )
 
 log = Logger( 'Pilot' )
-for o, _v in pilotParams.optList:
-  if o == '-d' or o == '--debug':
-    log.setDebug()
+if pilotParams.debugFlag:
+  log.setDebug()
+commands = getCommands( pilotParams )  
+if type( commands ) != ListType:
+  log.error( commands )
+  sys.exit( -1 )
 
 log.debug( 'PARAMETER [%s]' % ', '.join( map( str, pilotParams.optList ) ) )
+log.info( "Executing commands: %s" % str( pilotParams.commands ) )
+if pilotParams.commandExtensions:
+  log.info( "Requested command extensions: %s" % str( params.commandExtensions ) )
 
 def main():
   pythonPathCheck()
-
-  # FIXME: Here there should be a command discovery mechanism a la ObjectLoader
-  for com in ['InstallDIRAC','ConfigureDIRAC','LaunchAgent']:
-    command = globals()[com]( pilotParams )
+  for command in commands:
     command.execute()
 
 if __name__ == "__main__":
