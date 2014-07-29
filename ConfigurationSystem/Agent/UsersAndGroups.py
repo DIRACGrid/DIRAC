@@ -15,7 +15,15 @@ class UsersAndGroups( AgentModule ):
 
   def initialize( self ):
     self.am_setOption( "PollingTime", 3600 * 6 ) # Every 6 hours
-    self.vomsSrv = VOMSService()
+    self.vomsAdminUrl = self.am_getOption( "VOMSAdmin", None )
+    self.vomsAttrUrl = self.am_getOption( "VOMSAttributes", None )
+    if self.vomsAdminUrl and self.vomsAttrUrl:
+      self.log.info( "Using VOMSAdmin URL '%s'..." % self.vomsAdminUrl )
+      self.log.info( "Using VOMSAttribute URL '%s'..." % self.vomsAttrUrl )
+      self.vomsSrv = VOMSService( self.vomsAdminUrl, self.vomsAttrUrl )
+    else:
+      self.log.info( "Using default VOMS URLs." )
+      self.vomsSrv = VOMSService()
     self.proxyLocation = os.path.join( self.am_getWorkDirectory(), ".volatileId" )
     self.__adminMsgs = {}
     # print self.getLFCRegisteredDNs()
