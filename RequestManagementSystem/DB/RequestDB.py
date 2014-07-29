@@ -248,8 +248,13 @@ class RequestDB( DB ):
       if not reqID["OK"]:
         log.error( reqID["Message"] )
         return reqID
-      requestID = reqID["Value"][reqIDQuery][0]["RequestID"] if "RequestID" in reqID["Value"][reqIDQuery][0] else None
-      status = reqID["Value"][reqIDQuery][0]["Status"] if "Status" in reqID["Value"][reqIDQuery][0] else None
+      reqID = reqID["Value"].get( reqIDQuery, [] )
+      if reqID:
+        reqID = reqID[0]
+      else:
+        reqID = {}
+      requestID = reqID.get( "RequestID" )
+      status = reqID.get( "Status" )
       if not all( ( requestID, status ) ):
         return S_ERROR( "getRequest: request '%s' not exists" % requestName )
       if requestID and status and status == "Assigned" and assigned:
