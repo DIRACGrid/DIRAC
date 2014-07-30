@@ -14,6 +14,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 import datetime
+import os
 
 class ReqClient( Client ):
   """
@@ -36,7 +37,7 @@ class ReqClient( Client ):
     :param bool useCertificates: flag to enable/disable certificates
     """
     Client.__init__( self )
-    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient" )
+    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
     self.setServer( "RequestManagement/ReqManager" )
 
   def requestManager( self, timeout = 120 ):
