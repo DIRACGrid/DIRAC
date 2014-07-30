@@ -15,16 +15,15 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id$"
 
+__RCSID__ = "$Id$"
 
 import os, random
 random.seed()
 
-
 import DIRAC
 # Some reasonable Defaults
-DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
+DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot-2.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_MODULES = [ os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py' ),
                   os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py' ) ]
