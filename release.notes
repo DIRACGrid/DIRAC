@@ -45,6 +45,15 @@ FIX: removed some deprecated codes
 *TMS
 NEW: WorkflowTaskAgent is now multi-threaded
 
+[v6r11p7]
+
+*Framework
+BUGFIX: ProxyDB.py - bug in a MySQL table definition
+
+*DMS
+FIX: ReplicateAndRegister.py - FTS client is not instantiated in the c'tor as it 
+     might not be used, 
+
 [v6r11p6]
 
 *WMS
