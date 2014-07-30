@@ -1,4 +1,4 @@
-[v6r12-pre5]
+[v6r12-pre6]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
