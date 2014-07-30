@@ -137,7 +137,6 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
     # Clients
     self.fc = FileCatalog()
-    self.ftsClient = FTSClient()
 
   def __call__( self ):
     """ call me maybe """
@@ -288,9 +287,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
     if filesToScheduleList:
 
-      ftsSchedule = self.ftsClient.ftsSchedule( self.request.RequestID,
-                                                self.operation.OperationID,
-                                                filesToScheduleList )
+      ftsSchedule = FTSClient().ftsSchedule( self.request.RequestID, self.operation.OperationID, filesToScheduleList )
       if not ftsSchedule["OK"]:
         self.log.error( ftsSchedule["Message"] )
         return ftsSchedule
