@@ -1,3 +1,26 @@
+########################################################################
+# $Id$
+########################################################################
+
+""" Definitions of a standard set of pilot commands
+
+    Each commands is represented by a class inheriting CommandBase class.
+    The command class constructor takes PilotParams object which is a data
+    structure which keeps common parameters across all the pilot commands.
+    
+    The constructor must call the superclass constructor with the PilotParams
+    object and the command name as arguments, e.g. ::
+    
+        class InstallDIRAC( CommandBase ):
+        
+          def __init__( self, pilotParams ):
+            CommandBase.__init__(self, pilotParams, 'Install')
+            ...
+
+    The command class must implement execute() method for the actual command
+    execution.
+"""
+
 import sys
 import os
 import stat
@@ -17,7 +40,7 @@ class InstallDIRAC( CommandBase ):
 
   def __setInstallOptions( self ):
     """Setup installation parameters"""
-    for o, v in self.optList:
+    for o, v in self.pp.optList:
       if o in ( '-b', '--build' ):
         self.installOpts.append( '-b' )
       elif o == '-d' or o == '--debug':
@@ -111,57 +134,39 @@ class ConfigureDIRAC( CommandBase ):
     sys.path.insert( 0, self.diracScriptsPath )
     self.CE = ""
     self.testVOMSOK = False
+    self.boincUserID = ''
+    self.boincHostID= ''
+    self.boincHostPlatform = ''
+    self.boincHostName = ''
 
   def __setConfigureOptions( self ):
     """Setup configuration parameters"""
 
+    if self.pp.site:
+      self.configureOpts.append( '-n "%s"' % self.pp.site )
+    if self.pp.ceName:
+      self.configureOpts.append( '-N "%s"' % self.pp.ceName )  
+    if self.debugFlag:
+      self.configureOpts.append( '-d' )  
+    if self.pp.setup:
+        self.configureOpts.append( '-S "%s"' % self.pp.setup ) 
+    if self.pp.configServer:
+      self.configureOpts.append( '-C "%s"' % self.pp.configServer )  
+    if self.pp.installation:
+      self.configureOpts.append( '-V "%s"' % self.pp.installation )     
+    if self.pp.releaseProject:
+      self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )  
+    if self.pp.gateway:
+      self.configureOpts.append( '-W "%s"' % self.pp.gateway )  
+    if self.pp.useServerCertificate:
+      self.configureOpts.append( '--UseServerCertificate' )  
+
     for o, v in self.pp.optList:
-      if o == '-n' or o == '--name':
-        self.configureOpts.append( '-n "%s"' % v )
-        self.pp.site = v
-      elif o == '-N' or o == '--Name':
-        self.configureOpts.append( '-N "%s"' % v )
-        self.pp.ceName = v
-      elif o == '-R' or o == '--reference':
-        self.pp.pilotReference = v
-      elif o == '-d' or o == '--debug':
-        self.configureOpts.append( '-d' )
-        self.debugFlag = True
-      elif o in ( '-S', '--setup' ):
-        self.configureOpts.append( '-S "%s"' % v )
-      elif o in ( '-C', '--configurationServer' ):
-        self.configureOpts.append( '-C "%s"' % v )
-      elif o in ( '-G', '--Group' ):
-        self.pp.userGroup = v
-      elif o in ( '-x', '--execute' ):
-        self.pp.executeCmd = v
-      elif o in ( '-O', '--OwnerDN' ):
-        self.pp.userDN = v
-      elif o == '-t' or o == '--test':
-        self.dryRun = True
-      elif o in ( '-V', '--installation' ):
-        #self.configureOpts.append( 'defaults-%s.cfg' % v )
-        self.configureOpts.append('-V "%s"' % v)
-      elif o == '-p' or o == '--platform':
-        self.pp.platform = v
-      elif o == '-D' or o == '--disk':
-        try:
-          self.pp.minDiskSpace = int( v )
-        except:
-          pass
-      elif o == '-r' or o == '--release':
-        self.pp.releaseVersion = v.split(',',1)[0]
-      elif o in ( '-l', '--project' ):
-        self.pp.releaseProject = v
-        self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % v )
-      elif o in ( '-W', '--gateway' ):
-        self.configureOpts.append( '-W "%s"' % v )
-      elif o == '-o' or o == '--option':
+      if o == '-o' or o == '--option':
         self.configureOpts.append( '-o "%s"' % v )
       elif o == '-s' or o == '--section':
         self.configureOpts.append( '-s "%s"' % v )
-      elif o == '-c' or o == '--cert':
-        self.configureOpts.append( '--UseServerCertificate' )
+
 
     self.__setFlavour()
     self.configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
@@ -176,13 +181,13 @@ class ConfigureDIRAC( CommandBase ):
     if self.pp.pilotReference != 'Unknown':
       self.configureOpts.append( '-o /LocalSite/PilotReference=%s' % self.pp.pilotReference )
     # add options for BOINc
-    if self.pp.boincUserID:
+    if self.boincUserID:
       self.configureOpts.append( '-o /LocalSite/BoincUserID=%s' % self.boincUserID )
-    if self.pp.boincHostID:
+    if self.boincHostID:
       self.configureOpts.append( '-o /LocalSite/BoincHostID=%s' % self.boincHostID )
-    if self.pp.boincHostPlatform:
+    if self.boincHostPlatform:
       self.configureOpts.append( '-o /LocalSite/BoincHostPlatform=%s' % self.boincHostPlatform )
-    if self.pp.boincHostName:
+    if self.boincHostName:
       self.configureOpts.append( '-o /LocalSite/BoincHostName=%s' % self.boincHostName )
 
 
@@ -207,28 +212,28 @@ class ConfigureDIRAC( CommandBase ):
     # Take the reference from the Torque batch system
     if os.environ.has_key( 'PBS_JOBID' ):
       self.pp.flavour = 'SSHTorque'
-      pilotRef = 'sshtorque://' + self.ceName + '/' + os.environ['PBS_JOBID']
+      pilotRef = 'sshtorque://' + self.pp.ceName + '/' + os.environ['PBS_JOBID']
       self.pp.queueName = os.environ['PBS_QUEUE']
 
     # Take the reference from the OAR batch system
     if os.environ.has_key( 'OAR_JOBID' ):
       self.pp.flavour = 'SSHOAR'
-      pilotRef = 'sshoar://'+self.ceName+'/'+os.environ['OAR_JOBID']
+      pilotRef = 'sshoar://' + self.pp.ceName + '/'+os.environ['OAR_JOBID']
 
     # Grid Engine
     if os.environ.has_key( 'JOB_ID' ):
       self.pp.flavour = 'SSHGE'
-      pilotRef = 'sshge://' + self.ceName + '/' + os.environ['JOB_ID']
+      pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
     if os.environ.has_key( 'CONDOR_JOBID' ):
       self.pp.flavour = 'SSHCondor'
-      pilotRef = 'sshcondor://' + self.ceName + '/' + os.environ['CONDOR_JOBID']
+      pilotRef = 'sshcondor://' + self.pp.ceName + '/' + os.environ['CONDOR_JOBID']
 
     # LSF
     if os.environ.has_key( 'LSB_BATCH_JID' ):
       self.pp.flavour = 'SSHLSF'
-      pilotRef = 'sshlsf://' + self.ceName + '/' + os.environ['LSB_BATCH_JID']
+      pilotRef = 'sshlsf://' + self.pp.ceName + '/' + os.environ['LSB_BATCH_JID']
 
     # This is the CREAM direct submission case
     if os.environ.has_key( 'CREAM_JOBID' ):
@@ -254,7 +259,7 @@ class ConfigureDIRAC( CommandBase ):
     # Direct SSH tunnel submission
     if os.environ.has_key( 'SSHCE_JOBID' ):
       self.pp.flavour = 'SSH'
-      pilotRef = 'ssh://' + self.ceName + '/' + os.environ['SSHCE_JOBID']
+      pilotRef = 'ssh://' + self.pp.ceName + '/' + os.environ['SSHCE_JOBID']
 
     # ARC case
     if os.environ.has_key( 'GRID_GLOBAL_JOBID' ):
@@ -268,13 +273,13 @@ class ConfigureDIRAC( CommandBase ):
 
     if self.pp.flavour == 'BOINC':
       if os.environ.has_key( 'BOINC_USER_ID' ):
-        self.pp.boincUserID = os.environ['BOINC_USER_ID']
+        self.boincUserID = os.environ['BOINC_USER_ID']
       if os.environ.has_key( 'BOINC_HOST_ID' ):
-        self.pp.boincHostID = os.environ['BOINC_HOST_ID']
+        self.boincHostID = os.environ['BOINC_HOST_ID']
       if os.environ.has_key( 'BOINC_HOST_PLATFORM' ):
-        self.pp.boincHostPlatform = os.environ['BOINC_HOST_PLATFORM']
+        self.boincHostPlatform = os.environ['BOINC_HOST_PLATFORM']
       if os.environ.has_key( 'BOINC_HOST_NAME' ):
-        self.pp.boincHostName = os.environ['BOINC_HOST_NAME']
+        self.boincHostName = os.environ['BOINC_HOST_NAME']
 
     self.log.debug( "Flavour: %s; pilot reference: %s " % ( self.pp.flavour, pilotRef ) )
 
@@ -592,12 +597,12 @@ class LaunchAgent( CommandBase ):
 
     diracAgentScript = os.path.join( self.pp.rootPath, "scripts", "dirac-agent" )
     extraCFG = []
-    for i in os.listdir( self.rootPath ):
-      cfg = os.path.join( self.rootPath, i )
+    for i in os.listdir( self.pp.rootPath ):
+      cfg = os.path.join( self.pp.rootPath, i )
       if os.path.isfile( cfg ) and re.search( '.cfg&', cfg ):
         extraCFG.append( cfg )
 
-    if self.executeCmd:
+    if self.pp.executeCmd:
       # Execute user command
       self.log.info( "Executing user defined command: %s" % self.pp.executeCmd )
       sys.exit( os.system( "source bashrc; %s" % self.pp.executeCmd ) / 256 )
@@ -614,7 +619,8 @@ class LaunchAgent( CommandBase ):
 
 
     if not self.pp.dryRun:
-      retCode, __outData__ = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
+      retCode, output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
+      print output
       if retCode:
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )
