@@ -571,7 +571,10 @@ class RequestDB( DB ):
     if not query["OK"]:
       self.log.error( "getRequestStatus: %s" % query["Message"] )
       return query
-    requestStatus = query['Value'][0][0]
+    if query['Value'] and query['Value'][0]:
+      requestStatus = query['Value'][0][0]
+    else:
+      return S_ERROR( "Request %s does not exist" % requestName )
     return S_OK( requestStatus )
 
   def getRequestFileStatus( self, requestName, lfnList ):
