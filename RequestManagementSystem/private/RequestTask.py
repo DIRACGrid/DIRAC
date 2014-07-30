@@ -57,7 +57,7 @@ class RequestTask( object ):
     # # handlers class def
     self.handlers = {}
     # # own sublogger
-    self.log = gLogger.getSubLogger( self.request.RequestName )
+    self.log = gLogger.getSubLogger( "pid_%s/%s" % ( os.getpid(), self.request.RequestName ) )
     # # get shifters info
     self.__managersDict = {}
     shifterProxies = self.__setupManagerProxies()
@@ -293,7 +293,7 @@ class RequestTask( object ):
           gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
         gMonitor.addMark( "RequestFail", 1 )
         if useServerCertificate:
-          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
         break
 
       # # operation status check

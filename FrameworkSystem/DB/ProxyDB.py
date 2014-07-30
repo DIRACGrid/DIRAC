@@ -92,7 +92,7 @@ class ProxyDB( DB ):
                                      }
 
     if 'ProxyDB_Log' not in tablesInDB:
-      tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'ID': 'BIGINT NOT NULL AUTOINCREMENT',
+      tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'ID': 'BIGINT NOT NULL AUTO_INCREMENT',
                                                 'IssuerDN' : 'VARCHAR(255) NOT NULL',
                                                 'IssuerGroup' : 'VARCHAR(255) NOT NULL',
                                                 'TargetDN' : 'VARCHAR(255) NOT NULL',

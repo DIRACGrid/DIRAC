@@ -1,4 +1,8 @@
-""" A set of common tools to be used in pilot scripts
+########################################################################
+# $Id$
+########################################################################
+
+""" A set of common tools to be used in pilot commands
 """
 
 import sys
@@ -6,6 +10,7 @@ import time
 import os
 import pickle
 import getopt
+import imp
 
 __RCSID__ = '$Id$'
 
@@ -43,6 +48,28 @@ def pythonPathCheck():
     print x
     raise x
 
+def getCommands( params ):
+  
+  extensions = params.commandExtensions
+  modules = [ m + 'Commands' for m in ['pilot'] + extensions ]
+  commandNames = params.commands
+  commands = []
+  for cName in commandNames:
+    commandObject = None
+    for module in modules:
+      try:
+        impData = imp.find_module( module )
+        commandModule = imp.load_module( module, *impData )
+        commandObject = getattr( commandModule, cName )
+      except:
+        pass  
+    if commandObject is None:
+      error = "Command %s is not found in all the locations: %s" % ( cName, str( extensions ) )
+      return error
+    else:
+      commands.append( commandObject( params ) )  
+  return commands
+
 class Logger( object ):
 
   def __init__( self, name = 'Pilot', debugFlag = False ):
@@ -74,6 +101,7 @@ class CommandBase( object ):
     self.pp = pilotParams
     self.commandName = name
     self.log = Logger( name )
+    self.debugFlag = False
     for o, _v in self.pp.optList:
       if o == '-d' or o == '--debug':
         self.log.setDebug()
@@ -100,13 +128,18 @@ class PilotParams:
       all the commands
   """
 
-  MAX_CYCLES = 100
+  MAX_CYCLES = 10
 
   def __init__( self ):
-    self.debug = False
+    self.debugFlag = False
     self.local = False
     self.dryRun = False
+    self.commandExtensions = []
+    self.commands = ['InstallDIRAC', 'ConfigureDIRAC', 'LaunchAgent']
     self.site = ""
+    self.setup = ""
+    self.configServer = ""
+    self.installation = ""
     self.ceName = ""
     self.queueName = ""
     self.platform = ""
@@ -115,58 +148,55 @@ class PilotParams:
     self.pythonVersion = '27'
     self.userGroup = ""
     self.userDN = ""
-    self.maxCycles = PilotParams.MAX_CYCLES
+    self.maxCycles = self.MAX_CYCLES
     self.flavour = 'DIRAC'
     self.gridVersion = '2014-04-09'
     self.pilotReference = ''
     self.releaseVersion = ''
     self.releaseProject = ''
+    self.gateway = ""
+    self.useServerCertificate = False
     self.rootPath = ''
     self.pilotRootPath = ''
     self.pilotScriptName = ''
     self.workingDir = ''
-    # The following parameters are added for BOINC computing element with virtual machine.
-    self.boincUserID = ''         #  The user ID in a BOINC computing element
-    self.boincHostPlatform = ''   # The os type of the host machine running the pilot, not the virtual machine
-    self.boincHostID = ''         # the host id in a  BOINC computing element
-    self.boincHostName = ''       # the host name of the host machine running the pilot, not the virtual machine
     # DIRAC client installation environment
     self.installEnv = None
     self.executeCmd = False
     
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
-                ( 'd', 'debug', 'Set debug flag' ),
-                ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
-                ( 'g:', 'grid=', 'lcg tools package version' ),
-                ( 'h', 'help', 'Show this help' ),
-                ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
-                ( 'l:', 'project=', 'Project to install' ),
-                ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
-                ( 't', 'test', 'Make a dry run. Do not run JobAgent' ),
-                ( 'u:', 'url=', 'Use <url> to download tarballs' ),
-                ( 'r:', 'release=', 'DIRAC release to install' ),
-                ( 'n:', 'name=', 'Set <Site> as Site Name' ),
-                ( 'D:', 'disk=', 'Require at least <space> MB available' ),
-                ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
-                ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
-                ( 'Q:', 'Queue', 'Queue name' ),
-                ( 'P:', 'path=', 'Install under <path>' ),
-                ( 'E', 'server', 'Make a full server installation' ),
-                ( 'S:', 'setup=', 'DIRAC Setup to use' ),
-                ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
-                ( 'T:', 'CPUTime', 'Requested CPU Time' ),
-                ( 'G:', 'Group=', 'DIRAC Group to use' ),
-                ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
-                ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
-                ( 'V:', 'VO=', 'Virtual Organization' ),
-                ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
-                ( 's:', 'section=', 'Set base section for relative parsed options' ),
-                ( 'o:', 'option=', 'Option=value to add' ),
-                ( 'c', 'cert', 'Use server certificate instead of proxy' ),
-                ( 'R:', 'reference=', 'Use this pilot reference' ),
-                ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
-              )
+                     ( 'd', 'debug', 'Set debug flag' ),
+                     ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
+                     ( 'E:', 'commandExtensions=', 'Python module with extra commands' ),
+                     ( 'X:', 'commands=', 'Pilot commands to execute commands' ),
+                     ( 'g:', 'grid=', 'lcg tools package version' ),
+                     ( 'h', 'help', 'Show this help' ),
+                     ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
+                     ( 'l:', 'project=', 'Project to install' ),
+                     ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
+                     ( 't', 'test', 'Make a dry run. Do not run JobAgent' ),
+                     ( 'u:', 'url=', 'Use <url> to download tarballs' ),
+                     ( 'r:', 'release=', 'DIRAC release to install' ),
+                     ( 'n:', 'name=', 'Set <Site> as Site Name' ),
+                     ( 'D:', 'disk=', 'Require at least <space> MB available' ),
+                     ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
+                     ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
+                     ( 'Q:', 'Queue', 'Queue name' ),
+                     ( 'S:', 'setup=', 'DIRAC Setup to use' ),
+                     ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
+                     ( 'T:', 'CPUTime', 'Requested CPU Time' ),
+                     ( 'G:', 'Group=', 'DIRAC Group to use' ),
+                     ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
+                     ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
+                     ( 'V:', 'VO=', 'Virtual Organization' ),
+                     ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
+                     ( 's:', 'section=', 'Set base section for relative parsed options' ),
+                     ( 'o:', 'option=', 'Option=value to add' ),
+                     ( 'c', 'cert', 'Use server certificate instead of proxy' ),
+                     ( 'R:', 'reference=', 'Use this pilot reference' ),
+                     ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
+                   )
 
     self.__initOptions()
     
@@ -174,8 +204,60 @@ class PilotParams:
     
     self.optList, __args__ = getopt.getopt( sys.argv[1:],
                                             "".join( [ opt[0] for opt in self.cmdOpts ] ),
-                                            [ opt[1] for opt in self.cmdOpts ] )   
+                                            [ opt[1] for opt in self.cmdOpts ] ) 
+    for o, v in self.optList:
+      if o == '-E' or o == '--commandExtensions':
+        self.commandExtensions = v.split( ',' )
+      elif o == '-X' or o == '--commands':
+        self.commands = v.split( ',' )
+      elif o == '-n' or o == '--name':
+        self.site = v
+      elif o == '-N' or o == '--Name':
+        self.ceName = v
+      elif o == '-R' or o == '--reference':
+        self.pilotReference = v
+      elif o == '-d' or o == '--debug':
+        self.debugFlag = True
+      elif o in ( '-S', '--setup' ):
+        self.setup = v
+      elif o in ( '-C', '--configurationServer' ):
+        self.configServer = v
+      elif o in ( '-G', '--Group' ):
+        self.userGroup = v
+      elif o in ( '-x', '--execute' ):
+        self.executeCmd = v
+      elif o in ( '-O', '--OwnerDN' ):
+        self.userDN = v
+      elif o == '-t' or o == '--test':
+        self.dryRun = True
+        
+      elif o in ( '-V', '--installation' ):
+        self.installation = v
+      elif o == '-p' or o == '--platform':
+        self.platform = v
+      elif o == '-D' or o == '--disk':
+        try:
+          self.minDiskSpace = int( v )
+        except:
+          pass
+      elif o == '-r' or o == '--release':
+        self.releaseVersion = v.split(',',1)[0]
+      elif o in ( '-l', '--project' ):
+        self.releaseProject = v
+      elif o in ( '-W', '--gateway' ):
+        self.gateway = v
+      elif o == '-c' or o == '--cert':
+        self.useServerCertificate = False
+      elif o == '-M' or o == '--MaxCycles':
+        try:
+          self.maxCycles = min( self.MAX_CYCLES, int( v ) )
+        except:
+          pass  
+      elif o in ( '-T', '--CPUTime' ):
+        self.jobCPUReq = v
+            
     self.rootPath = os.getcwd()
     self.originalRootPath = os.getcwd()
     self.pilotRootPath = os.getcwd()  
     self.workingDir = os.getcwd()  
+    

@@ -34,7 +34,7 @@ import DIRAC
 
 __RCSID__ = "$Id$"
 
-DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
+DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot-2.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_MODULES = [ os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py' ),
                   os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py' ) ]
@@ -778,7 +778,7 @@ class SiteDirector( AgentModule ):
       mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
                 ( moduleName, compressedAndEncodedExtra[moduleName] )
       mStringList.append( mString )
-    extraModuleString = '  ' + '\n  '.join( mStringList ) 
+    extraModuleString = '\n  '.join( mStringList ) 
   
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF

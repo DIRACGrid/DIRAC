@@ -24,9 +24,9 @@ except ImportError:
 globalDistribution = Distribution.Distribution()
 
 g_uploadCmd = {
-  'DIRAC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'LHCb' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'ILC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'DIRAC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh $USER@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'LHCb' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh $USER@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'ILC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh $USER@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'",
 }
 
 ###
