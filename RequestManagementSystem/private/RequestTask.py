@@ -293,7 +293,7 @@ class RequestTask( object ):
           gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
         gMonitor.addMark( "RequestFail", 1 )
         if useServerCertificate:
-          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
         break
 
       # # operation status check
