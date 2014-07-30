@@ -1,4 +1,8 @@
-""" A set of common tools to be used in pilot scripts
+########################################################################
+# $Id$
+########################################################################
+
+""" A set of common tools to be used in pilot commands
 """
 
 import sys
