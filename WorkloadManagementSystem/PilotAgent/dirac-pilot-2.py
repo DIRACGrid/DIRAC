@@ -48,7 +48,7 @@ if type( commands ) != ListType:
 log.debug( 'PARAMETER [%s]' % ', '.join( map( str, pilotParams.optList ) ) )
 log.info( "Executing commands: %s" % str( pilotParams.commands ) )
 if pilotParams.commandExtensions:
-  log.info( "Requested command extensions: %s" % str( params.commandExtensions ) )
+  log.info( "Requested command extensions: %s" % str( pilotParams.commandExtensions ) )
 
 def main():
   pythonPathCheck()

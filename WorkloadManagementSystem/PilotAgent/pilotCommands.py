@@ -95,11 +95,11 @@ class InstallDIRAC( CommandBase ):
     self.installScript = installScript
 
     if not os.path.isfile( installScript ):
-      self.log.error( "%s requires %s to exist in one of: %s, %s" % ( self.pp.pilotScriptName, 
-                                                                      self.installScriptName,
-                                                                      self.pp.pilotRootPath, 
-                                                                      self.pp.originalRootPath, 
-                                                                      self.pp.rootPath ) )
+      self.log.error( "%s requires %s to exist in one of: %s, %s, %s" % ( self.pp.pilotScriptName,
+                                                                          self.installScriptName,
+                                                                          self.pp.pilotRootPath,
+                                                                          self.pp.originalRootPath,
+                                                                          self.pp.rootPath ) )
       sys.exit( 1 )
 
     try:
@@ -172,7 +172,7 @@ class ConfigureDIRAC( CommandBase ):
     self.configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
     if self.pp.userGroup:
-      self.configureOpts.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.userGroup )
+      self.configureOpts.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.pp.userGroup )
 
     if self.pp.userDN:
       self.configureOpts.append( '-o /AgentJobRequirements/OwnerDN="%s"' % v )
@@ -332,7 +332,7 @@ class ConfigureDIRAC( CommandBase ):
       os.chdir( osgDir )
       try:
         import shutil
-        shutil.copy( self.installScript, os.path.join( osgDir, self.installScriptName ) )
+        shutil.copy( self.pp.installScript, os.path.join( osgDir, self.pp.installScriptName ) )
       except Exception, x:
         print sys.executable
         print sys.version
@@ -402,7 +402,7 @@ class ConfigureDIRAC( CommandBase ):
     if self.testVOMSOK:
       retCode, __outData__ = self.executeAndGetOutput( 'dirac-proxy-info | grep -q fqan', self.pp.installEnv )
       if retCode != 0:
-        self.log.debug( "dirac-pilot: missing voms certs at %s" % self.site )
+        self.log.debug( "dirac-pilot: missing voms certs at %s" % self.pp.site )
         sys.exit( -1 )
 
     ##########################################################################################################################
@@ -520,11 +520,11 @@ class ConfigureDIRAC( CommandBase ):
           queueNorm = float( queueNormList[1] )
           self.log.info( 'Queue Normalization = %s SI00' % queueNorm )
           if queueNorm:
-          # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
-          # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-          # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-          # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.configureScript,
+            # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
+            # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
+            # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+            # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.pp.configureScript,
                                                                                                              queueNorm / 250.,
                                                                                                              queueNorm / 250. ) )
         else:
@@ -568,7 +568,7 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
     self.inProcessOpts.append( '-o GridCE=%s' % self.pp.ceName )
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.inProcessOpts.append( '-o GridCEQueue=%s' % self.CE )
+      self.inProcessOpts.append( '-o GridCEQueue=%s' % self.pp.CE )
     self.inProcessOpts.append( '-o LocalAccountString=%s' % localUser )
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
