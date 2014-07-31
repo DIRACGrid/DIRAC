@@ -750,7 +750,7 @@ class JobWrapper:
     if ( outputData and not self.failedFlag ) or uploadOutputDataInAnyCase:
       # Do not upload outputdata if the job has failed.
       # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
-      outputSE = self.jobArgs.get( 'OutputSE', self.defaultOutputPath )
+      outputSE = self.jobArgs.get( 'OutputSE', self.defaultOutputSE )
       if type( outputSE ) in types.StringTypes:
         outputSE = [outputSE]
 
