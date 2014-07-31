@@ -640,11 +640,11 @@ class JobWrapper:
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    for lfn, cause in catalogResult['Failed'].items():
+    for lfn, cause in catalogResult.get( 'Failed', {} ).items():
       badLFNCount += 1
       badLFNs.append( 'LFN:%s Problem: %s' % ( lfn, cause ) )
 
-    for lfn, replicas in catalogResult['Successful'].items():
+    for lfn, replicas in catalogResult.get( 'Successful', {} ).items():
       if not replicas:
         badLFNCount += 1
         badLFNs.append( 'LFN:%s Problem: Null replica value' % ( lfn ) )
