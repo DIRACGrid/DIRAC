@@ -564,7 +564,7 @@ class LaunchAgent( CommandBase ):
   def __init__( self, pilotParams ):
     """ c'tor
     """
-    super( InstallDIRAC, self ).__init__( pilotParams )
+    super( LaunchAgent, self ).__init__( pilotParams )
     self.inProcessOpts = []
     self.jobAgentOpts = []
 
