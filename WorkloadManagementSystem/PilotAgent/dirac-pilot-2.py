@@ -50,10 +50,7 @@ log.info( "Executing commands: %s" % str( pilotParams.commands ) )
 if pilotParams.commandExtensions:
   log.info( "Requested command extensions: %s" % str( pilotParams.commandExtensions ) )
 
-def main():
+if __name__ == "__main__":
   pythonPathCheck()
   for command in commands:
     command.execute()
-
-if __name__ == "__main__":
-    main()

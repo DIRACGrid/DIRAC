@@ -32,14 +32,19 @@ from pilotTools import CommandBase
 __RCSID__ = "$Id$"
 
 class InstallDIRAC( CommandBase ):
+  """ Basically, this is used to call dirac-install with the passed parameters
+  """
 
   def __init__( self, pilotParams ):
-    CommandBase.__init__(self, pilotParams, 'Install')
+    """ c'tor
+    """
+    super( InstallDIRAC, self ).__init__( pilotParams, 'Install' )
     self.installOpts = []
     self.pp.rootPath = self.pp.pilotRootPath
 
   def __setInstallOptions( self ):
-    """Setup installation parameters"""
+    """ Setup installation parameters
+    """
     for o, v in self.pp.optList:
       if o in ( '-b', '--build' ):
         self.installOpts.append( '-b' )
@@ -79,6 +84,8 @@ class InstallDIRAC( CommandBase ):
 
 
   def execute( self ):
+    """ What is called all the time
+    """
 
     self.__setInstallOptions()
 
@@ -118,17 +125,18 @@ class InstallDIRAC( CommandBase ):
 
 
 class ConfigureDIRAC( CommandBase ):
+  """ Configure DIRAC
+  """
 
   def __init__( self, pilotParams ):
+    """ diracScript is the path of the script files;
+        rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
+        EnviRon is a dictionary containing the set-up environment of a specific experiment
+        noCert it is True when the setup is not Certification and it is False when the setup is certification
     """
-    diracScript is the path of the script files;
-    rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
-    EnviRon is a dictionary containing the set-up environment of a specific experiment
-    noCert it is True when the setup is not Certification and it is False when the setup is certification
-    """
-    CommandBase.__init__(self, pilotParams, 'Configure')
+    super( ConfigureDIRAC, self ).__init__( pilotParams, 'Configure' )
+
     self.configureOpts = []
-    self.inProcessOpts = []
     self.jobAgentOpts = []
     self.diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )  # Set the env to use the recently installed DIRAC
     sys.path.insert( 0, self.diracScriptsPath )
@@ -140,7 +148,8 @@ class ConfigureDIRAC( CommandBase ):
     self.boincHostName = ''
 
   def __setConfigureOptions( self ):
-    """Setup configuration parameters"""
+    """ Setup configuration parameters
+    """
 
     if self.pp.site:
       self.configureOpts.append( '-n "%s"' % self.pp.site )
@@ -348,7 +357,8 @@ class ConfigureDIRAC( CommandBase ):
       #rootPath = os.getcwd()
 
   def execute( self ):
-    """ Configure DIRAC """
+    """ What is called all the time
+    """
 
     self.__setConfigureOptions()
     self.__getCPURequirement()
@@ -547,12 +557,15 @@ class ConfigureDIRAC( CommandBase ):
       # os.system( "dirac-wms-cpu-normalization -U" )
 
 class LaunchAgent( CommandBase ):
+  """ Prepare and launch the job agent
+  """
 
   def __init__( self, pilotParams ):
+    """ c'tor
     """
-    Prepare and launch the job agent
-    """
-    CommandBase.__init__(self, pilotParams, 'LaunchAgent')
+    super( InstallDIRAC, self ).__init__( pilotParams, 'LaunchAgent' )
+    self.inProcessOpts = []
+    self.jobAgentOpts = []
 
   def __setInProcessOpts( self ):
 
@@ -591,9 +604,10 @@ class LaunchAgent( CommandBase ):
 
 
   def __startJobAgent(self):
-    """Starting of the JobAgent"""
+    """ Starting of the JobAgent
+    """
 
-# Find any .cfg file uploaded with the sandbox
+    # Find any .cfg file uploaded with the sandbox
 
     diracAgentScript = os.path.join( self.pp.rootPath, "scripts", "dirac-agent" )
     extraCFG = []
@@ -638,6 +652,7 @@ class LaunchAgent( CommandBase ):
     sys.exit( 0 )
 
   def execute( self ):
-
+    """ What is called all the time
+    """
     self.__setInProcessOpts()
     self.__startJobAgent()
