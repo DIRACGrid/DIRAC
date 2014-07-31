@@ -38,7 +38,7 @@ class InstallDIRAC( CommandBase ):
   def __init__( self, pilotParams ):
     """ c'tor
     """
-    super( InstallDIRAC, self ).__init__( pilotParams, 'Install' )
+    super( InstallDIRAC, self ).__init__( pilotParams )
     self.installOpts = []
     self.pp.rootPath = self.pp.pilotRootPath
 
@@ -89,6 +89,7 @@ class InstallDIRAC( CommandBase ):
 
     self.__setInstallOptions()
 
+    # FIXME: this should be a parameter
     self.installScriptName = 'dirac-install.py'
 
     ############################################################################
@@ -125,7 +126,7 @@ class InstallDIRAC( CommandBase ):
 
 
 class ConfigureDIRAC( CommandBase ):
-  """ Configure DIRAC
+  """ Command to configure DIRAC
   """
 
   def __init__( self, pilotParams ):
@@ -134,7 +135,7 @@ class ConfigureDIRAC( CommandBase ):
         EnviRon is a dictionary containing the set-up environment of a specific experiment
         noCert it is True when the setup is not Certification and it is False when the setup is certification
     """
-    super( ConfigureDIRAC, self ).__init__( pilotParams, 'Configure' )
+    super( ConfigureDIRAC, self ).__init__( pilotParams )
 
     self.configureOpts = []
     self.jobAgentOpts = []
@@ -563,7 +564,7 @@ class LaunchAgent( CommandBase ):
   def __init__( self, pilotParams ):
     """ c'tor
     """
-    super( InstallDIRAC, self ).__init__( pilotParams, 'LaunchAgent' )
+    super( InstallDIRAC, self ).__init__( pilotParams )
     self.inProcessOpts = []
     self.jobAgentOpts = []
 
@@ -634,7 +635,7 @@ class LaunchAgent( CommandBase ):
 
     if not self.pp.dryRun:
       retCode, output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      print output
+      self.log.info( output )
       if retCode:
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )

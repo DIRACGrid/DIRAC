@@ -71,6 +71,8 @@ def getCommands( params ):
   return commands
 
 class Logger( object ):
+  """ Basic logger object, for use inside the pilot. Just using print.
+  """
 
   def __init__( self, name = 'Pilot', debugFlag = False ):
     self.debugFlag = debugFlag
@@ -90,17 +92,28 @@ class Logger( object ):
       print "%s UTC %s [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), self.name, _line )
     sys.stdout.flush()
 
+  def warn( self, msg ):
+    for _line in msg.split( "\n" ):
+      print "%s UTC %s [WARN]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), self.name, _line )
+    sys.stdout.flush()
+
   def info( self, msg ):
     for _line in msg.split( "\n" ):
       print "%s UTC %s [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), self.name, _line )
     sys.stdout.flush()
 
 class CommandBase( object ):
+  """ CommandBase is the base class for every command in the pilot commands toolbox
+  """
 
-  def __init__( self, pilotParams, name = 'Pilot' ):
+  def __init__( self, pilotParams ):
+    """ c'tor
+
+        Defines the logger and the pilot parameters
+    """
+
     self.pp = pilotParams
-    self.commandName = name
-    self.log = Logger( name )
+    self.log = Logger( self.__class__ )
     self.debugFlag = False
     for o, _v in self.pp.optList:
       if o == '-d' or o == '--debug':
