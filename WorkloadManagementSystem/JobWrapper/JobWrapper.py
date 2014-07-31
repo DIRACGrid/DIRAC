@@ -182,12 +182,12 @@ class JobWrapper:
     self.owner = self.jobArgs.get( 'Owner', self.owner )
     self.jobGroup = self.jobArgs.get( 'JobGroup', self.jobGroup )
     self.jobType = self.jobArgs.get( 'JobType', self.jobType )
-    dataParam = self.jobArgs.get( 'InputData' )
-    if dataParam and not type( dataParam ) == type( [] ):
+    dataParam = self.jobArgs.get( 'InputData', [] )
+    if dataParam and not type( dataParam ) == types.ListType:
       dataParam = [dataParam]
     self.inputDataFiles = len( dataParam )
-    dataParam = self.jobArgs.get( 'OutputData' )
-    if dataParam and not type( dataParam ) == type( [] ):
+    dataParam = self.jobArgs.get( 'OutputData', [] )
+    if dataParam and not type( dataParam ) == types.ListType:
       dataParam = [dataParam]
     self.outputDataFiles = len( dataParam )
     self.processingType = self.jobArgs.get( 'ProcessingType', self.processingType )
@@ -496,8 +496,9 @@ class JobWrapper:
     """
     self.__report( 'Running', 'Input Data Resolution', sendFlag = True )
 
-    localSEList = self.ceArgs.get( 'LocalSE', [] )
-    if not localSEList:
+    if 'LocalSE' in self.ceArgs:
+      localSEList = self.ceArgs[ 'LocalSE']
+    else:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', [] )
       if not localSEList:
         msg = 'Job has input data requirement but no site LocalSE defined'
