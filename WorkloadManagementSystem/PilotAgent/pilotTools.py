@@ -38,14 +38,15 @@ def pythonPathCheck():
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove( os.path.normpath( p ) )
       except Exception, x:
-        print 'Failing path:', p, os.path.normpath( p )
-        print 'sys.path:', sys.path
+        print x
+        print "[EXCEPTION-info] Failing path:", p, os.path.normpath( p )
+        print "[EXCEPTION-info] sys.path:", sys.path
         raise x
   except Exception, x:
-    print sys.executable
-    print sys.version
-    print os.uname()
     print x
+    print "[EXCEPTION-info] sys.executable:", sys.executable
+    print "[EXCEPTION-info] sys.version:", sys.version
+    print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
 
 def getCommands( params ):
@@ -115,11 +116,11 @@ class CommandBase( object ):
     self.pp = pilotParams
     self.log = Logger( self.__class__ )
     self.debugFlag = False
-    for o, _v in self.pp.optList:
+    for o, _ in self.pp.optList:
       if o == '-d' or o == '--debug':
         self.log.setDebug()
         self.debugFlag = True
-
+    self.log.debug( "Initialized command %s" % self.__class__ )
 
   def executeAndGetOutput( self, cmd, environDict = None ):
     """ Execute a command on the worker node and get the output"""

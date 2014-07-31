@@ -32,7 +32,9 @@ from pilotTools import CommandBase
 __RCSID__ = "$Id$"
 
 class InstallDIRAC( CommandBase ):
-  """ Basically, this is used to call dirac-install with the passed parameters
+  """ Basically, this is used to call dirac-install with the passed parameters.
+
+      It requires dirac-install script to be sitting in the same directory.
   """
 
   def __init__( self, pilotParams ):
@@ -41,6 +43,7 @@ class InstallDIRAC( CommandBase ):
     super( InstallDIRAC, self ).__init__( pilotParams )
     self.installOpts = []
     self.pp.rootPath = self.pp.pilotRootPath
+    self.installScriptName = 'dirac-install.py'
 
   def __setInstallOptions( self ):
     """ Setup installation parameters
@@ -89,9 +92,6 @@ class InstallDIRAC( CommandBase ):
 
     self.__setInstallOptions()
 
-    # FIXME: this should be a parameter
-    self.installScriptName = 'dirac-install.py'
-
     ############################################################################
     # Locate installation script
 
@@ -123,6 +123,7 @@ class InstallDIRAC( CommandBase ):
     if os.system( installCmd ):
       self.log.error( "Could not make a proper DIRAC installation" )
       sys.exit( 1 )
+    self.log.info( "%s completed successfully" % self.installScriptName )
 
 
 class ConfigureDIRAC( CommandBase ):
@@ -130,10 +131,11 @@ class ConfigureDIRAC( CommandBase ):
   """
 
   def __init__( self, pilotParams ):
-    """ diracScript is the path of the script files;
+    """ c'tor
+
         rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
         EnviRon is a dictionary containing the set-up environment of a specific experiment
-        noCert it is True when the setup is not Certification and it is False when the setup is certification
+        noCert is True when the setup is not Certification and it is False when the setup is certification
     """
     super( ConfigureDIRAC, self ).__init__( pilotParams )
 
@@ -626,9 +628,9 @@ class LaunchAgent( CommandBase ):
     os.environ['PYTHONUNBUFFERED'] = 'yes'
 
     jobAgent = '%s WorkloadManagement/JobAgent %s %s %s' % ( diracAgentScript,
-                                                         " ".join( self.jobAgentOpts ),
-                                                         " ".join( self.inProcessOpts ),
-                                                         " ".join( extraCFG ) )
+                                                             " ".join( self.jobAgentOpts ),
+                                                             " ".join( self.inProcessOpts ),
+                                                             " ".join( extraCFG ) )
 
     self.log.info( "JobAgent execution command:\n%s" % jobAgent )
 
