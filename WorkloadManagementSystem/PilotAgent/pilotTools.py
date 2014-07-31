@@ -30,6 +30,7 @@ def pythonPathCheck():
   try:
     os.umask( 022 )
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
+    print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
       if p == '': continue
       try:
@@ -37,7 +38,6 @@ def pythonPathCheck():
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove( os.path.normpath( p ) )
       except Exception, x:
-        print 'Directories in PYTHONPATH:', pythonpath
         print 'Failing path:', p, os.path.normpath( p )
         print 'sys.path:', sys.path
         raise x

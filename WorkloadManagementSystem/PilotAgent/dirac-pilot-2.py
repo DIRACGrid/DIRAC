@@ -52,5 +52,6 @@ if pilotParams.commandExtensions:
 
 if __name__ == "__main__":
   pythonPathCheck()
+  print "Going to execute commands %s" ', '.join( commands )
   for command in commands:
     command.execute()
