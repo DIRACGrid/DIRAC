@@ -157,7 +157,9 @@ class JobStateUpdateHandler( RequestHandler ):
           startDate = date
       if sDict['ApplicationStatus']:
         application = sDict['ApplicationStatus']
-      appCounter = sDict.get( 'ApplicationCounter', appCounter )
+      counter = sDict.get( 'ApplicationCounter' )
+      if counter:
+        appCounter = counter
     attrNames = []
     attrValues = []
     if status:
