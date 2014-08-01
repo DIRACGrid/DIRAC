@@ -167,7 +167,7 @@ class DBUtils:
     startBucketEpoch = startEpoch - startEpoch % granularity
     for key in dataDict:
       currentDict = dataDict[ key ]
-      for timeEpoch in range( startBucketEpoch, endEpoch, granularity ):
+      for timeEpoch in range( int( startBucketEpoch ), int( endEpoch ), granularity ):
         if timeEpoch not in currentDict:
           currentDict[ timeEpoch ] = 0
     return dataDict
