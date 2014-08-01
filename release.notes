@@ -1,4 +1,4 @@
-[v6r12-pre5]
+[v6r12-pre6]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -7,6 +7,7 @@ FIX: MySQL - correctly parse BooleanType
 FIX: dirac-install - use python 2.7 by default
 NEW: dirac-configure - added --SkipVOMSDownload switch, added --Output switch
      to define output configuration file
+CHANGE: ProcessPool - exit from the working process if a task execution timed out     
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
@@ -41,9 +42,28 @@ NEW: ReqClient, RequestDB - added getBulkRequest() interface. RequestExecutingAg
 FIX: Operation, Request - set LastUpdate time stamp when reaching final state
 FIX: OperationHandlerBase - don't erase the original message when reaching the max attempts      
 FIX: removed some deprecated codes
+FIX: RequestTask - always set useServerCerificate flag to tru in case of executing inside
+     an agent
 
 *TMS
 NEW: WorkflowTaskAgent is now multi-threaded
+NEW: Better use of threads in Transformation Agents
+
+[v6r11p7]
+
+*Framework
+BUGFIX: ProxyDB.py - bug in a MySQL table definition
+
+*DMS
+FIX: ReplicateAndRegister.py - FTS client is not instantiated in the c'tor as it 
+     might not be used, 
+
+*WMS
+FIX: JobWrapper - don't delete the sandbox tar file if upload fails
+FIX: JobWrapper - fix in setting the failover request
+
+*RMS
+FIX: RequestDB - add protections when trying to get a non existing request
 
 [v6r11p6]
 

@@ -14,6 +14,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 import datetime
+import os
 
 class ReqClient( Client ):
   """
@@ -29,14 +30,13 @@ class ReqClient( Client ):
   __requestProxiesDict = {}
   __requestValidator = None
 
-  def __init__( self, useCertificates = False ):
+  def __init__( self ):
     """c'tor
 
     :param self: self reference
-    :param bool useCertificates: flag to enable/disable certificates
     """
     Client.__init__( self )
-    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient" )
+    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
     self.setServer( "RequestManagement/ReqManager" )
 
   def requestManager( self, timeout = 120 ):
@@ -55,7 +55,7 @@ class ReqClient( Client ):
       proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/ReqProxyURLs" ) )
       if not proxiesURLs:
         self.log.warn( "CS option RequestManagement/ReqProxyURLs is not set!" )
-      for proxyURL in randomize( proxiesURLs ):
+      for proxyURL in proxiesURLs:
         self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
         self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout = timeout )
     return self.__requestProxiesDict
@@ -88,7 +88,8 @@ class ReqClient( Client ):
     errorsDict["RequestManager"] = setRequestMgr["Message"]
     self.log.warn( "putRequest: unable to set request '%s' at RequestManager" % request.RequestName )
     proxies = self.requestProxies()
-    for proxyURL, proxyClient in proxies.items():
+    for proxyURL in randomize( proxies.keys() ):
+      proxyClient = proxies[proxyURL]
       self.log.debug( "putRequest: trying RequestProxy at %s" % proxyURL )
       setRequestProxy = proxyClient.putRequest( requestJSON )
       if setRequestProxy["OK"]:

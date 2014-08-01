@@ -5,7 +5,7 @@ from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 class PlottersList:
 
   def __init__( self ):
-    objectsLoaded = TypeLoader.getTypes()
+    objectsLoaded = TypeLoader().getTypes()
     self.__plotters = {}
     for objName in objectsLoaded:
       self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
