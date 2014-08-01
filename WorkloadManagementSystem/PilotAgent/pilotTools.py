@@ -123,7 +123,8 @@ class CommandBase( object ):
     self.log.debug( "Initialized command %s" % self.__class__ )
 
   def executeAndGetOutput( self, cmd, environDict = None ):
-    """ Execute a command on the worker node and get the output"""
+    """ Execute a command on the worker node and get the output
+    """
 
     self.log.debug( 'Executing command %s' % cmd )
     try:
@@ -138,13 +139,18 @@ class CommandBase( object ):
       self.log.error( "Error importing subprocess" )
       
 class PilotParams:
-  """ This is a structure to hold all the parameters to be used across 
-      all the commands
+  """ Class that holds the structure with all the parameters to be used across all the commands
   """
 
   MAX_CYCLES = 10
 
   def __init__( self ):
+    """ c'tor
+
+        param names and defaults are defined here
+    """
+
+    self.optList = {}
     self.debugFlag = False
     self.local = False
     self.dryRun = False
@@ -215,6 +221,8 @@ class PilotParams:
     self.__initOptions()
     
   def __initOptions( self ):
+    """ Parses and interpret options on the command line
+    """
     
     self.optList, __args__ = getopt.getopt( sys.argv[1:],
                                             "".join( [ opt[0] for opt in self.cmdOpts ] ),
