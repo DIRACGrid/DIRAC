@@ -62,7 +62,8 @@ def getCommands( params ):
         impData = imp.find_module( module )
         commandModule = imp.load_module( module, *impData )
         commandObject = getattr( commandModule, cName )
-      except:
+      except Exception, e:
+        print e
         pass  
     if commandObject is None:
       error = "Command %s is not found in all the locations: %s" % ( cName, str( extensions ) )
