@@ -151,9 +151,7 @@ class ConfigureDIRAC( CommandBase ):
     if self.pp.setup:
         self.configureOpts.append( '-S "%s"' % self.pp.setup ) 
     if self.pp.configServer:
-      self.configureOpts.append( '-C "%s"' % self.pp.configServer )  
-    if self.pp.installation:
-      self.configureOpts.append( '-V "%s"' % self.pp.installation )     
+      self.configureOpts.append( '-C "%s"' % self.pp.configServer )
     if self.pp.releaseProject:
       self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )  
     if self.pp.gateway:
