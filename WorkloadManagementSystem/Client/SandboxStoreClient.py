@@ -56,7 +56,7 @@ class SandboxStoreClient( object ):
     else:
       return TransferClient( self.__serviceName, **self.__kwargs )
 
-  #Upload sandbox to jobs and pilots
+  # Upload sandbox to jobs and pilots
 
   def uploadFilesAsSandboxForJob( self, fileList, jobId, sbType, sizeLimit = 0 ):
     if sbType not in self.__validSandboxTypes:
@@ -68,7 +68,7 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Invalid Sandbox type %s" % sbType )
     return self.uploadFilesAsSandbox( fileList, sizeLimit, assignTo = { "Pilot:%s" % jobId: sbType } )
 
-  #Upload generic sandbox
+  # Upload generic sandbox
 
   def uploadFilesAsSandbox( self, fileList, sizeLimit = 0, assignTo = {} ):
     """ Send files in the fileList to a Sandbox service for the given jobID.
@@ -129,7 +129,8 @@ class SandboxStoreClient( object ):
     result = transferClient.sendFile( tmpFilePath, ( "%s.tar.bz2" % oMD5.hexdigest(), assignTo ) )
     result[ 'SandboxFileName' ] = tmpFilePath
     try:
-      os.unlink( tmpFilePath )
+      if result['OK']:
+        os.unlink( tmpFilePath )
     except:
       pass
     return result
@@ -149,8 +150,8 @@ class SandboxStoreClient( object ):
       return S_ERROR( "Invalid sandbox URL" )
     SEName = sbSplit[0]
     SEPFN = "|".join( sbSplit[1:] )
-    #If destination dir is not specified use current working dir
-    #If its defined ensure the dir structure is there
+    # If destination dir is not specified use current working dir
+    # If its defined ensure the dir structure is there
     if not destinationDir:
       destinationDir = os.getcwd()
     else:
