@@ -5,7 +5,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, Time
+from DIRAC import S_OK, S_ERROR, Time, gLogger
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -116,14 +116,10 @@ class JobReport( object ):
     if statusDict:
       jobMonitor = RPCClient( 'WorkloadManagement/JobStateUpdate', timeout = 60 )
       result = jobMonitor.setJobStatusBulk( self.jobID, statusDict )
-      if not result['OK']:
-        return result
-
       if result['OK']:
         # Empty the internal status containers
         self.jobStatusInfo = []
         self.appStatusInfo = []
-
       return result
 
     else:
@@ -134,6 +130,7 @@ class JobReport( object ):
     """
 
     parameters = []
+    paramDict = {}
     for pname, value in self.jobParameters.items():
       pvalue, _timeStamp = value
       parameters.append( ( pname, pvalue ) )
@@ -192,6 +189,7 @@ class JobReport( object ):
 
     result = self.sendStoredStatusInfo()
     if not result['OK']:
+      gLogger.error( "Error while sending the job status", result['Message'] )
       if 'rpcStub' in result:
 
         rpcStub = result['rpcStub']
