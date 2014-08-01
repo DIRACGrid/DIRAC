@@ -6,7 +6,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
-from DIRAC.Core.Utilities.List                                      import sortList, breakListIntoChunks
+from DIRAC.Core.Utilities.List                                      import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
@@ -28,38 +28,30 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     TransformationAgentsUtilities.__init__( self )
 
     # few parameters
-    self.pluginLocation = self.am_getOption( 'PluginLocation',
-                                             'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
-    self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
-    self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
+    self.pluginLocation = ''
+    self.transformationStatus = []
+    self.maxFiles = 0
+    self.transformationTypes = []
 
-    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
-    if agentTSTypes:
-      self.transformationTypes = sortList( agentTSTypes )
-    else:
-      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
-      self.transformationTypes = sortList( dataProc + dataManip )
+    # clients (out of the threads)
+    self.transfClient = None
 
-    # clients
-    self.transfClient = TransformationClient()
-
-    # for the threading
+    # parameters for the threading
     self.transQueue = Queue.Queue()
     self.transInQueue = []
 
-    # for caching using a pickle file
-    self.workDirectory = self.am_getWorkDirectory()
-    self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
-    self.controlDirectory = self.am_getControlDirectory()
+    # parameters for caching
+    self.workDirectory = ''
+    self.cacheFile = ''
+    self.controlDirectory = ''
     self.dateWriteCache = datetime.datetime.utcnow()
 
     # Validity of the cache
     self.replicaCache = None
-    self.replicaCacheValidity = self.am_getOption( 'ReplicaCacheValidity', 2 )
+    self.replicaCacheValidity = None
     self.writingCache = False
 
-    self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
+    self.noUnusedDelay = 0
     self.unusedFiles = {}
     self.unusedTimeStamp = {}
 
@@ -69,11 +61,36 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def initialize( self ):
     """ standard initialize
     """
+    # few parameters
+    self.pluginLocation = self.am_getOption( 'PluginLocation',
+                                             'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
+    self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
+    self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
 
-    self.__readCache()
-    self.dateWriteCache = datetime.datetime.utcnow()
+    agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
+    if agentTSTypes:
+      self.transformationTypes = sorted( agentTSTypes )
+    else:
+      dataProc = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      dataManip = Operations().getValue( 'Transformations/DataManipulation', ['Replication', 'Removal'] )
+      self.transformationTypes = sorted( dataProc + dataManip )
 
+
+
+    # clients
+    self.transfClient = TransformationClient()
+
+    # shifter
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
+
+    # for caching using a pickle file
+    self.__readCache()
+    self.workDirectory = self.am_getWorkDirectory()
+    self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
+    self.controlDirectory = self.am_getControlDirectory()
+    self.replicaCacheValidity = self.am_getOption( 'ReplicaCacheValidity', 2 )
+    self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
+    self.dateWriteCache = datetime.datetime.utcnow()
 
     # Get it threaded
     maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )

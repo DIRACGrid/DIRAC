@@ -1,10 +1,11 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
 import re
+import random
 
 from DIRAC                              import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
-from DIRAC.Core.Utilities.List          import breakListIntoChunks, sortList, uniqueElements, randomize
+from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -89,14 +90,8 @@ class TransformationPlugin( object ):
     if not self.params:
       return S_ERROR( "TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters." )
 
-    sourceseParam = self.params['SourceSE']
     targetseParam = self.params['TargetSE']
-    sourceSEs = []
     targetSEs = []
-    if sourceseParam.count( '[' ):#assume it's an array
-      sourceSEs = eval( sourceseParam )
-    else:
-      sourceSEs = [sourceseParam]
     sourceSEs = eval( self.params['SourceSE'] )
     if targetseParam.count( '[' ):
       targetSEs = eval( targetseParam )
@@ -128,14 +123,14 @@ class TransformationPlugin( object ):
       for lfn in lfns:
         targets = []
         sources = self._getSitesForSEs( ses )
-        for targetSE in randomize( targetSEs ):
+        for targetSE in random.shuffle( targetSEs ):
           site = self._getSiteForSE( targetSE )['Value']
           if not site in sources:
             if ( destinations ) and ( len( targets ) >= destinations ):
               continue
             sources.append( site )
           targets.append( targetSE )#after all, if someone wants to copy to the source, it's his choice
-        strTargetSEs = str.join( ',', sortList( targets ) )
+        strTargetSEs = str.join( ',', sorted( targets ) )
         if not targetSELfns.has_key( strTargetSEs ):
           targetSELfns[strTargetSEs] = []
         targetSELfns[strTargetSEs].append( lfn )
@@ -156,7 +151,7 @@ class TransformationPlugin( object ):
       return res
     cpuShares = res['Value']
     gLogger.info( "Obtained the following target shares (%):" )
-    for site in sortList( cpuShares.keys() ):
+    for site in sorted( cpuShares.keys() ):
       gLogger.info( "%s: %.1f" % ( site.ljust( 15 ), cpuShares[site] ) )
 
     # Get the existing destinations from the transformationDB
@@ -168,7 +163,7 @@ class TransformationPlugin( object ):
     if existingCount:
       gLogger.info( "Existing site utilization (%):" )
       normalisedExistingCount = self._normaliseShares( existingCount.copy() )
-      for se in sortList( normalisedExistingCount.keys() ):
+      for se in sorted( normalisedExistingCount.keys() ):
         gLogger.info( "%s: %.1f" % ( se.ljust( 15 ), normalisedExistingCount[se] ) )
 
     # Group the input files by their existing replicas
@@ -287,7 +282,7 @@ class TransformationPlugin( object ):
     fileGroups = self._getFileGroups( self.data )
     # Create tasks based on the group size
     tasks = []
-    for replicaSE in sortList( fileGroups.keys() ):
+    for replicaSE in sorted( fileGroups.keys() ):
       lfns = fileGroups[replicaSE]
       tasksLfns = breakListIntoChunks( lfns, groupSize )
       for taskLfns in tasksLfns:
@@ -334,7 +329,7 @@ class TransformationPlugin( object ):
     """
     fileGroups = {}
     for lfn, replicas in fileReplicas.items():
-      replicaSEs = ",".join( sortList( uniqueElements( replicas ) ) )
+      replicaSEs = ",".join( sorted( list( set( replicas ) ) ) )
       if replicaSEs not in fileGroups:
         fileGroups[replicaSEs] = []
       fileGroups[replicaSEs].append( lfn )
