@@ -45,7 +45,7 @@ class InstallDIRAC( CommandBase ):
     self.pp.rootPath = self.pp.pilotRootPath
     self.installScriptName = 'dirac-install.py'
 
-  def __setInstallOptions( self ):
+  def _setInstallOptions( self ):
     """ Setup installation parameters
     """
     for o, v in self.pp.optList:
@@ -85,16 +85,9 @@ class InstallDIRAC( CommandBase ):
 
     self.log.debug( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
 
-
-  def execute( self ):
-    """ What is called all the time
+  def _locateInstallationScript( self ):
+    """ Locate installation script
     """
-
-    self.__setInstallOptions()
-
-    ############################################################################
-    # Locate installation script
-
     installScript = ''
     for path in ( self.pp.pilotRootPath, self.pp.originalRootPath, self.pp.rootPath ):
       installScript = os.path.join( path, self.installScriptName )
@@ -111,19 +104,29 @@ class InstallDIRAC( CommandBase ):
       sys.exit( 1 )
 
     try:
-      os.chmod( installScript, stat.S_IRWXU )  # change permission of the script
+      # change permission of the script
+      os.chmod( self.installScript, stat.S_IRWXU )
     except:
       pass
 
-    #############################################################################
-    # Do the installation
-
-    installCmd = "%s %s" % ( installScript, " ".join( self.installOpts ) )
+  def _installDIRAC( self ):
+    """ launch the installation script
+    """
+    installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
     if os.system( installCmd ):
       self.log.error( "Could not make a proper DIRAC installation" )
       sys.exit( 1 )
     self.log.info( "%s completed successfully" % self.installScriptName )
+
+
+  def execute( self ):
+    """ What is called all the time
+    """
+
+    self._setInstallOptions()
+    self._locateInstallationScript()
+    self._installDIRAC()
 
 
 class ConfigureDIRAC( CommandBase ):
