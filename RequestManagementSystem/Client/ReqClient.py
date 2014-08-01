@@ -30,11 +30,10 @@ class ReqClient( Client ):
   __requestProxiesDict = {}
   __requestValidator = None
 
-  def __init__( self, useCertificates = False ):
+  def __init__( self ):
     """c'tor
 
     :param self: self reference
-    :param bool useCertificates: flag to enable/disable certificates
     """
     Client.__init__( self )
     self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
