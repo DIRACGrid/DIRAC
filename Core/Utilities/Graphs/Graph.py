@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ Graph is a class providing layouts for the complete plot images including
     titles multiple plots and a legend
     
@@ -206,7 +202,7 @@ class Graph(object):
         return 
       if type(metadata) != types.ListType:
         metaList = []
-        for ip in range(nPlots):
+        for _ in range( nPlots ):
           metaList.append(metadata)
         metadata = metaList
         
@@ -321,28 +317,19 @@ class Graph(object):
              img_size[1]/float(prefs['height'])*resize)
       #print box
       ax_wm = self.figure.add_axes( box )
-      im = ax_wm.imshow( i, origin='lower', aspect='equal', zorder = -10 )
+      ax_wm.imshow( i, origin = 'lower', aspect = 'equal', zorder = -10 )
       ax_wm.axis('off')
       ax_wm.set_frame_on( False )
       ax_wm.set_clip_on( False )
     except Exception, e:
       print e 
       
-  def writeGraph(self,fname,format):
+  def writeGraph( self, fname, fileFormat = 'PNG' ):
     """ Write out the resulting graph to a file with fname in a given format
     """
 
-    start = time.time()
     self.canvas.draw()
-    if format.lower() == 'png':
+    if fileFormat.lower() == 'png':
       self.canvas.print_png(fname)
-    elif format.lower() == 'svg':
+    elif fileFormat.lower() == 'svg':
       self.canvas.print_svg(fname)   
-        
-                     
-    
-    
-            
-          
-        
-    

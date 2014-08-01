@@ -40,7 +40,7 @@ class RequestTask( object ):
   request's processing task
   """
 
-  def __init__( self, requestJSON, handlersDict, csPath, agentName ):
+  def __init__( self, requestJSON, handlersDict, csPath, agentName, standalone = False ):
     """c'tor
 
     :param self: self reference
@@ -52,6 +52,8 @@ class RequestTask( object ):
     self.csPath = csPath
     # # agent name
     self.agentName = agentName
+    # # standalone flag
+    self.standalone = standalone
     # # handlers dict
     self.handlersDict = handlersDict
     # # handlers class def
@@ -272,7 +274,11 @@ class RequestTask( object ):
       handler.shifter = shifter
       # # and execute
       pluginName = self.getPluginName( self.handlersDict.get( operation.Type ) )
-      useServerCertificate = gConfig.useServerCertificate()
+      if self.standalone:
+        useServerCertificate = gConfig.useServerCertificate()
+      else:
+        # Always use server certificates if executed within an agent
+        useServerCertificate = True 
       try:
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Att" ), 1 )

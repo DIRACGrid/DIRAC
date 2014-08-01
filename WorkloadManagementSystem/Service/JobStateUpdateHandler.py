@@ -119,8 +119,6 @@ class JobStateUpdateHandler( RequestHandler ):
         as a key and status information dictionary as values
     """
 
-    dates = statusDict.keys()
-    dates.sort()
     status = ""
     minor = ""
     application = ""
@@ -129,7 +127,7 @@ class JobStateUpdateHandler( RequestHandler ):
     startDate = ''
     startFlag = ''
 
-    result = jobDB.getJobAttributes( int( jobID ), ['Status'] )
+    result = jobDB.getJobAttributes( int( jobID ), ['Status', 'LastUpdateTime'] )
     if not result['OK']:
       return result
 
@@ -140,23 +138,28 @@ class JobStateUpdateHandler( RequestHandler ):
     new_status = result['Value']['Status']
     if new_status == "Stalled":
       status = 'Running'
+    lastUpdate = result['Value']['LastUpdateTime']
 
     # Get the last status values
-    for date in dates:
-      if statusDict[date]['Status']:
-        status = statusDict[date]['Status']
+    dates = sorted( statusDict )
+    # We should only update the status if its time stamp is more recent than the last update
+    for date in [date for date in dates if date > lastUpdate]:
+      sDict = statusDict[date]
+      if sDict['Status']:
+        status = sDict['Status']
         if status in JOB_FINAL_STATES:
           endDate = date
         if status == "Running":
           startFlag = 'Running'
-      if statusDict[date]['MinorStatus']:
-        minor = statusDict[date]['MinorStatus']
+      if sDict['MinorStatus']:
+        minor = sDict['MinorStatus']
         if minor == "Application" and startFlag == 'Running':
           startDate = date
-      if statusDict[date]['ApplicationStatus']:
-        application = statusDict[date]['ApplicationStatus']
-      if 'ApplicationCounter' in statusDict[date] and statusDict[date]['ApplicationCounter']:
-        appCounter = statusDict[date]['ApplicationCounter']
+      if sDict['ApplicationStatus']:
+        application = sDict['ApplicationStatus']
+      counter = sDict.get( 'ApplicationCounter' )
+      if counter:
+        appCounter = counter
     attrNames = []
     attrValues = []
     if status:
@@ -181,8 +184,8 @@ class JobStateUpdateHandler( RequestHandler ):
       result = jobDB.setStartExecTime( int( jobID ), startDate )
 
     # Update the JobLoggingDB records
-    for date, sDict in statusDict.items():
-
+    for date in dates:
+      sDict = statusDict[date]
       status = sDict['Status']
       if not status:
         status = 'idem'
@@ -298,15 +301,15 @@ class JobStateUpdateHandler( RequestHandler ):
       gLogger.warn( 'Failed to set the heart beat data for job %d ' % int( jobID ) )
 
     # Restore the Running status if necessary
-    #result = jobDB.getJobAttributes(jobID,['Status'])
-    #if not result['OK']:
+    # result = jobDB.getJobAttributes(jobID,['Status'])
+    # if not result['OK']:
     #  return result
 
-    #if not result['Value']:
+    # if not result['Value']:
     #  return S_ERROR('Job %d not found' % jobID)
 
-    #status = result['Value']['Status']
-    #if status == "Stalled" or status == "Matched":
+    # status = result['Value']['Status']
+    # if status == "Stalled" or status == "Matched":
     #  result = jobDB.setJobAttribute(jobID,'Status','Running',True)
     #  if not result['OK']:
     #    gLogger.warn('Failed to restore the job status to Running')
