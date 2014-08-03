@@ -10,8 +10,6 @@ FLUSH PRIVILEGES;
 
 USE FileCatalogDB;
 
-<<<<<<< HEAD
-=======
 drop table if exists FC_Files;
 CREATE TABLE FC_Files(
     FileID INT AUTO_INCREMENT PRIMARY KEY,
@@ -269,4 +267,3 @@ CREATE TABLE FC_FileAncestors (
   UNIQUE INDEX (FileID,AncestorID)
 ) ENGINE = INNODB;
 
->>>>>>> rel-v6r12
