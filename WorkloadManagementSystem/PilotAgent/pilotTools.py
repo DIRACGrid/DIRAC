@@ -30,6 +30,7 @@ def pythonPathCheck():
   try:
     os.umask( 022 )
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
+    print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
       if p == '': continue
       try:
@@ -37,15 +38,15 @@ def pythonPathCheck():
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove( os.path.normpath( p ) )
       except Exception, x:
-        print 'Directories in PYTHONPATH:', pythonpath
-        print 'Failing path:', p, os.path.normpath( p )
-        print 'sys.path:', sys.path
+        print x
+        print "[EXCEPTION-info] Failing path:", p, os.path.normpath( p )
+        print "[EXCEPTION-info] sys.path:", sys.path
         raise x
   except Exception, x:
-    print sys.executable
-    print sys.version
-    print os.uname()
     print x
+    print "[EXCEPTION-info] sys.executable:", sys.executable
+    print "[EXCEPTION-info] sys.version:", sys.version
+    print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
 
 def getCommands( params ):
@@ -61,7 +62,8 @@ def getCommands( params ):
         impData = imp.find_module( module )
         commandModule = imp.load_module( module, *impData )
         commandObject = getattr( commandModule, cName )
-      except:
+      except Exception, e:
+        print e
         pass  
     if commandObject is None:
       error = "Command %s is not found in all the locations: %s" % ( cName, str( extensions ) )
@@ -71,6 +73,8 @@ def getCommands( params ):
   return commands
 
 class Logger( object ):
+  """ Basic logger object, for use inside the pilot. Just using print.
+  """
 
   def __init__( self, name = 'Pilot', debugFlag = False ):
     self.debugFlag = debugFlag
@@ -90,26 +94,38 @@ class Logger( object ):
       print "%s UTC %s [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), self.name, _line )
     sys.stdout.flush()
 
+  def warn( self, msg ):
+    for _line in msg.split( "\n" ):
+      print "%s UTC %s [WARN]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), self.name, _line )
+    sys.stdout.flush()
+
   def info( self, msg ):
     for _line in msg.split( "\n" ):
       print "%s UTC %s [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), self.name, _line )
     sys.stdout.flush()
 
 class CommandBase( object ):
+  """ CommandBase is the base class for every command in the pilot commands toolbox
+  """
 
-  def __init__( self, pilotParams, name = 'Pilot' ):
+  def __init__( self, pilotParams ):
+    """ c'tor
+
+        Defines the logger and the pilot parameters
+    """
+
     self.pp = pilotParams
-    self.commandName = name
-    self.log = Logger( name )
+    self.log = Logger( self.__class__ )
     self.debugFlag = False
-    for o, _v in self.pp.optList:
+    for o, _ in self.pp.optList:
       if o == '-d' or o == '--debug':
         self.log.setDebug()
         self.debugFlag = True
-
+    self.log.debug( "Initialized command %s" % self.__class__ )
 
   def executeAndGetOutput( self, cmd, environDict = None ):
-    """ Execute a command on the worker node and get the output"""
+    """ Execute a command on the worker node and get the output
+    """
 
     self.log.debug( 'Executing command %s' % cmd )
     try:
@@ -124,13 +140,18 @@ class CommandBase( object ):
       self.log.error( "Error importing subprocess" )
       
 class PilotParams:
-  """ This is a structure to hold all the parameters to be used across 
-      all the commands
+  """ Class that holds the structure with all the parameters to be used across all the commands
   """
 
   MAX_CYCLES = 10
 
   def __init__( self ):
+    """ c'tor
+
+        param names and defaults are defined here
+    """
+
+    self.optList = {}
     self.debugFlag = False
     self.local = False
     self.dryRun = False
@@ -201,6 +222,8 @@ class PilotParams:
     self.__initOptions()
     
   def __initOptions( self ):
+    """ Parses and interpret options on the command line
+    """
     
     self.optList, __args__ = getopt.getopt( sys.argv[1:],
                                             "".join( [ opt[0] for opt in self.cmdOpts ] ),
