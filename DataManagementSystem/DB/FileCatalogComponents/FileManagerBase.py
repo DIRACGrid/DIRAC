@@ -132,11 +132,8 @@ class FileManagerBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
-<<<<<<< HEAD
-  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], connection = False ):
-=======
+
   def _getFileReplicas( self, fileIDs, fields = ['PFN'], allStatus = False, connection = False ):
->>>>>>> rel-v6r12
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
