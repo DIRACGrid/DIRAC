@@ -3,7 +3,6 @@
     The failover transfer client exposes the following methods:
     - transferAndRegisterFile()
     - transferAndRegisterFileFailover()
-    - getRequestObject()
 
     Initially these methods were developed inside workflow modules but
     have evolved to a generic 'transfer file with failover' client.
@@ -16,8 +15,6 @@
     to the original target SE as well as the removal request for the
     temporary replica.
 
-    getRequestObject() allows to retrieve the modified request object
-    after transfer operations.
 """
 
 __RCSID__ = "$Id$"
