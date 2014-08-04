@@ -106,21 +106,22 @@ class ObjectLoader( object ):
         self.log.exception( errMsg )
       return None, None
     if len( modName ) == 1:
-      return impModule, parentModule.__path__
+      return impModule, parentModule.__path__[0]
     return self.__recurseImport( modName[1:], impModule,
                                  hideExceptions = hideExceptions )
 
 
-  def loadObject( self, moduleName, command ):
+  def loadObject( self, package, moduleName, command ):
     """ Load an object from inside a module
     """
-    module, parentPath = self.loadModule( moduleName )
+    loadModuleName = '%s.%s' % ( package, moduleName )
+    module, parentPath = self.loadModule( loadModuleName )
     if module is None:
       return None, None
 
     try:
       commandObj = getattr( module, command )
-      return commandObj, '.'.join( parentPath )
+      return commandObj, os.path.join( parentPath, moduleName )
     except AttributeError, e:
       self.log.error( 'Exception: %s' % str(e) )
       return None, None
@@ -165,7 +166,9 @@ def getCommand( params, commandName, log ):
     diracExtensions += ['DIRAC']
     ol = ObjectLoader( diracExtensions, log )
     for module in modules:
-      commandObject, modulePath = ol.loadObject( 'WorkloadManagementSystem.PilotAgent.%s' % module, commandName )
+      commandObject, modulePath = ol.loadObject( 'WorkloadManagementSystem.PilotAgent', 
+                                                 module, 
+                                                 commandName )
       if commandObject:
         return commandObject( params ), modulePath
 
