@@ -7,12 +7,12 @@
     Each commands is represented by a class inheriting CommandBase class.
     The command class constructor takes PilotParams object which is a data
     structure which keeps common parameters across all the pilot commands.
-    
+
     The constructor must call the superclass constructor with the PilotParams
     object and the command name as arguments, e.g. ::
-    
+
         class InstallDIRAC( CommandBase ):
-        
+
           def __init__( self, pilotParams ):
             CommandBase.__init__(self, pilotParams, 'Install')
             ...
@@ -32,14 +32,22 @@ from pilotTools import CommandBase
 __RCSID__ = "$Id$"
 
 class InstallDIRAC( CommandBase ):
+  """ Basically, this is used to call dirac-install with the passed parameters.
+
+      It requires dirac-install script to be sitting in the same directory.
+  """
 
   def __init__( self, pilotParams ):
-    CommandBase.__init__(self, pilotParams, 'Install')
+    """ c'tor
+    """
+    super( InstallDIRAC, self ).__init__( pilotParams )
     self.installOpts = []
     self.pp.rootPath = self.pp.pilotRootPath
+    self.installScriptName = 'dirac-install.py'
 
-  def __setInstallOptions( self ):
-    """Setup installation parameters"""
+  def _setInstallOptions( self ):
+    """ Setup installation parameters
+    """
     for o, v in self.pp.optList:
       if o in ( '-b', '--build' ):
         self.installOpts.append( '-b' )
@@ -65,7 +73,7 @@ class InstallDIRAC( CommandBase ):
         self.pp.rootPath = v
       elif o in ( '-V', '--installation' ):
         self.installOpts.append( '-V "%s"' % v )
-      elif o == '-E' or o == '--server':
+      elif o == '-t' or o == '--server':
         self.installOpts.append( '-t "server"' )
 
     if self.pp.gridVersion:
@@ -77,16 +85,9 @@ class InstallDIRAC( CommandBase ):
 
     self.log.debug( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
 
-
-  def execute( self ):
-
-    self.__setInstallOptions()
-
-    self.installScriptName = 'dirac-install.py'
-
-    ############################################################################
-    # Locate installation script
-
+  def _locateInstallationScript( self ):
+    """ Locate installation script
+    """
     installScript = ''
     for path in ( self.pp.pilotRootPath, self.pp.originalRootPath, self.pp.rootPath ):
       installScript = os.path.join( path, self.installScriptName )
@@ -95,40 +96,61 @@ class InstallDIRAC( CommandBase ):
     self.installScript = installScript
 
     if not os.path.isfile( installScript ):
-      self.log.error( "%s requires %s to exist in one of: %s, %s" % ( self.pp.pilotScriptName, 
-                                                                      self.installScriptName,
-                                                                      self.pp.pilotRootPath, 
-                                                                      self.pp.originalRootPath, 
-                                                                      self.pp.rootPath ) )
+      self.log.error( "%s requires %s to exist in one of: %s, %s, %s" % ( self.pp.pilotScriptName,
+                                                                          self.installScriptName,
+                                                                          self.pp.pilotRootPath,
+                                                                          self.pp.originalRootPath,
+                                                                          self.pp.rootPath ) )
       sys.exit( 1 )
 
     try:
-      os.chmod( installScript, stat.S_IRWXU )  # change permission of the script
+      # change permission of the script
+      os.chmod( self.installScript, stat.S_IRWXU )
     except:
       pass
 
-    #############################################################################
-    # Do the installation
-
-    installCmd = "%s %s" % ( installScript, " ".join( self.installOpts ) )
+  def _installDIRAC( self ):
+    """ launch the installation script
+    """
+    installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
-    if os.system( installCmd ):
+
+    retCode, output = self.executeAndGetOutput( installCmd )
+    self.log.info( output, header = False )
+
+    if retCode:
       self.log.error( "Could not make a proper DIRAC installation" )
       sys.exit( 1 )
+    self.log.info( "%s completed successfully" % self.installScriptName )
+
+    sys.path.insert( 0, self.pp.rootPath )
+    diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
+    sys.path.insert( 0, diracScriptsPath )
+    self.pp.diracInstalled = True
+
+  def execute( self ):
+    """ What is called all the time
+    """
+
+    self._setInstallOptions()
+    self._locateInstallationScript()
+    self._installDIRAC()
 
 
 class ConfigureDIRAC( CommandBase ):
+  """ Command to configure DIRAC
+  """
 
   def __init__( self, pilotParams ):
+    """ c'tor
+
+        rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
+        EnviRon is a dictionary containing the set-up environment of a specific experiment
+        noCert is True when the setup is not Certification and it is False when the setup is certification
     """
-    diracScript is the path of the script files;
-    rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
-    EnviRon is a dictionary containing the set-up environment of a specific experiment
-    noCert it is True when the setup is not Certification and it is False when the setup is certification
-    """
-    CommandBase.__init__(self, pilotParams, 'Configure')
+    super( ConfigureDIRAC, self ).__init__( pilotParams )
+
     self.configureOpts = []
-    self.inProcessOpts = []
     self.jobAgentOpts = []
     self.diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )  # Set the env to use the recently installed DIRAC
     sys.path.insert( 0, self.diracScriptsPath )
@@ -140,24 +162,25 @@ class ConfigureDIRAC( CommandBase ):
     self.boincHostName = ''
 
   def __setConfigureOptions( self ):
-    """Setup configuration parameters"""
+    """ Setup configuration parameters
+    """
 
     if self.pp.site:
       self.configureOpts.append( '-n "%s"' % self.pp.site )
     if self.pp.ceName:
-      self.configureOpts.append( '-N "%s"' % self.pp.ceName )  
+      self.configureOpts.append( '-N "%s"' % self.pp.ceName )
     if self.debugFlag:
-      self.configureOpts.append( '-d' )  
+      self.configureOpts.append( '-d' )
     if self.pp.setup:
-        self.configureOpts.append( '-S "%s"' % self.pp.setup ) 
+        self.configureOpts.append( '-S "%s"' % self.pp.setup )
     if self.pp.configServer:
       self.configureOpts.append( '-C "%s"' % self.pp.configServer )
     if self.pp.releaseProject:
-      self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )  
+      self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )
     if self.pp.gateway:
-      self.configureOpts.append( '-W "%s"' % self.pp.gateway )  
+      self.configureOpts.append( '-W "%s"' % self.pp.gateway )
     if self.pp.useServerCertificate:
-      self.configureOpts.append( '--UseServerCertificate' )  
+      self.configureOpts.append( '--UseServerCertificate' )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
@@ -170,7 +193,7 @@ class ConfigureDIRAC( CommandBase ):
     self.configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
     if self.pp.userGroup:
-      self.configureOpts.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.userGroup )
+      self.configureOpts.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.pp.userGroup )
 
     if self.pp.userDN:
       self.configureOpts.append( '-o /AgentJobRequirements/OwnerDN="%s"' % v )
@@ -330,7 +353,7 @@ class ConfigureDIRAC( CommandBase ):
       os.chdir( osgDir )
       try:
         import shutil
-        shutil.copy( self.installScript, os.path.join( osgDir, self.installScriptName ) )
+        shutil.copy( self.pp.installScript, os.path.join( osgDir, self.pp.installScriptName ) )
       except Exception, x:
         print sys.executable
         print sys.version
@@ -346,7 +369,8 @@ class ConfigureDIRAC( CommandBase ):
       #rootPath = os.getcwd()
 
   def execute( self ):
-    """ Configure DIRAC """
+    """ What is called all the time
+    """
 
     self.__setConfigureOptions()
     self.__getCPURequirement()
@@ -400,7 +424,7 @@ class ConfigureDIRAC( CommandBase ):
     if self.testVOMSOK:
       retCode, __outData__ = self.executeAndGetOutput( 'dirac-proxy-info | grep -q fqan', self.pp.installEnv )
       if retCode != 0:
-        self.log.debug( "dirac-pilot: missing voms certs at %s" % self.site )
+        self.log.debug( "dirac-pilot: missing voms certs at %s" % self.pp.site )
         sys.exit( -1 )
 
     ##########################################################################################################################
@@ -504,6 +528,8 @@ class ConfigureDIRAC( CommandBase ):
                   % ( diskSpace, self.pp.minDiskSpace ) )
       sys.exit( 1 )
 
+    self.pp.diracConfigured = True
+
   def __getCPURequirement(self):
     """ Get job CPU requirement and queue normalization """
 
@@ -518,11 +544,11 @@ class ConfigureDIRAC( CommandBase ):
           queueNorm = float( queueNormList[1] )
           self.log.info( 'Queue Normalization = %s SI00' % queueNorm )
           if queueNorm:
-          # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
-          # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-          # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-          # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.configureScript,
+            # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
+            # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
+            # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+            # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.pp.configureScript,
                                                                                                              queueNorm / 250.,
                                                                                                              queueNorm / 250. ) )
         else:
@@ -545,12 +571,15 @@ class ConfigureDIRAC( CommandBase ):
       # os.system( "dirac-wms-cpu-normalization -U" )
 
 class LaunchAgent( CommandBase ):
+  """ Prepare and launch the job agent
+  """
 
   def __init__( self, pilotParams ):
+    """ c'tor
     """
-    Prepare and launch the job agent
-    """
-    CommandBase.__init__(self, pilotParams, 'LaunchAgent')
+    super( LaunchAgent, self ).__init__( pilotParams )
+    self.inProcessOpts = []
+    self.jobAgentOpts = []
 
   def __setInProcessOpts( self ):
 
@@ -566,7 +595,7 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
     self.inProcessOpts.append( '-o GridCE=%s' % self.pp.ceName )
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.inProcessOpts.append( '-o GridCEQueue=%s' % self.CE )
+      self.inProcessOpts.append( '-o GridCEQueue=%s' % self.pp.CE )
     self.inProcessOpts.append( '-o LocalAccountString=%s' % localUser )
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
@@ -589,9 +618,10 @@ class LaunchAgent( CommandBase ):
 
 
   def __startJobAgent(self):
-    """Starting of the JobAgent"""
+    """ Starting of the JobAgent
+    """
 
-# Find any .cfg file uploaded with the sandbox
+    # Find any .cfg file uploaded with the sandbox
 
     diracAgentScript = os.path.join( self.pp.rootPath, "scripts", "dirac-agent" )
     extraCFG = []
@@ -609,16 +639,16 @@ class LaunchAgent( CommandBase ):
     os.environ['PYTHONUNBUFFERED'] = 'yes'
 
     jobAgent = '%s WorkloadManagement/JobAgent %s %s %s' % ( diracAgentScript,
-                                                         " ".join( self.jobAgentOpts ),
-                                                         " ".join( self.inProcessOpts ),
-                                                         " ".join( extraCFG ) )
+                                                             " ".join( self.jobAgentOpts ),
+                                                             " ".join( self.inProcessOpts ),
+                                                             " ".join( extraCFG ) )
 
     self.log.info( "JobAgent execution command:\n%s" % jobAgent )
 
 
     if not self.pp.dryRun:
       retCode, output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      print output
+      self.log.info( output, header = False )
       if retCode:
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )
@@ -636,6 +666,7 @@ class LaunchAgent( CommandBase ):
     sys.exit( 0 )
 
   def execute( self ):
-
+    """ What is called all the time
+    """
     self.__setInProcessOpts()
     self.__startJobAgent()

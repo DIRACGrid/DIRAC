@@ -655,14 +655,6 @@ class SiteDirector( AgentModule ):
       self.log.info( 'DIRAC project will be installed by pilots' )
 
     #Request a release
-    # diracVersion = opsHelper.getValue( "Pilot/Version", [] )
-    # if not diracVersion:
-    #  self.log.error( 'Pilot/Version is not defined in the configuration' )
-    #  return [ None, None ]
-    # diracVersion is a list of accepted releases. Just take the first one
-    # pilotOptions.append( '-r %s' % diracVersion[0] )
-
-    # Request the list of accepted release --> needed to check correct release with SetupProject
     diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
       self.log.error( 'Pilot/Version is not defined in the configuration' )

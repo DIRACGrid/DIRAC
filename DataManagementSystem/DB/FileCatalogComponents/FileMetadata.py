@@ -20,7 +20,6 @@ FILE_STANDARD_METAKEYS = [ 'SE', 'CreationDate', 'ModificationDate', 'LastAccess
 
 class FileMetadata:
 
-<<<<<<< HEAD
   _tables = {}
   _tables["FC_FileMeta"] = { "Fields": {
                                        "FileID": "INTEGER NOT NULL",
@@ -52,15 +51,6 @@ class FileMetadata:
       gLogger.info( "Tables created: %s" % ','.join( result['Value'] ) )  
     return result
         
-=======
-  def __init__( self, database = None ):
-
-    self.db = database
-
-  def setDatabase( self, database ):
-    self.db = database
-
->>>>>>> rel-v6r12
 ##############################################################################
 #
 #  Manage Metadata fields

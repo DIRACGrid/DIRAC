@@ -188,13 +188,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
 #       result = self.db._update(req,conn)
 #       result = self.db._query("UNLOCK TABLES;",conn)
       lPath = "LPATH%d" % (level)
-<<<<<<< HEAD
-      req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID) 
-      result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
-=======
       req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d FOR UPDATE; " % ( lPath, parentDirID )
       resultLock = self.db._query( "START TRANSACTION; ", conn )
->>>>>>> rel-v6r12
       result = self.db._query(req,conn)
       req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)   
       result = self.db._update(req,conn)
