@@ -271,7 +271,7 @@ class PilotParams:
     self.local = False
     self.dryRun = False
     self.commandExtensions = []
-    self.commands = ['InstallDIRAC', 'ConfigureDIRAC', 'LaunchAgent']
+    self.commands = ['GetPilotVersion', 'InstallDIRAC', 'ConfigureDIRAC', 'LaunchAgent']
     self.extensions = []
     self.site = ""
     self.setup = ""

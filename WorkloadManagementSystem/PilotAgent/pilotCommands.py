@@ -27,9 +27,109 @@ import stat
 import imp
 import socket
 import re
+import signal
+import urllib2
+
 from pilotTools import CommandBase
 
 __RCSID__ = "$Id$"
+
+class GetPilotVersion( CommandBase ):
+  """ Used to get the pilot version that needs to be installed.
+      If passed as a parameter, use that one. If not passed, it looks for alternatives.
+
+      This assures that a version is always got even on non-standard Grid resources.
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( GetPilotVersion, self ).__init__( pilotParams )
+    
+  def execute(self):
+    """ Standard method for pilot commands
+    """
+    if '-r' in self.pp.optList or '--release' in self.pp.optList:
+      self.log.info( "Pilot version requested as pilot script option" )
+    else:
+      self.log.info( "Pilot version not requested as pilot script option, going to find it" )
+      self.__urlretrieveTimeout( url, fileName, 120 )
+
+
+  def __urlretrieveTimeout( self, url, fileName = '', timeout = 0 ):
+    """
+     Retrieve remote url to local file, with timeout wrapper
+    """
+    self.log.debug( 'Retrieving remote file "%s"' % url )
+
+    urlData = ''
+    if timeout:
+      signal.signal( signal.SIGALRM, self.__alarmTimeoutHandler )
+      # set timeout alarm
+      signal.alarm( timeout + 5 )
+    try:
+      remoteFD = urllib2.urlopen( url )
+      expectedBytes = 0
+      # Sometimes repositories do not return Content-Length parameter
+      try:
+        expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+      except Exception, x:
+        self.log.warn( 'Content-Length parameter not returned, skipping expectedBytes check' )
+
+      if fileName:
+        localFD = open( fileName, "wb" )
+      receivedBytes = 0L
+      data = remoteFD.read( 16384 )
+      count = 1
+      progressBar = False
+      while data:
+        receivedBytes += len( data )
+        if fileName:
+          localFD.write( data )
+        else:
+          urlData += data
+        data = remoteFD.read( 16384 )
+        if count % 20 == 0:
+          print '\033[1D' + ".",
+          sys.stdout.flush()
+          progressBar = True
+        count += 1
+      if progressBar:
+        # return cursor to the beginning of the line
+        print '\033[1K',
+        print '\033[1A'
+      if fileName:
+        localFD.close()
+      remoteFD.close()
+      if receivedBytes != expectedBytes and expectedBytes > 0:
+        self.log.error( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
+        return False
+    except urllib2.HTTPError, x:
+      if x.code == 404:
+        self.log.error( "%s does not exist" % url )
+        if timeout:
+          signal.alarm( 0 )
+        return False
+    except urllib2.URLError:
+      self.log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
+    except Exception, x:
+      if x == 'Timeout':
+        self.log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
+      if timeout:
+        signal.alarm( 0 )
+      raise x
+
+    if timeout:
+      signal.alarm( 0 )
+
+    if fileName:
+      return True
+    else:
+      return urlData
+
+  def __alarmTimeoutHandler( self, *args ):
+    raise Exception( 'Timeout' )
+
 
 class InstallDIRAC( CommandBase ):
   """ Basically, this is used to call dirac-install with the passed parameters.
