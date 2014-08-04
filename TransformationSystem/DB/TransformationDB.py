@@ -604,7 +604,7 @@ class TransformationDB( DB ):
     updatesList = []
     for fileID, status in fileStatusDict.items():
 
-      updatesList.append( "(%d, %d, '%s', VALUES(ErrorCount), UTC_TIMESTAMP())" % ( transID, fileID, status ) )
+      updatesList.append( "(%d, %d, '%s', 0, UTC_TIMESTAMP())" % ( transID, fileID, status ) )
 
     req += ','.join( updatesList )
     req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
