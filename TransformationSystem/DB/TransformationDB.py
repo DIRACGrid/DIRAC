@@ -319,6 +319,10 @@ class TransformationDB( DB ):
       if not res['OK']:
         return S_ERROR( "Failed to parse parameter value" )
       paramValue = res['Value']
+      req = "UPDATE Transformations SET %s=%s, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
+                                                                                                          paramValue,
+                                                                                                          transID )
+      return self._update( req, connection )
     req = "UPDATE Transformations SET %s='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
                                                                                                           paramValue,
                                                                                                           transID )
