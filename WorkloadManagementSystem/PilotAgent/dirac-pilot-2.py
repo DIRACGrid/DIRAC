@@ -25,7 +25,7 @@ import getopt
 import sys
 from types import ListType
 
-from pilotTools import Logger, pythonPathCheck, PilotParams, getCommands
+from pilotTools import Logger, pythonPathCheck, PilotParams, getCommand
 
 if __name__ == "__main__":
 
@@ -42,14 +42,16 @@ if __name__ == "__main__":
   pilotParams.pilotScriptName = os.path.basename( pilotParams.pilotScript )
   log.debug( 'PARAMETER [%s]' % ', '.join( map( str, pilotParams.optList ) ) )
 
-  commands = getCommands( pilotParams )
-  if type( commands ) != ListType:
-    log.error( commands )
-    sys.exit( -1 )
-
   log.info( "Executing commands: %s" % str( pilotParams.commands ) )
   if pilotParams.commandExtensions:
     log.info( "Requested command extensions: %s" % str( pilotParams.commandExtensions ) )
 
-  for command in commands:
-    command.execute()
+  for commandName in pilotParams.commands:
+    command, module = getCommand( pilotParams, commandName, log )
+    if command is not None:
+      log.info( "Command %s instantiated from %s" % ( commandName, module ) )
+      command.execute()
+    else:
+      log.error( "Command %s could not be instantiated" % commandName )
+      sys.exit( -1 )
+

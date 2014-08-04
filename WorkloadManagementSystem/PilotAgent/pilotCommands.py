@@ -7,12 +7,12 @@
     Each commands is represented by a class inheriting CommandBase class.
     The command class constructor takes PilotParams object which is a data
     structure which keeps common parameters across all the pilot commands.
-    
+
     The constructor must call the superclass constructor with the PilotParams
     object and the command name as arguments, e.g. ::
-    
+
         class InstallDIRAC( CommandBase ):
-        
+
           def __init__( self, pilotParams ):
             CommandBase.__init__(self, pilotParams, 'Install')
             ...
@@ -73,7 +73,7 @@ class InstallDIRAC( CommandBase ):
         self.pp.rootPath = v
       elif o in ( '-V', '--installation' ):
         self.installOpts.append( '-V "%s"' % v )
-      elif o == '-E' or o == '--server':
+      elif o == '-t' or o == '--server':
         self.installOpts.append( '-t "server"' )
 
     if self.pp.gridVersion:
@@ -114,11 +114,19 @@ class InstallDIRAC( CommandBase ):
     """
     installCmd = "%s %s" % ( self.installScript, " ".join( self.installOpts ) )
     self.log.debug( "Installing with: %s" % installCmd )
-    if os.system( installCmd ):
+
+    retCode, output = self.executeAndGetOutput( installCmd )
+    self.log.info( output, header = False )
+
+    if retCode:
       self.log.error( "Could not make a proper DIRAC installation" )
       sys.exit( 1 )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
+    sys.path.insert( 0, self.pp.rootPath )
+    diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
+    sys.path.insert( 0, diracScriptsPath )
+    self.pp.diracInstalled = True
 
   def execute( self ):
     """ What is called all the time
@@ -160,19 +168,19 @@ class ConfigureDIRAC( CommandBase ):
     if self.pp.site:
       self.configureOpts.append( '-n "%s"' % self.pp.site )
     if self.pp.ceName:
-      self.configureOpts.append( '-N "%s"' % self.pp.ceName )  
+      self.configureOpts.append( '-N "%s"' % self.pp.ceName )
     if self.debugFlag:
-      self.configureOpts.append( '-d' )  
+      self.configureOpts.append( '-d' )
     if self.pp.setup:
-        self.configureOpts.append( '-S "%s"' % self.pp.setup ) 
+        self.configureOpts.append( '-S "%s"' % self.pp.setup )
     if self.pp.configServer:
       self.configureOpts.append( '-C "%s"' % self.pp.configServer )
     if self.pp.releaseProject:
-      self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )  
+      self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )
     if self.pp.gateway:
-      self.configureOpts.append( '-W "%s"' % self.pp.gateway )  
+      self.configureOpts.append( '-W "%s"' % self.pp.gateway )
     if self.pp.useServerCertificate:
-      self.configureOpts.append( '--UseServerCertificate' )  
+      self.configureOpts.append( '--UseServerCertificate' )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
@@ -520,6 +528,8 @@ class ConfigureDIRAC( CommandBase ):
                   % ( diskSpace, self.pp.minDiskSpace ) )
       sys.exit( 1 )
 
+    self.pp.diracConfigured = True
+
   def __getCPURequirement(self):
     """ Get job CPU requirement and queue normalization """
 
@@ -638,7 +648,7 @@ class LaunchAgent( CommandBase ):
 
     if not self.pp.dryRun:
       retCode, output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      self.log.info( output )
+      self.log.info( output, header = False )
       if retCode:
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )
