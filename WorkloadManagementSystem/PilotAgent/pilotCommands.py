@@ -73,7 +73,7 @@ class InstallDIRAC( CommandBase ):
         self.pp.rootPath = v
       elif o in ( '-V', '--installation' ):
         self.installOpts.append( '-V "%s"' % v )
-      elif o == '-E' or o == '--server':
+      elif o == '-t' or o == '--server':
         self.installOpts.append( '-t "server"' )
 
     if self.pp.gridVersion:
