@@ -29,6 +29,7 @@ import socket
 import re
 import signal
 import urllib2
+import json
 
 from pilotTools import CommandBase
 
@@ -36,7 +37,7 @@ __RCSID__ = "$Id$"
 
 class GetPilotVersion( CommandBase ):
   """ Used to get the pilot version that needs to be installed.
-      If passed as a parameter, use that one. If not passed, it looks for alternatives.
+      If passed as a parameter, uses that one. If not passed, it looks for alternatives.
 
       This assures that a version is always got even on non-standard Grid resources.
   """
@@ -45,22 +46,31 @@ class GetPilotVersion( CommandBase ):
     """ c'tor
     """
     super( GetPilotVersion, self ).__init__( pilotParams )
+
+    # These parameters can be set by the VO
+    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
+    self.pilotCFGFile = '%s-pilot.json' % self.pp.releaseProject
     
   def execute(self):
     """ Standard method for pilot commands
     """
-    if '-r' in self.pp.optList or '--release' in self.pp.optList:
-      self.log.info( "Pilot version requested as pilot script option" )
+    if self.pp.releaseVersion:
+      self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
     else:
       self.log.info( "Pilot version not requested as pilot script option, going to find it" )
-      self.__urlretrieveTimeout( url, fileName, 120 )
-
+      self.__urlretrieveTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, timeout = 120 )
+      fp = open( self.pilotCFGFile, 'r' )
+      pilotCFGFileContent = json.load( fp )
+      fp.close()
+      pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
+      self.log.debug( "Pilot versions found: %s" % ', '.join( pilotVersions ) )
+      self.log.info("Setting pilot version to %s" % pilotVersions[0])
+      self.pp.releaseVersion = pilotVersions[0]
 
   def __urlretrieveTimeout( self, url, fileName = '', timeout = 0 ):
+    """ Retrieve remote url to local file, with timeout wrapper
     """
-     Retrieve remote url to local file, with timeout wrapper
-    """
-    self.log.debug( 'Retrieving remote file "%s"' % url )
+    self.log.debug( "Retrieving remote file '%s'" % url )
 
     urlData = ''
     if timeout:
@@ -74,7 +84,7 @@ class GetPilotVersion( CommandBase ):
       try:
         expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
       except Exception, x:
-        self.log.warn( 'Content-Length parameter not returned, skipping expectedBytes check' )
+        self.log.warn( "Content-Length parameter not returned, skipping expectedBytes check" )
 
       if fileName:
         localFD = open( fileName, "wb" )
@@ -111,10 +121,10 @@ class GetPilotVersion( CommandBase ):
           signal.alarm( 0 )
         return False
     except urllib2.URLError:
-      self.log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
+      self.log.error( "Timeout after %s seconds on transfer request for '%s'" % ( str( timeout ), url ) )
     except Exception, x:
       if x == 'Timeout':
-        self.log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
+        self.log.error( "Timeout after %s seconds on transfer request for '%s'" % ( str( timeout ), url ) )
       if timeout:
         signal.alarm( 0 )
       raise x
@@ -163,9 +173,6 @@ class InstallDIRAC( CommandBase ):
         self.installOpts.append( "-l '%s'" % v )
       elif o == '-p' or o == '--platform':
         self.pp.platform = v
-      elif o == '-r' or o == '--release':
-        v = v.split(',',1)[0] # for traditional DIRAC Installation take the first release from the list of accepted release
-        self.installOpts.append( '-r "%s"' % v )
       elif o == '-u' or o == '--url':
         self.installOpts.append( '-u "%s"' % v )
       elif o in ( '-P', '--path' ):
@@ -182,6 +189,9 @@ class InstallDIRAC( CommandBase ):
       self.installOpts.append( "-i '%s'" % self.pp.pythonVersion )
     if self.pp.platform:
       self.installOpts.append( '-p "%s"' % self.pp.platform )
+
+    # The release version to install is a requirement
+    self.installOpts.append( '-r "%s"' % self.pp.releaseVersion )
 
     self.log.debug( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
 
