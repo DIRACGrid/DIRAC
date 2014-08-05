@@ -41,25 +41,37 @@ class InputData( OptimizerExecutor ):
     # the shifterProxy option in the Configuration can be used to change this default.
     cls.ex_setProperty( 'shifterProxy', 'DataManager' )
 
-    try:
-      cls.__dataMan = DataManager()
-    except Exception, e:
-      msg = 'Failed to create DataManager'
-      cls.log.exception( msg )
-      return S_ERROR( msg + str( e ) )
-
-    try:
-      cls.__fc = FileCatalog()
-    except Exception, e:
-      msg = 'Failed to create FileCatalog'
-      cls.log.exception( msg )
-      return S_ERROR( msg + str( e ) )
-
+    cls.__dataManDict = {}
+    cls.__fcDict = {}
     cls.__SEToSiteMap = {}
     cls.__lastCacheUpdate = 0
     cls.__cacheLifeTime = 600
 
     return S_OK()
+
+  def __getDataManager( self, vo ):
+    if vo in self.__dataManDict:
+      return self.__dataManDict[vo]
+    else:
+      try:
+        self.__dataManDict[vo] = DataManager( vo = vo )
+      except Exception, e:
+        msg = 'Failed to create DataManager'
+        self.log.exception( msg )
+        return None
+      return self.__dataManDict[vo]
+   
+  def __getFileCatalog( self, vo ):
+    if vo in self.__fcDict:
+      return self.__fcDict[vo]
+    else:
+      try:
+        self.__fcDict[vo] = FileCatalog( vo = vo )
+      except Exception, e:
+        msg = 'Failed to create FileCatalog'
+        self.log.exception( msg )
+        return None
+      return self.__fcDict[vo]   
 
   def optimizeJob( self, jid, jobState ):
     result = jobState.getInputData()
@@ -105,12 +117,17 @@ class InputData( OptimizerExecutor ):
       else:
         lfns.append( lfn )
 
-
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption( 'VirtualOrganization' ) 
     startTime = time.time()
-
-    print "LFNS", lfns
-
-    result = self.__dataMan.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
+    dm = self.__getDataManager( vo )
+    if dm is None:
+      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )  
+    else:
+      result = dm.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -129,7 +146,16 @@ class InputData( OptimizerExecutor ):
 
     if self.ex_getOption( 'CheckFileMetadata', True ):
       start = time.time()
-      guidDict = self.__fc.getFileMetadata( lfns )
+      result = jobState.getManifest()
+      if not result['OK']:
+        return result
+      manifest = result['Value']
+      vo = manifest.getOption( 'VirtualOrganization' )  
+      fc = self.__getFileCatalog( vo )
+      if fc is None:
+        return S_ERROR( 'Failed to instantiate FileCatalog for vo %s' % vo )
+      else:
+        guidDict = fc.getFileMetadata( lfns )
       self.jobLog.info( 'Catalog Metadata Lookup Time: %.2f seconds ' % ( time.time() - startTime ) )
 
       if not guidDict['OK']:
@@ -193,7 +219,16 @@ class InputData( OptimizerExecutor ):
     # Now let's check if some replicas might not be available due to banned SE's
     self.jobLog.info( "Checking active replicas" )
     startTime = time.time()
-    result = self.__dataMan.checkActiveReplicas( replicaDict )
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption( 'VirtualOrganization' ) 
+    dm = self.__getDataManager( vo )
+    if dm is None:
+      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
+    else:  
+      result = dm.checkActiveReplicas( replicaDict )
     self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
     if not result['OK']:
       # due to banned SE's input data might no be available
