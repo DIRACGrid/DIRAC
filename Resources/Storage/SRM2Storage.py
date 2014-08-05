@@ -793,7 +793,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "getFileSize: %s" % pathSURL["Message"] )
+          self.log.verbose( "getFileSize: %s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -803,20 +803,20 @@ class SRM2Storage( StorageBase ):
             successful[pathSURL] = statDict['Size']
           else:
             errStr = "SRM2Storage.getFileSize: Supplied path is not a file."
-            self.log.error( errStr, pathSURL )
+            self.log.verbose( errStr, pathSURL )
             failed[pathSURL] = errStr
         elif urlDict['status'] == 2:
           errMessage = "SRM2Storage.getFileSize: File does not exist."
-          self.log.error( errMessage, pathSURL )
+          self.log.verbose( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
           errStr = "SRM2Storage.getFileSize: Failed to get file metadata."
           errMessage = urlDict['ErrorMessage']
-          self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
+          self.log.verbose( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
       else:
         errStr = "SRM2Storage.getFileSize: Returned element does not contain surl."
-        self.log.fatal( errStr, self.name )
+        self.log.error( errStr, self.name )
         return S_ERROR( errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
