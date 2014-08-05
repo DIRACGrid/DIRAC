@@ -120,8 +120,6 @@ class GetPilotVersion( CommandBase ):
         if timeout:
           signal.alarm( 0 )
         return False
-    except urllib2.URLError:
-      self.log.error( "Timeout after %s seconds on transfer request for '%s'" % ( str( timeout ), url ) )
     except Exception, x:
       if x == 'Timeout':
         self.log.error( "Timeout after %s seconds on transfer request for '%s'" % ( str( timeout ), url ) )
