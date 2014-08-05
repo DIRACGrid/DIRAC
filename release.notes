@@ -1,3 +1,8 @@
+[v6r11p8]
+
+*TMS
+FIX: TransformationDB - fix default value within ON DUPLICATE KEY UPDATE mysql statement
+
 [v6r11p7]
 
 *Framework
