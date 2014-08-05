@@ -1,4 +1,4 @@
-""" 
+"""
 :mod: DataManager
 
 .. module: DataManager
@@ -40,7 +40,7 @@ class DataManager( object ):
 
   A DataManager is taking all the actions that impact or require the FileCatalog and the StorageElement together
   """
-  def __init__( self, catalogs = [], masterCatalogOnly = False ):
+  def __init__( self, catalogs = [], masterCatalogOnly = False, vo = False ):
     """ c'tor
 
     :param self: self reference
@@ -48,19 +48,21 @@ class DataManager( object ):
                     list will be ignored if masterCatalogOnly is set to True
     :param masterCatalogOnly: if set to True, the operations will be performed only on the master catalog.
                               The catalogs parameter will be ignored.
+    :param vo: the VO for which the DataManager is created, get VO from the current proxy if not specified
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
 
 
-    catalogsToUse = FileCatalog().getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
+    catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
 
-    self.fc = FileCatalog( catalogsToUse )
+    self.vo = vo
+    self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
-    self.ignoreMissingInFC = Operations().getValue( 'DataManagement/IgnoreMissingInFC', False )
-    self.useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
+    self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
+    self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -868,7 +870,7 @@ class DataManager( object ):
       fileDict[lfn] = {'PFN':physicalFile, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
 
     if catalog:
-      fileCatalog = FileCatalog( catalog )
+      fileCatalog = FileCatalog( catalog, vo = self.vo )
       if not fileCatalog.isOK():
         return S_ERROR( "Can't get FileCatalog %s" % catalog )
     else:
@@ -932,7 +934,7 @@ class DataManager( object ):
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
 
     if catalog:
-      fileCatalog = FileCatalog( catalog )
+      fileCatalog = FileCatalog( catalog, vo = self.vo )
       res = fileCatalog.addReplica( replicaDict )
     else:
       res = self.fc.addReplica( replicaDict )
@@ -1540,7 +1542,7 @@ class DataManager( object ):
     # # default value
     argsDict = argsDict if argsDict else {}
     # # get replicas for lfn
-    res = FileCatalog().getReplicas( lfn )
+    res = FileCatalog( vo = self.vo ).getReplicas( lfn )
     if not res["OK"]:
       errStr = "_callReplicaSEFcn: Completely failed to get replicas for LFNs."
       self.log.debug( errStr, res["Message"] )
@@ -1690,4 +1692,5 @@ class DataManager( object ):
     # # make sure lfns are sorted from the longest to the shortest
     if type( lfn ) == ListType:
       lfn = sorted( lfn, reverse = True )
-    return FileCatalog().removeFile( lfn )
+    return FileCatalog( vo = self.vo ).removeFile( lfn )
+

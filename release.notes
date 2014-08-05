@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre7]
+[v6r12-pre8]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -129,6 +129,7 @@ FIX: Logger - fix FileBackend implementation
 *WMS
 NEW: Refactored pilots ( dirac-pilot-2 ) to become modular following RFC #18, 
      added pilotCommands.py, SiteDirector modified accordingly 
+CHANGE: InputData(Executor) - use VO specific catalogs      
 
 *Resources
 NEW: StorageElement - added a cache of already created SE objects
@@ -142,6 +143,7 @@ NEW: DataManager - add masterCatalogOnly flag in the constructor
 FIX: DataManager - fix to protect against non valid SE
 CHANGE: FC.DirectoryLevelTree - use SELECT ... FOR UPDATE lock in makeDir()
 FIX: FileCatalog - fixes in using file and replica status
+CHANGE: DataManager - added a new argument to the constructor - vo
 
 *RMS
 NEW: Added 'since' and 'until' parameters for getting requests
@@ -158,6 +160,12 @@ FIX: RequestTask - always set useServerCerificate flag to tru in case of executi
 *TMS
 NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
+CHANGE: TransformationDB - modified such that the body in a transformation can be updated
+
+[v6r11p8]
+
+*TMS
+FIX: TransformationDB - fix default value within ON DUPLICATE KEY UPDATE mysql statement
 
 [v6r11p7]
 
