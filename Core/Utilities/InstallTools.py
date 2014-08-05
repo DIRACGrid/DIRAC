@@ -1219,6 +1219,7 @@ def setupSite( scriptCfg, cfg = None ):
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
   setupExecutors = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Executors' ), [] ) ]
   setupWeb = localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
+  setupWebApp = localCfg.getOption( cfgInstallPath( 'WebApp' ), False )
   setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
   setupPrivateConfiguration = localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
   setupConfigurationName = localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), setup )
@@ -1475,7 +1476,10 @@ def setupSite( scriptCfg, cfg = None ):
 
   # 7.- And finally the Portal
   if setupWeb:
-    setupPortal()
+    if setupWebApp:
+      setupNewPortal()
+    else:
+      setupPortal()
 
   if localServers != masterServer:
     _addCfgToDiracCfg( initialCfg )
@@ -1785,6 +1789,97 @@ def setupPortal():
 
   # Final check
   return getStartupComponentStatus( [ ( 'Web', 'httpd' ), ( 'Web', 'paster' ) ] )
+
+def setupNewPortal():
+  """
+  Install and create link in startup
+  """
+  result = installNewPortal()
+  if not result['OK']:
+    return result
+
+  # Create the startup entries now
+  runitCompDir = result['Value']
+  startCompDir = os.path.join( startDir, 'Web_WebApp' )
+                    
+
+  if not os.path.exists( startDir ):
+    os.makedirs( startDir )
+  
+  if not os.path.lexists( startCompDir ):
+      gLogger.notice( 'Creating startup link at', startCompDir )
+      os.symlink( runitCompDir, startCompDir )
+      
+  time.sleep( 5 )
+
+  # Check the runsv status
+  start = time.time()
+  while ( time.time() - 10 ) < start:
+    result = getStartupComponentStatus( [ ( 'Web', 'WebApp' ) ] )
+    if not result['OK']:
+      return S_ERROR( 'Failed to start the Portal' )
+    if result['Value'] and \
+       result['Value']['%s_%s' % ( 'Web', 'WebApp' )]['RunitStatus'] == "Run":
+      break
+    time.sleep( 1 )
+
+  # Final check
+  return getStartupComponentStatus( [ ( 'Web', 'WebApp' ) ] )
+
+def installNewPortal():
+  """
+  Install runit directories for the Web Portal
+  """
+  # Check that the software for the Web Portal is installed
+  error = ''
+  webDir = os.path.join( linkedRootPath, 'WebApp' )
+  if not os.path.exists( webDir ):
+    error = 'WebApp extension not installed at %s' % webDir
+    if exitOnError:
+      gLogger.error( error )
+      DIRAC.exit( -1 )
+    return S_ERROR( error )
+
+  # First the lighthttpd server
+
+  # Check if the component is already installed
+  runitWebAppDir = os.path.join( runitDir, 'Web', 'WebApp' )
+
+  # Check if the component is already installed
+  if os.path.exists( runitWebAppDir ):
+    msg = "Web Portal already installed"
+    gLogger.notice( msg )
+  else:
+    gLogger.notice( 'Installing Web Portal' )
+    # Now do the actual installation
+    try:
+      _createRunitLog( runitWebAppDir )
+      runFile = os.path.join( runitWebAppDir, 'run' )
+      fd = open( runFile, 'w' )
+      fd.write( 
+"""#!/bin/bash
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py < /dev/null
+""" % {'bashrc': os.path.join( instancePath, 'bashrc' ),
+       'DIRAC': linkedRootPath} )
+      fd.close()
+
+      os.chmod( runFile, gDefaultPerms )
+    except Exception:
+      error = 'Failed to prepare setup for Web Portal'
+      gLogger.exception( error )
+      if exitOnError:
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
+
+    result = execCommand( 5, [runFile] )
+    gLogger.notice( result['Value'][1] )
+
+  return S_OK( runitWebAppDir )
 
 def fixMySQLScripts( startupScript = mysqlStartupScript ):
   """
