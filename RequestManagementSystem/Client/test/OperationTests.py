@@ -192,7 +192,7 @@ class OperationTests( unittest.TestCase ):
     self.assertEqual( op.Status, "Queued", "4. wrong status %s" % op.Status )
 
     op.addFile( File( { "Status": "Failed" } ) )
-    self.assertEqual( op.Status, "Failed", "5. wrong status %s" % op.Status )
+    self.assertEqual( op.Status, "Queued", "5. wrong status %s" % op.Status )
 
     op[3].Status = "Scheduled"
     self.assertEqual( op.Status, "Queued", "6. wrong status %s" % op.Status )
