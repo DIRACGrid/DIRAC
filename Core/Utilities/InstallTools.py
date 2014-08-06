@@ -1815,7 +1815,7 @@ def setupNewPortal():
   # Check the runsv status
   start = time.time()
   while ( time.time() - 10 ) < start:
-    result = getStartupComponentStatus( [ ( 'Web', 'WebApp' ) ] )
+    result = getStartupComponentStatus( [( 'Web', 'WebApp' )] )
     if not result['OK']:
       return S_ERROR( 'Failed to start the Portal' )
     if result['Value'] and \
@@ -1824,15 +1824,25 @@ def setupNewPortal():
     time.sleep( 1 )
 
   # Final check
-  return getStartupComponentStatus( [ ( 'Web', 'WebApp' ) ] )
+  return getStartupComponentStatus( [ ('Web', 'WebApp') ] )
 
 def installNewPortal():
   """
   Install runit directories for the Web Portal
   """
+    
+  result = execCommand( False, ["pip", "install", "tornado"] )
+  if not result['OK']:
+    error = "Tornado can not be installed:%s" % result['Value']
+    gLogger.erro(error)
+    DIRAC.exit(-1)
+    return error
+  else:
+    gLogger.notice("Tornado has installed suceccfully!")
+    
   # Check that the software for the Web Portal is installed
   error = ''
-  webDir = os.path.join( linkedRootPath, 'WebApp' )
+  webDir = os.path.join( linkedRootPath, 'WebAppDIRAC' )
   if not os.path.exists( webDir ):
     error = 'WebApp extension not installed at %s' % webDir
     if exitOnError:
