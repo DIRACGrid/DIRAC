@@ -62,8 +62,7 @@ class ForwardDISET( OperationHandlerBase ):
 
     # ForwardDiset is supposed to be used with a host certificate
     useServerCertificate = gConfig.useServerCertificate()
-    if not useServerCertificate:
-      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
     forward = executeRPCStub( decode )
     if not useServerCertificate:
       gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
