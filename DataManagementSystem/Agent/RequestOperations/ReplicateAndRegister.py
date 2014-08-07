@@ -369,7 +369,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     for opFile in waitingFiles:
 
       gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
-      opFile.Error = ''
+      opFile.Error = ' '
       lfn = opFile.LFN
 
       # Check if replica is at the specified source
@@ -378,14 +378,32 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         self.log.error( replicas["Message"] )
         continue
       replicas = replicas["Value"]
-      if not replicas["Valid"]:
-        self.log.warn( "unable to find valid replicas for %s" % lfn )
+      validReplicas = replicas["Valid"]
+      bannedReplicas = replicas["Banned"]
+      noReplicas = replicas['NoReplicas']
+      badReplicas = replicas['Bad']
+      noPFN = replicas['NoPFN']
+
+      if not validReplicas:
+        gMonitor.addMark( "ReplicateFail" )
+        if bannedReplicas:
+          self.log.warn( "unable to replicate '%s', replicas only at banned SEs" % opFile.LFN )
+        elif noReplicas:
+          self.log.error( "unable to replicate %s, file doesn't exist" % opFile.LFN )
+          opFile.Error = 'No replicas found'
+          opFile.Status = 'Failed'
+        elif badReplicas:
+          self.log.error( "unable to replicate %s, all replicas have a bad checksum" % opFile.LFN )
+          opFile.Error = 'All replicas have a bad checksum'
+          opFile.Status = 'Failed'
+        elif noPFN:
+          self.log.warn( "unable to schedule %s, could not get a PFN" % opFile.LFN )
         continue
       # # get the first one in the list
-      if sourceSE not in replicas['Valid']:
+      if sourceSE not in validReplicas:
         if sourceSE:
           self.log.warn( "%s is not at specified sourceSE %s, changed to %s" % ( lfn, sourceSE, replicas["Valid"][0] ) )
-        sourceSE = replicas["Valid"][0]
+        sourceSE = validReplicas[0]
 
       # # loop over targetSE
       catalog = self.operation.Catalog
