@@ -209,8 +209,8 @@ class Watchdog:
       self.parameters['Vsize'].append( vsize )
       self.parameters.setdefault( 'RSS', [] )
       self.parameters['RSS'].append( rss )
-      msg += "Job Vsize: %.1f kb" % vsize
-      msg += "Job RSS: %.1f kb" % rss
+      msg += "Job Vsize: %.1f kb " % vsize
+      msg += "Job RSS: %.1f kb " % rss
     result = self.getDiskSpace()
     msg += 'DiskSpace: %.1f MB ' % ( result['Value'] )
     if not self.parameters.has_key( 'DiskSpace' ):
@@ -629,8 +629,8 @@ class Watchdog:
     if not result['OK']:
       self.log.warn( 'Could not get job memory usage' )
 
-    self.initialValues['Vsize'] = result['Value']['Vsize']
-    self.initialValues['RSS'] = result['Value']['RSS']
+    self.initialValues['Vsize'] = result['Value']['Vsize']/1024.
+    self.initialValues['RSS'] = result['Value']['RSS']/1024.
     self.parameters['Vsize'] = []
     self.parameters['RSS'] = []
 
