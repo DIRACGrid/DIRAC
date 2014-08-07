@@ -4,7 +4,7 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/16 13:43:45
 ########################################################################
-""" 
+"""
 :mod: Request
 =============
 
@@ -159,7 +159,8 @@ class Request( Record ):
           op._setQueued( self )
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
-          rStatus = "Done"
+        rStatus = "Done"
+        self.Error = ' '
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -417,7 +418,7 @@ class Request( Record ):
     if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
     if value == 'Done':
-      self.__data__['Error'] = ''
+      self.Error = ' '
     self.__data__["Status"] = value
 
   @property
