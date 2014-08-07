@@ -397,7 +397,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
         elif noPFN:
-          self.log.warn( "unable to schedule %s, could not get a PFN" % opFile.LFN )
+          self.log.warn( "unable to replicate %s, could not get a PFN" % opFile.LFN )
         continue
       # # get the first one in the list
       if sourceSE not in validReplicas:
