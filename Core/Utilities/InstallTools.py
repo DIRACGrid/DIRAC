@@ -1850,8 +1850,20 @@ def installNewPortal():
       DIRAC.exit( -1 )
     return S_ERROR( error )
 
-  # First the lighthttpd server
-
+  #compile the JS code
+  prodMode = ""
+  webappCompileScript = os.path.join( linkedRootPath, "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
+  if os.path.isfile( webappCompileScript ):
+    os.chmod( webappCompileScript , gDefaultPerms )
+    gLogger.notice( "Executing %s..." % webappCompileScript )
+    if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( webappCompileScript,
+                                                           webappCompileScript,
+                                                           webappCompileScript ) ):
+      gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
+                                                                       webappCompileScript ) )
+    else:
+      prodMode = "-p"
+  
   # Check if the component is already installed
   runitWebAppDir = os.path.join( runitDir, 'Web', 'WebApp' )
 
@@ -1873,9 +1885,10 @@ rcfile=%(bashrc)s
 #
 exec 2>&1
 #
-exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py < /dev/null
+exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py %(prodMode)s < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
-       'DIRAC': linkedRootPath} )
+       'DIRAC': linkedRootPath,
+       'prodMode':prodMode} )
       fd.close()
 
       os.chmod( runFile, gDefaultPerms )
