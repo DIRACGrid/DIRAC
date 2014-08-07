@@ -129,7 +129,7 @@ class ProcessMonitor:
         rss += float( info[23] ) * pageSize
         self.log.debug( 'Added %s to CPU total (now %s) from child PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
         del infoDict[pidCheck]
-        childCPU += self.__getChildCPUConsumedLinux( pidCheck, pidList, infoDict )
+        childCPU += self.__getChildResourceConsumedLinux( pidCheck, pidList, infoDict )
 
 
     #Next add any contributions from orphan processes in same process group
