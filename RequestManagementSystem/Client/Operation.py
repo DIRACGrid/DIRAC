@@ -5,7 +5,7 @@
 # Date: 2012/07/24 12:12:05
 ########################################################################
 
-""" 
+"""
 :mod: Operation
 
 .. module: Operation
@@ -132,7 +132,7 @@ class Operation( Record ):
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
-      self.__data__['Error'] = ''
+      self.Error = ' '
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
@@ -342,7 +342,7 @@ class Operation( Record ):
       if self._parent:
         self._parent._notify()
     if self.__data__['Status'] == 'Done':
-      self.__data__['Error'] = ''
+      self.Error = ' '
 
   @property
   def Order( self ):

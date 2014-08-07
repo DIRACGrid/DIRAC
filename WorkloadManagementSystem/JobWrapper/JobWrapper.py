@@ -276,7 +276,12 @@ class JobWrapper:
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
-
+      
+    jobMemory = 0.  
+    if "Memory" in self.jobArgs:
+      # Job specifies memory in GB, internally use KB
+      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024. 
+      
     if 'Executable' in self.jobArgs:
       executable = self.jobArgs['Executable'].strip()
     else:
@@ -335,7 +340,7 @@ class JobWrapper:
     self.__setJobParam( 'PayloadPID', payloadPID )
 
     watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime )
+    watchdogInstance = watchdogFactory.getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
     if not watchdogInstance['OK']:
       self.log.warn( watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )

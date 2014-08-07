@@ -24,7 +24,7 @@ class WatchdogFactory:
     self.log = gLogger
 
   #############################################################################
-  def getWatchdog(self,pid,thread,spObject,jobcputime):
+  def getWatchdog( self, pid, thread, spObject, jobcputime, memoryLimit ):
     """This method returns the CE instance corresponding to the local OS,
        the Linux watchdog is returned by default.
     """
@@ -49,7 +49,7 @@ class WatchdogFactory:
       return S_ERROR(msg)
 
     try:
-      ceStr = 'ceSubClass.%s(pid, thread, spObject, jobcputime)' %(subClassName)
+      ceStr = 'ceSubClass.%s(pid, thread, spObject, jobcputime, memoryLimit)' %(subClassName)
       watchdogInstance = eval(ceStr)
     except Exception, x:
       msg = 'WatchdogFactory could not instantiate %s()' %(subClassName)
