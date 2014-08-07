@@ -978,27 +978,28 @@ class StorageManagementDB( DB ):
       taskIDs = [ row[0] for row in res['Value'] ]
 
       # ! Make sure to only cancel file staging for files with no relations with other tasks (jobs) but the killed ones
-      req = "SELECT DISTINCT(CR.ReplicaID) FROM TaskReplicas AS TR, CacheReplicas AS CR WHERE TR.TaskID IN (%s) AND CR.Links=1 and TR.ReplicaID=CR.ReplicaID;" % intListToString( taskIDs )
-      res = self._query( req )
-      if not res['OK']:
-        gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
-
-
-      replicaIDs = [ row[0] for row in res['Value'] ]
-
-      if replicaIDs:
-        req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )
-        res = self._update( req, connection )
+      if taskIDs:
+        req = "SELECT DISTINCT(CR.ReplicaID) FROM TaskReplicas AS TR, CacheReplicas AS CR WHERE TR.TaskID IN (%s) AND CR.Links=1 and TR.ReplicaID=CR.ReplicaID;" % intListToString( taskIDs )
+        res = self._query( req )
         if not res['OK']:
-          gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+          gLogger.error( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
 
-        req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
-        res = self._update( req, connection )
-        if not res['OK']:
-          gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
 
-      # Finally, remove the Task and TaskReplicas entries.
-      res = self.removeTasks( taskIDs, connection )
+        replicaIDs = [ row[0] for row in res['Value'] ]
+
+        if replicaIDs:
+          req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString ( replicaIDs )
+          res = self._update( req, connection )
+          if not res['OK']:
+            gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+
+          req = "DELETE FROM CacheReplicas WHERE ReplicaID in (%s) AND Links=1;" % intListToString ( replicaIDs )
+          res = self._update( req, connection )
+          if not res['OK']:
+            gLogger.error( "%s.%s_DB: problem removing records: %s. %s" % ( self._caller(), 'killTasksBySourceTaskID', req, res['Message'] ) )
+
+        # Finally, remove the Task and TaskReplicas entries.
+        res = self.removeTasks( taskIDs, connection )
       return res
 
   def removeStageRequests( self, replicaIDs, connection = False ):
