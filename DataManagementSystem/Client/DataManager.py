@@ -1677,20 +1677,3 @@ class DataManager( object ):
     return self.__executeIfReplicaExists( storageElementName, lfn,
                                                   "getFile", localPath = localPath )
 
-
-
-  # we should so something to get rid of this one
-  def removeCatalogFile( self, lfn ):
-    """ remove a file from the FileCatalog
-
-    :param self: self reference
-    :param mixed lfn: LFN as string or list of LFN strings or dict with LFNs as keys
-    :param bool singleFile: execute for the first LFN only
-    :param list catalogs: catalogs' names
-    """
-
-    # # make sure lfns are sorted from the longest to the shortest
-    if type( lfn ) == ListType:
-      lfn = sorted( lfn, reverse = True )
-    return FileCatalog( vo = self.vo ).removeFile( lfn )
-
