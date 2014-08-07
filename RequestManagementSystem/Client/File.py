@@ -4,7 +4,7 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/03 15:02:53
 ########################################################################
-""" 
+"""
 :mod: File
 ==========
 
@@ -232,7 +232,7 @@ class File( Record ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
-      self.__data__['Error'] = ''
+      self.Error = ' '
     self.__data__["Status"] = value
     if self._parent:
       self._parent._notify()
