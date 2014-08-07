@@ -1,3 +1,21 @@
+[v6r11p9]
+
+*Core
+NEW: AgentModule - set AGENT_WORKDIRECTORY env variable with the workDirectory
+NEW: InstallTools - added methods for the new web portal installation
+
+*DMS
+FIX: ReplicateAndRegister - apply same error logic for DM replication as for FTS
+
+*Resources:
+FIX: SRM2Storage - fix log message level
+FIX: SRM2Storage - avoid useless existence checks 
+
+*RMS
+FIX: ForwardDISET - a temporary fix for a special LHCb case, to be removed asap
+FIX: ReqClient - prettyPrint is even prettier
+FIX: RequestTask - always use server certificates when executed within an agent
+
 [v6r11p8]
 
 *TMS
