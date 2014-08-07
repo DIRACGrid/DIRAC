@@ -413,16 +413,22 @@ def prettyPrint( mainItem, key = '', offset = 0 ):
     for key in sorted( mainItem ):
       prettyPrint( mainItem[key], key = key, offset = offset )
     output += "%s%s\n" % ( blanks, '}' ) if blanks else ''
-  elif mainItem and type( mainItem ) == type( [] ):
-    output += "%s%s%s\n" % ( blanks, key, '[' )
+  elif mainItem and type( mainItem ) == type( [] ) or type( mainItem ) == type( tuple() ):
+    output += "%s%s%s\n" % ( blanks, key, '[' if type( mainItem ) == type( [] ) else '(' )
     for item in mainItem:
       prettyPrint( item, offset = offset + 2 )
-    output += "%s%s\n" % ( blanks, ']' )
+    output += "%s%s\n" % ( blanks, ']' if type( mainItem ) == type( [] ) else ')' )
   elif type( mainItem ) == type( '' ):
-    output += "%s%s'%s'\n" % ( blanks, key, str( mainItem ) )
+    if '\n' in mainItem:
+      prettyPrint( mainItem.strip( '\n' ).split( '\n' ), offset = offset )
+    else:
+      output += "%s%s'%s'\n" % ( blanks, key, mainItem )
   else:
     output += "%s%s%s\n" % ( blanks, key, str( mainItem ) )
-  output = output.replace( '[\n%s{' % blanks, '[{' ).replace( '}\n%s]' % blanks, '}]' )
+  output = output.replace( '[\n%s{' % blanks, '[{' ).replace( '}\n%s]' % blanks, '}]' ) \
+                 .replace( '(\n%s{' % blanks, '({' ).replace( '}\n%s)' % blanks, '})' ) \
+                 .replace( '(\n%s(' % blanks, '((' ).replace( ')\n%s)' % blanks, '))' ) \
+                 .replace( '(\n%s[' % blanks, '[' ).replace( ']\n%s)' % blanks, ']' )
 
 def printRequest( request, status = None, full = False, verbose = True, terse = False ):
   from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
@@ -440,10 +446,9 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
                                                                      request.Status, " ('%s' in DB)" % status if status != request.Status else '',
                                                                      ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
                                                                      ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
-    if verbose:
-      gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
-      if request.OwnerDN:
-        gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
+    gLogger.always( "Created %s, Updated %s" % ( request.CreationTime, request.LastUpdate ) )
+    if request.OwnerDN:
+      gLogger.always( "Owner: '%s', Group: %s" % ( request.OwnerDN, request.OwnerGroup ) )
     for indexOperation in enumerate( request ):
       op = indexOperation[1]
       if not terse or op.Status == 'Failed':
@@ -457,18 +462,25 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
                                                                for job in ftsJobs] ) )
 
 def printOperation( indexOperation, verbose = True, onlyFailed = False ):
+  global output
   i, op = indexOperation
   prStr = ''
-  if 'Replicate' in op.Type:
-    anyReplication = True
-  if verbose:
-    if op.SourceSE:
-      prStr += 'SourceSE: %s' % op.SourceSE
-    if op.TargetSE:
-      prStr += ( ' - ' if prStr else '' ) + 'TargetSE: %s' % op.TargetSE
-    if prStr:
-      prStr += ' - '
-    prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
+  if op.SourceSE:
+    prStr += 'SourceSE: %s' % op.SourceSE
+  if op.TargetSE:
+    prStr += ( ' - ' if prStr else '' ) + 'TargetSE: %s' % op.TargetSE
+  if prStr:
+    prStr += ' - '
+  prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
+  if op.Type == 'ForwardDISET':
+    from DIRAC.Core.Utilities import DEncode
+    decode, _length = DEncode.decode( op.Arguments )
+    if verbose:
+      output = ''
+      prettyPrint( decode, offset = 10 )
+      prStr += '\n      Arguments:\n' + output.strip( '\n' )
+    else:
+      prStr += '\n      Service: %s' % decode[0][0]
   gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID,
                                                                                        op.Order, op.Status,
                                                                                        ( " Error='%s'" % op.Error ) if op.Error and op.Error.strip() else "",

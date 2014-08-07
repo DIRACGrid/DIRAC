@@ -88,10 +88,10 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
 
         seChecksum = repSEMetadata.get( "Checksum" )
         if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
-          log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
-                                                          opFile.Checksum,
-                                                          repSE,
-                                                          seChecksum ) )
+          log.warn( " %s checksum mismatch, request: %s @%s: %s" % ( opFile.LFN,
+                                                                     opFile.Checksum,
+                                                                     repSEName,
+                                                                     seChecksum ) )
           ret["Bad"].append( repSEName )
         else:
           # # if we're here repSE is OK
@@ -371,7 +371,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     for opFile in waitingFiles:
 
       gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
-      opFile.Error = ''
+      opFile.Error = ' '
       lfn = opFile.LFN
 
       # Check if replica is at the specified source
@@ -380,22 +380,41 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         self.log.error( replicas["Message"] )
         continue
       replicas = replicas["Value"]
-      if not replicas["Valid"]:
-        self.log.warn( "unable to find valid replicas for %s" % lfn )
+      validReplicas = replicas["Valid"]
+      bannedReplicas = replicas["Banned"]
+      noReplicas = replicas['NoReplicas']
+      badReplicas = replicas['Bad']
+      noPFN = replicas['NoPFN']
+
+      if not validReplicas:
+        gMonitor.addMark( "ReplicateFail" )
+        if bannedReplicas:
+          self.log.warn( "unable to replicate '%s', replicas only at banned SEs" % opFile.LFN )
+        elif noReplicas:
+          self.log.error( "unable to replicate %s, file doesn't exist" % opFile.LFN )
+          opFile.Error = 'No replicas found'
+          opFile.Status = 'Failed'
+        elif badReplicas:
+          self.log.error( "unable to replicate %s, all replicas have a bad checksum" % opFile.LFN )
+          opFile.Error = 'All replicas have a bad checksum'
+          opFile.Status = 'Failed'
+        elif noPFN:
+          self.log.warn( "unable to replicate %s, could not get a PFN" % opFile.LFN )
         continue
       # # get the first one in the list
-      if sourceSE not in replicas['Valid']:
+      if sourceSE not in validReplicas:
         if sourceSE:
-          self.log.warn( "%s is not at specified sourceSE %s, changed to %s" % ( lfn, sourceSE, replicas["Valid"][0] ) )
-        sourceSE = replicas["Valid"][0]
+          self.log.warn( "%s is not at specified sourceSE %s, changed to %s" % ( lfn, sourceSE, validReplicas[0] ) )
+        sourceSE = validReplicas[0]
 
       # # loop over targetSE
       catalog = self.operation.Catalog
       for targetSE in self.operation.targetSEList:
 
         # # call DataManager
-        if targetSE == sourceSE:
-          self.log.warn( "Request to replicate %s to the source SE: %s" % ( lfn, sourceSE ) )
+        if targetSE in validReplicas:
+          self.log.warn( "Request to replicate %s to an existing location: %s" % ( lfn, targetSE ) )
+          opFile.Status = 'Done'
           continue
         res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE, catalog = catalog )
         if res["OK"]:

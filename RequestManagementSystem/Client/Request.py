@@ -4,7 +4,7 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/16 13:43:45
 ########################################################################
-""" 
+"""
 :mod: Request
 
 .. module: Request
@@ -158,8 +158,8 @@ class Request( Record ):
           op._setQueued( self )
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
-          rStatus = "Done"
-
+        rStatus = "Done"
+        self.Error = ' '
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -423,7 +423,7 @@ class Request( Record ):
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
     if value == 'Done':
-      self.__data__['Error'] = ''
+      self.Error = ' '
     self.__data__["Status"] = value
 
   @property
