@@ -327,8 +327,9 @@ class SRM2Storage( StorageBase ):
       dfile.write( " " )
       dfile.close()
     destFile = os.path.join( path, 'dirac_directory.%s' % time.time() )
-    res = self.__putFile( srcFile, destFile, 0 )
-    self.__executeOperation( destFile, 'removeFile' )
+    res = self.__putFile( srcFile, destFile, 0, checkExists = False )
+    if res['OK']:
+      self.__executeOperation( destFile, 'removeFile' )
     return res
 
   def __makeDirs( self, path ):
@@ -840,7 +841,7 @@ class SRM2Storage( StorageBase ):
           failed[dest_url] = res['Message']
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
-  def __putFile( self, src_file, dest_url, sourceSize ):
+  def __putFile( self, src_file, dest_url, sourceSize, checkExists = True ):
     """ put :src_file: to :dest_url:
 
     :param self: self reference
@@ -848,17 +849,18 @@ class SRM2Storage( StorageBase ):
     :param str dest_url: destination url on storage
     :param int sourceSize: :src_file: size in B
     """
-    # Pre-transfer check
-    res = self.__executeOperation( dest_url, 'exists' )
-    if not res['OK']:
-      self.log.debug( "__putFile: Failed to find pre-existance of destination file." )
-      return res
-    if res['Value']:
-      res = self.__executeOperation( dest_url, 'removeFile' )
+    if checkExists:
+      # Pre-transfer check
+      res = self.__executeOperation( dest_url, 'exists' )
       if not res['OK']:
-        self.log.debug( "__putFile: Failed to remove remote file %s." % dest_url )
-      else:
-        self.log.debug( "__putFile: Removed remote file %s." % dest_url )
+        self.log.debug( "__putFile: Failed to find pre-existance of destination file." )
+        return res
+      if res['Value']:
+        res = self.__executeOperation( dest_url, 'removeFile' )
+        if not res['OK']:
+          self.log.debug( "__putFile: Failed to remove remote file %s." % dest_url )
+        else:
+          self.log.debug( "__putFile: Removed remote file %s." % dest_url )
     dsttype = self.defaulttype
     src_spacetokendesc = ''
     dest_spacetokendesc = self.spaceToken
