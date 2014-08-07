@@ -86,10 +86,10 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
 
         seChecksum = repSEMetadata.get( "Checksum" )
         if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
-          log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
-                                                               opFile.Checksum,
-                                                               repSE,
-                                                               seChecksum ) )
+          log.warn( " %s checksum mismatch, request: %s @%s: %s" % ( opFile.LFN,
+                                                                     opFile.Checksum,
+                                                                     repSEName,
+                                                                     seChecksum ) )
           ret["Bad"].append( repSEName )
         else:
           # # if we're here repSE is OK
