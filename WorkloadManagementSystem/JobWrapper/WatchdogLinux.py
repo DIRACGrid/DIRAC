@@ -18,14 +18,15 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Os import getDiskSpace
 
-import string,re,socket
+import string
+import socket
 
 class WatchdogLinux(Watchdog):
 
-  def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='linux'):
+  def __init__(self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag='linux'):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__(self,pid,thread,spObject,jobCPUtime,systemFlag)
+    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
     self.systemFlag = systemFlag
     self.pid = pid
 
@@ -37,16 +38,16 @@ class WatchdogLinux(Watchdog):
     """
     result = S_OK()
     try:
-      file = open ("/proc/cpuinfo","r")
+      _file = open ("/proc/cpuinfo","r")
       info =  file.readlines()
-      file.close()
+      _file.close()
       result["HostName"] = socket.gethostname()
       result["CPU(MHz)"]   = string.replace(string.replace(string.split(info[6],":")[1]," ",""),"\n","")
       result["ModelName"] = string.replace(string.replace(string.split(info[4],":")[1]," ",""),"\n","")
       result["CacheSize(kB)"] = string.replace(string.replace(string.split(info[7],":")[1]," ",""),"\n","")
-      file = open ("/proc/meminfo","r")
+      _file = open ("/proc/meminfo","r")
       info =  file.readlines()
-      file.close()
+      _file.close()
       result["Memory(kB)"] =  string.replace(string.replace(string.split(info[3],":")[1]," ",""),"\n","")
       account = 'Unknown'
       localID = shellCall(10,'whoami')
@@ -95,7 +96,7 @@ class WatchdogLinux(Watchdog):
       result['Value'] = 0
     return result
 
- #############################################################################
+  #############################################################################
   def getDiskSpace(self):
     """Obtains the disk space used.
     """
