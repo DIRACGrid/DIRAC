@@ -137,8 +137,9 @@ class JobStateUpdateHandler( RequestHandler ):
     endDate = ''
     startDate = ''
     startFlag = ''
+    jobID = int( jobID )
 
-    result = jobDB.getJobAttributes( int( jobID ), ['Status', 'LastUpdateTime'] )
+    result = jobDB.getJobAttributes( jobID, ['Status'] )
     if not result['OK']:
       return result
 
@@ -149,12 +150,17 @@ class JobStateUpdateHandler( RequestHandler ):
     new_status = result['Value']['Status']
     if new_status == "Stalled":
       status = 'Running'
-    lastUpdate = result['Value']['LastUpdateTime']
+
+    # Get the latest WN time stamps of status updates
+    result = logDB.getWMSTimeStamps( int( jobID ) )
+    if not result['OK']:
+      return result
+    lastTime = max( [int( t ) for s, t in result['Value'].items() if s != 'LastTime'] )
 
     # Get the last status values
     dates = sorted( statusDict )
     # We should only update the status if its time stamp is more recent than the last update
-    for date in [date for date in dates if date > lastUpdate]:
+    for date in [date for date in dates if date > lastTime]:
       sDict = statusDict[date]
       if sDict['Status']:
         status = sDict['Status']
@@ -185,14 +191,14 @@ class JobStateUpdateHandler( RequestHandler ):
     if appCounter:
       attrNames.append( 'ApplicationCounter' )
       attrValues.append( appCounter )
-    result = jobDB.setJobAttributes( int( jobID ), attrNames, attrValues, update = True )
+    result = jobDB.setJobAttributes( jobID, attrNames, attrValues, update = True )
     if not result['OK']:
       return result
 
     if endDate:
-      result = jobDB.setEndExecTime( int( jobID ), endDate )
+      result = jobDB.setEndExecTime( jobID, endDate )
     if startDate:
-      result = jobDB.setStartExecTime( int( jobID ), startDate )
+      result = jobDB.setStartExecTime( jobID, startDate )
 
     # Update the JobLoggingDB records
     for date in dates:
@@ -210,7 +216,7 @@ class JobStateUpdateHandler( RequestHandler ):
         status = "Running"
         minor = "Application"
       source = sDict['Source']
-      result = logDB.addLoggingRecord( int( jobID ), status, minor, application, date, source )
+      result = logDB.addLoggingRecord( jobID, status, minor, application, date, source )
       if not result['OK']:
         return result
 
