@@ -14,6 +14,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
+import time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -48,20 +49,30 @@ class JobStateUpdateHandler( RequestHandler ):
     else:
       return S_ERROR( "updateJobFromStager: %s status not known." % status )
 
-    result = jobDB.getJobAttributes( jobID, ['Status'] )
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      # if there is no matching Job it returns an empty dictionary
-      return S_OK( 'No Matching Job' )
-    status = result['Value']['Status']
+    infoStr = None
+    trials = 10
+    for i in range( trials ):
+      result = jobDB.getJobAttributes( jobID, ['Status'] )
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        # if there is no matching Job it returns an empty dictionary
+        return S_OK( 'No Matching Job' )
+      status = result['Value']['Status']
+      if status == 'Staging':
+        if i:
+          infoStr = "Found job in Staging after %d seconds" % i
+        break
+      time.sleep( 1 )
     if status != 'Staging':
-      return S_OK( 'Job is not in Staging' )
+      return S_OK( 'Job is not in Staging after %d seconds' % trials )
 
     result = self.__setJobStatus( int( jobID ), jobStatus, minorStatus, 'StagerSystem', None )
     if not result['OK']:
       if result['Message'].find( 'does not exist' ) != -1:
         return S_OK()
+    if infoStr:
+      return S_OK( infoStr )
     return result
 
   ###########################################################################
