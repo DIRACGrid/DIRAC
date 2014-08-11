@@ -214,12 +214,13 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
     self.assertEqual( res['Value']['DowntimeID'], '1 aRealName' )
 
 
+# FIXME: rest to be reviewed. The test of the doNew is missing and more important of the doMaster
 
 #   def test_doMaster( self ):
 #     """ tests the doMaster method
 #     """
 #
-#     command = self.testClass()
+#     command = DowntimeCommand()
 #     res = command.doMaster()
 #
 #     self.assertEqual( False, res['OK'] )
