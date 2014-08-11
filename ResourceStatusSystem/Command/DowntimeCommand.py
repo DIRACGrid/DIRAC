@@ -1,6 +1,4 @@
-# $HeadURL:  $
 ''' DowntimeCommand module
-
 '''
 
 import urllib2
@@ -190,7 +188,7 @@ class DowntimeCommand( Command ):
   def doCache( self ):
     '''
       Method that reads the cache table and tries to read from it. It will 
-      return a list of dictionaries if there are results.
+      return a list with one dictionary describing the DT if there are results.
     '''
     
     params = self._prepareCommand()
@@ -226,7 +224,7 @@ class DowntimeCommand( Command ):
       # If hours are defined, we want also the downtimes starting in the next <hours>
       dtDateFuture = dtDate + timedelta( hours = hours )
       for dt in uniformResult:
-        if ( dt[ 'StartDate' ] > dtDate and dt[ 'EndDate' ] > dtDate ) or ( dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
+        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
           if dt[ 'Severity' ] == 'Outage':
             dtOutages.append( dt )
           else:
