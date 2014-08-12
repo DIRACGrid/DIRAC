@@ -34,16 +34,16 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
       seType = 'targetSE'
     bannedSEs = []
     for checkSE in checkSEs:
-      writeStatus = self.rssSEStatus( checkSE, access, retries = 5 )
-      if not writeStatus["OK"]:
-        self.log.error( writeStatus["Message"] )
+      seStatus = self.rssSEStatus( checkSE, access, retries = 5 )
+      if not seStatus["OK"]:
+        self.log.error( seStatus["Message"] )
         error = "unknown %s: %s" % ( seType, checkSE )
         for opFile in self.operation:
           opFile.Error = error
         self.operation.Error = error
         return S_ERROR( error )
 
-      if not writeStatus["Value"]:
+      if not seStatus["Value"]:
         self.log.info( "%s %s is banned for %s right now" % ( seType.capitalize(), checkSE, access ) )
         bannedSEs.append( checkSE )
         self.operation.Error = "banned %s: %s;" % ( seType, checkSE )

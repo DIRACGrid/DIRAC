@@ -335,17 +335,13 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
       # # check source se for read
-      sourceRead = self.rssSEStatus( sourceSE, "ReadAccess" )
-      if not sourceRead["OK"]:
-        self.log.info( sourceRead["Message"] )
-        for opFile in self.operation:
-          opFile.Error = sourceRead["Message"]
-        self.operation.Error = sourceRead["Message"]
+      bannedSource = self.checkSEsRSS( sourceSE, 'ReadAccess' )
+      if not bannedSource["OK"]:
         gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
         gMonitor.addMark( "ReplicateFail", len( self.operation ) )
-        return sourceRead
+        return bannedSource
 
-      if not sourceRead["Value"]:
+      if bannedSource["Value"]:
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
         self.log.info( self.operation.Error )
         return S_OK( self.operation.Error )
