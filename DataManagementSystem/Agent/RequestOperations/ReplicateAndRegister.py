@@ -346,7 +346,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       if not bannedSource["OK"]:
         gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
         gMonitor.addMark( "ReplicateFail", len( self.operation ) )
-        return S_OK( 'SourceSE %s is banned for reading' % sourceSE )
+        return bannedSource
 
       if bannedSource["Value"]:
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
@@ -361,7 +361,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       return bannedTargets
 
     if bannedTargets['Value']:
-      return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
+      self.operation.Error = "%s targets are banned for writing" % ",".join( bannedTargets['Value'] )
+      return S_OK( self.operation.Error )
 
     # Can continue now
     self.log.verbose( "No targets banned for writing" )
