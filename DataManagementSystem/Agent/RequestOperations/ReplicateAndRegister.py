@@ -260,6 +260,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         gMonitor.addMark( "FTSScheduleFail" )
         if bannedReplicas:
           self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+          opFile.Attempt -= 1
         elif noReplicas:
           self.log.error( "unable to schedule %s, file doesn't exist" % opFile.LFN )
           opFile.Error = 'No replicas found'
