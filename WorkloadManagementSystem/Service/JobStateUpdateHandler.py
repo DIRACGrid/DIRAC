@@ -155,12 +155,14 @@ class JobStateUpdateHandler( RequestHandler ):
     result = logDB.getWMSTimeStamps( int( jobID ) )
     if not result['OK']:
       return result
-    lastTime = max( [int( t ) for s, t in result['Value'].items() if s != 'LastTime'] )
+    lastTime = max( [float( t ) for s, t in result['Value'].items() if s != 'LastTime'] )
+    from DIRAC import Time
+    lastTime = Time.toString( Time.fromEpoch( lastTime ) )
 
     # Get the last status values
     dates = sorted( statusDict )
     # We should only update the status if its time stamp is more recent than the last update
-    for date in [date for date in dates if date > lastTime]:
+    for date in [date for date in dates if date >= lastTime]:
       sDict = statusDict[date]
       if sDict['Status']:
         status = sDict['Status']
