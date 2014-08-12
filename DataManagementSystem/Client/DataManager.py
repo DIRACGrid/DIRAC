@@ -705,16 +705,10 @@ class DataManager( object ):
       errStr = "%s Completely failed to get replicas for LFN." % logStr
       self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
       return res
-    try:
-      if lfn not in res['Value']['Successful']:
-        errStr = "%s Failed to get replicas for LFN." % logStr
-        self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
-        return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
-    except:
-      print '=== Exception ==='
-      print 'LFN', lfn
-      print 'result', res
-      return S_ERROR( "Exception" )
+    if lfn not in res['Value']['Successful']:
+      errStr = "%s Failed to get replicas for LFN." % logStr
+      self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
+      return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
     self.log.debug( "%s Successfully obtained replicas for LFN." % logStr )
     lfnReplicas = res['Value']['Successful'][lfn]
 
