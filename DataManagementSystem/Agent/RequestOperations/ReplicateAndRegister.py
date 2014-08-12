@@ -149,9 +149,9 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       bannedGroups = getattr( self, "FTSBannedGroups" ) if hasattr( self, "FTSBannedGroups" ) else ()
       if self.request.OwnerGroup in bannedGroups:
         self.log.info( "usage of FTS system is banned for request's owner" )
-        return self.rmTransfer()
+        return self.dmTransfer()
       return self.ftsTransfer()
-    return self.rmTransfer()
+    return self.dmTransfer()
 
   def __checkReplicas( self ):
     """ check done replicas and update file states  """
@@ -322,14 +322,11 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       self.log.info( "No files to schedule after metadata checks" )
 
     # Just in case some transfers could not be scheduled, try them with RM
-    return self.rmTransfer( fromFTS = True )
+    return self.dmTransfer( fromFTS = True )
 
-  def rmTransfer( self, fromFTS = False ):
+  def dmTransfer( self, fromFTS = False ):
     """ replicate and register using dataManager  """
     # # get waiting files. If none just return
-    waitingFiles = self.getWaitingFilesList()
-    if not waitingFiles:
-      return S_OK()
     if fromFTS:
       self.log.info( "Trying transfer using replica manager as FTS failed" )
     else:
@@ -366,6 +363,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     # Can continue now
     self.log.verbose( "No targets banned for writing" )
 
+    waitingFiles = self.getWaitingFilesList()
     # # loop over files
     for opFile in waitingFiles:
 
@@ -389,6 +387,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         gMonitor.addMark( "ReplicateFail" )
         if bannedReplicas:
           self.log.warn( "unable to replicate '%s', replicas only at banned SEs" % opFile.LFN )
+          opFile.Attempt -= 1
         elif noReplicas:
           self.log.error( "unable to replicate %s, file doesn't exist" % opFile.LFN )
           opFile.Error = 'No replicas found'
