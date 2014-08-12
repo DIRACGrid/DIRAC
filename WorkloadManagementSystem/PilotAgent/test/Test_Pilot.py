@@ -17,7 +17,10 @@ class PilotTestCase( unittest.TestCase ):
     self.pp = PilotParams()
   
   def tearDown( self ):
-    pass
+    try:
+      os.remove('pilot.out')
+    except IOError:
+      pass
 
 
 class CommandsTestCase( PilotTestCase ):
