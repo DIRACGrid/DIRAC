@@ -346,7 +346,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       if not bannedSource["OK"]:
         gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
         gMonitor.addMark( "ReplicateFail", len( self.operation ) )
-        return bannedSource
+        return S_OK( 'SourceSE %s is banned for reading' % sourceSE )
 
       if bannedSource["Value"]:
         self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
