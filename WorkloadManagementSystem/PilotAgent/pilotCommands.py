@@ -58,13 +58,13 @@ class GetPilotVersion( CommandBase ):
       self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
     else:
       self.log.info( "Pilot version not requested as pilot script option, going to find it" )
-      self.__urlretrieveTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, timeout = 120 )
+      self.__urlretrieveTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, self.pilotCFGFile, timeout = 120 )
       fp = open( self.pilotCFGFile, 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
       pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
       self.log.debug( "Pilot versions found: %s" % ', '.join( pilotVersions ) )
-      self.log.info("Setting pilot version to %s" % pilotVersions[0])
+      self.log.info( "Setting pilot version to %s" % pilotVersions[0] )
       self.pp.releaseVersion = pilotVersions[0]
 
   def __urlretrieveTimeout( self, url, fileName = '', timeout = 0 ):
