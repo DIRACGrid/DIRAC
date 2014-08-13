@@ -14,6 +14,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
+import time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -48,20 +49,30 @@ class JobStateUpdateHandler( RequestHandler ):
     else:
       return S_ERROR( "updateJobFromStager: %s status not known." % status )
 
-    result = jobDB.getJobAttributes( jobID, ['Status'] )
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      # if there is no matching Job it returns an empty dictionary
-      return S_OK( 'No Matching Job' )
-    status = result['Value']['Status']
+    infoStr = None
+    trials = 10
+    for i in range( trials ):
+      result = jobDB.getJobAttributes( jobID, ['Status'] )
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        # if there is no matching Job it returns an empty dictionary
+        return S_OK( 'No Matching Job' )
+      status = result['Value']['Status']
+      if status == 'Staging':
+        if i:
+          infoStr = "Found job in Staging after %d seconds" % i
+        break
+      time.sleep( 1 )
     if status != 'Staging':
-      return S_OK( 'Job is not in Staging' )
+      return S_OK( 'Job is not in Staging after %d seconds' % trials )
 
     result = self.__setJobStatus( int( jobID ), jobStatus, minorStatus, 'StagerSystem', None )
     if not result['OK']:
       if result['Message'].find( 'does not exist' ) != -1:
         return S_OK()
+    if infoStr:
+      return S_OK( infoStr )
     return result
 
   ###########################################################################
@@ -126,8 +137,9 @@ class JobStateUpdateHandler( RequestHandler ):
     endDate = ''
     startDate = ''
     startFlag = ''
+    jobID = int( jobID )
 
-    result = jobDB.getJobAttributes( int( jobID ), ['Status', 'LastUpdateTime'] )
+    result = jobDB.getJobAttributes( jobID, ['Status'] )
     if not result['OK']:
       return result
 
@@ -138,12 +150,19 @@ class JobStateUpdateHandler( RequestHandler ):
     new_status = result['Value']['Status']
     if new_status == "Stalled":
       status = 'Running'
-    lastUpdate = result['Value']['LastUpdateTime']
+
+    # Get the latest WN time stamps of status updates
+    result = logDB.getWMSTimeStamps( int( jobID ) )
+    if not result['OK']:
+      return result
+    lastTime = max( [float( t ) for s, t in result['Value'].items() if s != 'LastTime'] )
+    from DIRAC import Time
+    lastTime = Time.toString( Time.fromEpoch( lastTime ) )
 
     # Get the last status values
     dates = sorted( statusDict )
     # We should only update the status if its time stamp is more recent than the last update
-    for date in [date for date in dates if date > lastUpdate]:
+    for date in [date for date in dates if date >= lastTime]:
       sDict = statusDict[date]
       if sDict['Status']:
         status = sDict['Status']
@@ -174,14 +193,14 @@ class JobStateUpdateHandler( RequestHandler ):
     if appCounter:
       attrNames.append( 'ApplicationCounter' )
       attrValues.append( appCounter )
-    result = jobDB.setJobAttributes( int( jobID ), attrNames, attrValues, update = True )
+    result = jobDB.setJobAttributes( jobID, attrNames, attrValues, update = True )
     if not result['OK']:
       return result
 
     if endDate:
-      result = jobDB.setEndExecTime( int( jobID ), endDate )
+      result = jobDB.setEndExecTime( jobID, endDate )
     if startDate:
-      result = jobDB.setStartExecTime( int( jobID ), startDate )
+      result = jobDB.setStartExecTime( jobID, startDate )
 
     # Update the JobLoggingDB records
     for date in dates:
@@ -199,7 +218,7 @@ class JobStateUpdateHandler( RequestHandler ):
         status = "Running"
         minor = "Application"
       source = sDict['Source']
-      result = logDB.addLoggingRecord( int( jobID ), status, minor, application, date, source )
+      result = logDB.addLoggingRecord( jobID, status, minor, application, date, source )
       if not result['OK']:
         return result
 

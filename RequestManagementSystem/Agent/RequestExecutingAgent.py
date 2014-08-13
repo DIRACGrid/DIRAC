@@ -207,7 +207,7 @@ class RequestExecutingAgent( AgentModule ):
     :param self: self reference
     """
     self.log.info( "putAllRequests: will put %s back requests" % len( self.__requestCache ) )
-    for requestName in self.__requestCache:
+    for requestName in self.__requestCache.keys():
       reset = self.requestClient().putRequest( self.__requestCache.pop( requestName ) )
       if not reset["OK"]:
         self.log.error( "putAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )

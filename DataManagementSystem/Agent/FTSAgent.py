@@ -543,7 +543,7 @@ class FTSAgent( AgentModule ):
         #  return self.putRequest( request )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
-      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed" ] )
+      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted' ] )
       if not ftsFiles["OK"]:
         log.error( ftsFiles["Message"] )
       else:
@@ -553,6 +553,13 @@ class FTSAgent( AgentModule ):
             if ftsFile.Status == 'Failed':
               # If the file was not unrecoverable failed and is not yet set toSubmit
               _reschedule, submit, _fail = self.__checkFailed( ftsFile )
+            elif ftsFile.Status == 'Submitted':
+              if ftsFile.FTSGUID not in [job.FTSGUID for job in ftsJobs]:
+                log.warn( 'FTS GUID %s not found in FTS jobs, resubmit file transfer' % ftsFile.FTSGUID )
+                ftsFile.Status = 'Waiting'
+                submit = True
+              else:
+                submit = False
             else:
               submit = True
             if submit:
@@ -571,20 +578,20 @@ class FTSAgent( AgentModule ):
       # # status change? - put back request
       if request.Status != "Scheduled":
         log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
+
+    except Exception, exceptMessage:
+      log.exception( "Exception in processRequest", exceptMessage )
+    finally:
       put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not put["OK"]:
           log.error( "unable to put back request:", put["Message"] )
-      return put
-
-    except:
-      pass
-    finally:
-      # #  put back jobs in all cases
+     # #  put back jobs in all cases
       if ftsJobs:
         putJobs = self.putFTSJobs( ftsJobs )
         if not putJobs["OK"]:
           log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
           return putJobs
+      return put
 
   def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
@@ -772,7 +779,9 @@ class FTSAgent( AgentModule ):
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
-      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"] or 'was not found' in monitor['Message']:
+      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"] or \
+         'was not found' in monitor['Message'] or\
+         'Unknown transfer state' in monitor['Message']:
         log.error( "FTSJob not known (expired on server?): delete it" )
         for ftsFile in ftsJob:
           ftsFile.Status = "Waiting"
@@ -793,9 +802,19 @@ class FTSAgent( AgentModule ):
     if ftsJob.Status in FTSJob.FINALSTATES:
       finalizeFTSJob = self.__finalizeFTSJob( request, ftsJob )
       if not finalizeFTSJob["OK"]:
-        log.error( finalizeFTSJob["Message"] )
-        return finalizeFTSJob
-      ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, finalizeFTSJob["Value"] )
+        if 'Unknown transfer state' in monitor['Message']:
+          for ftsFile in ftsJob:
+            ftsFile.Status = "Waiting"
+            ftsFilesDict["toSubmit"].append( ftsFile )
+          # #  No way further for that job: delete it
+          res = self.ftsClient().deleteFTSJob( ftsJob.FTSJobID )
+          if not res['OK']:
+            log.error( "Unable to delete FTSJob", res['Message'] )
+        else:
+          log.error( finalizeFTSJob["Message"] )
+          return finalizeFTSJob
+      else:
+        ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, finalizeFTSJob["Value"] )
 
     return S_OK( ftsFilesDict )
 

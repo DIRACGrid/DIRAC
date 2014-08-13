@@ -1,4 +1,4 @@
-""" 
+"""
 :mod: DataManager
 =======================
 
@@ -843,7 +843,12 @@ class DataManager( object ):
     if not res['OK']:
       errStr = "registerFile: Completely failed to register files."
       self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      return res
+    # Remove Failed LFNs if they are in success
+    success = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn in success:
+      failed.pop( lfn, None )
     return res
 
   def __registerFile( self, fileTuples, catalog ):
@@ -886,6 +891,12 @@ class DataManager( object ):
     if not res['OK']:
       errStr = "registerReplica: Completely failed to register replicas."
       self.log.debug( errStr, res['Message'] )
+      return res
+    # Remove Failed LFNs if they are in success
+    success = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn in success:
+      failed.pop( lfn, None )
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):
