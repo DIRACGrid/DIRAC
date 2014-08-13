@@ -1,6 +1,4 @@
-# $HeadURL:  $
 ''' DowntimeCommand module
-
 '''
 
 import urllib2
@@ -18,23 +16,23 @@ __RCSID__ = '$Id:  $'
 
 class DowntimeCommand( Command ):
   '''
-    Downtime "master" Command.    
+    Downtime "master" Command.
   '''
 
   def __init__( self, args = None, clients = None ):
-    
+
     super( DowntimeCommand, self ).__init__( args, clients )
 
     if 'GOCDBClient' in self.apis:
       self.gClient = self.apis[ 'GOCDBClient' ]
     else:
-      self.gClient = GOCDBClient() 
+      self.gClient = GOCDBClient()
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis[ 'ResourceManagementClient' ]
     else:
       self.rmClient = ResourceManagementClient()
-      
+
   def _storeCommand( self, result ):
     '''
       Stores the results of doNew method on the database.
@@ -67,8 +65,8 @@ class DowntimeCommand( Command ):
     
     if 'name' not in self.args:
       return S_ERROR( '"name" not found in self.args' )
-    elementName = self.args[ 'name' ]      
-    
+    elementName = self.args[ 'name' ]
+
     if 'element' not in self.args:
       return S_ERROR( '"element" not found in self.args' )
     element = self.args[ 'element' ]
@@ -78,7 +76,7 @@ class DowntimeCommand( Command ):
     elementType = self.args[ 'elementType' ]
     
     if not element in [ 'Site', 'Resource' ]:
-      return S_ERROR( 'element is not Site nor Resource' )   
+      return S_ERROR( 'element is not Site nor Resource' )
 
     hours = None
     if 'hours' in self.args:
@@ -91,7 +89,7 @@ class DowntimeCommand( Command ):
       if not gocSite[ 'OK' ]:
         return gocSite
       elementName = gocSite[ 'Value' ]
-          
+
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
       
@@ -99,7 +97,7 @@ class DowntimeCommand( Command ):
       if not seHost:
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
-             
+
     return S_OK( ( element, elementName, hours ) )
 
   def doNew( self, masterParams = None ):
@@ -116,14 +114,14 @@ class DowntimeCommand( Command ):
     
     if masterParams is not None:
       element, elementNames = masterParams
-      hours       = None
+      hours = None
       elementName = None
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName, hours = params[ 'Value' ]  
-      elementNames = [ elementName ]     
+      element, elementName, hours = params[ 'Value' ]
+      elementNames = [ elementName ]
 
     startDate = datetime.utcnow() - timedelta( days = 14 )
           
@@ -177,20 +175,20 @@ class DowntimeCommand( Command ):
     if hours:
       startDate = startDate + timedelta( hours = hours )
 
-    result = None           
+    result = None
     for dt in uniformResult:
       
       if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
         result = dt
         #We want to take the latest one ( they are sorted by insertion time )
         #break
-           
-    return S_OK( result )            
+
+    return S_OK( result )
 
   def doCache( self ):
     '''
       Method that reads the cache table and tries to read from it. It will 
-      return a list of dictionaries if there are results.
+      return a list with one dictionary describing the DT if there are results.
     '''
     
     params = self._prepareCommand()
@@ -204,18 +202,17 @@ class DowntimeCommand( Command ):
     
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
-    # We return only one downtime, if its ongoind at dtDate
+    # We return only one downtime, if its ongoing at dtDate
     dtDate = datetime.utcnow()
     result = None
        
+    dtOutages = []
+    dtWarnings = []
+
     if not hours:
       # If not hours defined, we want the downtimes running now, which means,
-      # the ones that already started and will finish later. In case many
-      # overlapping downtimes have been declared, the first one in severity and 
-      # then time order will be selected. 
+      # the ones that already started and will finish later.
   
-      dtOutages = []
-      dtWarnings = []
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
           if dt[ 'Severity' ] == 'Outage':
@@ -223,23 +220,24 @@ class DowntimeCommand( Command ):
           else:
             dtWarnings.append( dt )
 
-      if len( dtOutages ) > 0:
-        result = dtOutages[0]
-      elif len( dtWarnings ) > 0:
-        result = dtWarnings[0]
-
-
-
     else:
-      # If hours are defined, we want the downtimes starting in the next <hours>
-      dtDateFuture = dtDate + timedelta( hours = hours )       
+      # If hours are defined, we want also the downtimes starting in the next <hours>
+      dtDateFuture = dtDate + timedelta( hours = hours )
       for dt in uniformResult:
-        if ( dt[ 'StartDate' ] > dtDate ) and ( dt[ 'StartDate' ] < dtDateFuture ):
-          result = dt
-          #We want to take the latest one ( they are sorted by insertion time )
-          #break
-           
-    return S_OK( result )       
+        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
+          if dt[ 'Severity' ] == 'Outage':
+            dtOutages.append( dt )
+          else:
+            dtWarnings.append( dt )
+
+    #In case many overlapping downtimes have been declared, the first one in severity and 
+    # then time order will be selected.
+    if len( dtOutages ) > 0:
+      result = dtOutages[0]
+    elif len( dtWarnings ) > 0:
+      result = dtWarnings[0]
+
+    return S_OK( result )
 
   def doMaster( self ):
     '''
