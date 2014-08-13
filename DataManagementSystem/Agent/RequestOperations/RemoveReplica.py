@@ -57,16 +57,8 @@ class RemoveReplica( DMSRequestOperationsBase ):
     """ remove replicas """
     # # prepare list of targetSEs
     targetSEs = self.operation.targetSEList
-    # # get waiting files
-    waitingFiles = self.getWaitingFilesList()
-    # # and prepare dict
-    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
-
-    self.log.info( "todo: %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
-    gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
-
     # # check targetSEs for removal
-    bannedTargets = self.checkSEsRSS( access = 'RemoveAccess' )
+    bannedTargets = self.checkSEsRSS( targetSEs, access = 'RemoveAccess' )
     if not bannedTargets['OK']:
       gMonitor.addMark( "RemoveReplicaAtt" )
       gMonitor.addMark( "RemoveReplicaFail" )
@@ -74,6 +66,14 @@ class RemoveReplica( DMSRequestOperationsBase ):
 
     if bannedTargets['Value']:
       return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
+
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
+    # # and prepare dict
+    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
+
+    self.log.info( "todo: %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
+    gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # keep status for each targetSE
     removalStatus = dict.fromkeys( toRemoveDict.keys(), None )

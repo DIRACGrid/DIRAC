@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-""" The dirac-pilot-2.py script is a steering script to execute a series of
-    pilot commands. The commands are provided in the pilot input sandbox in
+""" The dirac-pilot.py script is a steering script to execute a series of
+    pilot commands. The commands may be provided in the pilot input sandbox, and are coded in
     the pilotCommands.py module or in any <EXTENSION>Commands.py module.
     The pilot script defines two switches in order to choose a set of commands for the pilot:
 

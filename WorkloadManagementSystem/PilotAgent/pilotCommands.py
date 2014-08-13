@@ -24,12 +24,119 @@
 import sys
 import os
 import stat
-import imp
 import socket
 import re
-from pilotTools import CommandBase
+import signal
+import urllib2
+import json
+
+from pilotTools import CommandBase, which
 
 __RCSID__ = "$Id$"
+
+class GetPilotVersion( CommandBase ):
+  """ Used to get the pilot version that needs to be installed.
+      If passed as a parameter, uses that one. If not passed, it looks for alternatives.
+
+      This assures that a version is always got even on non-standard Grid resources.
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( GetPilotVersion, self ).__init__( pilotParams )
+
+    # These parameters can be set by the VO
+    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
+    self.pilotCFGFile = '%s-pilot.json' % self.pp.releaseProject
+    
+  def execute(self):
+    """ Standard method for pilot commands
+    """
+    if self.pp.releaseVersion:
+      self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
+    else:
+      self.log.info( "Pilot version not requested as pilot script option, going to find it" )
+      self.__urlretrieveTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, self.pilotCFGFile, timeout = 120 )
+      fp = open( self.pilotCFGFile, 'r' )
+      pilotCFGFileContent = json.load( fp )
+      fp.close()
+      pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
+      self.log.debug( "Pilot versions found: %s" % ', '.join( pilotVersions ) )
+      self.log.info( "Setting pilot version to %s" % pilotVersions[0] )
+      self.pp.releaseVersion = pilotVersions[0]
+
+  def __urlretrieveTimeout( self, url, fileName = '', timeout = 0 ):
+    """ Retrieve remote url to local file, with timeout wrapper
+    """
+    self.log.debug( "Retrieving remote file '%s'" % url )
+
+    urlData = ''
+    if timeout:
+      signal.signal( signal.SIGALRM, self.__alarmTimeoutHandler )
+      # set timeout alarm
+      signal.alarm( timeout + 5 )
+    try:
+      remoteFD = urllib2.urlopen( url )
+      expectedBytes = 0
+      # Sometimes repositories do not return Content-Length parameter
+      try:
+        expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+      except Exception, x:
+        self.log.warn( "Content-Length parameter not returned, skipping expectedBytes check" )
+
+      if fileName:
+        localFD = open( fileName, "wb" )
+      receivedBytes = 0L
+      data = remoteFD.read( 16384 )
+      count = 1
+      progressBar = False
+      while data:
+        receivedBytes += len( data )
+        if fileName:
+          localFD.write( data )
+        else:
+          urlData += data
+        data = remoteFD.read( 16384 )
+        if count % 20 == 0:
+          print '\033[1D' + ".",
+          sys.stdout.flush()
+          progressBar = True
+        count += 1
+      if progressBar:
+        # return cursor to the beginning of the line
+        print '\033[1K',
+        print '\033[1A'
+      if fileName:
+        localFD.close()
+      remoteFD.close()
+      if receivedBytes != expectedBytes and expectedBytes > 0:
+        self.log.error( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
+        return False
+    except urllib2.HTTPError, x:
+      if x.code == 404:
+        self.log.error( "%s does not exist" % url )
+        if timeout:
+          signal.alarm( 0 )
+        return False
+    except Exception, x:
+      if x == 'Timeout':
+        self.log.error( "Timeout after %s seconds on transfer request for '%s'" % ( str( timeout ), url ) )
+      if timeout:
+        signal.alarm( 0 )
+      raise x
+
+    if timeout:
+      signal.alarm( 0 )
+
+    if fileName:
+      return True
+    else:
+      return urlData
+
+  def __alarmTimeoutHandler( self, *args ):
+    raise Exception( 'Timeout' )
+
 
 class InstallDIRAC( CommandBase ):
   """ Basically, this is used to call dirac-install with the passed parameters.
@@ -63,9 +170,6 @@ class InstallDIRAC( CommandBase ):
         self.installOpts.append( "-l '%s'" % v )
       elif o == '-p' or o == '--platform':
         self.pp.platform = v
-      elif o == '-r' or o == '--release':
-        v = v.split(',',1)[0] # for traditional DIRAC Installation take the first release from the list of accepted release
-        self.installOpts.append( '-r "%s"' % v )
       elif o == '-u' or o == '--url':
         self.installOpts.append( '-u "%s"' % v )
       elif o in ( '-P', '--path' ):
@@ -82,6 +186,9 @@ class InstallDIRAC( CommandBase ):
       self.installOpts.append( "-i '%s'" % self.pp.pythonVersion )
     if self.pp.platform:
       self.installOpts.append( '-p "%s"' % self.pp.platform )
+
+    # The release version to install is a requirement
+    self.installOpts.append( '-r "%s"' % self.pp.releaseVersion )
 
     self.log.debug( 'INSTALL OPTIONS [%s]' % ', '.join( map( str, self.installOpts ) ) )
 
@@ -123,9 +230,31 @@ class InstallDIRAC( CommandBase ):
       sys.exit( 1 )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
-    sys.path.insert( 0, self.pp.rootPath )
     diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
+    platformScript = os.path.join( diracScriptsPath, "dirac-platform" )
+    if not self.pp.platform:
+      retCode, output = self.executeAndGetOutput( platformScript )
+      if retCode:
+        self.log.error( "Failed to determine DIRAC platform" )
+        sys.exit( 1 )
+      self.pp.platform = output
+    diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
+    diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
+
+    for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
+      if envVarName in os.environ:
+        os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
+        del( os.environ[ envVarName ] )
+      else:
+        os.environ[ '%s_SAVE' % envVarName ] = ""
+
+    os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
+    sys.path.insert( 0, self.pp.rootPath )
     sys.path.insert( 0, diracScriptsPath )
+    if "PATH" in os.environ:
+      os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( 'PATH' ) )
+    else:
+      os.environ['PATH'] = '%s:%s' % ( diracBinPath, diracScriptsPath )
     self.pp.diracInstalled = True
 
   def execute( self ):
@@ -144,18 +273,28 @@ class ConfigureDIRAC( CommandBase ):
   def __init__( self, pilotParams ):
     """ c'tor
 
-        rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
-        EnviRon is a dictionary containing the set-up environment of a specific experiment
-        noCert is True when the setup is not Certification and it is False when the setup is certification
+        Here, we have to pay attention to the paths. Specifically, we need to know where to look for
+        - executables (scripts)
+        - DIRAC python code
+        If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
+        simply the current directory is used, and:
+        - scripts will be in cwd/scripts.
+        - DIRAC python code will be all sitting in cwd
+        - the local dirac.cfg file will be found in cwd/etc
+
+        For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
+        installation phase.
+
+        Executables and code will be searched there.
+        The dirac.cfg file has to be created in the first directory of the PATH - ?????
     """
     super( ConfigureDIRAC, self ).__init__( pilotParams )
 
+    # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
     self.configureOpts = []
-    self.jobAgentOpts = []
-    self.diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )  # Set the env to use the recently installed DIRAC
-    sys.path.insert( 0, self.diracScriptsPath )
     self.CE = ""
     self.testVOMSOK = False
+
     self.boincUserID = ''
     self.boincHostID= ''
     self.boincHostPlatform = ''
@@ -364,10 +503,6 @@ class ConfigureDIRAC( CommandBase ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
 
-    #if self.rootPath == originalRootPath:
-      # No special root path was requested
-      #rootPath = os.getcwd()
-
   def execute( self ):
     """ What is called all the time
     """
@@ -379,43 +514,24 @@ class ConfigureDIRAC( CommandBase ):
 
     self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
     self.configureOpts.append( '-I' )
-    configureScript = os.path.join( self.diracScriptsPath, "dirac-configure" )
+    configureScript = "dirac-configure"
     if self.pp.installEnv:
       configureScript += ' -O pilot.cfg -DM'
 
-    configureCmd = "%s %s" % ( os.path.join( self.diracScriptsPath, "dirac-configure" ), " ".join( self.configureOpts ) )
+    configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
 
     self.log.debug( "Configuring DIRAC with: %s %s" % ( configureCmd, self.pp.installEnv) )
+
     retCode, __outData__ = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
     if retCode:
       self.log.error( "Could not configure DIRAC" )
       sys.exit( 1 )
 
-    # Set the LD_LIBRARY_PATH and PATH
-
-    if not self.pp.platform:
-      platformPath = os.path.join(self.pp.rootPath, "DIRAC", "Core", "Utilities", "Platform.py" )
-      platFD = open( platformPath, "r" )
-      PlatformModule = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-      platFD.close()
-      self.pp.platform = PlatformModule.getPlatformString()
-
     if not self.pp.installEnv:  # if traditional installation
       if self.testVOMSOK:
       # Check voms-proxy-info before touching the original PATH and LD_LIBRARY_PATH
         os.system( 'which voms-proxy-info && voms-proxy-info -all' )
-
-      diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
-      diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
-      for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
-        if envVarName in os.environ:
-          os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
-          del( os.environ[ envVarName ] )
-        else:
-          os.environ[ '%s_SAVE' % envVarName ] = ""
-      os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
-      os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, self.diracScriptsPath, os.getenv( 'PATH' ) )
 
     #########################################################################################################################
     # Check proxy
@@ -431,16 +547,9 @@ class ConfigureDIRAC( CommandBase ):
     # Set the local architecture
 
     if not self.pp.installEnv:  # if traditional installation
-      architectureScriptName = "dirac-architecture"
-      architectureScript = ""
-      candidate = os.path.join( self.pp.rootPath, "scripts", architectureScriptName )
-      if os.path.isfile( candidate ):
-        architectureScript = candidate
-      else:
-      # If the extension does not provide a dirac-architecture, use dirac-platform as default value
-        candidate = os.path.join( self.pp.rootPath, "scripts", "dirac-platform" )
-        if os.path.isfile( candidate ):
-          architectureScript = candidate
+      architectureScript = which( "dirac-architecture" )
+      if architectureScript is None:
+        architectureScript = which( "dirac-platform" )
 
       if architectureScript:
         retCode, localArchitecture = self.executeAndGetOutput( architectureScript,self.pp.installEnv)
@@ -621,9 +730,9 @@ class LaunchAgent( CommandBase ):
     """ Starting of the JobAgent
     """
 
-    # Find any .cfg file uploaded with the sandbox
+    # Find any .cfg file uploaded with the sandbox or generated by previous commands
 
-    diracAgentScript = os.path.join( self.pp.rootPath, "scripts", "dirac-agent" )
+    diracAgentScript = "dirac-agent"
     extraCFG = []
     for i in os.listdir( self.pp.rootPath ):
       cfg = os.path.join( self.pp.rootPath, i )
@@ -653,16 +762,9 @@ class LaunchAgent( CommandBase ):
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )
 
-
-    #fs = os.statvfs( self.rootPath )
     fs = os.statvfs( self.pp.workingDir )
     diskSpace = fs[4] * fs[0] / 1024 / 1024
     self.log.info( 'DiskSpace (MB) = %s' % diskSpace )
-    #ret = os.system( 'dirac-proxy-info' )
-    #if os.environ.has_key( 'OSG_WN_TMP' ) and osgDir:
-      # os.chdir( originalRootPath )
-      # import shutil
-      # shutil.rmtree( osgDir )
     sys.exit( 0 )
 
   def execute( self ):
@@ -670,3 +772,4 @@ class LaunchAgent( CommandBase ):
     """
     self.__setInProcessOpts()
     self.__startJobAgent()
+
