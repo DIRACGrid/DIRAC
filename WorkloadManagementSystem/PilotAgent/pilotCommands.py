@@ -256,14 +256,16 @@ class ConfigureDIRAC( CommandBase ):
         - executables (scripts)
         - DIRAC python code
         If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
-        the variable rootPath is simply the current directory, and:
-        - scripts will be in rootPath/scripts.
-        - DIRAC python code will be all sitting in rootPath
-        - the local dirac.cfg file will be found in rootPath/etc
+        simply the current directory is used, and:
+        - scripts will be in cwd/scripts.
+        - DIRAC python code will be all sitting in cwd
+        - the local dirac.cfg file will be found in cwd/etc
 
-        For non-traditional installations, the rootPath can be an ordered list of directories (as a real path).
+        For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
+        installation phase.
+
         Executables and code will be searched there.
-        The dirac.cfg file has to be created in the first directory of rootPath
+        The dirac.cfg file has to be created in the first directory of the PATH - ?????
     """
     super( ConfigureDIRAC, self ).__init__( pilotParams )
 
@@ -500,6 +502,7 @@ class ConfigureDIRAC( CommandBase ):
     self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
     self.configureOpts.append( '-I' )
     configureScript = os.path.join( self.diracScriptsPath, "dirac-configure" )
+    # FIXME: isn't this making a not-always correct assumption?
     if self.pp.installEnv:
       configureScript += ' -O pilot.cfg -DM'
 
