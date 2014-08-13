@@ -802,9 +802,19 @@ class FTSAgent( AgentModule ):
     if ftsJob.Status in FTSJob.FINALSTATES:
       finalizeFTSJob = self.__finalizeFTSJob( request, ftsJob )
       if not finalizeFTSJob["OK"]:
-        log.error( finalizeFTSJob["Message"] )
-        return finalizeFTSJob
-      ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, finalizeFTSJob["Value"] )
+        if 'Unknown transfer state' in monitor['Message']:
+          for ftsFile in ftsJob:
+            ftsFile.Status = "Waiting"
+            ftsFilesDict["toSubmit"].append( ftsFile )
+          # #  No way further for that job: delete it
+          res = self.ftsClient().deleteFTSJob( ftsJob.FTSJobID )
+          if not res['OK']:
+            log.error( "Unable to delete FTSJob", res['Message'] )
+        else:
+          log.error( finalizeFTSJob["Message"] )
+          return finalizeFTSJob
+      else:
+        ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, finalizeFTSJob["Value"] )
 
     return S_OK( ftsFilesDict )
 
