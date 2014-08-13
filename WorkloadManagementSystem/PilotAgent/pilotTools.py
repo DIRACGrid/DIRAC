@@ -49,6 +49,25 @@ def pythonPathCheck():
     print "[EXCEPTION-info] sys.version:", sys.version
     print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
+  
+def which( program ):
+  """ Utility that mimics the 'which' command from the shell
+  """
+  def is_exe( fpath ):
+    return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
+
+  fpath, _fname = os.path.split( program )
+  if fpath:
+    if is_exe( program ):
+      return program
+  else:
+    for path in os.environ["PATH"].split( os.pathsep ):
+      path = path.strip( '"' )
+      exe_file = os.path.join( path, program )
+      if is_exe( exe_file ):
+        return exe_file
+
+  return None  
 
 class ObjectLoader( object ):
   """ Simplified class for loading objects from a DIRAC installation.
