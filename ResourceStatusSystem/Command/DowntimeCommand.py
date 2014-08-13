@@ -107,12 +107,7 @@ class DowntimeCommand( Command ):
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
 
-<<<<<<< HEAD
-
     return S_OK( ( element, elementName, hours, gocdbServiceType ) )
-=======
-    return S_OK( ( element, elementName, hours ) )
->>>>>>> rel-v6r11
 
   def doNew( self, masterParams = None ):
     '''
@@ -134,7 +129,7 @@ class DowntimeCommand( Command ):
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName, hours = params[ 'Value' ]
+      element, elementName, hours, gocdbServiceType = params[ 'Value' ]
       elementNames = [ elementName ]
 
     startDate = datetime.utcnow() - timedelta( days = 14 )
@@ -202,13 +197,8 @@ class DowntimeCommand( Command ):
 
   def doCache( self ):
     '''
-<<<<<<< HEAD
-      Method that reads the cache table and tries to read from it. It will
-      return a list of dictionaries if there are results.
-=======
       Method that reads the cache table and tries to read from it. It will 
       return a list with one dictionary describing the DT if there are results.
->>>>>>> rel-v6r11
     '''
 
     params = self._prepareCommand()
@@ -226,19 +216,7 @@ class DowntimeCommand( Command ):
 
     # We return only one downtime, if its ongoing at dtDate
     dtDate = datetime.utcnow()
-    result = None
-<<<<<<< HEAD
-
-    if not hours:
-      # If not hours defined, we want the downtimes running now, which means,
-      # the ones that already started and will finish later. In case many
-      # overlapping downtimes have been declared, the first one in severity and 
-      # then time order will be selected. 
-
-      dtOutages = []
-      dtWarnings = []
-=======
-       
+    result = None       
     dtOutages = []
     dtWarnings = []
 
@@ -246,7 +224,6 @@ class DowntimeCommand( Command ):
       # If not hours defined, we want the downtimes running now, which means,
       # the ones that already started and will finish later.
   
->>>>>>> rel-v6r11
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
           if dt[ 'Severity' ] == 'Outage':
@@ -255,15 +232,6 @@ class DowntimeCommand( Command ):
             dtWarnings.append( dt )
 
     else:
-<<<<<<< HEAD
-      # If hours are defined, we want the downtimes starting in the next <hours>
-      dtDateFuture = dtDate + timedelta( hours = hours )
-      for dt in uniformResult:
-        if ( dt[ 'StartDate' ] > dtDate ) and ( dt[ 'StartDate' ] < dtDateFuture ):
-          result = dt
-          #We want to take the latest one ( they are sorted by insertion time )
-          #break
-=======
       # If hours are defined, we want also the downtimes starting in the next <hours>
       dtDateFuture = dtDate + timedelta( hours = hours )
       for dt in uniformResult:
@@ -279,7 +247,6 @@ class DowntimeCommand( Command ):
       result = dtOutages[0]
     elif len( dtWarnings ) > 0:
       result = dtWarnings[0]
->>>>>>> rel-v6r11
 
     return S_OK( result )
 
