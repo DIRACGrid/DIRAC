@@ -24,14 +24,13 @@
 import sys
 import os
 import stat
-import imp
 import socket
 import re
 import signal
 import urllib2
 import json
 
-from pilotTools import CommandBase
+from pilotTools import CommandBase, which
 
 __RCSID__ = "$Id$"
 
@@ -231,9 +230,31 @@ class InstallDIRAC( CommandBase ):
       sys.exit( 1 )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
-    sys.path.insert( 0, self.pp.rootPath )
     diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
+    platformScript = os.path.join( diracScriptsPath, "dirac-platform" )
+    if not self.pp.platform:
+      retCode, output = self.executeAndGetOutput( platformScript )
+      if retCode:
+        self.log.error( "Failed to determine DIRAC platform" )
+        sys.exit( 1 )
+      self.pp.platform = output
+    diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
+    diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
+
+    for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
+      if envVarName in os.environ:
+        os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
+        del( os.environ[ envVarName ] )
+      else:
+        os.environ[ '%s_SAVE' % envVarName ] = ""
+
+    os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
+    sys.path.insert( 0, self.pp.rootPath )
     sys.path.insert( 0, diracScriptsPath )
+    if "PATH" in os.environ:
+      os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( 'PATH' ) )
+    else:
+      os.environ['PATH'] = '%s:%s' % ( diracBinPath, diracScriptsPath )
     self.pp.diracInstalled = True
 
   def execute( self ):
@@ -486,10 +507,6 @@ class ConfigureDIRAC( CommandBase ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
 
-    #if self.rootPath == originalRootPath:
-      # No special root path was requested
-      #rootPath = os.getcwd()
-
   def execute( self ):
     """ What is called all the time
     """
@@ -501,44 +518,24 @@ class ConfigureDIRAC( CommandBase ):
 
     self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
     self.configureOpts.append( '-I' )
-    configureScript = os.path.join( self.diracScriptsPath, "dirac-configure" )
-    # FIXME: isn't this making a not-always correct assumption?
+    configureScript = "dirac-configure"
     if self.pp.installEnv:
       configureScript += ' -O pilot.cfg -DM'
 
-    configureCmd = "%s %s" % ( os.path.join( self.diracScriptsPath, "dirac-configure" ), " ".join( self.configureOpts ) )
+    configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
 
     self.log.debug( "Configuring DIRAC with: %s %s" % ( configureCmd, self.pp.installEnv) )
+
     retCode, __outData__ = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
     if retCode:
       self.log.error( "Could not configure DIRAC" )
       sys.exit( 1 )
 
-    # Set the LD_LIBRARY_PATH and PATH
-
-    if not self.pp.platform:
-      platformPath = os.path.join(self.pp.rootPath, "DIRAC", "Core", "Utilities", "Platform.py" )
-      platFD = open( platformPath, "r" )
-      PlatformModule = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-      platFD.close()
-      self.pp.platform = PlatformModule.getPlatformString()
-
     if not self.pp.installEnv:  # if traditional installation
       if self.testVOMSOK:
       # Check voms-proxy-info before touching the original PATH and LD_LIBRARY_PATH
         os.system( 'which voms-proxy-info && voms-proxy-info -all' )
-
-      diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
-      diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
-      for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
-        if envVarName in os.environ:
-          os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
-          del( os.environ[ envVarName ] )
-        else:
-          os.environ[ '%s_SAVE' % envVarName ] = ""
-      os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
-      os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, self.diracScriptsPath, os.getenv( 'PATH' ) )
 
     #########################################################################################################################
     # Check proxy
@@ -554,16 +551,9 @@ class ConfigureDIRAC( CommandBase ):
     # Set the local architecture
 
     if not self.pp.installEnv:  # if traditional installation
-      architectureScriptName = "dirac-architecture"
-      architectureScript = ""
-      candidate = os.path.join( self.pp.rootPath, "scripts", architectureScriptName )
-      if os.path.isfile( candidate ):
-        architectureScript = candidate
-      else:
-      # If the extension does not provide a dirac-architecture, use dirac-platform as default value
-        candidate = os.path.join( self.pp.rootPath, "scripts", "dirac-platform" )
-        if os.path.isfile( candidate ):
-          architectureScript = candidate
+      architectureScript = which( "dirac-architecture" )
+      if architectureScript is None:
+        architectureScript = which( "dirac-platform" )
 
       if architectureScript:
         retCode, localArchitecture = self.executeAndGetOutput( architectureScript,self.pp.installEnv)
@@ -746,7 +736,7 @@ class LaunchAgent( CommandBase ):
 
     # Find any .cfg file uploaded with the sandbox
 
-    diracAgentScript = os.path.join( self.pp.rootPath, "scripts", "dirac-agent" )
+    diracAgentScript = "dirac-agent"
     extraCFG = []
     for i in os.listdir( self.pp.rootPath ):
       cfg = os.path.join( self.pp.rootPath, i )
@@ -776,16 +766,9 @@ class LaunchAgent( CommandBase ):
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )
 
-
-    #fs = os.statvfs( self.rootPath )
     fs = os.statvfs( self.pp.workingDir )
     diskSpace = fs[4] * fs[0] / 1024 / 1024
     self.log.info( 'DiskSpace (MB) = %s' % diskSpace )
-    #ret = os.system( 'dirac-proxy-info' )
-    #if os.environ.has_key( 'OSG_WN_TMP' ) and osgDir:
-      # os.chdir( originalRootPath )
-      # import shutil
-      # shutil.rmtree( osgDir )
     sys.exit( 0 )
 
   def execute( self ):
@@ -793,3 +776,4 @@ class LaunchAgent( CommandBase ):
     """
     self.__setInProcessOpts()
     self.__startJobAgent()
+
