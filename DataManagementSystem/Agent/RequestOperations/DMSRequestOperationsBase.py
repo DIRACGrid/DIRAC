@@ -19,31 +19,36 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     OperationHandlerBase.__init__( self, operation, csPath )
 
 
-  def checkSEsRSS( self, targetSEs = None, access = 'WriteAccess' ):
+  def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess' ):
     """ check SEs.
-        By default, we check the targetSEs for WriteAccess, but it is configurable
+        By default, we check the SEs for WriteAccess, but it is configurable
     """
-    if not targetSEs:
-      targetSEs = self.operation.targetSEList
-    elif type( targetSEs ) == str:
-      targetSEs = [targetSEs]
+    if not checkSEs:
+      checkSEs = self.operation.targetSEList
+    elif type( checkSEs ) == str:
+      checkSEs = [checkSEs]
 
-    bannedTargets = []
-    for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, access, retries = 5 )
-      if not writeStatus["OK"]:
-        self.log.error( writeStatus["Message"] )
+    if access == 'ReadAccess':
+      seType = 'sourceSE'
+    else:
+      seType = 'targetSE'
+    bannedSEs = []
+    for checkSE in checkSEs:
+      seStatus = self.rssSEStatus( checkSE, access, retries = 5 )
+      if not seStatus["OK"]:
+        self.log.error( seStatus["Message"] )
+        error = "unknown %s: %s" % ( seType, checkSE )
         for opFile in self.operation:
-          opFile.Error = "unknown targetSE: %s" % targetSE
-        self.operation.Error = "unknown targetSE: %s" % targetSE
-        return S_ERROR( self.operation.Error )
+          opFile.Error = error
+        self.operation.Error = error
+        return S_ERROR( error )
 
-      if not writeStatus["Value"]:
-        self.log.info( "TargetSE %s is banned for %s right now" % ( targetSE, access ) )
-        bannedTargets.append( targetSE )
-        self.operation.Error = "banned targetSE: %s;" % targetSE
+      if not seStatus["Value"]:
+        self.log.info( "%s %s is banned for %s right now" % ( seType.capitalize(), checkSE, access ) )
+        bannedSEs.append( checkSE )
+        self.operation.Error = "banned %s: %s;" % ( seType, checkSE )
 
-    return S_OK( bannedTargets )
+    return S_OK( bannedSEs )
 
 
   def getRegisterOperation( self, opFile, targetSE, type = 'RegisterFile', catalog = None ):
