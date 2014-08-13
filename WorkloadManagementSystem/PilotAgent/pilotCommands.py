@@ -252,22 +252,34 @@ class ConfigureDIRAC( CommandBase ):
   def __init__( self, pilotParams ):
     """ c'tor
 
-        rootPath is the local path of DIRAC, it is used as path where to install DIRAC for traditional installation and as path where to create the dirac.cfg for VOs specific installation
-        EnviRon is a dictionary containing the set-up environment of a specific experiment
-        noCert is True when the setup is not Certification and it is False when the setup is certification
+        Here, we have to pay attention to the paths. Specifically, we need to know where to look for
+        - executables (scripts)
+        - DIRAC python code
+        If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
+        the variable rootPath is simply the current directory, and:
+        - scripts will be in rootPath/scripts.
+        - DIRAC python code will be all sitting in rootPath
+        - the local dirac.cfg file will be found in rootPath/etc
+
+        For non-traditional installations, the rootPath can be an ordered list of directories (as a real path).
+        Executables and code will be searched there.
+        The dirac.cfg file has to be created in the first directory of rootPath
     """
     super( ConfigureDIRAC, self ).__init__( pilotParams )
 
+    # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
     self.configureOpts = []
-    self.jobAgentOpts = []
-    self.diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )  # Set the env to use the recently installed DIRAC
-    sys.path.insert( 0, self.diracScriptsPath )
     self.CE = ""
     self.testVOMSOK = False
+
     self.boincUserID = ''
     self.boincHostID= ''
     self.boincHostPlatform = ''
     self.boincHostName = ''
+
+    self.diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )  # Set the env to use the recently installed DIRAC
+    sys.path.insert( 0, self.diracScriptsPath )
+
 
   def __setConfigureOptions( self ):
     """ Setup configuration parameters
