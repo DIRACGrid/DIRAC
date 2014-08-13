@@ -1,3 +1,24 @@
+[v6r11p10]
+
+*RSS
+FIX: DowntimeCommand, Test_RSS_Command_GOCDBStatusCommand - correctly interpreting list of downtimes
+
+*RMS
+FIX: ReplicateAndRegister - Create a RegisterReplica (not RegisterFile) if ReplicateAndRegister 
+     fails to register
+FIX: OperationHandlerBase - handle correctly Attempt counters when SEs are banned
+FIX: ReplicateAndRegister - use FC checksum in case of mismatch request/PFN
+FIX: FTSAgent - in case a file is Submitted but the FTSJob is unknown, resubmit
+FIX: FTSAgent - log exceptions and put request to DB in case of exception
+FIX: FTSAgent - handle FTS error "Unknown transfer state NOT_USED", due to same file 
+     registered twice (to be fixed in RMS, not clear origin)
+
+*WMS
+FIX: JobStateUpdateHandler - status not updated while jobLogging is, due to time skew between 
+     WN and DB service
+FIX: JobStateUpdateHandler - stager callback not getting the correct status Staging 
+     (retry for 10 seconds)     
+
 [v6r11p9]
 
 *Core
