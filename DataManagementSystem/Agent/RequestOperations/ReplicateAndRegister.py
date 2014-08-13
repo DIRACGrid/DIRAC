@@ -88,7 +88,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
         if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
           # The checksum in the request may be wrong, check with FC
           fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
-          fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN )
+          fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
           if fcChecksum and fcChecksum != opFile.Checksum and compareAdler( fcChecksum , seChecksum ):
             opFile.Checksum = fcChecksum
             ret['Valid'].append( repSEName )
