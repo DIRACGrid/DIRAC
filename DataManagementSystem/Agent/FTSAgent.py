@@ -558,6 +558,8 @@ class FTSAgent( AgentModule ):
                 log.warn( 'FTS GUID %s not found in FTS jobs, resubmit file transfer' % ftsFile.FTSGUID )
                 ftsFile.Status = 'Waiting'
                 submit = True
+              else:
+                submit = False
             else:
               submit = True
             if submit:
@@ -576,20 +578,20 @@ class FTSAgent( AgentModule ):
       # # status change? - put back request
       if request.Status != "Scheduled":
         log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
+
+    except Exception, exceptMessage:
+      log.exception( "Exception in processRequest", exceptMessage )
+    finally:
       put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not put["OK"]:
           log.error( "unable to put back request:", put["Message"] )
-      return put
-
-    except:
-      pass
-    finally:
-      # #  put back jobs in all cases
+     # #  put back jobs in all cases
       if ftsJobs:
         putJobs = self.putFTSJobs( ftsJobs )
         if not putJobs["OK"]:
           log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
           return putJobs
+      return put
 
   def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
