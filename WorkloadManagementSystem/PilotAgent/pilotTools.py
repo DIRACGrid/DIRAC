@@ -269,6 +269,9 @@ class CommandBase( object ):
                         stderr = subprocess.PIPE, close_fds = False )
       outData = _p.stdout.read().strip()
       returnCode = _p.wait()
+      if returnCode != 0:
+        for line in _p.stderr:
+          print line
       return (returnCode, outData)
     except ImportError:
       self.log.error( "Error importing subprocess" )

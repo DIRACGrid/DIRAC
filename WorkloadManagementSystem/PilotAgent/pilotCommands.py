@@ -520,9 +520,11 @@ class ConfigureDIRAC( CommandBase ):
 
     configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
 
-    self.log.debug( "Configuring DIRAC with: %s %s" % ( configureCmd, self.pp.installEnv) )
+    self.log.debug( "Configuring DIRAC with command: %s \nwith environment set to %s" % ( configureCmd, self.pp.installEnv ) )
 
-    retCode, __outData__ = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+    retCode, configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+
+    self.log.debug( configureOutData )
 
     if retCode:
       self.log.error( "Could not configure DIRAC" )
