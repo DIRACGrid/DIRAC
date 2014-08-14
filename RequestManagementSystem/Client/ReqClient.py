@@ -299,7 +299,7 @@ class ReqClient( Client ):
           stateUpdate = stateServer.setJobStatus( jobID, "Failed", "Requests done", "" )
 
       if not stateUpdate:
-        self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+        self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done (status is %s)" % ( jobID, jobStatus ) )
         stateUpdate = stateServer.setJobStatus( jobID, jobStatus, "Requests done", "" )
 
       if not stateUpdate["OK"]:
