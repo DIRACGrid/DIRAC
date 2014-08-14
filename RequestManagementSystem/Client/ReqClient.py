@@ -300,7 +300,7 @@ class ReqClient( Client ):
 
       if not stateUpdate:
         self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
-        stateUpdate = stateServer.setJobStatus( jobID, "", "Requests done", "" )
+        stateUpdate = stateServer.setJobStatus( jobID, jobStatus, "Requests done", "" )
 
       if not stateUpdate["OK"]:
         self.log.error( "finalizeRequest: Failed to set job %d status: %s" % ( jobID, stateUpdate['Message'] ) )
