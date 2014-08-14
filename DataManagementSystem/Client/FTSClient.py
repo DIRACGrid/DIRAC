@@ -246,7 +246,17 @@ class FTSClient( Client ):
     :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
     """
 
-    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in opFileList ]
+    # Check whether there are duplicates
+    opFileSet = set( opFileList )
+    if len( opFileSet ) != len( opFileList ):
+      self.log.warn( 'File list for FTS scheduling has duplicates, fix it:\n', '\n'.join( opFileList ) )
+      fList = []
+      for fTuple in opFileList:
+        if fTuple not in fList:
+          fList.append( fTuple )
+    else:
+      fList = opFileList
+    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in fList ]
     res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
@@ -257,7 +267,7 @@ class FTSClient( Client ):
     # # this will be returned on success
     result = { "Successful": [], "Failed": {} }
 
-    for fileJSON, sourceSEs, targetSEs in opFileList:
+    for fileJSON, sourceSEs, targetSEs in fList:
 
       lfn = fileJSON.get( "LFN", "" )
       size = int( fileJSON.get( "Size", 0 ) )
