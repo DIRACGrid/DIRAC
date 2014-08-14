@@ -517,10 +517,9 @@ class ConfigureDIRAC( CommandBase ):
     configureScript = "dirac-configure"
     if self.pp.installEnv:
       configureScript += ' -O pilot.cfg -DM'
+      self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
 
     configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
-
-    self.log.debug( "Configuring DIRAC with command: %s \nwith environment set to %s" % ( configureCmd, self.pp.installEnv ) )
 
     retCode, configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
@@ -753,8 +752,6 @@ class LaunchAgent( CommandBase ):
                                                              " ".join( self.jobAgentOpts ),
                                                              " ".join( self.inProcessOpts ),
                                                              " ".join( extraCFG ) )
-
-    self.log.info( "JobAgent execution command:\n%s" % jobAgent )
 
 
     if not self.pp.dryRun:

@@ -261,10 +261,9 @@ class CommandBase( object ):
     """ Execute a command on the worker node and get the output
     """
 
-    self.log.debug( 'Executing command %s' % cmd )
+    self.log.info( "Executing command %s" % cmd )
     try:
       import subprocess  # spawn new processes, connect to their input/output/error pipes, and obtain their return codes.
-      self.log.debug( "executeAndGetOutput: %s" % cmd )
       _p = subprocess.Popen( "%s" % cmd, shell = True, env=environDict, stdout = subprocess.PIPE,
                         stderr = subprocess.PIPE, close_fds = False )
       outData = _p.stdout.read().strip()
