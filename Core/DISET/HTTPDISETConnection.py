@@ -26,9 +26,9 @@ class HTTPDISETSocket:
       self.gsiSocket.shutdown()
       self.gsiSocket.close()
 
-  def read( self, bytes ):
-    while len( self._storedBufer ) < bytes:
-      result = self._read( bytes - len( self._storedBufer ) )
+  def read( self, size ):
+    while len( self._storedBufer ) < size:
+      result = self._read( size - len( self._storedBufer ) )
       if not result[ 'OK' ]:
         break
         #raise Exception( result[ 'Message' ] )
@@ -37,8 +37,8 @@ class HTTPDISETSocket:
         if not data:
           break
         self._storedBufer += data
-    data = self._storedBufer[:bytes]
-    self._storedBufer = self._storedBufer[bytes:]
+    data = self._storedBufer[:size]
+    self._storedBufer = self._storedBufer[size:]
     return data
 
   def _read( self, bufSize = 4096 ):
@@ -61,7 +61,6 @@ class HTTPDISETSocket:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def readline( self, size = 0 ):
-    buf = ""
     sepPos = self._storedBufer.find( "\n" )
     while sepPos == -1 :
       result = self._read( 128 )
@@ -100,7 +99,7 @@ class HTTPDISETConnection( httplib.HTTPConnection ):
     errorMsg = ""
     for res in socket.getaddrinfo( self.host, self.port, 0,
                                   socket.SOCK_STREAM ):
-      af, socktype, proto, canonname, addTuple = res
+      _af, _socktype, _proto, _canonname, addTuple = res
       result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig._useServerCertificate() )
       if not result[ 'OK' ]:
         errorMsg = result[ 'Message' ]
