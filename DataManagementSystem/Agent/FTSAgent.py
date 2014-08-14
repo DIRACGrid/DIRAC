@@ -442,6 +442,9 @@ class FTSAgent( AgentModule ):
       log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
       return self.putRequest( request )
     operation = operation["Value"]
+    if not isinstance( operation, Operation ):
+      log.error( "waiting returned operation is not an operation: %s" % type( operation ) )
+      return self.putRequest( request )
     if operation.Type != "ReplicateAndRegister":
       log.error( "operation to be executed is not a ReplicateAndRegister but %s" % operation.Type )
       return self.putRequest( request )
