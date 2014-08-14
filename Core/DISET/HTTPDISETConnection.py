@@ -60,7 +60,7 @@ class HTTPDISETSocket:
       except Exception, e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
-  def readline( self ):
+  def readline( self, size = 0 ):
     buf = ""
     sepPos = self._storedBufer.find( "\n" )
     while sepPos == -1 :
@@ -78,6 +78,9 @@ class HTTPDISETSocket:
     else:
       line = self._storedBufer[:sepPos + 1]
       self._storedBufer = self._storedBufer[sepPos + 1:]
+      
+    if size and len( line ) > size:
+      line = line[:size]  
     return line
 
 class HTTPDISETResponse( httplib.HTTPResponse ):
