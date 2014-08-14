@@ -306,7 +306,17 @@ class FTSClient( Client ):
 
       self.log.verbose( "LFN=%s tree=%s" % ( lfn, tree ) )
 
+      treeBranches = []
+      printed = False
       for repDict in tree.values():
+        if repDict in treeBranches:
+          if not printed:
+            self.log.warn( 'Duplicate tree branch', str( tree ) )
+            printed = True
+        else:
+          treeBranches.append( repDict )
+
+      for repDict in treeBranches:
         self.log.verbose( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"],
                                                                                 repDict["Ancestor"],
                                                                                 repDict["SourceSE"],
