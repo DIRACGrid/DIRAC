@@ -447,6 +447,7 @@ class ConfigureDIRAC( CommandBase ):
 
   def __getCEName ( self ):
 
+    # FIXME: is this necessary at all?
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE',self.pp.installEnv)
       if not retCode:
@@ -642,6 +643,10 @@ class ConfigureDIRAC( CommandBase ):
 
   def __getCPURequirement(self):
     """ Get job CPU requirement and queue normalization """
+    
+    #FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
+    # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
+    # as explained in the RFC
 
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       self.log.info( 'CE = %s' % self.CE )
