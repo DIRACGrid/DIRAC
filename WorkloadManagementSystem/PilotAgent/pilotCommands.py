@@ -724,7 +724,13 @@ class LaunchAgent( CommandBase ):
 
     if self.pp.userDN:
       self.log.info( 'Setting Owner DN to "%s"' % self.pp.userDN )
-      self.inProcessOpts .append( '-o OwnerDN="%s"' % self.pp.userDN )
+      self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
+
+    if self.pp.installEnv:
+      # The instancePath is where the agent works
+      self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
+      # The file pilot.cfg has to be created previously by ConfigureDIRAC
+      self.inProcessOpts.append( 'pilot.cfg' )
 
 
   def __startJobAgent(self):

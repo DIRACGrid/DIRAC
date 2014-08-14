@@ -266,11 +266,18 @@ class CommandBase( object ):
       import subprocess  # spawn new processes, connect to their input/output/error pipes, and obtain their return codes.
       _p = subprocess.Popen( "%s" % cmd, shell = True, env=environDict, stdout = subprocess.PIPE,
                         stderr = subprocess.PIPE, close_fds = False )
+
+      # standard output
+      for line in _p.stdout:
+        sys.stdout.write( line )
       outData = _p.stdout.read().strip()
+
+      for line in _p.stderr:
+        sys.stdout.write( line )
+
+      # return code
       returnCode = _p.wait()
-      if returnCode != 0:
-        for line in _p.stderr:
-          print line
+
       return (returnCode, outData)
     except ImportError:
       self.log.error( "Error importing subprocess" )
