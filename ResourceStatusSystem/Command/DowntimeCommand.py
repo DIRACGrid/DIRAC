@@ -171,7 +171,11 @@ class DowntimeCommand( Command ):
       dt[ 'Severity' ] = downDic[ 'SEVERITY' ]
       dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
       dt[ 'Link' ] = downDic[ 'GOCDB_PORTAL_URL' ]
-      dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      try:
+        dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      except KeyError:
+        # SERVICE_TYPE is not alwasy defined
+        pass
 
       uniformResult.append( dt )
 
