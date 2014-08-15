@@ -251,11 +251,10 @@ class DowntimeCommand( Command ):
     return S_OK( result )
 
   def doMaster( self ):
-    '''
-      Master method, which looks little bit spaguetti code, sorry !
-      - It gets all sites and transforms them into gocSites.
-      - It gets all the storage elements and transforms them into their hosts
-      - It gets the fts, the ces and file catalogs.
+    ''' Master method, which looks little bit spaghetti code, sorry !
+        - It gets all sites and transforms them into gocSites.
+        - It gets all the storage elements and transforms them into their hosts
+        - It gets the the CEs (FTS and file catalogs will come).
     '''
 
     gocSites = CSHelpers.getGOCSites()
@@ -270,9 +269,7 @@ class DowntimeCommand( Command ):
 
     resources = sesHosts
 
-    #
-    #
-    #FIXME: file catalogs need also to use their hosts
+    # TODO: file catalogs need also to use their hosts
     # something similar applies to FTS Channels
     #
     #fts = CSHelpers.getFTS()
