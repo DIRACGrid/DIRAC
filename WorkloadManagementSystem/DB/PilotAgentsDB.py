@@ -234,11 +234,12 @@ class PilotAgentsDB( DB ):
       result = self._query( req )
       if not result['OK']:
         gLogger.warn( 'Error while clearing up pilots' )
-      if result['Value']:
-        idList = [ x[0] for x in result['Value'] ]
-        result = self.deletePilots( idList )
-        if not result['OK']:
-          gLogger.warn( 'Error while deleting pilots' )
+      else:
+        if result['Value']:
+          idList = [ x[0] for x in result['Value'] ]
+          result = self.deletePilots( idList )
+          if not result['OK']:
+            gLogger.warn( 'Error while deleting pilots' )
 
     return S_OK()
 
