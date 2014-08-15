@@ -43,7 +43,7 @@ class MultiAccountingDB( object ):
 
   def __registerMethods( self ):
     for methodName in ( 'registerType', 'changeBucketsLength', 'regenerateBuckets',
-                        'deleteType', 'insertRecordThroughQueue', 'deleteRecord',
+                        'deleteType', 'insertRecordThroughQueue', 'insertRecordBundleThroughQueue', 'deleteRecord',
                         'getKeyValues', 'retrieveBucketedData', 'calculateBuckets',
                         'calculateBucketLengthForTime' ):
       setattr( self, methodName, lambda *x: self.__mimeTypeMethod( methodName, *x ) )
