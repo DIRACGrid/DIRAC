@@ -274,9 +274,9 @@ class GOCDBClient(object):
 
     for dtElement in downtimeElements:
       elements = _parseSingleElement( dtElement, ['SEVERITY', 'SITENAME', 'HOSTNAME',
-                                                       'HOSTED_BY', 'FORMATED_START_DATE',
-                                                       'FORMATED_END_DATE', 'DESCRIPTION',
-                                                       'GOCDB_PORTAL_URL'] )
+                                                  'HOSTED_BY', 'FORMATED_START_DATE',
+                                                  'FORMATED_END_DATE', 'DESCRIPTION',
+                                                  'GOCDB_PORTAL_URL'] )
       try:
         dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['HOSTNAME'] ] = elements
       except Exception:
