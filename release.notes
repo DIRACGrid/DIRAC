@@ -1,4 +1,4 @@
-[v6r12-pre10]
+[v6r12-pre11]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -59,6 +59,20 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p11]
+
+*Core
+FIX: TransportPool - fixed exception due to uninitialized variable
+FIX: HTTPDISETSocket - readline() takes optional argument size ( = 0 )
+
+*DMS
+FIX: FTSAgent - check the type of the Operation object ( can be None )
+FIX: FTSClient - avoid duplicates in the file list
+
+*RMS
+FIX: ReqClient - modified log message
+CHANGE: dirac-dms-fts-monitor - allow multiple comma separated LFNs in the arguments
 
 [v6r11p10]
 
