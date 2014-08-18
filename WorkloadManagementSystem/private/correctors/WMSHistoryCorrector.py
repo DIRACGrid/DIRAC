@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ WMSHistory corrector for the group and ingroup shares
 """
 
@@ -9,9 +6,9 @@ __RCSID__ = "$Id$"
 import datetime
 import time as nativetime
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
-from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities import Time
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-from DIRAC  import gLogger, S_OK, S_ERROR
+from DIRAC  import gLogger, S_OK
 from DIRAC.Core.Security import CS
 
 class WMSHistoryCorrector( BaseCorrector ):
@@ -31,9 +28,9 @@ class WMSHistoryCorrector( BaseCorrector ):
     self._fillSlices()
     return S_OK()
 
-  def _applyHistoryCorrections( self, entityShares, baseSection = "" ):
-    if baseSection not in self.__historyForCorrections or not self.__historyForCorrections[ baseSection ]:
-      return entityShares
+#   def _applyHistoryCorrections( self, entityShares, baseSection = "" ):
+#     if baseSection not in self.__historyForCorrections or not self.__historyForCorrections[ baseSection ]:
+#       return entityShares
 
   def _fillSlices( self ):
     self.__log.info( "Filling time slices..." )

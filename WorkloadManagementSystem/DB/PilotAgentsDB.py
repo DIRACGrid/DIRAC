@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
     It also registers the mapping of the DIRAC jobs to the pilot
@@ -31,8 +28,8 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
-from types import *
-import threading, time
+from types import IntType, LongType, ListType
+import threading
 
 DEBUG = 1
 
@@ -54,7 +51,6 @@ class PilotAgentsDB( DB ):
     result = self._escapeString( requirements )
     if not result['OK']:
       gLogger.warn( 'Failed to escape requirements string' )
-      e_requirements = "Failed to escape requirements string"
     e_requirements = result['Value']
 
     for ref in pilotRef:
@@ -204,7 +200,7 @@ class PilotAgentsDB( DB ):
 
     failed = False
     for table in ['PilotAgents', 'PilotOutput', 'PilotRequirements', 'JobToPilotMapping']:
-      idString = ','.join( [ str( id ) for id in pilotIDs ] )
+      idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
       result = self._update( req, conn = conn )
       if not result['OK']:
@@ -238,11 +234,12 @@ class PilotAgentsDB( DB ):
       result = self._query( req )
       if not result['OK']:
         gLogger.warn( 'Error while clearing up pilots' )
-      if result['Value']:
-        idList = [ x[0] for x in result['Value'] ]
-        result = self.deletePilots( idList )
-        if not result['OK']:
-          gLogger.warn( 'Error while deleting pilots' )
+      else:
+        if result['Value']:
+          idList = [ x[0] for x in result['Value'] ]
+          result = self.deletePilots( idList )
+          if not result['OK']:
+            gLogger.warn( 'Error while deleting pilots' )
 
     return S_OK()
 
@@ -656,7 +653,6 @@ class PilotAgentsDB( DB ):
     allStateNames = stateNames + ['Done_Empty', 'Aborted_Hour']
     paramNames = ['Site', 'CE'] + allStateNames
 
-    resultDict = {}
     last_update = None
     if selectDict.has_key( 'LastUpdateTime' ):
       last_update = selectDict['LastUpdateTime']
@@ -681,7 +677,6 @@ class PilotAgentsDB( DB ):
       site_select = [expand_site]
       del selectDict['ExpandSite']
 
-    start = time.time()
     # Get all the data from the database with various selections
     result = self.getCounters( 'PilotAgents',
                               ['GridSite', 'DestinationSite', 'Status'],
@@ -987,9 +982,7 @@ class PilotAgentsDB( DB ):
     """
 
     resultDict = {}
-    last_update = None
     if selectDict.has_key( 'LastUpdateTime' ):
-      last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
     if selectDict.has_key( 'Owner' ):
       userList = selectDict['Owner']
