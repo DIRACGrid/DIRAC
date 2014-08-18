@@ -35,8 +35,9 @@ from DIRAC.WorkloadManagementSystem.private.PilotDirector  import PilotDirector
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.ProxyInfo                         import getProxyInfoAsString
 from DIRAC.Core.Utilities.Grid                             import executeGridCommand
+from DIRAC.Core.Utilities                                  import Time, List
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC import S_OK, S_ERROR, List, Time, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 class GridPilotDirector( PilotDirector ):
@@ -139,7 +140,6 @@ class GridPilotDirector( PilotDirector ):
       return S_ERROR( ERROR_VOMS )
     if not ret['Value']:
       return S_ERROR( ERROR_VOMS )
-    vomsGroup = ret['Value'][0]
 
     workingDirectory = tempfile.mkdtemp( prefix = 'TQ_%s_' % taskQueueID, dir = workDir )
     self.log.verbose( 'Using working Directory:', workingDirectory )
@@ -364,9 +364,6 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
     self.log.info( 'Job Submit Execution Time: %.2f for TaskQueue %d' % ( ( time.time() - start ), taskQueueID ) )
 
     stdout = ret['Value'][1]
-    stderr = ret['Value'][2]
-
-    submittedPilot = None
 
     failed = 1
     rb = ''
@@ -374,7 +371,6 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
       m = re.search( "(https:\S+)", line )
       if ( m ):
         glite_id = m.group( 1 )
-        submittedPilot = glite_id
         if not rb:
           m = re.search( "https://(.+):.+", glite_id )
           rb = m.group( 1 )
@@ -393,7 +389,7 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
       f.write( '\n'.join( jdlList ) )
       f.close()
     except Exception, x:
-      self.log.exception()
+      self.log.exception( x )
       return ''
 
     return filename
