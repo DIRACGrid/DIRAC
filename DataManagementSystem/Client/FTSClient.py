@@ -245,7 +245,14 @@ class FTSClient( Client ):
     :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
     """
 
-    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in opFileList ]
+    # Check whether there are duplicates
+    fList = []
+    for fTuple in opFileList:
+      if fTuple not in fList:
+        fList.append( fTuple )
+      else:
+        self.log.warn( 'File list for FTS scheduling has duplicates, fix it:\n', fTuple )
+    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in fList ]
     res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
@@ -256,7 +263,7 @@ class FTSClient( Client ):
     # # this will be returned on success
     result = { "Successful": [], "Failed": {} }
 
-    for fileJSON, sourceSEs, targetSEs in opFileList:
+    for fileJSON, sourceSEs, targetSEs in fList:
 
       lfn = fileJSON.get( "LFN", "" )
       size = int( fileJSON.get( "Size", 0 ) )
@@ -295,7 +302,17 @@ class FTSClient( Client ):
 
       self.log.verbose( "LFN=%s tree=%s" % ( lfn, tree ) )
 
+      treeBranches = []
+      printed = False
       for repDict in tree.values():
+        if repDict in treeBranches:
+          if not printed:
+            self.log.warn( 'Duplicate tree branch', str( tree ) )
+            printed = True
+        else:
+          treeBranches.append( repDict )
+
+      for repDict in treeBranches:
         self.log.verbose( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"],
                                                                                 repDict["Ancestor"],
                                                                                 repDict["SourceSE"],

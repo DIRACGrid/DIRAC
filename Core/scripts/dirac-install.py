@@ -665,12 +665,12 @@ class ReleaseConfig:
     if project != "DIRAC":
       for modName in modules:
         if modName.find( project ) != 0:
-          return S_ERROR( "Module %s does not start with the name %s" ( modName, project ) )
+          return S_ERROR( "Module %s does not start with the name %s" % ( modName, project ) )
     return S_OK( modules )
 
   def getModSource( self, release, modName ):
     if not self.__projectName in self.__prjRelCFG:
-      return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__defaultObject )
+      return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
     modLocation = self.getReleaseOption( self.__projectName, release, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )

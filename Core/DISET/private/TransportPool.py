@@ -27,7 +27,7 @@ class TransportPool:
   def __sendKeepAlives( self, retries = 5 ):
     if retries == 0:
       return
-    now = time.time()
+    tridList = []
     try:
       tridList = [ trid for trid in self.__transports ]
     except RuntimeError:

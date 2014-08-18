@@ -71,10 +71,11 @@ class PilotDirector:
           that must call the parent class __init__ method and then do its own initialization
       * configure( self, csSection, submitPool ):
           that must call the parent class configure method and the do its own configuration
-      * _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit, ceMask,
+      * _submitPilot( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit, ceMask,
                       submitPrivatePilot, privateTQ, proxy, pilotsPerJob )
-          actual method doing the submission to the backend once the submitPilots method
-          has prepared the common part
+      * _listMatch( self, proxy, jdl, taskQueueID, rb )
+      * _getChildrenReferences( self, proxy, parentReference, taskQueueID )
+
 
     Derived classes might implement:
       * configureFromSection( self, mySection ):
@@ -368,8 +369,8 @@ class PilotDirector:
 
     return S_OK( ( pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) )
 
-  def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
-                     ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
+  def _submitPilot( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
+                    ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """
       This method must be implemented on the Backend specific derived class.
       This is problem with the Director, not with the Job so we must return S_OK
@@ -378,6 +379,17 @@ class PilotDirector:
     self.log.error( '_submitPilots method not implemented' )
     return S_OK()
 
+  def _listMatch( self, proxy, jdl, taskQueueID, rb ):
+    """ This method must be implemented on the Backend specific derived class.
+    """
+    self.log.error( '_listMatch method not implemented' )
+    return S_OK()
+
+  def _getChildrenReferences( self, proxy, parentReference, taskQueueID ):
+    """ This method must be implemented on the Backend specific derived class.
+    """
+    self.log.error( '_getChildrenReferences method not implemented' )
+    return S_OK()
 
   def submitPilots( self, taskQueueDict, pilotsToSubmit, workDir = None ):
     """

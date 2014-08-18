@@ -447,6 +447,7 @@ class ConfigureDIRAC( CommandBase ):
 
   def __getCEName ( self ):
 
+    # FIXME: is this necessary at all?
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE',self.pp.installEnv)
       if not retCode:
@@ -517,12 +518,13 @@ class ConfigureDIRAC( CommandBase ):
     configureScript = "dirac-configure"
     if self.pp.installEnv:
       configureScript += ' -O pilot.cfg -DM'
+      self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
 
     configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
 
-    self.log.debug( "Configuring DIRAC with: %s %s" % ( configureCmd, self.pp.installEnv) )
+    retCode, configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
-    retCode, __outData__ = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+    self.log.debug( configureOutData )
 
     if retCode:
       self.log.error( "Could not configure DIRAC" )
@@ -641,6 +643,10 @@ class ConfigureDIRAC( CommandBase ):
 
   def __getCPURequirement(self):
     """ Get job CPU requirement and queue normalization """
+    
+    #FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
+    # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
+    # as explained in the RFC
 
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       self.log.info( 'CE = %s' % self.CE )
@@ -723,7 +729,13 @@ class LaunchAgent( CommandBase ):
 
     if self.pp.userDN:
       self.log.info( 'Setting Owner DN to "%s"' % self.pp.userDN )
-      self.inProcessOpts .append( '-o OwnerDN="%s"' % self.pp.userDN )
+      self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
+
+    if self.pp.installEnv:
+      # The instancePath is where the agent works
+      self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
+      # The file pilot.cfg has to be created previously by ConfigureDIRAC
+      self.inProcessOpts.append( 'pilot.cfg' )
 
 
   def __startJobAgent(self):
@@ -751,8 +763,6 @@ class LaunchAgent( CommandBase ):
                                                              " ".join( self.jobAgentOpts ),
                                                              " ".join( self.inProcessOpts ),
                                                              " ".join( extraCFG ) )
-
-    self.log.info( "JobAgent execution command:\n%s" % jobAgent )
 
 
     if not self.pp.dryRun:

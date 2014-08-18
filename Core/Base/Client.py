@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 
-class Client:
+class Client( object ):
   """ Simple class to redirect unknown actions directly to the server. Arguments
       to the constructor are passed to the RPCClient constructor as they are.
 
@@ -27,7 +27,7 @@ class Client:
   def __getattr__( self, name ):
     # This allows the dir() method to work as well as tab completion in ipython
     if name == '__dir__':
-      return super( object, self ).__getattr__()
+      return super( Client, self ).__getattr__()
     self.call = name
     return self.executeRPC
 

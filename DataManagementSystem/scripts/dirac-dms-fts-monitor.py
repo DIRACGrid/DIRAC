@@ -30,9 +30,9 @@ if not args:
   DIRAC.exit( 1 )
 if '@' in args[0]:
   guid, server = args.pop( 0 ).replace( "'", "" ).split( '@' )
-elif largs > 1:
+elif len( args ) > 1:
   server = args.pop( 0 )
-  guid = args.pop( 1 )
+  guid = args.pop( 0 )
 else:
   Script.showHelp()
   DIRAC.exit( 1 )
@@ -41,7 +41,8 @@ if args:
 if args:
   targetSE = args.pop( 0 )
 if args:
-  lfns = args
+  for arg in args:
+    lfns += args.split( ',' )
 
 oFTSRequest = FTSRequest()
 oFTSRequest.sourceSE = sourceSE

@@ -1833,7 +1833,7 @@ def installNewPortal():
   result = execCommand( False, ["pip", "install", "tornado"] )
   if not result['OK']:
     error = "Tornado can not be installed:%s" % result['Value']
-    gLogger.erro(error)
+    gLogger.error( error )
     DIRAC.exit(-1)
     return error
   else:

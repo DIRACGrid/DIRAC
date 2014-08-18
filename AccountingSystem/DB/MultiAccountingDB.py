@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, S_OK, gLogger
@@ -44,7 +43,7 @@ class MultiAccountingDB( object ):
 
   def __registerMethods( self ):
     for methodName in ( 'registerType', 'changeBucketsLength', 'regenerateBuckets',
-                        'deleteType', 'insertRecordThroughQueue', 'deleteRecord',
+                        'deleteType', 'insertRecordThroughQueue', 'insertRecordBundleThroughQueue', 'deleteRecord',
                         'getKeyValues', 'retrieveBucketedData', 'calculateBuckets',
                         'calculateBucketLengthForTime' ):
       setattr( self, methodName, lambda *x: self.__mimeTypeMethod( methodName, *x ) )
@@ -63,6 +62,6 @@ class MultiAccountingDB( object ):
         end = res
     return end
 
-  def __db( acType ):
+  def __db( self, acType ):
     return self.__allDBs[ self.__dbByType.get( acType, self.__defaultDB ) ]
 
