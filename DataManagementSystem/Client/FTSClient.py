@@ -247,15 +247,12 @@ class FTSClient( Client ):
     """
 
     # Check whether there are duplicates
-    opFileSet = set( opFileList )
-    if len( opFileSet ) != len( opFileList ):
-      self.log.warn( 'File list for FTS scheduling has duplicates, fix it:\n', '\n'.join( opFileList ) )
-      fList = []
-      for fTuple in opFileList:
-        if fTuple not in fList:
-          fList.append( fTuple )
-    else:
-      fList = opFileList
+    fList = []
+    for fTuple in opFileList:
+      if fTuple not in fList:
+        fList.append( fTuple )
+      else:
+        self.log.warn( 'File list for FTS scheduling has duplicates, fix it:\n', fTuple )
     fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in fList ]
     res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
