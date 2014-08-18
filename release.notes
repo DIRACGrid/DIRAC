@@ -1,3 +1,17 @@
+[v6r11p11]
+
+*Core
+FIX: TransportPool - fixed exception due to uninitialized variable
+FIX: HTTPDISETSocket - readline() takes optional argument size ( = 0 )
+
+*DMS
+FIX: FTSAgent - check the type of the Operation object ( can be None )
+FIX: FTSClient - avoid duplicates in the file list
+
+*RMS
+FIX: ReqClient - modified log message
+CHANGE: dirac-dms-fts-monitor - allow multiple comma separated LFNs in the arguments
+
 [v6r11p10]
 
 *RSS
