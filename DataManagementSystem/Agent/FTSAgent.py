@@ -568,8 +568,8 @@ class FTSAgent( AgentModule ):
 
       # # submit new ftsJobs
       if toSubmit:
-        if request.Status == 'Scheduled':
-          log.info( "Found %d FTSFiles to submit while request is no longer in Submitted status (%s)" \
+        if request.Status != 'Scheduled':
+          log.info( "Found %d FTSFiles to submit while request is no longer in Scheduled status (%s)" \
                     % ( len( toSubmit ), request.Status ) )
         else:
           self.__checkDuplicates( request.RequestName, toSubmit )
