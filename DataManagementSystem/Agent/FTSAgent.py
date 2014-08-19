@@ -541,9 +541,6 @@ class FTSAgent( AgentModule ):
         rescheduleFiles = self.__reschedule( request, operation, toReschedule )
         if not rescheduleFiles["OK"]:
           log.error( rescheduleFiles["Message"] )
-        # if request.Status == "Waiting":
-        #  log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
-        #  return self.putRequest( request )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
       ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted' ] )
@@ -571,13 +568,16 @@ class FTSAgent( AgentModule ):
 
       # # submit new ftsJobs
       if toSubmit:
-        self.__checkDuplicates( request.RequestName, toSubmit )
-        log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
-        submit = self.__submit( request, operation, toSubmit )
-        if not submit["OK"]:
-          log.error( submit["Message"] )
+        if request.Status == 'Scheduled':
+          log.info( "Found %d FTSFiles to submit while request is no longer in Submitted status" % len( toSubmit ) )
         else:
-          ftsJobs += submit["Value"]
+          self.__checkDuplicates( request.RequestName, toSubmit )
+          log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
+          submit = self.__submit( request, operation, toSubmit )
+          if not submit["OK"]:
+            log.error( submit["Message"] )
+          else:
+            ftsJobs += submit["Value"]
 
       # # status change? - put back request
       if request.Status != "Scheduled":
