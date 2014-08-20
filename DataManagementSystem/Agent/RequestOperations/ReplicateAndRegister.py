@@ -154,7 +154,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     if hasattr( self, "FTSMode" ) and getattr( self, "FTSMode" ):
       bannedGroups = getattr( self, "FTSBannedGroups" ) if hasattr( self, "FTSBannedGroups" ) else ()
       if self.request.OwnerGroup in bannedGroups:
-        self.log.info( "usage of FTS system is banned for request's owner" )
+        self.log.verbose( "usage of FTS system is banned for request's owner" )
         return self.dmTransfer()
       return self.ftsTransfer()
     return self.dmTransfer()
