@@ -273,7 +273,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         gMonitor.addMark( "FTSScheduleFail" )
         if noMetaReplicas:
           self.log.warn( "unable to schedule '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
-          opFile.Attempt -= 1
+          opFile.Error = "Couldn't get metadata"
         elif noReplicas:
           self.log.error( "unable to schedule %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
           opFile.Error = 'No replicas found'
@@ -386,7 +386,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         gMonitor.addMark( "ReplicateFail" )
         if noMetaReplicas:
           self.log.warn( "unable to replicate '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
-          opFile.Attempt -= 1
+          opFile.Error = "Couldn't get metadata"
         elif noReplicas:
           self.log.error( "unable to replicate %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noreplicas ) ) )
           opFile.Error = 'No replicas found'
