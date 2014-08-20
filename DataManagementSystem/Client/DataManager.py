@@ -686,7 +686,7 @@ class DataManager( object ):
       self.log.debug( errStr, "%s %s" % ( destSE, res['Message'] ) )
       return S_ERROR( errStr )
     destSE = destStorageElement.getStorageElementName()['Value']
-    self.log.info( "%s Destination Storage Element verified." % logStr )
+    self.log.verbose( "%s Destination Storage Element verified." % logStr )
 
     ###########################################################
     # Check whether the destination storage element is banned
@@ -740,7 +740,7 @@ class DataManager( object ):
       return S_ERROR( errStr )
     self.log.debug( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
 
-    self.log.info( "%s Replication initialization successful." % logStr )
+    self.log.verbose( "%s Replication initialization successful." % logStr )
 
     resDict = {
                'DestStorage'   : destStorageElement,
