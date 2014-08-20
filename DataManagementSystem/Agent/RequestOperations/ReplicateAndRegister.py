@@ -44,7 +44,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
     seCache = {}
 
   log = logger.getSubLogger( "filterReplicas" )
-  ret = { "Valid" : [], "Banned" : [], "Bad" : [], 'NoReplicas':[], 'NoPFN':[] }
+  ret = { "Valid" : [], "NoMetadata" : [], "Bad" : [], 'NoReplicas':[], 'NoPFN':[] }
 
   replicas = dataManager.getActiveReplicas( opFile.LFN )
   if not replicas["OK"]:
@@ -75,12 +75,11 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
       repSEMetadata = repSE.getFileMetadata( pfn )
       error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
       if error:
-        log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error )
+        log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error.replace( '\n', '' ) )
         if 'File does not exist' in error:
           ret['NoReplicas'].append( repSEName )
         else:
-          log.verbose( "StorageElement '%s' is banned for reading" % ( repSEName ) )
-          ret["Banned"].append( repSEName )
+          ret["NoMetadata"].append( repSEName )
       else:
         repSEMetadata = repSEMetadata['Value']['Successful'][pfn]
 
@@ -258,7 +257,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       replicas = replicas["Value"]
 
       validReplicas = replicas["Valid"]
-      bannedReplicas = replicas["Banned"]
+      noMetaReplicas = replicas["NoMetadata"]
       noReplicas = replicas['NoReplicas']
       badReplicas = replicas['Bad']
       noPFN = replicas['NoPFN']
@@ -272,19 +271,19 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           toSchedule[opFile.LFN] = [ opFile, validReplicas, validTargets ]
       else:
         gMonitor.addMark( "FTSScheduleFail" )
-        if bannedReplicas:
-          self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        if noMetaReplicas:
+          self.log.warn( "unable to schedule '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
           opFile.Attempt -= 1
         elif noReplicas:
-          self.log.error( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+          self.log.error( "unable to schedule %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
-          self.log.error( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+          self.log.error( "unable to schedule %s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
         elif noPFN:
-          self.log.warn( "unable to schedule %s, could not get a PFN" % opFile.LFN )
+          self.log.warn( "unable to schedule %s, could not get a PFN at %s" % ( opFile.LFN, ','.join( noPFN ) ) )
 
     res = self._addMetadataToFiles( toSchedule )
     if not res['OK']:
@@ -378,22 +377,22 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         continue
       replicas = replicas["Value"]
       validReplicas = replicas["Valid"]
-      bannedReplicas = replicas["Banned"]
+      noMetaReplicas = replicas["NoMetadata"]
       noReplicas = replicas['NoReplicas']
       badReplicas = replicas['Bad']
       noPFN = replicas['NoPFN']
 
       if not validReplicas:
         gMonitor.addMark( "ReplicateFail" )
-        if bannedReplicas:
-          self.log.warn( "unable to replicate '%s', replicas only at banned SEs" % opFile.LFN )
+        if noMetaReplicas:
+          self.log.warn( "unable to replicate '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
           opFile.Attempt -= 1
         elif noReplicas:
-          self.log.error( "unable to replicate %s, file doesn't exist" % opFile.LFN )
+          self.log.error( "unable to replicate %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noreplicas ) ) )
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
-          self.log.error( "unable to replicate %s, all replicas have a bad checksum" % opFile.LFN )
+          self.log.error( "unable to replicate %s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
         elif noPFN:

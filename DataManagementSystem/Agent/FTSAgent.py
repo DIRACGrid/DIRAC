@@ -642,7 +642,7 @@ class FTSAgent( AgentModule ):
         continue
       replicas = replicas["Value"]
       validReplicas = replicas["Valid"]
-      bannedReplicas = replicas["Banned"]
+      noMetaReplicas = replicas["NoMetadata"]
       noReplicas = replicas["NoReplicas"]
       badReplicas = replicas['Bad']
 
@@ -653,13 +653,13 @@ class FTSAgent( AgentModule ):
           opFile.Status = "Done"
         else:
           toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
-      elif bannedReplicas:
-        log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+      elif noMetaReplicas:
+        log.warn( "unable to schedule '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
       elif noReplicas:
-        log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
+        log.warn( "unable to schedule %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
         opFile.Status = 'Failed'
       elif badReplicas:
-        log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
+        log.warn( "unable to schedule %s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
         opFile.Status = 'Failed'
 
     # # do real schedule here
