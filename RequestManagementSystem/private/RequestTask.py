@@ -278,7 +278,7 @@ class RequestTask( object ):
         useServerCertificate = gConfig.useServerCertificate()
       else:
         # Always use server certificates if executed within an agent
-        useServerCertificate = True 
+        useServerCertificate = True
       try:
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Att" ), 1 )
@@ -293,13 +293,27 @@ class RequestTask( object ):
           if pluginName:
             gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
           gMonitor.addMark( "RequestFail", 1 )
+          if self.request.JobID:
+            # Check if the job exists
+            from DIRAC.Core.DISET.RPCClient import RPCClient
+            monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
+            res = monitorServer.getJobPrimarySummary( int( self.request.JobID ) )
+            if not res["OK"]:
+              self.log.error( "RequestTask: Failed to get job %d status" % self.request.JobID )
+            elif not res['Value']:
+              self.log.warn( "RequestTask: job %d does not exist (anymore): failed request" % self.request.JobID )
+              for opFile in operation:
+                opFile.Status = 'Failed'
+              if operation.Status != 'Failed':
+                operation.Status = 'Failed'
+              self.request.Error = 'Job no longer exists'
       except Exception, error:
         self.log.exception( "hit by exception: %s" % str( error ) )
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
         gMonitor.addMark( "RequestFail", 1 )
         if useServerCertificate:
-          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
         break
 
       # # operation status check
