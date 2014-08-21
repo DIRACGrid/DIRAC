@@ -25,6 +25,7 @@ def getSites():
       return result
     sites += result['Value']
 
+
   return S_OK( sites )
 
 def getStorageElementSiteMapping( siteList = [] ):
@@ -44,7 +45,7 @@ def getStorageElementSiteMapping( siteList = [] ):
 
   return S_OK( siteDict )
 
-def getFTSServersForSites( self, siteList = None ):
+def getFTS2ServersForSites( self, siteList = None ):
   """ get FTSServers for sites
 
   :param list siteList: list of sites
@@ -57,9 +58,26 @@ def getFTSServersForSites( self, siteList = None ):
     siteList = siteList["Value"]
   ftsServers = dict()
   for site in siteList:
-    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "FTSEndpoints", site ), "" )
+    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS2", site ), "" )
     if serv:
       ftsServers[site] = serv
+  return S_OK( ftsServers )
+
+
+def getFTS3Servers():
+  """ get FTSServers for sites
+
+  :param list siteList: list of sites
+  """
+
+  csPath = cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS3" )
+  # We do it in two times to keep the order
+  ftsServerNames = gConfig.getOptions( csPath ).get( 'Value', [] )
+
+  ftsServers = []
+  for name in ftsServerNames:
+    ftsServers.append( gConfig.getValue( cfgPath( csPath, name ) ) )
+
   return S_OK( ftsServers )
 
 def getSiteTier( site ):
