@@ -219,7 +219,7 @@ class ARCComputingElement( ComputingElement ):
           elif stateARC in ['Failed']:
             resultDict[jobRef] = "Failed"
           else:
-            log.warning( "Unknown state %s for job %s" % ( stateARC, jobRef ) )
+            log.warn( "Unknown state %s for job %s" % ( stateARC, jobRef ) )
       elif lines[ln].startswith( "WARNING: Job information not found:" ):
         jobRef = lines[ln].replace( 'WARNING: Job information not found:', '' ).strip()
         resultDict[jobRef] = "Scheduled"
