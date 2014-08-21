@@ -541,9 +541,6 @@ class FTSAgent( AgentModule ):
         rescheduleFiles = self.__reschedule( request, operation, toReschedule )
         if not rescheduleFiles["OK"]:
           log.error( rescheduleFiles["Message"] )
-        # if request.Status == "Waiting":
-        #  log.info( "request is in 'Waiting' state, will put it back to ReqDB" )
-        #  return self.putRequest( request )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
       ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted' ] )
@@ -571,12 +568,17 @@ class FTSAgent( AgentModule ):
 
       # # submit new ftsJobs
       if toSubmit:
-        log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
-        submit = self.__submit( request, operation, toSubmit )
-        if not submit["OK"]:
-          log.error( submit["Message"] )
+        if request.Status != 'Scheduled':
+          log.info( "Found %d FTSFiles to submit while request is no longer in Scheduled status (%s)" \
+                    % ( len( toSubmit ), request.Status ) )
         else:
-          ftsJobs += submit["Value"]
+          self.__checkDuplicates( request.RequestName, toSubmit )
+          log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
+          submit = self.__submit( request, operation, toSubmit )
+          if not submit["OK"]:
+            log.error( submit["Message"] )
+          else:
+            ftsJobs += submit["Value"]
 
       # # status change? - put back request
       if request.Status != "Scheduled":
@@ -587,14 +589,34 @@ class FTSAgent( AgentModule ):
     finally:
       put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not put["OK"]:
-          log.error( "unable to put back request:", put["Message"] )
+        log.error( "unable to put back request:", put["Message"] )
      # #  put back jobs in all cases
       if ftsJobs:
+        for ftsJob in list( ftsJobs ):
+          if not len( ftsJob ):
+            log.warn( 'FTS job empty, removed: %s' % ftsJob.FTSGUID )
+            self.ftsClient().deleteFTSJob( ftsJob.FTSJobID )
+            ftsJobs.remove( ftsJob )
         putJobs = self.putFTSJobs( ftsJobs )
         if not putJobs["OK"]:
           log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
           return putJobs
       return put
+
+  def __checkDuplicates( self, name, toSubmit ):
+    """ Check in a list of FTSFiles whether there are duplicates
+    """
+    tupleList = []
+    log = self.log.getSubLogger( "%s/checkDuplicates" % name )
+    for ftsFile in list( toSubmit ):
+      fTuple = ( ftsFile.LFN, ftsFile.SourceSE, ftsFile.TargetSE )
+      if fTuple in tupleList:
+        log.warn( "Duplicate file to submit, removed:", ', '.join( fTuple ) )
+        toSubmit.remove( ftsFile )
+        self.ftsClient().deleteFTSFiles( ftsFile.OperationID, [ftsFile.FileID] )
+      else:
+        tupleList.append( fTuple )
+
 
   def __reschedule( self, request, operation, toReschedule ):
     """ reschedule list of :toReschedule: files in request for operation :operation:
@@ -604,12 +626,11 @@ class FTSAgent( AgentModule ):
     :param list toReschedule: list of FTSFiles
     """
     log = self.log.getSubLogger( "%s/reschedule" % request.RequestName )
-    log.info( "found %s files to reschedule" % len( toReschedule ) )
 
+    ftsFileIDs = [ftsFile.FileID for ftsFile in toReschedule]
     for opFile in operation:
-      for ftsFile in toReschedule:
-        if opFile.FileID == ftsFile.FileID:
-          opFile.Status = "Waiting"
+      if opFile.FileID in ftsFileIDs:
+        opFile.Status = "Waiting"
 
     toSchedule = []
 
@@ -621,26 +642,25 @@ class FTSAgent( AgentModule ):
         continue
       replicas = replicas["Value"]
       validReplicas = replicas["Valid"]
-      bannedReplicas = replicas["Banned"]
+      noMetaReplicas = replicas["NoMetadata"]
       noReplicas = replicas["NoReplicas"]
       badReplicas = replicas['Bad']
 
-      if not validReplicas:
-        if bannedReplicas:
-          log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        elif noReplicas:
-          log.warn( "unable to schedule %s, file doesn't exist" % opFile.LFN )
-          opFile.Status = 'Failed'
-        elif badReplicas:
-          log.warn( "unable to schedule %s, all replicas have a bad checksum" % opFile.LFN )
-          opFile.Status = 'Failed'
-      else:
+      if validReplicas:
         validTargets = list( set( operation.targetSEList ) - set( validReplicas ) )
         if not validTargets:
           log.info( "file %s is already present at all targets" % opFile.LFN )
           opFile.Status = "Done"
         else:
           toSchedule.append( ( opFile.toJSON()["Value"], validReplicas, validTargets ) )
+      elif noMetaReplicas:
+        log.warn( "unable to schedule '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
+      elif noReplicas:
+        log.warn( "unable to schedule %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
+        opFile.Status = 'Failed'
+      elif badReplicas:
+        log.warn( "unable to schedule %s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
+        opFile.Status = 'Failed'
 
     # # do real schedule here
     if toSchedule:
@@ -653,18 +673,14 @@ class FTSAgent( AgentModule ):
         return ftsSchedule
 
       ftsSchedule = ftsSchedule["Value"]
-      for fileID in ftsSchedule["Successful"]:
-        for opFile in operation:
-          if fileID == opFile.FileID:
-            opFile.Status = "Scheduled"
-
-      for fileID, reason in ftsSchedule["Failed"]:
-        for opFile in operation:
-          if fileID == opFile.FileID:
-            opFile.Error = reason
+      for opFile in operation:
+        fileID = opFile.FileID
+        if fileID in ftsSchedule["Successful"]:
+          opFile.Status = "Scheduled"
+        elif fileID in ftsSchedule["Failed"]:
+          opFile.Error = ftsSchedule["Failed"][fileID]
 
     return S_OK()
-
 
   def __submit( self, request, operation, toSubmit ):
     """ create and submit new FTSJobs using list of FTSFiles
