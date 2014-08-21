@@ -498,7 +498,7 @@ class FileMetadata:
             escapedOperand = self.db._escapeString( operand )
             if not escapedOperand['OK']:
               return escapedOperand
-            escapedOperand = escapeValue['Value']
+            escapedOperand = escapeValues['Value']
 
           if operation in ['>', '<', '>=', '<=']:
             if type( operand ) == types.ListType:
