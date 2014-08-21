@@ -185,6 +185,7 @@ class ARCComputingElement( ComputingElement ):
     """
     resultDict = {}
     lines = commandOutput.split('\n')
+    
     ln = 0
     while ln < len( lines ):
       if lines[ln].startswith( 'Job:' ):
@@ -193,24 +194,21 @@ class ARCComputingElement( ComputingElement ):
         line = lines[ln].strip()
         stateARC = ''
         if line.startswith( 'State' ):
-          result = re.match( 'State: \w+ \(([\w|:]+)\)', line )
-          if result:
-            stateARC = result.groups()[0]
+          stateARC = line.replace( 'State:','' ).strip()
           line = lines[ln+1].strip()
           exitCode = None 
           if line.startswith( 'Exit Code' ):
             line = line.replace( 'Exit Code:','' ).strip()
             exitCode = int( line )
-          
+         
           # Evaluate state now
-          if stateARC in ['ACCEPTING','ACCEPTED','PREPARING','PREPARED','SUBMITTING',
-                          'INLRMS:Q','INLRMS:S','INLRMS:O']:
+          if stateARC in ['Accepted','Preparing','Submitting','Queuing','Hold']:
             resultDict[jobRef] = "Scheduled"
-          elif stateARC in ['INLRMS:R','INLRMS:E','EXECUTED','FINISHING']:
+          elif stateARC in ['Running','Finishing']:
             resultDict[jobRef] = "Running"
-          elif stateARC in ['KILLING','KILLED']:
+          elif stateARC in ['Killed','Deleted']:
             resultDict[jobRef] = "Killed"
-          elif stateARC in ['FINISHED']:
+          elif stateARC in ['Finished','Other']:
             if exitCode is not None:
               if exitCode == 0:
                 resultDict[jobRef] = "Done" 
@@ -218,8 +216,10 @@ class ARCComputingElement( ComputingElement ):
                 resultDict[jobRef] = "Failed"
             else:
               resultDict[jobRef] = "Failed"
-          elif stateARC in ['FAILED']:
+          elif stateARC in ['Failed']:
             resultDict[jobRef] = "Failed"
+          else:
+            log.warning( "Unknown state %s for job %s" % ( stateARC, jobRef ) )
       elif lines[ln].startswith( "WARNING: Job information not found:" ):
         jobRef = lines[ln].replace( 'WARNING: Job information not found:', '' ).strip()
         resultDict[jobRef] = "Scheduled"
