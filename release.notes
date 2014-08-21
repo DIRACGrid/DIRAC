@@ -68,7 +68,8 @@ FIX: TransportPool - fixed exception due to uninitialized variable
 FIX: HTTPDISETSocket - readline() takes optional argument size ( = 0 )
 
 *DMS
-FIX: FTSAgent - check the type of the Operation object ( can be None )
+FIX: FTSAgent - check the type of the Operation object ( can be None ) and
+     some other protections
 FIX: FTSClient - avoid duplicates in the file list
 
 *RMS

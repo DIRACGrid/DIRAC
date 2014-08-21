@@ -140,14 +140,14 @@ class FTSClient( Client ):
 
     :param FTSJob ftsJob: FTSJob instance
     """
-    isValid = self.ftsValidator.validate( ftsJob )
-    if not isValid['OK']:
-      self.log.error( isValid['Message'] )
-      return isValid
     ftsJobJSON = ftsJob.toJSON()
     if not ftsJobJSON['OK']:
       self.log.error( ftsJobJSON['Message'] )
       return ftsJobJSON
+    isValid = self.ftsValidator.validate( ftsJob )
+    if not isValid['OK']:
+      self.log.error( isValid['Message'], str( ftsJobJSON['Value'] ) )
+      return isValid
     return self.ftsManager.putFTSJob( ftsJobJSON['Value'] )
 
   def getFTSJob( self, ftsJobID ):
