@@ -1053,7 +1053,7 @@ def getOverallStatus( extensions ):
               resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
               resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
               resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
-          except Exception, x:
+          except Exception:
             #print str(x)
             pass
 
@@ -1083,7 +1083,7 @@ def getOverallStatus( extensions ):
               resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
               resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
               resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
-          except Exception, x:
+          except Exception:
             #print str(x)
             pass
 
@@ -1214,6 +1214,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   # Now get the necessary info from localCfg
   setupSystems = localCfg.getOption( cfgInstallPath( 'Systems' ), ['Configuration', 'Framework'] )
+  installMySQL = localCfg.getOption( cfgInstallPath( 'InstallMySQL' ), False )
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
@@ -1431,13 +1432,15 @@ def setupSite( scriptCfg, cfg = None ):
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'AutoPublish' , 'no' )
     _addCfgToDiracCfg( cfg )
 
-  # 2.- Check if MySQL is required
-  if setupDatabases:
+  # 2.- Check if MySQL is to be installed
+  if installMySQL:
     gLogger.notice( 'Installing MySQL' )
     getMySQLPasswords()
     installMySQL()
 
-    # 3.- And install requested Databases
+  # 3.- Install requested Databases
+  # if MySQL is not installed locally, we assume a host is given
+  if setupDatabases:
     result = getDatabases()
     if not result['OK']:
       if exitOnError:
@@ -2102,7 +2105,7 @@ def installMySQL():
     return result
 
   gLogger.notice( 'Setting MySQL root password' )
-  result = execCommand( 0, ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd] )
+  result = execCommand( 0, ['mysqladmin', '-u', mysqlRootUser, 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
   
@@ -2117,7 +2120,7 @@ def installMySQL():
     return result
   
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
-    result = execCommand( 0, ['mysqladmin', '-u', 'root', '-h', mysqlHost, 'password', mysqlRootPwd] )
+    result = execCommand( 0, ['mysqladmin', '-u', mysqlRootUser, '-h', mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
       return result
 
@@ -2136,7 +2139,7 @@ def getMySQLStatus():
   if not result['OK']:
     return result
   output = result['Value'][1]
-  d1, uptime, nthreads, nquestions, nslow, nopens, nflash, nopen, nqpersec = output.split( ':' )
+  _d1, uptime, nthreads, nquestions, nslow, nopens, nflash, nopen, nqpersec = output.split( ':' )
   resDict = {}
   resDict['UpTime'] = uptime.strip().split()[0]
   resDict['NumberOfThreads'] = nthreads.strip().split()[0]
