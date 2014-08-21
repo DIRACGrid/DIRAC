@@ -1,4 +1,4 @@
-[v6r12-pre11]
+[v6r12]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -24,6 +24,7 @@ NEW: Refactored pilots ( dirac-pilot-2 ) to become modular following RFC #18,
 CHANGE: InputData(Executor) - use VO specific catalogs      
 NEW: JobWrapper, Watchdog - monitor memory consumption by the job ( in a Warning mode )
 FIX: SandboxStoreHandler - treat the case of exception while cleaning sandboxes
+CHANGE: JobCleaningAgent - the delays of job removals become CS parameters
 
 *Resources
 NEW: StorageElement - added a cache of already created SE objects
