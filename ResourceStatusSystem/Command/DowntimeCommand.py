@@ -40,16 +40,16 @@ class DowntimeCommand( Command ):
     '''
 
     for dt in result:
-
-      resQuery = self.rmClient.addOrModifyDowntimeCache( dt[ 'DowntimeID' ],
-                                                         dt[ 'Element' ],
-                                                         dt[ 'Name' ],
-                                                         dt[ 'StartDate' ],
-                                                         dt[ 'EndDate' ],
-                                                         dt[ 'Severity' ],
-                                                         dt[ 'Description' ],
-                                                         dt[ 'Link' ],
-                                                         dt[ 'GOCDBServiceType' ] )
+      resQuery = self.rmClient.addOrModifyDowntimeCache( 
+                               downtimeID = dt[ 'DowntimeID' ],
+                               element = dt[ 'Element' ],
+                               name = dt[ 'Name' ],
+                               startDate = dt[ 'StartDate' ],
+                               endDate = dt[ 'EndDate' ],
+                               severity = dt[ 'Severity' ],
+                               description = dt[ 'Description' ],
+                               link = dt[ 'Link' ],
+                               gocdbServiceType = dt[ 'GOCDBServiceType' ] )
       if not resQuery[ 'OK' ]:
         return resQuery
     return S_OK()
@@ -156,6 +156,9 @@ class DowntimeCommand( Command ):
     for downtime, downDic in results.items():
 
       dt = {}
+      if gocdbServiceType and downDic[ 'SERVICE_TYPE' ]:
+        if  gocdbServiceType.lower() != downDic[ 'SERVICE_TYPE' ].lower():
+          continue
       if element == 'Resource':
         dt[ 'Name' ] = downDic[ 'HOSTNAME' ]
       else:
@@ -174,7 +177,7 @@ class DowntimeCommand( Command ):
       try:
         dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
       except KeyError:
-        # SERVICE_TYPE is not alwasy defined
+        # SERVICE_TYPE is not always defined
         pass
 
       uniformResult.append( dt )
@@ -183,25 +186,38 @@ class DowntimeCommand( Command ):
     if not storeRes[ 'OK' ]:
       return storeRes
 
-    # We return only one downtime, if its ongoind at dtDate
+    # We return only one downtime, if its ongoing at dtDate
     startDate = datetime.utcnow()
-    endDate = startDate
     if hours:
       startDate = startDate + timedelta( hours = hours )
+    endDate = startDate
 
     result = None
-    for dt in uniformResult:
+    dtOutages = []
+    dtWarnings = []
 
+    for dt in uniformResult:
       if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
-        result = dt
-        #We want to take the latest one ( they are sorted by insertion time )
-        #break
+        if dt[ 'Severity' ] == 'Outage':
+          dtOutages.append( dt )
+        else:
+          dtWarnings.append( dt )
+
+    #In case many overlapping downtimes have been declared, the first one in
+    #severity and then time order will be selected. We want to get the latest one
+    #( they are sorted by insertion time )
+    if len( dtOutages ) > 0:
+      result = dtOutages[-1]
+    elif len( dtWarnings ) > 0:
+      result = dtWarnings[-1]
 
     return S_OK( result )
 
+
+
   def doCache( self ):
     '''
-      Method that reads the cache table and tries to read from it. It will 
+      Method that reads the cache table and tries to read from it. It will
       return a list with one dictionary describing the DT if there are results.
     '''
 
@@ -220,39 +236,39 @@ class DowntimeCommand( Command ):
 
     # We return only one downtime, if its ongoing at dtDate
     dtDate = datetime.utcnow()
-    result = None       
+    result = None
     dtOutages = []
     dtWarnings = []
 
     if not hours:
-      # If not hours defined, we want the downtimes running now, which means,
-      # the ones that already started and will finish later.
-  
+      # If hours not defined, we want the ongoing downtimes
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
           if dt[ 'Severity' ] == 'Outage':
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
-
     else:
-      # If hours are defined, we want also the downtimes starting in the next <hours>
+      # If hours defined, we want ongoing downtimes and downtimes starting 
+      # in the next <hours>
       dtDateFuture = dtDate + timedelta( hours = hours )
       for dt in uniformResult:
-        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
+        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( 
+           dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
           if dt[ 'Severity' ] == 'Outage':
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
 
-    #In case many overlapping downtimes have been declared, the first one in severity and 
-    # then time order will be selected.
+    #In case many overlapping downtimes have been declared, the first one in
+    #severity and then time order will be selected.
     if len( dtOutages ) > 0:
       result = dtOutages[0]
     elif len( dtWarnings ) > 0:
       result = dtWarnings[0]
 
     return S_OK( result )
+
 
   def doMaster( self ):
     ''' Master method, which looks little bit spaghetti code, sorry !
