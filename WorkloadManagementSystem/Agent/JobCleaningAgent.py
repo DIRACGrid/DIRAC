@@ -164,6 +164,9 @@ class JobCleaningAgent( AgentModule ):
     for job in failedJobs:
       jobList.pop( jobList.index( job ) ) 
 
+    # TODO: we should not remove a job if it still has requests in the RequestManager.
+    # But this logic should go in the client or in the service, and right now no service expose jobDB.removeJobFromDB
+
     if self.jobByJob:
       for jobID in jobList:
         resultJobDB = self.jobDB.removeJobFromDB( jobID )
