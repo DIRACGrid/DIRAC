@@ -61,9 +61,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.DictCache import DictCache
 
-#from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
-
-class PilotDirector:
+class PilotDirector( object ):
   """
     Base Pilot Director class.
     Derived classes must implement:
