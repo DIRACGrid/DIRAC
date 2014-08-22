@@ -2188,10 +2188,6 @@ def installDatabase( dbName ):
 
   global mysqlRootPwd, mysqlPassword
 
-  result = mysqlInstalled()
-  if not result['OK']:
-    return result
-
   if not mysqlRootPwd:
     rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )
     return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
