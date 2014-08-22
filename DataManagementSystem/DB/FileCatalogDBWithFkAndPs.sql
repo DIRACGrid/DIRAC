@@ -348,11 +348,11 @@ DELIMITER //
 CREATE PROCEDURE ps_find_dir
 (IN dirName varchar(255), OUT dir_id INT, OUT dir_lvl INT)
 BEGIN
-  SELECT DirID INTO dir_id from FC_DirectoryList where Name = dirName;
+  SELECT SQL_NO_CACHE DirID INTO dir_id from FC_DirectoryList where Name = dirName;
   IF dir_id IS NULL THEN
     SET dir_id = 0;
   END IF;
-  SELECT max(Depth) INTO dir_lvl FROM FC_DirectoryClosure WHERE ChildID = dir_id;
+  SELECT  SQL_NO_CACHE max(Depth) INTO dir_lvl FROM FC_DirectoryClosure WHERE ChildID = dir_id;
 END //
 DELIMITER ;
 
@@ -365,7 +365,7 @@ CREATE PROCEDURE ps_find_dirs
 (IN dirNames TEXT)
 BEGIN
 --   SELECT DirID from FC_DirectoryList where Name in (dirNames);
-  SET @sql = CONCAT('SELECT Name, DirID from FC_DirectoryList where Name in (', dirNames, ')');
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE Name, DirID from FC_DirectoryList where Name in (', dirNames, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -436,7 +436,7 @@ BEGIN
     
     IF parent_id != 0 THEN
       INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
-        SELECT p.ParentID, c.ChildID, p.depth + c.depth + 1
+        SELECT SQL_NO_CACHE p.ParentID, c.ChildID, p.depth + c.depth + 1
         FROM FC_DirectoryClosure p, FC_DirectoryClosure c
         WHERE p.ChildID = parent_id AND c.ParentID = dir_id;
     END IF;
@@ -458,7 +458,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_dirName_from_id
 (IN dir_id INT, OUT dirName varchar(255) )
 BEGIN
-   SELECT Name INTO dirName from FC_DirectoryList where DirID = dir_id;
+   SELECT SQL_NO_CACHE Name INTO dirName from FC_DirectoryList where DirID = dir_id;
 END //
 DELIMITER ;
 
@@ -471,7 +471,7 @@ CREATE PROCEDURE ps_get_dirNames_from_ids
 (IN dirIds TEXT)
 BEGIN
 --   SELECT DirID from FC_DirectoryList where Name in (dirNames);
-  SET @sql = CONCAT('SELECT DirID, Name from FC_DirectoryList where DirID in (', dirIds, ')');
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE DirID, Name from FC_DirectoryList where DirID in (', dirIds, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -488,7 +488,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_parentIds_from_id
 (IN dir_id INT )
 BEGIN
-   SELECT ParentID FROM FC_DirectoryClosure WHERE ChildID = dir_id order by Depth desc;
+   SELECT SQL_NO_CACHE ParentID FROM FC_DirectoryClosure WHERE ChildID = dir_id order by Depth desc;
 END //
 DELIMITER ;
 
@@ -517,14 +517,14 @@ CREATE PROCEDURE ps_get_sub_directories
 BEGIN
 
     IF includeParent THEN
-      SELECT c1.ChildID, max(c1.Depth) AS lvl
+      SELECT SQL_NO_CACHE c1.ChildID, max(c1.Depth) AS lvl
       FROM FC_DirectoryClosure c1 
       JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
       WHERE c2.ParentID = dir_id
       GROUP BY c1.ChildID 
       ORDER BY NULL;
     ELSE
-      SELECT c1.ChildID, max(c1.Depth) AS lvl
+      SELECT SQL_NO_CACHE c1.ChildID, max(c1.Depth) AS lvl
       FROM FC_DirectoryClosure c1 
       JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
       WHERE c2.ParentID = dir_id AND c2.Depth != 0
@@ -544,7 +544,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_multiple_sub_directories
 (IN dirIds TEXT)
 BEGIN
-  SET @sql = CONCAT('select distinct(ChildID) from FC_DirectoryClosure where ParentID in (',dirIds ,')');
+  SET @sql = CONCAT('select SQL_NO_CACHE distinct(ChildID) from FC_DirectoryClosure where ParentID in (',dirIds ,')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -564,7 +564,7 @@ CREATE PROCEDURE ps_count_sub_directories
 (IN dir_id INT, IN includeParent BOOLEAN, OUT countDir INT )
 BEGIN
 
-  SELECT count(ChildID) INTO countDir FROM FC_DirectoryClosure WHERE ParentID = dir_id;
+  SELECT SQL_NO_CACHE count(ChildID) INTO countDir FROM FC_DirectoryClosure WHERE ParentID = dir_id;
   
     IF NOT includeParent THEN
       IF countDir != 0 THEN
@@ -580,7 +580,7 @@ CREATE PROCEDURE ps_count_files_in_dir
 (IN dir_id INT, OUT countFile INT )
 BEGIN
 
-  SELECT count(FileID) INTO countFile FROM FC_Files WHERE DirID = dir_id;
+  SELECT SQL_NO_CACHE count(FileID) INTO countFile FROM FC_Files WHERE DirID = dir_id;
  
 END //
 DELIMITER ;
@@ -677,7 +677,7 @@ DELIMITER ;
 drop PROCEDURE if exists update_directory_usage;
 DELIMITER //
 CREATE PROCEDURE update_directory_usage 
-(IN top_dir_id INT, IN se_id INT, IN size_diff INT, IN file_diff INT)
+(IN top_dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
 -- top_dir_id : the id of the dir in which the mouvement starts
 -- se_id : the id of the SE in which the replica was inserted
 -- size_diff : the modification to bring to the size (positif if adding a replica, negatif otherwise)
@@ -687,7 +687,7 @@ BEGIN
   DECLARE done INT DEFAULT FALSE;
 --   DECLARE cur1 CURSOR FOR SELECT ParentID FROM FC_DirectoryClosure c JOIN (SELECT DirID FROM FC_Files where FileID = file_id) f on f.DirID = c.ChildID;
   DECLARE cur1 CURSOR FOR
-    SELECT ParentID FROM FC_DirectoryClosure c
+    SELECT SQL_NO_CACHE ParentID FROM FC_DirectoryClosure c
     WHERE c.ChildID = top_dir_id;
 
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = True;
@@ -729,7 +729,7 @@ BEGIN
   DECLARE dir_id INT;
   
  
-  SELECT Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = new.FileID;
+  SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = new.FileID;
   
   
 --   call update_directory_usage (new.FileID, new.SEID, file_size, 1);
@@ -748,7 +748,7 @@ BEGIN
   DECLARE file_size BIGINT;
   DECLARE dir_id INT;
  
-  SELECT Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
+  SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
   
 --   call update_directory_usage (old.FileID, old.SEID, -file_size, -1);
   call update_directory_usage (dir_id, old.SEID, -file_size, -1);
@@ -769,7 +769,7 @@ BEGIN
   -- We only update if the replica was moved
   IF new.SEID <> old.SEID THEN
 
-    SELECT Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
+    SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
   
 
 --     -- Decrease the usage of old storage ...
@@ -837,7 +837,7 @@ CREATE PROCEDURE ps_get_replicas_for_files_in_dir
 (IN dir_id INT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255), IN visibleReplicaStatus VARCHAR(255) )
 BEGIN
 -- select f.FileName, f.FileID, s.SEName, ri.PFN from FC_Replicas r join  FC_ReplicaInfo ri on ri.RepID = r.RepID join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID where DirID = 6;
-  set @sql = 'select f.FileName, f.FileID, s.SEName, ri.PFN from FC_Replicas r join  FC_ReplicaInfo ri on ri.RepID = r.RepID join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
+  set @sql = 'select SQL_NO_CACHE f.FileName, f.FileID, s.SEName, ri.PFN from FC_Replicas r join  FC_ReplicaInfo ri on ri.RepID = r.RepID join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
 
   
   IF not allStatus THEN
@@ -867,7 +867,7 @@ BEGIN
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
 -- SELECT d.Name, f.FileName,f.FileID FROM FC_Files f join FC_DirectoryList d on f.DirID = d.DirID WHERE (d.Name = '/vo.formation.idgrilles.fr/user/a/atsareg' and FileName in ('another testFile') ) OR (d.DirID = 6 and FileName in ('testfile'));
-  SELECT FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON f.DirID = f.DirID WHERE CONCAT_WS('/', d.Name, f.FileName) = lfn;
+  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON f.DirID = f.DirID WHERE CONCAT_WS('/', d.Name, f.FileName) = lfn;
   IF file_id IS NULL THEN
     SET file_id = 0;
   END IF;
@@ -882,7 +882,7 @@ CREATE PROCEDURE ps_get_file_ids_from_dir_id
 (IN dir_id INT, IN file_names TEXT)
 BEGIN
 -- SELECT d.Name, f.FileName,f.FileID FROM FC_Files f join FC_DirectoryList d on f.DirID = d.DirID WHERE (d.Name = '/vo.formation.idgrilles.fr/user/a/atsareg' and FileName in ('another testFile') ) OR (d.DirID = 6 and FileName in ('testfile'));
-  SET @sql = CONCAT('SELECT FileID, FileName FROM FC_Files f WHERE DirID = ', dir_id, ' AND FileName IN (', file_names, ')');
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, FileName FROM FC_Files f WHERE DirID = ', dir_id, ' AND FileName IN (', file_names, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -905,7 +905,7 @@ BEGIN
 
 
 
-  set @sql = CONCAT('SELECT FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
+  set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
                      GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
                     FROM FC_Files f
                     JOIN FC_FileInfo fi ON f.FileID = fi.FileID
@@ -938,7 +938,7 @@ CREATE PROCEDURE ps_get_all_info_for_file_ids
 (IN file_ids TEXT)
 BEGIN
 -- SELECT d.Name, f.FileName,f.FileID FROM FC_Files f join FC_DirectoryList d on f.DirID = d.DirID WHERE (d.Name = '/vo.formation.idgrilles.fr/user/a/atsareg' and FileName in ('another testFile') ) OR (d.DirID = 6 and FileName in ('testfile'));
-  SET @sql = CONCAT('SELECT f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
                      FROM FC_Files f
                      JOIN FC_FileInfo fi ON f.FileID = fi.FileID
                      JOIN FC_Statuses s ON f.Status = s.StatusID
@@ -997,7 +997,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_guids
 (IN  guids TEXT)
 BEGIN
-  SET @sql = CONCAT('SELECT GUID, FileID FROM FC_FileInfo f WHERE GUID IN (', guids, ')');
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, FileID FROM FC_FileInfo f WHERE GUID IN (', guids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -1086,7 +1086,7 @@ CREATE PROCEDURE ps_get_replica_id
 (IN  file_id INT, IN se_id INT, OUT rep_id INT) 
 BEGIN
 
-  SELECT RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
+  SELECT SQL_NO_CACHE RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
   
   IF rep_id IS NULL THEN
     SET rep_id = 0;
@@ -1225,7 +1225,7 @@ BEGIN
 
   IF allStatus THEN
 
-    SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+    SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
     FROM FC_Replicas r
     JOIN FC_ReplicaInfo ri on r.RepID = ri.RepID
     JOIN FC_StorageElements se on r.SEID = se.SEID
@@ -1235,7 +1235,7 @@ BEGIN
   ELSE
 
     SET @sql = CONCAT(
-                    'SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+                    'SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
                     FROM FC_Replicas r
                     JOIN FC_ReplicaInfo ri on r.RepID = ri.RepID
                     JOIN FC_StorageElements se on r.SEID = se.SEID
@@ -1260,7 +1260,7 @@ CREATE PROCEDURE ps_get_all_directory_info
 BEGIN
 
 
-    SELECT d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
+    SELECT SQL_NO_CACHE d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
     FROM FC_DirectoryList d
     JOIN FC_DirectoryInfo di on d.DirID = di.DirID
     JOIN FC_Users u on di.UID = u.UID
@@ -1278,7 +1278,7 @@ CREATE PROCEDURE ps_get_all_directory_info_from_id
 BEGIN
 
 
-    SELECT d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
+    SELECT SQL_NO_CACHE d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
     FROM FC_DirectoryList d
     JOIN FC_DirectoryInfo di on d.DirID = di.DirID
     JOIN FC_Users u on di.UID = u.UID
@@ -1352,7 +1352,7 @@ CREATE PROCEDURE ps_get_files_in_dir
 (IN dir_id INT)
 BEGIN
 
-  SELECT FileID, DirID, FileName FROM FC_Files f WHERE DirID = dir_id;
+  SELECT SQL_NO_CACHE FileID, DirID, FileName FROM FC_Files f WHERE DirID = dir_id;
 
 END //
 DELIMITER ;
@@ -1364,7 +1364,7 @@ CREATE PROCEDURE ps_get_dir_logical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SESize, SEFiles FROM FC_DirectoryUsage u
+  SELECT SQL_NO_CACHE SESize, SEFiles FROM FC_DirectoryUsage u
   JOIN FC_StorageElements s ON s.SEID = u.SEID 
   WHERE s.SEName = 'FakeSE'
   AND u.DirID = dir_id;
@@ -1383,7 +1383,7 @@ BEGIN
   DECLARE log_size BIGINT DEFAULT 0;
   DECLARE log_files INT DEFAULT 0;
   
-  SELECT SUM(f.Size), COUNT(*) INTO log_size, log_files FROM FC_Files f
+  SELECT SQL_NO_CACHE SUM(f.Size), COUNT(*) INTO log_size, log_files FROM FC_Files f
   JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID
   WHERE ParentID = dir_id;
   
@@ -1403,7 +1403,7 @@ CREATE PROCEDURE ps_get_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SEName, SESize, SEFiles
+  SELECT SQL_NO_CACHE SEName, SESize, SEFiles
   FROM FC_DirectoryUsage u
   JOIN FC_StorageElements se ON se.SEID = u.SEID
   WHERE DirID = dir_id
@@ -1422,7 +1422,7 @@ CREATE PROCEDURE ps_calculate_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT se.SEName, sum(f.Size), count(*)
+  SELECT SQL_NO_CACHE se.SEName, sum(f.Size), count(*)
   FROM FC_Replicas r
   JOIN FC_Files f ON f.FileID = r.FileID
   JOIN FC_StorageElements se ON se.SEID = r.SEID
@@ -1436,6 +1436,164 @@ DELIMITER ;
 
 
 
+-- DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
+-- DELIMITER //
+-- 
+-- CREATE PROCEDURE ps_rebuild_directory_usage()
+-- BEGIN
+--   DECLARE dir_id INT UNSIGNED;
+--   DECLARE se_id INT UNSIGNED;
+--   DECLARE _size BIGINT UNSIGNED;
+--   DECLARE fileCur CURSOR FOR SELECT DirID, Size from FC_Files;
+--   DECLARE repCur CURSOR FOR SELECT f.DirID, f.Size, r.SEID from FC_Files f, FC_Replicas r where r.FileID = f.FileID;
+--   DECLARE cur CURSOR FOR SELECT DirID, SEID, SESize, SEFiles from TMP_UsageSum;
+-- 
+--   START TRANSACTION;
+--   
+--   
+--   CREATE TEMPORARY TABLE TMP_UsageSum AS SELECT DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles from FC_Files group by DirID;
+-- 
+--   INSERT INTO TMP_UsageSum (DirID, SEID, SESize, SEFiles)  select DirID, SEID, sum(Size), count(*) from FC_Replicas r join FC_Files f on r.FileID = f.FileID group by DirID, SEID;
+--   
+--   DELETE FROM FC_DirectoryUsage;
+--   
+--   BLOCKFILE: begin
+--     DECLARE doneFile BOOLEAN DEFAULT FALSE;
+-- 
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET doneFile := TRUE;
+-- 
+--     OPEN fileCur;
+--     
+--     fileLoop: LOOP
+--       FETCH fileCur INTO dir_id, _size;
+--       IF doneFile THEN
+--         LEAVE fileLoop;
+--       END IF;
+--       CALL update_directory_usage (dir_id, 1, _size, 1);
+--     END LOOP fileLoop;
+-- 
+--     CLOSE fileCur;
+--     
+--   END BLOCKFILE;
+--   
+--   BLOCKREP: begin
+--     DECLARE doneRep BOOLEAN DEFAULT FALSE;
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET doneRep := TRUE;
+-- 
+--     OPEN repCur;
+--     
+--     repLoop: LOOP
+--       FETCH repCur INTO dir_id, _size, se_id;
+--       IF doneRep THEN
+--         LEAVE repLoop;
+--       END IF;
+--       CALL update_directory_usage (dir_id, se_id, _size, 1);
+--     END LOOP repLoop;
+-- 
+--     CLOSE repCur;
+--     
+--   END BLOCKREP;
+--   
+--   COMMIT;
+-- END //
+-- DELIMITER ;
 
+DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
+DELIMITER //
+
+CREATE PROCEDURE ps_rebuild_directory_usage()
+BEGIN
+  DECLARE dir_id INT UNSIGNED;
+  DECLARE se_id INT UNSIGNED;
+  DECLARE _size BIGINT UNSIGNED;
+  DECLARE _count INT;
+  DECLARE done BOOLEAN DEFAULT FALSE;
+
+  DECLARE cur CURSOR FOR SELECT DirID, SEID, SESize, SEFiles from TMP_UsageSum;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done := TRUE;
+  START TRANSACTION;
+  
+  
+  CREATE TEMPORARY TABLE TMP_UsageSum AS SELECT DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles from FC_Files group by DirID ORDER BY NULL;
+
+  INSERT INTO TMP_UsageSum (DirID, SEID, SESize, SEFiles)  select DirID, SEID, sum(Size), count(*) from FC_Replicas r join FC_Files f on r.FileID = f.FileID group by DirID, SEID ORDER BY NULL;
+  
+  DELETE FROM FC_DirectoryUsage;
+  
+  OPEN cur;
+    
+  fileLoop: LOOP
+    FETCH cur INTO dir_id, se_id, _size, _count;
+    IF done THEN
+      LEAVE fileLoop;
+    END IF;
+    CALL update_directory_usage (dir_id, se_id, _size, _count);
+  END LOOP fileLoop;
+
+  CLOSE cur;
+  
+  DROP TABLE TMP_UsageSum;
+  
+  COMMIT;
+END //
+DELIMITER ;
+
+
+-- Consistency checks
+
+-- entry in FileInfo not in Files
+-- SELECT i.* from FC_Files f RIGHT OUTER JOIN FC_FileInfo i ON f.FileID = i.FileID WHERE f.FileID IS NULL;
+
+-- entry in Files not in FileInfo
+-- SELECT f.* from FC_Files f LEFT OUTER JOIN FC_FileInfo i ON f.FileID = i.FileID WHERE i.FileID IS NULL;
+
+
+-- entry in DirectoryInfo not in DirectoryList
+-- SELECT i.* from FC_DirectoryList d RIGHT OUTER JOIN FC_DirectoryInfo i ON d.DirID = i.DirID WHERE d.DirID IS NULL;
+
+-- entry in DirectoryList not in DirectoryInfo
+-- SELECT d.* from FC_DirectoryList d LEFT OUTER JOIN FC_DirectoryInfo i ON d.DirID = i.DirID WHERE i.DirID IS NULL;
+
+-- entry in ReplicaInfo not in Replicas
+-- This might give some result, since in the lfc it is possible to have several replica at the same SE for a given LFN
+-- SELECT i.* from FC_Replicas f RIGHT OUTER JOIN FC_ReplicaInfo i ON f.RepID = i.RepID WHERE f.RepID IS NULL;
+
+-- entry in Replicas not in ReplicaInfo
+-- SELECT f.* from FC_Replicas f LEFT OUTER JOIN FC_ReplicaInfo i ON f.RepID = i.RepID WHERE i.RepID IS NULL;
+
+-- useless users
+-- we have some. What to do?
+-- SELECT u.* from FC_Users u LEFT OUTER JOIN (select distinct(UID) From FC_DirectoryInfo UNION select distinct(UID) from FC_Files) i ON u.UID = i.UID WHERE i.UID IS NULL;
+
+-- We will find some files and dirs with non exisiting users. Some already come from the LFC
+-- the otehrs is the mapping between the root lfc and the root dfc. 0 needs to be transformed into 1
+
+-- Files with non existing users
+-- SELECT f.* from FC_Files f LEFT OUTER JOIN FC_Users u on f.UID = u.UID WHERE u.UID IS NULL;
+
+-- Directory with non existing users
+-- SELECT d.*, di.* from FC_DirectoryInfo di LEFT OUTER JOIN FC_Users u on di.UID = u.UID INNER JOIN FC_DirectoryList d on d.DirID = di.DirID WHERE u.UID IS NULL;
+
+-- useless groups
+-- we have some. What to do?
+-- SELECT g.* from FC_Groups g LEFT OUTER JOIN (select distinct(GID) From FC_DirectoryInfo UNION select distinct(GID) from FC_Files) i ON g.GID = i.GID WHERE i.GID IS NULL;
+
+-- here we need to convert 0 to 1 for the GID again (root mapping)
+
+-- Files with non existing groups
+-- SELECT f.* from FC_Files f LEFT OUTER JOIN FC_Groups g on f.GID = g.GID WHERE g.GID IS NULL;
+
+-- Directory with non existing groups
+-- SELECT d.*, di.* from FC_DirectoryInfo di LEFT OUTER JOIN FC_Groups g on di.GID = g.GID INNER JOIN FC_DirectoryList d on d.DirID = di.DirID WHERE g.GID IS NULL;
+
+-- Replicas without Files
+-- SELECT r.* FROM FC_Replicas r LEFT OUTER JOIN FC_Files f on r.FileID = f.FileID WHERE f.FileID IS NULL;
+
+-- Files without Replicas
+-- we do have some, what to do?
+-- SELECT f.* FROM FC_Replicas r RIGHT OUTER JOIN FC_Files f on r.FileID = f.FileID WHERE r.FileID IS NULL;
+
+-- Files without Directory
+-- SELECT f.* FROM FC_Files f LEFT OUTER JOIN FC_DirectoryList d on f.DirID = d.DirID where d.DirID is NULL;
 
 SET FOREIGN_KEY_CHECKS = 1;
