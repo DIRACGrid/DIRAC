@@ -43,12 +43,12 @@ class MultiAccountingDB( object ):
 
   def __registerMethods( self ):
     for methodName in ( 'registerType', 'changeBucketsLength', 'regenerateBuckets',
-                        'deleteType', 'insertRecordThroughQueue', 'insertRecordBundleThroughQueue', 'deleteRecord',
+                        'deleteType', 'insertRecordThroughQueue', 'deleteRecord',
                         'getKeyValues', 'retrieveBucketedData', 'calculateBuckets',
                         'calculateBucketLengthForTime' ):
       setattr( self, methodName, lambda *x: self.__mimeTypeMethod( methodName, *x ) )
     for methodName in ( 'autoCompactDB', 'compactBuckets', 'markAllPendingRecordsAsNotTaken',
-                        'loadPendingRecords', 'getRegisteredTypes' ):
+                        'loadPendingRecords', 'insertRecordBundleThroughQueue', 'getRegisteredTypes' ):
       setattr( self, methodName, lambda *x: self.__mimeMethod( methodName, *x ) )
 
   def __mimeTypeMethod( self, methodName, setup, acType, *args ):
