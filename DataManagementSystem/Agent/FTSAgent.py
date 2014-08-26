@@ -169,9 +169,11 @@ class FTSAgent( AgentModule ):
     """ get Requests systematically and refresh cache """
     getRequest = cls.requestClient().getRequest( reqName )
     if not getRequest["OK"]:
+      cls.__reqCache.pop( reqName, None )
       return getRequest
     getRequest = getRequest["Value"]
     if not getRequest:
+      cls.__reqCache.pop( reqName, None )
       return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
     cls.__reqCache[reqName] = getRequest
 
