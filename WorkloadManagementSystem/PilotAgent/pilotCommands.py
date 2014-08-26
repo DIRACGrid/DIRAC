@@ -86,7 +86,7 @@ class GetPilotVersion( CommandBase ):
         self.log.warn( "Content-Length parameter not returned, skipping expectedBytes check" )
 
       if fileName:
-        localFD = open( fileName, "wb" )
+        localFD = open( fileName + '-local', "wb" )
       receivedBytes = 0L
       data = remoteFD.read( 16384 )
       count = 1
@@ -109,6 +109,7 @@ class GetPilotVersion( CommandBase ):
         print '\033[1A'
       if fileName:
         localFD.close()
+        os.rename( fileName + '-local', fileName )
       remoteFD.close()
       if receivedBytes != expectedBytes and expectedBytes > 0:
         self.log.error( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
