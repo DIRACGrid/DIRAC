@@ -329,10 +329,6 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
   def dmTransfer( self, fromFTS = False ):
     """ replicate and register using dataManager  """
     # # get waiting files. If none just return
-    if fromFTS:
-      self.log.info( "Trying transfer using replica manager as FTS failed" )
-    else:
-      self.log.info( "Transferring files using Data manager..." )
     # # source SE
     sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
     if sourceSE:
@@ -363,7 +359,13 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     self.log.verbose( "No targets banned for writing" )
 
     waitingFiles = self.getWaitingFilesList()
+    if not waitingFiles:
+      return S_OK()
     # # loop over files
+    if fromFTS:
+      self.log.info( "Trying transfer using replica manager as FTS failed" )
+    else:
+      self.log.info( "Transferring files using Data manager..." )
     for opFile in waitingFiles:
 
       gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
@@ -388,7 +390,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           self.log.warn( "unable to replicate '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
           opFile.Error = "Couldn't get metadata"
         elif noReplicas:
-          self.log.error( "unable to replicate %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noreplicas ) ) )
+          self.log.error( "unable to replicate %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
