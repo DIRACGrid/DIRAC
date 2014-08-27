@@ -30,6 +30,7 @@ from DIRAC.RequestManagementSystem.private.OperationHandlerBase import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security import CS
 
 ########################################################################
@@ -295,7 +296,6 @@ class RequestTask( object ):
           gMonitor.addMark( "RequestFail", 1 )
           if self.request.JobID:
             # Check if the job exists
-            from DIRAC.Core.DISET.RPCClient import RPCClient
             monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
             res = monitorServer.getJobPrimarySummary( int( self.request.JobID ) )
             if not res["OK"]:
@@ -331,17 +331,17 @@ class RequestTask( object ):
 
     gMonitor.flush()
 
-    # # update request to the RequestDB
-    self.log.info( 'updating request with status %s' % self.request.Status )
-    update = self.updateRequest()
-    if not update["OK"]:
-      self.log.error( update["Message"] )
-      return update
     if error:
       return S_ERROR( error )
 
     # # request done?
     if self.request.Status == "Done":
+      # # update request to the RequestDB
+      self.log.info( 'updating request with status %s' % self.request.Status )
+      update = self.updateRequest()
+      if not update["OK"]:
+        self.log.error( update["Message"] )
+        return update
       self.log.info( "request '%s' is done" % self.request.RequestName )
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
@@ -366,4 +366,5 @@ class RequestTask( object ):
                                                             ( ' after %d attempts' % attempts ) if attempts else '' ) )
             break
 
+    # Request will be updated by the callBack method
     return S_OK()
