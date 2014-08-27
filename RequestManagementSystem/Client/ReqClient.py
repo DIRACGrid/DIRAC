@@ -356,7 +356,7 @@ class ReqClient( Client ):
     if all or recoverableRequest( req ):
       # Only reset requests that can be recovered
       for i, op in enumerate( req ):
-        op.Error = ' '
+        op.Error = ''
         if op.Status == 'Failed':
           printOperation( ( i, op ), onlyFailed = True )
         for f in op:
@@ -365,7 +365,7 @@ class ReqClient( Client ):
               f.Attempt = 1
             else:
               f.Attempt += 1
-            f.Error = ' '
+            f.Error = ''
             f.Status = 'Waiting'
         if op.Status == 'Failed':
           op.Status = 'Waiting'

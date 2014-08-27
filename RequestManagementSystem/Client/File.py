@@ -234,7 +234,7 @@ class File( Record ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
-      self.Error = ' '
+      self.Error = ''
     self.__data__["Status"] = value
     if self._parent:
       self._parent._notify()
