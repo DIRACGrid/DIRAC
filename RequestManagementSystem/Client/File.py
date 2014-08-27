@@ -210,7 +210,7 @@ class File( Record ):
   @property
   def Error( self ):
     """ error prop """
-    return self.__data__["Error"]
+    return self.__data__["Error"].strip()
 
   @Error.setter
   def Error( self, value ):
@@ -267,3 +267,4 @@ class File( Record ):
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if type( val ) != str else val for val in self.__data__.values() ] ) )
     return S_OK( digest )
+
