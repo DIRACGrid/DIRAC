@@ -217,6 +217,8 @@ class File( Record ):
     """ error setter """
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
+    if value == '':
+      value = ' '
     self.__data__["Error"] = self._escapeStr( value , 255 )
 
   @property
