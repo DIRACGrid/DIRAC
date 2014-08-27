@@ -185,8 +185,14 @@ class RequestExecutingAgent( AgentModule ):
 
     :param Request request: Request instance
     """
-    if request.RequestName in self.__requestCache:
-      return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+    count = 5
+    # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache
+    while request.RequestName in self.__requestCache:
+      count -= 1
+      if not count:
+        self.requestClient().putRequest( request )
+        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+      time.sleep( 1 )
     self.__requestCache[ request.RequestName ] = request
     return S_OK()
 
@@ -322,11 +328,9 @@ class RequestExecutingAgent( AgentModule ):
                                                       "S_OK" if taskResult["OK"] else "S_ERROR",
                                                       taskResult["Value"] if taskResult["OK"] else taskResult["Message"] ) )
 
-    if not taskResult["OK"] and taskResult["Message"] in ( "Timed out", 'Change proxy error' ):
-      self.putRequest( taskID )
-    else:
-      # # clean cache
-      self.cleanCache( taskID )
+    # # clean cache
+    self.cleanCache( taskID )
+    self.putRequest( taskID )
 
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
