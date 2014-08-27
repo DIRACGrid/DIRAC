@@ -367,4 +367,4 @@ class RequestTask( object ):
             break
 
     # Request will be updated by the callBack method
-    return S_OK()
+    return S_OK( self.request )

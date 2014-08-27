@@ -187,15 +187,21 @@ class RequestExecutingAgent( AgentModule ):
     self.__requestCache[ request.RequestName ] = request
     return S_OK()
 
-  def putRequest( self, requestName ):
+  def putRequest( self, requestName, taskResult = None ):
     """ put back :requestName: to RequestClient
 
     :param str requestName: request's name
     """
     if requestName in self.__requestCache:
-      reset = self.requestClient().putRequest( self.__requestCache.pop( requestName ) )
+      request = self.__requestCache.pop( requestName )
+      if taskResult and taskResult['OK']:
+        request = taskResult['Value']
+
+      reset = self.requestClient().putRequest( request )
       if not reset["OK"]:
         return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+    else:
+      return S_ERROR( 'Not in cache' )
     return S_OK()
 
   def putAllRequests( self ):
@@ -312,15 +318,17 @@ class RequestExecutingAgent( AgentModule ):
   def resultCallback( self, taskID, taskResult ):
     """ definition of request callback function
 
-    :param str taskID: Reqiest.RequestName
-    :param dict taskResult: task result S_OK/S_ERROR
+    :param str taskID: Request.RequestName
+    :param dict taskResult: task result S_OK(Request)/S_ERROR(Message)
     """
-    self.log.info( "callback: %s result is %s(%s)" % ( taskID,
-                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
-                                                      taskResult["Value"] if taskResult["OK"] else taskResult["Message"] ) )
-
     # # clean cache
-    self.putRequest( taskID )
+    res = self.putRequest( taskID, taskResult )
+    self.log.info( "callback: %s result is %s(%s), put %s(%s)" % ( taskID,
+                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
+                                                      taskResult["Value"].Status if taskResult["OK"] else taskResult["Message"],
+                                                      "S_OK" if res['OK'] else 'S_ERROR',
+                                                      '' if res['OK'] else res['Message'] ) )
+
 
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
