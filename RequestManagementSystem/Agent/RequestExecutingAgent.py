@@ -171,15 +171,6 @@ class RequestExecutingAgent( AgentModule ):
       self.__requestClient = ReqClient()
     return self.__requestClient
 
-  def cleanCache( self, requestName = None ):
-    """ delete request from requestCache
-
-    :param str requestName: Request.RequestName
-    """
-    if requestName in self.__requestCache:
-      del self.__requestCache[requestName]
-    return S_OK()
-
   def cacheRequest( self, request ):
     """ put request into requestCache
 
@@ -214,11 +205,11 @@ class RequestExecutingAgent( AgentModule ):
     """
     self.log.info( "putAllRequests: will put %s back requests" % len( self.__requestCache ) )
     for requestName in self.__requestCache.keys():
-      reset = self.requestClient().putRequest( self.__requestCache.pop( requestName ) )
+      reset = self.putRequest( requestName )
       if not reset["OK"]:
-        self.log.error( "putAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
-        continue
-      self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestName )
+        self.log.error( reset["Message"] )
+      else:
+        self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()
 
   def initialize( self ):
@@ -329,7 +320,6 @@ class RequestExecutingAgent( AgentModule ):
                                                       taskResult["Value"] if taskResult["OK"] else taskResult["Message"] ) )
 
     # # clean cache
-    self.cleanCache( taskID )
     self.putRequest( taskID )
 
   def exceptionCallback( self, taskID, taskException ):
