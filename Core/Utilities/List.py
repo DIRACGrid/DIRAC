@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import StringTypes
+from types import StringTypes, DictType, TupleType
 import random
 random.seed()
 
@@ -38,14 +38,14 @@ def appendUnique( aList, anObject ):
 def fromChar( inputString, sepChar = "," ):
   """Generates a list splitting a string by the required character(s)
      resulting string items are stripped and empty items are removed.
-     
+
      :param string inputString: list serialised to string
-     :param string sepChar: separator 
+     :param string sepChar: separator
      :return: list of strings or None if sepChar has a wrong type
   """
   if not ( type( inputString ) in StringTypes and
            type( sepChar ) in StringTypes and
-           sepChar ): # to prevent getting an empty String as argument
+           sepChar ):  # to prevent getting an empty String as argument
     return None
   return [ fieldString.strip() for fieldString in inputString.split( sepChar ) if len( fieldString.strip() ) > 0 ]
 
@@ -54,7 +54,7 @@ def randomize( aList ):
 
 	:param list aList: list to permute
   """
-  tmpList = aList[:]
+  tmpList = list( aList )
   random.shuffle( tmpList )
   return tmpList
 
@@ -90,11 +90,11 @@ def intListToString( aList ):
   return ",".join( [str( x ) for x in aList ] )
 
 def getChunk( aList, chunkSize ):
-  """Generator yielding chunk from a list of a size chunkSize. 
+  """Generator yielding chunk from a list of a size chunkSize.
 
   :param list aList: list to be splitted
   :param integer chunkSize: lenght of one chunk
-  :raise: StopIteration 
+  :raise: StopIteration
 
   Usage:
 
@@ -107,7 +107,7 @@ def getChunk( aList, chunkSize ):
 
 def breakListIntoChunks( aList, chunkSize ):
   """This method takes a list as input and breaks it into list of size 'chunkSize'. It returns a list of lists.
-  
+
   :param list aList: list of elements
   :param integer chunkSize: len of a single chunk
   :return: list of lists of length of chunkSize
@@ -115,6 +115,8 @@ def breakListIntoChunks( aList, chunkSize ):
   """
   if chunkSize < 1:
     raise RuntimeError( "chunkSize cannot be less than 1" )
+  if type( aList ) in ( type( set() ), DictType, TupleType ):
+    aList = list( aList )
   return [ chunk for chunk in getChunk( aList, chunkSize ) ]
 
 def removeEmptyElements( aList ):
