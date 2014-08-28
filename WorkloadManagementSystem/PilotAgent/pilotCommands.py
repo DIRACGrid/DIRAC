@@ -29,8 +29,9 @@ import re
 import signal
 import urllib2
 import json
+import distutils.spawn
 
-from pilotTools import CommandBase, which
+from pilotTools import CommandBase
 
 __RCSID__ = "$Id$"
 
@@ -550,9 +551,9 @@ class ConfigureDIRAC( CommandBase ):
     # Set the local architecture
 
     if not self.pp.installEnv:  # if traditional installation
-      architectureScript = which( "dirac-architecture" )
+      architectureScript = distutils.spawn.find_executable( "dirac-architecture" )
       if architectureScript is None:
-        architectureScript = which( "dirac-platform" )
+        architectureScript = distutils.spawn.find_executable( "dirac-platform" )
 
       if architectureScript:
         retCode, localArchitecture = self.executeAndGetOutput( architectureScript,self.pp.installEnv)
