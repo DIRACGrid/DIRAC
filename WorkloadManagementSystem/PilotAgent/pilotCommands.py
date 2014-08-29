@@ -295,7 +295,6 @@ class ConfigureDIRAC( CommandBase ):
     # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
     self.configureOpts = []
     self.CE = ""
-    self.testVOMSOK = False
 
     self.boincUserID = ''
     self.boincHostID= ''
@@ -531,21 +530,6 @@ class ConfigureDIRAC( CommandBase ):
     if retCode:
       self.log.error( "Could not configure DIRAC" )
       sys.exit( 1 )
-
-    if not self.pp.installEnv:  # if traditional installation
-      if self.testVOMSOK:
-      # Check voms-proxy-info before touching the original PATH and LD_LIBRARY_PATH
-        os.system( 'which voms-proxy-info && voms-proxy-info -all' )
-
-    #########################################################################################################################
-    # Check proxy
-
-    retCode, __outData__ = self.executeAndGetOutput( 'dirac-proxy-info', self.pp.installEnv )
-    if self.testVOMSOK:
-      retCode, __outData__ = self.executeAndGetOutput( 'dirac-proxy-info | grep -q fqan', self.pp.installEnv )
-      if retCode != 0:
-        self.log.debug( "dirac-pilot: missing voms certs at %s" % self.pp.site )
-        sys.exit( -1 )
 
     ##########################################################################################################################
     # Set the local architecture
