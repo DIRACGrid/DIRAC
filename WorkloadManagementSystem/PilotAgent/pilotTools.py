@@ -400,7 +400,7 @@ class PilotParams:
       elif o in ( '-W', '--gateway' ):
         self.gateway = v
       elif o == '-c' or o == '--cert':
-        self.useServerCertificate = False
+        self.useServerCertificate = True
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
