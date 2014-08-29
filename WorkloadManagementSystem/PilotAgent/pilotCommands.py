@@ -523,9 +523,7 @@ class ConfigureDIRAC( CommandBase ):
 
     configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
 
-    retCode, configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
-
-    self.log.debug( configureOutData )
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
     if retCode:
       self.log.error( "Could not configure DIRAC" )
@@ -752,8 +750,7 @@ class LaunchAgent( CommandBase ):
 
 
     if not self.pp.dryRun:
-      retCode, output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      self.log.info( output, header = False )
+      retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
       if retCode:
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )
