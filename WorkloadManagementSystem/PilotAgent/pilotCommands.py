@@ -450,7 +450,7 @@ class ConfigureDIRAC( CommandBase ):
 
     # FIXME: is this necessary at all?
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE',self.pp.installEnv)
+      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE', self.pp.installEnv )
       if not retCode:
         self.pp.ceName = self.CE.split( ':' )[0]
         if len( self.CE.split( '/' ) ) > 1:
@@ -505,6 +505,50 @@ class ConfigureDIRAC( CommandBase ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
 
+  def __getCPURequirement( self ):
+    """ Get job CPU requirement and queue normalization """
+
+    # FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
+    # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
+    # as explained in the RFC
+
+    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
+      self.log.info( 'CE = %s' % self.CE )
+      self.log.info( 'LCG_SITE_CE = %s' % self.pp.ceName )
+
+      retCode, queueNormList = self.executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % self.CE, self.pp.installEnv )
+      if not retCode:
+        queueNormList = queueNormList.strip().split( ' ' )
+        if len( queueNormList ) == 2:
+          queueNorm = float( queueNormList[1] )
+          self.log.info( 'Queue Normalization = %s SI00' % queueNorm )
+          if queueNorm:
+            # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
+            # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
+            # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+            # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.pp.configureScript,
+                                                                                                             queueNorm / 250.,
+                                                                                                             queueNorm / 250. ) )
+        else:
+          self.log.error( 'Fail to get Normalization of the Queue' )
+      else:
+        self.log.error( "There was an error calling dirac-wms-get-queue-normalization" )
+
+      retCode, queueLength = self.executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % self.CE, self.pp.installEnv )
+      if not retCode:
+        queueLength = queueLength.strip().split( ' ' )
+        if len( queueLength ) == 2:
+          self.pp.jobCPUReq = float( queueLength[1] )
+          self.log.info( 'Normalized Queue Length = %s' % self.pp.jobCPUReq )
+        else:
+          self.log.error( 'Failed to get Normalized length of the Queue' )
+      else:
+        self.log.error( "There was an error calling dirac-wms-get-normalized-queue-length" )
+
+      # Instead of using the Average reported by the Site, determine a Normalization
+      # os.system( "dirac-wms-cpu-normalization -U" )
+
   def execute( self ):
     """ What is called all the time
     """
@@ -516,12 +560,12 @@ class ConfigureDIRAC( CommandBase ):
 
     self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
     self.configureOpts.append( '-I' )
-    configureScript = "dirac-configure"
     if self.pp.installEnv:
-      configureScript += ' -O pilot.cfg -DM'
+      # FIXME: really needed?
+      self.ppconfigureScript += ' -O pilot.cfg -DM'
       self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
 
-    configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.configureOpts ) )
 
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
@@ -529,28 +573,9 @@ class ConfigureDIRAC( CommandBase ):
       self.log.error( "Could not configure DIRAC" )
       sys.exit( 1 )
 
-    ##########################################################################################################################
-    # Set the local architecture
-
-    if not self.pp.installEnv:  # if traditional installation
-      architectureScript = distutils.spawn.find_executable( "dirac-architecture" )
-      if architectureScript is None:
-        architectureScript = distutils.spawn.find_executable( "dirac-platform" )
-
-      if architectureScript:
-        retCode, localArchitecture = self.executeAndGetOutput( architectureScript,self.pp.installEnv)
-        if not retCode:
-          localArchitecture = localArchitecture.strip()
-          os.environ['CMTCONFIG'] = localArchitecture
-          self.log.info( 'Setting CMTCONFIG=%s' % localArchitecture )
-        # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
-        # dirac-configure will not change existing cfg unless -U option is used.
-          os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
-        else:
-          self.log.error( "There was an error calling %s" % architectureScript )
-
     ###############################################################################################################################
     # Get host and local user info
+    # FIXME: this part may go to a different Command
 
     self.log.info( 'Uname      = %s' % " ".join( os.uname() ) )
     self.log.info( 'Host Name  = %s' % socket.gethostname() )
@@ -623,49 +648,36 @@ class ConfigureDIRAC( CommandBase ):
                   % ( diskSpace, self.pp.minDiskSpace ) )
       sys.exit( 1 )
 
-  def __getCPURequirement(self):
-    """ Get job CPU requirement and queue normalization """
-    
-    #FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
-    # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
-    # as explained in the RFC
 
-    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.log.info( 'CE = %s' % self.CE )
-      self.log.info( 'LCG_SITE_CE = %s' % self.pp.ceName )
 
-      retCode, queueNormList = self.executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % self.CE,self.pp.installEnv )
-      if not retCode:
-        queueNormList = queueNormList.strip().split( ' ' )
-        if len( queueNormList ) == 2:
-          queueNorm = float( queueNormList[1] )
-          self.log.info( 'Queue Normalization = %s SI00' % queueNorm )
-          if queueNorm:
-            # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
-            # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-            # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.pp.configureScript,
-                                                                                                             queueNorm / 250.,
-                                                                                                             queueNorm / 250. ) )
-        else:
-          self.log.error( 'Fail to get Normalization of the Queue' )
-      else:
-        self.log.error( "There was an error calling dirac-wms-get-queue-normalization" )
+class ConfigureArchitecture( CommandBase ):
+  """ This command simply calls dirac-platfom to determine the platform.
+      Separated from the ConfigureDIRAC command for easier extensibility.
+  """
 
-      retCode, queueLength = self.executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % self.CE, self.pp.installEnv )
-      if not retCode:
-        queueLength = queueLength.strip().split( ' ' )
-        if len( queueLength ) == 2:
-          self.pp.jobCPUReq = float( queueLength[1] )
-          self.log.info( 'Normalized Queue Length = %s' % self.pp.jobCPUReq )
-        else:
-          self.log.error( 'Failed to get Normalized length of the Queue' )
-      else:
-        self.log.error( "There was an error calling dirac-wms-get-normalized-queue-length" )
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ConfigureArchitecture, self ).__init__( pilotParams )
 
-      # Instead of using the Average reported by the Site, determine a Normalization
-      # os.system( "dirac-wms-cpu-normalization -U" )
+
+  def execute( self ):
+    """ This is a simple command to call the dirac-platform utility to get the platform
+    """
+
+    ##########################################################################################################################
+    # Set the local architecture
+
+    retCode, localArchitecture = self.executeAndGetOutput( self.pp.architectureScript, self.pp.installEnv )
+    if not retCode:
+      localArchitecture = localArchitecture.strip()
+      os.environ['CMTCONFIG'] = localArchitecture
+      self.log.info( 'Setting CMTCONFIG=%s' % localArchitecture )
+    # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
+    # dirac-configure will not change existing cfg unless -U option is used.
+      os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( self.pp.configureScript, localArchitecture ) )
+    else:
+      self.log.error( "There was an error calling %s" % self.pp.architectureScript )
 
 class LaunchAgent( CommandBase ):
   """ Prepare and launch the job agent

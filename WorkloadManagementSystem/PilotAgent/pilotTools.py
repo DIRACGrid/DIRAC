@@ -280,7 +280,7 @@ class PilotParams:
     self.local = False
     self.dryRun = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'InstallDIRAC', 'ConfigureDIRAC', 'LaunchAgent']
+    self.commands = ['GetPilotVersion', 'InstallDIRAC', 'ConfigureDIRAC', 'ConfigureArchitecture', 'LaunchAgent']
     self.extensions = []
     self.site = ""
     self.setup = ""
@@ -311,6 +311,8 @@ class PilotParams:
     self.diracExtensions = []
     self.installEnv = None
     self.executeCmd = False
+    self.configureScript = 'dirac-configure'
+    self.architectureScript = 'dirac-platform'
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
