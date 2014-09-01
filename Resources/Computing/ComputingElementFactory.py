@@ -44,7 +44,7 @@ class ComputingElementFactory( object ):
     subClassName = "%sComputingElement" % (ceTypeLocal)
 
     # FIXME: what about extensions?
-    # Use ModuleFactory?
+    # Should use the objectLoader I guess...?
     # In practice, as coded, this is just a redundant check
     try:
       ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName, globals(), locals(), [subClassName])
