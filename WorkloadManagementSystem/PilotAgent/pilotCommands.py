@@ -623,8 +623,6 @@ class ConfigureDIRAC( CommandBase ):
                   % ( diskSpace, self.pp.minDiskSpace ) )
       sys.exit( 1 )
 
-    self.pp.diracConfigured = True
-
   def __getCPURequirement(self):
     """ Get job CPU requirement and queue normalization """
     

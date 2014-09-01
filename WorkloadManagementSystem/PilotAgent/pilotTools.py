@@ -308,7 +308,6 @@ class PilotParams:
     self.workingDir = ''
     # DIRAC client installation environment
     self.diracInstalled = False
-    self.diracConfigured = False
     self.diracExtensions = []
     self.installEnv = None
     self.executeCmd = False
