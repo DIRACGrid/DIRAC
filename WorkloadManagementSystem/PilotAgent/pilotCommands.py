@@ -280,9 +280,9 @@ class ConfigureDIRAC( CommandBase ):
         - DIRAC python code
         If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
         simply the current directory is used, and:
-        - scripts will be in cwd/scripts.
-        - DIRAC python code will be all sitting in cwd
-        - the local dirac.cfg file will be found in cwd/etc
+        - scripts will be in $CWD/scripts.
+        - DIRAC python code will be all sitting in $CWD
+        - the local dirac.cfg file will be found in $CWD/etc
 
         For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
         installation phase.
@@ -561,7 +561,7 @@ class ConfigureDIRAC( CommandBase ):
     self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
     self.configureOpts.append( '-I' )
     if self.pp.installEnv:
-      # FIXME: really needed?
+      # FIXME: really needed? This might be necessary even when the installEnv is not set
       self.ppconfigureScript += ' -O pilot.cfg -DM'
       self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
 
