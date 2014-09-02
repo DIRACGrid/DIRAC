@@ -236,7 +236,7 @@ class CommandBase( object ):
       if o == '-d' or o == '--debug':
         self.log.setDebug()
         self.debugFlag = True
-    self.log.debug( "Initialized command %s" % self.__class__ )
+    self.log.debug( "\n\n Initialized command %s" % self.__class__ )
 
   def executeAndGetOutput( self, cmd, environDict = None ):
     """ Execute a command on the worker node and get the output
