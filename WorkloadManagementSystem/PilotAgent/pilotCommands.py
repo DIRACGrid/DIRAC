@@ -565,6 +565,9 @@ class ConfigureDIRAC( CommandBase ):
       self.ppconfigureScript += ' -O pilot.cfg -DM'
       self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
 
+    if self.pp.debugFlag:
+      self.configureOpts.append( '-ddd' )
+
     configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.configureOpts ) )
 
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
@@ -668,16 +671,20 @@ class ConfigureArchitecture( CommandBase ):
     ##########################################################################################################################
     # Set the local architecture
 
-    retCode, localArchitecture = self.executeAndGetOutput( self.pp.architectureScript, self.pp.installEnv )
+    archScript = self.pp.architectureScript
+
+    if self.pp.debugFlag:
+      archScript +  ' -ddd'
+
+    retCode, localArchitecture = self.executeAndGetOutput( archScript, self.pp.installEnv )
     if not retCode:
       localArchitecture = localArchitecture.strip()
-      os.environ['CMTCONFIG'] = localArchitecture
-      self.log.info( 'Setting CMTCONFIG=%s' % localArchitecture )
-    # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
-    # dirac-configure will not change existing cfg unless -U option is used.
+      # dirac-configure will not change existing cfg unless -F option is used.
       os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( self.pp.configureScript, localArchitecture ) )
+      return localArchitecture
     else:
       self.log.error( "There was an error calling %s" % self.pp.architectureScript )
+      sys.exit( 1 )
 
 class LaunchAgent( CommandBase ):
   """ Prepare and launch the job agent
