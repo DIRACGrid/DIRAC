@@ -525,8 +525,6 @@ class ConfigureDIRAC( CommandBase ):
           if queueNorm:
             # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
             # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-            # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
             self.configureOpts.append( '/LocalSite/CPUScalingFactor=%s' % queueNorm / 250. )
             self.configureOpts.append( '/LocalSite/PUNormalizationFactor=%s' % queueNorm / 250. )
         else:
@@ -559,10 +557,8 @@ class ConfigureDIRAC( CommandBase ):
 
     self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
     self.configureOpts.append( '-I' )
-    if self.pp.installEnv:
-      # FIXME: really needed? This might be necessary even when the installEnv is not set
-      self.ppconfigureScript += ' -O pilot.cfg -DM'
-      self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
+    # writing a pilot.cfg file in any case
+    self.configureOpts.append( '-O pilot.cfg' )
 
     if self.pp.debugFlag:
       self.configureOpts.append( '-ddd' )
@@ -675,8 +671,9 @@ class ConfigureArchitecture( CommandBase ):
     retCode, localArchitecture = self.executeAndGetOutput( archScript, self.pp.installEnv )
     if not retCode:
       localArchitecture = localArchitecture.strip()
-      cfg = ['-FDMH']  # force update, skip CA cheks, skip CA download, skip VOMS
+      cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
       cfg.append( '/LocalSite/Architecture=%s' % localArchitecture )
+      cfg.append( '-O pilot.cfg' )  # our target file for pilots
       if self.pp.debugFlag:
         cfg.append( "-ddd" )
 
@@ -685,8 +682,10 @@ class ConfigureArchitecture( CommandBase ):
       if not retCode:
         return localArchitecture
 
-    self.log.error( "There was an error calling %s" % self.pp.architectureScript )
+    self.log.error( "There was an error updating the platform" )
     sys.exit( 1 )
+
+
 
 class LaunchAgent( CommandBase ):
   """ Prepare and launch the job agent
@@ -738,11 +737,11 @@ class LaunchAgent( CommandBase ):
       self.log.info( 'Setting UseServerCertificate flag' % self.pp.useServerCertificate )
       self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' % self.pp.useServerCertificate )
 
-    if self.pp.installEnv:
-      # The instancePath is where the agent works
-      self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
-      # The file pilot.cfg has to be created previously by ConfigureDIRAC
-      self.inProcessOpts.append( 'pilot.cfg' )
+    # The instancePath is where the agent works
+    self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
+
+    # The file pilot.cfg has to be created previously by ConfigureDIRAC
+    self.inProcessOpts.append( 'pilot.cfg' )
 
 
   def __startJobAgent(self):
