@@ -527,9 +527,8 @@ class ConfigureDIRAC( CommandBase ):
             # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
             # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
             # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.pp.configureScript,
-                                                                                                             queueNorm / 250.,
-                                                                                                             queueNorm / 250. ) )
+            self.configureOpts.append( '/LocalSite/CPUScalingFactor=%s' % queueNorm / 250. )
+            self.configureOpts.append( '/LocalSite/PUNormalizationFactor=%s' % queueNorm / 250. )
         else:
           self.log.error( 'Fail to get Normalization of the Queue' )
       else:
@@ -665,11 +664,8 @@ class ConfigureArchitecture( CommandBase ):
 
 
   def execute( self ):
-    """ This is a simple command to call the dirac-platform utility to get the platform
+    """ This is a simple command to call the dirac-platform utility to get the platform, and add it to the configuration
     """
-
-    ##########################################################################################################################
-    # Set the local architecture
 
     archScript = self.pp.architectureScript
 
@@ -679,12 +675,18 @@ class ConfigureArchitecture( CommandBase ):
     retCode, localArchitecture = self.executeAndGetOutput( archScript, self.pp.installEnv )
     if not retCode:
       localArchitecture = localArchitecture.strip()
-      # dirac-configure will not change existing cfg unless -F option is used.
-      os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( self.pp.configureScript, localArchitecture ) )
-      return localArchitecture
-    else:
-      self.log.error( "There was an error calling %s" % self.pp.architectureScript )
-      sys.exit( 1 )
+      cfg = ['-FDMH']  # force update, skip CA cheks, skip CA download, skip VOMS
+      cfg.append( '/LocalSite/Architecture=%s' % localArchitecture )
+      if self.pp.debugFlag:
+        cfg.append( "-ddd" )
+
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if not retCode:
+        return localArchitecture
+
+    self.log.error( "There was an error calling %s" % self.pp.architectureScript )
+    sys.exit( 1 )
 
 class LaunchAgent( CommandBase ):
   """ Prepare and launch the job agent
@@ -731,6 +733,10 @@ class LaunchAgent( CommandBase ):
     if self.pp.userDN:
       self.log.info( 'Setting Owner DN to "%s"' % self.pp.userDN )
       self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
+
+    if self.pp.useServerCertificate:
+      self.log.info( 'Setting UseServerCertificate flag' % self.pp.useServerCertificate )
+      self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' % self.pp.useServerCertificate )
 
     if self.pp.installEnv:
       # The instancePath is where the agent works
