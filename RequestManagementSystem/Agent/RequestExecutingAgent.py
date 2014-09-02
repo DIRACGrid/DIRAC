@@ -134,7 +134,10 @@ class RequestExecutingAgent( AgentModule ):
 
     self.log.info( "Operation handlers:" )
     for item in enumerate ( self.handlersDict.items() ):
-      self.log.info( "[%s] %s: %s" % ( item[0], item[1][0], item[1][1] ) )
+      opHandler = item[1][0]
+      self.log.info( "[%s] %s: %s (timeout: %d s + %d s per file)" % ( item[0], item[1][0], item[1][1],
+                                                                   self.timeOuts[opHandler]['PerOperation'],
+                                                                   self.timeOuts[opHandler]['PerFile'] ) )
 
     # # common monitor activity
     gMonitor.registerActivity( "Iteration", "Agent Loops",
