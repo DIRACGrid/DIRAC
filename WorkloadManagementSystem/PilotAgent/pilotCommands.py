@@ -361,6 +361,16 @@ class ConfigureDIRAC( CommandBase ):
     self.log.debug ( 'CONFIGURE [%s]' % ', '.join( map( str, self.configureOpts ) ) )
 
 
+    self.configureOpts.append( '-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion )
+    # Instead of dumping the Full configuration, include all Server in dirac.cfg
+    self.configureOpts.append( '-I' )
+    # writing a pilot.cfg file in any case
+    self.configureOpts.append( '-O pilot.cfg' )
+
+    if self.pp.debugFlag:
+      self.configureOpts.append( '-ddd' )
+
+
   def __setFlavour(self):
 
     pilotRef = 'Unknown'
@@ -553,16 +563,6 @@ class ConfigureDIRAC( CommandBase ):
     self.__setConfigureOptions()
     self.__getCPURequirement()
 
-    # Instead of dumping the Full configuration, include all Server in dirac.cfg
-
-    self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
-    self.configureOpts.append( '-I' )
-    # writing a pilot.cfg file in any case
-    self.configureOpts.append( '-O pilot.cfg' )
-
-    if self.pp.debugFlag:
-      self.configureOpts.append( '-ddd' )
-
     configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.configureOpts ) )
 
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
@@ -673,6 +673,8 @@ class ConfigureArchitecture( CommandBase ):
       localArchitecture = localArchitecture.strip()
       cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
       cfg.append( '/LocalSite/Architecture=%s' % localArchitecture )
+      if self.pp.useServerCertificate:
+        cfg.append( '--UseServerCertificate' )
       cfg.append( '-O pilot.cfg' )  # our target file for pilots
       if self.pp.debugFlag:
         cfg.append( "-ddd" )
