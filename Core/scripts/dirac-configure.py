@@ -324,6 +324,7 @@ if not useServerCert:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'no' )
 else:
   # will be removed later but it is necessary to initialized the CS in script mode
+  DIRAC.gLogger.verbose( '/DIRAC/Security/UseServerCertificate =', 'yes' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
 
 host = DIRAC.gConfig.getValue( cfgInstallPath( "Host" ), "" )
