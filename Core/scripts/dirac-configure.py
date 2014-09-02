@@ -28,7 +28,7 @@
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
   -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
   -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
-  -F --ForceUpdate                                 Forces the update of dirac.cfg, even if it does already exists (use with care)
+  -F --ForceUpdate                                 Forces the update of cfg file (i.e. dirac.cfg), even if it does already exists (use with care)
   -O --Output                                      define output configuration file
 
   Other arguments will take proper defaults if not defined.
@@ -216,7 +216,7 @@ Script.registerSwitch( "v", "UseVersionsDir", "Use versions directory", setUseVe
 Script.registerSwitch( "A:", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
 Script.registerSwitch( "L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
 
-Script.registerSwitch( "F", "ForceUpdate", "Force Update of dirac.cfg (otherwise nothing happens if dirac.cfg already exists)", forceUpdate )
+Script.registerSwitch( "F", "ForceUpdate", "Force Update of cfg file (i.e. dirac.cfg) (otherwise nothing happens if dirac.cfg already exists)", forceUpdate )
 
 Script.registerSwitch ( "O:", "output=", "output configuration file", setOutput )
 
@@ -303,7 +303,7 @@ DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
 if update:
-  DIRAC.gLogger.notice( 'Will update dirac.cfg' )
+  DIRAC.gLogger.notice( 'Will update the output file (i.e. dirac.cfg)' )
 
 if setup:
   DIRAC.gLogger.verbose( '/DIRAC/Setup =', setup )
