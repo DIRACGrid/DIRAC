@@ -788,8 +788,8 @@ class LaunchAgent( CommandBase ):
       self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
 
     if self.pp.useServerCertificate:
-      self.log.info( 'Setting UseServerCertificate flag' % self.pp.useServerCertificate )
-      self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' % self.pp.useServerCertificate )
+      self.log.info( 'Setting UseServerCertificate flag' )
+      self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
 
     # The instancePath is where the agent works
     self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
