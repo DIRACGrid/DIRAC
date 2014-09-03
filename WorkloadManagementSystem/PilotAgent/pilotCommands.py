@@ -384,6 +384,9 @@ class ConfigureBasics( CommandBase ):
     super( ConfigureBasics, self ).__init__( pilotParams )
     self.cfg = []
 
+    self.certsLocation = '%s/etc/grid-security' % self.pp.workingDir
+
+
   def execute( self ):
     """ What is called all the times.
 
@@ -422,10 +425,14 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( '-o /AgentJobRequirements/OwnerDN="%s"' % self.pp.userDN )
 
   def _getSecurityCFG( self ):
-    """ Nothing specific by default
+    """ Nothing specific by default, but need to know host cert and key location in case they are needed
     """
     if self.pp.useServerCertificate:
       self.cfg.append( '--UseServerCertificate' )
+
+    if self.pp.useServerCertificate:
+      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.certsLocation )
 
 
 class ConfigureSite( CommandBase ):
