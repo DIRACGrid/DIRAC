@@ -151,7 +151,7 @@ def getCommand( params, commandName, log ):
       impData = imp.find_module( module )
       commandModule = imp.load_module( module, *impData )
       commandObject = getattr( commandModule, commandName )
-    except Exception, e:
+    except Exception, _e:
       pass
     if commandObject:
       return commandObject( params ), module
@@ -280,7 +280,9 @@ class PilotParams:
     self.local = False
     self.dryRun = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'InstallDIRAC', 'ConfigureDIRAC', 'ConfigureArchitecture', 'LaunchAgent']
+    self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
+                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture',
+                     'LaunchAgent']
     self.extensions = []
     self.site = ""
     self.setup = ""
