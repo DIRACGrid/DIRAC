@@ -429,8 +429,6 @@ class ConfigureBasics( CommandBase ):
     """
     if self.pp.useServerCertificate:
       self.cfg.append( '--UseServerCertificate' )
-
-    if self.pp.useServerCertificate:
       self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.certsLocation )
       self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.certsLocation )
 
