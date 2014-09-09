@@ -150,8 +150,9 @@ class FileManagerPs( FileManagerBase ):
     formatedFileNames = stringListToString( fileNames )
     fStatus = stringListToString( self.db.visibleFileStatus )
 
+    specificFiles = True if len( fileNames ) else False
     result = self.db.executeStoredProcedureWithCursor( 'ps_get_all_info_for_files_in_dir',
-                                                            ( dirID, len( fileNames ),
+                                                            ( dirID, specificFiles,
                                                              formatedFileNames, allStatus, fStatus ) )
 
     if not result['OK']:

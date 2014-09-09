@@ -674,48 +674,77 @@ DELIMITER ;
 */
 
 
+-- drop PROCEDURE if exists update_directory_usage;
+-- DELIMITER //
+-- CREATE PROCEDURE update_directory_usage 
+-- (IN top_dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
+-- -- top_dir_id : the id of the dir in which the mouvement starts
+-- -- se_id : the id of the SE in which the replica was inserted
+-- -- size_diff : the modification to bring to the size (positif if adding a replica, negatif otherwise)
+-- -- file_diff : + or - 1 depending whether we add or remove a replica 
+-- BEGIN
+--   DECLARE dir_id INT;
+--   DECLARE exSize INT;
+--   DECLARE done INT DEFAULT FALSE;
+-- --   DECLARE cur1 CURSOR FOR SELECT ParentID FROM FC_DirectoryClosure c JOIN (SELECT DirID FROM FC_Files where FileID = file_id) f on f.DirID = c.ChildID;
+--   DECLARE cur1 CURSOR FOR
+--     SELECT SQL_NO_CACHE ParentID FROM FC_DirectoryClosure c
+--     WHERE c.ChildID = top_dir_id;
+-- 
+--   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = True;
+--   
+-- 
+--   OPEN cur1;
+--   
+--   update_loop: LOOP
+--     FETCH cur1 INTO dir_id;
+--     IF done THEN
+--       LEAVE update_loop;
+--     END IF;
+--     
+-- --     -- creates the initial line if it does not exist yet
+-- --     INSERT IGNORE INTO FC_DirectoryUsage (DirID, SEID) values (dir_id, new.SEID);  
+-- --     -- then add the values
+-- --     UPDATE FC_DirectoryUsage SET SESize = SESize + file_size, SEFiles = SEFiles + 1  WHERE DirID = dir_id AND SEID = new.SEID;
+--     
+--     -- alternative
+--     -- If it is the first replica inserted for the given SE, then we insert the new row, otherwise we do an update
+--     -- INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (dir_id, se_id, size_diff, file_diff) ON DUPLICATE KEY UPDATE  SESize = SESize + size_diff, SEFiles = SEFiles + file_diff;
+--     
+--     -- yet another alternative
+--     SELECT SESize INTO exSize FROM FC_DirectoryUsage where DirID = dir_id and SEID = se_id  FOR UPDATE;
+--     IF exSize IS NULL THEN
+--       INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (dir_id, se_id, size_diff, file_diff);
+--     ELSE
+--       UPDATE FC_DirectoryUsage SET SESize = SESize + size_diff, SEFiles = SEFiles + file_diff WHERE DirID = dir_id and SEID = se_id ;
+--     END IF;
+--     
+--     
+--   END LOOP;
+--   
+--   CLOSE cur1;
+-- END //
+-- DELIMITER ;
+-- 
+
 drop PROCEDURE if exists update_directory_usage;
 DELIMITER //
 CREATE PROCEDURE update_directory_usage 
-(IN top_dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
--- top_dir_id : the id of the dir in which the mouvement starts
+(IN dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
+-- dir_id : the id of the dir in which we insert/remove
 -- se_id : the id of the SE in which the replica was inserted
 -- size_diff : the modification to bring to the size (positif if adding a replica, negatif otherwise)
 -- file_diff : + or - 1 depending whether we add or remove a replica 
 BEGIN
-  DECLARE dir_id INT;
-  DECLARE done INT DEFAULT FALSE;
---   DECLARE cur1 CURSOR FOR SELECT ParentID FROM FC_DirectoryClosure c JOIN (SELECT DirID FROM FC_Files where FileID = file_id) f on f.DirID = c.ChildID;
-  DECLARE cur1 CURSOR FOR
-    SELECT SQL_NO_CACHE ParentID FROM FC_DirectoryClosure c
-    WHERE c.ChildID = top_dir_id;
 
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = True;
   
-
-  OPEN cur1;
-  
-  update_loop: LOOP
-    FETCH cur1 INTO dir_id;
-    IF done THEN
-      LEAVE update_loop;
-    END IF;
-    
---     -- creates the initial line if it does not exist yet
---     INSERT IGNORE INTO FC_DirectoryUsage (DirID, SEID) values (dir_id, new.SEID);  
---     -- then add the values
---     UPDATE FC_DirectoryUsage SET SESize = SESize + file_size, SEFiles = SEFiles + 1  WHERE DirID = dir_id AND SEID = new.SEID;
     
     -- alternative
     -- If it is the first replica inserted for the given SE, then we insert the new row, otherwise we do an update
     INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (dir_id, se_id, size_diff, file_diff) ON DUPLICATE KEY UPDATE  SESize = SESize + size_diff, SEFiles = SEFiles + file_diff;
     
-  END LOOP;
-  
-  CLOSE cur1;
 END //
 DELIMITER ;
-
 
 
 
@@ -1358,21 +1387,36 @@ END //
 DELIMITER ;
 
 
+-- DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
+-- DELIMITER //
+-- CREATE PROCEDURE ps_get_dir_logical_size
+-- (IN dir_id INT)
+-- BEGIN
+-- 
+--   SELECT SQL_NO_CACHE SESize, SEFiles FROM FC_DirectoryUsage u
+--   JOIN FC_StorageElements s ON s.SEID = u.SEID 
+--   WHERE s.SEName = 'FakeSE'
+--   AND u.DirID = dir_id;
+-- 
+-- 
+-- END //
+-- DELIMITER ;
+
 DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_logical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE SESize, SEFiles FROM FC_DirectoryUsage u
+  SELECT SQL_NO_CACHE SUM(SESize), SUM(SEFiles) FROM FC_DirectoryUsage u
+  JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
   JOIN FC_StorageElements s ON s.SEID = u.SEID 
   WHERE s.SEName = 'FakeSE'
-  AND u.DirID = dir_id;
+  AND c.ParentID = dir_id;
 
 
 END //
 DELIMITER ;
-
 
 
 DROP PROCEDURE IF EXISTS ps_calculate_dir_logical_size;
@@ -1397,6 +1441,24 @@ DELIMITER ;
 
 
 
+-- DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
+-- DELIMITER //
+-- CREATE PROCEDURE ps_get_dir_physical_size
+-- (IN dir_id INT)
+-- BEGIN
+-- 
+--   SELECT SQL_NO_CACHE SEName, SESize, SEFiles
+--   FROM FC_DirectoryUsage u
+--   JOIN FC_StorageElements se ON se.SEID = u.SEID
+--   WHERE DirID = dir_id
+--   AND SEName != 'FakeSE'
+--   AND (SESize != 0 OR SEFiles != 0);
+-- 
+-- 
+-- END //
+-- DELIMITER ;
+
+
 DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_physical_size
@@ -1405,8 +1467,9 @@ BEGIN
 
   SELECT SQL_NO_CACHE SEName, SESize, SEFiles
   FROM FC_DirectoryUsage u
+  JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
   JOIN FC_StorageElements se ON se.SEID = u.SEID
-  WHERE DirID = dir_id
+  WHERE c.ParentID = dir_id
   AND SEName != 'FakeSE'
   AND (SESize != 0 OR SEFiles != 0);
 
