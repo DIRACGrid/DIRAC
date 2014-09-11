@@ -1,4 +1,4 @@
-[v6r12]
+[v6r12-pre12]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -10,6 +10,7 @@ NEW: dirac-configure - added --SkipVOMSDownload switch, added --Output switch
 CHANGE: ProcessPool - exit from the working process if a task execution timed out  
 NEW: ProcessMonitor - added evaluation of the memory consumed by a process and its children   
 NEW: InstallTools - added flag to require MySQL installation
+CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
@@ -32,6 +33,7 @@ CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
 
 *ResourceStatus
 NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
+FIX: GODDBClient  - downTimeXMLParsing() can now handle the "service type" parameter properly
 
 *DMS
 NEW: DataManager - add masterCatalogOnly flag in the constructor
