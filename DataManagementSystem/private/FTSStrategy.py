@@ -258,9 +258,10 @@ class FTSStrategy( object ):
     while targetSEs:
       minTimeToStart = float( "inf" )
       channels = []
+      self.log.info( "minimiseTotalWait: searching routes between %s and %s" % ( ",".join( sourceSEs ),
+                                                                                 ",".join( targetSEs ) ) )
       for targetSE in targetSEs:
         for sourceSE in sourceSEs:
-          self.log.info( "searching %s-%s" % ( sourceSE, targetSE ) )
           ftsChannel = self.ftsGraph.findRoute( sourceSE, targetSE )
           if not ftsChannel["OK"]:
             self.log.warn( "minimiseTotalWait: %s" % ftsChannel["Message"] )
@@ -269,20 +270,11 @@ class FTSStrategy( object ):
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
 
       if not channels:
-        msg = "minimiseTotalWait: FTS route between %s and %s not defined" % ( ",".join( sourceSEs ),
-                                                                               ",".join( targetSEs ) )
-        self.log.error( msg )
-        return S_ERROR( msg )
-      # # filter out already used channels
-      channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
-                   if channel.routeName not in tree ]
-      if not channels:
-        msg = "minimiseTotalWait: all FTS routes between %s and %s are already used in tree" % ( ",".join( sourceSEs ),
-                                                                                                 ",".join( targetSEs ) )
+        msg = "minimiseTotalWait: FTS route between these SEs are not defined"
         self.log.error( msg )
         return S_ERROR( msg )
 
-      self.log.info( "minimiseTotalWait: found %s candidate routes, checking activity" % len( channels ) )
+      self.log.info( "minimiseTotalWait: found %s candidate routes, checking RSS status" % len( channels ) )
 
       for ch, s, t in channels:
         self.log.info( "%s %s %s" % ( ch.routeName, ch.fromNode.SEs[s]["read"], ch.toNode.SEs[t]["write"] ) )

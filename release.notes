@@ -64,6 +64,23 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p12]
+
+*Resources
+CHANGE: ARCComputingElement - accomodate changes in the ARC job reported states
+
+*Configuration
+CHANGE: Resources - define a default FTS server in the CS (only for v6r11 and v6r12)
+
+*DMS
+FIX: FTSStrategy - allow to use a given channel more than once in a tree 
+FIX: FTSAgent - remove request from cache if not found
+FIX: FTSAgent - recover deadlock situations when FTS Files had not been correctly 
+     updated or were not in the DB
+
+*RMS
+FIX: RequestExecutingAgent - fix a race condition (cache was cleared after the request was put)
+
 [v6r11p11]
 
 *Core
