@@ -133,7 +133,7 @@ class Operation( Record ):
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
-      self.Error = ' '
+      self.Error = ''
       newStatus = 'Done'
 
     self.__data__["Status"] = newStatus
@@ -332,7 +332,7 @@ class Operation( Record ):
       if self._parent:
         self._parent._notify()
     if self.__data__['Status'] == 'Done':
-      self.Error = ' '
+      self.Error = ''
 
   @property
   def Order( self ):

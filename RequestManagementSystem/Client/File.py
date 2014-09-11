@@ -210,13 +210,15 @@ class File( Record ):
   @property
   def Error( self ):
     """ error prop """
-    return self.__data__["Error"]
+    return self.__data__["Error"].strip()
 
   @Error.setter
   def Error( self, value ):
     """ error setter """
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
+    if value == '':
+      value = ' '
     self.__data__["Error"] = self._escapeStr( value , 255 )
 
   @property
@@ -232,7 +234,7 @@ class File( Record ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
-      self.Error = ' '
+      self.Error = ''
     self.__data__["Status"] = value
     if self._parent:
       self._parent._notify()
@@ -267,3 +269,4 @@ class File( Record ):
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if type( val ) != str else val for val in self.__data__.values() ] ) )
     return S_OK( digest )
+

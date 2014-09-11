@@ -160,7 +160,7 @@ class Request( Record ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
         rStatus = "Done"
-        self.Error = ' '
+        self.Error = ''
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -418,7 +418,7 @@ class Request( Record ):
     if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
     if value == 'Done':
-      self.Error = ' '
+      self.Error = ''
     self.__data__["Status"] = value
 
   @property

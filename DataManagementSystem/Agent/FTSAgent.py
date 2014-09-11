@@ -169,9 +169,11 @@ class FTSAgent( AgentModule ):
     """ get Requests systematically and refresh cache """
     getRequest = cls.requestClient().getRequest( reqName )
     if not getRequest["OK"]:
+      cls.__reqCache.pop( reqName, None )
       return getRequest
     getRequest = getRequest["Value"]
     if not getRequest:
+      cls.__reqCache.pop( reqName, None )
       return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
     cls.__reqCache[reqName] = getRequest
 
@@ -493,6 +495,41 @@ class FTSAgent( AgentModule ):
             log.warn( "File should be set Done! %s is replicated at all targets" % opFile.LFN )
             opFile.Status = "Done"
 
+        if missingReplicas:
+          # Check if these files are in the FTSDB
+          ftsFiles = self.ftsClient().getAllFTSFilesForRequest( request.RequestID )
+          if not ftsFiles['OK']:
+            log.error( ftsFiles['Message'] )
+          else:
+            ftsFiles = ftsFiles['Value']
+            ftsLfns = set( [ftsFile.LFN for ftsFile in ftsFiles] )
+            toSchedule = set( missingReplicas ) - ftsLfns
+            if toSchedule:
+              log.warn( '%d files in operation are not in FTSDB, reset them Waiting' % len( toSchedule ) )
+              for opFile in operation:
+                if opFile.LFN in toSchedule and opFile.Status == 'Scheduled':
+                  opFile.Status = 'Waiting'
+            # identify missing LFNs that are waiting for a replication which is finished
+            for ftsFile in [f for f in ftsFiles if f.LFN in missingReplicas and f.Status.startswith( 'Waiting#' )]:
+              targetSE = ftsFile.Status.split( '#' )[1]
+              finishedFiles = [f for f in ftsFiles if
+                               f.LFN == ftsFile.LFN and
+                               f.Status == 'Finished' and
+                               f.TargetSE == targetSE and
+                               f not in ftsFilesDict['toUpdate']]
+              if finishedFiles:
+                log.warn( "%s is %s while replication was Finished to %s, update" % ( ftsFile.LFN, ftsFile.Status, targetSE ) )
+                ftsFilesDict['toUpdate'] += finishedFiles
+            # identify Finished transfer for which the replica is still missing
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Finished' and f.TargetSE in missingReplicas.get( f.LFN, [] ) and f not in ftsFilesDict['toRegister'] ]:
+              # Check if there is a registration operation for that file and that target
+              regOp = [op for op in request if
+                       op.Type == 'RegisterReplica' and
+                       op.TargetSE == ftsFile.TargetSE and
+                       [f for f in op if f.LFN == ftsFile.LFN]]
+              if not regOp:
+                ftsFilesDict['toReschedule'].append( ftsFile )
+
       toFail = ftsFilesDict.get( "toFail", [] )
       toReschedule = ftsFilesDict.get( "toReschedule", [] )
       toSubmit = ftsFilesDict.get( "toSubmit", [] )
@@ -664,12 +701,12 @@ class FTSAgent( AgentModule ):
 
     # # do real schedule here
     if toSchedule:
-
+      log.info( "Rescheduling %d files" % len( toReschedule ) )
       ftsSchedule = self.ftsClient().ftsSchedule( request.RequestID,
                                                   operation.OperationID,
                                                   toSchedule )
       if not ftsSchedule["OK"]:
-        self.log.error( ftsSchedule["Message"] )
+        log.error( "Error scheduling files", ftsSchedule["Message"] )
         return ftsSchedule
 
       ftsSchedule = ftsSchedule["Value"]
@@ -679,6 +716,7 @@ class FTSAgent( AgentModule ):
           opFile.Status = "Scheduled"
         elif fileID in ftsSchedule["Failed"]:
           opFile.Error = ftsSchedule["Failed"][fileID]
+          log.error( "Error scheduling file %s" % opFile.LFN, opFile.Error )
 
     return S_OK()
 
