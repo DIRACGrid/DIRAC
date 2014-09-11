@@ -390,7 +390,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           self.log.warn( "unable to replicate '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
           opFile.Error = "Couldn't get metadata"
         elif noReplicas:
-          self.log.error( "unable to replicate %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noreplicas ) ) )
+          self.log.error( "unable to replicate %s, file doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:

@@ -43,6 +43,9 @@ class ComputingElementFactory( object ):
       return S_ERROR( error )
     subClassName = "%sComputingElement" % (ceTypeLocal)
 
+    # FIXME: what about extensions?
+    # Should use the objectLoader I guess...?
+    # In practice, as coded, this is just a redundant check
     try:
       ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName, globals(), locals(), [subClassName])
     except Exception, x:
@@ -53,6 +56,7 @@ class ComputingElementFactory( object ):
 
     try:
       ceStr = 'ceSubClass.%s( "%s" )' % ( subClassName, ceNameLocal )
+      # FIXME: eval? Really?
       computingElement = eval( ceStr )
       if ceParametersDict:
         computingElement.setParameters(ceParametersDict)

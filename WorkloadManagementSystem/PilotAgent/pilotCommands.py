@@ -30,7 +30,7 @@ import signal
 import urllib2
 import json
 
-from pilotTools import CommandBase, which
+from pilotTools import CommandBase
 
 __RCSID__ = "$Id$"
 
@@ -86,7 +86,7 @@ class GetPilotVersion( CommandBase ):
         self.log.warn( "Content-Length parameter not returned, skipping expectedBytes check" )
 
       if fileName:
-        localFD = open( fileName, "wb" )
+        localFD = open( fileName + '-local', "wb" )
       receivedBytes = 0L
       data = remoteFD.read( 16384 )
       count = 1
@@ -109,6 +109,7 @@ class GetPilotVersion( CommandBase ):
         print '\033[1A'
       if fileName:
         localFD.close()
+        os.rename( fileName + '-local', fileName )
       remoteFD.close()
       if receivedBytes != expectedBytes and expectedBytes > 0:
         self.log.error( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
@@ -136,6 +137,91 @@ class GetPilotVersion( CommandBase ):
 
   def __alarmTimeoutHandler( self, *args ):
     raise Exception( 'Timeout' )
+
+
+class checks( CommandBase ):
+  """ Executes some basic checks
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( checks, self ).__init__( pilotParams )
+
+  def execute( self ):
+    """ Get host and local user info, and other basic checks, e.g. space available
+    """
+
+    self.log.info( 'Uname      = %s' % " ".join( os.uname() ) )
+    self.log.info( 'Host Name  = %s' % socket.gethostname() )
+    self.log.info( 'Host FQDN  = %s' % socket.getfqdn() )
+    self.log.info( 'WorkingDir = %s' % self.pp.workingDir )  # this could be different than rootPath
+
+    fileName = '/etc/redhat-release'
+    if os.path.exists( fileName ):
+      f = open( fileName, 'r' )
+      self.log.info( 'RedHat Release = %s' % f.read().strip() )
+      f.close()
+
+    fileName = '/etc/lsb-release'
+    if os.path.isfile( fileName ):
+      f = open( fileName, 'r' )
+      self.log.info( 'Linux release:\n%s' % f.read().strip() )
+      f.close()
+
+    fileName = '/proc/cpuinfo'
+    if os.path.exists( fileName ):
+      f = open( fileName, 'r' )
+      cpu = f.readlines()
+      f.close()
+      nCPU = 0
+      for line in cpu:
+        if line.find( 'cpu MHz' ) == 0:
+          nCPU += 1
+          freq = line.split()[3]
+        elif line.find( 'model name' ) == 0:
+          CPUmodel = line.split( ': ' )[1].strip()
+      self.log.info( 'CPU (model)    = %s' % CPUmodel )
+      self.log.info( 'CPU (MHz)      = %s x %s' % ( nCPU, freq ) )
+
+    fileName = '/proc/meminfo'
+    if os.path.exists( fileName ):
+      f = open( fileName, 'r' )
+      mem = f.readlines()
+      f.close()
+      freeMem = 0
+      for line in mem:
+        if line.find( 'MemTotal:' ) == 0:
+          totalMem = int( line.split()[1] )
+        if line.find( 'MemFree:' ) == 0:
+          freeMem += int( line.split()[1] )
+        if line.find( 'Cached:' ) == 0:
+          freeMem += int( line.split()[1] )
+      self.log.info( 'Memory (kB)    = %s' % totalMem )
+      self.log.info( 'FreeMem. (kB)  = %s' % freeMem )
+
+    ##############################################################################################################################
+    # Disk space check
+
+    # fs = os.statvfs( rootPath )
+    fs = os.statvfs( self.pp.workingDir )
+    # bsize;    /* file system block size */
+    # frsize;   /* fragment size */
+    # blocks;   /* size of fs in f_frsize units */
+    # bfree;    /* # free blocks */
+    # bavail;   /* # free blocks for non-root */
+    # files;    /* # inodes */
+    # ffree;    /* # free inodes */
+    # favail;   /* # free inodes for non-root */
+    # flag;     /* mount flags */
+    # namemax;  /* maximum filename length */
+    diskSpace = fs[4] * fs[0] / 1024 / 1024
+    self.log.info( 'DiskSpace (MB) = %s' % diskSpace )
+
+    if diskSpace < self.pp.minDiskSpace:
+      self.log.error( '%s MB < %s MB, not enough local disk space available, exiting'
+                  % ( diskSpace, self.pp.minDiskSpace ) )
+      sys.exit( 1 )
+
 
 
 class InstallDIRAC( CommandBase ):
@@ -260,43 +346,108 @@ class InstallDIRAC( CommandBase ):
   def execute( self ):
     """ What is called all the time
     """
-
     self._setInstallOptions()
     self._locateInstallationScript()
     self._installDIRAC()
 
 
-class ConfigureDIRAC( CommandBase ):
-  """ Command to configure DIRAC
+
+class ConfigureBasics( CommandBase ):
+  """ This command completes DIRAC installation, e.g. calls dirac-configure to:
+      - download, by default, the CAs
+      - creates a pilot.cfg file to be used where all the pilot configuration is to be set, e.g.:
+      - adds to it basic info like the version
+      - adds to it the security configuration
+
+      If there is more than one command calling dirac-configure, this one should be always the first one called.
+
+      Nota Bene: Further commands should always call dirac-configure using the options -FDMH -O pilot.cfg pilot.cfg
+
+
+
+      From here on, we have to pay attention to the paths. Specifically, we need to know where to look for
+      - executables (scripts)
+      - DIRAC python code
+      If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
+      simply the current directory is used, and:
+      - scripts will be in $CWD/scripts.
+      - DIRAC python code will be all sitting in $CWD
+      - the local dirac.cfg file will be found in $CWD/etc
+
+      For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
+      installation phase. Executables and code will be searched there.
   """
 
   def __init__( self, pilotParams ):
     """ c'tor
-
-        Here, we have to pay attention to the paths. Specifically, we need to know where to look for
-        - executables (scripts)
-        - DIRAC python code
-        If the pilot has installed DIRAC (and extensions) in the traditional way, so using the dirac-install.py script,
-        simply the current directory is used, and:
-        - scripts will be in cwd/scripts.
-        - DIRAC python code will be all sitting in cwd
-        - the local dirac.cfg file will be found in cwd/etc
-
-        For a more general case of non-traditional installations, we should use the PATH and PYTHONPATH as set by the
-        installation phase.
-
-        Executables and code will be searched there.
-        The dirac.cfg file has to be created in the first directory of the PATH - ?????
     """
-    super( ConfigureDIRAC, self ).__init__( pilotParams )
+    super( ConfigureBasics, self ).__init__( pilotParams )
+    self.cfg = []
+
+    self.certsLocation = '%s/etc/grid-security' % self.pp.workingDir
+
+
+  def execute( self ):
+    """ What is called all the times.
+
+        VOs may want to replace/extend the _getBasicsCFG and _getSecurityCFG functions
+    """
+
+    self._getBasicsCFG()
+    self._getSecurityCFG()
+
+    if self.pp.debugFlag:
+      self.cfg.append( '-ddd' )
+    self.cfg.append( '-O pilot.cfg' )
+
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+
+    if retCode:
+      self.log.error( "Could not configure DIRAC basics" )
+      sys.exit( 1 )
+
+  def _getBasicsCFG( self ):
+    """  basics (needed!)
+    """
+    self.cfg.append( '-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion )
+    self.cfg.append( '-S "%s"' % self.pp.setup )
+    if self.pp.configServer:
+      self.cfg.append( '-C "%s"' % self.pp.configServer )
+    if self.pp.releaseProject:
+      self.cfg.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )
+    if self.pp.gateway:
+      self.cfg.append( '-W "%s"' % self.pp.gateway )
+    if self.pp.userGroup:
+      self.cfg.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.pp.userGroup )
+    if self.pp.userDN:
+      self.cfg.append( '-o /AgentJobRequirements/OwnerDN="%s"' % self.pp.userDN )
+
+  def _getSecurityCFG( self ):
+    """ Nothing specific by default, but need to know host cert and key location in case they are needed
+    """
+    if self.pp.useServerCertificate:
+      self.cfg.append( '--UseServerCertificate' )
+      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.certsLocation )
+
+
+class ConfigureSite( CommandBase ):
+  """ Command to configure DIRAC sites using the pilot options
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ConfigureSite, self ).__init__( pilotParams )
 
     # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
-    self.configureOpts = []
+    self.cfg = []
     self.CE = ""
-    self.testVOMSOK = False
 
     self.boincUserID = ''
-    self.boincHostID= ''
+    self.boincHostID = ''
     self.boincHostPlatform = ''
     self.boincHostName = ''
 
@@ -305,62 +456,41 @@ class ConfigureDIRAC( CommandBase ):
     """
 
     if self.pp.site:
-      self.configureOpts.append( '-n "%s"' % self.pp.site )
+      self.cfg.append( '-n "%s"' % self.pp.site )
     if self.pp.ceName:
-      self.configureOpts.append( '-N "%s"' % self.pp.ceName )
-    if self.debugFlag:
-      self.configureOpts.append( '-d' )
-    if self.pp.setup:
-        self.configureOpts.append( '-S "%s"' % self.pp.setup )
-    if self.pp.configServer:
-      self.configureOpts.append( '-C "%s"' % self.pp.configServer )
-    if self.pp.releaseProject:
-      self.configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % self.pp.releaseProject )
-    if self.pp.gateway:
-      self.configureOpts.append( '-W "%s"' % self.pp.gateway )
-    if self.pp.useServerCertificate:
-      self.configureOpts.append( '--UseServerCertificate' )
+      self.cfg.append( '-N "%s"' % self.pp.ceName )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
-        self.configureOpts.append( '-o "%s"' % v )
+        self.cfg.append( '-o "%s"' % v )
       elif o == '-s' or o == '--section':
-        self.configureOpts.append( '-s "%s"' % v )
+        self.cfg.append( '-s "%s"' % v )
 
 
     self.__setFlavour()
-    self.configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
-
-    if self.pp.userGroup:
-      self.configureOpts.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.pp.userGroup )
-
-    if self.pp.userDN:
-      self.configureOpts.append( '-o /AgentJobRequirements/OwnerDN="%s"' % v )
-
+    self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
     if self.pp.pilotReference != 'Unknown':
-      self.configureOpts.append( '-o /LocalSite/PilotReference=%s' % self.pp.pilotReference )
+      self.cfg.append( '-o /LocalSite/PilotReference=%s' % self.pp.pilotReference )
     # add options for BOINc
     if self.boincUserID:
-      self.configureOpts.append( '-o /LocalSite/BoincUserID=%s' % self.boincUserID )
+      self.cfg.append( '-o /LocalSite/BoincUserID=%s' % self.boincUserID )
     if self.boincHostID:
-      self.configureOpts.append( '-o /LocalSite/BoincHostID=%s' % self.boincHostID )
+      self.cfg.append( '-o /LocalSite/BoincHostID=%s' % self.boincHostID )
     if self.boincHostPlatform:
-      self.configureOpts.append( '-o /LocalSite/BoincHostPlatform=%s' % self.boincHostPlatform )
+      self.cfg.append( '-o /LocalSite/BoincHostPlatform=%s' % self.boincHostPlatform )
     if self.boincHostName:
-      self.configureOpts.append( '-o /LocalSite/BoincHostName=%s' % self.boincHostName )
-
+      self.cfg.append( '-o /LocalSite/BoincHostName=%s' % self.boincHostName )
 
     self.__getCEName()
-    self.configureOpts.append( '-N "%s"' % self.pp.ceName )
+    self.cfg.append( '-N "%s"' % self.pp.ceName )
     if self.pp.queueName:
-      self.configureOpts.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
+      self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
     if self.pp.ceName:
-      self.configureOpts.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
-    self.log.debug ( 'CONFIGURE [%s]' % ', '.join( map( str, self.configureOpts ) ) )
+      self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
 
 
-  def __setFlavour(self):
+  def __setFlavour( self ):
 
     pilotRef = 'Unknown'
 
@@ -378,7 +508,7 @@ class ConfigureDIRAC( CommandBase ):
     # Take the reference from the OAR batch system
     if os.environ.has_key( 'OAR_JOBID' ):
       self.pp.flavour = 'SSHOAR'
-      pilotRef = 'sshoar://' + self.pp.ceName + '/'+os.environ['OAR_JOBID']
+      pilotRef = 'sshoar://' + self.pp.ceName + '/' + os.environ['OAR_JOBID']
 
     # Grid Engine
     if os.environ.has_key( 'JOB_ID' ):
@@ -449,7 +579,7 @@ class ConfigureDIRAC( CommandBase ):
 
     # FIXME: is this necessary at all?
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE',self.pp.installEnv)
+      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE', self.pp.installEnv )
       if not retCode:
         self.pp.ceName = self.CE.split( ':' )[0]
         if len( self.CE.split( '/' ) ) > 1:
@@ -504,147 +634,10 @@ class ConfigureDIRAC( CommandBase ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
 
-  def execute( self ):
-    """ What is called all the time
-    """
-
-    self.__setConfigureOptions()
-    self.__getCPURequirement()
-
-    # Instead of dumping the Full configuration, include all Server in dirac.cfg
-
-    self.configureOpts.append('-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion)
-    self.configureOpts.append( '-I' )
-    configureScript = "dirac-configure"
-    if self.pp.installEnv:
-      configureScript += ' -O pilot.cfg -DM'
-      self.log.debug( "Configuring DIRAC with environment set to %s" % self.pp.installEnv )
-
-    configureCmd = "%s %s" % ( configureScript, " ".join( self.configureOpts ) )
-
-    retCode, configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
-
-    self.log.debug( configureOutData )
-
-    if retCode:
-      self.log.error( "Could not configure DIRAC" )
-      sys.exit( 1 )
-
-    if not self.pp.installEnv:  # if traditional installation
-      if self.testVOMSOK:
-      # Check voms-proxy-info before touching the original PATH and LD_LIBRARY_PATH
-        os.system( 'which voms-proxy-info && voms-proxy-info -all' )
-
-    #########################################################################################################################
-    # Check proxy
-
-    retCode, __outData__ = self.executeAndGetOutput( 'dirac-proxy-info', self.pp.installEnv )
-    if self.testVOMSOK:
-      retCode, __outData__ = self.executeAndGetOutput( 'dirac-proxy-info | grep -q fqan', self.pp.installEnv )
-      if retCode != 0:
-        self.log.debug( "dirac-pilot: missing voms certs at %s" % self.pp.site )
-        sys.exit( -1 )
-
-    ##########################################################################################################################
-    # Set the local architecture
-
-    if not self.pp.installEnv:  # if traditional installation
-      architectureScript = which( "dirac-architecture" )
-      if architectureScript is None:
-        architectureScript = which( "dirac-platform" )
-
-      if architectureScript:
-        retCode, localArchitecture = self.executeAndGetOutput( architectureScript,self.pp.installEnv)
-        if not retCode:
-          localArchitecture = localArchitecture.strip()
-          os.environ['CMTCONFIG'] = localArchitecture
-          self.log.info( 'Setting CMTCONFIG=%s' % localArchitecture )
-        # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
-        # dirac-configure will not change existing cfg unless -U option is used.
-          os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
-        else:
-          self.log.error( "There was an error calling %s" % architectureScript )
-
-    ###############################################################################################################################
-    # Get host and local user info
-
-    self.log.info( 'Uname      = %s' % " ".join( os.uname() ) )
-    self.log.info( 'Host Name  = %s' % socket.gethostname() )
-    self.log.info( 'Host FQDN  = %s' % socket.getfqdn() )
-    self.log.info( 'WorkingDir = %s' % self.pp.workingDir )  # this could be different than rootPath
-
-    fileName = '/etc/redhat-release'
-    if os.path.exists( fileName ):
-      f = open( fileName, 'r' )
-      self.log.info( 'RedHat Release = %s' % f.read().strip() )
-      f.close()
-
-    fileName = '/etc/lsb-release'
-    if os.path.isfile( fileName ):
-      f = open( fileName, 'r' )
-      self.log.info( 'Linux release:\n%s' % f.read().strip() )
-      f.close()
-
-    fileName = '/proc/cpuinfo'
-    if os.path.exists( fileName ):
-      f = open( fileName, 'r' )
-      cpu = f.readlines()
-      f.close()
-      nCPU = 0
-      for line in cpu:
-        if line.find( 'cpu MHz' ) == 0:
-          nCPU += 1
-          freq = line.split()[3]
-        elif line.find( 'model name' ) == 0:
-          CPUmodel = line.split( ': ' )[1].strip()
-      self.log.info( 'CPU (model)    = %s' % CPUmodel )
-      self.log.info( 'CPU (MHz)      = %s x %s' % ( nCPU, freq ) )
-
-    fileName = '/proc/meminfo'
-    if os.path.exists( fileName ):
-      f = open( fileName, 'r' )
-      mem = f.readlines()
-      f.close()
-      freeMem = 0
-      for line in mem:
-        if line.find( 'MemTotal:' ) == 0:
-          totalMem = int( line.split()[1] )
-        if line.find( 'MemFree:' ) == 0:
-          freeMem += int( line.split()[1] )
-        if line.find( 'Cached:' ) == 0:
-          freeMem += int( line.split()[1] )
-      self.log.info( 'Memory (kB)    = %s' % totalMem )
-      self.log.info( 'FreeMem. (kB)  = %s' % freeMem )
-
-    ##############################################################################################################################
-    # Disk space check
-
-    #fs = os.statvfs( rootPath )
-    fs = os.statvfs( self.pp.workingDir )
-    # bsize;    /* file system block size */
-    # frsize;   /* fragment size */
-    # blocks;   /* size of fs in f_frsize units */
-    # bfree;    /* # free blocks */
-    # bavail;   /* # free blocks for non-root */
-    # files;    /* # inodes */
-    # ffree;    /* # free inodes */
-    # favail;   /* # free inodes for non-root */
-    # flag;     /* mount flags */
-    # namemax;  /* maximum filename length */
-    diskSpace = fs[4] * fs[0] / 1024 / 1024
-    self.log.info( 'DiskSpace (MB) = %s' % diskSpace )
-
-    if diskSpace < self.pp.minDiskSpace:
-      self.log.error( '%s MB < %s MB, not enough local disk space available, exiting'
-                  % ( diskSpace, self.pp.minDiskSpace ) )
-      sys.exit( 1 )
-
-    self.pp.diracConfigured = True
-
-  def __getCPURequirement(self):
+  def __getCPURequirement( self ):
     """ Get job CPU requirement and queue normalization """
-    
-    #FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
+
+    # FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
     # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
     # as explained in the RFC
 
@@ -652,7 +645,7 @@ class ConfigureDIRAC( CommandBase ):
       self.log.info( 'CE = %s' % self.CE )
       self.log.info( 'LCG_SITE_CE = %s' % self.pp.ceName )
 
-      retCode, queueNormList = self.executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % self.CE,self.pp.installEnv )
+      retCode, queueNormList = self.executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % self.CE, self.pp.installEnv )
       if not retCode:
         queueNormList = queueNormList.strip().split( ' ' )
         if len( queueNormList ) == 2:
@@ -661,11 +654,8 @@ class ConfigureDIRAC( CommandBase ):
           if queueNorm:
             # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
             # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-            # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-            os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( self.pp.configureScript,
-                                                                                                             queueNorm / 250.,
-                                                                                                             queueNorm / 250. ) )
+            self.cfg.append( '/LocalSite/CPUScalingFactor=%s' % queueNorm / 250. )
+            self.cfg.append( '/LocalSite/PUNormalizationFactor=%s' % queueNorm / 250. )
         else:
           self.log.error( 'Fail to get Normalization of the Queue' )
       else:
@@ -683,7 +673,78 @@ class ConfigureDIRAC( CommandBase ):
         self.log.error( "There was an error calling dirac-wms-get-normalized-queue-length" )
 
       # Instead of using the Average reported by the Site, determine a Normalization
+      # FIXME: do not use os.system...
       # os.system( "dirac-wms-cpu-normalization -U" )
+
+  def execute( self ):
+    """ What is called all the time
+    """
+
+    self.__setConfigureOptions()
+    self.__getCPURequirement()
+
+    # these are needed as this is not the fist time we call dirac-configure
+    self.cfg.append( '-FDMH' )
+    self.cfg.append( '-O pilot.cfg' )
+    self.cfg.append( 'pilot.cfg' )
+
+    if self.debugFlag:
+      self.cfg.append( '-ddd' )
+    if self.pp.useServerCertificate:
+      self.cfg.append( '--UseServerCertificate' )
+
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+
+    if retCode:
+      self.log.error( "Could not configure DIRAC" )
+      sys.exit( 1 )
+
+
+
+
+class ConfigureArchitecture( CommandBase ):
+  """ This command simply calls dirac-platfom to determine the platform.
+      Separated from the ConfigureDIRAC command for easier extensibility.
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ConfigureArchitecture, self ).__init__( pilotParams )
+    self.archScriptCFG = []
+
+  def execute( self ):
+    """ This is a simple command to call the dirac-platform utility to get the platform, and add it to the configuration
+    """
+
+    architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( self.archScriptCFG ) )
+
+    retCode, localArchitecture = self.executeAndGetOutput( architectureCmd, self.pp.installEnv )
+    if not retCode:
+      # standard options
+      cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
+      if self.pp.useServerCertificate:
+        cfg.append( '--UseServerCertificate' )
+      cfg.append( '-O pilot.cfg' )  # our target file for pilots
+      cfg.append( 'pilot.cfg' )  # this file is also an input
+      if self.pp.debugFlag:
+        cfg.append( "-ddd" )
+
+      # real options added here
+      localArchitecture = localArchitecture.strip()
+      cfg.append( '/LocalSite/Architecture=%s' % localArchitecture )
+
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if not retCode:
+        return localArchitecture
+
+    self.log.error( "There was an error updating the platform" )
+    sys.exit( 1 )
+
+
 
 class LaunchAgent( CommandBase ):
   """ Prepare and launch the job agent
@@ -731,11 +792,15 @@ class LaunchAgent( CommandBase ):
       self.log.info( 'Setting Owner DN to "%s"' % self.pp.userDN )
       self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
 
-    if self.pp.installEnv:
-      # The instancePath is where the agent works
-      self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
-      # The file pilot.cfg has to be created previously by ConfigureDIRAC
-      self.inProcessOpts.append( 'pilot.cfg' )
+    if self.pp.useServerCertificate:
+      self.log.info( 'Setting UseServerCertificate flag' )
+      self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
+
+    # The instancePath is where the agent works
+    self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
+
+    # The file pilot.cfg has to be created previously by ConfigureDIRAC
+    self.inProcessOpts.append( 'pilot.cfg' )
 
 
   def __startJobAgent(self):
@@ -766,8 +831,7 @@ class LaunchAgent( CommandBase ):
 
 
     if not self.pp.dryRun:
-      retCode, output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      self.log.info( output, header = False )
+      retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
       if retCode:
         self.log.error( "Could not start the JobAgent" )
         sys.exit( 1 )

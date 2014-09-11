@@ -1,15 +1,11 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
 __RCSID__ = "$Id$"
 
-import time
 import random
 import types
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC  import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, List, Network
 
@@ -267,18 +263,18 @@ class ComponentMonitoringDB( DB ):
       return value in condVal
     return value == condVal
 
-  def __getComponentDefinitionFromCS( self, system, setup, instance, type, component ):
+  def __getComponentDefinitionFromCS( self, system, setup, instance, cType, component ):
     componentName = "%s/%s" % ( system, component )
     compDict = { 'ComponentName' : componentName,
-                 'Type' : type,
+                 'Type' : cType,
                  'Setup' : setup
                 }
     componentSection = "/Systems/%s/%s/%s/%s" % ( system, instance,
-                                                  "%ss" % type.capitalize(), component )
+                                                  "%ss" % cType.capitalize(), component )
     compStatus = gConfig.getValue( "%s/Status" % componentSection, 'Active' )
     if compStatus.lower() in ( "inactive", ):
       compDict[ 'Status' ] = compStatus.lower().capitalize()
-    if type == 'service':
+    if cType == 'service':
       result = gConfig.getOption( "%s/Port" % componentSection )
       if not result[ 'OK' ]:
         compDict[ 'Status' ] = 'Error'
@@ -321,16 +317,16 @@ class ComponentMonitoringDB( DB ):
       for system in systems:
         instance = systems[ system ]
         #Check defined agents and serviecs
-        for type in ( 'agent' , 'service' ):
+        for cType in ( 'agent' , 'service' ):
           #Get entries for the instance of a system
-          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % type.capitalize() ) )
+          result = gConfig.getSections( "/Systems/%s/%s/%s" % ( system, instance, "%ss" % cType.capitalize() ) )
           if not result[ 'OK' ]:
             self.log.warn( "Opps, sytem seems to be defined wrong\n", "System %s at %s: %s" % ( system, instance, result[ 'Message' ] ) )
             continue
           components = result[ 'Value' ]
           for component in components:
             componentName = "%s/%s" % ( system, component )
-            compDict = self.__getComponentDefinitionFromCS( system, setup, instance, type, component )
+            compDict = self.__getComponentDefinitionFromCS( system, setup, instance, cType, component )
             if self.__componentMatchesCondition( compDict, requiredComponents, conditionDict ):
               statusSet.addUniqueToSet( requiredComponents, compDict )
         #Walk the URLs
@@ -433,10 +429,10 @@ class StatusSet:
 
   def setComponentsAsRequired( self, requiredSet ):
     for setup in requiredSet:
-      for type in requiredSet[ setup ]:
-        for name in requiredSet[ setup ][ type ]:
+      for cType in requiredSet[ setup ]:
+        for name in requiredSet[ setup ][ cType ]:
           #Need to narrow down required
-          cDL = requiredSet[ setup ][ type ][ name ]
+          cDL = requiredSet[ setup ][ cType ][ name ]
           cDL = self.__reduceComponentList( cDL )
           self.__setComponentListAsRequired( cDL )
 

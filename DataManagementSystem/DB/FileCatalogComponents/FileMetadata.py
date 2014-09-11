@@ -218,7 +218,7 @@ class FileMetadata:
       return result
     metaFields = result['Value']
 
-    stringIDs = ','.join( [ '%s' % id for id in fileIDList ] )
+    stringIDs = ','.join( [ '%s' % fId for fId in fileIDList ] )
     metaDict = {}
     for meta in metaFields:
       req = "SELECT Value,FileID FROM FC_FileMeta_%s WHERE FileID in (%s)" % ( meta, stringIDs )
@@ -498,7 +498,7 @@ class FileMetadata:
             escapedOperand = self.db._escapeString( operand )
             if not escapedOperand['OK']:
               return escapedOperand
-            escapedOperand = escapeValue['Value']
+            escapedOperand = escapeValues['Value']
 
           if operation in ['>', '<', '>=', '<=']:
             if type( operand ) == types.ListType:
@@ -597,7 +597,7 @@ class FileMetadata:
     if not result['Value']:
       return S_OK( [] )
 
-    fileList = [ row[0] for row in result['Value' ] ]
+#     fileList = [ row[0] for row in result['Value' ] ]
     fileList = []
     for row in result['Value']:
       fileID = row[0]
@@ -620,7 +620,7 @@ class FileMetadata:
     dirFlag = result['Selection']
 
     # 2.- Get known file metadata fields
-    fileMetaDict = {}
+#     fileMetaDict = {}
     result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result

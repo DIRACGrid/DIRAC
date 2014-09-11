@@ -1,4 +1,3 @@
-# $HeadURL$
 """
 SystemLoggingHandler is the implementation of the Logging service
 in the DISET framework.
@@ -10,7 +9,7 @@ The following methods are available in the Service interface::
 """
 __RCSID__ = "$Id$"
 
-from types import ListType, StringTypes, StringTypes
+from types import ListType, StringTypes
 
 from DIRAC                                            import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                  import RequestHandler
