@@ -34,7 +34,7 @@ def _parseSingleElement( element, attributes = None ):
 #############################################################################
 
 
-class GOCDBClient(object):
+class GOCDBClient( object ):
   """ Class for dealing with GOCDB. Class because of easier use from RSS
   """
 
@@ -61,24 +61,25 @@ class GOCDBClient(object):
 
     :return: (example)
       {'OK': True,
-      'Value': {'78305448':
-                  {
-                  'SITENAME': 'UKI-LT2-QMUL',
-                  'FORMATED_END_DATE': '2010-06-22 19:00',
-                  'SEVERITY': 'OUTAGE',
-                  'FORMATED_START_DATE': '2010-06-18 09:00',
-                  'DESCRIPTION': 'Electrical work in the building housing the cluster.'
-                  },
-                '78905446':
-                  {
-                  'SITENAME': 'NCP-LCG2',
-                  'FORMATED_END_DATE': '2010-06-22 19:40',
-                  'SEVERITY': 'OUTAGE',
-                  'FORMATED_START_DATE': '2010-06-20 19:43',
-                  'DESCRIPTION': "Problem at Service provider's end"
-                  }
-                }
-      }
+       'Value': {'92569G0': {'DESCRIPTION': 'Annual site downtime for various major tasks in the area of network, storage, etc.',
+                             'FORMATED_END_DATE': '2014-05-27 15:21',
+                             'FORMATED_START_DATE': '2014-05-26 04:00',
+                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
+                             'HOSTED_BY': 'FZK-LCG2',
+                             'HOSTNAME': 'lhcbsrm-kit.gridka.de',
+                             'SERVICE_TYPE': 'SRM.nearline',
+                             'SEVERITY': 'OUTAGE'},
+                 '93293G0': {'DESCRIPTION': 'Maintenance on KIT campus border routers. In the unlikely event that redundancy should fail, FZK-LCG2 connection to the GPN will be down. LHCOPN/LHCONE will stay up.',
+                             'FORMATED_END_DATE': '2014-07-12 14:00',
+                             'FORMATED_START_DATE': '2014-07-12 06:00',
+                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14771',
+                             'HOSTED_BY': 'FZK-LCG2',
+                             'HOSTNAME': 'lhcbsrm-kit.gridka.de',
+                             'SERVICE_TYPE': 'SRM.nearline',
+                             'SEVERITY': 'WARNING'}
+                 }
+        }
+
 
     """
 
@@ -157,7 +158,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    assert(type(granularity) == str and type(entity) == str)
+    assert( type( granularity ) == str and type( entity ) == str )
     try:
       serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
       return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
@@ -165,7 +166,7 @@ class GOCDBClient(object):
       _msg = 'Exception getting information for %s %s: %s' % ( granularity, entity, e )
       gLogger.exception( _msg )
       return S_ERROR( _msg )
-      
+
 #############################################################################
 
 #  def getSiteInfo(self, site):
@@ -233,7 +234,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    if type(granularity) != str or type(entity) != str:
+    if type( granularity ) != str or type( entity ) != str:
       raise ValueError, "Arguments must be strings."
 
     # GOCDB-PI query
@@ -276,11 +277,9 @@ class GOCDBClient(object):
       elements = _parseSingleElement( dtElement, ['SEVERITY', 'SITENAME', 'HOSTNAME',
                                                   'HOSTED_BY', 'FORMATED_START_DATE',
                                                   'FORMATED_END_DATE', 'DESCRIPTION',
-                                                  'GOCDB_PORTAL_URL'] )
-      try:
-        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['HOSTNAME'] ] = elements
-      except Exception:
-        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['SITENAME'] ] = elements
+                                                  'GOCDB_PORTAL_URL', 'SERVICE_TYPE' ] )
+
+      dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) ] = elements
 
     for dt_ID in dtDict.keys():
       if siteOrRes in ( 'Site', 'Sites' ):
@@ -320,5 +319,5 @@ class GOCDBClient(object):
     """
     doc = minidom.parseString( serviceXML )
     services = doc.getElementsByTagName( "SERVICE_ENDPOINT" )
-    services = [_parseSingleElement(s) for s in services]
+    services = [_parseSingleElement( s ) for s in services]
     return services
