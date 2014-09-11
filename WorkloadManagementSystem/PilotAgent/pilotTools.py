@@ -50,25 +50,6 @@ def pythonPathCheck():
     print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
   
-def which( program ):
-  """ Utility that mimics the 'which' command from the shell
-  """
-  def is_exe( fpath ):
-    return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
-
-  fpath, _fname = os.path.split( program )
-  if fpath:
-    if is_exe( program ):
-      return program
-  else:
-    for path in os.environ["PATH"].split( os.pathsep ):
-      path = path.strip( '"' )
-      exe_file = os.path.join( path, program )
-      if is_exe( exe_file ):
-        return exe_file
-
-  return None  
-
 class ObjectLoader( object ):
   """ Simplified class for loading objects from a DIRAC installation.
 
@@ -170,7 +151,7 @@ def getCommand( params, commandName, log ):
       impData = imp.find_module( module )
       commandModule = imp.load_module( module, *impData )
       commandObject = getattr( commandModule, commandName )
-    except Exception, e:
+    except Exception, _e:
       pass
     if commandObject:
       return commandObject( params ), module
@@ -255,7 +236,7 @@ class CommandBase( object ):
       if o == '-d' or o == '--debug':
         self.log.setDebug()
         self.debugFlag = True
-    self.log.debug( "Initialized command %s" % self.__class__ )
+    self.log.debug( "\n\n Initialized command %s" % self.__class__ )
 
   def executeAndGetOutput( self, cmd, environDict = None ):
     """ Execute a command on the worker node and get the output
@@ -265,12 +246,12 @@ class CommandBase( object ):
     try:
       import subprocess  # spawn new processes, connect to their input/output/error pipes, and obtain their return codes.
       _p = subprocess.Popen( "%s" % cmd, shell = True, env=environDict, stdout = subprocess.PIPE,
-                        stderr = subprocess.PIPE, close_fds = False )
+                             stderr = subprocess.PIPE, close_fds = False )
 
       # standard output
-      for line in _p.stdout:
-        sys.stdout.write( line )
       outData = _p.stdout.read().strip()
+      for line in outData:
+        sys.stdout.write( line )
 
       for line in _p.stderr:
         sys.stdout.write( line )
@@ -299,7 +280,9 @@ class PilotParams:
     self.local = False
     self.dryRun = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'InstallDIRAC', 'ConfigureDIRAC', 'LaunchAgent']
+    self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
+                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture',
+                     'LaunchAgent']
     self.extensions = []
     self.site = ""
     self.setup = ""
@@ -327,10 +310,11 @@ class PilotParams:
     self.workingDir = ''
     # DIRAC client installation environment
     self.diracInstalled = False
-    self.diracConfigured = False
     self.diracExtensions = []
     self.installEnv = None
     self.executeCmd = False
+    self.configureScript = 'dirac-configure'
+    self.architectureScript = 'dirac-platform'
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
@@ -419,7 +403,7 @@ class PilotParams:
       elif o in ( '-W', '--gateway' ):
         self.gateway = v
       elif o == '-c' or o == '--cert':
-        self.useServerCertificate = False
+        self.useServerCertificate = True
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )

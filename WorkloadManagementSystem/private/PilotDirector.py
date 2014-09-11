@@ -61,9 +61,7 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.DictCache import DictCache
 
-#from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
-
-class PilotDirector:
+class PilotDirector( object ):
   """
     Base Pilot Director class.
     Derived classes must implement:
@@ -376,7 +374,7 @@ class PilotDirector:
       This is problem with the Director, not with the Job so we must return S_OK
       Return S_ERROR if not defined.
     """
-    self.log.error( '_submitPilots method not implemented' )
+    self.log.error( '_submitPilot method not implemented' )
     return S_OK()
 
   def _listMatch( self, proxy, jdl, taskQueueID, rb ):
@@ -417,10 +415,10 @@ class PilotDirector:
         return S_ERROR( ERROR_PROXY )
       proxy = ret['Value']
       # Now call a Grid Specific method to handle the final submission of the pilots
-      return self._submitPilots( workDir, taskQueueDict, pilotOptions,
-                                 pilotsToSubmit, ceMask,
-                                 submitPrivatePilot, privateTQ,
-                                 proxy, pilotsPerJob )
+      return self._submitPilot( workDir, taskQueueDict, pilotOptions,
+                                pilotsToSubmit, ceMask,
+                                submitPrivatePilot, privateTQ,
+                                proxy, pilotsPerJob )
 
     except Exception:
       self.log.exception( 'Error in Pilot Submission' )

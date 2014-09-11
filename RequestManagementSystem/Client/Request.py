@@ -159,7 +159,7 @@ class Request( Record ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
         rStatus = "Done"
-        self.Error = ' '
+        self.Error = ''
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -423,7 +423,7 @@ class Request( Record ):
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
     if value == 'Done':
-      self.Error = ' '
+      self.Error = ''
     self.__data__["Status"] = value
 
   @property

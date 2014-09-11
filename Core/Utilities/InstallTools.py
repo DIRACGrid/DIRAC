@@ -690,6 +690,7 @@ def getDatabaseCfg( system, dbName, compInstance ):
   databasePath = cfgPath( 'Systems', system, compInstance, 'Databases', dbName )
   cfg = __getCfg( databasePath, 'DBName', dbName )
   cfg.setOption( cfgPath( databasePath, 'Host' ), mysqlHost )
+  cfg.setOption( cfgPath( databasePath, 'Port' ), mysqlPort )
 
   return S_OK( cfg )
 
@@ -2185,10 +2186,6 @@ def installDatabase( dbName ):
   """
 
   global mysqlRootPwd, mysqlPassword
-
-  result = mysqlInstalled()
-  if not result['OK']:
-    return result
 
   if not mysqlRootPwd:
     rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )

@@ -777,7 +777,7 @@ class AccountingDB( DB ):
       bucketStartTime = bucketInfo[0]
       bucketProportion = bucketInfo[1]
       bucketLength = bucketInfo[2]
-      for i in range( max( 1, self.__deadLockRetries ) ):
+      for _i in range( max( 1, self.__deadLockRetries ) ):
         retVal = self.__extractFromBucket( typeName,
                                            bucketStartTime,
                                            bucketLength,
@@ -858,7 +858,7 @@ class AccountingDB( DB ):
   def __writeBuckets( self, typeName, buckets, keyValues, valuesList, connObj = False ):
     """ Insert or update a bucket
     """
-    tableName = _getTableName( "bucket", typeName )
+#     tableName = _getTableName( "bucket", typeName )
     #INSERT PART OF THE QUERY
     sqlFields = [ '`startTime`', '`bucketLength`', '`entriesInBucket`' ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
@@ -877,7 +877,7 @@ class AccountingDB( DB ):
       for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
         sqlValues.append( keyValues[ keyPos ] )
       for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
-        value = valuesList[ valPos ]
+#         value = valuesList[ valPos ]
         sqlValues.append( "(%s*%s)" % ( valuesList[ valPos ], bProportion ) )
       valuesGroups.append( "( %s )" % ",".join( str( val ) for val in sqlValues ) )
 
@@ -885,7 +885,7 @@ class AccountingDB( DB ):
     cmd += "VALUES %s " % ", ".join( valuesGroups)
     cmd += "ON DUPLICATE KEY UPDATE %s" % ", ".join( sqlUpData )
 
-    for i in range( max( 1, self.__deadLockRetries ) ):
+    for _i in range( max( 1, self.__deadLockRetries ) ):
       result = self._update( cmd, conn = connObj )
       if not result[ 'OK' ]:
         #If failed because of dead lock try restarting

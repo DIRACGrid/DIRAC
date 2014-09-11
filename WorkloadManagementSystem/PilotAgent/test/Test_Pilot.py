@@ -19,6 +19,7 @@ class PilotTestCase( unittest.TestCase ):
   def tearDown( self ):
     try:
       os.remove('pilot.out')
+      os.remove( 'Test-pilot.json' )
     except IOError:
       pass
 
@@ -46,7 +47,6 @@ class CommandsTestCase( PilotTestCase ):
     gpv.pilotCFGFileLocation = 'file://%s' % os.getcwd()
     self.assertIsNone( gpv.execute() )
     self.assertEqual( gpv.pp.releaseVersion, 'v1r1' )
-    os.remove( 'Test-pilot.json' )
 
 #############################################################################
 # Test Suite run

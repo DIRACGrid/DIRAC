@@ -2091,7 +2091,8 @@ File Catalog Client $Revision: 1.17 $Date:
       for dir_ in result['Value']:
         print dir_
     else:
-      print "No matching data found"      
+      if verbose:
+        print "No matching data found"      
 
     if verbose and "QueryTime" in result:
       print "QueryTime %.2f sec" % result['QueryTime']  

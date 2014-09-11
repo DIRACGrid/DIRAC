@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12]
+[v6r12-pre12]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -120,6 +120,7 @@ NEW: dirac-configure - added --SkipVOMSDownload switch, added --Output switch
 CHANGE: ProcessPool - exit from the working process if a task execution timed out  
 NEW: ProcessMonitor - added evaluation of the memory consumed by a process and its children   
 NEW: InstallTools - added flag to require MySQL installation
+CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
@@ -142,6 +143,7 @@ CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
 
 *ResourceStatus
 NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
+FIX: GODDBClient  - downTimeXMLParsing() can now handle the "service type" parameter properly
 
 *DMS
 NEW: DataManager - add masterCatalogOnly flag in the constructor
@@ -171,6 +173,23 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p12]
+
+*Resources
+CHANGE: ARCComputingElement - accomodate changes in the ARC job reported states
+
+*Configuration
+CHANGE: Resources - define a default FTS server in the CS (only for v6r11 and v6r12)
+
+*DMS
+FIX: FTSStrategy - allow to use a given channel more than once in a tree 
+FIX: FTSAgent - remove request from cache if not found
+FIX: FTSAgent - recover deadlock situations when FTS Files had not been correctly 
+     updated or were not in the DB
+
+*RMS
+FIX: RequestExecutingAgent - fix a race condition (cache was cleared after the request was put)
 
 [v6r11p11]
 

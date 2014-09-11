@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 
 import os, stat, tempfile, pickle, shutil, random, base64
 from string import Template
+import distutils.spawn
 
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
@@ -456,7 +457,7 @@ os.execl( "$executable" )
     elif os.environ.has_key( 'GLITE_LOCATION' ):
       glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
     else: #try to locate the excutable in the PATH
-      glexecPath = which( "glexec" )    
+      glexecPath = distutils.spawn.find_executable( "glexec" )
     if not glexecPath:
       self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION nor OSG_GLEXEC_LOCATION defined' )
       return S_ERROR( 'glexec not found' )
