@@ -3,6 +3,7 @@ __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -13,7 +14,8 @@ class DataStoreHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, svcInfoDict ):
-    cls.__acDB = MultiAccountingDB( svcInfoDict[ 'serviceSectionPath' ] )
+    multiPath = PathFinder.getDatabaseSection( "Accounting/MultiDB" )
+    cls.__acDB = MultiAccountingDB( multiPath )
     cls.__acDB.autoCompactDB()
     result = cls.__acDB.markAllPendingRecordsAsNotTaken()
     if not result[ 'OK' ]:

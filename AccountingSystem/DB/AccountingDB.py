@@ -1301,9 +1301,9 @@ class AccountingDB( DB ):
     if dataTimespan < 86400 * 30:
       return
     for table, field in ( ( _getTableName( "type", typeName ), 'endTime' ),
-                          ( _getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
+                          ( _getTableName( "bucket", typeName ), 'startTime + %s' % self.dbBucketsLength[ typeName ][-1][1] ) ):
       self.log.info( "[COMPACT] Deleting old records for table %s" % table )
-      deleteLimit = 10000
+      deleteLimit = 100000
       deleted = deleteLimit
       while deleted >= deleteLimit:
         sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )

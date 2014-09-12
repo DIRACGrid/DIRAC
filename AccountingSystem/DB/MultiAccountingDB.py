@@ -7,7 +7,7 @@ from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 class MultiAccountingDB( object ):
 
   def __init__( self, csPath, maxQueueSize = 10, readOnly = False ):
-    self.__csPath = "%s/TypeDB" % csPath
+    self.__csPath = csPath
     self.__readOnly = readOnly
     self.__maxQueueSize = maxQueueSize
     self.__dbByType = {}
@@ -39,17 +39,17 @@ class MultiAccountingDB( object ):
           dbName = "Accounting/%s" % dbName
         gLogger.notice( "Creating DB %s" % dbName )
         self.__allDBs[ dbName ] = AccountingDB( dbName, maxQueueSize = self.__maxQueueSize, readOnly = self.__readOnly )
-      self.__dbByType[ acType ] = self.__allDBs[ dbName ]
+      self.__dbByType[ acType ] = dbName
 
   def __registerMethods( self ):
     for methodName in ( 'registerType', 'changeBucketsLength', 'regenerateBuckets',
-                        'deleteType', 'insertRecordThroughQueue', 'deleteRecord',
-                        'getKeyValues', 'retrieveBucketedData', 'calculateBuckets',
-                        'calculateBucketLengthForTime' ):
-      setattr( self, methodName, lambda *x: self.__mimeTypeMethod( methodName, *x ) )
+                        'deleteType', 'insertRecordThroughQueue',
+                        'deleteRecord', 'getKeyValues', 'retrieveBucketedData',
+                        'calculateBuckets', 'calculateBucketLengthForTime' ):
+      (lambda closure: setattr( self, closure, lambda *x: self.__mimeTypeMethod( closure, *x ) ))(methodName)
     for methodName in ( 'autoCompactDB', 'compactBuckets', 'markAllPendingRecordsAsNotTaken',
-                        'loadPendingRecords', 'insertRecordBundleThroughQueue', 'getRegisteredTypes' ):
-      setattr( self, methodName, lambda *x: self.__mimeMethod( methodName, *x ) )
+                        'loadPendingRecords', 'getRegisteredTypes' ):
+      (lambda closure: setattr( self, closure, lambda *x: self.__mimeMethod( closure, *x ) ))(methodName)
 
   def __mimeTypeMethod( self, methodName, setup, acType, *args ):
     return getattr( self.__db( acType ), methodName )( "%s_%s" % ( setup, acType ), *args )
@@ -65,3 +65,16 @@ class MultiAccountingDB( object ):
   def __db( self, acType ):
     return self.__allDBs[ self.__dbByType.get( acType, self.__defaultDB ) ]
 
+  def insertRecordBundleThroughQueue( self, records ):
+    recByType = {}
+    for record in records:
+      acType = record[1]
+      if acType not in recByType:
+        recByType[ acType ] = []
+      recByType[ acType ].append( ( "%s_%s" % ( record[0], record[1] ), record[2], record[3], record[4] ) )
+    end = S_OK()
+    for acType in recByType:
+      res = self.__db( acType ).insertRecordBundleThroughQueue( recByType[ acType ] )
+      if not res[ 'OK' ]:
+        end = res
+    return end
