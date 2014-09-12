@@ -7,7 +7,7 @@ from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 class MultiAccountingDB( object ):
 
   def __init__( self, csPath, maxQueueSize = 10, readOnly = False ):
-    self.__csPath = "%s/TypeDB" % csPath
+    self.__csPath = csPath
     self.__readOnly = readOnly
     self.__maxQueueSize = maxQueueSize
     self.__dbByType = {}
