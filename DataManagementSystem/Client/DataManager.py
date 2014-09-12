@@ -51,11 +51,10 @@ class DataManager( object ):
     :param vo: the VO for which the DataManager is created, get VO from the current proxy if not specified
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
-
-
-    catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
-
     self.vo = vo
+    
+    catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
+    
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
