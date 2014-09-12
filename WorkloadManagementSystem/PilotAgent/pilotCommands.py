@@ -591,7 +591,7 @@ class ConfigureSite( CommandBase ):
         CE = os.environ['OSG_JOB_CONTACT']
         self.pp.ceName = CE.split( '/' )[0]
         if len( CE.split( '/' ) ) > 1:
-          self.queueName = CE.split( '/' )[1]
+          self.pp.queueName = CE.split( '/' )[1]
       # configureOpts.append( '-N "%s"' % cliParams.ceName )
       else:
         self.log.error( "There was an error executing brokerinfo. Setting ceName to local " )
@@ -599,7 +599,7 @@ class ConfigureSite( CommandBase ):
       if os.environ.has_key( 'CE_ID' ):
         self.pp.ceName = os.environ['CE_ID'].split( ':' )[0]
         if os.environ['CE_ID'].count( "/" ):
-          self.queueName = os.environ['CE_ID'].split( '/' )[1]
+          self.pp.queueName = os.environ['CE_ID'].split( '/' )[1]
 
 
 
