@@ -770,8 +770,6 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
     self.inProcessOpts.append( '-o GridCE=%s' % self.pp.ceName )
-    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.inProcessOpts.append( '-o GridCEQueue=%s' % self.pp.CE )
     self.inProcessOpts.append( '-o LocalAccountString=%s' % localUser )
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
