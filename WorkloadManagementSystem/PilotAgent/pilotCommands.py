@@ -817,11 +817,10 @@ class LaunchAgent( CommandBase ):
                                                              " ".join( extraCFG ) )
 
 
-    if not self.pp.dryRun:
-      retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      if retCode:
-        self.log.error( "Could not start the JobAgent" )
-        sys.exit( 1 )
+    retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
+    if retCode:
+      self.log.error( "Could not start the JobAgent" )
+      sys.exit( 1 )
 
     fs = os.statvfs( self.pp.workingDir )
     diskSpace = fs[4] * fs[0] / 1024 / 1024

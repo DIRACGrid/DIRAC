@@ -278,7 +278,6 @@ class PilotParams:
     self.optList = {}
     self.debugFlag = False
     self.local = False
-    self.dryRun = False
     self.commandExtensions = []
     self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
                      'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
@@ -384,8 +383,6 @@ class PilotParams:
         self.executeCmd = v
       elif o in ( '-O', '--OwnerDN' ):
         self.userDN = v
-      elif o == '-y' or o == '--test':
-        self.dryRun = True
 
       elif o in ( '-V', '--installation' ):
         self.installation = v
