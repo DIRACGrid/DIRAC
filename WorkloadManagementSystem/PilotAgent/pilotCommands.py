@@ -690,7 +690,7 @@ class ConfigureArchitecture( CommandBase ):
 
       # real options added here
       localArchitecture = localArchitecture.strip()
-      cfg.append( '/LocalSite/Architecture=%s' % localArchitecture )
+      cfg.append( '-o /LocalSite/Architecture=%s' % localArchitecture )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
