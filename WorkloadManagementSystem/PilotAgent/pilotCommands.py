@@ -444,21 +444,23 @@ class ConfigureSite( CommandBase ):
 
     # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
     self.cfg = []
-    self.CE = ""
 
     self.boincUserID = ''
     self.boincHostID = ''
     self.boincHostPlatform = ''
     self.boincHostName = ''
 
-  def __setConfigureOptions( self ):
+  def execute( self ):
     """ Setup configuration parameters
     """
 
-    if self.pp.site:
-      self.cfg.append( '-n "%s"' % self.pp.site )
-    if self.pp.ceName:
-      self.cfg.append( '-N "%s"' % self.pp.ceName )
+    self.cfg.append( '-n "%s"' % self.pp.site )
+
+    if not self.pp.ceName or not self.pp.queueName:
+      self.__getCEName()
+    self.cfg.append( '-N "%s"' % self.pp.ceName )
+    self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
+    self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
@@ -482,12 +484,23 @@ class ConfigureSite( CommandBase ):
     if self.boincHostName:
       self.cfg.append( '-o /LocalSite/BoincHostName=%s' % self.boincHostName )
 
-    self.__getCEName()
-    self.cfg.append( '-N "%s"' % self.pp.ceName )
-    if self.pp.queueName:
-      self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
-    if self.pp.ceName:
-      self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
+    # these are needed as this is not the fist time we call dirac-configure
+    self.cfg.append( '-FDMH' )
+    self.cfg.append( '-O pilot.cfg' )
+    self.cfg.append( 'pilot.cfg' )
+
+    if self.debugFlag:
+      self.cfg.append( '-ddd' )
+    if self.pp.useServerCertificate:
+      self.cfg.append( '--UseServerCertificate' )
+
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+
+    if retCode:
+      self.log.error( "Could not configure DIRAC" )
+      sys.exit( 1 )
 
 
   def __setFlavour( self ):
@@ -575,27 +588,35 @@ class ConfigureSite( CommandBase ):
 
     self.pp.pilotReference = pilotRef
 
-  def __getCEName ( self ):
-
-    # FIXME: is this necessary at all?
+  def __getCEName( self ):
+    """ Try to get the CE name
+    """
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE',
+      retCode, CEName = self.executeAndGetOutput( 'glite-brokerinfo getCE',
                                                    self.pp.installEnv )
       if not retCode:
-        self.pp.ceName = self.CE.split( ':' )[0]
-        if len( self.CE.split( '/' ) ) > 1:
-          self.pp.queueName = self.CE.split( '/' )[1]
-      # configureOpts.append( '-N "%s"' % cliParams.ceName )
+        self.pp.ceName = CEName.split( ':' )[0]
+        if len( CEName.split( '/' ) ) > 1:
+          self.pp.queueName = CEName.split( '/' )[1]
       elif os.environ.has_key( 'OSG_JOB_CONTACT' ):
-    # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
-    #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
+        # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
+        #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
         CE = os.environ['OSG_JOB_CONTACT']
         self.pp.ceName = CE.split( '/' )[0]
         if len( CE.split( '/' ) ) > 1:
           self.pp.queueName = CE.split( '/' )[1]
       # configureOpts.append( '-N "%s"' % cliParams.ceName )
       else:
-        self.log.error( "There was an error executing brokerinfo. Setting ceName to local " )
+        # is it already present?
+        from DIRAC import gConfig
+        ceName = gConfig.getValue( 'LocalSite/GridCE', '' )
+        ceQueue = gConfig.getValue( 'LocalSite/CEQueue', '' )
+        if ceName and ceQueue:
+          self.pp.ceName = ceName
+          self.pp.queueName = ceQueue
+        else:
+          self.log.error( "Can't find ceName nor queue... have to fail!" )
+          sys.exit( 1 )
     elif self.pp.flavour == "CREAM":
       if os.environ.has_key( 'CE_ID' ):
         self.pp.ceName = os.environ['CE_ID'].split( ':' )[0]
@@ -634,33 +655,6 @@ class ConfigureSite( CommandBase ):
     if os.environ.has_key( 'OSG_APP' ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
-
-  def execute( self ):
-    """ What is called all the time
-    """
-
-    self.__setConfigureOptions()
-    self.__getCPURequirement()
-
-    # these are needed as this is not the fist time we call dirac-configure
-    self.cfg.append( '-FDMH' )
-    self.cfg.append( '-O pilot.cfg' )
-    self.cfg.append( 'pilot.cfg' )
-
-    if self.debugFlag:
-      self.cfg.append( '-ddd' )
-    if self.pp.useServerCertificate:
-      self.cfg.append( '--UseServerCertificate' )
-
-    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
-
-    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
-
-    if retCode:
-      self.log.error( "Could not configure DIRAC" )
-      sys.exit( 1 )
-
-
 
 
 class ConfigureArchitecture( CommandBase ):
@@ -764,6 +758,7 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
     self.inProcessOpts.append( '-o GridCE=%s' % self.pp.ceName )
     self.inProcessOpts.append( '-o LocalAccountString=%s' % localUser )
+    # FIXME: this is artificial
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
     self.inProcessOpts.append( '-o CPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
