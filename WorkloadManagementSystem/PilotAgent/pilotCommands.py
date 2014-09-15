@@ -825,7 +825,6 @@ class LaunchAgent( CommandBase ):
     fs = os.statvfs( self.pp.workingDir )
     diskSpace = fs[4] * fs[0] / 1024 / 1024
     self.log.info( 'DiskSpace (MB) = %s' % diskSpace )
-    sys.exit( 0 )
 
   def execute( self ):
     """ What is called all the time
@@ -833,3 +832,4 @@ class LaunchAgent( CommandBase ):
     self.__setInProcessOpts()
     self.__startJobAgent()
 
+    sys.exit( 0 )
