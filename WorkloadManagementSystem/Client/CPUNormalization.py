@@ -170,5 +170,3 @@ def getCPUTime( CPUNormalizationFactor ):
         CPUTime = int( cpuTimeInMinutes ) * 60
 
   return CPUTime
-
-

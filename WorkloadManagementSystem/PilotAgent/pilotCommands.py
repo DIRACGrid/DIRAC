@@ -724,13 +724,11 @@ class ConfigureCPURequirements( CommandBase ):
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
-    from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUTime
-    # seconds
-    cpuTime = getCPUTime( cpuNormalizationFactor )
-    self.log.info( "CPUTime left (in seconds) is %d" % cpuTime )
+    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time', self.pp.installEnv )
+    self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
-    self.pp.jobCPUReq = cpuTime * cpuNormalizationFactor
+    self.pp.jobCPUReq = float( cpuTime ) * float( cpuNormalizationFactor )
     self.log.info( "Queue length is %f" % self.pp.jobCPUReq )
 
 
