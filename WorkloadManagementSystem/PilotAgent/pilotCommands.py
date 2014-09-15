@@ -453,6 +453,8 @@ class ConfigureSite( CommandBase ):
   def execute( self ):
     """ Setup configuration parameters
     """
+    self.__setFlavour()
+    self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
     self.cfg.append( '-n "%s"' % self.pp.site )
 
@@ -469,12 +471,10 @@ class ConfigureSite( CommandBase ):
         self.cfg.append( '-s "%s"' % v )
 
 
-    self.__setFlavour()
-    self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
-
     if self.pp.pilotReference != 'Unknown':
       self.cfg.append( '-o /LocalSite/PilotReference=%s' % self.pp.pilotReference )
     # add options for BOINc
+    # FIXME: this should not be part of the standard configuration
     if self.boincUserID:
       self.cfg.append( '-o /LocalSite/BoincUserID=%s' % self.boincUserID )
     if self.boincHostID:
@@ -591,6 +591,7 @@ class ConfigureSite( CommandBase ):
   def __getCEName( self ):
     """ Try to get the CE name
     """
+    # FIXME: this should not be part of the standard configuration (flavours discriminations should stay out)
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       retCode, CEName = self.executeAndGetOutput( 'glite-brokerinfo getCE',
                                                    self.pp.installEnv )
