@@ -9,7 +9,7 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getQueueInfo
+from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
 from DIRAC import gConfig, S_OK, S_ERROR
 import os, random
 
@@ -98,7 +98,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   if reference not in UNITS:
     return S_ERROR( 'Unknown Normalization unit %s' % str( reference ) )
   try:
-    iter = max( min( int( iterations ), 10 ), 1 )
+    max( min( int( iterations ), 10 ), 1 )
   except ( TypeError, ValueError ), x :
     return S_ERROR( x )
 
@@ -115,7 +115,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
     if i == 1:
       start = os.times()
     # Now the iterations
-    for j in range( n ):
+    for _j in range( n ):
       t = random.normalvariate( 10, 1 )
       m += t
       m2 += t * t
