@@ -579,7 +579,8 @@ class ConfigureSite( CommandBase ):
 
     # FIXME: is this necessary at all?
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE', self.pp.installEnv )
+      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE',
+                                                   self.pp.installEnv )
       if not retCode:
         self.pp.ceName = self.CE.split( ':' )[0]
         if len( self.CE.split( '/' ) ) > 1:
@@ -633,48 +634,6 @@ class ConfigureSite( CommandBase ):
     if os.environ.has_key( 'OSG_APP' ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
-
-  def __getCPURequirement( self ):
-    """ Get job CPU requirement and queue normalization """
-
-    # FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
-    # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
-    # as explained in the RFC
-
-    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.log.info( 'CE = %s' % self.CE )
-      self.log.info( 'LCG_SITE_CE = %s' % self.pp.ceName )
-
-      retCode, queueNormList = self.executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % self.CE, self.pp.installEnv )
-      if not retCode:
-        queueNormList = queueNormList.strip().split( ' ' )
-        if len( queueNormList ) == 2:
-          queueNorm = float( queueNormList[1] )
-          self.log.info( 'Queue Normalization = %s SI00' % queueNorm )
-          if queueNorm:
-            # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
-            # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-            self.cfg.append( '/LocalSite/CPUScalingFactor=%s' % queueNorm / 250. )
-            self.cfg.append( '/LocalSite/PUNormalizationFactor=%s' % queueNorm / 250. )
-        else:
-          self.log.error( 'Fail to get Normalization of the Queue' )
-      else:
-        self.log.error( "There was an error calling dirac-wms-get-queue-normalization" )
-
-      retCode, queueLength = self.executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % self.CE, self.pp.installEnv )
-      if not retCode:
-        queueLength = queueLength.strip().split( ' ' )
-        if len( queueLength ) == 2:
-          self.pp.jobCPUReq = float( queueLength[1] )
-          self.log.info( 'Normalized Queue Length = %s' % self.pp.jobCPUReq )
-        else:
-          self.log.error( 'Failed to get Normalized length of the Queue' )
-      else:
-        self.log.error( "There was an error calling dirac-wms-get-normalized-queue-length" )
-
-      # Instead of using the Average reported by the Site, determine a Normalization
-      # FIXME: do not use os.system...
-      # os.system( "dirac-wms-cpu-normalization -U" )
 
   def execute( self ):
     """ What is called all the time
@@ -744,6 +703,37 @@ class ConfigureArchitecture( CommandBase ):
     self.log.error( "There was an error updating the platform" )
     sys.exit( 1 )
 
+
+class ConfigureCPURequirements( CommandBase ):
+  """ This command determines the CPU requirements. Needs to be executed after ConfigureSite
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ConfigureCPURequirements, self ).__init__( pilotParams )
+
+  def execute( self ):
+    """ Get job CPU requirement and queue normalization
+    """
+    # Determining the CPU normalization factor and updating pilot.cfg with it
+    retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U -R pilot.cfg',
+                                                                      self.pp.installEnv )
+    if retCode:
+      self.log.error( "Failed to determine cpu normalization" )
+      sys.exit( 1 )
+
+    # HS06 benchmark
+    cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
+    self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
+
+    from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUTime
+    cpuTime = getCPUTime( cpuNormalizationFactor )
+    self.log.info( "CPUTime left (in seconds) is %d" % cpuTime )
+
+    # HS06s = seconds * HS06
+    self.pp.jobCPUReq = cpuTime * cpuNormalizationFactor
+    self.log.info( "Queue length is %f" % self.pp.jobCPUReq )
 
 
 class LaunchAgent( CommandBase ):

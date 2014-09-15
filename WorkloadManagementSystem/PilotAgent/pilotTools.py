@@ -281,7 +281,7 @@ class PilotParams:
     self.dryRun = False
     self.commandExtensions = []
     self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
-                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture',
+                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
     self.site = ""
