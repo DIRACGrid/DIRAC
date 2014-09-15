@@ -326,7 +326,6 @@ class PilotParams:
                      ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
                      ( 'l:', 'project=', 'Project to install' ),
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
-                     ( 'y', 'test', 'Make a dry run. Do not run JobAgent' ),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
                      ( 'r:', 'release=', 'DIRAC release to install' ),
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
