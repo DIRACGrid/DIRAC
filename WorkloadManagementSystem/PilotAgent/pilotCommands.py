@@ -676,6 +676,8 @@ class ConfigureArchitecture( CommandBase ):
 
   def execute( self ):
     """ This is a simple command to call the dirac-platform utility to get the platform, and add it to the configuration
+
+        The architecture script, as well as its options can be replaced in a pilot extension
     """
 
     architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( self.archScriptCFG ) )
@@ -728,6 +730,7 @@ class ConfigureCPURequirements( CommandBase ):
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
     from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUTime
+    # seconds
     cpuTime = getCPUTime( cpuNormalizationFactor )
     self.log.info( "CPUTime left (in seconds) is %d" % cpuTime )
 
