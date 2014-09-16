@@ -427,7 +427,7 @@ class MonitoringClient(object):
           break
       for row in tabledData:
         sortingData.append( ( row[ fieldIndex ], row ) )
-      sortingData.sort()
+      sortingData.sort( key = lambda x: x[0] )
       if sortDirection == "DESC":
         sortingData.reverse()
       tabledData = [ row[1] for row in sortingData ]
