@@ -86,7 +86,6 @@ class JobAgent( AgentModule ):
     #Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
-    self.gridCEQueue = gConfig.getValue( '/Resources/Computing/CEDefaults/GridCEQueue', '' )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
     self.pilotInfoReportedFlag = False
@@ -239,8 +238,6 @@ class JobAgent( AgentModule ):
     try:
       jobReport = JobReport( jobID, 'JobAgent@%s' % self.siteName )
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
-      if self.gridCEQueue:
-        jobReport.setJobParameter( 'GridCEQueue', self.gridCEQueue, sendFlag = False )
 
       if os.environ.has_key( 'BOINC_JOB_ID' ):
         # Report BOINC environment

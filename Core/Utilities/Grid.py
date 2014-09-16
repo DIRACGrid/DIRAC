@@ -280,32 +280,142 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 
   return S_OK( views )
 
-def ldapSA( site, vo, attr = None, host = None ):
-  """ CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
+def ldapSE( site, vo, attr = None, host = None ):
+  """ SE/SA information from bdii.
 
-:param  ce: ce or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
-:return: standard DIRAC answer with Value equals to list of ceVOViews.
+:param  site: site with globing, for example, "ce0?.tier2.hep.manchester*" or just "*"
+:param  vo: VO name with globing, "*" if all VOs
+:return: standard DIRAC answer with Value equals to list of SE/SA merged items.
 
-Each ceVOView is dictionary which contains attributes of ce.
-For example result['Value'][0]['GlueCEStateRunningJobs']
+Each SE is dictionary which contains attributes of SE and corresponding SA.
+For example result['Value'][0]['GlueSESizeFree']
   """
-
-  filt = '(&(GlueSEUniqueID=*)(GlueForeignKey=GlueSiteUniqueID=%s))' % ( site )
+  voFilters = '(GlueSAAccessControlBaseRule=VOMS:/%s/*)' % vo
+  voFilters += '(GlueSAAccessControlBaseRule=VOMS:/%s)' % vo
+  voFilters += '(GlueSAAccessControlBaseRule=VO:%s)' % vo
+  filt = '(&(objectClass=GlueSA)(|%s))' % voFilters
   result = ldapsearchBDII( filt, attr, host )
+  if not result['OK']:
+    return result
+  sas = result['Value']
 
+  saDict = {}
+
+  seIDFilter = ''
+  for sa in sas:
+    chunk = sa['attr'].get('GlueChunkKey','')
+    if chunk:
+      seID = sa['attr']['GlueChunkKey'].replace('GlueSEUniqueID=','')
+      saDict[seID] = sa['attr']
+      seIDFilter += '(GlueSEUniqueID=%s)' % seID
+
+  if vo == "*":
+    filt = '(&(objectClass=GlueSE)(GlueForeignKey=GlueSiteUniqueID=%s))' % site
+  else:
+    filt = '(&(objectClass=GlueSE)(|%s)(GlueForeignKey=GlueSiteUniqueID=%s))' % ( seIDFilter, site )
+  result = ldapsearchBDII( filt, attr, host )
+  if not result['OK']:
+    return result
+  ses = result['Value']
+
+  seDict = {}
+  for se in ses:
+    seID = se['attr']['GlueSEUniqueID']
+    seDict[seID] = se['attr']
+    siteName = se['attr']['GlueForeignKey'].replace('GlueSiteUniqueID=','')
+    seDict[seID]['GlueSiteUniqueID'] = siteName
+    if seID in saDict:
+      seDict[seID].update( saDict[seID] )
+
+  seList = seDict.values()
+  return S_OK( seList )
+
+def getBdiiCEInfo( vo, host = None ):
+  """ Get information for all the CEs/queues for a given VO
+  
+:param vo: BDII VO name
+:return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
+               each siteID, ceID, queueName all the BDII/Glue parameters are retrieved  
+  """  
+  result = ldapCEState( '', vo, host = host )
   if not result['OK']:
     return result
 
+  siteDict = {}
+  ceDict = {}
+  queueDict = {}
+  
+  for queue in result['Value']:
+    ceID = queue.get('GlueForeignKey','').replace('GlueClusterUniqueID=','')
+    queueDict[queue['GlueCEUniqueID']] = queue
+    queueDict[queue['GlueCEUniqueID']]['CE'] = ceID
+    if not ceID in ceDict:
+      result = ldapCluster( ceID, host = host )
+      if not result['OK']:
+        print "ldapCluster: failed to get info for CE", ceID
+        continue
+  
+      ce = result['Value'][0]
+      ceDict[ceID] = ce
+  
+      fKey = ce['GlueForeignKey']
+      siteID = ''
+      for key in fKey:
+        if key.startswith('GlueSiteUniqueID'):
+          siteID = key.replace('GlueSiteUniqueID=','')
+      ceDict[ceID]['Site'] = siteID
+  
+      result = ldapCE( ceID, host = host )
+      if not result['OK']:
+        print "ldapCE: failed to get info for CE", ceID
+        continue
+  
+      ce = result['Value'][0]
+      ceDict[ceID].update( ce )
+  
+      if not siteID in siteDict:
+        site = {}
+        result = ldapSite( siteID, host = host )
+        if not result['OK']:
+          print "ldapSite: failed to get info for site", siteID
+        elif not result['Value']:
+          print "ldapSite: site %s not found" % siteID
+        else:
+          site = result['Value'][0]
+        siteDict[siteID] = site
+  
+  for ceID in ceDict:
+    siteID = ceDict[ceID]['Site']
+    siteDict[siteID].setdefault('CEs',{})
+    siteDict[siteID]['CEs'][ceID] = ceDict[ceID]
+  
+  for queueID in queueDict:
+    ceID = queueDict[queueID]['CE']
+    siteID = ceDict[ceID]['Site']
+    siteDict[siteID]['CEs'][ceID].setdefault('Queues',{})
+    queueName = queueDict[queueID]['GlueCEUniqueID'].replace('%s:8443/' % ceID,'')
+    siteDict[siteID]['CEs'][ceID]['Queues'][queueName] = queueDict[queueID]
+    
+  return S_OK( siteDict )  
+
+def getBdiiSEInfo( vo, host = None ):
+  """ Get information for all the SEs for a given VO
+
+:param vo: BDII VO name
+:return result structure: result['Value'][siteID]['SEs'][seID]. For
+               each siteID, seIDall the BDII/Glue SE/SA parameters are retrieved
+  """
+  result = ldapSE( '*', vo, host = host )
+  if not result['OK']:
+    return result
   ses = result['Value']
 
-  filt = 'GlueSALocalID=%s' % vo
-  sas = []
-
+  siteDict = {}
+  seDict = {}
   for se in ses:
-    dn = se['dn']
-    result = ldapsearchBDII( filt, attr, host, base = dn )
-    if result['OK']:
-      if result['Value']:
-        sas.append( result['Value'][0]['attr'] )
+    siteName = se['GlueSiteUniqueID']
+    siteDict.setdefault( siteName, { "SEs": {} } )
+    seID = se['GlueSEUniqueID']
+    siteDict[siteName]["SEs"][seID] = se
 
-  return S_OK( sas )
+  return S_OK( siteDict )

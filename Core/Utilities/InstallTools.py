@@ -2209,112 +2209,95 @@ def installDatabase( dbName ):
     return S_ERROR( error )
 
   dbFile = dbFile[0]
+  
+  # just check
+  result = execMySQL( 'SHOW STATUS' )
+  if not result['OK']:
+    error = 'Could not connect to MySQL server'
+    gLogger.error( error )
+    if exitOnError:
+      DIRAC.exit( -1 )
+    return S_ERROR( error )
 
+  # now creating the Database
+  result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
+  if not result['OK']:
+    gLogger.error( result['Message'] )
+    if exitOnError:
+      DIRAC.exit( -1 )
+    return result
+
+  perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
+  for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
+                                                                              mysqlPassword ),
+              "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
+                                                                       mysqlHost, mysqlPassword ),
+              "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
+                                                                       mysqlPassword ) ]:
+    result = execMySQL( cmd )
+    if not result['OK']:
+      error = "Error executing '%s'" % cmd
+      gLogger.error( error, result['Message'] )
+      if exitOnError:
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
+  result = execMySQL( 'FLUSH PRIVILEGES' )
+  if not result['OK']:
+    gLogger.error( result['Message'] )
+    if exitOnError:
+      exit( -1 )
+    return result
+
+  # first getting the lines to be executed, and then execute them
   try:
-    fd = open( dbFile )
-    dbLines = fd.readlines()
-    fd.close()
-    dbAdded = False
-    cmdLines = []
-    for line in dbLines:
-      if line.lower().find( ( 'use %s;' % dbName ).lower() ) > -1:
-        result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
-        if not result['OK']:
-          gLogger.error( result['Message'] )
-          if exitOnError:
-            DIRAC.exit( -1 )
-          return result
+    cmdLines = _createMySQLCMDLines( dbFile )
 
-        result = execMySQL( 'SHOW STATUS' )
-        if not result['OK']:
-          error = 'Could not connect to MySQL server'
-          gLogger.error( error )
-          if exitOnError:
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
-        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
-        for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
-                                                                                       mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
-                                                                                mysqlHost, mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
-                                                                                mysqlPassword ),
-                    ]:
-          result = execMySQL( cmd )
-          if not result['OK']:
-            error = 'Error setting MySQL permissions'
-            gLogger.error( error, result['Message'] )
-            if exitOnError:
-              DIRAC.exit( -1 )
-            return S_ERROR( error )
-        dbAdded = True
-        result = execMySQL( 'FLUSH PRIVILEGES' )
-        if not result['OK']:
-          gLogger.error( result['Message'] )
-          if exitOnError:
-            exit( -1 )
-          return result
-
-      elif dbAdded:
-        if line.strip():
-          cmdLines.append( line.strip() )
-        if line.strip() and line.strip()[-1] == ';':
-          result = execMySQL( '\n'.join( cmdLines ), dbName )
-          if not result['OK']:
-            error = 'Failed to initialize Database'
-            gLogger.notice( '\n'.join( cmdLines ) )
-            gLogger.error( error, result['Message'] )
-            if exitOnError:
-              DIRAC.exit( -1 )
-            return S_ERROR( error )
-          cmdLines = []
-
-    # last line might not have the last ";"
-    if cmdLines:
-      cmd = '\n'.join( cmdLines )
-      if cmd.lower().find( 'source' ) == 0:
-        try:
-          dbFile = cmd.split()[1]
-          dbFile = os.path.join( rootPath, dbFile )
-          fd = open( dbFile )
-          dbLines = fd.readlines()
-          fd.close()
-          cmdLines = []
-          for line in dbLines:
-            if line.strip():
-              cmdLines.append( line.strip() )
-            if line.strip() and line.strip()[-1] == ';':
-              result = execMySQL( '\n'.join( cmdLines ), dbName )
-              if not result['OK']:
-                error = 'Failed to initialize Database'
-                gLogger.notice( '\n'.join( cmdLines ) )
-                gLogger.error( error, result['Message'] )
-                if exitOnError:
-                  DIRAC.exit( -1 )
-                return S_ERROR( error )
-              cmdLines = []
-        except Exception:
-          error = 'Failed to %s' % cmd
-          gLogger.exception( error )
-          if exitOnError:
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
-
-    if not dbAdded:
-      error = 'Missing "use %s;"' % dbName
-      gLogger.error( error )
+    result = execMySQL( '\n'.join( cmdLines ), dbName )
+    if not result['OK']:
+      error = 'Failed to initialize Database'
+      gLogger.notice( '\n'.join( cmdLines ) )
+      gLogger.error( error, result['Message'] )
       if exitOnError:
         DIRAC.exit( -1 )
       return S_ERROR( error )
 
-  except Exception:
-    error = 'Failed to create Database'
-    gLogger.exception( error )
+  except Exception, e:
+    gLogger.error( str( e ) )
     if exitOnError:
       DIRAC.exit( -1 )
     return S_ERROR( error )
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
+
+def _createMySQLCMDLines( dbFile ):
+  """ Creates a list of MYSQL commands to be executed, inspecting the dbFile(s)
+  """
+
+  cmdLines = []
+
+  fd = open( dbFile )
+  dbLines = fd.readlines()
+  fd.close()
+
+  for line in dbLines:
+    # Should we first source an SQL file (is this sql file an extension)?
+    if 'source' in line.lower():
+      sourcedDBbFileName = line.split( ' ' )[1].replace( '\n', '' )
+      gLogger.info( "Found file to source: %s" % sourcedDBbFileName )
+      sourcedDBbFile = os.path.join( rootPath, sourcedDBbFileName )
+      fdSourced = open( sourcedDBbFile )
+      dbLinesSourced = fdSourced.readlines()
+      fdSourced.close()
+      for lineSourced in dbLinesSourced:
+        if lineSourced.strip():
+          cmdLines.append( lineSourced.strip() )
+
+    # Creating/adding cmdLines
+    else:
+      if line.strip():
+        cmdLines.append( line.strip() )
+
+  return cmdLines
 
 def execMySQL( cmd, dbName = 'mysql', localhost=False ):
   """

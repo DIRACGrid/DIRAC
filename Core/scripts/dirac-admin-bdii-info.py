@@ -28,7 +28,7 @@ def registerSwitches():
                                      'Arguments:',
                                      '  Site:     Name of the Site (i.e. CERN-PROD)',
                                      '  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)',
-                                     '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site|site-sa)' ] ) )
+                                     '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site|site-se)' ] ) )
 
 
 def parseSwitches():
@@ -58,7 +58,7 @@ def parseSwitches():
 
   if params['info'] in ['ce', 'ce-state', 'ce-cluster', 'ce-vo']:
     params['ce'] = args[1]
-  elif params['info']in ['site', 'site-sa']:
+  elif params['info']in ['site', 'site-se']:
     params['site'] = args[1]
   else:
     Script.gLogger.error( 'Wrong argument value' )
@@ -91,8 +91,8 @@ def getInfo( params ):
     result = diracAdmin.getBDIICEVOView( params['ce'], useVO = params['vo'], host = params['host'] )
   if params['info'] == 'site':
     result = diracAdmin.getBDIISite( params['site'], host = params['host'] )
-  if params['info'] == 'site-sa':
-    result = diracAdmin.getBDIISA( params['site'], useVO = params['vo'], host = params['host'] )
+  if params['info'] == 'site-se':
+    result = diracAdmin.getBDIISE( params['site'], useVO = params['vo'], host = params['host'] )
  
   if not result['OK']:
     print result['Message']
@@ -110,25 +110,25 @@ def showInfo( result, info ):
 
   for element in elements:
     if info == 'ce' or info == 'all':
-      print "CE: %s {" % element.get( 'GlueSubClusterName', 'Unknown' )
+      print "CE: %s \n{" % element.get( 'GlueSubClusterName', 'Unknown' )
 
     if info == 'ce-state' or info == 'all':
-      print "CE: %s {" % element.get( 'GlueCEUniqueID', 'Unknown' )
+      print "CE: %s \n{" % element.get( 'GlueCEUniqueID', 'Unknown' )
 
     if info == 'ce-cluster' or info == 'all':
-      print "Cluster: %s {" % element.get( 'GlueClusterName', 'Unknown' )
+      print "Cluster: %s \n{" % element.get( 'GlueClusterName', 'Unknown' )
 
     if info == 'ce-vo' or info == 'all':
-      print "CEVOView: %s {" % element.get( 'GlueChunkKey', 'Unknown' )  
+      print "CEVOView: %s \n{" % element.get( 'GlueChunkKey', 'Unknown' )  
 
     if info == 'site' or info == 'all':
-      print "Site: %s {" % element.get( 'GlueSiteName', 'Unknown' )
+      print "Site: %s \n{" % element.get( 'GlueSiteName', 'Unknown' )
 
-    if info == 'site-sa' or info == 'all':
-      print "SA: %s {" % element.get( 'GlueChunkKey', 'Unknown' )
+    if info == 'site-se' or info == 'all':
+      print "SE: %s \n{" % element.get( 'GlueSEUniqueID', 'Unknown' )
 
     for item in element.iteritems():
-      print "%s: %s" % item
+      print "  %s: %s" % item
     print "}"
 
 

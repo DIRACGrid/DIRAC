@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre13]
+[v6r12-pre14]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -120,7 +120,9 @@ NEW: dirac-configure - added --SkipVOMSDownload switch, added --Output switch
 CHANGE: ProcessPool - exit from the working process if a task execution timed out  
 NEW: ProcessMonitor - added evaluation of the memory consumed by a process and its children   
 NEW: InstallTools - added flag to require MySQL installation
+FIX: InstallTools - correctly installing DBs extended (with sql to be sourced) 
 CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
+NEW: Grid.py - ldapSA replaced by ldapSE, added getBdiiSE(CE)Info() methods
 
 *Accounting
 NEW: Allow to have more than one DB for accounting

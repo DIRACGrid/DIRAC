@@ -17,7 +17,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManag
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
-from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
+from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSE
 from DIRAC.ResourceStatusSystem.Client.SiteStatus             import SiteStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient   import ResourceStatusClient
 
@@ -1137,10 +1137,10 @@ class DiracAdmin( API ):
     return ldapCEVOView( ce, useVO, host = host )
 
   #############################################################################
-  def getBDIISA( self, site, useVO = voName, host = None ):
+  def getBDIISE( self, site, useVO = voName, host = None ):
     """
     Get information about SA  from BDII at host
     """
-    return ldapSA( site, useVO, host = host )
+    return ldapSE( site, useVO, host = host )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
