@@ -1,11 +1,2 @@
-DROP DATABASE IF EXISTS FTSDB;
-CREATE DATABASE FTSDB;
-
---
--- Must set passwords for database user by replacing "must_be_set".
---
-use mysql;
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW,SHOW VIEW ON FTSDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW,SHOW VIEW ON FTSDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
-
+# Everything is created by the DB object upon instantiation if it does not exists.
 USE FTSDB;
