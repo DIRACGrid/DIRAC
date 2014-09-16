@@ -177,8 +177,6 @@ class PilotDirector( object ):
       reload from CS
     """
     self.pilot = gConfig.getValue( mySection + '/PilotScript'          , self.pilot )
-    #TODO: Remove this DIRACVersion after 06/2012
-    self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
     self.installVersion = gConfig.getValue( mySection + '/Version'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
@@ -374,14 +372,14 @@ class PilotDirector( object ):
 
     return S_OK( ( pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) )
 
-  def _submitPilot( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
-                    ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
+  def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
+                     ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """
       This method must be implemented on the Backend specific derived class.
       This is problem with the Director, not with the Job so we must return S_OK
       Return S_ERROR if not defined.
     """
-    self.log.error( '_submitPilot method not implemented' )
+    self.log.error( '_submitPilots method not implemented' )
     return S_OK()
 
   def _listMatch( self, proxy, jdl, taskQueueID, rb ):
@@ -422,10 +420,10 @@ class PilotDirector( object ):
         return S_ERROR( ERROR_PROXY )
       proxy = ret['Value']
       # Now call a Grid Specific method to handle the final submission of the pilots
-      return self._submitPilot( workDir, taskQueueDict, pilotOptions,
-                                pilotsToSubmit, ceMask,
-                                submitPrivatePilot, privateTQ,
-                                proxy, pilotsPerJob )
+      return self._submitPilots( workDir, taskQueueDict, pilotOptions,
+                                 pilotsToSubmit, ceMask,
+                                 submitPrivatePilot, privateTQ,
+                                 proxy, pilotsPerJob )
 
     except Exception:
       self.log.exception( 'Error in Pilot Submission' )

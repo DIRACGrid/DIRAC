@@ -111,7 +111,6 @@ class GridPilotDirector( PilotDirector ):
     self.rank = gConfig.getValue( mySection + '/Rank'                 , self.rank )
     self.fuzzyRank = gConfig.getValue( mySection + '/FuzzyRank'            , self.fuzzyRank )
 
-  # FIXME: this should be called _submitPilot not _submitPilots....
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """

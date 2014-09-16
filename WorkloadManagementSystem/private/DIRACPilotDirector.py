@@ -120,7 +120,7 @@ class DIRACPilotDirector(PilotDirector):
         self.computingElementDict[CE]['CE'] = ceInstance['Value']
 
 
-  def _submitPilot( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
+  def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """
       This method does the actual pilot submission to the DIRAC CE
