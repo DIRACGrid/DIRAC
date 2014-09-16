@@ -125,6 +125,7 @@ class DowntimeCommand( Command ):
       element, elementNames = masterParams
       hours = None
       elementName = None
+      gocdbServiceType = None
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
