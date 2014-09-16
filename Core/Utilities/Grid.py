@@ -329,14 +329,14 @@ For example result['Value'][0]['GlueSESizeFree']
   seList = seDict.values()
   return S_OK( seList )
 
-def getBdiiCEInfo( vo ):
+def getBdiiCEInfo( vo, host = None ):
   """ Get information for all the CEs/queues for a given VO
   
 :param vo: BDII VO name
 :return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
                each siteID, ceID, queueName all the BDII/Glue parameters are retrieved  
   """  
-  result = ldapCEState( '', vo )
+  result = ldapCEState( '', vo, host = host )
   if not result['OK']:
     return result
 
@@ -349,7 +349,7 @@ def getBdiiCEInfo( vo ):
     queueDict[queue['GlueCEUniqueID']] = queue
     queueDict[queue['GlueCEUniqueID']]['CE'] = ceID
     if not ceID in ceDict:
-      result = ldapCluster( ceID )
+      result = ldapCluster( ceID, host = host )
       if not result['OK']:
         print "ldapCluster: failed to get info for CE", ceID
         continue
@@ -364,7 +364,7 @@ def getBdiiCEInfo( vo ):
           siteID = key.replace('GlueSiteUniqueID=','')
       ceDict[ceID]['Site'] = siteID
   
-      result = ldapCE( ceID )
+      result = ldapCE( ceID, host = host )
       if not result['OK']:
         print "ldapCE: failed to get info for CE", ceID
         continue
@@ -374,7 +374,7 @@ def getBdiiCEInfo( vo ):
   
       if not siteID in siteDict:
         site = {}
-        result = ldapSite( siteID )
+        result = ldapSite( siteID, host = host )
         if not result['OK']:
           print "ldapSite: failed to get info for site", siteID
         elif not result['Value']:
@@ -397,14 +397,14 @@ def getBdiiCEInfo( vo ):
     
   return S_OK( siteDict )  
 
-def getBdiiSEInfo( vo ):
+def getBdiiSEInfo( vo, host = None ):
   """ Get information for all the SEs for a given VO
 
 :param vo: BDII VO name
 :return result structure: result['Value'][siteID]['SEs'][seID]. For
                each siteID, seIDall the BDII/Glue SE/SA parameters are retrieved
   """
-  result = ldapSE( '*', vo )
+  result = ldapSE( '*', vo, host = host )
   if not result['OK']:
     return result
   ses = result['Value']
