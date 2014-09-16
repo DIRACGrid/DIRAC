@@ -444,21 +444,25 @@ class ConfigureSite( CommandBase ):
 
     # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
     self.cfg = []
-    self.CE = ""
 
     self.boincUserID = ''
     self.boincHostID = ''
     self.boincHostPlatform = ''
     self.boincHostName = ''
 
-  def __setConfigureOptions( self ):
+  def execute( self ):
     """ Setup configuration parameters
     """
+    self.__setFlavour()
+    self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
-    if self.pp.site:
-      self.cfg.append( '-n "%s"' % self.pp.site )
-    if self.pp.ceName:
-      self.cfg.append( '-N "%s"' % self.pp.ceName )
+    self.cfg.append( '-n "%s"' % self.pp.site )
+
+    if not self.pp.ceName or not self.pp.queueName:
+      self.__getCEName()
+    self.cfg.append( '-N "%s"' % self.pp.ceName )
+    self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
+    self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
@@ -467,12 +471,10 @@ class ConfigureSite( CommandBase ):
         self.cfg.append( '-s "%s"' % v )
 
 
-    self.__setFlavour()
-    self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
-
     if self.pp.pilotReference != 'Unknown':
       self.cfg.append( '-o /LocalSite/PilotReference=%s' % self.pp.pilotReference )
     # add options for BOINc
+    # FIXME: this should not be part of the standard configuration
     if self.boincUserID:
       self.cfg.append( '-o /LocalSite/BoincUserID=%s' % self.boincUserID )
     if self.boincHostID:
@@ -482,12 +484,23 @@ class ConfigureSite( CommandBase ):
     if self.boincHostName:
       self.cfg.append( '-o /LocalSite/BoincHostName=%s' % self.boincHostName )
 
-    self.__getCEName()
-    self.cfg.append( '-N "%s"' % self.pp.ceName )
-    if self.pp.queueName:
-      self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
-    if self.pp.ceName:
-      self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
+    # these are needed as this is not the fist time we call dirac-configure
+    self.cfg.append( '-FDMH' )
+    self.cfg.append( '-O pilot.cfg' )
+    self.cfg.append( 'pilot.cfg' )
+
+    if self.debugFlag:
+      self.cfg.append( '-ddd' )
+    if self.pp.useServerCertificate:
+      self.cfg.append( '--UseServerCertificate' )
+
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+
+    if retCode:
+      self.log.error( "Could not configure DIRAC" )
+      sys.exit( 1 )
 
 
   def __setFlavour( self ):
@@ -575,31 +588,41 @@ class ConfigureSite( CommandBase ):
 
     self.pp.pilotReference = pilotRef
 
-  def __getCEName ( self ):
-
-    # FIXME: is this necessary at all?
+  def __getCEName( self ):
+    """ Try to get the CE name
+    """
+    # FIXME: this should not be part of the standard configuration (flavours discriminations should stay out)
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      retCode, self.CE = self.executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE', self.pp.installEnv )
+      retCode, CEName = self.executeAndGetOutput( 'glite-brokerinfo getCE',
+                                                   self.pp.installEnv )
       if not retCode:
-        self.pp.ceName = self.CE.split( ':' )[0]
-        if len( self.CE.split( '/' ) ) > 1:
-          self.pp.queueName = self.CE.split( '/' )[1]
-      # configureOpts.append( '-N "%s"' % cliParams.ceName )
+        self.pp.ceName = CEName.split( ':' )[0]
+        if len( CEName.split( '/' ) ) > 1:
+          self.pp.queueName = CEName.split( '/' )[1]
       elif os.environ.has_key( 'OSG_JOB_CONTACT' ):
-    # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
-    #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
+        # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
+        #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
         CE = os.environ['OSG_JOB_CONTACT']
         self.pp.ceName = CE.split( '/' )[0]
         if len( CE.split( '/' ) ) > 1:
-          self.queueName = CE.split( '/' )[1]
+          self.pp.queueName = CE.split( '/' )[1]
       # configureOpts.append( '-N "%s"' % cliParams.ceName )
       else:
-        self.log.error( "There was an error executing brokerinfo. Setting ceName to local " )
+        # is it already present?
+        from DIRAC import gConfig
+        ceName = gConfig.getValue( 'LocalSite/GridCE', '' )
+        ceQueue = gConfig.getValue( 'LocalSite/CEQueue', '' )
+        if ceName and ceQueue:
+          self.pp.ceName = ceName
+          self.pp.queueName = ceQueue
+        else:
+          self.log.error( "Can't find ceName nor queue... have to fail!" )
+          sys.exit( 1 )
     elif self.pp.flavour == "CREAM":
       if os.environ.has_key( 'CE_ID' ):
         self.pp.ceName = os.environ['CE_ID'].split( ':' )[0]
         if os.environ['CE_ID'].count( "/" ):
-          self.queueName = os.environ['CE_ID'].split( '/' )[1]
+          self.pp.queueName = os.environ['CE_ID'].split( '/' )[1]
 
 
 
@@ -634,75 +657,6 @@ class ConfigureSite( CommandBase ):
     # Try to define it here although this will be only in the local shell environment
       os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
 
-  def __getCPURequirement( self ):
-    """ Get job CPU requirement and queue normalization """
-
-    # FIXME: this can disappear, in favor of just calling dirac-wms-cpu-normalization, maybe in a separate command
-    # Also all this distinctions on the flavour should be dropped from here, and put instead in the configuration,
-    # as explained in the RFC
-
-    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.log.info( 'CE = %s' % self.CE )
-      self.log.info( 'LCG_SITE_CE = %s' % self.pp.ceName )
-
-      retCode, queueNormList = self.executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % self.CE, self.pp.installEnv )
-      if not retCode:
-        queueNormList = queueNormList.strip().split( ' ' )
-        if len( queueNormList ) == 2:
-          queueNorm = float( queueNormList[1] )
-          self.log.info( 'Queue Normalization = %s SI00' % queueNorm )
-          if queueNorm:
-            # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
-            # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-            self.cfg.append( '/LocalSite/CPUScalingFactor=%s' % queueNorm / 250. )
-            self.cfg.append( '/LocalSite/PUNormalizationFactor=%s' % queueNorm / 250. )
-        else:
-          self.log.error( 'Fail to get Normalization of the Queue' )
-      else:
-        self.log.error( "There was an error calling dirac-wms-get-queue-normalization" )
-
-      retCode, queueLength = self.executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % self.CE, self.pp.installEnv )
-      if not retCode:
-        queueLength = queueLength.strip().split( ' ' )
-        if len( queueLength ) == 2:
-          self.pp.jobCPUReq = float( queueLength[1] )
-          self.log.info( 'Normalized Queue Length = %s' % self.pp.jobCPUReq )
-        else:
-          self.log.error( 'Failed to get Normalized length of the Queue' )
-      else:
-        self.log.error( "There was an error calling dirac-wms-get-normalized-queue-length" )
-
-      # Instead of using the Average reported by the Site, determine a Normalization
-      # FIXME: do not use os.system...
-      # os.system( "dirac-wms-cpu-normalization -U" )
-
-  def execute( self ):
-    """ What is called all the time
-    """
-
-    self.__setConfigureOptions()
-    self.__getCPURequirement()
-
-    # these are needed as this is not the fist time we call dirac-configure
-    self.cfg.append( '-FDMH' )
-    self.cfg.append( '-O pilot.cfg' )
-    self.cfg.append( 'pilot.cfg' )
-
-    if self.debugFlag:
-      self.cfg.append( '-ddd' )
-    if self.pp.useServerCertificate:
-      self.cfg.append( '--UseServerCertificate' )
-
-    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
-
-    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
-
-    if retCode:
-      self.log.error( "Could not configure DIRAC" )
-      sys.exit( 1 )
-
-
-
 
 class ConfigureArchitecture( CommandBase ):
   """ This command simply calls dirac-platfom to determine the platform.
@@ -717,6 +671,8 @@ class ConfigureArchitecture( CommandBase ):
 
   def execute( self ):
     """ This is a simple command to call the dirac-platform utility to get the platform, and add it to the configuration
+
+        The architecture script, as well as its options can be replaced in a pilot extension
     """
 
     architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( self.archScriptCFG ) )
@@ -734,7 +690,7 @@ class ConfigureArchitecture( CommandBase ):
 
       # real options added here
       localArchitecture = localArchitecture.strip()
-      cfg.append( '/LocalSite/Architecture=%s' % localArchitecture )
+      cfg.append( '-o /LocalSite/Architecture=%s' % localArchitecture )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
@@ -744,6 +700,36 @@ class ConfigureArchitecture( CommandBase ):
     self.log.error( "There was an error updating the platform" )
     sys.exit( 1 )
 
+
+class ConfigureCPURequirements( CommandBase ):
+  """ This command determines the CPU requirements. Needs to be executed after ConfigureSite
+  """
+
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( ConfigureCPURequirements, self ).__init__( pilotParams )
+
+  def execute( self ):
+    """ Get job CPU requirement and queue normalization
+    """
+    # Determining the CPU normalization factor and updating pilot.cfg with it
+    retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U -R pilot.cfg',
+                                                                      self.pp.installEnv )
+    if retCode:
+      self.log.error( "Failed to determine cpu normalization" )
+      sys.exit( 1 )
+
+    # HS06 benchmark
+    cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
+    self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
+
+    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time', self.pp.installEnv )
+    self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
+
+    # HS06s = seconds * HS06
+    self.pp.jobCPUReq = float( cpuTime ) * float( cpuNormalizationFactor )
+    self.log.info( "Queue length is %f" % self.pp.jobCPUReq )
 
 
 class LaunchAgent( CommandBase ):
@@ -770,9 +756,8 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
     self.inProcessOpts.append( '-o GridCE=%s' % self.pp.ceName )
-    if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
-      self.inProcessOpts.append( '-o GridCEQueue=%s' % self.pp.CE )
     self.inProcessOpts.append( '-o LocalAccountString=%s' % localUser )
+    # FIXME: this is artificial
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
     self.inProcessOpts.append( '-o CPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
@@ -830,16 +815,14 @@ class LaunchAgent( CommandBase ):
                                                              " ".join( extraCFG ) )
 
 
-    if not self.pp.dryRun:
-      retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
-      if retCode:
-        self.log.error( "Could not start the JobAgent" )
-        sys.exit( 1 )
+    retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
+    if retCode:
+      self.log.error( "Could not start the JobAgent" )
+      sys.exit( 1 )
 
     fs = os.statvfs( self.pp.workingDir )
     diskSpace = fs[4] * fs[0] / 1024 / 1024
     self.log.info( 'DiskSpace (MB) = %s' % diskSpace )
-    sys.exit( 0 )
 
   def execute( self ):
     """ What is called all the time
@@ -847,3 +830,4 @@ class LaunchAgent( CommandBase ):
     self.__setInProcessOpts()
     self.__startJobAgent()
 
+    sys.exit( 0 )

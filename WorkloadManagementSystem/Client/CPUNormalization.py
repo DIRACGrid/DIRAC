@@ -9,9 +9,10 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getQueueInfo
-from DIRAC import gConfig, S_OK, S_ERROR
 import os, random
+
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
 
 # TODO: This should come from some place in the configuration
 NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to HS06 (ie min * SI00 -> sec * HS06 )
@@ -19,8 +20,7 @@ NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to H
 UNITS = { 'HS06': 1. , 'SI00': 1. / 250. }
 
 def queueNormalizedCPU( ceUniqueID ):
-  """
-    Report Normalized CPU length of queue
+  """ Report Normalized CPU length of queue
   """
   result = getQueueInfo( ceUniqueID )
   if not result['OK']:
@@ -34,7 +34,6 @@ def queueNormalizedCPU( ceUniqueID ):
   maxCPUTime = __getMaxCPUTime( queueCSSection )
 
   if maxCPUTime and benchmarkSI00:
-    # To get to the Current LHCb 
     normCPUTime = NORMALIZATIONCONSTANT * maxCPUTime * benchmarkSI00
   else:
     if not benchmarkSI00:
@@ -46,8 +45,7 @@ def queueNormalizedCPU( ceUniqueID ):
   return S_OK( normCPUTime )
 
 def getQueueNormalization( ceUniqueID ):
-  """
-    Report Normalization Factor applied by Site to the given Queue
+  """ Report Normalization Factor applied by Site to the given Queue
   """
   result = getQueueInfo( ceUniqueID )
   if not result['OK']:
@@ -68,8 +66,7 @@ def getQueueNormalization( ceUniqueID ):
     #exitCode = 3
 
 def __getQueueNormalization( queueCSSection, siteCSSEction ):
-  """
-    Query the CS and return the Normalization
+  """ Query the CS and return the Normalization
   """
   benchmarkSI00Option = '%s/%s' % ( queueCSSection, 'SI00' )
   benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
@@ -80,8 +77,7 @@ def __getQueueNormalization( queueCSSection, siteCSSEction ):
   return benchmarkSI00
 
 def __getMaxCPUTime( queueCSSection ):
-  """
-    Query the CS and return the maxCPUTime 
+  """ Query the CS and return the maxCPUTime
   """
   maxCPUTimeOption = '%s/%s' % ( queueCSSection, 'maxCPUTime' )
   maxCPUTime = gConfig.getValue( maxCPUTimeOption, 0.0 )
@@ -92,13 +88,12 @@ def __getMaxCPUTime( queueCSSection ):
   return maxCPUTime
 
 def getCPUNormalization( reference = 'HS06', iterations = 1 ):
-  """
-    Get Normalized Power of the current CPU in [reference] units
+  """ Get Normalized Power of the current CPU in [reference] units
   """
   if reference not in UNITS:
     return S_ERROR( 'Unknown Normalization unit %s' % str( reference ) )
   try:
-    iter = max( min( int( iterations ), 10 ), 1 )
+    max( min( int( iterations ), 10 ), 1 )
   except ( TypeError, ValueError ), x :
     return S_ERROR( x )
 
@@ -115,7 +110,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
     if i == 1:
       start = os.times()
     # Now the iterations
-    for j in range( n ):
+    for _j in range( n ):
       t = random.normalvariate( 10, 1 )
       m += t
       m2 += t * t
@@ -132,3 +127,46 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   return S_OK( {'CPU': cput, 'WALL':wall, 'NORM': calib * iterations / cput, 'UNIT': reference } )
 
 
+def getCPUTime( CPUNormalizationFactor ):
+  """ Trying to get CPUTime (in seconds) from the CS. The default is a (low) 10000s.
+
+      This is a generic method, independent from the middleware of the resource.
+  """
+  CPUTime = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
+
+  if CPUTime:
+    # This is in HS06sseconds
+    # We need to convert in real seconds
+    CPUTime = CPUTime / int( CPUNormalizationFactor )
+  else:
+    # now we know that we have to find the CPUTimeLeft by looking in the CS
+    gridCE = gConfig.getValue( '/LocalSite/GridCE' )
+    CEQueue = gConfig.getValue( '/LocalSite/CEQueue' )
+    if not CEQueue:
+      # we have to look for a CEQueue in the CS
+      # A bit hacky. We should better profit from something generic
+      gLogger.warn( "No CEQueue in local configuration, looking to find one in CS" )
+      siteName = gConfig.getValue( '/LocalSite/Site' )
+      queueSection = '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( siteName.split( '.' )[0], siteName, gridCE )
+      res = gConfig.getSections( queueSection )
+      if not res['OK']:
+        raise RuntimeError( res['Message'] )
+      queues = res['Value']
+      CPUTimes = []
+      for queue in queues:
+        CPUTimes.append( gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 10000 ) )
+      cpuTimeInMinutes = min( CPUTimes )
+      # These are (real, wall clock) minutes - damn BDII!
+      CPUTime = int( cpuTimeInMinutes ) * 60
+    else:
+      queueInfo = getQueueInfo( '%s/%s' % ( gridCE, CEQueue ) )
+      if not queueInfo['OK'] or not queueInfo['Value']:
+        gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to 10000" )
+        CPUTime = 10000
+      else:
+        queueCSSection = queueInfo['Value']['QueueCSSection']
+        # These are (real, wall clock) minutes - damn BDII!
+        cpuTimeInMinutes = gConfig.getValue( '%s/maxCPUTime' % queueCSSection )
+        CPUTime = int( cpuTimeInMinutes ) * 60
+
+  return CPUTime

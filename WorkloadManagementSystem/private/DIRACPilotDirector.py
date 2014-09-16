@@ -187,11 +187,11 @@ class DIRACPilotDirector(PilotDirector):
       if 'SharedArea' in ceConfigDict:
         pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
 
-      if 'CPUScalingFactor' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
-
-      if 'CPUNormalizationFactor' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
+#       if 'CPUScalingFactor' in ceConfigDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
+#
+#       if 'CPUNormalizationFactor' in ceConfigDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
 
         self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 

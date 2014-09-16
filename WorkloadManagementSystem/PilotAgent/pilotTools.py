@@ -278,10 +278,9 @@ class PilotParams:
     self.optList = {}
     self.debugFlag = False
     self.local = False
-    self.dryRun = False
     self.commandExtensions = []
     self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
-                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture',
+                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
     self.site = ""
@@ -327,7 +326,6 @@ class PilotParams:
                      ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
                      ( 'l:', 'project=', 'Project to install' ),
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
-                     ( 'y', 'test', 'Make a dry run. Do not run JobAgent' ),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
                      ( 'r:', 'release=', 'DIRAC release to install' ),
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
@@ -384,8 +382,6 @@ class PilotParams:
         self.executeCmd = v
       elif o in ( '-O', '--OwnerDN' ):
         self.userDN = v
-      elif o == '-y' or o == '--test':
-        self.dryRun = True
 
       elif o in ( '-V', '--installation' ):
         self.installation = v
