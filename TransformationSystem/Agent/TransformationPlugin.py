@@ -123,7 +123,8 @@ class TransformationPlugin( object ):
       for lfn in lfns:
         targets = []
         sources = self._getSitesForSEs( ses )
-        for targetSE in random.shuffle( targetSEs ):
+        random.shuffle( targetSEs )
+        for targetSE in targetSEs:
           site = self._getSiteForSE( targetSE )['Value']
           if not site in sources:
             if ( destinations ) and ( len( targets ) >= destinations ):
