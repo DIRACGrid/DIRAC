@@ -1215,7 +1215,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   # Now get the necessary info from localCfg
   setupSystems = localCfg.getOption( cfgInstallPath( 'Systems' ), ['Configuration', 'Framework'] )
-  installMySQL = localCfg.getOption( cfgInstallPath( 'InstallMySQL' ), False )
+  installMySQLFlag = localCfg.getOption( cfgInstallPath( 'InstallMySQL' ), False )
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
@@ -1434,7 +1434,7 @@ def setupSite( scriptCfg, cfg = None ):
     _addCfgToDiracCfg( cfg )
 
   # 2.- Check if MySQL is to be installed
-  if installMySQL:
+  if installMySQLFlag:
     gLogger.notice( 'Installing MySQL' )
     getMySQLPasswords()
     installMySQL()
@@ -1456,7 +1456,8 @@ def setupSite( scriptCfg, cfg = None ):
         result = addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
         if not result['OK']:
           gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
-      gLogger.notice( 'Database %s already installed' % dbName )
+      else:    
+        gLogger.notice( 'Database %s already installed' % dbName )
 
   if mysqlPassword:
     if not _addMySQLToDiracCfg():
@@ -2282,8 +2283,7 @@ def _createMySQLCMDLines( dbFile ):
 
   for line in dbLines:
     # Should we first source an SQL file (is this sql file an extension)?
-    command = line.split( ' ' )[0]
-    if command.lower() == 'source':
+    if line.lower().startswith('source'):
       sourcedDBbFileName = line.split( ' ' )[1].replace( '\n', '' )
       gLogger.info( "Found file to source: %s" % sourcedDBbFileName )
       sourcedDBbFile = os.path.join( rootPath, sourcedDBbFileName )
