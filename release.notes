@@ -1,10 +1,12 @@
-[v6r12-pre15]
+[v6r12-pre16]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
 NEW: ReturnValue - added returnSingleResult() utility 
 FIX: MySQL - correctly parse BooleanType
 FIX: dirac-install - use python 2.7 by default
+FIX: dirac-install-xxx commands - complement installation with the component setup
+     in runit
 NEW: dirac-configure - added --SkipVOMSDownload switch, added --Output switch
      to define output configuration file
 CHANGE: ProcessPool - exit from the working process if a task execution timed out  
