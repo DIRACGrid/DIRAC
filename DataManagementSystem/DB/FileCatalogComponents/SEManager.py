@@ -27,6 +27,7 @@ class SEManagerBase:
 
 
   def __init__( self, database = None ):
+    self.lock = threading.Lock()
     self.db = database
     if database is not None:
       self.setDatabase( database )
@@ -34,7 +35,6 @@ class SEManagerBase:
       self.db.seNames = {}
       self.db.seids = {}
       self.db.seDefinitions = {}
-    self.lock = threading.Lock()
     self.seUpdatePeriod = 600
     self.resourcesHelper = Resources()
     self._refreshSEs()
