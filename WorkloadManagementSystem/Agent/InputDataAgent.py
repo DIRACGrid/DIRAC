@@ -32,19 +32,9 @@ class InputDataAgent( OptimizerModule ):
     #this will ignore failover SE files
     self.checkFileMetadata = self.am_getOption( 'CheckFileMetadata', True )
 
-    #Define the shifter proxy needed
-    # This sets the Default Proxy to used as that defined under 
-    # /Operations/Shifter/ProductionManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
+    self.am_setOption( 'shifterProxy', 'DataManager' )
 
-    try:
-      self.dataManager = DataManager()
-    except Exception, e:
-      msg = 'Failed to create DataManager'
-      self.log.exception( msg )
-      return S_ERROR( msg + str( e ) )
-    
+    self.dataManager = DataManager()
     self.resourceStatus = ResourceStatus()
     self.fc = FileCatalog()
 
@@ -168,6 +158,7 @@ class InputDataAgent( OptimizerModule ):
     return self.__getSiteCandidates( replicaDict['Successful'] )
 
   #############################################################################
+  # FIXME: right now this is unused...
   def __checkActiveSEs( self, job, replicaDict ):
     """
     Check active SE and replicas and identify possible Site candidates for 

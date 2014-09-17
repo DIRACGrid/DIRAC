@@ -16,6 +16,7 @@ from DIRAC import gConfig, S_OK, S_ERROR
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
+from DIRAC import exit as DIRACexit
 
 overwrite = False
 def setOverwrite( opVal ):
@@ -55,7 +56,7 @@ if len( args ) == 1:
 
 if len( args ) != 2:
   Script.showHelp()
-  exit( -1 )
+  DIRACexit( -1 )
 #
 system = args[0]
 service = args[1]
@@ -80,5 +81,13 @@ else:
   result = InstallTools.installComponent( 'service', system, service, getCSExtensions(), module )
   if not result['OK']:
     print "ERROR:", result['Message']
+    DIRACexit( 1 )
   else:
-    print "Successfully installed service %s in %s system" % ( service, system )
+    print "Successfully installed service %s in %s system, now setting it up" % ( service, system )
+    result = InstallTools.setupComponent( 'service', system, service, getCSExtensions(), module )
+    if not result['OK']:
+      print "ERROR:", result['Message']
+      DIRACexit( 1 )
+    else:
+      print "Successfully completed the installation of service %s in %s system" % ( service, system )
+      DIRACexit()

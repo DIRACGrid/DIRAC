@@ -1,4 +1,7 @@
-""" DISET request handler base class for the TransformationDB."""
+""" DISET request handler base class for the TransformationDB.
+"""
+
+__RCSID__ = "$Id$"
 
 from DIRAC                                               import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                     import RequestHandler

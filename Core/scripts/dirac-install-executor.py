@@ -16,6 +16,7 @@ from DIRAC import gConfig, S_OK, S_ERROR
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
+from DIRAC import exit as DIRACexit
 
 overwrite = False
 def setOverwrite( opVal ):
@@ -55,7 +56,7 @@ if len( args ) == 1:
 
 if len( args ) != 2:
   Script.showHelp()
-  exit( -1 )
+  DIRACexit( -1 )
 #
 system = args[0]
 executor = args[1]
@@ -81,4 +82,11 @@ else:
   if not result['OK']:
     print "ERROR:", result['Message']
   else:
-    print "Successfully installed executor %s in %s system" % ( executor, system )
+    print "Successfully installed executor %s in %s system, now setting it up" % ( executor, system )
+    result = InstallTools.setupComponent( 'executor', system, executor, getCSExtensions(), module )
+    if not result['OK']:
+      print "ERROR:", result['Message']
+      DIRACexit( 1 )
+    else:
+      print "Successfully completed the installation of executor %s in %s system" % ( executor, system )
+      DIRACexit()
