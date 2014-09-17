@@ -1215,7 +1215,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   # Now get the necessary info from localCfg
   setupSystems = localCfg.getOption( cfgInstallPath( 'Systems' ), ['Configuration', 'Framework'] )
-  installMySQL = localCfg.getOption( cfgInstallPath( 'InstallMySQL' ), False )
+  installMySQLFlag = localCfg.getOption( cfgInstallPath( 'InstallMySQL' ), False )
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
@@ -1434,7 +1434,7 @@ def setupSite( scriptCfg, cfg = None ):
     _addCfgToDiracCfg( cfg )
 
   # 2.- Check if MySQL is to be installed
-  if installMySQL:
+  if installMySQLFlag:
     gLogger.notice( 'Installing MySQL' )
     getMySQLPasswords()
     installMySQL()
