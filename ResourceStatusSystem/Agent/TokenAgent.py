@@ -46,7 +46,6 @@ class TokenAgent( AgentModule ):
 
   def initialize( self ):
     ''' TokenAgent initialization
-        Uses the ProductionManager shifterProxy to modify the ResourceStatus DB
     '''
 
     self.notifyHours = self.am_getOption( 'notifyHours', self.notifyHours )
