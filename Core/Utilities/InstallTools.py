@@ -1456,7 +1456,8 @@ def setupSite( scriptCfg, cfg = None ):
         result = addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
         if not result['OK']:
           gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
-      gLogger.notice( 'Database %s already installed' % dbName )
+      else:    
+        gLogger.notice( 'Database %s already installed' % dbName )
 
   if mysqlPassword:
     if not _addMySQLToDiracCfg():
