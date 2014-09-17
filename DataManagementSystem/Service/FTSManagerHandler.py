@@ -14,6 +14,8 @@
 Service handler for FTSDB using DISET
 """
 
+__RCSID__ = "$Id$"
+
 # #
 # @file FTSManagerHandler.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
