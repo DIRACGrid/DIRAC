@@ -15,7 +15,6 @@ from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import Opti
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
 from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
-from DIRAC.Core.Utilities.List                                       import uniqueElements
 from DIRAC                                                           import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 
@@ -37,7 +36,6 @@ class InputData( OptimizerExecutor ):
 
     #Define the shifter proxy needed
     # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/ProductionManager
     # the shifterProxy option in the Configuration can be used to change this default.
     cls.ex_setProperty( 'shifterProxy', 'DataManager' )
 
@@ -55,7 +53,7 @@ class InputData( OptimizerExecutor ):
     else:
       try:
         self.__dataManDict[vo] = DataManager( vo = vo )
-      except Exception, e:
+      except Exception, _e:
         msg = 'Failed to create DataManager'
         self.log.exception( msg )
         return None
@@ -67,7 +65,7 @@ class InputData( OptimizerExecutor ):
     else:
       try:
         self.__fcDict[vo] = FileCatalog( vo = vo )
-      except Exception, e:
+      except Exception, _e:
         msg = 'Failed to create FileCatalog'
         self.log.exception( msg )
         return None
@@ -107,6 +105,7 @@ class InputData( OptimizerExecutor ):
     return self.setNextOptimizer()
 
   #############################################################################
+  # FIXME: this one in practice it is unused right now...
   def __resolveInputData( self, jobState, inputData ):
     """This method checks the file catalog for replica information.
     """
@@ -145,7 +144,6 @@ class InputData( OptimizerExecutor ):
     siteCandidates = result[ 'Value' ]
 
     if self.ex_getOption( 'CheckFileMetadata', True ):
-      start = time.time()
       result = jobState.getManifest()
       if not result['OK']:
         return result

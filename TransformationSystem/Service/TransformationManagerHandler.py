@@ -1,5 +1,7 @@
-''' DISET request handler base class for the TransformationDB.
-'''
+""" DISET request handler base class for the TransformationDB.
+"""
+
+__RCSID__ = "$Id$"
 
 from types import StringType, ListType, DictType, IntType, LongType, StringTypes, TupleType
 from DIRAC                                               import gLogger, S_OK, S_ERROR
