@@ -2283,7 +2283,7 @@ def _createMySQLCMDLines( dbFile ):
 
   for line in dbLines:
     # Should we first source an SQL file (is this sql file an extension)?
-    if 'source' in line.lower():
+    if line.lower().startswith('source'):
       sourcedDBbFileName = line.split( ' ' )[1].replace( '\n', '' )
       gLogger.info( "Found file to source: %s" % sourcedDBbFileName )
       sourcedDBbFile = os.path.join( rootPath, sourcedDBbFileName )
