@@ -62,6 +62,8 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     dirDict = {}
+    if not paths:
+      return S_OK( dirDict )
     dpaths = stringListToString( [os.path.normpath( path ) for path in paths ] )
     result = self.db.executeStoredProcedureWithCursor( 'ps_find_dirs', ( dpaths, ) )
     if not result['OK']:

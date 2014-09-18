@@ -81,15 +81,56 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 
 
 
+-- drop table if exists FC_DirectoryList;
+-- create table FC_DirectoryList (
+--   DirID INT NOT NULL AUTO_INCREMENT,
+--   Name varchar(255)CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+-- 
+--   PRIMARY KEY (DirID),
+--   
+--   UNIQUE (Name)
+-- ) ENGINE=INNODB;
+-- 
+-- 
+-- 
+-- 
+-- drop table if exists FC_DirectoryInfo;
+-- CREATE TABLE FC_DirectoryInfo (
+--     DirID INTEGER NOT NULL,
+--     UID INTEGER NOT NULL DEFAULT 0,
+--     GID INTEGER NOT NULL DEFAULT 0,
+--     CreationDate DATETIME,
+--     ModificationDate DATETIME,
+--     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+--     Status INTEGER NOT NULL DEFAULT 0,
+--     
+--     PRIMARY KEY (DirID),
+--     FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
+--     FOREIGN KEY (UID) REFERENCES FC_Users(UID),
+--     FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
+--     FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID)
+-- ) ENGINE = INNODB;
+
+
 drop table if exists FC_DirectoryList;
 create table FC_DirectoryList (
   DirID INT NOT NULL AUTO_INCREMENT,
+  UID INTEGER NOT NULL DEFAULT 0,
+  GID INTEGER NOT NULL DEFAULT 0,
+  CreationDate DATETIME,
+  ModificationDate DATETIME,
+  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+  Status INTEGER NOT NULL DEFAULT 0,
   Name varchar(255)CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
 
   PRIMARY KEY (DirID),
-  
+  FOREIGN KEY (UID) REFERENCES FC_Users(UID),
+  FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
+  FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
   UNIQUE (Name)
 ) ENGINE=INNODB;
+
+
 
 -- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryClosure;
@@ -112,24 +153,54 @@ CREATE TABLE FC_DirectoryClosure (
 
 
 
-drop table if exists FC_DirectoryInfo;
-CREATE TABLE FC_DirectoryInfo (
-    DirID INTEGER NOT NULL,
-    UID INTEGER NOT NULL DEFAULT 0,
-    GID INTEGER NOT NULL DEFAULT 0,
-    CreationDate DATETIME,
-    ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-    Status INTEGER NOT NULL DEFAULT 0,
-    
-    PRIMARY KEY (DirID),
-    FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
-    FOREIGN KEY (UID) REFERENCES FC_Users(UID),
-    FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
-    FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID)
-) ENGINE = INNODB;
-
 -- -------------------------------------------------------------------------------
+
+
+-- drop table if exists FC_Files;
+-- CREATE TABLE FC_Files(
+--     FileID INT AUTO_INCREMENT,
+--     DirID INT NOT NULL,
+--     Size BIGINT UNSIGNED NOT NULL,
+--     UID INT NOT NULL,
+--     GID INT NOT NULL,
+--     Status INT NOT NULL,
+--     FileName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+-- 
+--     PRIMARY KEY (FileID),
+--     FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
+--     FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
+--     FOREIGN KEY (UID) REFERENCES FC_Users(UID),
+--     FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
+--     
+--     UNIQUE (DirID, FileName),
+--     
+--     INDEX (UID,GID),
+--     INDEX (Status),
+--     INDEX (FileName)
+-- 
+-- ) ENGINE = INNODB;
+-- 
+-- -- ------------------------------------------------------------------------------
+-- drop table if exists FC_FileInfo;
+-- CREATE TABLE FC_FileInfo (
+--     FileID INTEGER NOT NULL,
+--     GUID char(36) NOT NULL,
+--     Checksum VARCHAR(32),
+--     CheckSumType ENUM('Adler32','MD5'),
+--     Type ENUM('File','Link') NOT NULL DEFAULT 'File',
+--     CreationDate DATETIME,
+--     ModificationDate DATETIME,
+--     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+--     
+--     PRIMARY KEY (FileID),
+--     FOREIGN KEY (FileID) REFERENCES FC_Files(FileID) ON DELETE CASCADE,
+--     
+--     UNIQUE(GUID)
+-- 
+-- 
+-- ) ENGINE = INNODB;
+
+
 
 
 drop table if exists FC_Files;
@@ -140,6 +211,13 @@ CREATE TABLE FC_Files(
     UID INT NOT NULL,
     GID INT NOT NULL,
     Status INT NOT NULL,
+    GUID char(36) NOT NULL,
+    Type ENUM('File','Link') NOT NULL DEFAULT 'File',
+    CreationDate DATETIME,
+    ModificationDate DATETIME,
+    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+    CheckSumType ENUM('Adler32','MD5'),
+    Checksum VARCHAR(32),
     FileName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
 
     PRIMARY KEY (FileID),
@@ -149,6 +227,7 @@ CREATE TABLE FC_Files(
     FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
     
     UNIQUE (DirID, FileName),
+    UNIQUE(GUID), 
     
     INDEX (UID,GID),
     INDEX (Status),
@@ -156,25 +235,40 @@ CREATE TABLE FC_Files(
 
 ) ENGINE = INNODB;
 
--- ------------------------------------------------------------------------------
-drop table if exists FC_FileInfo;
-CREATE TABLE FC_FileInfo (
-    FileID INTEGER NOT NULL,
-    GUID char(36) NOT NULL,
-    Checksum VARCHAR(32),
-    CheckSumType ENUM('Adler32','MD5'),
-    Type ENUM('File','Link') NOT NULL DEFAULT 'File',
-    CreationDate DATETIME,
-    ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-    
-    PRIMARY KEY (FileID),
-    FOREIGN KEY (FileID) REFERENCES FC_Files(FileID) ON DELETE CASCADE,
-    
-    UNIQUE(GUID)
 
-
-) ENGINE = INNODB;
+-- -- -----------------------------------------------------------------------------
+-- -- do we want the delete on cascade on the SE?
+-- drop table if exists FC_Replicas;
+-- CREATE TABLE FC_Replicas (
+--     RepID INT AUTO_INCREMENT,
+--     FileID INT NOT NULL,
+--     SEID INTEGER NOT NULL,
+--     Status INTEGER NOT NULL,
+-- 
+--     
+--     PRIMARY KEY (RepID),
+--     FOREIGN KEY (FileID) REFERENCES FC_Files(FileID),
+--     FOREIGN KEY (SEID) REFERENCES FC_StorageElements(SEID), 
+--     FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
+--     
+--     UNIQUE (FileID,SEID)
+-- 
+-- 
+-- ) ENGINE = INNODB;
+-- 
+-- -- ------------------------------------------------------------------------------
+-- drop table if exists FC_ReplicaInfo;
+-- CREATE TABLE FC_ReplicaInfo (
+--     RepID INTEGER NOT NULL,
+--     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
+--     CreationDate DATETIME,
+--     ModificationDate DATETIME,
+--     PFN VARCHAR(1024),  
+--     
+--     PRIMARY KEY (RepID),
+--     FOREIGN KEY (RepID) REFERENCES FC_Replicas(RepID) ON DELETE CASCADE
+-- ) ENGINE = INNODB;
+-- 
 
 -- -----------------------------------------------------------------------------
 -- do we want the delete on cascade on the SE?
@@ -184,7 +278,10 @@ CREATE TABLE FC_Replicas (
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
     Status INTEGER NOT NULL,
-
+    RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
+    CreationDate DATETIME,
+    ModificationDate DATETIME,
+    PFN VARCHAR(1024),  
     
     PRIMARY KEY (RepID),
     FOREIGN KEY (FileID) REFERENCES FC_Files(FileID),
@@ -195,21 +292,6 @@ CREATE TABLE FC_Replicas (
 
 
 ) ENGINE = INNODB;
-
--- ------------------------------------------------------------------------------
-drop table if exists FC_ReplicaInfo;
-CREATE TABLE FC_ReplicaInfo (
-    RepID INTEGER NOT NULL,
-    RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
-    CreationDate DATETIME,
-    ModificationDate DATETIME,
-    PFN VARCHAR(1024),  
-    
-    PRIMARY KEY (RepID),
-    FOREIGN KEY (RepID) REFERENCES FC_Replicas(RepID) ON DELETE CASCADE
-) ENGINE = INNODB;
-
-
 
 
 -- ------------------------------------------------------------------------------
@@ -403,6 +485,53 @@ DELIMITER ;
 -- returns (errno, message)
 
 
+-- DROP PROCEDURE IF EXISTS ps_insert_dir;
+-- DELIMITER //
+-- CREATE PROCEDURE ps_insert_dir
+-- (IN parent_id INT, IN child_name varchar(255), IN UID INT,
+--  IN GID INT, IN Mode SMALLINT UNSIGNED, IN Status INT)
+-- BEGIN
+--   DECLARE dir_id INT DEFAULT 0;
+--   
+--   DECLARE EXIT HANDLER FOR 1062 BEGIN
+--     ROLLBACK;
+--     SELECT 0 as dir_id, 'Error, duplicate key occurred' as msg;
+--   END;
+-- 
+--   DECLARE EXIT HANDLER FOR 1452 BEGIN
+--     ROLLBACK;
+--     SELECT 0 as dir_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
+--   END;
+--   
+--   DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
+--       ROLLBACK;
+--       SELECT 0 as dir_id, 'Unknown error occured' as msg;
+--   END;
+--     
+--   
+--   START TRANSACTION;
+--    
+--     INSERT INTO FC_DirectoryList (Name) values (child_name);
+--     SELECT LAST_INSERT_ID() INTO dir_id; 
+--   
+--     INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (dir_id, dir_id, 0);
+--     
+--     IF parent_id != 0 THEN
+--       INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
+--         SELECT SQL_NO_CACHE p.ParentID, c.ChildID, p.depth + c.depth + 1
+--         FROM FC_DirectoryClosure p, FC_DirectoryClosure c
+--         WHERE p.ChildID = parent_id AND c.ParentID = dir_id;
+--     END IF;
+--     
+--     INSERT INTO FC_DirectoryInfo (DirID, UID, GID, CreationDate, ModificationDate, Mode, Status) VALUES (dir_id, UID, GID, UTC_TIMESTAMP(), UTC_TIMESTAMP(), Mode, Status);
+--     
+--     SELECT dir_id, 'OK';
+--     
+--    COMMIT;
+-- END //
+-- DELIMITER ;
+
+
 DROP PROCEDURE IF EXISTS ps_insert_dir;
 DELIMITER //
 CREATE PROCEDURE ps_insert_dir
@@ -429,19 +558,18 @@ BEGIN
   
   START TRANSACTION;
    
-    INSERT INTO FC_DirectoryList (Name) values (child_name);
+    INSERT INTO FC_DirectoryList (UID, GID, CreationDate, ModificationDate, Mode, Status, Name) values ( UID, GID, UTC_TIMESTAMP(), UTC_TIMESTAMP(), Mode, Status, child_name);
     SELECT LAST_INSERT_ID() INTO dir_id; 
   
     INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (dir_id, dir_id, 0);
     
     IF parent_id != 0 THEN
       INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
-        SELECT SQL_NO_CACHE p.ParentID, c.ChildID, p.depth + c.depth + 1
-        FROM FC_DirectoryClosure p, FC_DirectoryClosure c
-        WHERE p.ChildID = parent_id AND c.ParentID = dir_id;
+        SELECT SQL_NO_CACHE p.ParentID, dir_id, p.depth + 1
+        FROM FC_DirectoryClosure p
+        WHERE p.ChildID = parent_id;
     END IF;
     
-    INSERT INTO FC_DirectoryInfo (DirID, UID, GID, CreationDate, ModificationDate, Mode, Status) VALUES (dir_id, UID, GID, UTC_TIMESTAMP(), UTC_TIMESTAMP(), Mode, Status);
     
     SELECT dir_id, 'OK';
     
@@ -493,7 +621,7 @@ END //
 DELIMITER ;
 
 
--- ps_get_direct_children : returns athe direct children of a directory
+-- ps_get_direct_children : returns the direct children of a directory
 -- dir_id : directory id
 -- returns : (directory id)
 DROP PROCEDURE IF EXISTS ps_get_direct_children;
@@ -501,7 +629,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_direct_children
 (IN dir_id INT )
 BEGIN
-   SELECT d.DirID from FC_DirectoryList d JOIN FC_DirectoryClosure c on (d.DirID = c.ChildID) where c.ParentID = dir_id and c.Depth = 1;
+   SELECT SQL_NO_CACHE d.DirID from FC_DirectoryList d JOIN FC_DirectoryClosure c on (d.DirID = c.ChildID) where c.ParentID = dir_id and c.Depth = 1;
 END //
 DELIMITER ;
 
@@ -727,6 +855,11 @@ DELIMITER ;
 -- DELIMITER ;
 -- 
 
+
+--insert into FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) select f.DirID, 1, f.Size as size_diff, 1 as file_diff from FC_Files f where (DirID = 1 and FileName = 'a.txt') OR (DirID = 1 and FileName = '1.txt') on duplicate key update SESize = SESize + f.Size, SEFiles = SEFiles + 1;
+
+
+
 drop PROCEDURE if exists update_directory_usage;
 DELIMITER //
 CREATE PROCEDURE update_directory_usage 
@@ -748,42 +881,42 @@ DELIMITER ;
 
 
 
-drop trigger if exists trg_after_insert_replica_increase_size;
-DELIMITER //
-CREATE TRIGGER trg_after_insert_replica_increase_size AFTER INSERT ON FC_Replicas
-FOR EACH ROW
-BEGIN
+-- drop trigger if exists trg_after_insert_replica_increase_size;
+-- DELIMITER //
+-- CREATE TRIGGER trg_after_insert_replica_increase_size AFTER INSERT ON FC_Replicas
+-- FOR EACH ROW
+-- BEGIN
+-- 
+--   DECLARE file_size BIGINT;
+--   DECLARE dir_id INT;
+--   
+--  
+--   SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = new.FileID;
+--   
+--   
+-- --   call update_directory_usage (new.FileID, new.SEID, file_size, 1);
+--   call update_directory_usage (dir_id, new.SEID, file_size, 1);
+-- 
+-- END //
+-- DELIMITER ;
 
-  DECLARE file_size BIGINT;
-  DECLARE dir_id INT;
-  
- 
-  SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = new.FileID;
-  
-  
---   call update_directory_usage (new.FileID, new.SEID, file_size, 1);
-  call update_directory_usage (dir_id, new.SEID, file_size, 1);
 
-END //
-DELIMITER ;
-
-
-drop trigger if exists trg_after_delete_replica_decrease_size;
-DELIMITER //
-CREATE TRIGGER trg_after_delete_replica_decrease_size AFTER DELETE ON FC_Replicas
-FOR EACH ROW
-BEGIN
-
-  DECLARE file_size BIGINT;
-  DECLARE dir_id INT;
- 
-  SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
-  
---   call update_directory_usage (old.FileID, old.SEID, -file_size, -1);
-  call update_directory_usage (dir_id, old.SEID, -file_size, -1);
-
-END //
-DELIMITER ;
+-- drop trigger if exists trg_after_delete_replica_decrease_size;
+-- DELIMITER //
+-- CREATE TRIGGER trg_after_delete_replica_decrease_size AFTER DELETE ON FC_Replicas
+-- FOR EACH ROW
+-- BEGIN
+-- 
+--   DECLARE file_size BIGINT;
+--   DECLARE dir_id INT;
+--  
+--   SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
+--   
+-- --   call update_directory_usage (old.FileID, old.SEID, -file_size, -1);
+--   call update_directory_usage (dir_id, old.SEID, -file_size, -1);
+-- 
+-- END //
+-- DELIMITER ;
 
 
 drop trigger if exists trg_after_update_replica_move_size;
@@ -819,39 +952,39 @@ DELIMITER ;
 
 
 
-drop trigger if exists trg_after_insert_file_increase_size;
-DELIMITER //
-CREATE TRIGGER trg_after_insert_file_increase_size AFTER INSERT ON FC_Files
-FOR EACH ROW
-BEGIN
-  DECLARE se_id INT;
-  
-  SELECT SEID INTO se_id FROM FC_StorageElements WHERE SEName = 'FakeSE';
-  
-  
-  -- Use the fake SE
---   call update_directory_usage (new.FileID, se_id, new.Size, 1);
-  call update_directory_usage (new.DirID, se_id, new.Size, 1);
+-- drop trigger if exists trg_after_insert_file_increase_size;
+-- DELIMITER //
+-- CREATE TRIGGER trg_after_insert_file_increase_size AFTER INSERT ON FC_Files
+-- FOR EACH ROW
+-- BEGIN
+--   DECLARE se_id INT;
+--   
+--   SELECT SEID INTO se_id FROM FC_StorageElements WHERE SEName = 'FakeSE';
+--   
+--   
+--   -- Use the fake SE
+-- --   call update_directory_usage (new.FileID, se_id, new.Size, 1);
+--   call update_directory_usage (new.DirID, se_id, new.Size, 1);
+-- 
+-- END //
+-- DELIMITER ;
 
-END //
-DELIMITER ;
 
-
-drop trigger if exists trg_after_delete_file_decrease_size;
-DELIMITER //
-CREATE TRIGGER trg_after_delete_file_decrease_size AFTER DELETE ON FC_Files
-FOR EACH ROW
-BEGIN
-  DECLARE se_id INT;
-  
-  SELECT SEID INTO se_id FROM FC_StorageElements WHERE SEName = 'FakeSE';
-    
---   call update_directory_usage (old.FileID, se_id, -old.Size, -1);
-  call update_directory_usage (old.DirID, se_id, -old.Size, -1);
-
-END //
-DELIMITER ;
-
+-- drop trigger if exists trg_after_delete_file_decrease_size;
+-- DELIMITER //
+-- CREATE TRIGGER trg_after_delete_file_decrease_size AFTER DELETE ON FC_Files
+-- FOR EACH ROW
+-- BEGIN
+--   DECLARE se_id INT;
+--   
+--   SELECT SEID INTO se_id FROM FC_StorageElements WHERE SEName = 'FakeSE';
+--     
+-- --   call update_directory_usage (old.FileID, se_id, -old.Size, -1);
+--   call update_directory_usage (old.DirID, se_id, -old.Size, -1);
+-- 
+-- END //
+-- DELIMITER ;
+-- 
 
 
 
@@ -866,7 +999,8 @@ CREATE PROCEDURE ps_get_replicas_for_files_in_dir
 (IN dir_id INT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255), IN visibleReplicaStatus VARCHAR(255) )
 BEGIN
 -- select f.FileName, f.FileID, s.SEName, ri.PFN from FC_Replicas r join  FC_ReplicaInfo ri on ri.RepID = r.RepID join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID where DirID = 6;
-  set @sql = 'select SQL_NO_CACHE f.FileName, f.FileID, s.SEName, ri.PFN from FC_Replicas r join  FC_ReplicaInfo ri on ri.RepID = r.RepID join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
+--   set @sql = 'select SQL_NO_CACHE f.FileName, f.FileID, s.SEName, ri.PFN from FC_Replicas r join  FC_ReplicaInfo ri on ri.RepID = r.RepID join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
+  set @sql = 'select SQL_NO_CACHE f.FileName, f.FileID, s.SEName, r.PFN from FC_Replicas r join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
 
   
   IF not allStatus THEN
@@ -934,10 +1068,18 @@ BEGIN
 
 
 
+--   set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
+--                      GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
+--                     FROM FC_Files f
+--                     JOIN FC_FileInfo fi ON f.FileID = fi.FileID
+--                     JOIN FC_Users u ON f.UID = u.UID
+--                     JOIN FC_Groups g ON f.GID = g.GID
+--                     JOIN FC_Statuses s ON f.Status = s.StatusID
+--                     WHERE DirID = ', dir_id, ' ' );
+
   set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
                      GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
                     FROM FC_Files f
-                    JOIN FC_FileInfo fi ON f.FileID = fi.FileID
                     JOIN FC_Users u ON f.UID = u.UID
                     JOIN FC_Groups g ON f.GID = g.GID
                     JOIN FC_Statuses s ON f.Status = s.StatusID
@@ -966,12 +1108,17 @@ DELIMITER //
 CREATE PROCEDURE ps_get_all_info_for_file_ids
 (IN file_ids TEXT)
 BEGIN
--- SELECT d.Name, f.FileName,f.FileID FROM FC_Files f join FC_DirectoryList d on f.DirID = d.DirID WHERE (d.Name = '/vo.formation.idgrilles.fr/user/a/atsareg' and FileName in ('another testFile') ) OR (d.DirID = 6 and FileName in ('testfile'));
+--   SET @sql = CONCAT('SELECT SQL_NO_CACHE f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
+--                      FROM FC_Files f
+--                      JOIN FC_FileInfo fi ON f.FileID = fi.FileID
+--                      JOIN FC_Statuses s ON f.Status = s.StatusID
+--                      WHERE f.FileID IN (', file_ids, ')');
+
   SET @sql = CONCAT('SELECT SQL_NO_CACHE f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
                      FROM FC_Files f
-                     JOIN FC_FileInfo fi ON f.FileID = fi.FileID
                      JOIN FC_Statuses s ON f.Status = s.StatusID
                      WHERE f.FileID IN (', file_ids, ')');
+                     
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -1007,17 +1154,64 @@ BEGIN
   END;
     
   
+--   START TRANSACTION;
+--   INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName) VALUES (dir_id, size, UID, GID, status_id, filename);
+--   SELECT LAST_INSERT_ID() INTO file_id;
+--   INSERT INTO FC_FileInfo (FileID, GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode)
+--          VALUES (file_id, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
+--   COMMIT;
+
   START TRANSACTION;
-  INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName) VALUES (dir_id, size, UID, GID, status_id, filename);
+  INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName,GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode )
+  VALUES (dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
   SELECT LAST_INSERT_ID() INTO file_id;
-  INSERT INTO FC_FileInfo (FileID, GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode)
-         VALUES (file_id, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
-  COMMIT;
   
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (dir_id, 1, size, 1) ON DUPLICATE KEY UPDATE  SESize = SESize + size, SEFiles = SEFiles + 1;
+
+  COMMIT;
+
   SELECT file_id, 'OK' as msg;
  
 END //
 DELIMITER ;
+
+
+
+-- fileValues formated like "(a,y,z), (u,v,w)"
+-- fileDesc formated like " (DirID = x and FileName = y) OR (DirID = u and FileName = v)"
+DROP PROCEDURE IF EXISTS ps_insert_multiple_file;
+DELIMITER //
+CREATE PROCEDURE ps_insert_multiple_file
+(IN fileValues LONGTEXT, IN fileDesc LONGTEXT )
+BEGIN
+
+  START TRANSACTION;
+  SET @sql = CONCAT('INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode) VALUES ', fileValues);
+
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  
+  SET @sql = CONCAT('INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) SELECT SQL_NO_CACHE f.DirID, 1, f.Size, 1 FROM FC_Files f WHERE ', fileDesc);
+  SET @sql = CONCAT(@sql, ' ON DUPLICATE KEY UPDATE SESize = SESize + f.Size, SEFiles = SEFiles + 1');
+  -- insert into FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) select f.DirID, 1, f.Size as size_diff, 1 as file_diff from FC_Files f where (DirID = 1 and FileName = 'a.txt') OR (DirID = 1 and FileName = '1.txt') on duplicate key update SESize = SESize + f.Size, SEFiles = SEFiles + 1;
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+  COMMIT;
+
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE DirID, FileName, FileID FROM FC_Files WHERE ', fileDesc );
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt; 
+  
+END //
+DELIMITER ;
+
 
 
 
@@ -1026,7 +1220,9 @@ DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_guids
 (IN  guids TEXT)
 BEGIN
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, FileID FROM FC_FileInfo f WHERE GUID IN (', guids, ')');
+--   SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, FileID FROM FC_FileInfo f WHERE GUID IN (', guids, ')');
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, FileID FROM FC_Files f WHERE GUID IN (', guids, ')');
+
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -1042,10 +1238,25 @@ CREATE PROCEDURE ps_delete_replicas_from_file_ids
 (IN  file_ids TEXT)
 BEGIN
 
+  START TRANSACTION;
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
+                    SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
+                    WHERE r.FileID = f.FileID 
+                    AND f.DirID = d.DirID 
+                    AND r.SEID = d.SEID
+                    AND f.FileID IN (', file_ids, ')');
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+
+
   SET @sql = CONCAT('DELETE FROM FC_Replicas  WHERE FileID IN (', file_ids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
+  
+  COMMIT;
   
   SELECT 0, 'OK';
   
@@ -1058,11 +1269,22 @@ DELIMITER //
 CREATE PROCEDURE ps_delete_files
 (IN  file_ids TEXT)
 BEGIN
-
+  START TRANSACTION;
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f
+                    SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
+                    WHERE f.DirID = d.DirID 
+                    AND d.SEID = 1
+                    AND f.FileID IN (', file_ids, ')');
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
   SET @sql = CONCAT('DELETE FROM FC_Files  WHERE FileID IN (', file_ids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
+  
+  COMMIT;
   
   SELECT 0, 'OK';
   
@@ -1095,17 +1317,66 @@ BEGIN
   END;
     
   
+--   START TRANSACTION;
+--   INSERT INTO FC_Replicas (FileID, SEID, Status) VALUES (file_id, se_id, status_id);
+--   SELECT LAST_INSERT_ID() INTO replica_id;
+--   INSERT INTO FC_ReplicaInfo (RepID, RepType, CreationDate, ModificationDate, PFN)
+--          VALUES (replica_id, rep_type, UTC_TIMESTAMP(), UTC_TIMESTAMP(), pfn);
+--   COMMIT;
+--   
   START TRANSACTION;
-  INSERT INTO FC_Replicas (FileID, SEID, Status) VALUES (file_id, se_id, status_id);
+  INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)
+  VALUES (file_id, se_id, status_id, rep_type, UTC_TIMESTAMP(), UTC_TIMESTAMP(), pfn);
   SELECT LAST_INSERT_ID() INTO replica_id;
-  INSERT INTO FC_ReplicaInfo (RepID, RepType, CreationDate, ModificationDate, PFN)
-         VALUES (replica_id, rep_type, UTC_TIMESTAMP(), UTC_TIMESTAMP(), pfn);
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)  SELECT DirID, se_id, Size, 1 from FC_Files f where f.FileID = file_id ON DUPLICATE KEY UPDATE  SESize = SESize + Size, SEFiles = SEFiles + 1;
+
   COMMIT;
   
   SELECT replica_id, 'OK' as msg;
  
 END //
 DELIMITER ;
+
+
+
+
+-- replicaValues formated like "(a,y,z), (u,v,w)"
+-- replicaDesc formated like " (FileID = x and SEID = y) OR (FileID = u and SEID = v)"
+DROP PROCEDURE IF EXISTS ps_insert_multiple_replica;
+DELIMITER //
+CREATE PROCEDURE ps_insert_multiple_replica
+(IN replicaValues LONGTEXT, IN replicaDesc LONGTEXT )
+BEGIN
+
+  START TRANSACTION;
+
+  SET @sql = CONCAT('INSERT INTO  FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN) VALUES ', replicaValues);
+
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  
+  SET @sql = CONCAT('INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) SELECT SQL_NO_CACHE f.DirID, SEID, f.Size, 1 FROM FC_Files f, FC_Replicas r WHERE f.FileID = r.FileID AND (', replicaDesc);
+  SET @sql = CONCAT(@sql, ') ON DUPLICATE KEY UPDATE SESize = SESize + f.Size, SEFiles = SEFiles + 1');
+  -- insert into FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) select f.DirID, 1, f.Size as size_diff, 1 as file_diff from FC_Files f where (DirID = 1 and FileName = 'a.txt') OR (DirID = 1 and FileName = '1.txt') on duplicate key update SESize = SESize + f.Size, SEFiles = SEFiles + 1;
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+  COMMIT;
+  
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, SEID, RepID FROM FC_Replicas r WHERE ', replicaDesc );
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt; 
+  
+END //
+DELIMITER ;
+
+
 
 
 
@@ -1128,19 +1399,37 @@ DELIMITER ;
 
 
 
+-- DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
+-- DELIMITER //
+-- CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
+-- (IN  file_id INT, IN se_id INT) 
+-- BEGIN
+-- 
+--   DELETE FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
+--   
+--   SELECT 0, 'OK';
+-- 
+-- END //
+-- DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
 (IN  file_id INT, IN se_id INT) 
 BEGIN
+  DECLARE file_size INT DEFAULT 0;
+  DECLARE dir_id INT DEFAULT 0;
 
-  DELETE FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
+  SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
+  
+  START TRANSACTION;
+    UPDATE FC_DirectoryUsage SET SESize = SESize - file_size, SEFiles = SEFiles - 1 WHERE DirID = dir_id and SEID = se_id;
+    DELETE FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
+  COMMIT;
   
   SELECT 0, 'OK';
 
 END //
 DELIMITER ;
-
 
 DROP PROCEDURE IF EXISTS ps_set_replica_status;
 DELIMITER //
@@ -1181,9 +1470,11 @@ BEGIN
     SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
   END;
   
-  UPDATE FC_Files SET UID = in_uid where FileID = file_id;
-  UPDATE FC_FileInfo SET ModificationDate = UTC_TIMESTAMP() WHERE FileID = file_id;
+--   UPDATE FC_Files SET UID = in_uid where FileID = file_id;
+--   UPDATE FC_FileInfo SET ModificationDate = UTC_TIMESTAMP() WHERE FileID = file_id;
   
+  UPDATE FC_Files SET UID = in_uid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
+ 
   SELECT 0, 'OK';
 
 END //
@@ -1200,8 +1491,10 @@ BEGIN
     SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
   END;
   
-  UPDATE FC_Files SET GID = in_gid where FileID = file_id;
-  UPDATE FC_FileInfo SET ModificationDate = UTC_TIMESTAMP() WHERE FileID = file_id;
+--   UPDATE FC_Files SET GID = in_gid where FileID = file_id;
+--   UPDATE FC_FileInfo SET ModificationDate = UTC_TIMESTAMP() WHERE FileID = file_id;
+
+  UPDATE FC_Files SET GID = in_gid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
   
   SELECT 0, 'OK';
 
@@ -1218,9 +1511,10 @@ BEGIN
     SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
   END;
   
-  UPDATE FC_Files SET Status = status_id where FileID = file_id;
-  UPDATE FC_FileInfo SET ModificationDate = UTC_TIMESTAMP() WHERE FileID = file_id;
-  
+--   UPDATE FC_Files SET Status = status_id where FileID = file_id;
+--   UPDATE FC_FileInfo SET ModificationDate = UTC_TIMESTAMP() WHERE FileID = file_id;
+  UPDATE FC_Files SET Status = status_id, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
+
   SELECT 0, 'OK';
 
 END //
@@ -1233,7 +1527,9 @@ CREATE PROCEDURE ps_set_file_mode
 (IN  file_id INT, IN in_mode SMALLINT UNSIGNED)
 BEGIN
 
-  UPDATE FC_FileInfo SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
+--   UPDATE FC_FileInfo SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
+  UPDATE FC_Files SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
+
 
   SELECT 0, 'OK';
 
@@ -1254,19 +1550,31 @@ BEGIN
 
   IF allStatus THEN
 
+--     SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+--     FROM FC_Replicas r
+--     JOIN FC_ReplicaInfo ri on r.RepID = ri.RepID
+--     JOIN FC_StorageElements se on r.SEID = se.SEID
+--     JOIN FC_Statuses st on r.Status = st.StatusID
+--     WHERE FileID = file_id;
     SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
     FROM FC_Replicas r
-    JOIN FC_ReplicaInfo ri on r.RepID = ri.RepID
     JOIN FC_StorageElements se on r.SEID = se.SEID
     JOIN FC_Statuses st on r.Status = st.StatusID
     WHERE FileID = file_id;
 
   ELSE
 
+--     SET @sql = CONCAT(
+--                     'SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+--                     FROM FC_Replicas r
+--                     JOIN FC_ReplicaInfo ri on r.RepID = ri.RepID
+--                     JOIN FC_StorageElements se on r.SEID = se.SEID
+--                     JOIN FC_Statuses st on r.Status = st.StatusID
+--                     WHERE FileID =',file_id,
+--                     ' and st.Status  in (',visibleReplicaStatus,') ');
     SET @sql = CONCAT(
                     'SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
                     FROM FC_Replicas r
-                    JOIN FC_ReplicaInfo ri on r.RepID = ri.RepID
                     JOIN FC_StorageElements se on r.SEID = se.SEID
                     JOIN FC_Statuses st on r.Status = st.StatusID
                     WHERE FileID =',file_id,
@@ -1289,13 +1597,17 @@ CREATE PROCEDURE ps_get_all_directory_info
 BEGIN
 
 
-    SELECT SQL_NO_CACHE d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
+--     SELECT SQL_NO_CACHE d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
+--     FROM FC_DirectoryList d
+--     JOIN FC_DirectoryInfo di on d.DirID = di.DirID
+--     JOIN FC_Users u on di.UID = u.UID
+--     JOIN FC_Groups g on di.GID = g.GID
+--     WHERE Name = dir_name;
+    SELECT SQL_NO_CACHE d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
     FROM FC_DirectoryList d
-    JOIN FC_DirectoryInfo di on d.DirID = di.DirID
-    JOIN FC_Users u on di.UID = u.UID
-    JOIN FC_Groups g on di.GID = g.GID
+    JOIN FC_Users u on d.UID = u.UID
+    JOIN FC_Groups g on d.GID = g.GID
     WHERE Name = dir_name;
-
 END //
 DELIMITER ;
 
@@ -1307,13 +1619,17 @@ CREATE PROCEDURE ps_get_all_directory_info_from_id
 BEGIN
 
 
-    SELECT SQL_NO_CACHE d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
+--     SELECT SQL_NO_CACHE d.DirID, di.UID, u.UserName, di.GID, g.GroupName, di.Status, di.Mode, di.CreationDate, di.ModificationDate
+--     FROM FC_DirectoryList d
+--     JOIN FC_DirectoryInfo di on d.DirID = di.DirID
+--     JOIN FC_Users u on di.UID = u.UID
+--     JOIN FC_Groups g on di.GID = g.GID
+--     WHERE d.DirID = dir_id;
+    SELECT SQL_NO_CACHE d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
     FROM FC_DirectoryList d
-    JOIN FC_DirectoryInfo di on d.DirID = di.DirID
-    JOIN FC_Users u on di.UID = u.UID
-    JOIN FC_Groups g on di.GID = g.GID
+    JOIN FC_Users u on d.UID = u.UID
+    JOIN FC_Groups g on d.GID = g.GID
     WHERE d.DirID = dir_id;
-
 END //
 DELIMITER ;
 
@@ -1324,7 +1640,8 @@ CREATE PROCEDURE ps_set_dir_gid
 (IN  dir_name VARCHAR(255), IN gid INT)
 BEGIN
 
-  UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET GID = gid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+--   UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET GID = gid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+  UPDATE FC_DirectoryList SET GID = gid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
 
   SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as errmsg;
 
@@ -1339,7 +1656,8 @@ CREATE PROCEDURE ps_set_dir_uid
 (IN  dir_name VARCHAR(255), IN uid INT)
 BEGIN
 
-  UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET UID = uid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+--   UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET UID = uid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+  UPDATE FC_DirectoryList SET UID = uid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
 
   SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as errmsg;
 
@@ -1354,7 +1672,8 @@ CREATE PROCEDURE ps_set_dir_status
 (IN  dir_name VARCHAR(255), IN status_id INT)
 BEGIN
 
-  UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET Status = status_id, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+--   UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET Status = status_id, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+  UPDATE FC_DirectoryList SET Status = status_id, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
 
   SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as errmsg;
 
@@ -1367,7 +1686,8 @@ CREATE PROCEDURE ps_set_dir_mode
 (IN  dir_name VARCHAR(255), IN mode SMALLINT UNSIGNED)
 BEGIN
 
-  UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET Mode = mode, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+--   UPDATE FC_DirectoryInfo di JOIN FC_DirectoryList d ON d.DirID = di.DirID SET Mode = mode, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
+  UPDATE FC_DirectoryList SET Mode = mode, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
 
   SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as errmsg;
 

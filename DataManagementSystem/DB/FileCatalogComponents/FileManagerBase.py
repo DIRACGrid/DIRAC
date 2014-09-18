@@ -634,6 +634,8 @@ class FileManagerBase( object ):
     successful = {}
     failed = {}
     res = self._findFiles( lfns, ['DirID', 'FileID', 'Size'], connection = connection )
+    if not res['OK']:
+      return res
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = True

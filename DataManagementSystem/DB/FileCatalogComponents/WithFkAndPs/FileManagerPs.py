@@ -9,7 +9,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import
 from DIRAC.Core.Utilities.List                                            import stringListToString, \
                                                                                  intListToString, \
                                                                                  breakListIntoChunks
-
+import datetime
 
 
 DEBUG = 0
@@ -211,6 +211,103 @@ class FileManagerPs( FileManagerBase ):
   #
   # _addFiles related methods
   #
+#
+#   def _insertFiles( self, lfns, uid, gid, connection = False ):
+#     """ Insert new files. lfns is a dictionary indexed on lfn, the values are
+#         mandatory: DirID, Size, Checksum, GUID
+#         optional : Owner (dict with username and group), ChecksumType (Adler32 by default), Mode (db.umask by default)
+#
+#         :param lfns : lfns and info to insert
+#         :param uid : user id, overwriten by Owner['username'] if defined
+#         :param gid : user id, overwriten by Owner['group'] if defined
+#
+#     """
+#
+#     connection = self._getConnection(connection)
+#
+#
+#     failed = {}
+#     successful = {}
+#     res = self._getStatusInt( 'AprioriGood', connection = connection )
+#
+#     if res['OK']:
+#       statusID = res['Value']
+#     else:
+#       return res
+#
+#     # Insert each file separately
+#     for lfn in lfns:
+#
+#       # Get all the info
+#       fileInfo = lfns[lfn]
+#
+#       dirID = fileInfo['DirID']
+#       fileName = os.path.basename( lfn )
+#       size = fileInfo['Size']
+#       ownerDict = fileInfo.get( 'Owner', None )
+#       checksum = fileInfo['Checksum']
+#       checksumtype = fileInfo.get( 'ChecksumType', 'Adler32' )
+#       guid = fileInfo['GUID']
+#       mode = fileInfo.get( 'Mode', self.db.umask )
+#
+#       s_uid = uid
+#       s_gid = gid
+#
+#       # overwrite the s_uid and s_gid if defined in the lfn info
+#       if ownerDict:
+#         result = self.db.ugManager.getUserAndGroupID( ownerDict )
+#         if result['OK']:
+#           s_uid, s_gid = result['Value']
+#
+#       # insert
+#       result = self.db.executeStoredProcedureWithCursor( 'ps_insert_file', ( dirID, size, s_uid, s_gid,
+#                                                                              statusID, fileName, guid,
+#                                                                              checksum, checksumtype, mode ) )
+#
+#       if not result['OK']:
+#         return result
+#
+#       fileID, errMsg = result['Value'][0]
+#
+#       if not fileID:
+#         failed[lfn] = errMsg
+#       else:
+#         successful[lfn] = lfns[lfn]
+#         successful[lfn]['FileID'] = fileID
+#
+#     return S_OK( { 'Successful' : successful, 'Failed' : failed} )
+
+
+
+
+  def __insertMultipleFiles ( self, allFileValues, wantedLfns ):
+
+    fileValuesStrings = []
+    fileDescStrings = []
+
+    for lfn in wantedLfns:
+      dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode = allFileValues[lfn]
+      utcNow = datetime.datetime.utcnow().replace( microsecond = 0 )
+      fileValuesStrings.append( "(%s, %s, %s, %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s)" % ( dirID,
+                                                             size, s_uid, s_gid, statusID, fileName, guid,
+                                                              checksum, checksumtype, utcNow, utcNow, mode ) )
+      fileDescStrings.append( "(DirID = %s AND FileName = '%s')" % ( dirID, fileName ) )
+
+
+    fileValuesStr = ",".join( fileValuesStrings )
+    fileDescStr = " OR ".join( fileDescStrings )
+
+
+    result = self.db.executeStoredProcedureWithCursor( 'ps_insert_multiple_file', ( fileValuesStr, fileDescStr ) )
+
+    return result
+
+
+  def __chunks( self, l, n ):
+    """ Yield successive n-sized chunks from l.
+    """
+    for i in xrange( 0, len( l ), n ):
+        yield l[i:i + n]
 
   def _insertFiles( self, lfns, uid, gid, connection = False ):
     """ Insert new files. lfns is a dictionary indexed on lfn, the values are
@@ -234,6 +331,11 @@ class FileManagerPs( FileManagerBase ):
       statusID = res['Value']
     else:
       return res
+
+    lfnsToRetry = []
+
+    fileValues = {}
+    fileDesc = {}
 
     # Insert each file separately
     for lfn in lfns:
@@ -259,6 +361,35 @@ class FileManagerPs( FileManagerBase ):
         if result['OK']:
           s_uid, s_gid = result['Value']
 
+
+      fileValues[lfn] = ( dirID, size, s_uid, s_gid,
+                          statusID, fileName, guid,
+                          checksum, checksumtype, mode )
+      fileDesc[( dirID, fileName )] = lfn
+
+
+    chunkSize = 200
+
+    allChunks = list( self.__chunks( lfns.keys(), chunkSize ) )
+
+    
+    for lfnChunk in allChunks:
+      result = self.__insertMultipleFiles( fileValues, lfnChunk )
+      
+      if result['OK']:
+        allIds = result['Value']
+        for dirId, fileName, fileID in allIds:
+          lfn = fileDesc[ ( dirId, fileName ) ]
+          successful[lfn] = lfns[lfn]
+          successful[lfn]['FileID'] = fileID
+      else:
+        lfnsToRetry.extend( lfnChunk )
+
+
+    # If we are here, that means that the multiple insert failed, so we do one by one
+
+    for lfn in lfnsToRetry:
+      dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode = fileValues[lfn]
       # insert
       result = self.db.executeStoredProcedureWithCursor( 'ps_insert_file', ( dirID, size, s_uid, s_gid,
                                                                              statusID, fileName, guid,
@@ -338,7 +469,12 @@ class FileManagerPs( FileManagerBase ):
 
     connection = self._getConnection(connection)
 
+    if not fileIDs:
+      return S_OK()
+
     formatedFileIds = intListToString( fileIDs )
+
+
 
     result = self.db.executeStoredProcedureWithCursor( 'ps_delete_replicas_from_file_ids', ( formatedFileIds, ) )
     if not result['OK']:
@@ -377,6 +513,93 @@ class FileManagerPs( FileManagerBase ):
   #
   # _addReplicas related methods
   #
+#
+#   def _insertReplicas( self, lfns, master = False, connection = False ):
+#     """ Insert new replicas. lfns is a dictionary with one entry for each file. The keys are lfns, and values are dict
+#         with mandatory attributes : FileID, SE (the name), PFN
+#
+#         :param lfns: lfns and info to insert
+#         :param master: true if they are master replica, otherwise they will be just 'Replica'
+#
+#         :return successful/failed convention, with successful[lfn] = true
+#     """
+#
+#     connection = self._getConnection(connection)
+#
+#     # Add the files
+#     failed = {}
+#     successful = {}
+#
+#     # Get the status id of AprioriGood
+#     res = self._getStatusInt( 'AprioriGood', connection = connection )
+#     if not res['OK']:
+#       return res
+#     statusID = res['Value']
+#
+#     # treat each file after each other
+#     for lfn in lfns.keys():
+#
+#       fileID = lfns[lfn]['FileID']
+#
+#       seName = lfns[lfn]['SE']
+#       if type(seName) in StringTypes:
+#         seList = [seName]
+#       elif type(seName) == ListType:
+#         seList = seName
+#       else:
+#         return S_ERROR('Illegal type of SE list: %s' % str( type( seName ) ) )
+#
+#
+#       replicaType = 'Master' if master else 'Replica'
+#       pfn = lfns[lfn]['PFN']
+#
+#       # treat each replica of a file after the other
+#       for seName in seList:
+#
+#         # get the SE id
+#         res = self.db.seManager.findSE(seName)
+#         if not res['OK']:
+#           failed[lfn] = res['Message']
+#           continue
+#         seID = res['Value']
+#
+#         # insert the replica and its info
+#         result = self.db.executeStoredProcedureWithCursor( 'ps_insert_replica',
+#                                                            ( fileID, seID, statusID, replicaType, pfn ) )
+#
+#         if not result['OK']:
+#           return result
+#
+#         replicaID, errMsg = result['Value'][0]
+#         if replicaID:
+#           lfns[lfn]['RepID'] = replicaID
+#           successful[lfn] = True
+#         else:
+#           failed[lfn] = errMsg
+#
+#     return S_OK({'Successful':successful,'Failed':failed})
+
+  def __insertMultipleReplicas ( self, allReplicaValues, lfnsChunk ):
+
+    repValuesStrings = []
+    repDescStrings = []
+
+    for lfn in lfnsChunk:
+      fileID, seID, statusID, replicaType, pfn = allReplicaValues[lfn]
+      utcNow = datetime.datetime.utcnow().replace( microsecond = 0 )
+      repValuesStrings.append( "(%s,%s,'%s','%s','%s','%s','%s')" % ( fileID,
+                              seID, statusID, replicaType, utcNow, utcNow, pfn ) )
+      repDescStrings.append( "(r.FileID = %s AND SEID = %s)" % ( fileID, seID ) )
+
+
+    repValuesStr = ",".join( repValuesStrings )
+    repDescStr = " OR ".join( repDescStrings )
+
+
+    result = self.db.executeStoredProcedureWithCursor( 'ps_insert_multiple_replica', ( repValuesStr, repDescStr ) )
+
+    return result
+
 
   def _insertReplicas( self, lfns, master = False, connection = False ):
     """ Insert new replicas. lfns is a dictionary with one entry for each file. The keys are lfns, and values are dict
@@ -387,6 +610,7 @@ class FileManagerPs( FileManagerBase ):
 
         :return successful/failed convention, with successful[lfn] = true
     """
+    chunkSize = 200
 
     connection = self._getConnection(connection)
 
@@ -400,10 +624,16 @@ class FileManagerPs( FileManagerBase ):
       return res
     statusID = res['Value']
 
+    lfnsToRetry = []
+
+    repValues = {}
+    repDesc = {}
+
     # treat each file after each other
     for lfn in lfns.keys():
 
       fileID = lfns[lfn]['FileID']
+
 
       seName = lfns[lfn]['SE']
       if type(seName) in StringTypes:
@@ -418,6 +648,7 @@ class FileManagerPs( FileManagerBase ):
       pfn = lfns[lfn]['PFN']
 
       # treat each replica of a file after the other
+      # (THIS CANNOT WORK... WE ARE ONLY CAPABLE OF DOING ONE REPLICA PER FILE AT THE TIME)
       for seName in seList:
 
         # get the SE id
@@ -427,21 +658,50 @@ class FileManagerPs( FileManagerBase ):
           continue
         seID = res['Value']
 
-        # insert the replica and its info
-        result = self.db.executeStoredProcedureWithCursor( 'ps_insert_replica',
-                                                           ( fileID, seID, statusID, replicaType, pfn ) )
+        # This is incompatible with adding multiple replica at the time for a given file
+        repValues[lfn] = ( fileID, seID, statusID, replicaType, pfn )
+        repDesc[( fileID, seID )] = lfn
 
-        if not result['OK']:
-          return result
 
-        replicaID, errMsg = result['Value'][0]
-        if replicaID:
-          lfns[lfn]['RepID'] = replicaID
-          successful[lfn] = True
-        else:
-          failed[lfn] = errMsg
+
+
+    allChunks = list( self.__chunks( lfns.keys(), chunkSize ) )
+
+    
+    for lfnChunk in allChunks:
+      result = self.__insertMultipleReplicas( repValues, lfnChunk )
+      
+      print "insert multi %s " % result['OK']
+
+      if result['OK']:
+        allIds = result['Value']
+        for fileId, seId, repId in allIds:
+          lfn = repDesc[ ( fileId, seId ) ]
+          successful[lfn] = lfns[lfn]
+          successful[lfn]['RepID'] = repId
+      else:
+        lfnsToRetry.extend( lfnChunk )
+
+
+
+    for lfn in lfnsToRetry:
+      fileID, seID, statusID, replicaType, pfn = repValues[lfn]
+      # insert the replica and its info
+      result = self.db.executeStoredProcedureWithCursor( 'ps_insert_replica',
+                                                         ( fileID, seID, statusID, replicaType, pfn ) )
+
+      if not result['OK']:
+        return result
+
+      replicaID, errMsg = result['Value'][0]
+      if replicaID:
+        lfns[lfn]['RepID'] = replicaID
+        successful[lfn] = True
+      else:
+        failed[lfn] = errMsg
 
     return S_OK({'Successful':successful,'Failed':failed})
+
 
   def _getRepIDsForReplica( self, replicaTuples, connection = False ):
     """ Get the Replica IDs for (fileId, SEID) couples
