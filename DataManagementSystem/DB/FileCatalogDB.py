@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                            import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                               import DB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities    import checkArgumentDict
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities    import checkArgumentFormat
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 #############################################################################

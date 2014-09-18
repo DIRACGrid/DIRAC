@@ -31,14 +31,12 @@ gDataLoggingDB = False
 def initializeDataLoggingHandler( serviceInfo ):
   """ handler initialisation """
   global gDataLoggingDB
-  gDataLoggingDB = DataLoggingDB()
+  gDataLoggingDB = DataLoggingDB( checkTables = True )
 
   res = gDataLoggingDB._connect()
   if not res['OK']:
     return res
-  res = gDataLoggingDB._checkTable()
-  if not res['OK'] and not res['Message'] == 'The requested table already exist':
-    return res
+
   return S_OK()
 
 class DataLoggingHandler( RequestHandler ):

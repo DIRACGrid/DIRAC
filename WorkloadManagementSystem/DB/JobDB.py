@@ -272,7 +272,7 @@ class JobDB( DB ):
                                  }
 
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self, maxQueueSize = 10, checkTables = False ):
     """ Standard Constructor
     """
 
@@ -282,6 +282,20 @@ class JobDB( DB ):
 
     self.jobAttributeNames = []
     self.nJobAttributeNames = 0
+    
+    if checkTables:
+      result = self._createTables( self._tablesDict )
+      if not result['OK']:
+        error = 'Failed to check/create tables'
+        self.log.fatal( 'JobDB: %s' % error )
+        sys.exit( error )
+      if result['Value']:
+        self.log.info( "JobDB: created tables %s" % result['Value'] )  
+      result = self.__updateDBSchema()
+      if not result['OK']:
+        error = 'Failed to update database schema'
+        self.log.fatal( 'JobDB: %s' % error )
+        sys.exit( error )
 
     result = self.__getAttributeNames()
 
@@ -296,51 +310,6 @@ class JobDB( DB ):
 
     if DEBUG:
       result = self.dumpParameters()
-
-    self.__updateDBSchema()
-
-
-  def _checkTable( self ):
-    """ _checkTable.
-
-    Method called on the MatcherHandler instead of on the JobDB constructor
-    to avoid an awful number of unnecessary queries with "show tables".
-    """
-
-    return self.__createTables()
-
-
-  def __createTables( self ):
-    """ __createTables
-
-    Writes the schema in the database. If a table is already in the schema, it is
-    skipped to avoid problems trying to create a table that already exists.
-    """
-
-    # Horrible SQL here !!
-    existingTables = self._query( "show tables" )
-    if not existingTables[ 'OK' ]:
-      return existingTables
-    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
-
-    # Makes a copy of the dictionary _tablesDict
-    tables = {}
-    tables.update( self._tablesDict )
-
-    for existingTable in existingTables:
-      if existingTable in tables:
-        del tables[ existingTable ]
-
-    res = self._createTables( tables )
-    if not res[ 'OK' ]:
-      return res
-
-    # Human readable S_OK message
-    if res[ 'Value' ] == 0:
-      res[ 'Value' ] = 'No tables created'
-    else:
-      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res
 
   def __updateDBSchema( self ):
     result = self.__checkDBVersion()

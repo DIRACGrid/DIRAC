@@ -26,12 +26,6 @@ class SandboxMetadataDB( DB ):
     """
     Create the tables
     """
-    result = self._query( "show tables" )
-    if not result[ 'OK' ]:
-      return result
-
-    tablesInDB = [ t[0] for t in result[ 'Value' ] ]
-    tablesToCreate = {}
     self.__tablesDesc = {}
 
     self.__tablesDesc[ 'sb_Owners' ] = { 'Fields' : { 'OwnerId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
@@ -69,11 +63,10 @@ class SandboxMetadataDB( DB ):
                                               'UniqueIndexes' : { 'Mapping' : [ 'SBId', 'EntitySetup', 'EntityId', 'Type' ] }
                                            }
 
-    for tableName in self.__tablesDesc:
-      if not tableName in tablesInDB:
-        tablesToCreate[ tableName ] = self.__tablesDesc[ tableName ]
-
-    return self._createTables( tablesToCreate )
+    result = self._createTables( self.__tablesDesc )
+    if result['OK'] and result['Value']:
+      self.log.info( "SandboxMetadataDB: created tables %s" % result['Value'] ) 
+    return result 
 
   def registerAndGetOwnerId( self, owner, ownerDN, ownerGroup ):
     """

@@ -113,7 +113,10 @@ class UserProfileDB( DB ):
     if 'up_HashTags' not in tablesInDB:
       tablesD[ 'up_HashTags' ] = self.tableDict['up_HashTags']
 
-    return self._createTables( tablesD )
+    result = self._createTables( tablesD )
+    if result['OK'] and result['Value']:
+      self.log.info( "UserProfileDB: created tables %s" % result['Value'] ) 
+    return result  
 
   def __getUserId( self, userName, insertIfMissing = True ):
     return self.__getObjId( userName, 'UserName', 'up_Users', insertIfMissing )
