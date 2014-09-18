@@ -7,6 +7,7 @@
 """
 
 import time
+import sys
 from types                import StringTypes, IntType, LongType
 
 from DIRAC                import gLogger, S_OK, S_ERROR
@@ -42,56 +43,21 @@ class JobLoggingDB( DB ):
 #                                  'Indexes' : { 'JobID' : [ 'JobID' ] }
                                  }
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self, maxQueueSize = 10, checkTables = False ):
     """ Standard Constructor
     """
 
     DB.__init__( self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB', maxQueueSize )
     self.gLogger = gLogger
-
-
-  def _checkTable( self ):
-    """ _checkTable.
-     
-    Method called on the MatcherHandler instead of on the JobLoggingDB constructor
-    to avoid an awful number of unnecessary queries with "show tables".
-    """
     
-    return self.__createTables()
-
-
-  def __createTables( self ):
-    """ __createTables
-    
-    Writes the schema in the database. If a table is already in the schema, it is
-    skipped to avoid problems trying to create a table that already exists.
-    """
-
-    # Horrible SQL here !!
-    existingTables = self._query( "show tables" )
-    if not existingTables[ 'OK' ]:
-      return existingTables
-    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
-
-    # Makes a copy of the dictionary _tablesDict
-    tables = {}
-    tables.update( self._tablesDict )
-        
-    for existingTable in existingTables:
-      if existingTable in tables:
-        del tables[ existingTable ]  
-              
-    res = self._createTables( tables )
-    if not res[ 'OK' ]:
-      return res
-    
-    # Human readable S_OK message
-    if res[ 'Value' ] == 0:
-      res[ 'Value' ] = 'No tables created'
-    else:
-      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res  
-
+    if checkTables:
+      result = self._createTables( self._tablesDict )
+      if not result['OK']:
+        error = 'Failed to check/create tables'
+        self.log.fatal( 'JobLoggingDB: %s' % error )
+        sys.exit( error )
+      if result['Value']:
+        self.log.info( "JobLoggingDB: created tables %s" % result['Value'] )    
 
 #############################################################################
   def addLoggingRecord( self,

@@ -6,6 +6,7 @@
 '''
 
 from datetime                                              import datetime 
+import sys
 
 from DIRAC                                                 import S_OK, S_ERROR 
 from DIRAC.Core.Base.DB                                    import DB
@@ -70,7 +71,7 @@ class ResourceStatusDB( object ):
                    }
   
   
-  def __init__( self, maxQueueSize = 10, mySQL = None ):
+  def __init__( self, maxQueueSize = 10, mySQL = None, checkTables = False ):
     '''
       Constructor, accepts any DB or mySQL connection, mostly used for testing
       purposes.
@@ -83,6 +84,14 @@ class ResourceStatusDB( object ):
     else:
       self.database = DB( 'ResourceStatusDB', 
                           'ResourceStatus/ResourceStatusDB', maxQueueSize )
+    if checkTables:
+      result = self._createTables( self._tablesDict )
+      if not result['OK']:
+        error = 'Failed to check/create tables'
+        self.log.fatal( 'ResourceStatusDB: %s' % error )
+        sys.exit( error )
+      if result['Value']:
+        self.log.info( "ResourceStatusDB: created tables %s" % result['Value'] )  
 
   ## SQL Methods ###############################################################
 
@@ -353,12 +362,6 @@ class ResourceStatusDB( object ):
 
   ## Protected methods #########################################################
 
-  def _checkTable( self ):
-    '''
-      Method used by database tools to write the schema
-    '''  
-    return self.__createTables()
-
   def _logRecord( self, params, meta, isUpdate ):
     '''
       Method that records every change on a LogTable.
@@ -396,37 +399,15 @@ class ResourceStatusDB( object ):
       are written in the database. If a table is already in the schema, it is
       skipped to avoid problems trying to create a table that already exists.
     '''
-
-    # Horrible SQL here !!
-    tablesCreatedRes = self.database._query( "show tables" )
-    if not tablesCreatedRes[ 'OK' ]:
-      return tablesCreatedRes
-    tablesCreated = [ tableCreated[0] for tableCreated in tablesCreatedRes[ 'Value' ] ]
-
     tables = {}
     if tableName is None:
-      tables.update( self._tableDict )
-   
+      tables.update( self._tableDict )   
     elif tableName in self._tableDict:
       tables = { tableName : self._tableDict[ tableName ] }
-    
     else:
       return S_ERROR( '"%s" is not a known table' % tableName )    
       
-    for tableName in tablesCreated:
-      if tableName in tables:
-        del tables[ tableName ]  
-              
-    res = self.database._createTables( tables )
-    if not res[ 'OK' ]:
-      return res
-    
-    # Human readable S_OK message
-    if res[ 'Value' ] == 0:
-      res[ 'Value' ] = 'No tables created'
-    else:
-      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res       
+    return self.database._createTables( tables )      
 
   def __generateTables( self ):
     '''

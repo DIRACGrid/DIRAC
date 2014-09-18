@@ -73,7 +73,11 @@ class ComponentMonitoringDB( DB ):
                                   'Indexes' : { 'Component' : [ 'CompId' ] }
                       }
 
-    return self._createTables( tablesD )
+    result = self._createTables( tablesD )
+    if result['OK'] and result['Value']:
+      self.log.info( "ComponentMonitoringDB: created tables %s" % result['Value'] )  
+    
+    return result  
 
   def __datetime2str( self, dt ):
     if type( dt ) == types.StringType:

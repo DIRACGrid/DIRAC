@@ -83,12 +83,6 @@ class TaskQueueDB( DB ):
     """
     Create the tables
     """
-    result = self._query( "show tables" )
-    if not result[ 'OK' ]:
-      return result
-
-    tablesInDB = [ t[0] for t in result[ 'Value' ] ]
-    tablesToCreate = {}
     self.__tablesDesc = {}
 
     self.__tablesDesc[ 'tq_TaskQueues' ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
@@ -122,11 +116,10 @@ class TaskQueueDB( DB ):
                                          'Indexes': { 'TaskIndex': [ 'TQId' ], '%sIndex' % multiField: [ 'Value' ] },
                                        }
 
-    for tableName in self.__tablesDesc:
-      if not tableName in tablesInDB:
-        tablesToCreate[ tableName ] = self.__tablesDesc[ tableName ]
-
-    return self._createTables( tablesToCreate )
+    result = self._createTables( self.__tablesDesc )
+    if result['OK'] and result['Value']:
+      self.log.info( "TaskQueueDB: created tables %s" % result['Value'] ) 
+    return result 
 
   def getGroupsInTQs( self ):
     cmdSQL = "SELECT DISTINCT( OwnerGroup ) FROM `tq_TaskQueues`"
@@ -136,11 +129,10 @@ class TaskQueueDB( DB ):
     return S_OK( [ row[0] for row in result[ 'Value' ] ] )
 
   def forceRecreationOfTables( self ):
-    dropSQL = "DROP TABLE IF EXISTS %s" % ", ".join( self.__tablesDesc )
-    result = self._update( dropSQL )
-    if not result[ 'OK' ]:
-      return result
-    return self._createTables( self.__tablesDesc )
+    result = self._createTables( self.__tablesDesc, force = True )
+    if result['OK'] and result['Value']:
+      self.log.info( "TaskQueueDB: created tables %s" % result['Value'] ) 
+    return result   
 
   def __strDict( self, dDict ):
     lines = []

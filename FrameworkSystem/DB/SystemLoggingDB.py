@@ -190,7 +190,10 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     result = self.__removeOldSchema()
     if not result['OK']:
       return result
-    return self._createTables( self.tableDict, force = False )
+    result = self._createTables( self.tableDict, force = False )
+    if result['OK'] and result['Value']:
+      self.log.info( "SystemLoggingDB: created tables %s" % result['Value'] ) 
+    return result   
 
   def __removeOldSchema( self ):
     """ remove the old schema if necessary

@@ -99,7 +99,10 @@ class NotificationDB( DB ):
                                                   }
 
     if tablesToCreate:
-      return self._createTables( tablesToCreate )
+      result = self._createTables( tablesToCreate )
+      if result['OK'] and result['Value']:
+        self.log.info( "NotificationDB: created tables %s" % result['Value'] ) 
+      return result   
     return S_OK()
 
   def __checkAlarmField( self, name, value ):

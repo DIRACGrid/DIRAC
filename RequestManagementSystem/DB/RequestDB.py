@@ -64,7 +64,10 @@ class RequestDB( DB ):
     for tableName in toCreate:
       metaCreate[tableName] = tableMeta[tableName]
     if metaCreate:
-      return self._createTables( metaCreate, force )
+      result = self._createTables( metaCreate, force = force )
+      if result['OK'] and result['Value']:
+        self.log.info( "RequestDB: created tables %s" % result['Value'] ) 
+      return result   
     return S_OK()
 
   @staticmethod

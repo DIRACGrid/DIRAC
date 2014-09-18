@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 
 import inspect
 import types
+import sys
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                           import DB
 from DIRAC.Core.Utilities.List                    import intListToString, stringListToString
@@ -101,7 +102,7 @@ class StorageManagementDB( DB ):
 
 
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+  def __init__( self, systemInstance = 'Default', maxQueueSize = 10, checkTables = False ):
     DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB', maxQueueSize )
 
     # FIXME: substitute with self._tablesDict ( but watch out, the order will not be the same ! )
@@ -111,49 +112,15 @@ class StorageManagementDB( DB ):
     self.STAGEPARAMS   = ['ReplicaID', 'StageStatus', 'RequestID', 'StageRequestSubmitTime', 'StageRequestCompletedTime', 'PinLength', 'PinExpiryTime']
     self.STATES        = ['Failed', 'New', 'Waiting', 'Offline', 'StageSubmitted', 'Staged']
 
-
-  def _checkTable( self ):
-    """ _checkTable.
-     
-    Method called on the StorageManagerHandler instead of on the StorageManagementDB constructor
-    to avoid an awful number of unnecessary queries with "show tables".
-    """
-    
-    return self.__createTables()
-
-
-  def __createTables( self ):
-    """ __createTables
-    
-    Writes the schema in the database. If a table is already in the schema, it is
-    skipped to avoid problems trying to create a table that already exists.
-    """
-
-    # Horrible SQL here !!
-    existingTables = self._query( "show tables" )
-    if not existingTables[ 'OK' ]:
-      return existingTables
-    existingTables = [ existingTable[0] for existingTable in existingTables[ 'Value' ] ]
-
-    # Makes a copy of the dictionary _tablesDict
-    tables = {}
-    tables.update( self._tablesDict )
-        
-    for existingTable in existingTables:
-      if existingTable in tables:
-        del tables[ existingTable ]  
-              
-    res = self._createTables( tables )
-    if not res[ 'OK' ]:
-      return res
-    
-    # Human readable S_OK message
-    if res[ 'Value' ] == 0:
-      res[ 'Value' ] = 'No tables created'
-    else:
-      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res  
-
+    if checkTables:
+      result = self._createTables( self._tablesDict )
+      if not result['OK']:
+        error = 'Failed to check/create tables'
+        self.log.fatal( 'StorageManagementDB: %s' % error )
+        sys.exit( error )
+        return
+      if result['Value']:
+        self.log.info( "StorageManagementDB: created tables %s" % result['Value'] )
 
   def __getConnection( self, connection ):
     if connection:

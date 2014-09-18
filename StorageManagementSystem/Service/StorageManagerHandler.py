@@ -11,10 +11,8 @@ storageDB = False
 
 def initializeStorageManagerHandler( serviceInfo ):
   global storageDB
-  storageDB = StorageManagementDB()
-  return storageDB._checkTable()
+  storageDB = StorageManagementDB( checkTables = True )
   
-
 class StorageManagerHandler( RequestHandler ):
 
   ######################################################################

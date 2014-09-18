@@ -29,12 +29,9 @@ def initializeDataIntegrityHandler( serviceInfo ):
   """ Check that we can connect to the DB and that the tables are properly created or updated
   """
   global gDataIntegrityDB
-  gDataIntegrityDB = DataIntegrityDB()
+  gDataIntegrityDB = DataIntegrityDB( checkTables = True )
   res = gDataIntegrityDB._connect()
   if not res['OK']:
-    return res
-  res = gDataIntegrityDB._checkTable()
-  if not res['OK'] and not res['Message'] == 'The requested table already exist':
     return res
 
   return S_OK()

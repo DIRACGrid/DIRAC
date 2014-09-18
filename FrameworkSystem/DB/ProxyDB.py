@@ -123,7 +123,10 @@ class ProxyDB( DB ):
                                          'PrimaryKey' : [ 'UserDN', 'UserGroup' ]
                                        }
 
-    return self._createTables( tablesD )
+    result = self._createTables( tablesD )
+    if result['OK'] and result['Value']:
+      self.log.info( "ProxyDB: created tables %s" % result['Value'] ) 
+    return result   
 
   def __addUserNameToTable( self, tableName ):
     result = self._update( "ALTER TABLE `%s` ADD COLUMN UserName VARCHAR(64) NOT NULL" % tableName )

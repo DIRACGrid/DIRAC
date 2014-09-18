@@ -271,10 +271,12 @@ class TransformationDB( DB ):
 
     if tablesToBeCreated:
       gLogger.verbose( "Creating tables %s" % ( ', '.join( tablesToBeCreated.keys() ) ) )
-      res = self._createTables( tablesToBeCreated )
-      if not res['OK']:
-        return res
-
+      result = self._createTables( tablesToBeCreated )
+      if result['OK'] and result['Value']:
+        self.log.info( "TransformationDB: created tables %s" % result['Value'] ) 
+      if not result['OK']:
+        return result   
+    
     #Get the available counters
     retVal = self._query( "EXPLAIN TransformationCounters" )
     if not retVal[ 'OK' ]:

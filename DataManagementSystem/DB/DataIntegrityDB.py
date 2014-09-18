@@ -50,10 +50,20 @@ CREATE TABLE Problematics(
 
   fieldList = ['FileID', 'LFN', 'PFN', 'Size', 'SE', 'GUID', 'Prognosis']
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self, maxQueueSize = 10, checkTables = False ):
     """ Standard Constructor
     """
     DB.__init__( self, 'DataIntegrityDB', 'DataManagement/DataIntegrityDB', maxQueueSize )
+    
+    if checkTables:
+      result = self._createTables( self.tableDict, force = False )
+      if not result['OK']:
+        error = 'Failed to check/create tables'
+        self.log.fatal( 'DataIntegrityDB: %s' % error )
+        sys.exit( error )
+      if result['Value']:
+        self.log.info( "DataIntegrityDB: created tables %s" % result['Value'] )    
+    
 
   def _checkTable( self ):
     """ Make sure the table is created

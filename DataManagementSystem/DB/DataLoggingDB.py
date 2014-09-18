@@ -64,7 +64,7 @@ class DataLoggingDB( DB ):
                             }
                }
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self, maxQueueSize = 10, checkTables = False ):
     """ c'tor
 
     :param self: self reference
@@ -72,6 +72,15 @@ class DataLoggingDB( DB ):
     """
     DB.__init__( self, "DataLoggingDB", "DataManagement/DataLoggingDB", maxQueueSize )
     self.gLogger = gLogger
+    
+    if checkTables:
+      result = self._createTables( self.tableDict, force = False )
+      if not result['OK']:
+        error = 'Failed to check/create tables'
+        self.log.fatal( 'DataLoggingDB: %s' % error )
+        sys.exit( error )
+      if result['Value']:
+        self.log.info( "DataLoggingDB: created tables %s" % result['Value'] )    
 
   def _checkTable( self ):
     """ Make sure the table is created
