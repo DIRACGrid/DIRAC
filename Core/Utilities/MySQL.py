@@ -513,14 +513,14 @@ class MySQL:
     if not retDict['OK']:
       return retDict
     if ( tableName, ) in retDict['Value']:
-      if not force:
-        # the requested exist and table creation is not force, return with error
-        return S_ERROR( 'Requested table %s already exists' % tableName )
-      else:
+      if force:
         cmd = 'DROP TABLE %s' % table
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
+      else:
+        # the requested exist and table creation is not force, return with error
+        return S_ERROR( 'Requested table %s already exists' % tableName )        
 
     return S_OK()
 
@@ -886,8 +886,7 @@ class MySQL:
         # Check if Table exists
         retDict = self.__checkTable( table, force = force )
         if not retDict['OK']:
-          message = 'The requested table already exists'
-          if retDict['Message'] == message and okIfTableExists:
+          if 'already exists' in retDict['Message'] and okIfTableExists:
             continue
           return retDict
 
