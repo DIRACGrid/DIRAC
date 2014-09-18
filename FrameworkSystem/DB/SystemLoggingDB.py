@@ -173,14 +173,15 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                }
 
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self, maxQueueSize = 10, checkTables = False ):
     """ Standard Constructor
     """
     DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
                  maxQueueSize, debug = DEBUG )
-    result = self._checkTable()
-    if not result['OK']:
-      gLogger.error( 'Failed to check/create the database tables', result['Message'] )
+    if checkTables:
+      result = self._checkTable()
+      if not result['OK']:
+        gLogger.error( 'Failed to check/create the database tables', result['Message'] )
 
   def _checkTable( self ):
     """ Make sure the tables are created
