@@ -27,10 +27,9 @@ import stat
 import socket
 import re
 import signal
-import urllib2
 import json
 
-from pilotTools import CommandBase
+from pilotTools import CommandBase, retrieveUrlTimeout
 
 __RCSID__ = "$Id$"
 
@@ -57,7 +56,13 @@ class GetPilotVersion( CommandBase ):
       self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
     else:
       self.log.info( "Pilot version not requested as pilot script option, going to find it" )
-      self.__urlretrieveTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, self.pilotCFGFile, timeout = 120 )
+      result = retrieveUrlTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, 
+                                   self.pilotCFGFile, 
+                                   self.log,
+                                   timeout = 120 )
+      if not result:
+        self.log.error( "Failed to get pilot version, exiting ...")
+        sys.exit( 1 )
       fp = open( self.pilotCFGFile, 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
@@ -65,78 +70,6 @@ class GetPilotVersion( CommandBase ):
       self.log.debug( "Pilot versions found: %s" % ', '.join( pilotVersions ) )
       self.log.info( "Setting pilot version to %s" % pilotVersions[0] )
       self.pp.releaseVersion = pilotVersions[0]
-
-  def __urlretrieveTimeout( self, url, fileName = '', timeout = 0 ):
-    """ Retrieve remote url to local file, with timeout wrapper
-    """
-    self.log.debug( "Retrieving remote file '%s'" % url )
-
-    urlData = ''
-    if timeout:
-      signal.signal( signal.SIGALRM, self.__alarmTimeoutHandler )
-      # set timeout alarm
-      signal.alarm( timeout + 5 )
-    try:
-      remoteFD = urllib2.urlopen( url )
-      expectedBytes = 0
-      # Sometimes repositories do not return Content-Length parameter
-      try:
-        expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-      except Exception, x:
-        self.log.warn( "Content-Length parameter not returned, skipping expectedBytes check" )
-
-      if fileName:
-        localFD = open( fileName + '-local', "wb" )
-      receivedBytes = 0L
-      data = remoteFD.read( 16384 )
-      count = 1
-      progressBar = False
-      while data:
-        receivedBytes += len( data )
-        if fileName:
-          localFD.write( data )
-        else:
-          urlData += data
-        data = remoteFD.read( 16384 )
-        if count % 20 == 0:
-          print '\033[1D' + ".",
-          sys.stdout.flush()
-          progressBar = True
-        count += 1
-      if progressBar:
-        # return cursor to the beginning of the line
-        print '\033[1K',
-        print '\033[1A'
-      if fileName:
-        localFD.close()
-        os.rename( fileName + '-local', fileName )
-      remoteFD.close()
-      if receivedBytes != expectedBytes and expectedBytes > 0:
-        self.log.error( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
-        return False
-    except urllib2.HTTPError, x:
-      if x.code == 404:
-        self.log.error( "%s does not exist" % url )
-        if timeout:
-          signal.alarm( 0 )
-        return False
-    except Exception, x:
-      if x == 'Timeout':
-        self.log.error( "Timeout after %s seconds on transfer request for '%s'" % ( str( timeout ), url ) )
-      if timeout:
-        signal.alarm( 0 )
-      raise x
-
-    if timeout:
-      signal.alarm( 0 )
-
-    if fileName:
-      return True
-    else:
-      return urlData
-
-  def __alarmTimeoutHandler( self, *args ):
-    raise Exception( 'Timeout' )
 
 
 class checks( CommandBase ):
@@ -355,15 +288,16 @@ class InstallDIRAC( CommandBase ):
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
       - download, by default, the CAs
-      - creates a pilot.cfg file to be used where all the pilot configuration is to be set, e.g.:
+      - creates a standard or custom (defined by self.pp.localConfigFile) cfg file 
+        to be used where all the pilot configuration is to be set, e.g.:
       - adds to it basic info like the version
       - adds to it the security configuration
 
       If there is more than one command calling dirac-configure, this one should be always the first one called.
 
-      Nota Bene: Further commands should always call dirac-configure using the options -FDMH -O pilot.cfg pilot.cfg
-
-
+      Nota Bene: Further commands should always call dirac-configure using the options -FDMH 
+      Nota Bene: If custom cfg file is created further commands should call dirac-configure with
+                 "-O %s %s" % ( self.pp.localConfigFile, self.pp.localConfigFile )
 
       From here on, we have to pay attention to the paths. Specifically, we need to know where to look for
       - executables (scripts)
@@ -398,7 +332,8 @@ class ConfigureBasics( CommandBase ):
 
     if self.pp.debugFlag:
       self.cfg.append( '-ddd' )
-    self.cfg.append( '-O pilot.cfg' )
+    if self.pp.localConfigFile:  
+      self.cfg.append( '-O %s' % self.pp.localConfigFile )
 
     configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
 
@@ -486,8 +421,9 @@ class ConfigureSite( CommandBase ):
 
     # these are needed as this is not the fist time we call dirac-configure
     self.cfg.append( '-FDMH' )
-    self.cfg.append( '-O pilot.cfg' )
-    self.cfg.append( 'pilot.cfg' )
+    if self.pp.localConfigFile:  
+      self.cfg.append( '-O %s' % self.pp.localConfigFile )
+      self.cfg.append( self.pp.localConfigFile )
 
     if self.debugFlag:
       self.cfg.append( '-ddd' )
@@ -683,8 +619,9 @@ class ConfigureArchitecture( CommandBase ):
       cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
       if self.pp.useServerCertificate:
         cfg.append( '--UseServerCertificate' )
-      cfg.append( '-O pilot.cfg' )  # our target file for pilots
-      cfg.append( 'pilot.cfg' )  # this file is also an input
+      if self.pp.localConfigFile:    
+        cfg.append( '-O %s' % self.pp.localConfigFile )  # our target file for pilots
+        cfg.append( self.pp.localConfigFile )  # this file is also an input
       if self.pp.debugFlag:
         cfg.append( "-ddd" )
 
@@ -714,7 +651,10 @@ class ConfigureCPURequirements( CommandBase ):
     """ Get job CPU requirement and queue normalization
     """
     # Determining the CPU normalization factor and updating pilot.cfg with it
-    retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U -R pilot.cfg',
+    configFileArg = ''
+    if self.pp.localConfigFile:
+      configFileArg = '-R %s' % self.pp.localConfigFile
+    retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U %s' % configFileArg,
                                                                       self.pp.installEnv )
     if retCode:
       self.log.error( "Failed to determine cpu normalization" )
@@ -724,7 +664,8 @@ class ConfigureCPURequirements( CommandBase ):
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
-    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time pilot.cfg', self.pp.installEnv )
+    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s' % self.pp.localConfigFile, 
+                                                 self.pp.installEnv )
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
@@ -785,7 +726,8 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts.append( '-o /LocalSite/InstancePath=%s' % self.pp.workingDir )
 
     # The file pilot.cfg has to be created previously by ConfigureDIRAC
-    self.inProcessOpts.append( 'pilot.cfg' )
+    if self.pp.localConfigFile:
+      self.inProcessOpts.append( self.pp.localConfigFile )
 
 
   def __startJobAgent(self):
