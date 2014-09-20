@@ -12,6 +12,8 @@ import pickle
 import getopt
 import imp
 import types
+import urllib2
+import signal
 
 __RCSID__ = '$Id$'
 
@@ -49,6 +51,51 @@ def pythonPathCheck():
     print "[EXCEPTION-info] sys.version:", sys.version
     print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
+  
+def alarmTimeoutHandler( *args ):
+  raise Exception( 'Timeout' )  
+  
+def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
+  """
+   Retrieve remote url to local file, with timeout wrapper
+  """
+  urlData = ''
+  if timeout:
+    signal.signal( signal.SIGALRM, alarmTimeoutHandler )
+    # set timeout alarm
+    signal.alarm( timeout + 5 )
+  try:
+    remoteFD = urllib2.urlopen( url )
+    expectedBytes = 0
+    # Sometimes repositories do not return Content-Length parameter
+    try:
+      expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
+    except Exception, x:
+      expectedBytes = 0
+    localFD = open( fileName, "wb" )
+    data = remoteFD.read()
+    localFD.write( data )        
+    localFD.close()
+    remoteFD.close()
+    if len( data ) != expectedBytes and expectedBytes > 0:
+      log.error( 'URL retrieve: expected size does not match the received one' )
+      return False
+    return True
+  except urllib2.HTTPError, x:
+    if x.code == 404:
+      log.error( "URL retrieve: %s does not exist" % url )
+      if timeout:
+        signal.alarm( 0 )
+      return False
+  except urllib2.URLError:
+    log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
+    return False
+  except Exception, x:
+    if x == 'Timeout':
+      log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
+    if timeout:
+      signal.alarm( 0 )
+    raise x  
   
 class ObjectLoader( object ):
   """ Simplified class for loading objects from a DIRAC installation.
@@ -279,7 +326,7 @@ class PilotParams:
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
+    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC',
                      'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
@@ -310,7 +357,10 @@ class PilotParams:
     # DIRAC client installation environment
     self.diracInstalled = False
     self.diracExtensions = []
+    # Some commands can define environment necessary to execute subsequent commands
     self.installEnv = None
+    # If DIRAC is preinstalled this file will receive the updates of the local configuration
+    self.localConfigFile = ''
     self.executeCmd = False
     self.configureScript = 'dirac-configure'
     self.architectureScript = 'dirac-platform'
