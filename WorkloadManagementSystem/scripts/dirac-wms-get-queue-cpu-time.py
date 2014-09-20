@@ -19,12 +19,10 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-
+CPUNormalizationFactor = 0.0
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "C", "CPUNormalizationFactor" ):
-    CPUNormalizationFactor = float( unprocSw[1] )
-  else:
-    CPUNormalizationFactor = 0.0
+    CPUNormalizationFactor = float( unprocSw[1] )    
 
 if __name__ == "__main__":
   from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUTime
