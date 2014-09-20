@@ -303,7 +303,10 @@ DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
 if update:
-  DIRAC.gLogger.notice( 'Will update the output file (i.e. dirac.cfg)' )
+  if outputFile:
+    DIRAC.gLogger.notice( 'Will update the output file %s' % outputFile )
+  else:
+    DIRAC.gLogger.notice( 'Will update %s' % DIRAC.gConfig.diracConfigFilePath )  
 
 if setup:
   DIRAC.gLogger.verbose( '/DIRAC/Setup =', setup )
