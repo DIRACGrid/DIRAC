@@ -26,7 +26,6 @@ import os
 import stat
 import socket
 import re
-import signal
 import json
 
 from pilotTools import CommandBase, retrieveUrlTimeout
@@ -72,13 +71,13 @@ class GetPilotVersion( CommandBase ):
       self.pp.releaseVersion = pilotVersions[0]
 
 
-class checks( CommandBase ):
+class CheckWorkerNode( CommandBase ):
   """ Executes some basic checks
   """
   def __init__( self, pilotParams ):
     """ c'tor
     """
-    super( checks, self ).__init__( pilotParams )
+    super( CheckWorkerNode, self ).__init__( pilotParams )
 
   def execute( self ):
     """ Get host and local user info, and other basic checks, e.g. space available

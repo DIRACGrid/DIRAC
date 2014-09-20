@@ -13,6 +13,7 @@ import getopt
 import imp
 import types
 import urllib2
+import signal
 
 __RCSID__ = '$Id$'
 
@@ -325,7 +326,7 @@ class PilotParams:
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'checks', 'InstallDIRAC',
+    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC',
                      'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
