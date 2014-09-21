@@ -451,7 +451,6 @@ class ConfigureSite( CommandBase ):
     if os.environ.has_key( 'PBS_JOBID' ):
       self.pp.flavour = 'SSHTorque'
       pilotRef = 'sshtorque://' + self.pp.ceName + '/' + os.environ['PBS_JOBID']
-      self.pp.queueName = os.environ['PBS_QUEUE']
 
     # Take the reference from the OAR batch system
     if os.environ.has_key( 'OAR_JOBID' ):

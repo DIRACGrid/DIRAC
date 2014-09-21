@@ -418,6 +418,8 @@ class PilotParams:
         self.site = v
       elif o == '-N' or o == '--Name':
         self.ceName = v
+      elif o == '-Q' or o == '--Queue':
+        self.queueName = v  
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
       elif o == '-d' or o == '--debug':
