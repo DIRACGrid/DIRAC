@@ -299,9 +299,11 @@ class CommandBase( object ):
       outData = _p.stdout.read().strip()
       for line in outData:
         sys.stdout.write( line )
+      sys.stdout.write( '\n' )  
 
       for line in _p.stderr:
         sys.stdout.write( line )
+      sys.stdout.write( '\n' )    
 
       # return code
       returnCode = _p.wait()
