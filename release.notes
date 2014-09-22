@@ -85,6 +85,7 @@ FIX: FTSAgent - recover deadlock situations when FTS Files had not been correctl
 
 *RMS
 FIX: RequestExecutingAgent - fix a race condition (cache was cleared after the request was put)
+FIX: RequestValidator - check that the Operation handlers are defined when inserting a request
 
 [v6r11p11]
 
