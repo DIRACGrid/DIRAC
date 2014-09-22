@@ -415,7 +415,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         fstat = res['Value']
         successful[lfn] = {}
         successful[lfn]['Size'] = fstat.filesize
-        successful[lfn]['CheckSumType'] = fstat.csumtype
+        successful[lfn]['ChecksumType'] = fstat.csumtype
         successful[lfn]['Checksum'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
@@ -633,7 +633,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         fstat = res['Value']
         successful[lfn] = {}
         successful[lfn]['Size'] = fstat.filesize
-        successful[lfn]['CheckSumType'] = fstat.csumtype
+        successful[lfn]['ChecksumType'] = fstat.csumtype
         successful[lfn]['Checksum'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
@@ -1524,7 +1524,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         if statRes['OK']:
           oPath = statRes['Value']
           pathMetadata['Size'] = oPath.filesize
-          pathMetadata['CheckSumType'] = oPath.csumtype
+          pathMetadata['ChecksumType'] = oPath.csumtype
           pathMetadata['Checksum'] = oPath.csumvalue
           pathMetadata['GUID'] = oPath.guid
           pathMetadata['Status'] = oPath.status
