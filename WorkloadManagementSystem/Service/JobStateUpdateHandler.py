@@ -14,6 +14,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
+import time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -48,20 +49,30 @@ class JobStateUpdateHandler( RequestHandler ):
     else:
       return S_ERROR( "updateJobFromStager: %s status not known." % status )
 
-    result = jobDB.getJobAttributes( jobID, ['Status'] )
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      # if there is no matching Job it returns an empty dictionary
-      return S_OK( 'No Matching Job' )
-    status = result['Value']['Status']
+    infoStr = None
+    trials = 10
+    for i in range( trials ):
+      result = jobDB.getJobAttributes( jobID, ['Status'] )
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        # if there is no matching Job it returns an empty dictionary
+        return S_OK( 'No Matching Job' )
+      status = result['Value']['Status']
+      if status == 'Staging':
+        if i:
+          infoStr = "Found job in Staging after %d seconds" % i
+        break
+      time.sleep( 1 )
     if status != 'Staging':
-      return S_OK( 'Job is not in Staging' )
+      return S_OK( 'Job is not in Staging after %d seconds' % trials )
 
     result = self.__setJobStatus( int( jobID ), jobStatus, minorStatus, 'StagerSystem', None )
     if not result['OK']:
       if result['Message'].find( 'does not exist' ) != -1:
         return S_OK()
+    if infoStr:
+      return S_OK( infoStr )
     return result
 
   ###########################################################################
@@ -119,8 +130,6 @@ class JobStateUpdateHandler( RequestHandler ):
         as a key and status information dictionary as values
     """
 
-    dates = statusDict.keys()
-    dates.sort()
     status = ""
     minor = ""
     application = ""
@@ -128,8 +137,9 @@ class JobStateUpdateHandler( RequestHandler ):
     endDate = ''
     startDate = ''
     startFlag = ''
+    jobID = int( jobID )
 
-    result = jobDB.getJobAttributes( int( jobID ), ['Status'] )
+    result = jobDB.getJobAttributes( jobID, ['Status'] )
     if not result['OK']:
       return result
 
@@ -141,22 +151,34 @@ class JobStateUpdateHandler( RequestHandler ):
     if new_status == "Stalled":
       status = 'Running'
 
+    # Get the latest WN time stamps of status updates
+    result = logDB.getWMSTimeStamps( int( jobID ) )
+    if not result['OK']:
+      return result
+    lastTime = max( [float( t ) for s, t in result['Value'].items() if s != 'LastTime'] )
+    from DIRAC import Time
+    lastTime = Time.toString( Time.fromEpoch( lastTime ) )
+
     # Get the last status values
-    for date in dates:
-      if statusDict[date]['Status']:
-        status = statusDict[date]['Status']
+    dates = sorted( statusDict )
+    # We should only update the status if its time stamp is more recent than the last update
+    for date in [date for date in dates if date >= lastTime]:
+      sDict = statusDict[date]
+      if sDict['Status']:
+        status = sDict['Status']
         if status in JOB_FINAL_STATES:
           endDate = date
         if status == "Running":
           startFlag = 'Running'
-      if statusDict[date]['MinorStatus']:
-        minor = statusDict[date]['MinorStatus']
+      if sDict['MinorStatus']:
+        minor = sDict['MinorStatus']
         if minor == "Application" and startFlag == 'Running':
           startDate = date
-      if statusDict[date]['ApplicationStatus']:
-        application = statusDict[date]['ApplicationStatus']
-      if 'ApplicationCounter' in statusDict[date] and statusDict[date]['ApplicationCounter']:
-        appCounter = statusDict[date]['ApplicationCounter']
+      if sDict['ApplicationStatus']:
+        application = sDict['ApplicationStatus']
+      counter = sDict.get( 'ApplicationCounter' )
+      if counter:
+        appCounter = counter
     attrNames = []
     attrValues = []
     if status:
@@ -171,18 +193,18 @@ class JobStateUpdateHandler( RequestHandler ):
     if appCounter:
       attrNames.append( 'ApplicationCounter' )
       attrValues.append( appCounter )
-    result = jobDB.setJobAttributes( int( jobID ), attrNames, attrValues, update = True )
+    result = jobDB.setJobAttributes( jobID, attrNames, attrValues, update = True )
     if not result['OK']:
       return result
 
     if endDate:
-      result = jobDB.setEndExecTime( int( jobID ), endDate )
+      result = jobDB.setEndExecTime( jobID, endDate )
     if startDate:
-      result = jobDB.setStartExecTime( int( jobID ), startDate )
+      result = jobDB.setStartExecTime( jobID, startDate )
 
     # Update the JobLoggingDB records
-    for date, sDict in statusDict.items():
-
+    for date in dates:
+      sDict = statusDict[date]
       status = sDict['Status']
       if not status:
         status = 'idem'
@@ -196,7 +218,7 @@ class JobStateUpdateHandler( RequestHandler ):
         status = "Running"
         minor = "Application"
       source = sDict['Source']
-      result = logDB.addLoggingRecord( int( jobID ), status, minor, application, date, source )
+      result = logDB.addLoggingRecord( jobID, status, minor, application, date, source )
       if not result['OK']:
         return result
 
@@ -298,15 +320,15 @@ class JobStateUpdateHandler( RequestHandler ):
       gLogger.warn( 'Failed to set the heart beat data for job %d ' % int( jobID ) )
 
     # Restore the Running status if necessary
-    #result = jobDB.getJobAttributes(jobID,['Status'])
-    #if not result['OK']:
+    # result = jobDB.getJobAttributes(jobID,['Status'])
+    # if not result['OK']:
     #  return result
 
-    #if not result['Value']:
+    # if not result['Value']:
     #  return S_ERROR('Job %d not found' % jobID)
 
-    #status = result['Value']['Status']
-    #if status == "Stalled" or status == "Matched":
+    # status = result['Value']['Status']
+    # if status == "Stalled" or status == "Matched":
     #  result = jobDB.setJobAttribute(jobID,'Status','Running',True)
     #  if not result['OK']:
     #    gLogger.warn('Failed to restore the job status to Running')

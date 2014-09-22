@@ -21,7 +21,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB   import PilotAgentsDB
-from DIRAC                                             import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient     import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 from DIRAC.Core.Security                               import Properties
 from DIRAC.Core.Utilities.DictCache                    import DictCache

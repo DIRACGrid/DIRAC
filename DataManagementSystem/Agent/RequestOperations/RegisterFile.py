@@ -23,7 +23,8 @@ __RCSID__ = "$Id $"
 # @brief Definition of RegisterOperation class.
 
 # # imports
-from DIRAC import gMonitor, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 

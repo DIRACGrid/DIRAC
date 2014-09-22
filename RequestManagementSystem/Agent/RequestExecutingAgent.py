@@ -138,7 +138,10 @@ class RequestExecutingAgent( AgentModule ):
 
     self.log.info( "Operation handlers:" )
     for item in enumerate ( self.handlersDict.items() ):
-      self.log.info( "[%s] %s: %s" % ( item[0], item[1][0], item[1][1] ) )
+      opHandler = item[1][0]
+      self.log.info( "[%s] %s: %s (timeout: %d s + %d s per file)" % ( item[0], item[1][0], item[1][1],
+                                                                   self.timeOuts[opHandler]['PerOperation'],
+                                                                   self.timeOuts[opHandler]['PerFile'] ) )
 
     # # common monitor activity
     gMonitor.registerActivity( "Iteration", "Agent Loops",
@@ -177,50 +180,51 @@ class RequestExecutingAgent( AgentModule ):
       self.__requestClient = ReqClient()
     return self.__requestClient
 
-  def cleanCache( self, requestName = None ):
-    """ delete request from requestCache
-
-    :param str requestName: Request.RequestName
-    """
-    if requestName in self.__requestCache:
-      del self.__requestCache[requestName]
-    return S_OK()
-
   def cacheRequest( self, request ):
     """ put request into requestCache
 
     :param Request request: Request instance
     """
-    if request.RequestName in self.__requestCache:
-      return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+    count = 5
+    # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache
+    while request.RequestName in self.__requestCache:
+      count -= 1
+      if not count:
+        self.requestClient().putRequest( request )
+        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+      time.sleep( 1 )
     self.__requestCache[ request.RequestName ] = request
     return S_OK()
 
-  def resetRequest( self, requestName ):
+  def putRequest( self, requestName, taskResult = None ):
     """ put back :requestName: to RequestClient
 
     :param str requestName: request's name
     """
     if requestName in self.__requestCache:
-      reset = self.requestClient().putRequest( self.__requestCache[requestName] )
-      del self.__requestCache[requestName]
+      request = self.__requestCache.pop( requestName )
+      if taskResult and taskResult['OK']:
+        request = taskResult['Value']
+
+      reset = self.requestClient().putRequest( request )
       if not reset["OK"]:
-        return S_ERROR( "resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+    else:
+      return S_ERROR( 'Not in cache' )
     return S_OK()
 
-  def resetAllRequests( self ):
+  def putAllRequests( self ):
     """ put back all requests without callback called into requestClient
 
     :param self: self reference
     """
-    self.log.info( "resetAllRequests: will put %s back requests" % len( self.__requestCache ) )
-    for requestName, request in self.__requestCache.items():
-      reset = self.requestClient().putRequest( request )
-      del self.__requestCache[requestName]
+    self.log.info( "putAllRequests: will put %s back requests" % len( self.__requestCache ) )
+    for requestName in self.__requestCache.keys():
+      reset = self.putRequest( requestName )
       if not reset["OK"]:
-        self.log.error( "resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
-        continue
-      self.log.debug( "resetAllRequests: request %s has been put back with its initial state" % requestName )
+        self.log.error( reset["Message"] )
+      else:
+        self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()
 
   def initialize( self ):
@@ -335,24 +339,23 @@ class RequestExecutingAgent( AgentModule ):
     """ agent finalization """
     if self.__processPool:
       self.processPool().finalize( timeout = self.__poolTimeout )
-    self.resetAllRequests()
+    self.putAllRequests()
     return S_OK()
 
   def resultCallback( self, taskID, taskResult ):
     """ definition of request callback function
 
-    :param str taskID: Reqiest.RequestName
-    :param dict taskResult: task result S_OK/S_ERROR
+    :param str taskID: Request.RequestName
+    :param dict taskResult: task result S_OK(Request)/S_ERROR(Message)
     """
-    self.log.info( "callback: %s result is %s(%s)" % ( taskID,
-                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
-                                                      taskResult["Value"] if taskResult["OK"] else taskResult["Message"] ) )
-
-    if not taskResult["OK"]:
-      if taskResult["Message"] == "Timed out":
-        self.resetRequest( taskID )
     # # clean cache
-    self.cleanCache( taskID )
+    res = self.putRequest( taskID, taskResult )
+    self.log.info( "callback: %s result is %s(%s), put %s(%s)" % ( taskID,
+                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
+                                                      taskResult["Value"].Status if taskResult["OK"] else taskResult["Message"],
+                                                      "S_OK" if res['OK'] else 'S_ERROR',
+                                                      '' if res['OK'] else res['Message'] ) )
+
 
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
@@ -361,4 +364,4 @@ class RequestExecutingAgent( AgentModule ):
     :param Exception taskException: Exception instance
     """
     self.log.error( "exceptionCallback: %s was hit by exception %s" % ( taskID, taskException ) )
-    self.resetRequest( taskID )
+    self.putRequest( taskID )

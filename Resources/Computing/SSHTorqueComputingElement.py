@@ -20,7 +20,8 @@ CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSHTorqueComputingElement( SSHComputingElement ):
-
+  """ Torque CE interface, via SSH
+  """
   #############################################################################
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
@@ -113,6 +114,6 @@ class SSHTorqueComputingElement( SSHComputingElement ):
     output = '%s/DIRACPilot.o%s' % ( self.batchOutput, jobStamp )
     error = '%s/DIRACPilot.e%s' % ( self.batchError, jobStamp )
 
-    return S_OK( (jobStamp,host,output,error) )
+    return S_OK( (jobStamp, host, output, error) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

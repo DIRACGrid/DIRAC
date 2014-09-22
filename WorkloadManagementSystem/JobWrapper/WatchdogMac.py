@@ -21,10 +21,10 @@ import string,re
 
 class WatchdogMac(Watchdog):
 
-  def __init__(self, pid, thread, spObject, jobCPUtime, systemFlag='mac'):
+  def __init__(self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag='mac'):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__(self,pid,thread,spObject,jobCPUtime,systemFlag)
+    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
     self.systemFlag = systemFlag
     self.pid = pid
 

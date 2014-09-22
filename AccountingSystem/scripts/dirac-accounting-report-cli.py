@@ -9,12 +9,13 @@
 """
 __RCSID__ = "$Id$"
 
+# FIXME: As it is, this one does not do much...
+
 import cmd
 import sys
 import signal
 import datetime
 import pprint
-import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI, List
@@ -122,38 +123,6 @@ class ReportCLI( cmd.Cmd ):
         return
       self.printPair( command, obj.__doc__[1:] )
 
-  def do_listSummaries( self, args ):
-    """
-    Get a list of available summaries
-      Usage : listSummaries
-    """
-    try:
-      retVal = ReportsClient().listSummaries()
-      if not retVal[ 'OK' ]:
-        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
-        return
-      print "Available summaries:"
-      for summary in retVal[ 'Value' ]:
-        print  " %s" % summary
-    except:
-      self.showTraceback()
-
-  def do_listViews( self, args ):
-    """
-    Get a list of available views
-      Usage : listViews
-    """
-    try:
-      retVal = ReportsClient().listViews()
-      if not retVal[ 'OK' ]:
-        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
-        return
-      print "Available summaries:"
-      for summary in retVal[ 'Value' ]:
-        print  " %s" % summary
-    except:
-      self.showTraceback()
-
   def __getDatetimeFromArg( self, dtString ):
     if len( dtString ) != 12:
       return False
@@ -163,83 +132,6 @@ class ReportCLI( cmd.Cmd ):
     dt += datetime.timedelta( hours = int( dtString[ 8:10 ] ),
                               minutes = int( dtString[ 10:12 ] ) )
     return dt
-
-  def do_getSummary( self, args ):
-    """
-    Gets a summary
-      Usage : getSummary <Summary name> <startdate YYYYMMDDHHMM> <enddate YYYYMMDDHHMM> (<field name> <field value>)*
-    """
-    try:
-      argList = List.fromChar( args, " " )
-      if len( argList ) < 3:
-        gLogger.error( "Missing arguments!" )
-        return
-      startDT = self.__getDatetimeFromArg( argList[1] )
-      if not startDT:
-        gLogger.error( "Start time has invalid format" )
-      endDT = self.__getDatetimeFromArg( argList[2] )
-      if not endDT:
-        gLogger.error( "End time has invalid format" )
-      gLogger.info( "Start time is %s" % startDT )
-      gLogger.info( "End time is %s" % endDT )
-      sumArgs = {}
-      for iP in range( 3, len( argList ), 2 ):
-        key = argList[ iP ]
-        if key in sumArgs:
-          sumArgs[ key ].append( argList[ iP + 1 ] )
-        else:
-          sumArgs[ key ] = [ argList[ iP + 1 ] ]
-      retVal = ReportsClient().generateSummary( argList[ 0 ], startDT, endDT, sumArgs )
-      if not retVal[ 'OK' ]:
-        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
-        return
-      printer = pprint.PrettyPrinter(indent=4)
-      printer.pprint( retVal[ 'Value' ][0] )
-      for data in retVal[ 'Value' ][1]:
-        printer.pprint( data )
-    except:
-      self.showTraceback()
-
-  def do_plotView( self, args ):
-    """
-    Gets a summary
-      Usage : getSummary <Summary name> <startdate YYYYMMDDHHMM> <enddate YYYYMMDDHHMM> <destLocation> (<field name> <field value>)*
-    """
-    try:
-      argList = List.fromChar( args, " " )
-      if len( argList ) < 4:
-        gLogger.error( "Missing arguments!" )
-        return
-      startDT = self.__getDatetimeFromArg( argList[1] )
-      if not startDT:
-        gLogger.error( "Start time has invalid format" )
-      endDT = self.__getDatetimeFromArg( argList[2] )
-      if not endDT:
-        gLogger.error( "End time has invalid format" )
-      gLogger.info( "Start time is %s" % startDT )
-      gLogger.info( "End time is %s" % endDT )
-      sumArgs = {}
-      for iP in range( 4, len( argList ), 2 ):
-        key = argList[ iP ]
-        if key in sumArgs:
-          sumArgs[ key ].append( argList[ iP + 1 ] )
-        else:
-          sumArgs[ key ] = [ argList[ iP + 1 ] ]
-      repClient = ReportsClient()
-      retVal = repClient.plotView( argList[ 0 ], startDT, endDT, sumArgs )
-      if not retVal[ 'OK' ]:
-        gLogger.error( "Error: %s" % retVal[ 'Message' ] )
-        return
-      destDir = argList[3]
-      plotImg = retVal[ 'Value' ]
-      print "Downloading %s plot to %s.." % ( plotImg, destDir )
-      retVal = repClient.getPlotToDirectory( plotImg, destDir )
-      if not retVal[ 'OK' ]:
-        print " Error: %s" % retVal[ 'Message' ]
-      else:
-        print " done (%s/%s)!" % ( destDir, plotImg )
-    except:
-      self.showTraceback()
 
 if __name__=="__main__":
     reli = ReportCLI()

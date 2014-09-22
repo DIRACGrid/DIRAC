@@ -9,7 +9,8 @@
 
 __RCSID__ = "$Id $"
 
-from DIRAC import gMonitor, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 
 ########################################################################
@@ -65,11 +66,12 @@ class RegisterReplica( DMSRequestOperationsBase ):
         self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
 
         reason = registerReplica.get( "Message", registerReplica.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
-        errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
+        errorStr = "failed to register LFN %s: %s" % ( lfn, str( reason ) )
+        # FIXME: this is incompatible with the change made in the DM that we ignore failures if successful in at least one catalog
         if lfn in registerReplica["Value"].get( "Successful", {} ) and type( reason ) == type( {} ):
           # As we managed, let's create a new operation for just the remaining registration
           errorStr += ' - adding registerReplica operations to request'
-          for failedCatalog in reason.keys():
+          for failedCatalog in reason:
             key = '%s/%s' % ( targetSE, failedCatalog )
             newOperation = self.getRegisterOperation( opFile, targetSE, type = 'RegisterReplica', catalog = failedCatalog )
             if key not in registerOperations:
@@ -79,8 +81,13 @@ class RegisterReplica( DMSRequestOperationsBase ):
           opFile.Status = 'Done'
         else:
           opFile.Error = errorStr
-          # If one targets explicitly a catalog and it fails
-          if catalog and ( 'file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower() ) :
+          catMaster = True
+          if type( reason ) == type( {} ):
+            from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+            for failedCatalog in reason:
+              catMaster = catMaster and FileCatalog()._getCatalogConfigDetails( failedCatalog ).get( 'Value', {} ).get( 'Master', False )
+          # If one targets explicitly a catalog and it fails or if it fails on the master catalog
+          if ( catalog or catMaster ) and ( 'file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower() ) :
             opFile.Status = 'Failed'
           failedReplicas += 1
         self.log.warn( errorStr )

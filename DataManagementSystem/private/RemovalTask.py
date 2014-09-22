@@ -27,7 +27,7 @@ import re
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
+from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Resources.Storage.StorageElement import StorageElement

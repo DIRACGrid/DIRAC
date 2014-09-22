@@ -248,8 +248,13 @@ class RequestDB( DB ):
       if not reqID["OK"]:
         log.error( reqID["Message"] )
         return reqID
-      requestID = reqID["Value"][reqIDQuery][0]["RequestID"] if "RequestID" in reqID["Value"][reqIDQuery][0] else None
-      status = reqID["Value"][reqIDQuery][0]["Status"] if "Status" in reqID["Value"][reqIDQuery][0] else None
+      reqID = reqID["Value"].get( reqIDQuery, [] )
+      if reqID:
+        reqID = reqID[0]
+      else:
+        reqID = {}
+      requestID = reqID.get( "RequestID" )
+      status = reqID.get( "Status" )
       if not all( ( requestID, status ) ):
         return S_ERROR( "getRequest: request '%s' not exists" % requestName )
       if requestID and status and status == "Assigned" and assigned:
@@ -647,7 +652,10 @@ class RequestDB( DB ):
     if not query["OK"]:
       self.log.error( "getRequestStatus: %s" % query["Message"] )
       return query
-    requestStatus = query['Value'][0][0]
+    if query['Value'] and query['Value'][0]:
+      requestStatus = query['Value'][0][0]
+    else:
+      return S_ERROR( "Request %s does not exist" % requestName )
     return S_OK( requestStatus )
 
   def getRequestFileStatus( self, requestName, lfnList ):

@@ -4,9 +4,9 @@
 # Author : Stuart Paterson
 ########################################################################
 
-""" The Process Monitor utility allows to calculate cumulative CPU time for a given PID
-    and it's process group.  This is only implemented for linux / proc file systems
-    but could feasibly be extended in the future.
+""" The Process Monitor utility allows to calculate cumulative CPU time and memory 
+    for a given PID and it's process group.  This is only implemented for linux /proc 
+    file systems but could feasibly be extended in the future.
 """
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -31,14 +31,22 @@ class ProcessMonitor:
     """
     currentOS = self.__checkCurrentOS()
     if currentOS.lower() == 'linux':
-      cpuResult = self.getCPUConsumedLinux( pid )
-      return cpuResult
+      return self.getCPUConsumedLinux( pid )
     else:
       self.log.warn( 'Platform %s is not supported' % ( currentOS ) )
       return S_ERROR( 'Unsupported platform' )
+    
+  def getMemoryConsumed( self, pid ):
+    """Returns the CPU consumed for supported platforms when supplied a PID.
+    """
+    currentOS = self.__checkCurrentOS()
+    if currentOS.lower() == 'linux':
+      return self.getMemoryConsumedLinux( pid )
+    else:
+      self.log.warn( 'Platform %s is not supported' % ( currentOS ) )
+      return S_ERROR( 'Unsupported platform' )  
 
-  #############################################################################
-  def getCPUConsumedLinux( self, pid ):
+  def getResourceConsumedLinux( self, pid ):
     """Returns the CPU consumed given a PID assuming a proc file system exists.
     """
     pid = str( pid )
@@ -52,11 +60,32 @@ class ProcessMonitor:
       return pidListResult
 
     pidList = pidListResult['Value']
-    #Now recursively add all child process CPU contributions
-    currentCPU = self.__getChildCPUConsumedLinux( pid, pidList )
+    return self.__getChildResourceConsumedLinux( pid, pidList )
+
+  #############################################################################
+  def getCPUConsumedLinux( self, pid ):
+    """Returns the CPU consumed given a PID assuming a proc file system exists.
+    """
+    result = self.getResourceConsumedLinux( pid )
+    if not result['OK']:
+      return result
+    currentCPU = result['Value']['CPU']
 
     self.log.verbose( 'Final CPU estimate is %s' % currentCPU )
     return S_OK( currentCPU )
+
+  def getMemoryConsumedLinux( self, pid ):
+    """ Get the current memory consumption
+    """
+    result = self.getResourceConsumedLinux( pid )
+    if not result['OK']:
+      return result
+    vsize = result['Value']['Vsize']
+    rss = result['Value']['RSS']
+
+    self.log.verbose( 'Current memory estimate is Vsize: %s, RSS: %s' % ( vsize, rss ) )
+    return S_OK( {'Vsize': vsize, 'RSS': rss } )
+ 
 
   #############################################################################
   def __getProcListLinux( self ):
@@ -72,10 +101,13 @@ class ProcessMonitor:
     return S_OK( procList )
 
   #############################################################################
-  def __getChildCPUConsumedLinux( self, pid, pidList, infoDict = None ):
+  def __getChildResourceConsumedLinux( self, pid, pidList, infoDict = None ):
     """Adds contributions to CPU total from child processes recursively.
     """
     childCPU = 0
+    vsize = 0
+    rss = 0
+    pageSize = os.sysconf('SC_PAGESIZE')
     if not infoDict:
       infoDict = {}
       for pidCheck in pidList:
@@ -93,9 +125,15 @@ class ProcessMonitor:
       if pidCheck in infoDict and info[3] == pid:
         contribution = float( info[13] ) / 100 + float( info[14] ) / 100 + float( info[15] ) / 100 + float( info[16] ) / 100
         childCPU += contribution
+        vsize += float( info[22] )
+        rss += float( info[23] ) * pageSize
         self.log.debug( 'Added %s to CPU total (now %s) from child PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
         del infoDict[pidCheck]
-        childCPU += self.__getChildCPUConsumedLinux( pidCheck, pidList, infoDict )
+        result = self.__getChildResourceConsumedLinux( pidCheck, pidList, infoDict )
+        if result['OK']:
+          childCPU += result['Value']['CPU']
+          vsize += result['Value']['Vsize']
+          rss += result['Value']['RSS'] 
 
 
     #Next add any contributions from orphan processes in same process group
@@ -103,6 +141,8 @@ class ProcessMonitor:
       if pidCheck in infoDict and info[3] == 1 and info[4] == procGroup:
         contribution = float( info[13] ) / 100 + float( info[14] ) / 100 + float( info[15] ) / 100 + float( info[16] ) / 100
         childCPU += contribution
+        vsize += float( info[22] )
+        rss += float( info[23] ) * pageSize
         self.log.debug( 'Added %s to CPU total (now %s) from orphan PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
         del infoDict[pidCheck]
 
@@ -111,6 +151,8 @@ class ProcessMonitor:
       info = infoDict[pid]
       contribution = float( info[13] ) / 100 + float( info[14] ) / 100 + float( info[15] ) / 100 + float( info[16] ) / 100
       childCPU += contribution
+      vsize += float( info[22] )
+      rss += float( info[23] ) * pageSize
       self.log.debug( 'Added %s to CPU total (now %s) from PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
       del infoDict[pid]
 
@@ -123,8 +165,9 @@ class ProcessMonitor:
             if info['OK']:
               self.log.error( '  PID:', info['Value'] )
 
-
-    return childCPU
+    return S_OK( { "CPU": childCPU,
+                   "Vsize": vsize,
+                   "RSS": rss } )
 
 
   #############################################################################
@@ -374,6 +417,6 @@ class ProcessMonitor:
     else:
       localOS = 'Linux'
       self.log.debug( 'Will determine CPU consumed for %s flavour OS' % ( localOS ) )
-    return localOS
+    return localOS    
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

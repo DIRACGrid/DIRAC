@@ -5,7 +5,7 @@
 # Date: 2012/07/24 12:12:05
 ########################################################################
 
-""" 
+"""
 :mod: Operation
 
 .. module: Operation
@@ -132,8 +132,14 @@ class Operation( Record ):
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
-      self.__data__['Error'] = ''
+      self.Error = ''
       newStatus = 'Done'
+
+    # If the status moved to Failed or Done, update the lastUpdate time
+    if newStatus in ('Failed', 'Done'):
+      if self.__data__["Status"] != newStatus:
+        self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
 
     self.__data__["Status"] = newStatus
     if self._parent:
@@ -327,11 +333,16 @@ class Operation( Record ):
     if self.__files__:
       self._notify()
     else:
+      # If the status moved to Failed or Done, update the lastUpdate time
+      if value in ( 'Failed', 'Done' ):
+        if self.__data__["Status"] != value:
+          self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
       self.__data__["Status"] = value
       if self._parent:
         self._parent._notify()
     if self.__data__['Status'] == 'Done':
-      self.__data__['Error'] = ''
+      self.Error = ''
 
   @property
   def Order( self ):
@@ -393,8 +404,8 @@ class Operation( Record ):
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) in ( str, datetime.datetime ) else str( getattr( self, column ) ) )
                 for column in self.__data__
-                if getattr( self, column ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
-    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+                if getattr( self, column ) and column not in ( "OperationID", "Order" ) ]
+    # colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     colVals.append( ( "`Order`", str( self.Order ) ) )
     # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
     query = []

@@ -58,25 +58,8 @@ class ReTransfer( DMSRequestOperationsBase ):
     """ reTransfer operation execution """
     # # list of targetSEs
     targetSEs = self.operation.targetSEList
-    # # get waiting files
-    waitingFiles = self.getWaitingFilesList()
-    # # prepare waiting files
-    toRetransfer = dict( [ ( opFile.PFN, opFile ) for opFile in waitingFiles ] )
-
-    gMonitor.addMark( "FileReTransferAtt", len( toRetransfer ) )
-
-    if len( targetSEs ) != 1:
-      error = "only one TargetSE allowed, got %s" % len( targetSEs )
-      for opFile in toRetransfer.values():
-        opFile.Error = error
-        opFile.Status = "Failed"
-      self.operation.Error = error
-      gMonitor.addMark( "FileReTransferFail", len( toRetransfer ) )
-      return S_ERROR( error )
-
     # # check targetSEs for removal
     targetSE = targetSEs[0]
-
     bannedTargets = self.checkSEsRSS( targetSE )
     if not bannedTargets['OK']:
       gMonitor.addMark( "FileReTransferAtt" )
@@ -85,6 +68,22 @@ class ReTransfer( DMSRequestOperationsBase ):
 
     if bannedTargets['Value']:
       return S_OK( "%s targets are banned for writing" % ",".join( bannedTargets['Value'] ) )
+
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
+    # # prepare waiting files
+    toRetransfer = dict( [ ( opFile.PFN, opFile ) for opFile in waitingFiles ] )
+
+    gMonitor.addMark( "FileReTransferAtt", len( toRetransfer ) )
+
+    if len( targetSEs ) != 1:
+      error = "only one TargetSE allowed, got %d" % len( targetSEs )
+      for opFile in toRetransfer.values():
+        opFile.Error = error
+        opFile.Status = "Failed"
+      self.operation.Error = error
+      gMonitor.addMark( "FileReTransferFail", len( toRetransfer ) )
+      return S_ERROR( error )
 
     se = StorageElement( targetSE )
     for opFile in toRetransfer.values():

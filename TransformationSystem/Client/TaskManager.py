@@ -29,6 +29,8 @@ def _requestName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
 class TaskBase( object ):
+  ''' The other classes inside here inherits from this one.
+  '''
 
   def __init__( self, transClient = None, logger = None ):
 
@@ -587,6 +589,7 @@ class WorkflowTasks( TaskBase ):
     else:
       self.log.error( "No valid job description found" )
       return S_ERROR( "No valid job description found" )
+    # the WMSClient expects to find the jobDescription.xml file in the local directory to be added to the InputSandbox
     workflowFile = open( "jobDescription.xml", 'w' )
     workflowFile.write( oJob._toXML() )
     workflowFile.close()
@@ -603,7 +606,7 @@ class WorkflowTasks( TaskBase ):
       requestName = _requestName( transID, taskID )
       requestNames.append( requestName )
     res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
-    if not ['OK']:
+    if not res['OK']:
       self.log.info( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
       return res
     requestNameIDs = {}

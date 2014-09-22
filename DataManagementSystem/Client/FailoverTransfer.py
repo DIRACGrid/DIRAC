@@ -3,7 +3,6 @@
     The failover transfer client exposes the following methods:
     - transferAndRegisterFile()
     - transferAndRegisterFileFailover()
-    - getRequestObject()
 
     Initially these methods were developed inside workflow modules but
     have evolved to a generic 'transfer file with failover' client.
@@ -16,8 +15,6 @@
     to the original target SE as well as the removal request for the
     temporary replica.
 
-    getRequestObject() allows to retrieve the modified request object
-    after transfer operations.
 """
 
 __RCSID__ = "$Id$"
@@ -180,17 +177,13 @@ class FailoverTransfer( object ):
   def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
     """ Sets a registration request.
     """
-    self.log.info( 'Setting replication and registration requests for %s to %s' % ( lfn, targetSE ) )
+    self.log.info( 'Setting ReplicateAndRegister request for %s to %s' % ( lfn, targetSE ) )
 
     transfer = Operation()
-    transfer.Type = "ReplicateFile"
+    transfer.Type = "ReplicateAndRegister"
     transfer.TargetSE = targetSE
     if sourceSE:
       transfer.SourceSE = sourceSE
-
-    register = Operation()
-    register.Type = "RegisterFile"
-    register.TargetSE = targetSE
 
     trFile = File()
     trFile.LFN = lfn
@@ -207,19 +200,9 @@ class FailoverTransfer( object ):
     if guid:
       trFile.GUID = guid
 
-    se = StorageElement( targetSE )
-    pfn = se.getPfnForLfn( lfn )
-    if not pfn['OK'] or lfn not in pfn['Value']['Successful']:
-      self.log.error( "unable to get PFN for LFN: %s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
-      return pfn
-
-    trFile.PFN = pfn["Value"]['Successful'][lfn]
-
     transfer.addFile( trFile )
-    register.addFile( trFile )
 
     self.request.addOperation( transfer )
-    self.request.addOperation( register )
 
     return S_OK()
 

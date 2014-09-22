@@ -4,7 +4,7 @@
 # Date: 2013/04/08 14:29:43
 ########################################################################
 
-""" 
+"""
 :mod: FTSClient
 
 .. module: FTSClient
@@ -84,13 +84,24 @@ class FTSClient( Client ):
     getFTSJobList = getFTSJobList['Value']
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
 
-  def getFTSFilesForRequest( self, requestID, operationID = None ):
+  def getFTSFilesForRequest( self, requestID, statusList = None ):
     """ read FTSFiles for a given :requestID:
 
     :param int requestID: ReqDB.Request.RequestID
-    :param int operationID: ReqDB.Operation.OperationID
+    :param list statusList: List of statuses (default: Waiting)
     """
-    ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, operationID )
+    ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, statusList )
+    if not ftsFiles['OK']:
+      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      return ftsFiles
+    return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles['Value'] ] )
+
+  def getAllFTSFilesForRequest( self, requestID ):
+    """ read FTSFiles for a given :requestID:
+
+    :param int requestID: ReqDB.Request.RequestID
+    """
+    ftsFiles = self.ftsManager.getAllFTSFilesForRequest( requestID )
     if not ftsFiles['OK']:
       self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
       return ftsFiles
@@ -129,14 +140,14 @@ class FTSClient( Client ):
 
     :param FTSJob ftsJob: FTSJob instance
     """
-    isValid = self.ftsValidator.validate( ftsJob )
-    if not isValid['OK']:
-      self.log.error( isValid['Message'] )
-      return isValid
     ftsJobJSON = ftsJob.toJSON()
     if not ftsJobJSON['OK']:
       self.log.error( ftsJobJSON['Message'] )
       return ftsJobJSON
+    isValid = self.ftsValidator.validate( ftsJob )
+    if not isValid['OK']:
+      self.log.error( isValid['Message'], str( ftsJobJSON['Value'] ) )
+      return isValid
     return self.ftsManager.putFTSJob( ftsJobJSON['Value'] )
 
   def getFTSJob( self, ftsJobID ):
@@ -234,7 +245,14 @@ class FTSClient( Client ):
     :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
     """
 
-    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in opFileList ]
+    # Check whether there are duplicates
+    fList = []
+    for fTuple in opFileList:
+      if fTuple not in fList:
+        fList.append( fTuple )
+      else:
+        self.log.warn( 'File list for FTS scheduling has duplicates, fix it:\n', fTuple )
+    fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in fList ]
     res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
       self.log.error( "ftsSchedule: %s" % res['Message'] )
@@ -243,9 +261,9 @@ class FTSClient( Client ):
     ftsFiles = []
 
     # # this will be returned on success
-    ret = { "Successful": [], "Failed": {} }
+    result = { "Successful": [], "Failed": {} }
 
-    for fileJSON, sourceSEs, targetSEs in opFileList:
+    for fileJSON, sourceSEs, targetSEs in fList:
 
       lfn = fileJSON.get( "LFN", "" )
       size = int( fileJSON.get( "Size", 0 ) )
@@ -259,12 +277,12 @@ class FTSClient( Client ):
       res = self.dataManager.getActiveReplicas( lfn )
       if not res['OK']:
         self.log.error( "ftsSchedule: %s" % res['Message'] )
-        ret["Failed"][fileID] = res['Message']
+        result["Failed"][fileID] = res['Message']
         continue
       replicaDict = res['Value']
 
       if lfn in replicaDict["Failed"] and lfn not in replicaDict["Successful"]:
-        ret["Failed"][fileID] = "no active replicas found"
+        result["Failed"][fileID] = "no active replicas found"
         continue
       replicaDict = replicaDict["Successful"].get( lfn, {} )
       # # use valid replicas only
@@ -272,31 +290,41 @@ class FTSClient( Client ):
 
       if not validReplicasDict:
         self.log.warn( "No active replicas found in sources" )
-        ret["Failed"][fileID] = "no active replicas found in sources"
+        result["Failed"][fileID] = "no active replicas found in sources"
         continue
 
       tree = self.ftsManager.getReplicationTree( sourceSEs, targetSEs, size )
       if not tree['OK']:
         self.log.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
-        ret["Failed"][fileID] = tree['Message']
+        result["Failed"][fileID] = tree['Message']
         continue
       tree = tree['Value']
 
       self.log.verbose( "LFN=%s tree=%s" % ( lfn, tree ) )
 
+      treeBranches = []
+      printed = False
       for repDict in tree.values():
+        if repDict in treeBranches:
+          if not printed:
+            self.log.warn( 'Duplicate tree branch', str( tree ) )
+            printed = True
+        else:
+          treeBranches.append( repDict )
+
+      for repDict in treeBranches:
         self.log.verbose( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"],
                                                                                 repDict["Ancestor"],
                                                                                 repDict["SourceSE"],
                                                                                 repDict["TargetSE"] ) )
         transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, validReplicasDict )
         if not transferSURLs['OK']:
-          ret["Failed"][fileID] = transferSURLs['Message']
+          result["Failed"][fileID] = transferSURLs['Message']
           continue
 
         sourceSURL, targetSURL, fileStatus = transferSURLs['Value']
         if sourceSURL == targetSURL:
-          ret["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
+          result["Failed"][fileID] = "sourceSURL equals to targetSURL for %s" % lfn
           continue
 
         self.log.verbose( "sourceURL=%s targetURL=%s FTSFile.Status=%s" % ( sourceSURL, targetSURL, fileStatus ) )
@@ -316,7 +344,7 @@ class FTSClient( Client ):
 
     if not ftsFiles:
       self.log.info( "ftsSchedule: no FTSFiles to put for request %d" % requestID )
-      return S_OK( ret )
+      return S_OK( result )
 
     ftsFilesJSONList = [ftsFile.toJSON()['Value'] for ftsFile in ftsFiles]
     res = self.ftsManager.putFTSFileList( ftsFilesJSONList )
@@ -324,10 +352,10 @@ class FTSClient( Client ):
       self.log.error( "ftsSchedule: %s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
 
-    ret['Successful'] += [ fileID for fileID in fileIDs if fileID not in ret['Failed']]
+    result['Successful'] += [ fileID for fileID in fileIDs if fileID not in result['Failed']]
 
     # # if we land here some files have been properly scheduled
-    return S_OK( ret )
+    return S_OK( result )
 
   ################################################################################################################
   # Some utilities function

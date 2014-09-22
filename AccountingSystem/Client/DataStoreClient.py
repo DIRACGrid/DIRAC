@@ -1,5 +1,7 @@
-import time
-import random
+# $HeadURL$
+__RCSID__ = "$Id$"
+
+import time, random, copy
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.ThreadSafe                import Synchronizer
@@ -56,7 +58,7 @@ class DataStoreClient:
       return retVal
     if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
       return S_OK()
-    self.__registersList.append( register.getValues() )
+    self.__registersList.append( copy.deepcopy( register.getValues() ) )
     return S_OK()
 
   def disableFailover( self ):

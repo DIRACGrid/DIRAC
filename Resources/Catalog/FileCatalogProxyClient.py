@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
-class FileCatalogProxyClient:
+class FileCatalogProxyClient( object ):
   """ File catalog client for the File Catalog proxy service
   """
 

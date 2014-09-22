@@ -35,7 +35,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 import re, types
 
-class FileCatalogueBase:
+class FileCatalogueBase( object ):
 
   def __init__( self, name = '' ):
     self.name = name

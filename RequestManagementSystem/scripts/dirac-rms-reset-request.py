@@ -44,7 +44,7 @@ if __name__ == "__main__":
       except:
         print "Invalid jobID", switch[1]
 
-  if not job:
+  if not jobs:
     args = Script.getPositionalArgs()
 
     if len( args ) == 1:

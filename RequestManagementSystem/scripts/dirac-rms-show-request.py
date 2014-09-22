@@ -19,15 +19,15 @@ def convertDate( date ):
 from DIRAC.Core.Base import Script
 Script.registerSwitch( '', 'Job=', '   = JobID' )
 Script.registerSwitch( '', 'Transformation=', '   = transID' )
-Script.registerSwitch( '', 'Tasks=', '   = list of taskIDs' )
-Script.registerSwitch( '', 'NotVerbose', '   Print more information' )
+Script.registerSwitch( '', 'Tasks=', '      Associated to --Transformation, list of taskIDs' )
+Script.registerSwitch( '', 'Verbose', '   Print more information' )
 Script.registerSwitch( '', 'Terse', '   Only print request status' )
 Script.registerSwitch( '', 'Full', '   Print full request' )
 Script.registerSwitch( '', 'Status=', '   Select all requests in a given status' )
 Script.registerSwitch( '', 'Since=', '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day' )
 Script.registerSwitch( '', 'Until=', '      Associated to --Status, end date (default= now' )
-Script.registerSwitch( '', 'All', '      Process all requests (otherwise exclude irrecoverable failures' )
-Script.registerSwitch( '', 'Reset', '      Reset Failed files to Waiting' )
+Script.registerSwitch( '', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures' )
+Script.registerSwitch( '', 'Reset', '   Reset Failed files to Waiting if any' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
                                      ' %s [option|cfgfile] [requestName|requestID]' % Script.scriptName,
@@ -45,10 +45,11 @@ if __name__ == "__main__":
   jobs = []
   requestName = ""
   transID = None
+  taskIDs = None
   tasks = None
   requests = []
   full = False
-  verbose = True
+  verbose = False
   status = None
   until = None
   since = None
@@ -73,8 +74,8 @@ if __name__ == "__main__":
         gLogger.fatal( 'Invalid tasks', switch[1] )
     elif switch[0] == 'Full':
       full = True
-    elif switch[0] == 'NotVerbose':
-      verbose = False
+    elif switch[0] == 'Verbose':
+      verbose = True
     elif switch[0] == 'Terse':
       terse = True
     elif switch[0] == 'All':
@@ -102,6 +103,7 @@ if __name__ == "__main__":
   reqClient = ReqClient()
   if transID:
     if not taskIDs:
+      gLogger.fatal( "If Transformation is set, a list of Tasks should also be set" )
       Script.showHelp()
       DIRAC.exit( 2 )
     requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]

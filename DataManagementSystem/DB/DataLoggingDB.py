@@ -41,7 +41,7 @@ class DataLoggingDB( DB ):
     Status VARCHAR(255) NOT NULL,
     MinorStatus VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     StatusTime DATETIME,
-    StatusTimeOrder DOUBLE(11,3) NOT NULL,
+    StatusTimeOrder DOUBLE(12,3) NOT NULL,
     Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY (FileID),
     INDEX (LFN)
@@ -55,7 +55,7 @@ class DataLoggingDB( DB ):
                                           'Status': 'VARCHAR(255) NOT NULL',
                                           'MinorStatus': 'VARCHAR(255) NOT NULL DEFAULT "Unknown" ',
                                           'StatusTime':'DATETIME NOT NULL',
-                                          'StatusTimeOrder': 'DOUBLE(11,3) NOT NULL',
+                                          'StatusTimeOrder': 'DOUBLE(12,3) NOT NULL',
                                           'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
                                          },
                              'PrimaryKey': 'FileID',
@@ -108,22 +108,24 @@ class DataLoggingDB( DB ):
     :param str source: source setting the new status
     """
     self.gLogger.info( "Entering records for %s lfns: %s/%s from source %s" % ( len( lfns ), status, minor, source ) )
-    _date = date
     if not date:
       _date = Time.dateTime()
-    if type( date ) in StringTypes:
-      _date = Time.fromString( date )
+    else:
+      if type( date ) in StringTypes:
+        _date = Time.fromString( date )
+      else:
+        _date = date
 
     try:
       time_order = Time.to2K( _date ) - NEW_MAGIC_EPOCH_2K
     except AttributeError:
       gLogger.error( 'Wrong date argument given using current time stamp' )
-      date = Time.dateTime()
-      time_order = Time.to2K( date ) - NEW_MAGIC_EPOCH_2K
+      dateNow = Time.dateTime()
+      time_order = Time.to2K( dateNow ) - NEW_MAGIC_EPOCH_2K
 
     inDict = { 'Status': status,
                'MinorStatus': minor,
-               'StatusTime': date,
+               'StatusTime': _date,
                'StatusTimeOrder': time_order,
                'Source': source
               }

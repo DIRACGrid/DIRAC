@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
@@ -10,11 +6,10 @@ __RCSID__ = "$Id$"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
-from DIRAC.Core.Security import Properties, CS
+from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 class ProxyManagerHandler( RequestHandler ):
@@ -31,7 +26,7 @@ class ProxyManagerHandler( RequestHandler ):
       return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeLogs )
+    gThreadScheduler.addPeriodicTask( 21600, cls.__proxyDB.purgeLogs )
     gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeExpiredProxies )
     gLogger.info( "MyProxy: %s\n MyProxy Server: %s" % ( useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
     return S_OK()
@@ -223,7 +218,7 @@ class ProxyManagerHandler( RequestHandler ):
                                                    requireLimited = forceLimited )
     if not retVal[ 'OK' ]:
       return retVal
-    credDict = self.getRemoteCredentials()
+    _credDict = self.getRemoteCredentials()
     return S_OK( retVal[ 'Value' ] )
 
   types_setPersistency = [ types.StringType, types.StringType, types.BooleanType ]
@@ -249,7 +244,7 @@ class ProxyManagerHandler( RequestHandler ):
     """
     errorInDelete = []
     deleted = 0
-    for id in idList:
+    for _id in idList:
       if len( id ) != 2:
         errorInDelete.append( "%s doesn't have two fields" % str( id ) )
       retVal = self.export_deleteProxy( id[0], id[1] )

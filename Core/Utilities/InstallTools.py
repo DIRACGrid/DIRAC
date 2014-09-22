@@ -691,6 +691,7 @@ def getDatabaseCfg( system, dbName, compInstance ):
   databasePath = cfgPath( 'Systems', system, compInstance, 'Databases', dbName )
   cfg = __getCfg( databasePath, 'DBName', dbName )
   cfg.setOption( cfgPath( databasePath, 'Host' ), mysqlHost )
+  cfg.setOption( cfgPath( databasePath, 'Port' ), mysqlPort )
 
   return S_OK( cfg )
 
@@ -1053,7 +1054,7 @@ def getOverallStatus( extensions ):
               resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
               resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
               resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
-          except Exception, x:
+          except Exception:
             #print str(x)
             pass
 
@@ -1083,7 +1084,7 @@ def getOverallStatus( extensions ):
               resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
               resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
               resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
-          except Exception, x:
+          except Exception:
             #print str(x)
             pass
 
@@ -1214,11 +1215,13 @@ def setupSite( scriptCfg, cfg = None ):
 
   # Now get the necessary info from localCfg
   setupSystems = localCfg.getOption( cfgInstallPath( 'Systems' ), ['Configuration', 'Framework'] )
+  installMySQLFlag = localCfg.getOption( cfgInstallPath( 'InstallMySQL' ), False )
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
   setupExecutors = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Executors' ), [] ) ]
   setupWeb = localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
+  setupWebApp = localCfg.getOption( cfgInstallPath( 'WebApp' ), False )
   setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
   setupPrivateConfiguration = localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
   setupConfigurationName = localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), setup )
@@ -1430,13 +1433,15 @@ def setupSite( scriptCfg, cfg = None ):
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'AutoPublish' , 'no' )
     _addCfgToDiracCfg( cfg )
 
-  # 2.- Check if MySQL is required
-  if setupDatabases:
+  # 2.- Check if MySQL is to be installed
+  if installMySQLFlag:
     gLogger.notice( 'Installing MySQL' )
     getMySQLPasswords()
     installMySQL()
 
-    # 3.- And install requested Databases
+  # 3.- Install requested Databases
+  # if MySQL is not installed locally, we assume a host is given
+  if setupDatabases:
     result = getDatabases()
     if not result['OK']:
       if exitOnError:
@@ -1451,7 +1456,8 @@ def setupSite( scriptCfg, cfg = None ):
         result = addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
         if not result['OK']:
           gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
-      gLogger.notice( 'Database %s already installed' % dbName )
+      else:    
+        gLogger.notice( 'Database %s already installed' % dbName )
 
   if mysqlPassword:
     if not _addMySQLToDiracCfg():
@@ -1475,7 +1481,10 @@ def setupSite( scriptCfg, cfg = None ):
 
   # 7.- And finally the Portal
   if setupWeb:
-    setupPortal()
+    if setupWebApp:
+      setupNewPortal()
+    else:
+      setupPortal()
 
   if localServers != masterServer:
     _addCfgToDiracCfg( initialCfg )
@@ -1786,6 +1795,120 @@ def setupPortal():
   # Final check
   return getStartupComponentStatus( [ ( 'Web', 'httpd' ), ( 'Web', 'paster' ) ] )
 
+def setupNewPortal():
+  """
+  Install and create link in startup
+  """
+  result = installNewPortal()
+  if not result['OK']:
+    return result
+
+  # Create the startup entries now
+  runitCompDir = result['Value']
+  startCompDir = os.path.join( startDir, 'Web_WebApp' )
+                    
+
+  if not os.path.exists( startDir ):
+    os.makedirs( startDir )
+  
+  if not os.path.lexists( startCompDir ):
+      gLogger.notice( 'Creating startup link at', startCompDir )
+      os.symlink( runitCompDir, startCompDir )
+      
+  time.sleep( 5 )
+
+  # Check the runsv status
+  start = time.time()
+  while ( time.time() - 10 ) < start:
+    result = getStartupComponentStatus( [( 'Web', 'WebApp' )] )
+    if not result['OK']:
+      return S_ERROR( 'Failed to start the Portal' )
+    if result['Value'] and \
+       result['Value']['%s_%s' % ( 'Web', 'WebApp' )]['RunitStatus'] == "Run":
+      break
+    time.sleep( 1 )
+
+  # Final check
+  return getStartupComponentStatus( [ ('Web', 'WebApp') ] )
+
+def installNewPortal():
+  """
+  Install runit directories for the Web Portal
+  """
+    
+  result = execCommand( False, ["pip", "install", "tornado"] )
+  if not result['OK']:
+    error = "Tornado can not be installed:%s" % result['Value']
+    gLogger.error( error )
+    DIRAC.exit(-1)
+    return error
+  else:
+    gLogger.notice("Tornado has installed suceccfully!")
+    
+  # Check that the software for the Web Portal is installed
+  error = ''
+  webDir = os.path.join( linkedRootPath, 'WebAppDIRAC' )
+  if not os.path.exists( webDir ):
+    error = 'WebApp extension not installed at %s' % webDir
+    if exitOnError:
+      gLogger.error( error )
+      DIRAC.exit( -1 )
+    return S_ERROR( error )
+
+  #compile the JS code
+  prodMode = ""
+  webappCompileScript = os.path.join( linkedRootPath, "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
+  if os.path.isfile( webappCompileScript ):
+    os.chmod( webappCompileScript , gDefaultPerms )
+    gLogger.notice( "Executing %s..." % webappCompileScript )
+    if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( webappCompileScript,
+                                                           webappCompileScript,
+                                                           webappCompileScript ) ):
+      gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
+                                                                       webappCompileScript ) )
+    else:
+      prodMode = "-p"
+  
+  # Check if the component is already installed
+  runitWebAppDir = os.path.join( runitDir, 'Web', 'WebApp' )
+
+  # Check if the component is already installed
+  if os.path.exists( runitWebAppDir ):
+    msg = "Web Portal already installed"
+    gLogger.notice( msg )
+  else:
+    gLogger.notice( 'Installing Web Portal' )
+    # Now do the actual installation
+    try:
+      _createRunitLog( runitWebAppDir )
+      runFile = os.path.join( runitWebAppDir, 'run' )
+      fd = open( runFile, 'w' )
+      fd.write( 
+"""#!/bin/bash
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py %(prodMode)s < /dev/null
+""" % {'bashrc': os.path.join( instancePath, 'bashrc' ),
+       'DIRAC': linkedRootPath,
+       'prodMode':prodMode} )
+      fd.close()
+
+      os.chmod( runFile, gDefaultPerms )
+    except Exception:
+      error = 'Failed to prepare setup for Web Portal'
+      gLogger.exception( error )
+      if exitOnError:
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
+
+    result = execCommand( 5, [runFile] )
+    gLogger.notice( result['Value'][1] )
+
+  return S_OK( runitWebAppDir )
+
 def fixMySQLScripts( startupScript = mysqlStartupScript ):
   """
   Edit MySQL scripts to point to desired locations for db and my.cnf
@@ -1984,7 +2107,7 @@ def installMySQL():
     return result
 
   gLogger.notice( 'Setting MySQL root password' )
-  result = execCommand( 0, ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd] )
+  result = execCommand( 0, ['mysqladmin', '-u', mysqlRootUser, 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
   
@@ -1999,7 +2122,7 @@ def installMySQL():
     return result
   
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
-    result = execCommand( 0, ['mysqladmin', '-u', 'root', '-h', mysqlHost, 'password', mysqlRootPwd] )
+    result = execCommand( 0, ['mysqladmin', '-u', mysqlRootUser, '-h', mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
       return result
 
@@ -2018,7 +2141,7 @@ def getMySQLStatus():
   if not result['OK']:
     return result
   output = result['Value'][1]
-  d1, uptime, nthreads, nquestions, nslow, nopens, nflash, nopen, nqpersec = output.split( ':' )
+  _d1, uptime, nthreads, nquestions, nslow, nopens, nflash, nopen, nqpersec = output.split( ':' )
   resDict = {}
   resDict['UpTime'] = uptime.strip().split()[0]
   resDict['NumberOfThreads'] = nthreads.strip().split()[0]
@@ -2066,10 +2189,6 @@ def installDatabase( dbName ):
 
   global mysqlRootPwd, mysqlPassword
 
-  result = mysqlInstalled()
-  if not result['OK']:
-    return result
-
   if not mysqlRootPwd:
     rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )
     return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
@@ -2092,112 +2211,95 @@ def installDatabase( dbName ):
     return S_ERROR( error )
 
   dbFile = dbFile[0]
+  
+  # just check
+  result = execMySQL( 'SHOW STATUS' )
+  if not result['OK']:
+    error = 'Could not connect to MySQL server'
+    gLogger.error( error )
+    if exitOnError:
+      DIRAC.exit( -1 )
+    return S_ERROR( error )
 
+  # now creating the Database
+  result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
+  if not result['OK']:
+    gLogger.error( result['Message'] )
+    if exitOnError:
+      DIRAC.exit( -1 )
+    return result
+
+  perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
+  for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
+                                                                              mysqlPassword ),
+              "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
+                                                                       mysqlHost, mysqlPassword ),
+              "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
+                                                                       mysqlPassword ) ]:
+    result = execMySQL( cmd )
+    if not result['OK']:
+      error = "Error executing '%s'" % cmd
+      gLogger.error( error, result['Message'] )
+      if exitOnError:
+        DIRAC.exit( -1 )
+      return S_ERROR( error )
+  result = execMySQL( 'FLUSH PRIVILEGES' )
+  if not result['OK']:
+    gLogger.error( result['Message'] )
+    if exitOnError:
+      exit( -1 )
+    return result
+
+  # first getting the lines to be executed, and then execute them
   try:
-    fd = open( dbFile )
-    dbLines = fd.readlines()
-    fd.close()
-    dbAdded = False
-    cmdLines = []
-    for line in dbLines:
-      if line.lower().find( ( 'use %s;' % dbName ).lower() ) > -1:
-        result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
-        if not result['OK']:
-          gLogger.error( result['Message'] )
-          if exitOnError:
-            DIRAC.exit( -1 )
-          return result
+    cmdLines = _createMySQLCMDLines( dbFile )
 
-        result = execMySQL( 'SHOW STATUS' )
-        if not result['OK']:
-          error = 'Could not connect to MySQL server'
-          gLogger.error( error )
-          if exitOnError:
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
-        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
-        for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
-                                                                                       mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
-                                                                                mysqlHost, mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
-                                                                                mysqlPassword ),
-                    ]:
-          result = execMySQL( cmd )
-          if not result['OK']:
-            error = 'Error setting MySQL permissions'
-            gLogger.error( error, result['Message'] )
-            if exitOnError:
-              DIRAC.exit( -1 )
-            return S_ERROR( error )
-        dbAdded = True
-        result = execMySQL( 'FLUSH PRIVILEGES' )
-        if not result['OK']:
-          gLogger.error( result['Message'] )
-          if exitOnError:
-            exit( -1 )
-          return result
-
-      elif dbAdded:
-        if line.strip():
-          cmdLines.append( line.strip() )
-        if line.strip() and line.strip()[-1] == ';':
-          result = execMySQL( '\n'.join( cmdLines ), dbName )
-          if not result['OK']:
-            error = 'Failed to initialize Database'
-            gLogger.notice( '\n'.join( cmdLines ) )
-            gLogger.error( error, result['Message'] )
-            if exitOnError:
-              DIRAC.exit( -1 )
-            return S_ERROR( error )
-          cmdLines = []
-
-    # last line might not have the last ";"
-    if cmdLines:
-      cmd = '\n'.join( cmdLines )
-      if cmd.lower().find( 'source' ) == 0:
-        try:
-          dbFile = cmd.split()[1]
-          dbFile = os.path.join( rootPath, dbFile )
-          fd = open( dbFile )
-          dbLines = fd.readlines()
-          fd.close()
-          cmdLines = []
-          for line in dbLines:
-            if line.strip():
-              cmdLines.append( line.strip() )
-            if line.strip() and line.strip()[-1] == ';':
-              result = execMySQL( '\n'.join( cmdLines ), dbName )
-              if not result['OK']:
-                error = 'Failed to initialize Database'
-                gLogger.notice( '\n'.join( cmdLines ) )
-                gLogger.error( error, result['Message'] )
-                if exitOnError:
-                  DIRAC.exit( -1 )
-                return S_ERROR( error )
-              cmdLines = []
-        except Exception:
-          error = 'Failed to %s' % cmd
-          gLogger.exception( error )
-          if exitOnError:
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
-
-    if not dbAdded:
-      error = 'Missing "use %s;"' % dbName
-      gLogger.error( error )
+    result = execMySQL( '\n'.join( cmdLines ), dbName )
+    if not result['OK']:
+      error = 'Failed to initialize Database'
+      gLogger.notice( '\n'.join( cmdLines ) )
+      gLogger.error( error, result['Message'] )
       if exitOnError:
         DIRAC.exit( -1 )
       return S_ERROR( error )
 
-  except Exception:
-    error = 'Failed to create Database'
-    gLogger.exception( error )
+  except Exception, e:
+    gLogger.error( str( e ) )
     if exitOnError:
       DIRAC.exit( -1 )
     return S_ERROR( error )
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
+
+def _createMySQLCMDLines( dbFile ):
+  """ Creates a list of MYSQL commands to be executed, inspecting the dbFile(s)
+  """
+
+  cmdLines = []
+
+  fd = open( dbFile )
+  dbLines = fd.readlines()
+  fd.close()
+
+  for line in dbLines:
+    # Should we first source an SQL file (is this sql file an extension)?
+    if line.lower().startswith('source'):
+      sourcedDBbFileName = line.split( ' ' )[1].replace( '\n', '' )
+      gLogger.info( "Found file to source: %s" % sourcedDBbFileName )
+      sourcedDBbFile = os.path.join( rootPath, sourcedDBbFileName )
+      fdSourced = open( sourcedDBbFile )
+      dbLinesSourced = fdSourced.readlines()
+      fdSourced.close()
+      for lineSourced in dbLinesSourced:
+        if lineSourced.strip():
+          cmdLines.append( lineSourced.strip() )
+
+    # Creating/adding cmdLines
+    else:
+      if line.strip():
+        cmdLines.append( line.strip() )
+
+  return cmdLines
 
 def execMySQL( cmd, dbName = 'mysql', localhost=False ):
   """

@@ -120,10 +120,6 @@ moduleInstance5 = step1.createModuleInstance('StepFinalization','module5')
 #moduleInstance5.addParameter(Parameter("appType_1","","string","self","appType_1",True,False,"Application Version"))
 #moduleInstance5.addParameter(Parameter("outputDataSE_1","","string","self","outputDataSE_1",True,False,"SE of output data"))
 
-# now we can add parameters for the STEP but instead of typing them we can just use old one from modules
-step1.addParameterCopyLinked(module3.parameters)
-step1.addParameterCopyLinked(module2.parameters)
-
 # and we can add additional parameter which will be used as a global
 step1.addParameter(Parameter("STEP_ID","@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}","string","","",True, False, "Temporary fix"))
 step1.addParameter(Parameter("EVENTTYPE","30000000","string","","",True, False, "Event Type"))
@@ -131,8 +127,6 @@ step1.addParameter(Parameter("outputData","@{STEP_ID}.root","string","","",True,
 step1.addParameter(Parameter("outputDataSE","Tier1-RDST","string","","",True,False,"etc name"))
 step1.addParameter(Parameter("etcf","SETC_@{STEP_ID}.root","string","","",True,False,"etc name"))
 step1.setValue("appLog","@{appName}_@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.log")
-step1.unlinkParameter(["appLog","appName", "appType"])
-step1.unlinkParameter(["DataType", "CONFIG_NAME","CONFIG_VERSION"])
 
 #outputData = "@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}"
 opt_dav = "EvtTupleSvc.Output = {}"
@@ -173,29 +167,22 @@ workflow1.addStep(step1)
 step1_prefix="step1_"
 stepInstance1 = workflow1.createStepInstance('Gaudi_App_Step', 'Step1')
 # lets link all parameters them up with the level of workflow
-stepInstance1.linkParameterUp(stepInstance1.parameters, step1_prefix)
 stepInstance1.setLink("systemConfig","self", "SystemConfig") # capital letter corrected
 # except "STEP_ID", "appLog"
-stepInstance1.unlinkParameter(["STEP_ID", "optionsFile", "optionsLine", "appLog","appName", "etcf", "appType", "outputData", "outputDataSE", "EVENTTYPE"])
 stepInstance1.setValue("appName", "DaVinci")
 stepInstance1.setValue("appType", "root")
 stepInstance1.setValue("outputData","@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}")
 stepInstance1.setValue("optionsFile", "DVOfficialStrippingFile.opts")
 stepInstance1.setValue("optionsLine",opt_dav)
 stepInstance1.setValue("outputDataSE","Tier1_M-DST")
-stepInstance1.linkParameterUp("CONFIG_NAME")
-stepInstance1.linkParameterUp("CONFIG_VERSION")
-stepInstance1.linkParameterUp("DataType")
 stepInstance1.setLink("inputData","self", "InputData") # KGG linked with InputData of the Workflow
 #setpInstance1_module5 = stepInstance1.module_instances.find(module5)
 
 step2_prefix="step2_"
 stepInstance2 = workflow1.createStepInstance('Gaudi_App_Step', 'Step2')
 # lets link all parameters them up with the level of workflow
-stepInstance2.linkParameterUp(stepInstance2.parameters, step2_prefix)
 stepInstance2.setLink("systemConfig","self", "SystemConfig") # capital letter corrected
 # except "STEP_ID", "appLog"
-stepInstance2.unlinkParameter(["STEP_ID", "optionsFile", "optionsLine","appLog","appName", "appType", "etcf", "outputDataSE", "outputData", "etcf", "EVENTTYPE"])
 stepInstance2.setValue("appName", "Brunel")
 stepInstance2.setValue("appType", "dst")
 stepInstance2.setValue("outputData","@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}")
@@ -203,27 +190,18 @@ stepInstance2.setValue("etcf","SETC_@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.ro
 stepInstance2.setValue("optionsFile", "RealData-ETC.opts")
 stepInstance2.setValue("optionsLine",opt_brunel)
 stepInstance2.setValue("outputDataSE","Tier1_M-DST")
-stepInstance2.linkParameterUp("CONFIG_NAME")
-stepInstance2.linkParameterUp("CONFIG_VERSION")
-stepInstance2.linkParameterUp("DataType")
 stepInstance2.setLink("inputData",stepInstance1.getName(),"outputData")
 
 workflow1.addStep(step3)
 step3_prefix="step3_"
 stepInstance3 = workflow1.createStepInstance('Job_Finalization', 'Step3')
 
-stepInstance3.linkParameterUp(stepInstance3.parameters, step3_prefix)
 # Now lets define parameters on the top
 #indata = "LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_1.sim;LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_2.sim;LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_3.sim"
 #indata = "LFN:/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00007918_1.rdst"
 indata = "LFN:/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00007918_1.rdst;/lhcb/data/CCRC08/RAW/LHCb/CCRC/420217/420217_0000116193.raw"
 #etcf = "joel.root"
 #indata = "LFN:/lhcb/data/CCRC08/RAW/LHCb/CCRC/402154/402154_0000047096.raw;LFN:/lhcb/data/CCRC08/RAW/LHCb/CCRC/402154/402154_0000047097.raw"
-# lets specify parameters on the level of workflow
-workflow1.addParameterCopyLinked(step1.parameters, step1_prefix)
-workflow1.addParameterCopyLinked(step1.parameters, step2_prefix)
-# and finally we can unlink them because we inherit them linked
-workflow1.unlinkParameter(workflow1.parameters)
 
 workflow1.setValue(step1_prefix+"appVersion", "v19r11")
 workflow1.setValue(step2_prefix+"appVersion", "v32r4")
@@ -256,9 +234,6 @@ workflow1.addParameter(Parameter("SoftwarePackages","Brunel.v32r3p1","JDL","",""
 workflow1.addParameter(Parameter("MaxCPUTime",300000,"JDLReqt","","",True, False, "Application Name"))
 #workflow1.addParameter(Parameter("Site","LCG.CERN.ch","JDLReqt","","",True, False, "Site"))
 workflow1.addParameter(Parameter("Platform","gLite","JDLReqt","","",True, False, "platform"))
-
-# and finally we can unlink them because we inherit them linked
-workflow1.unlinkParameter(workflow1.parameters)
 
 workflow1.addParameter(Parameter("PRODUCTION_ID","00003033","string","","",True, False, "Temporary fix"))
 workflow1.addParameter(Parameter("JOB_ID","00000011","string","","",True, False, "Temporary fix"))

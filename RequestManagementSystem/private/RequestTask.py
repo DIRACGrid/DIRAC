@@ -30,6 +30,7 @@ from DIRAC.RequestManagementSystem.private.OperationHandlerBase import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security import CS
 
 ########################################################################
@@ -40,7 +41,7 @@ class RequestTask( object ):
   request's processing task
   """
 
-  def __init__( self, requestJSON, handlersDict, csPath, agentName ):
+  def __init__( self, requestJSON, handlersDict, csPath, agentName, standalone = False ):
     """c'tor
 
     :param self: self reference
@@ -52,12 +53,14 @@ class RequestTask( object ):
     self.csPath = csPath
     # # agent name
     self.agentName = agentName
+    # # standalone flag
+    self.standalone = standalone
     # # handlers dict
     self.handlersDict = handlersDict
     # # handlers class def
     self.handlers = {}
     # # own sublogger
-    self.log = gLogger.getSubLogger( self.request.RequestName )
+    self.log = gLogger.getSubLogger( "pid_%s/%s" % ( os.getpid(), self.request.RequestName ) )
     # # get shifters info
     self.__managersDict = {}
     shifterProxies = self.__setupManagerProxies()
@@ -244,7 +247,7 @@ class RequestTask( object ):
     if not setupProxy["OK"]:
       self.log.error( setupProxy["Message"] )
       self.request.Error = setupProxy["Message"]
-      return self.updateRequest()
+      return S_ERROR( 'Change proxy error' )
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
@@ -272,7 +275,11 @@ class RequestTask( object ):
       handler.shifter = shifter
       # # and execute
       pluginName = self.getPluginName( self.handlersDict.get( operation.Type ) )
-      useServerCertificate = gConfig.useServerCertificate()
+      if self.standalone:
+        useServerCertificate = gConfig.useServerCertificate()
+      else:
+        # Always use server certificates if executed within an agent
+        useServerCertificate = True
       try:
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Att" ), 1 )
@@ -287,13 +294,26 @@ class RequestTask( object ):
           if pluginName:
             gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
           gMonitor.addMark( "RequestFail", 1 )
+          if self.request.JobID:
+            # Check if the job exists
+            monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
+            res = monitorServer.getJobPrimarySummary( int( self.request.JobID ) )
+            if not res["OK"]:
+              self.log.error( "RequestTask: Failed to get job %d status" % self.request.JobID )
+            elif not res['Value']:
+              self.log.warn( "RequestTask: job %d does not exist (anymore): failed request" % self.request.JobID )
+              for opFile in operation:
+                opFile.Status = 'Failed'
+              if operation.Status != 'Failed':
+                operation.Status = 'Failed'
+              self.request.Error = 'Job no longer exists'
       except Exception, error:
         self.log.exception( "hit by exception: %s" % str( error ) )
         if pluginName:
           gMonitor.addMark( "%s%s" % ( pluginName, "Fail" ), 1 )
         gMonitor.addMark( "RequestFail", 1 )
         if useServerCertificate:
-          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
         break
 
       # # operation status check
@@ -311,17 +331,17 @@ class RequestTask( object ):
 
     gMonitor.flush()
 
-    # # update request to the RequestDB
-    self.log.info( 'updating request with status %s' % self.request.Status )
-    update = self.updateRequest()
-    if not update["OK"]:
-      self.log.error( update["Message"] )
-      return update
     if error:
       return S_ERROR( error )
 
     # # request done?
     if self.request.Status == "Done":
+      # # update request to the RequestDB
+      self.log.info( 'updating request with status %s' % self.request.Status )
+      update = self.updateRequest()
+      if not update["OK"]:
+        self.log.error( update["Message"] )
+        return update
       self.log.info( "request '%s' is done" % self.request.RequestName )
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
@@ -346,5 +366,5 @@ class RequestTask( object ):
                                                             ( ' after %d attempts' % attempts ) if attempts else '' ) )
             break
 
-    return S_OK()
-  
+    # Request will be updated by the callBack method
+    return S_OK( self.request )

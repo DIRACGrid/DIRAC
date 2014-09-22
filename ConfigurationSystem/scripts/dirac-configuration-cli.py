@@ -9,7 +9,6 @@
 """
 __RCSID__   = "$Id$"
 
-import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 

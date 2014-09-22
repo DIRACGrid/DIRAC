@@ -9,9 +9,11 @@ from DIRAC                                                          import S_OK,
 
 import os, types
 
+__RCSID__ = "$Id$"
+
 COMPONENT_NAME = 'PoolXMLSlice'
 
-class PoolXMLSlice:
+class PoolXMLSlice( object ):
 
   #############################################################################
   def __init__( self, catalogName ):

@@ -8,7 +8,7 @@
   Retrieve logging info of a Grid pilot
 """
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -22,6 +22,7 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
@@ -41,4 +42,4 @@ for gridID in args:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit( exitCode )
+DIRACExit( exitCode )

@@ -1,4 +1,4 @@
-""" 
+"""
 :mod: DataManager
 
 .. module: DataManager
@@ -40,7 +40,7 @@ class DataManager( object ):
 
   A DataManager is taking all the actions that impact or require the FileCatalog and the StorageElement together
   """
-  def __init__( self, catalogs = [], masterCatalogOnly = False ):
+  def __init__( self, catalogs = [], masterCatalogOnly = False, vo = False ):
     """ c'tor
 
     :param self: self reference
@@ -48,19 +48,20 @@ class DataManager( object ):
                     list will be ignored if masterCatalogOnly is set to True
     :param masterCatalogOnly: if set to True, the operations will be performed only on the master catalog.
                               The catalogs parameter will be ignored.
+    :param vo: the VO for which the DataManager is created, get VO from the current proxy if not specified
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
-
-
-    catalogsToUse = FileCatalog().getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
-
-    self.fc = FileCatalog( catalogsToUse )
+    self.vo = vo
+    
+    catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
+    
+    self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
-    self.ignoreMissingInFC = Operations().getValue( 'DataManagement/IgnoreMissingInFC', False )
-    self.useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
+    self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
+    self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -693,7 +694,7 @@ class DataManager( object ):
       self.log.debug( errStr, "%s %s" % ( destSE, res['Message'] ) )
       return S_ERROR( errStr )
     destSE = destStorageElement.getStorageElementName()['Value']
-    self.log.info( "%s Destination Storage Element verified." % logStr )
+    self.log.verbose( "%s Destination Storage Element verified." % logStr )
 
     ###########################################################
     # Check whether the destination storage element is banned
@@ -747,7 +748,7 @@ class DataManager( object ):
       return S_ERROR( errStr )
     self.log.debug( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
 
-    self.log.info( "%s Replication initialization successful." % logStr )
+    self.log.verbose( "%s Replication initialization successful." % logStr )
 
     resDict = {
                'DestStorage'   : destStorageElement,
@@ -786,7 +787,13 @@ class DataManager( object ):
           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
           # pfn = returnSingleResult( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
-          if storageElement.getRemoteProtocols()['Value']:
+          remoteProtocols = storageElement.getRemoteProtocols()
+          if not remoteProtocols['OK']:
+            self.log.debug( "%s : could not get remote protocols %s" % ( diracSE, remoteProtocols['Message'] ) )
+            continue
+
+          remoteProtocols = remoteProtocols['Value']
+          if remoteProtocols:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
             res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
@@ -850,7 +857,12 @@ class DataManager( object ):
     if not res['OK']:
       errStr = "registerFile: Completely failed to register files."
       self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      return res
+    # Remove Failed LFNs if they are in success
+    success = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn in success:
+      failed.pop( lfn, None )
     return res
 
   def __registerFile( self, fileTuples, catalog ):
@@ -862,7 +874,7 @@ class DataManager( object ):
       fileDict[lfn] = {'PFN':physicalFile, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
 
     if catalog:
-      fileCatalog = FileCatalog( catalog )
+      fileCatalog = FileCatalog( catalog, vo = self.vo )
       if not fileCatalog.isOK():
         return S_ERROR( "Can't get FileCatalog %s" % catalog )
     else:
@@ -893,6 +905,12 @@ class DataManager( object ):
     if not res['OK']:
       errStr = "registerReplica: Completely failed to register replicas."
       self.log.debug( errStr, res['Message'] )
+      return res
+    # Remove Failed LFNs if they are in success
+    success = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn in success:
+      failed.pop( lfn, None )
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):
@@ -926,7 +944,7 @@ class DataManager( object ):
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
 
     if catalog:
-      fileCatalog = FileCatalog( catalog )
+      fileCatalog = FileCatalog( catalog, vo = self.vo )
       res = fileCatalog.addReplica( replicaDict )
     else:
       res = self.fc.addReplica( replicaDict )
@@ -1100,6 +1118,10 @@ class DataManager( object ):
     lfnDict = {}
     failed = {}
     se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
+    if se:
+      res = se.isValid( 'removeFile' )
+      if not res['OK']:
+        return res
     for lfn, pfn in fileTuple:
       res = self.__verifyOperationWritePermission( lfn )
       if not res['OK'] or not res['Value']:
@@ -1331,7 +1353,8 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = ret['Value']
 
       deletedSize = sum( [size for pfn, size in deletedSizes.items() if pfn in res['Value']['Successful']] )
-      oDataOperation.setValueByKey( 'TransferOK', deletedSize )
+      oDataOperation.setValueByKey( 'TransferSize', deletedSize )
+      oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
@@ -1389,7 +1412,7 @@ class DataManager( object ):
     ##########################################################
     #  Perform the put here.
     startTime = time.time()
-    res = storageElement.putFile( fileDict, singleFile = True )
+    res = returnSingleResult( storageElement.putFile( fileDict ) )
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "put: Failed to put file to Storage Element."
@@ -1529,7 +1552,7 @@ class DataManager( object ):
     # # default value
     argsDict = argsDict if argsDict else {}
     # # get replicas for lfn
-    res = FileCatalog().getReplicas( lfn )
+    res = FileCatalog( vo = self.vo ).getReplicas( lfn )
     if not res["OK"]:
       errStr = "_callReplicaSEFcn: Completely failed to get replicas for LFNs."
       self.log.debug( errStr, res["Message"] )
@@ -1664,19 +1687,3 @@ class DataManager( object ):
     return self.__executeIfReplicaExists( storageElementName, lfn,
                                                   "getFile", localPath = localPath )
 
-
-
-  # we should so something to get rid of this one
-  def removeCatalogFile( self, lfn ):
-    """ remove a file from the FileCatalog
-
-    :param self: self reference
-    :param mixed lfn: LFN as string or list of LFN strings or dict with LFNs as keys
-    :param bool singleFile: execute for the first LFN only
-    :param list catalogs: catalogs' names
-    """
-
-    # # make sure lfns are sorted from the longest to the shortest
-    if type( lfn ) == ListType:
-      lfn = sorted( lfn, reverse = True )
-    return FileCatalog().removeFile( lfn )

@@ -131,7 +131,7 @@ class OperationHandlerBase( object ):
         raise TypeError( "expecting Operation instance" )
       self.operation = operation
       self.request = operation._parent
-      self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self.request.RequestName,
+      self.log = gLogger.getSubLogger( "pid_%s/%s/%s/%s" % ( os.getpid(), self.request.RequestName,
                                                       self.request.Order,
                                                       self.operation.Type ) )
 
@@ -201,7 +201,7 @@ class OperationHandlerBase( object ):
       maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 1024
       if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
-        opFile.Error = "Max attempts limit reached"
+        opFile.Error += " (Max attempts limit reached)"
     return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
 
   def rssSEStatus( self, se, status, retries = 2 ):

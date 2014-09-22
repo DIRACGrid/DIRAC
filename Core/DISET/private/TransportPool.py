@@ -27,7 +27,7 @@ class TransportPool:
   def __sendKeepAlives( self, retries = 5 ):
     if retries == 0:
       return
-    now = time.time()
+    tridList = []
     try:
       tridList = [ trid for trid in self.__transports ]
     except RuntimeError:
@@ -91,7 +91,7 @@ class TransportPool:
     try:
       return self.__transports[ trid ][0]
     except KeyError:
-      return False
+      return None
 
   # Receive
   def receive( self, trid, maxBufferSize = 0, blockAfterKeepAlive = True, idleReceive = False ):
@@ -156,7 +156,7 @@ class TransportPool:
       self.__modLock.release()
 
 
-gTransportPool = False
+gTransportPool = None
 
 def getGlobalTransportPool():
   global gTransportPool

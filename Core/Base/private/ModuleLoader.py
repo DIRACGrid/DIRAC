@@ -134,6 +134,7 @@ class ModuleLoader( object ):
       loadCSSection = self.__sectionFinder( loadName )
       handlerPath = gConfig.getValue( "%s/HandlerPath" % loadCSSection, "" )
       if handlerPath:
+        gLogger.info( "Trying to %s from CS defined path %s" % ( loadName, handlerPath ) )
         gLogger.verbose( "Found handler for %s: %s" % ( loadName, handlerPath ) )
         handlerPath = handlerPath.replace( "/", "." )
         if handlerPath.find( ".py", len( handlerPath ) -3 ) > -1:
@@ -144,6 +145,7 @@ class ModuleLoader( object ):
           return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Message' ] ) )
         gLogger.verbose( "Loaded %s" % handlerPath )
       elif parentModule:
+        gLogger.info( "Trying to autodiscover %s from parent" % loadName )
         #If we've got a parent module, load from there.
         modImport = module
         if self.__modSuffix:
@@ -151,6 +153,7 @@ class ModuleLoader( object ):
         result = self.__recurseImport( modImport, parentModule, hideExceptions = hideExceptions )
       else:
         #Check to see if the module exists in any of the root modules
+        gLogger.info( "Trying to autodiscover %s" % loadName )
         rootModulesToLook = getInstalledExtensions()
         for rootModule in rootModulesToLook:
           importString = '%s.%sSystem.%s.%s' % ( rootModule, system, self.__importLocation, module )

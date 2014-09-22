@@ -25,8 +25,8 @@ __RCSID__ = "$Id $"
 # @brief Definition of RegistrationTask class.
 
 ## imports 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
+from DIRAC import S_OK
+from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 ########################################################################
 class RegistrationTask( RequestTask ):

@@ -109,8 +109,8 @@ def checkStatusTypes( statusTypes ):
   for statusType in statusTypes:
     if not statusType in acceptableStatusTypes and statusType != 'all':
       acceptableStatusTypes.append('all')
-      error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-             % ( statusType, str( acceptableStatusTypes ) ) )
+      subLogger.error( "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
+                       % ( statusType, str( acceptableStatusTypes ) ) )
 
 
   if 'all' in statusType:

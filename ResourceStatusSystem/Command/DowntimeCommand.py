@@ -1,6 +1,4 @@
-# $HeadURL:  $
 ''' DowntimeCommand module
-
 '''
 
 import urllib2
@@ -42,16 +40,16 @@ class DowntimeCommand( Command ):
     '''
 
     for dt in result:
-
-      resQuery = self.rmClient.addOrModifyDowntimeCache( dt[ 'DowntimeID' ],
-                                                         dt[ 'Element' ],
-                                                         dt[ 'Name' ],
-                                                         dt[ 'StartDate' ],
-                                                         dt[ 'EndDate' ],
-                                                         dt[ 'Severity' ],
-                                                         dt[ 'Description' ],
-                                                         dt[ 'Link' ],
-                                                         dt[ 'GOCDBServiceType' ] )
+      resQuery = self.rmClient.addOrModifyDowntimeCache( 
+                               downtimeID = dt[ 'DowntimeID' ],
+                               element = dt[ 'Element' ],
+                               name = dt[ 'Name' ],
+                               startDate = dt[ 'StartDate' ],
+                               endDate = dt[ 'EndDate' ],
+                               severity = dt[ 'Severity' ],
+                               description = dt[ 'Description' ],
+                               link = dt[ 'Link' ],
+                               gocdbServiceType = dt[ 'GOCDBServiceType' ] )
       if not resQuery[ 'OK' ]:
         return resQuery
     return S_OK()
@@ -109,7 +107,6 @@ class DowntimeCommand( Command ):
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
 
-
     return S_OK( ( element, elementName, hours, gocdbServiceType ) )
 
   def doNew( self, masterParams = None ):
@@ -128,11 +125,12 @@ class DowntimeCommand( Command ):
       element, elementNames = masterParams
       hours = None
       elementName = None
+      gocdbServiceType = None
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName, hours = params[ 'Value' ]
+      element, elementName, hours, gocdbServiceType = params[ 'Value' ]
       elementNames = [ elementName ]
 
     startDate = datetime.utcnow() - timedelta( days = 14 )
@@ -159,6 +157,9 @@ class DowntimeCommand( Command ):
     for downtime, downDic in results.items():
 
       dt = {}
+      if gocdbServiceType and downDic[ 'SERVICE_TYPE' ]:
+        if  gocdbServiceType.lower() != downDic[ 'SERVICE_TYPE' ].lower():
+          continue
       if element == 'Resource':
         dt[ 'Name' ] = downDic[ 'HOSTNAME' ]
       else:
@@ -174,7 +175,11 @@ class DowntimeCommand( Command ):
       dt[ 'Severity' ] = downDic[ 'SEVERITY' ]
       dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
       dt[ 'Link' ] = downDic[ 'GOCDB_PORTAL_URL' ]
-      dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      try:
+        dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      except KeyError:
+        # SERVICE_TYPE is not always defined
+        pass
 
       uniformResult.append( dt )
 
@@ -182,26 +187,39 @@ class DowntimeCommand( Command ):
     if not storeRes[ 'OK' ]:
       return storeRes
 
-    # We return only one downtime, if its ongoind at dtDate
+    # We return only one downtime, if its ongoing at dtDate
     startDate = datetime.utcnow()
-    endDate = startDate
     if hours:
       startDate = startDate + timedelta( hours = hours )
+    endDate = startDate
 
     result = None
-    for dt in uniformResult:
+    dtOutages = []
+    dtWarnings = []
 
+    for dt in uniformResult:
       if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
-        result = dt
-        #We want to take the latest one ( they are sorted by insertion time )
-        #break
+        if dt[ 'Severity' ] == 'Outage':
+          dtOutages.append( dt )
+        else:
+          dtWarnings.append( dt )
+
+    #In case many overlapping downtimes have been declared, the first one in
+    #severity and then time order will be selected. We want to get the latest one
+    #( they are sorted by insertion time )
+    if len( dtOutages ) > 0:
+      result = dtOutages[-1]
+    elif len( dtWarnings ) > 0:
+      result = dtWarnings[-1]
 
     return S_OK( result )
+
+
 
   def doCache( self ):
     '''
       Method that reads the cache table and tries to read from it. It will
-      return a list of dictionaries if there are results.
+      return a list with one dictionary describing the DT if there are results.
     '''
 
     params = self._prepareCommand()
@@ -217,49 +235,47 @@ class DowntimeCommand( Command ):
 
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
-    # We return only one downtime, if its ongoind at dtDate
+    # We return only one downtime, if its ongoing at dtDate
     dtDate = datetime.utcnow()
     result = None
+    dtOutages = []
+    dtWarnings = []
 
     if not hours:
-      # If not hours defined, we want the downtimes running now, which means,
-      # the ones that already started and will finish later. In case many
-      # overlapping downtimes have been declared, the first one in severity and 
-      # then time order will be selected. 
-
-      dtOutages = []
-      dtWarnings = []
+      # If hours not defined, we want the ongoing downtimes
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
           if dt[ 'Severity' ] == 'Outage':
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
-
-      if len( dtOutages ) > 0:
-        result = dtOutages[0]
-      elif len( dtWarnings ) > 0:
-        result = dtWarnings[0]
-
-
-
     else:
-      # If hours are defined, we want the downtimes starting in the next <hours>
+      # If hours defined, we want ongoing downtimes and downtimes starting 
+      # in the next <hours>
       dtDateFuture = dtDate + timedelta( hours = hours )
       for dt in uniformResult:
-        if ( dt[ 'StartDate' ] > dtDate ) and ( dt[ 'StartDate' ] < dtDateFuture ):
-          result = dt
-          #We want to take the latest one ( they are sorted by insertion time )
-          #break
+        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( 
+           dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
+          if dt[ 'Severity' ] == 'Outage':
+            dtOutages.append( dt )
+          else:
+            dtWarnings.append( dt )
+
+    #In case many overlapping downtimes have been declared, the first one in
+    #severity and then time order will be selected.
+    if len( dtOutages ) > 0:
+      result = dtOutages[0]
+    elif len( dtWarnings ) > 0:
+      result = dtWarnings[0]
 
     return S_OK( result )
 
+
   def doMaster( self ):
-    '''
-      Master method, which looks little bit spaguetti code, sorry !
-      - It gets all sites and transforms them into gocSites.
-      - It gets all the storage elements and transforms them into their hosts
-      - It gets the fts, the ces and file catalogs.
+    ''' Master method, which looks little bit spaghetti code, sorry !
+        - It gets all sites and transforms them into gocSites.
+        - It gets all the storage elements and transforms them into their hosts
+        - It gets the the CEs (FTS and file catalogs will come).
     '''
 
     gocSites = CSHelpers.getGOCSites()
@@ -274,9 +290,7 @@ class DowntimeCommand( Command ):
 
     resources = sesHosts
 
-    #
-    #
-    #FIXME: file catalogs need also to use their hosts
+    # TODO: file catalogs need also to use their hosts
     # something similar applies to FTS Channels
     #
     #fts = CSHelpers.getFTS()

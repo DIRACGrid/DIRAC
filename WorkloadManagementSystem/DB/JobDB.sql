@@ -7,24 +7,20 @@
 -- -
 -- ------------------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS JobDB;
-
-CREATE DATABASE JobDB;
-
+-- When installing via dirac tools, the following is not needed (still here for reference)
+-- 
+-- DROP DATABASE IF EXISTS JobDB;
+-- CREATE DATABASE JobDB;
 -- ------------------------------------------------------------------------------
 -- Database owner definition
-
-USE mysql;
-DELETE FROM user WHERE user='Dirac';
-
+-- USE mysql;
+-- DELETE FROM user WHERE user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
-
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
-
-FLUSH PRIVILEGES;
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
 USE JobDB;

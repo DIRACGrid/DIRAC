@@ -429,8 +429,12 @@ class SandboxStoreHandler( RequestHandler ):
       return self.__deleteSandboxFromExternalBackend( SEName, SEPFN )
     else:
       hdPath = self.__sbToHDPath( SEPFN )
-      if not os.path.isfile( hdPath ):
-        return S_OK()
+      try:
+        if not os.path.isfile( hdPath ):
+          return S_OK()
+      except Exception, e:
+        gLogger.error( "Cannot perform isfile", "%s : %s" % ( hdPath, str( e ) ) )
+        return S_ERROR( "Error checking %s" % hdPath )
       try:
         os.unlink( hdPath )
       except Exception, e:
@@ -438,16 +442,16 @@ class SandboxStoreHandler( RequestHandler ):
       while hdPath:
         hdPath = os.path.dirname( hdPath )
         gLogger.info( "Checking if dir %s is empty" % hdPath )
-        if not os.path.isdir( hdPath ):
-          break
-        if len( os.listdir( hdPath ) ) > 0:
-          break
-        gLogger.info( "Trying to clean dir %s" % hdPath )
-        # Empty dir!
         try:
+          if not os.path.isdir( hdPath ):
+            break
+          if len( os.listdir( hdPath ) ) > 0:
+            break
+          gLogger.info( "Trying to clean dir %s" % hdPath )
+          # Empty dir!
           os.rmdir( hdPath )
         except Exception, e:
-          gLogger.error( "Cannot clean empty directory", "%s : %s" % ( hdPath, str( e ) ) )
+          gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, str( e ) ) )
           break
     return S_OK()
 

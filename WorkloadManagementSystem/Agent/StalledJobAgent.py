@@ -494,9 +494,9 @@ used to fail jobs due to the optimizer chain.
 
   def __failCompletedJobs( self ):
     """ Failed Jobs stuck in Completed Status for a long time.
-They are due to pilots being killed during the
-finalization of the job execution.
-"""
+      They are due to pilots being killed during the
+      finalization of the job execution.
+    """
 
     # Get old Completed Jobs
     checkTime = str( dateTime() - self.completedTime * second )
@@ -511,11 +511,13 @@ finalization of the job execution.
 
     # Remove those with Minor Status "Pending Requests"
     for jobID in jobIDs:
-      result = self.jobDB.getJobAttribute( jobID, 'MinorStatus' )
+      result = self.jobDB.getJobAttributes( jobID, ['Status','MinorStatus'] )
       if not result['OK']:
         self.log.error( result['Message'] )
         continue
-      if result['Value'] == "Pending Requests":
+      if result['Value']['Status'] != "Completed":
+        continue
+      if result['Value']['MinorStatus'] == "Pending Requests":
         continue
 
       result = self.__updateJobStatus( jobID, 'Failed',

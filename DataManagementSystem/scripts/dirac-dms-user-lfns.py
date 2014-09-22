@@ -84,6 +84,8 @@ if not baseDir:
     Script.showHelp()
   baseDir = '/%s/user/%s/%s' % ( vo, username[0], username )
 
+baseDir = baseDir.rstrip('/')
+
 gLogger.info( 'Will search for files in %s' % baseDir )
 activeDirs = [baseDir]
 

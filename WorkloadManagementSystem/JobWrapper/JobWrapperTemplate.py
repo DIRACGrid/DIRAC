@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 import sys
-sys.path.insert( 0, "@SITEPYTHON@" )
+sitePython = "@SITEPYTHON@"
+if sitePython:
+  sys.path.insert( 0, "@SITEPYTHON@" )
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 #######################################################################################################################
@@ -59,7 +62,7 @@ def execute ( arguments ):
   except Exception:
     gLogger.exception( 'JobWrapper failed the initialization phase' )
     rescheduleResult = rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
-    job.sendWMSAccounting( rescheduleResult, 'Job Wrapper Initialization' )
+    job.sendJobAccounting( rescheduleResult, 'Job Wrapper Initialization' )
     return 1
 
   if arguments['Job'].has_key( 'InputSandbox' ):
@@ -72,7 +75,7 @@ def execute ( arguments ):
     except Exception:
       gLogger.exception( 'JobWrapper failed to download input sandbox' )
       rescheduleResult = rescheduleFailedJob( jobID, 'Input Sandbox Download', gJobReport )
-      job.sendWMSAccounting( rescheduleResult, 'Input Sandbox Download' )
+      job.sendJobAccounting( rescheduleResult, 'Input Sandbox Download' )
       return 1
   else:
     gLogger.verbose( 'Job has no InputSandbox requirement' )
@@ -89,7 +92,7 @@ def execute ( arguments ):
       except Exception, x:
         gLogger.exception( 'JobWrapper failed to resolve input data' )
         rescheduleResult = rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
-        job.sendWMSAccounting( rescheduleResult, 'Input Data Resolution' )
+        job.sendJobAccounting( rescheduleResult, 'Input Data Resolution' )
         return 1
     else:
       gLogger.verbose( 'Job has a null InputData requirement:' )

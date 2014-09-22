@@ -180,7 +180,10 @@ class AgentModule:
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
     _checkDir( self.am_getControlDirectory() )
-    _checkDir( self.am_getWorkDirectory() )
+    workDirectory = self.am_getWorkDirectory()
+    _checkDir( workDirectory )
+    # Set the work directory in an environment variable available to subprocesses if needed
+    os.environ['AGENT_WORKDIRECTORY'] = workDirectory
 
     self.__moduleProperties[ 'shifterProxy' ] = self.am_getOption( 'shifterProxy' )
     if self.am_monitoringEnabled():
@@ -299,7 +302,7 @@ class AgentModule:
     self.monitor.initialize()
     self.monitor.registerActivity( 'CPU', "CPU Usage", 'Framework', "CPU,%", self.monitor.OP_MEAN, 600 )
     self.monitor.registerActivity( 'MEM', "Memory Usage", 'Framework', 'Memory,MB', self.monitor.OP_MEAN, 600 )
-    #Component monitor
+    # Component monitor
     for field in ( 'version', 'DIRACVersion', 'description', 'platform' ):
       self.monitor.setComponentExtraParam( field, self.__codeProperties[ field ] )
     self.monitor.setComponentExtraParam( 'startTime', Time.dateTime() )
@@ -330,7 +333,7 @@ class AgentModule:
     return S_OK()
 
   def am_go( self ):
-    #Set the shifter proxy if required
+    # Set the shifter proxy if required
     result = self._setShifterProxy()
     if not result[ 'OK' ]:
       return result
@@ -346,9 +349,9 @@ class AgentModule:
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
       self._endReportToMonitoring( *cpuStats )
-    #Increment counters
+    # Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
-    #Show status
+    # Show status
     elapsedTime = time.time() - elapsedTime
     self.__moduleProperties[ 'totalElapsedTime' ] += elapsedTime
     self.log.notice( "-"*40 )
@@ -365,7 +368,7 @@ class AgentModule:
     else:
       self.log.warn( " Cycle had an error:", cycleResult[ 'Message' ] )
     self.log.notice( "-"*40 )
-    #Update number of cycles
+    # Update number of cycles
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
     return cycleResult
 
@@ -397,11 +400,11 @@ class AgentModule:
 
 
   def __executeModuleCycle( self ):
-    #Execute the beginExecution function
+    # Execute the beginExecution function
     result = self.am_secureCall( self.beginExecution, name = "beginExecution" )
     if not result[ 'OK' ]:
       return result
-    #Launch executor functions
+    # Launch executor functions
     executors = self.__moduleProperties[ 'executors' ]
     if len( executors ) == 1:
       result = self.am_secureCall( executors[0][0], executors[0][1] )
@@ -414,7 +417,7 @@ class AgentModule:
         thread.start()
       for thread in exeThreads:
         thread.join()
-    #Execute the endExecution function
+    # Execute the endExecution function
     return  self.am_secureCall( self.endExecution, name = "endExecution" )
 
   def initialize( self, *args, **kwargs ):

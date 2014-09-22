@@ -33,7 +33,7 @@ import os, time
 class Watchdog:
 
   #############################################################################
-  def __init__( self, pid, exeThread, spObject, jobCPUtime, systemFlag = 'linux2.4' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux2.4' ):
     """ Constructor, takes system flag as argument.
     """
     self.log = gLogger.getSubLogger( "Watchdog" )
@@ -43,6 +43,7 @@ class Watchdog:
     self.appPID = self.exeThread.getCurrentPID()
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
+    self.memoryLimit = memoryLimit
     self.calibration = 0
     self.initialValues = {}
     self.parameters = {}
@@ -82,6 +83,7 @@ class Watchdog:
     self.testLoadAvg = gConfig.getValue( self.section + '/CheckLoadAvgFlag', 1 )
     self.testCPUConsumed = gConfig.getValue( self.section + '/CheckCPUConsumedFlag', 1 )
     self.testCPULimit = gConfig.getValue( self.section + '/CheckCPULimitFlag', 0 )
+    self.testMemoryLimit = gConfig.getValue( self.section + '/CheckMemoryLimitFlag', 0 )
     self.testTimeLeft = gConfig.getValue( self.section + '/CheckTimeLeftFlag', 1 )
     #Other parameters
     self.pollingTime = gConfig.getValue( self.section + '/PollingTime', 10 ) # 10 seconds
@@ -197,6 +199,18 @@ class Watchdog:
     if not self.parameters.has_key( 'MemoryUsed' ):
       self.parameters['MemoryUsed'] = []
     self.parameters['MemoryUsed'].append( result['Value'] )
+    result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
+    if result['OK']:
+      vsize = result['Value']['Vsize']/1024.
+      rss = result['Value']['RSS']/1024.
+      heartBeatDict['Vsize'] = vsize
+      heartBeatDict['RSS'] = rss
+      self.parameters.setdefault( 'Vsize', [] )
+      self.parameters['Vsize'].append( vsize )
+      self.parameters.setdefault( 'RSS', [] )
+      self.parameters['RSS'].append( rss )
+      msg += "Job Vsize: %.1f kb " % vsize
+      msg += "Job RSS: %.1f kb " % rss
     result = self.getDiskSpace()
     msg += 'DiskSpace: %.1f MB ' % ( result['Value'] )
     if not self.parameters.has_key( 'DiskSpace' ):
@@ -371,7 +385,7 @@ class Watchdog:
         return result
     else:
       report += 'CPULimit: NA, '
-
+        
     if self.testTimeLeft:
       self.__timeLeft()
       if self.timeLeft:
@@ -379,6 +393,14 @@ class Watchdog:
     else:
       report += 'TimeLeft: NA'
 
+    if self.testMemoryLimit:
+      result = self.__checkMemoryLimit()
+      report += 'MemoryLimit OK, '
+      if not result['OK']:
+        self.log.warn( result['Message'] )
+        return result
+    else:
+      report += 'MemoryLimit: NA, '
 
     self.log.info( report )
     return S_OK( 'All enabled checks passed' )
@@ -489,6 +511,20 @@ class Watchdog:
     else:
       return S_OK( 'Not possible to determine CPU consumed' )
 
+  def __checkMemoryLimit( self ):
+    """ Checks that the job memory consumption is within a limit
+    """
+    if self.parameters.has_key( 'Vsize' ):
+      vsize = self.parameters['Vsize'][-1]
+      
+    if vsize and self.memoryLimit:
+      if vsize > self.memoryLimit:
+        vsize = vsize
+        # Just a warning for the moment
+        self.log.warn( "Job has consumed %f.2 KB of memory with the limit of %f.2 KB" % ( vsize, self.memoryLimit ) )  
+    
+    return S_OK()
+
   #############################################################################
   def __checkDiskSpace( self ):
     """Checks whether the CS defined minimum disk space is available.
@@ -587,6 +623,16 @@ class Watchdog:
 
     self.initialValues['MemoryUsed'] = result['Value']
     self.parameters['MemoryUsed'] = []
+    
+    result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
+    self.log.verbose( 'Job Memory: %s' % ( result['Value'] ) )
+    if not result['OK']:
+      self.log.warn( 'Could not get job memory usage' )
+
+    self.initialValues['Vsize'] = result['Value']['Vsize']/1024.
+    self.initialValues['RSS'] = result['Value']['RSS']/1024.
+    self.parameters['Vsize'] = []
+    self.parameters['RSS'] = []
 
     result = self. getDiskSpace()
     self.log.verbose( 'DiskSpace: %s' % ( result ) )

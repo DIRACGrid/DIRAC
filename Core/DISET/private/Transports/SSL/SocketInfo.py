@@ -19,7 +19,7 @@ class SocketInfo:
   __cachedCAsCRLsLoadLock = LockRing().getLock()
 
 
-  def __init__( self, infoDict, sslContext = False ):
+  def __init__( self, infoDict, sslContext = None ):
     self.infoDict = infoDict
     #HACK:DISABLE CRLS!!!!!
     self.infoDict[ 'IgnoreCRLs' ] = True

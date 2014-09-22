@@ -9,7 +9,7 @@
 __RCSID__ = "$Id$"
 
 ## from DIRAC
-from DIRAC import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RemovalTask import RemovalTask
 

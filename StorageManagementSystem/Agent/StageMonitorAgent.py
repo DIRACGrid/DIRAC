@@ -4,7 +4,6 @@ from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
-from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.AccountingSystem.Client.Types.DataOperation            import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient                import gDataStoreClient
@@ -18,7 +17,6 @@ class StageMonitorAgent( AgentModule ):
 
   def initialize( self ):
     self.stagerClient = StorageManagerClient()
-    self.dataIntegrityClient = DataIntegrityClient()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -175,18 +173,6 @@ class StageMonitorAgent( AgentModule ):
       replicaIDs[replicaID]['RequestID'] = reqID
 
     return S_OK( {'SEReplicas':seReplicas, 'ReplicaIDs':replicaIDs} )
-
-  def __reportProblematicFiles( self, lfns, reason ):
-    return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason,  sourceComponent = 'StageMonitorAgent'  )
-    if not res['OK']:
-      gLogger.error( "StageMonitor.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "StageMonitor.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "StageMonitor.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res
 
   def __wakeupOldRequests( self, oldRequests ):
     gLogger.info( "StageMonitor.__wakeupOldRequests: Attempting..." )

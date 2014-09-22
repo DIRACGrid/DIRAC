@@ -13,7 +13,7 @@ from DIRAC                                                import gLogger, S_OK, 
 from DIRAC.Core.Base.DB                                   import DB
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
-from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, sortList, breakListIntoChunks
+from DIRAC.Core.Utilities.List                            import stringListToString, intListToString, breakListIntoChunks
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
@@ -77,7 +77,8 @@ class TransformationDB( DB ):
                           'AgentType',
                           'Status',
                           'MaxNumberOfTasks',
-                          'TransformationFamily']  # for the moment include TransformationFamily
+                          'TransformationFamily',
+                          'Body']  # for the moment include TransformationFamily
 
     self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
@@ -313,6 +314,15 @@ class TransformationDB( DB ):
   def __updateTransformationParameter( self, transID, paramName, paramValue, connection = False ):
     if not ( paramName in self.mutable ):
       return S_ERROR( "Can not update the '%s' transformation parameter" % paramName )
+    if paramName == 'Body':
+      res = self._escapeString( paramValue )
+      if not res['OK']:
+        return S_ERROR( "Failed to parse parameter value" )
+      paramValue = res['Value']
+      req = "UPDATE Transformations SET %s=%s, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
+                                                                                                          paramValue,
+                                                                                                          transID )
+      return self._update( req, connection )
     req = "UPDATE Transformations SET %s='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % ( paramName,
                                                                                                           paramValue,
                                                                                                           transID )
@@ -390,7 +400,11 @@ class TransformationDB( DB ):
     message = ''
     if paramName in self.TRANSPARAMS:
       res = self.__updateTransformationParameter( transID, paramName, paramValue, connection = connection )
-      if res['OK'] and ( paramName != 'Body' ):
+      if res['OK']:
+        self._escapeString( paramValue )
+        if not res['OK']:
+          return S_ERROR( "Failed to parse parameter value" )
+        paramValue = res['Value']
         message = '%s updated to %s' % ( paramName, paramValue )
     else:
       res = self.__addAdditionalTransformationParameter( transID, paramName, paramValue, connection = connection )
@@ -604,7 +618,7 @@ class TransformationDB( DB ):
     updatesList = []
     for fileID, status in fileStatusDict.items():
 
-      updatesList.append( "(%d, %d, '%s', VALUES(ErrorCount), UTC_TIMESTAMP())" % ( transID, fileID, status ) )
+      updatesList.append( "(%d, %d, '%s', 0, UTC_TIMESTAMP())" % ( transID, fileID, status ) )
 
     req += ','.join( updatesList )
     req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
@@ -999,7 +1013,7 @@ class TransformationDB( DB ):
       return S_ERROR( "Input data query already exists for transformation" )
     if res['Message'] != 'No InputDataQuery found for transformation':
       return res
-    for parameterName in sortList( queryDict.keys() ):
+    for parameterName in sorted( queryDict.keys() ):
       parameterValue = queryDict[parameterName]
       if not parameterValue:
         continue

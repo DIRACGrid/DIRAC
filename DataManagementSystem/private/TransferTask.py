@@ -27,7 +27,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
+from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 

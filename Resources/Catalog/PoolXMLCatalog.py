@@ -3,11 +3,12 @@
     POOL project schema. It presents a DIRAC generic File Catalog interface
     although not complete and with several extensions
 """
+__RCSID__ = "$Id$"
 
 import os, xml.dom.minidom, types
 from DIRAC import S_OK, S_ERROR
 
-class PoolFile:
+class PoolFile( object ):
   """
       A Pool XML File Catalog entry
 
@@ -87,7 +88,8 @@ class PoolFile:
     """ Adds one PFN
     """
     sename = "Unknown"
-    if se: sename = se
+    if se: 
+      sename = se
 
     if pfntype:
       self.pfns.append( ( pfn, pfntype, sename ) )
@@ -126,7 +128,7 @@ class PoolFile:
     res = res + '   </File>\n'
     return res
 
-class PoolXMLCatalog:
+class PoolXMLCatalog( object ):
   """ A Pool XML File Catalog
   """
 

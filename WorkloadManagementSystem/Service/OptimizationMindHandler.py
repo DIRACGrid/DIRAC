@@ -1,6 +1,8 @@
+__RCSID__ = "$Id$"
+
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DEncode, ThreadScheduler
+from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState

@@ -50,8 +50,10 @@ def checkArgumentFormat( path ):
       mUrl = url[4:]
     elif url.startswith( 'LFN:' ):
       mUrl = url[4:]  
-    if mUrl.startswith('/grid'):  
-      mUrl = mUrl[5:] 
+    if mUrl.startswith('/grid'):
+      uList = mUrl.split('/')
+      if len( uList ) >= 2 and uList[1] == 'grid':  
+        mUrl = mUrl[5:] 
     normpath = os.path.normpath( mUrl )
     urls[normpath] = pathDict[url]
   return S_OK( urls )

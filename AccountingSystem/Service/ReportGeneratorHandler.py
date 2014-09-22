@@ -31,9 +31,10 @@ class ReportGeneratorHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfo ):
-    reportSection = serviceInfo[ 'serviceSectionPath' ]
-    cls.__acDB = MultiAccountingDB( reportSection, readOnly = True )
+    multiPath = PathFinder.getDatabaseSection( "Accounting/MultiDB" )
+    cls.__acDB = MultiAccountingDB( multiPath, readOnly = True )
     #Get data location
+    reportSection = serviceInfo[ 'serviceSectionPath' ]
     dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
     dataPath = dataPath.strip()
     if "/" != dataPath[0]:
