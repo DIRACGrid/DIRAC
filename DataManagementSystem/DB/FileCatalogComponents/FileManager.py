@@ -40,7 +40,7 @@ class FileManager(FileManagerBase):
                                          "FileID": "INTEGER NOT NULL",
                                          "GUID": "char(36) NOT NULL",
                                          "Checksum": "VARCHAR(32)",
-                                         "CheckSumType": "ENUM('Adler32','MD5')",
+                                         "ChecksumType": "ENUM('Adler32','MD5')",
                                          "Type": "ENUM('File','Link') NOT NULL DEFAULT 'File'",
                                          "CreationDate": "DATETIME",
                                          "ModificationDate": "DATETIME",
