@@ -1,3 +1,8 @@
+[v6r11p13]
+
+*DMS
+BUGFIX: SEManager - in SEManagerDB.__addSE() bad _getConnection call, closes #2062
+
 [v6r11p12]
 
 *Resources
