@@ -56,8 +56,10 @@ __RCSID__ = "$Id$"
 # # import
 import inspect
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+from DIRAC.ConfigurationSystem.Client import PathFinder
+
 
 ########################################################################
 class RequestValidator( object ):
@@ -81,6 +83,9 @@ class RequestValidator( object ):
                "RegisterFile" : { "Operation" : [ ], "Files" : [ "LFN", "PFN", "ChecksumType", "Checksum", "GUID" ] },
                "RegisterReplica" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] } }
 
+  # All the operationHandlers defined in the CS
+  opHandlers = set()
+
   def __init__( self ):
     """ c'tor
 
@@ -93,6 +98,17 @@ class RequestValidator( object ):
                        self._hasFiles,
                        self._hasRequiredAttrs,
                        self._hasChecksumAndChecksumType )
+
+    configPath = PathFinder.getAgentSection( "RequestManagement/RequestExecutingAgent" )
+
+    # # operation handlers over here
+    opHandlersPath = "%s/%s" % ( configPath, "OperationHandlers" )
+    opHandlers = gConfig.getSections( opHandlersPath )
+    if not opHandlers["OK"]:
+      gLogger.error( opHandlers["Message" ] )
+    else:
+      self.opHandlers = set( opHandlers["Value"] )
+
 
   @classmethod
   def addReqAttrsCheck( cls, operationType, operationAttrs = None, filesAttrs = None ):
@@ -212,6 +228,18 @@ class RequestValidator( object ):
           return S_ERROR( "File in operation #%d is missing Checksum (%s) or ChecksumType (%s)" % \
                           ( request.indexOf( operation ), opFile.Checksum, opFile.ChecksumType ) )
     return S_OK()
+
+
+  def _hasExistingOperationTypes( self, request ):
+    """ Check that there is a handler defined in the CS for each operation type"""
+    requiredHandlers = set( [op.Type for op in request] )
+    nonExistingHandlers = requiredHandlers - self.opHandlers
+
+    if nonExistingHandlers:
+      return S_ERROR( "The following operation type(s) have no handlers defined in the CS: %s" % nonExistingHandlers )
+
+    return S_OK()
+
 
 # # global instance
 gRequestValidator = RequestValidator()
