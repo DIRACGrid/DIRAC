@@ -214,7 +214,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       opFileToSchedule = toSchedule[lfnsToSchedule][0]
       opFileToSchedule.GUID = lfnMetadata['GUID']
       opFileToSchedule.Checksum = metadata[lfnsToSchedule]['Checksum']
-      opFileToSchedule.ChecksumType = metadata[lfnsToSchedule]['CheckSumType']
+      opFileToSchedule.ChecksumType = metadata[lfnsToSchedule]['ChecksumType']
       opFileToSchedule.Size = metadata[lfnsToSchedule]['Size']
 
       filesToScheduleList.append( ( opFileToSchedule.toJSON()['Value'],

@@ -172,7 +172,7 @@ class FileManager(FileManagerBase):
     metadata = list(metadata_input)
     
     connection = self._getConnection(connection)
-    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType',
+    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','ChecksumType',
     # 'Type','CreationDate','ModificationDate','Mode']
     req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
     if not allStatus:
@@ -332,7 +332,7 @@ class FileManager(FileManagerBase):
       toDelete.append(fileID)
       insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (fileID,guid,checksum,checksumtype,mode))
     if insertTuples:
-      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,CreationDate,ModificationDate,Mode) VALUES %s" % ','.join(insertTuples)
+      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode) VALUES %s" % ','.join( insertTuples )
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete,connection=connection)

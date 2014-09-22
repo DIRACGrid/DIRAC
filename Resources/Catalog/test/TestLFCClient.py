@@ -190,7 +190,7 @@ class FilesCase(LFCClientTestCase):
     self.assert_(res['Value']['Successful'].has_key(lfn))
     metadataDict = res['Value']['Successful'][lfn]
     self.assertEqual(metadataDict['Status'],'-')
-    self.assertEqual(metadataDict['CheckSumType'],'')
+    self.assertEqual( metadataDict['ChecksumType'], '' )
     self.assertEqual(metadataDict['Checksum'],'')
     self.assertEqual(metadataDict['Size'],10000000)
 
