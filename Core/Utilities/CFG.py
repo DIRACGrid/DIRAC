@@ -5,6 +5,7 @@ import types
 import copy
 import os
 import re
+
 try:
   import zipfile
   gZipEnabled = True
