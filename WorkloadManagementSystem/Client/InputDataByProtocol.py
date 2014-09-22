@@ -31,7 +31,7 @@ class InputDataByProtocol( object ):
     self.jobID = None
     self.storageElements = {}
     # This is because  replicas contain SEs and metadata keys!
-    self.metaKeys = set( ['CheckSumType', 'Checksum', 'NumberOfLinks', 'Mode', 'GUID', 'Status', 'ModificationDate', 'CreationDate', 'Size'] )
+    self.metaKeys = set( ['ChecksumType', 'Checksum', 'NumberOfLinks', 'Mode', 'GUID', 'Status', 'ModificationDate', 'CreationDate', 'Size'] )
 
   def __storageElement( self, seName ):
     return self.storageElements.setdefault( seName, StorageElement( seName ) )
