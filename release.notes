@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre16]
+[v6r12-pre17]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -140,6 +140,7 @@ CHANGE: InputData(Executor) - use VO specific catalogs
 NEW: JobWrapper, Watchdog - monitor memory consumption by the job ( in a Warning mode )
 FIX: SandboxStoreHandler - treat the case of exception while cleaning sandboxes
 CHANGE: JobCleaningAgent - the delays of job removals become CS parameters
+BUGFIX: JobDB - %j placeholder not replaced after rescheduling
 
 *Resources
 NEW: StorageElement - added a cache of already created SE objects

@@ -1849,7 +1849,12 @@ class JobDB( DB ):
     # Fix the possible lack of the brackets in the JDL
     if jdl.strip()[0].find( '[' ) != 0 :
       jdl = '[%s]' % jdl
-    jobManifest = JobManifest()
+      
+    # Replace the JobID placeholder if any
+    if jdl.find( '%j' ) != -1:
+      jdl = jdl.replace( '%j', str( jid ) )  
+      
+    jobManifest = JobManifest()    
     jobManifest.loadJDL( jdl )
 
     result = self.__checkAndPrepareManifest( jobManifest, jid, attrs['Owner'],
