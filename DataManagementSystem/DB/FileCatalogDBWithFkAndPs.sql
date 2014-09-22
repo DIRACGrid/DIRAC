@@ -1024,13 +1024,13 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_file_id_from_lfn;
 DELIMITER //
 CREATE PROCEDURE ps_get_file_id_from_lfn
-(IN lfn VARCHAR(255), OUT file_id INT )
+(IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id INT )
 BEGIN
   DECLARE done INT;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
 -- SELECT d.Name, f.FileName,f.FileID FROM FC_Files f join FC_DirectoryList d on f.DirID = d.DirID WHERE (d.Name = '/vo.formation.idgrilles.fr/user/a/atsareg' and FileName in ('another testFile') ) OR (d.DirID = 6 and FileName in ('testfile'));
-  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON f.DirID = f.DirID WHERE CONCAT_WS('/', d.Name, f.FileName) = lfn;
+  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON f.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
   IF file_id IS NULL THEN
     SET file_id = 0;
   END IF;
@@ -1078,7 +1078,7 @@ BEGIN
 --                     WHERE DirID = ', dir_id, ' ' );
 
   set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
-                     GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
+                     GUID, Checksum, CheckSumType, Type, CreationDate,ModificationDate, Mode
                     FROM FC_Files f
                     JOIN FC_Users u ON f.UID = u.UID
                     JOIN FC_Groups g ON f.GID = g.GID

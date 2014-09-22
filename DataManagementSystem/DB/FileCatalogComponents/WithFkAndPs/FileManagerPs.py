@@ -81,8 +81,8 @@ class FileManagerPs( FileManagerBase ):
     # If there is only one lfn, we might as well make a direct query
     if len(lfns) == 1:
       lfn = list( lfns )[0]  # if lfns is a dict, list(lfns) returns lfns.keys()
-
-      result = self.db.executeStoredProcedure( 'ps_get_file_id_from_lfn', ( lfn, 'ret1' ), outputIds = [1] )
+      pathPart, filePart = os.path.split( lfn )
+      result = self.db.executeStoredProcedure( 'ps_get_file_id_from_lfn', ( pathPart, filePart, 'ret1' ), outputIds = [2] )
       if not result['OK']:
         return result
 
@@ -160,7 +160,7 @@ class FileManagerPs( FileManagerBase ):
 
     fieldNames = ["FileName", "DirID", "FileID", "Size", "UID", "Owner",
                   "GID", "OwnerGroup", "Status", "GUID", "Checksum",
-                  "CheckSumType", "Type", "CreationDate", "ModificationDate", "Mode"]
+                  "ChecksumType", "Type", "CreationDate", "ModificationDate", "Mode"]
 
     rows = result['Value']
     files = {}
@@ -903,7 +903,7 @@ class FileManagerPs( FileManagerBase ):
 
     # In case this is a 'new' parameter, we have a failback solution, but we should add a specific ps for it
     else:
-      req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)"\
+      req = "UPDATE FC_Files SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)"\
             % ( paramName, paramValue, intListToString( fileID ) )
       return self.db._update( req, connection )
 
