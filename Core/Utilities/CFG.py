@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 import types
 import copy
 import os
+import re
 try:
   import zipfile
   gZipEnabled = True
@@ -894,6 +895,7 @@ class CFG( object ):
     @param data: Contents of the CFG
     @return: This CFG
     """
+    commentRE = re.compile( "^\s*#" )
     self.reset()
     levelList = []
     currentLevel = self
@@ -903,10 +905,8 @@ class CFG( object ):
       line = line.strip()
       if len( line ) < 1:
         continue
-      commentPos = line.find( "#" )
-      if commentPos > -1:
-        currentComment += "%s\n" % line[ commentPos: ].replace( "#", "" )
-        line = line[ :commentPos ]
+      if commentRE.match( line ):
+          continue
       for index in range( len( line ) ):
         if line[ index ] == "{":
           currentlyParsedString = currentlyParsedString.strip()
