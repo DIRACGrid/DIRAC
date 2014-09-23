@@ -216,7 +216,7 @@ CREATE TABLE FC_Files(
     CreationDate DATETIME,
     ModificationDate DATETIME,
     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-    CheckSumType ENUM('Adler32','MD5'),
+    ChecksumType ENUM('Adler32','MD5'),
     Checksum VARCHAR(32),
     FileName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
 
@@ -856,7 +856,7 @@ DELIMITER ;
 -- 
 
 
---insert into FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) select f.DirID, 1, f.Size as size_diff, 1 as file_diff from FC_Files f where (DirID = 1 and FileName = 'a.txt') OR (DirID = 1 and FileName = '1.txt') on duplicate key update SESize = SESize + f.Size, SEFiles = SEFiles + 1;
+-- insert into FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) select f.DirID, 1, f.Size as size_diff, 1 as file_diff from FC_Files f where (DirID = 1 and FileName = 'a.txt') OR (DirID = 1 and FileName = '1.txt') on duplicate key update SESize = SESize + f.Size, SEFiles = SEFiles + 1;
 
 
 
@@ -1078,7 +1078,7 @@ BEGIN
 --                     WHERE DirID = ', dir_id, ' ' );
 
   set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
-                     GUID, Checksum, CheckSumType, Type, CreationDate,ModificationDate, Mode
+                     GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
                     FROM FC_Files f
                     JOIN FC_Users u ON f.UID = u.UID
                     JOIN FC_Groups g ON f.GID = g.GID
@@ -1162,7 +1162,7 @@ BEGIN
 --   COMMIT;
 
   START TRANSACTION;
-  INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName,GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode )
+  INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName,GUID, Checksum, ChecksumType, CreationDate, ModificationDate, Mode )
   VALUES (dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
   SELECT LAST_INSERT_ID() INTO file_id;
   
@@ -1186,7 +1186,7 @@ CREATE PROCEDURE ps_insert_multiple_file
 BEGIN
 
   START TRANSACTION;
-  SET @sql = CONCAT('INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode) VALUES ', fileValues);
+  SET @sql = CONCAT('INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, ChecksumType, CreationDate, ModificationDate, Mode) VALUES ', fileValues);
 
 
   PREPARE stmt FROM @sql;
@@ -1880,7 +1880,7 @@ DELIMITER ;
 --   COMMIT;
 -- END //
 -- DELIMITER ;
-
+/*
 DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
 DELIMITER //
 
@@ -1919,8 +1919,35 @@ BEGIN
   
   COMMIT;
 END //
-DELIMITER ;
+DELIMITER ;*/
 
+
+DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
+DELIMITER //
+
+CREATE PROCEDURE ps_rebuild_directory_usage()
+BEGIN
+
+  START TRANSACTION;
+  
+  DELETE FROM FC_DirectoryUsage;
+
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
+    SELECT SQL_NO_CACHE DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
+    FROM FC_Files
+    GROUP BY DirID
+    ORDER BY NULL;
+
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
+    SELECT SQL_NO_CACHE DirID, SEID, sum(Size), count(*)
+    FROM FC_Replicas r
+    JOIN FC_Files f ON r.FileID = f.FileID
+    GROUP BY DirID, SEID
+    ORDER BY NULL;
+   
+  COMMIT;
+END //
+DELIMITER ;
 
 -- Consistency checks
 

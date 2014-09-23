@@ -130,7 +130,7 @@ class FileManagerPs( FileManagerBase ):
         :param filenames : the list of filenames, or []
         :param metadata_input: list of desired metadata.
                    It can be anything from (FileName, DirID, FileID, Size, UID, Owner,
-                   GID, OwnerGroup, Status, GUID, Checksum, CheckSumType, Type, CreationDate, ModificationDate, Mode)
+                   GID, OwnerGroup, Status, GUID, Checksum, ChecksumType, Type, CreationDate, ModificationDate, Mode)
         :param allStatus : if False, only displays the files whose status is in db.visibleFileStatus
 
         :returns S_OK(files), where files is a dictionary indexed on filename, and values are dictionary of metadata
