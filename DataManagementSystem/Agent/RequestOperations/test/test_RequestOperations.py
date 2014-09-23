@@ -23,7 +23,7 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
   def test__addMetadataToFiles( self ):
     resMeta = {'OK': True,
      'Value': {'Failed': {},
-               'Successful': {'/lhcb/1.dst': {'CheckSumType': 'AD',
+               'Successful': {'/lhcb/1.dst': {'ChecksumType': 'AD',
                                               'Checksum': '123456',
                                               'CreationDate': datetime.datetime( 2013, 12, 11, 20, 20, 21 ),
                                               'GUID': '92F9CE97-7A62-E311-8401-0025907FD430',
@@ -32,7 +32,7 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
                                               'NumberOfLinks': 1,
                                               'Size': 5846023777,
                                               'Status': '-'},
-                              '/lhcb/2.dst': {'CheckSumType': 'AD',
+                              '/lhcb/2.dst': {'ChecksumType': 'AD',
                                               'Checksum': '987654',
                                               'CreationDate': datetime.datetime( 2013, 12, 12, 6, 26, 52 ),
                                               'GUID': 'DAE4933A-C162-E311-8A6B-003048FEAF04',

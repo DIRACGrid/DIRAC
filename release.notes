@@ -1,4 +1,4 @@
-[v6r12-pre17]
+[v6r12-pre18]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -15,6 +15,7 @@ NEW: InstallTools - added flag to require MySQL installation
 FIX: InstallTools - correctly installing DBs extended (with sql to be sourced) 
 CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 NEW: Grid.py - ldapSA replaced by ldapSE, added getBdiiSE(CE)Info() methods
+CHANGE: CFG.py - only lines starting with ^\s*# will be treated as comments
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
@@ -47,6 +48,7 @@ CHANGE: FC.DirectoryLevelTree - use SELECT ... FOR UPDATE lock in makeDir()
 FIX: FileCatalog - fixes in using file and replica status
 CHANGE: DataManager - added a new argument to the constructor - vo
 CHANGE: DataManager - removed removeCatalogFile() and dirac-dms-remove-catalog-file adjusted
+CHANGE: Several components - field/parameter CheckSumType all changed to ChecksumType
 
 *SMS
 FIX: StorageManagementDB - small bugfix to avoid SQL errors
@@ -68,6 +70,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p13]
+
+*DMS
+BUGFIX: SEManager - in SEManagerDB.__addSE() bad _getConnection call, closes #2062
 
 [v6r11p12]
 

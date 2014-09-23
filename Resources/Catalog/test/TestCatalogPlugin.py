@@ -18,7 +18,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
   """ Base class for the CatalogPlugin test case """
 
   def setUp(self):
-    self.fullMetadata = ['Status', 'CheckSumType', 'OwnerRole', 'CreationDate', 'Checksum', 'ModificationDate', 'OwnerDN', 'Mode', 'GUID', 'Size']
+    self.fullMetadata = ['Status', 'ChecksumType', 'OwnerRole', 'CreationDate', 'Checksum', 'ModificationDate', 'OwnerDN', 'Mode', 'GUID', 'Size']
     self.dirMetadata = self.fullMetadata + ['NumberOfSubPaths']
     self.fileMetadata = self.fullMetadata + ['NumberOfLinks']
 
@@ -118,7 +118,7 @@ class FileTestCase(CatalogPlugInTestCase):
     returnValue = self.parseResult(res,self.files[0])
     self.assertEqual(returnValue['Status'],'-')
     self.assertEqual(returnValue['Size'],10000000)
-    self.metadata = ['Status', 'CheckSumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
+    self.metadata = ['Status', 'ChecksumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
     for key in self.metadata:
       self.assert_(returnValue.has_key(key))
     # Test getFileMetadata for missing path
@@ -130,7 +130,7 @@ class FileTestCase(CatalogPlugInTestCase):
     returnValue = self.parseResult(res,self.destDir)
     self.assertEqual(returnValue['Status'],'-')
     self.assertEqual(returnValue['Size'],0) 
-    self.metadata = ['Status', 'CheckSumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
+    self.metadata = ['Status', 'ChecksumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
     for key in self.metadata:
       self.assert_(returnValue.has_key(key))
 
