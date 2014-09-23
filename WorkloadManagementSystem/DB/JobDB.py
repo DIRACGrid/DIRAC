@@ -1744,18 +1744,18 @@ class JobDB( DB ):
     return result
 
 #############################################################################
-  def removeSiteFromMask( self, site ):
+  def removeSiteFromMask( self, site = None ):
     """ Remove the given site from the mask
     """
-    ret = self._escapeString( site )
-    if not ret['OK']:
-      return ret
-    site = ret['Value']
-
-    if site == "All":
+    if not site:
       req = "DELETE FROM SiteMask"
     else:
+      ret = self._escapeString( site )
+      if not ret['OK']:
+        return ret
+      site = ret['Value']
       req = "DELETE FROM SiteMask WHERE Site=%s" % site
+
     return self._update( req )
 
 #############################################################################
