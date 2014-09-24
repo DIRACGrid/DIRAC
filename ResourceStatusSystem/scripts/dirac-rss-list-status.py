@@ -145,7 +145,7 @@ def tabularPrint( elementsList ):
     if switchDict[ keyT ] is None:
       titles.append( key )
     else:
-      subLogger.notice( '  %s: %s' % ( key.ljust( 15 ), switchDict[ key ] ) )
+      subLogger.notice( '  %s: %s' % ( key.ljust( 15 ), switchDict[ keyT ] ) )
     
   subLogger.notice( printTable( titles, elementsList, printOut = False, 
                                 numbering = True, columnSeparator = ' | ' ) ) 
