@@ -148,7 +148,7 @@ def tabularPrint( elementsList ):
       subLogger.notice( '  %s: %s' % ( key.ljust( 15 ), switchDict[ keyT ] ) )
     
   subLogger.notice( printTable( titles, elementsList, printOut = False, 
-                                numbering = True, columnSeparator = ' | ' ) ) 
+                                numbering = False, columnSeparator = ' | ' ) ) 
     
 #...............................................................................
 
