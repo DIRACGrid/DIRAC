@@ -4,7 +4,6 @@
 
     The following methods are provided for public usage:
 
-    getJobID()
     getJobAttribute()
     getJobAttributes()
     getAllJobAttributes()
@@ -135,27 +134,6 @@ class JobDB( DB ):
     self.nJobAttributeNames = len( self.jobAttributeNames )
 
     return S_OK()
-
-#############################################################################
-  def getJobID( self ):
-    """Get the next unique JobID and prepare the new job insertion
-    """
-
-    cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
-    err = 'JobDB.getJobID: Failed to retrieve a new Id.'
-
-    res = self._update( cmd )
-    if not res['OK']:
-      return S_ERROR( '1 %s\n%s' % ( err, res['Message'] ) )
-
-    if not 'lastRowId' in res['Value']:
-      return S_ERROR( '2 %s' % err )
-
-    jobID = int( res['Value']['lastRowId'] )
-
-    self.log.info( 'JobDB: New JobID served "%s"' % jobID )
-
-    return S_OK( jobID )
 
 #############################################################################
   def getAttributesForJobList( self, jobIDList, attrList = None ):
