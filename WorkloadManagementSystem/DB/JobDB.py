@@ -437,6 +437,7 @@ class JobDB( DB ):
     return S_OK( attributes )
 
 #############################################################################
+  # FIXME: unused... to be removed?
   def getJobInfo( self, jobID, parameters = None ):
     """ Get parameters for job specified by jobID. Parameters can be
         either job attributes ( fields in the Jobs table ) or those
@@ -563,6 +564,7 @@ class JobDB( DB ):
       return S_ERROR( 'JobDB.getJobOptParameters: failed to retrieve parameters' )
 
 #############################################################################
+  # FIXME: unused... to be removed?
   def getTimings( self, site, period = 3600 ):
     """ Get CPU and wall clock times for the jobs finished in the last hour
     """
@@ -596,7 +598,7 @@ class JobDB( DB ):
     return S_OK( {"CPUTime":int( cpu ), "WallClockTime":int( wctime )} )
 
 #############################################################################
-  def getInputData ( self, jobID ):
+  def getInputData( self, jobID ):
     """Get input data for the given job
     """
     ret = self._escapeString( jobID )
@@ -611,7 +613,7 @@ class JobDB( DB ):
     return S_OK( [ i[0] for i in res['Value'] if i[0].strip() ] )
 
 #############################################################################
-  def setInputData ( self, jobID, inputData ):
+  def setInputData( self, jobID, inputData ):
     """Inserts input data for the given job
     """
     ret = self._escapeString( jobID )
@@ -682,6 +684,7 @@ class JobDB( DB ):
     return S_OK( nextOptimizer )
 
 ############################################################################
+  # FIXME: unused... to be removed?
   def countJobs( self, condDict, older = None, newer = None, timeStamp = 'LastUpdateTime' ):
     """ Get the number of jobs matching conditions specified by condDict and time limits
     """
@@ -712,6 +715,7 @@ class JobDB( DB ):
     return S_OK( [ self._to_value( i ) for i in  res['Value'] ] )
 
 #############################################################################
+  # FIXME: seems unused... to be removed?
   def selectJobWithStatus( self, status ):
     """ Get the list of jobs with a given Major Status
     """
@@ -1783,6 +1787,7 @@ class JobDB( DB ):
     return S_OK( resultDict )
 
 #############################################################################
+  # FIXME: seems unused... to be removed?
   def setSandboxReady( self, jobID, stype = 'InputSandbox' ):
     """ Set the sandbox status ready for the job with jobID
     """
