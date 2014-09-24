@@ -1859,7 +1859,8 @@ class JobDB( DB ):
     paramNames = ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus']
     paramNames += JOB_STATES
     paramNames += ['Efficiency', 'Status']
-    siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'PIC', 'CNAF', 'RAL', 'GRIDKA']
+    #FIXME: hack!!!
+    siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'SARA', 'PIC', 'CNAF', 'RAL', 'GRIDKA', 'RRCKI']
 
     # Sort out records as requested
     sortItem = -1
