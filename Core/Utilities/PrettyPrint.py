@@ -18,7 +18,7 @@ def int_with_commas(i):
   return news[:-1]
 
 def printTable( fields, records, sortField='', numbering=True, 
-                printOut = True, columnSpace = 1 ):
+                printOut = True, columnSeparator = ' ' ):
     """ Utility to pretty print tabular data
     """
 
@@ -31,7 +31,7 @@ def printTable( fields, records, sortField='', numbering=True,
     
     records = list( records )
 
-    nFields = len(fields)
+    nFields = len(fields)      
     if nFields != len(records[0]):
       out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len(records[0]) )
       if printOut:      
@@ -50,30 +50,31 @@ def printTable( fields, records, sortField='', numbering=True,
 
     
     numberWidth = len( str( len( records ) ) ) + 1      
+    separatorWidth = len( columnSeparator )
     totalLength = 0
     for i in lengths:
       totalLength += i
-      totalLength += columnSpace
+      totalLength += separatorWidth 
     
     if numbering:        
-      totalLength += numberWidth
+      totalLength += (numberWidth + separatorWidth)
           
     if numbering:      
-      stringBuffer.write( ' '*(numberWidth+1) )      
+      stringBuffer.write( ' '*(numberWidth+separatorWidth) )      
     for i in range(nFields):
-      stringBuffer.write( fields[i].ljust(lengths[i]+columnSpace) )
+      stringBuffer.write( fields[i].ljust(lengths[i]+separatorWidth) )
     stringBuffer.write( '\n' )
     stringBuffer.write( '='*totalLength + '\n' )
     count = 1
     for r in records:
       if numbering:
         if count == len(records) and records[-1][0] == "Total":
-          stringBuffer.write( " "*(numberWidth+1) )  
+          stringBuffer.write( " "*(numberWidth+separatorWidth) )  
         else:  
-          stringBuffer.write( str(count).rjust(numberWidth)+' ' )
+          stringBuffer.write( str(count).rjust(numberWidth)+columnSeparator )
       
       for i in range(nFields):
-        stringBuffer.write( r[i].ljust(lengths[i]+columnSpace) )
+        stringBuffer.write( r[i].ljust(lengths[i])+columnSeparator )
       
       stringBuffer.write( '\n' )    
       if count == len(records)-1 and records[-1][0] == "Total":
