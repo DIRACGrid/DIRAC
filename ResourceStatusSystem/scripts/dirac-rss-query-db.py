@@ -38,6 +38,7 @@ from DIRAC.ResourceStatusSystem.Client                      import ResourceStatu
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Utilities                                   import Time
+from DIRAC.Core.Utilities.PrettyPrint                       import printTable 
 import datetime
 
 
@@ -271,45 +272,25 @@ def confirm( query, matches ):
 
   subLogger.notice( "\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % ( query, matches ) )
 
-def printTable( table ):
-  '''
-    Prints query output on a tabular
-  '''
-
+def tabularPrint( table ):
+  
   columns_names = table[0].keys()
-  columns = [ [c] for c in columns_names ]
-
+  records = []
   for row in table:
-    for j, key in enumerate( row ):
-      if type( row[key] ) == datetime.datetime:
-        row[key] = Time.toString( row[key] )
-      if row[key] is None:
-        row[key] = ''
-      columns[j].append( row[key] )
+    record = []
+    for k,v in row.items():
+      if type( v ) == datetime.datetime:
+        record.append( Time.toString( v ) )
+      elif v is None:
+        record.append( '' )
+      else:
+        record.append( v )  
+    records.append( record )    
 
-  columns_width = []
-  for column in columns:
-    columns_width.append( max( [ len( str( value ) ) for value in column ] ) )
-
-  columns_separator = True
-  for i in range( len( table ) + 1 ):
-    row = ''
-    for j in range( len( columns ) ):
-      row = row + "{:{}}".format( columns[j][i], columns_width[j] ) + " | "
-    row = "| " + row
-    line = "-" * ( len( row ) - 1 )
-
-    if columns_separator:
-      subLogger.notice( line )
-
-    subLogger.notice( row )
-
-    if columns_separator:
-      subLogger.notice( line )
-      columns_separator = False
-
-  subLogger.notice( line )
-
+  output = printTable( columns_names, records, numbering = False, 
+                       columnSeparator = " | ", printOut = False )
+  
+  subLogger.notice( output )
 
 #...............................................................................
 
@@ -463,7 +444,7 @@ def run( args, switchDictSet ):
       error( result[ 'message' ] )
 
   if query == 'select' and matches > 0:
-    printTable( table )
+    tabularPrint( table )
   confirm( query, matches )
 
 #...............................................................................
