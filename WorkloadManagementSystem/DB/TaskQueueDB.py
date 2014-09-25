@@ -906,8 +906,8 @@ class TaskQueueDB( DB ):
     retVal = self._update( sqlCmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not delete task queue %s: %s" % ( tqId, retVal[ 'Message' ] ) )
-    for _ in self.__multiValueDefFields:
-      retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % tqId, conn = connObj )
+    for field in self.__multiValueDefFields:
+      retVal = self._update( "DELETE FROM `tq_TQTo%s` WHERE TQId = %s" % ( field, tqId ), conn = connObj )
       if not retVal[ 'OK' ]:
         return retVal
     if delTQ > 0:
