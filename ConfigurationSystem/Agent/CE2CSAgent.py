@@ -147,7 +147,15 @@ class CE2CSAgent( AgentModule ):
 
         if ceString:
           body += ceString
-          possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( site, ceListString ) )
+          result = getDIRACSiteName( site )
+          if result['OK']:
+            diracSiteName = result['Value']
+            if len( diracSiteName ) > 1:
+              self.log.warn( '!!! More than one DIRAC site %s for the GOC site name %s ' % ( str(diracSiteName), site ) )
+            diracSiteName = diracSiteName[0]  
+          else:
+            diracSiteName = '<DIRACSiteName>'  
+          possibleNewSites.append( 'dirac-admin-add-site %s %s %s' % ( diracSiteName, site, ceListString ) )
 
       if body:
         body = "\nWe are glad to inform You about new CE(s) possibly suitable for %s:\n" % vo + body
