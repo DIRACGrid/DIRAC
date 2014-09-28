@@ -51,7 +51,23 @@ if __name__ == "__main__":
   newSite = True
   if result['OK']:
     if result['Value']: 
-      diracCSSite = result['Value'][0]
+      if len( result['Value'] ) > 1:
+        gLogger.notice( '%s GOC site name is associated with several DIRAC sites:' % gridSiteName )
+        for i,dsite in enumerate( result['Value'] ):
+          gLogger.notice( '%d: %s' % ( i, dsite ) )
+        inp = raw_input( 'Enter your choice number: ' )  
+        try:
+          inp = int( inp )
+        except:
+          gLogger.error( 'You should enter an integer number' )
+          DIRACExit( -1 )
+        if inp >= 0 and inp < len( result['Value'] ):
+          diracCSSite = result['Value'][inp]
+        else:
+          gLogger.error( 'Number out of range: %d' % inp ) 
+          DIRACExit( -1 )
+      else:
+        diracCSSite = result['Value'][0]     
       if diracCSSite == diracSiteName:
         gLogger.notice( 'Site with GOC name %s is already defined as %s' % ( gridSiteName, diracSiteName ) )
         newSite = False
