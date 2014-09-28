@@ -7,12 +7,13 @@ __RCSID__ = "$Id$"
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                        import AgentModule
 from DIRAC.Core.Utilities                               import List
-from DIRAC.Core.Utilities.Grid                          import ldapSite, ldapCluster, ldapCE, ldapCEState
+from DIRAC.Core.Utilities.Grid                          import getBdiiCEInfo
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping        import getDIRACSiteName
 
 class CE2CSAgent( AgentModule ):
 
@@ -47,16 +48,23 @@ class CE2CSAgent( AgentModule ):
     self.am_setOption( 'shifterProxy', 'TestManager' )
 
     self.voName = self.am_getOption( 'VirtualOrganization', [] )
-    if not self.voName:
-      vo = getVO()
-      if vo:
-        self.voName = [ vo ] 
-    
+    if not self.voName or ( len( self.voName ) == 1 and self.voName[0].lower() == 'all' ):
+      # Get all VOs defined in the configuration
+      self.voName = []
+      result = getVOs()
+      if result['OK']:
+        vos = result['Value']
+        for vo in vos:
+          vomsVO = getVOOption( vo, "VOMSName" )
+          if vomsVO:
+            self.voName.append( vomsVO )
+
     if self.voName:
       self.log.info( "Agent will manage VO(s) %s" % self.voName )
     else:
       self.log.fatal( "VirtualOrganization option not defined for agent" )
       return S_ERROR()
+    self.voBdiiDict = {}
 
     self.csAPI = CSAPI()
     return self.csAPI.initialize()
@@ -76,25 +84,9 @@ class CE2CSAgent( AgentModule ):
       self.log.warn( "Could not download a fresh copy of the CS data", result[ 'Message' ] )
 
     self.__lookForCE()
-    self.__infoFromCE()
+    self.__updateCEs()
     self.log.info( "End Execution" )
     return S_OK()
-
-  def __checkAlternativeBDIISite( self, fun, *args ):
-    if self.alternativeBDIIs:
-      self.log.warn( "Trying to use alternative BDII sites" )
-      for site in self.alternativeBDIIs :
-        self.log.info( "Trying to contact alternative BDII", site )
-        if len( args ) == 1 :
-          result = fun( args[0], host = site )
-        elif len( args ) == 2 :
-          result = fun( args[0], vo = args[1], host = site )
-        if not result['OK'] :
-          self.log.error ( "Problem contacting alternative BDII", result['Message'] )
-        elif result['OK'] :
-          return result
-      self.log.warn( "Also checking alternative BDII sites failed" )
-      return result
 
   def __lookForCE( self ):
 
@@ -115,421 +107,234 @@ class CE2CSAgent( AgentModule ):
         opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
         ces = List.fromChar( opt.get( 'CE', '' ) )
         knownCEs += ces
+    knownCEs = set( knownCEs )
 
-    response = ''
     for vo in self.voName:
-      self.log.info( "Check for available CEs for VO", vo )
-      response = ldapCEState( '', vo )
-      if not response['OK']:
-        self.log.error( "Error during BDII request", response['Message'] )
-        response = self.__checkAlternativeBDIISite( ldapCEState, '', vo )
-        return response
+      result = self.__getBdiiCEInfo( vo )
+      if not result['OK']:
+        continue
 
-      newCEs = {}
-      for queue in response['Value']:
-        try:
-          queueName = queue['GlueCEUniqueID']
-        except:
-          continue
-
-        ceName = queueName.split( ":" )[0]
-        if not ceName in knownCEs:
-          newCEs[ceName] = None
-          self.log.debug( "New CE", ceName )
-
-      body = ""
+      ceDict = result['Value']
+      body = ''
       possibleNewSites = []
-      for ce in newCEs.iterkeys():
-        response = ldapCluster( ce )
-        if not response['OK']:
-          self.log.warn( "Error during BDII request", response['Message'] )
-          response = self.__checkAlternativeBDIISite( ldapCluster, ce )
-          continue
-        clusters = response['Value']
-        if len( clusters ) != 1:
-          self.log.warn( "Error in cluster length", " CE %s Length %d" % ( ce, len( clusters ) ) )
-        if len( clusters ) == 0:
-          continue
-        cluster = clusters[0]
-        fkey = cluster.get( 'GlueForeignKey', [] )
-        if type( fkey ) == type( '' ):
-          fkey = [fkey]
-        nameBDII = None
-        for entry in fkey:
-          if entry.count( 'GlueSiteUniqueID' ):
-            nameBDII = entry.split( '=' )[1]
-            break
-        if not nameBDII:
+      for site in ceDict:
+        siteCEs = set( ceDict[site]['CEs'].keys() )
+        newCEs = siteCEs - knownCEs
+        if not newCEs:
           continue
 
-        ceString = "CE: %s, GOCDB Name: %s" % ( ce, nameBDII )
-        self.log.info( ceString )
-
-        response = ldapCE( ce )
-        if not response['OK']:
-          self.log.warn( "Error during BDII request", response['Message'] )
-          response = self.__checkAlternativeBDIISite( ldapCE, ce )
-          continue
-
-        ceInfos = response['Value']
-        if len( ceInfos ):
-          ceInfo = ceInfos[0]
+        ceString = ''
+        for ce in newCEs:
+          queueString = ''
+          ceInfo = ceDict[site]['CEs'][ce]
+          ceString = "CE: %s, GOCDB Site Name: %s" % ( ce, site )
           systemName = ceInfo.get( 'GlueHostOperatingSystemName', 'Unknown' )
           systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', 'Unknown' )
           systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', 'Unknown' )
-        else:
-          systemName = "Unknown"
-          systemVersion = "Unknown"
-          systemRelease = "Unknown"
+          osString = "SystemName: %s, SystemVersion: %s, SystemRelease: %s" % ( systemName, systemVersion, systemRelease )
+          newCEString = "\n%s\n%s\n" % ( ceString, osString )
+          for queue in ceInfo['Queues']:
+            queueStatus = ceInfo['Queues'][queue].get( 'GlueCEStateStatus', 'UnknownStatus' )
+            if 'production' in queueStatus.lower():
+              ceType = ceInfo['Queues'][queue].get( 'GlueCEImplementationName', '' )
+              queueString += "   %s %s %s\n" % ( queue, queueStatus, ceType )
+          if queueString:
+            ceString = newCEString
+            ceString += "Queues:\n"
+            ceString += queueString
 
-        osString = "SystemName: %s, SystemVersion: %s, SystemRelease: %s" % ( systemName, systemVersion, systemRelease )
-        self.log.info( osString )
+        if ceString:
+          body += ceString
+          possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( site, ce ) )
 
-        response = ldapCEState( ce, vo )
-        if not response['OK']:
-          self.log.warn( "Error during BDII request", response['Message'] )
-          response = self.__checkAlternativeBDIISite( ldapCEState, ce, vo )
-          continue
-
-        newCEString = "\n\n%s\n%s" % ( ceString, osString )
-        usefull = False
-        ceStates = response['Value']
-        for ceState in ceStates:
-          queueName = ceState.get( 'GlueCEUniqueID', 'UnknownName' )
-          queueStatus = ceState.get( 'GlueCEStateStatus', 'UnknownStatus' )
-
-          queueString = "%s %s" % ( queueName, queueStatus )
-          self.log.info( queueString )
-          newCEString += "\n%s" % queueString
-          if queueStatus.count( 'Production' ):
-            usefull = True
-        if usefull:
-          body += newCEString
-          possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( nameBDII, ce ) )
       if body:
-        body = "We are glad to inform You about new CE(s) possibly suitable for %s:\n" % vo + body
-        body += "\n\nTo suppress information about CE add its name to BannedCEs list."
+        body = "\nWe are glad to inform You about new CE(s) possibly suitable for %s:\n" % vo + body
+        body += "\n\nTo suppress information about CE add its name to BannedCEs list.\n"
         for  possibleNewSite in  possibleNewSites:
           body = "%s\n%s" % ( body, possibleNewSite )
         self.log.info( body )
         if self.addressTo and self.addressFrom:
           notification = NotificationClient()
           result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
+          if not result['OK']:
+            self.log.error( 'Can not send new site notification mail', result['Message'] )
 
     return S_OK()
 
-  def __infoFromCE( self ):
+  def __getBdiiCEInfo( self, vo ):
 
-    sitesSection = cfgPath( 'Resources', 'Sites' )
-    result = gConfig.getSections( sitesSection )
+    if vo in self.voBdiiDict:
+      return S_OK( self.voBdiiDict[vo] )
+    self.log.info( "Check for available CEs for VO", vo )
+    result = getBdiiCEInfo( vo )
+    message = ''
     if not result['OK']:
-      return
-    grids = result['Value']
+      message = result['Message']
+      for bdii in self.alternativeBDIIs :
+        result = getBdiiCEInfo( vo, host = bdii )
+        if result['OK']:
+          break
+    if not result['OK']:
+      if message:
+        self.log.error( "Error during BDII request", message )
+      else:
+        self.log.error( "Error during BDII request", result['Message'] )
+    else:
+      self.voBdiiDict[vo] = result['Value']
+    return result
 
-    changed = False
-    body = ""
+  def __updateCSOption( self, section, option, value, new_value ):
 
-    for grid in grids:
-      gridSection = cfgPath( sitesSection, grid )
-      result = gConfig.getSections( gridSection )
+    logString = ''
+    if new_value and new_value != value:
+      logString = "%s/%s %s -> %s" % ( section, option, value, new_value )
+      if logString in self.changeList:
+        return logString
+      self.changeList.append( logString )
+      self.log.info( logString )
+      if value == 'Unknown' or not value:
+        self.csAPI.setOption( cfgPath( section, option ), new_value )
+      else:
+        self.csAPI.modifyValue( cfgPath( section, option ), new_value )
+    return logString
+
+  def __updateCEs( self ):
+
+    self.changeList = []
+    queueVODict = {}
+
+    for vo in self.voName:
+      result = self.__getBdiiCEInfo( vo )
       if not result['OK']:
-        return
-      sites = result['Value']
+        continue
 
-      for site in sites:
-        siteSection = cfgPath( gridSection, site )
-        opt = gConfig.getOptionsDict( siteSection )['Value']
-        name = opt.get( 'Name', '' )
-        if name:
-          coor = opt.get( 'Coordinates', 'Unknown' )
-          mail = opt.get( 'Mail', 'Unknown' )
-
-          result = ldapSite( name )
-          if not result['OK']:
-            self.log.warn( "BDII site %s: %s" % ( name, result['Message'] ) )
-            result = self.__checkAlternativeBDIISite( ldapSite, name )
-
-          if result['OK']:
-            bdiiSites = result['Value']
-            if len( bdiiSites ) == 0:
-              self.log.warn( name, "Error in BDII: leng = 0" )
-            else:
-              if not len( bdiiSites ) == 1:
-                self.log.warn( name, "Warning in BDII: leng = %d" % len( bdiiSites ) )
-
-              bdiiSite = bdiiSites[0]
-
-              try:
-                longitude = bdiiSite['GlueSiteLongitude']
-                latitude = bdiiSite['GlueSiteLatitude']
-                newcoor = "%s:%s" % ( longitude, latitude )
-              except:
-                self.log.warn( "Error in BDII coordinates" )
-                newcoor = "Unknown"
-
-              try:
-                newmail = bdiiSite['GlueSiteSysAdminContact'].split( ":" )[-1].strip()
-              except:
-                self.log.warn( "Error in BDII mail" )
-                newmail = "Unknown"
-
-              self.log.debug( "%s %s %s" % ( name, newcoor, newmail ) )
-
-              if newcoor != coor:
-                self.log.info( "%s" % ( name ), "%s -> %s" % ( coor, newcoor ) )
-                if coor == 'Unknown':
-                  self.csAPI.setOption( cfgPath( siteSection, 'Coordinates' ), newcoor )
-                else:
-                  self.csAPI.modifyValue( cfgPath( siteSection, 'Coordinates' ), newcoor )
-                changed = True
-
-              if newmail != mail:
-                self.log.info( "%s" % ( name ), "%s -> %s" % ( mail, newmail ) )
-                if mail == 'Unknown':
-                  self.csAPI.setOption( cfgPath( siteSection, 'Mail' ), newmail )
-                else:
-                  self.csAPI.modifyValue( cfgPath( siteSection, 'Mail' ), newmail )
-                changed = True
-
-        ceList = List.fromChar( opt.get( 'CE', '' ) )
-
-        if not ceList:
-          self.log.warn( site, 'Empty site list' )
+      ceBdiiDict = result['Value']
+      for site in ceBdiiDict:
+        result = getDIRACSiteName( site )
+        if not result['OK']:
           continue
+        siteName = result['Value'][0]
+        siteSection = cfgPath( '/Resources', 'Sites', siteName.split('.')[0], siteName )
+        result = gConfig.getOptionsDict( siteSection )
+        if not result['OK']:
+          continue
+        siteDict = result['Value']
+        name = siteDict.get( 'Name', '' )
+        if name:
+          coor = siteDict.get( 'Coordinates', 'Unknown' )
+          mail = siteDict.get( 'Mail', 'Unknown' )
+          description = siteDict.get( 'Description', 'Unknown' )
 
-  #      result = gConfig.getSections( cfgPath( siteSection,'CEs' )
-  #      if not result['OK']:
-  #        self.log.debug( "Section CEs:", result['Message'] )
+          longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
+          latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
+          newcoor = ''
+          if longitude and latitude:
+            newcoor = "%s:%s" % ( longitude, latitude )
+          newmail = ceBdiiDict[site].get( 'GlueSiteSysAdminContact', '' ).replace( 'mailto:', '' ).strip()
+          newdescription = ceBdiiDict[site].get( 'GlueSiteDescription', '' ).strip()
 
-        for ce in ceList:
-          ceSection = cfgPath( siteSection, 'CEs', ce )
-          result = gConfig.getOptionsDict( ceSection )
+          self.log.debug( "%s %s %s %s" % ( name, newcoor, newmail, newdescription ) )
+
+          self.__updateCSOption( siteSection, 'Coordinates', coor, newcoor )
+          self.__updateCSOption( siteSection, 'Mail', mail, newmail )
+          self.__updateCSOption( siteSection, 'Description', description, newdescription )
+
+          result = gConfig.getSections( cfgPath( siteSection, 'CEs' ) )
           if not result['OK']:
-            self.log.debug( "Section CE", result['Message'] )
-            wnTmpDir = 'Unknown'
-            arch = 'Unknown'
-            os = 'Unknown'
-            si00 = 'Unknown'
-            pilot = 'Unknown'
-            ceType = 'Unknown'
-          else:
-            ceopt = result['Value']
-            wnTmpDir = ceopt.get( 'wnTmpDir', 'Unknown' )
-            arch = ceopt.get( 'architecture', 'Unknown' )
-            os = ceopt.get( 'OS', 'Unknown' )
-            si00 = ceopt.get( 'SI00', 'Unknown' )
-            pilot = ceopt.get( 'Pilot', 'Unknown' )
-            ceType = ceopt.get( 'CEType', 'Unknown' )
-
-          result = ldapCE( ce )
-          if not result['OK']:
-            self.log.warn( 'Error in BDII for %s' % ce, result['Message'] )
-            result = self.__checkAlternativeBDIISite( ldapCE, ce )
             continue
-          try:
-            bdiiCE = result['Value'][0]
-          except:
-            self.log.warn( 'Error in BDII for %s' % ce, result )
-            bdiiCE = None
-          if bdiiCE:
-            try:
-              newWNTmpDir = bdiiCE['GlueSubClusterWNTmpDir']
-            except:
-              newWNTmpDir = 'Unknown'
-            if wnTmpDir != newWNTmpDir and newWNTmpDir != 'Unknown':
-              section = cfgPath( ceSection, 'wnTmpDir' )
-              self.log.info( section, " -> ".join( ( wnTmpDir, newWNTmpDir ) ) )
-              if wnTmpDir == 'Unknown':
-                self.csAPI.setOption( section, newWNTmpDir )
-              else:
-                self.csAPI.modifyValue( section, newWNTmpDir )
-              changed = True
-
-            try:
-              newArch = bdiiCE['GlueHostArchitecturePlatformType']
-            except:
-              newArch = 'Unknown'
-            if arch != newArch and newArch != 'Unknown':
-              section = cfgPath( ceSection, 'architecture' )
-              self.log.info( section, " -> ".join( ( arch, newArch ) ) )
-              if arch == 'Unknown':
-                self.csAPI.setOption( section, newArch )
-              else:
-                self.csAPI.modifyValue( section, newArch )
-              changed = True
-
-            try:
-              newOS = '_'.join( ( bdiiCE['GlueHostOperatingSystemName'],
-                                  bdiiCE['GlueHostOperatingSystemVersion'],
-                                  bdiiCE['GlueHostOperatingSystemRelease'] ) )
-            except:
-              newOS = 'Unknown'
-            if os != newOS and newOS != 'Unknown':
-              section = cfgPath( ceSection, 'OS' )
-              self.log.info( section, " -> ".join( ( os, newOS ) ) )
-              if os == 'Unknown':
-                self.csAPI.setOption( section, newOS )
-              else:
-                self.csAPI.modifyValue( section, newOS )
-              changed = True
-              body = body + "OS was changed %s -> %s for %s at %s\n" % ( os, newOS, ce, site )
-
-            try:
-              newSI00 = bdiiCE['GlueHostBenchmarkSI00']
-            except:
-              newSI00 = 'Unknown'
-            if si00 != newSI00 and newSI00 != 'Unknown':
-              section = cfgPath( ceSection, 'SI00' )
-              self.log.info( section, " -> ".join( ( si00, newSI00 ) ) )
-              if si00 == 'Unknown':
-                self.csAPI.setOption( section, newSI00 )
-              else:
-                self.csAPI.modifyValue( section, newSI00 )
-              changed = True
-
-            try:
-              rte = bdiiCE['GlueHostApplicationSoftwareRunTimeEnvironment']
-              for vo in self.voName:
-                if vo.lower() == 'lhcb':
-                  if 'VO-lhcb-pilot' in rte:
-                    newPilot = 'True'
-                  else:
-                    newPilot = 'False'
-                else:
-                  newPilot = 'Unknown'
-            except:
-              newPilot = 'Unknown'
-            if pilot != newPilot and newPilot != 'Unknown':
-              section = cfgPath( ceSection, 'Pilot' )
-              self.log.info( section, " -> ".join( ( pilot, newPilot ) ) )
-              if pilot == 'Unknown':
-                self.csAPI.setOption( section, newPilot )
-              else:
-                self.csAPI.modifyValue( section, newPilot )
-              changed = True
-
-          newVO = ''
-          for vo in self.voName:
-            result = ldapCEState( ce, vo )        #getBDIICEVOView
+          ces = result['Value']
+          for ce in ces:
+            ceSection = cfgPath( siteSection, 'CEs', ce )
+            result = gConfig.getOptionsDict( ceSection )
             if not result['OK']:
-              self.log.warn( 'Error in BDII for queue %s' % ce, result['Message'] )
-              result = self.__checkAlternativeBDIISite( ldapCEState, ce, vo )
               continue
-            try:
-              queues = result['Value']
-            except:
-              self.log.warn( 'Error in BDII for queue %s' % ce, result['Massage'] )
+            ceDict = result['Value']
+            ceInfo = ceBdiiDict[site]['CEs'].get( ce, None )
+            if ceInfo is None:
               continue
 
+            arch = ceDict.get( 'architecture', 'Unknown' )
+            OS = ceDict.get( 'OS', 'Unknown' )
+            si00 = ceDict.get( 'SI00', 'Unknown' )
+            ceType = ceDict.get( 'CEType', 'Unknown' )
+            ram = ceDict.get( 'HostRAM', 'Unknown' )
+
+            newarch = ceBdiiDict[site]['CEs'][ce].get( 'GlueHostArchitecturePlatformType', '' ).strip()
+            systemName = ceInfo.get( 'GlueHostOperatingSystemName', '' ).strip()
+            systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', '' ).strip()
+            systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', '' ).strip()
+            newOS = ''
+            if systemName and systemVersion and systemRelease:
+              newOS = '_'.join( ( systemName, systemVersion, systemRelease ) )
+            newsi00 = ceInfo.get( 'GlueHostBenchmarkSI00', '' ).strip()
             newCEType = 'Unknown'
-            for queue in queues:
-              try:
-                queueType = queue['GlueCEImplementationName']
-              except:
-                queueType = 'Unknown'
-              if newCEType == 'Unknown':
-                newCEType = queueType
-              else:
-                if queueType != newCEType:
-                  self.log.warn( 'Error in BDII for CE %s ' % ce, 'different CE types %s %s' % ( newCEType, queueType ) )
-
+            for queue in ceInfo['Queues']:
+              queueDict = ceInfo['Queues'][queue]
+              newCEType = queueDict.get( 'GlueCEImplementationName', '' ).strip()
+              if newCEType:
+                break
             if newCEType=='ARC-CE':
               newCEType = 'ARC'
+            newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
 
-            if ceType != newCEType and newCEType != 'Unknown':
-              section = cfgPath( ceSection, 'CEType' )
-              self.log.info( section, " -> ".join( ( ceType, newCEType ) ) )
-              if ceType == 'Unknown':
-                self.csAPI.setOption( section, newCEType )
-              else:
-                self.csAPI.modifyValue( section, newCEType )
-              changed = True
+            self.__updateCSOption( ceSection, 'architecture', arch, newarch )
+            self.__updateCSOption( ceSection, 'OS', OS, newOS )
+            self.__updateCSOption( ceSection, 'SI00', si00, newsi00 )
+            self.__updateCSOption( ceSection, 'CEType', ceType, newCEType )
+            self.__updateCSOption( ceSection, 'HostRAM', ram, newRAM )
 
+            result = gConfig.getSections( cfgPath( ceSection, 'Queues' ) )
+            if not result['OK']:
+              continue
+            queues = result['Value']
             for queue in queues:
-              try:
-                queueName = queue['GlueCEUniqueID'].split( '/' )[-1]
-              except:
-                self.log.warn( 'Error in queueName ', queue )
-                continue
-
-              try:
-                newMaxCPUTime = queue['GlueCEPolicyMaxCPUTime']
-              except:
-                newMaxCPUTime = None
-
-              newSI00 = None
-              try:
-                caps = queue['GlueCECapability']
-                if type( caps ) == type( '' ):
-                  caps = [caps]
-                for cap in caps:
-                  if cap.count( 'CPUScalingReferenceSI00' ):
-                    newSI00 = cap.split( '=' )[-1]
-              except:
-                newSI00 = None
-
-              queueSection = cfgPath( ceSection, 'Queues', queueName )
+              queueSection = cfgPath( ceSection, 'Queues', queue )
               result = gConfig.getOptionsDict( queueSection )
               if not result['OK']:
-                self.log.warn( "Section Queues", result['Message'] )
-                maxCPUTime = 'Unknown'
-                si00 = 'Unknown'
-                allowedVOs = ['']
-              else:
-                queueOpt = result['Value']
-                maxCPUTime = queueOpt.get( 'maxCPUTime', 'Unknown' )
-                si00 = queueOpt.get( 'SI00', 'Unknown' )
-                if newVO == '':     # Remember previous iteration, if none - read from conf
-                  allowedVOs = queueOpt.get( 'VO', '' ).split( "," )
-                else:               # Else use newVO, as it can contain changes, which aren't in conf yet
-                  allowedVOs = newVO.split( "," )
-              if newMaxCPUTime and ( maxCPUTime != newMaxCPUTime ):
-                section = cfgPath( queueSection, 'maxCPUTime' )
-                self.log.info( section, " -> ".join( ( maxCPUTime, newMaxCPUTime ) ) )
-                if maxCPUTime == 'Unknown':
-                  self.csAPI.setOption( section, newMaxCPUTime )
-                else:
-                  self.csAPI.modifyValue( section, newMaxCPUTime )
-                changed = True
+                continue
+              queueDict = result['Value']
+              queueInfo = ceInfo['Queues'].get( queue, None )
+              if queueInfo is None:
+                continue
 
-              if newSI00 and ( si00 != newSI00 ):
-                section = cfgPath( queueSection, 'SI00' )
-                self.log.info( section, " -> ".join( ( si00, newSI00 ) ) )
-                if si00 == 'Unknown':
-                  self.csAPI.setOption( section, newSI00 )
-                else:
-                  self.csAPI.modifyValue( section, newSI00 )
-                changed = True
-                
-              modifyVO = True                       # Flag saying if we need VO option to change
-              newVO = ''
-              if allowedVOs != ['']:
-                for allowedVO in allowedVOs:
-                  allowedVO = allowedVO.strip()     # Get rid of spaces
-                  newVO += allowedVO
-                  if allowedVO == vo:               # Current VO has been already in list
-                    newVO = ''
-                    modifyVO = False                # Don't change anything
-                    break                           # Skip next 'if', proceed to next VO
-                  newVO += ', '
-                    
-              if modifyVO:
-                section = cfgPath( queueSection, 'VO' )
-                newVO += vo
-                self.log.info( section, " -> ".join( ( '%s' % allowedVOs, newVO ) ) )
-                if allowedVOs == ['']:
-                  self.csAPI.setOption( section, newVO )
-                else:
-                  self.csAPI.modifyValue( section, newVO )
-                changed = True
-                
-    if changed:
-      self.log.info( body )
+              maxCPUTime = queueDict.get( 'maxCPUTime', 'Unknown' )
+              si00 = queueDict.get( 'SI00', 'Unknown' )
+              ram = queueDict.get( 'RAM', 'Unknown' )
+
+              newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
+              newSI00 = ''
+              caps = queueInfo['GlueCECapability']
+              if type( caps ) == type( '' ):
+                caps = [caps]
+              for cap in caps:
+                if 'CPUScalingReferenceSI00' in cap:
+                  newSI00 = cap.split( '=' )[-1]
+
+              self.__updateCSOption( queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime )
+              self.__updateCSOption( queueSection, 'SI00', si00, newSI00 )
+
+              VOs = set()
+              if queueDict.get( 'VO', '' ):
+                VOs = set( [ q.strip() for q in queueDict.get( 'VO', '' ).split( ',' ) if q ] )
+              if not queue in queueVODict:
+                queueVODict[queue] = VOs
+              queueVODict[queue].add( vo )
+              if len( queueVODict[queue] - VOs ) > 0:
+                newVOs = ','.join( queueVODict[queue] )
+                self.__updateCSOption( queueSection, 'VO', '', newVOs )
+
+    if self.changeList:
+      body = '\n'.join( self.changeList )
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
 
-      return self.csAPI.commit()
+      result = self.csAPI.commit()
+      if not result['OK']:
+        self.log.error( "Error while commit to CS", result['Message'] )  
+      else:
+        self.log.info( "Successfully committed %d changes to CS" % len( self.changeList ) )
+      return result
     else:
       self.log.info( "No changes found" )
       return S_OK()

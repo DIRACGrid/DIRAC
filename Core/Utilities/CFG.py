@@ -440,7 +440,7 @@ class CFG( object ):
 
   def getAsDict( self, path = "" ):
     """
-    Get the contents below a give path as a dict
+    Get the contents below a given path as a dict
 
     @type path: string
     @param path: Path to retrieve as dict
