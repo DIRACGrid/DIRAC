@@ -124,6 +124,7 @@ class CE2CSAgent( AgentModule ):
           continue
 
         ceString = ''
+        ceListString = ''
         for ce in newCEs:
           queueString = ''
           ceInfo = ceDict[site]['CEs'][ce]
@@ -142,10 +143,11 @@ class CE2CSAgent( AgentModule ):
             ceString = newCEString
             ceString += "Queues:\n"
             ceString += queueString
+            ceListString += "%s " % ce
 
         if ceString:
           body += ceString
-          possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( site, ce ) )
+          possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( site, ceListString ) )
 
       if body:
         body = "\nWe are glad to inform You about new CE(s) possibly suitable for %s:\n" % vo + body
@@ -219,109 +221,133 @@ class CE2CSAgent( AgentModule ):
         if not result['OK']:
           continue
         siteDict = result['Value']
-        name = siteDict.get( 'Name', '' )
-        if name:
-          coor = siteDict.get( 'Coordinates', 'Unknown' )
-          mail = siteDict.get( 'Mail', 'Unknown' )
-          description = siteDict.get( 'Description', 'Unknown' )
+        # Current CS values
+        coor = siteDict.get( 'Coordinates', 'Unknown' )
+        mail = siteDict.get( 'Mail', 'Unknown' ).replace( ' ','' )
+        description = siteDict.get( 'Description', 'Unknown' )
 
-          longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
-          latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
-          newcoor = ''
-          if longitude and latitude:
-            newcoor = "%s:%s" % ( longitude, latitude )
-          newmail = ceBdiiDict[site].get( 'GlueSiteSysAdminContact', '' ).replace( 'mailto:', '' ).strip()
-          newdescription = ceBdiiDict[site].get( 'GlueSiteDescription', '' ).strip()
+        longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
+        latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
 
-          self.log.debug( "%s %s %s %s" % ( name, newcoor, newmail, newdescription ) )
+        # Current BDII value
+        newcoor = ''
+        if longitude and latitude:
+          newcoor = "%s:%s" % ( longitude, latitude )
+        newmail = ceBdiiDict[site].get( 'GlueSiteSysAdminContact', '' ).replace( 'mailto:', '' ).strip()
+        newdescription = ceBdiiDict[site].get( 'GlueSiteDescription', '' ).strip()
 
-          self.__updateCSOption( siteSection, 'Coordinates', coor, newcoor )
-          self.__updateCSOption( siteSection, 'Mail', mail, newmail )
-          self.__updateCSOption( siteSection, 'Description', description, newdescription )
+        self.log.debug( "%s %s %s %s" % ( site, newcoor, newmail, newdescription ) )
 
-          result = gConfig.getSections( cfgPath( siteSection, 'CEs' ) )
-          if not result['OK']:
-            continue
-          ces = result['Value']
-          for ce in ces:
-            ceSection = cfgPath( siteSection, 'CEs', ce )
-            result = gConfig.getOptionsDict( ceSection )
-            if not result['OK']:
-              continue
+        # Adding site data to the CS
+        self.__updateCSOption( siteSection, 'Coordinates', coor, newcoor )
+        self.__updateCSOption( siteSection, 'Mail', mail, newmail )
+        self.__updateCSOption( siteSection, 'Description', description, newdescription )
+
+        ces = gConfig.getValue( cfgPath( siteSection, 'CE' ), [] )
+        for ce in ces:
+          ceSection = cfgPath( siteSection, 'CEs', ce )
+          ceDict = {}
+          result = gConfig.getOptionsDict( ceSection )
+          if result['OK']:
             ceDict = result['Value']
-            ceInfo = ceBdiiDict[site]['CEs'].get( ce, None )
-            if ceInfo is None:
-              continue
+          else:
+            if ceBdiiDict[site]['CEs'].get( ce, None ):
+              self.log.info( "Adding new CE %s to site %s/%s" % (ce, siteName, site) )
+          ceInfo = ceBdiiDict[site]['CEs'].get( ce, None )
+          if ceInfo is None:
+            ceType = ceDict.get( 'CEType', '')
+            continue
 
-            arch = ceDict.get( 'architecture', 'Unknown' )
-            OS = ceDict.get( 'OS', 'Unknown' )
-            si00 = ceDict.get( 'SI00', 'Unknown' )
-            ceType = ceDict.get( 'CEType', 'Unknown' )
-            ram = ceDict.get( 'HostRAM', 'Unknown' )
+          # Current CS CE info
+          arch = ceDict.get( 'architecture', 'Unknown' )
+          OS = ceDict.get( 'OS', 'Unknown' )
+          si00 = ceDict.get( 'SI00', 'Unknown' )
+          ceType = ceDict.get( 'CEType', 'Unknown' )
+          ram = ceDict.get( 'HostRAM', 'Unknown' )
+          submissionMode = ceDict.get( 'SubmissionMode', 'Unknown' )
 
-            newarch = ceBdiiDict[site]['CEs'][ce].get( 'GlueHostArchitecturePlatformType', '' ).strip()
-            systemName = ceInfo.get( 'GlueHostOperatingSystemName', '' ).strip()
-            systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', '' ).strip()
-            systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', '' ).strip()
-            newOS = ''
-            if systemName and systemVersion and systemRelease:
-              newOS = '_'.join( ( systemName, systemVersion, systemRelease ) )
-            newsi00 = ceInfo.get( 'GlueHostBenchmarkSI00', '' ).strip()
-            newCEType = 'Unknown'
-            for queue in ceInfo['Queues']:
-              queueDict = ceInfo['Queues'][queue]
-              newCEType = queueDict.get( 'GlueCEImplementationName', '' ).strip()
-              if newCEType:
-                break
-            if newCEType=='ARC-CE':
-              newCEType = 'ARC'
-            newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
+          # Current BDII CE info
+          newarch = ceBdiiDict[site]['CEs'][ce].get( 'GlueHostArchitecturePlatformType', '' ).strip()
+          systemName = ceInfo.get( 'GlueHostOperatingSystemName', '' ).strip()
+          systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', '' ).strip()
+          systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', '' ).strip()
+          newOS = ''
+          if systemName and systemVersion and systemRelease:
+            newOS = '_'.join( ( systemName, systemVersion, systemRelease ) )
+          newsi00 = ceInfo.get( 'GlueHostBenchmarkSI00', '' ).strip()
+          newCEType = 'Unknown'
+          for queue in ceInfo['Queues']:
+            queueDict = ceInfo['Queues'][queue]
+            newCEType = queueDict.get( 'GlueCEImplementationName', '' ).strip()
+            if newCEType:
+              break
+          if newCEType=='ARC-CE':
+            newCEType = 'ARC'
+          if newCEType in ['ARC','CREAM']:
+            newSubmissionMode = "Direct" 
+          newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
 
-            self.__updateCSOption( ceSection, 'architecture', arch, newarch )
-            self.__updateCSOption( ceSection, 'OS', OS, newOS )
-            self.__updateCSOption( ceSection, 'SI00', si00, newsi00 )
-            self.__updateCSOption( ceSection, 'CEType', ceType, newCEType )
-            self.__updateCSOption( ceSection, 'HostRAM', ram, newRAM )
+          # Adding CE data to the CS
+          self.__updateCSOption( ceSection, 'architecture', arch, newarch )
+          self.__updateCSOption( ceSection, 'OS', OS, newOS )
+          self.__updateCSOption( ceSection, 'SI00', si00, newsi00 )
+          self.__updateCSOption( ceSection, 'CEType', ceType, newCEType )
+          self.__updateCSOption( ceSection, 'HostRAM', ram, newRAM )
+          if submissionMode == "Unknown":
+            self.__updateCSOption( ceSection, 'SubmissionMode', submissionMode, newSubmissionMode )
 
-            result = gConfig.getSections( cfgPath( ceSection, 'Queues' ) )
-            if not result['OK']:
-              continue
-            queues = result['Value']
-            for queue in queues:
-              queueSection = cfgPath( ceSection, 'Queues', queue )
-              result = gConfig.getOptionsDict( queueSection )
-              if not result['OK']:
-                continue
+          queues = ceInfo['Queues'].keys()
+          for queue in queues:
+            queueSection = cfgPath( ceSection, 'Queues', queue )
+            queueDict = {}
+            result = gConfig.getOptionsDict( queueSection )
+            if result['OK']:
               queueDict = result['Value']
-              queueInfo = ceInfo['Queues'].get( queue, None )
-              if queueInfo is None:
-                continue
+            else:
+              self.log.info( "Adding new queue %s to CE %s" % (queue, ce) )
+            queueInfo = ceInfo['Queues'][queue]
+            queueStatus = queueInfo['GlueCEStateStatus']
+            if queueStatus.lower() != "production":
+              continue
 
-              maxCPUTime = queueDict.get( 'maxCPUTime', 'Unknown' )
-              si00 = queueDict.get( 'SI00', 'Unknown' )
-              ram = queueDict.get( 'RAM', 'Unknown' )
+            # Current CS queue info
+            maxCPUTime = queueDict.get( 'maxCPUTime', 'Unknown' )
+            si00 = queueDict.get( 'SI00', 'Unknown' )
+            maxTotalJobs = queueDict.get( 'MaxTotalJobs', 'Unknown' )
+            maxWaitingJobs = queueDict.get( 'MaxWaitingJobs', 'Unknown' )
 
-              newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
-              newSI00 = ''
-              caps = queueInfo['GlueCECapability']
-              if type( caps ) == type( '' ):
-                caps = [caps]
-              for cap in caps:
-                if 'CPUScalingReferenceSI00' in cap:
-                  newSI00 = cap.split( '=' )[-1]
+            # Current BDII queue info
+            newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
+            newSI00 = ''
+            caps = queueInfo['GlueCECapability']
+            if type( caps ) == type( '' ):
+              caps = [caps]
+            for cap in caps:
+              if 'CPUScalingReferenceSI00' in cap:
+                newSI00 = cap.split( '=' )[-1]
 
-              self.__updateCSOption( queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime )
-              self.__updateCSOption( queueSection, 'SI00', si00, newSI00 )
+            # Adding queue info to the CS
+            self.__updateCSOption( queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime )
+            self.__updateCSOption( queueSection, 'SI00', si00, newSI00 )
+            if maxTotalJobs == "Unknown":
+              newTotalJobs =  min( 1000, int( int( queueInfo.get( 'GlueCEInfoTotalCPUs', 0 ) )/2 ) )
+              newWaitingJobs =  max( 2, int( newTotalJobs * 0.1 ) )
+              newTotalJobs = str( newTotalJobs )
+              newWaitingJobs = str( newWaitingJobs )
+              self.__updateCSOption( queueSection, 'MaxTotalJobs', '', newTotalJobs )
+              self.__updateCSOption( queueSection, 'MaxWaitingJobs', '', newWaitingJobs )
 
-              VOs = set()
-              if queueDict.get( 'VO', '' ):
-                VOs = set( [ q.strip() for q in queueDict.get( 'VO', '' ).split( ',' ) if q ] )
-              if not queue in queueVODict:
-                queueVODict[queue] = VOs
-              queueVODict[queue].add( vo )
-              if len( queueVODict[queue] - VOs ) > 0:
-                newVOs = ','.join( queueVODict[queue] )
-                self.__updateCSOption( queueSection, 'VO', '', newVOs )
+
+            # Updating eligible VO list
+            VOs = set()
+            if queueDict.get( 'VO', '' ):
+              VOs = set( [ q.strip() for q in queueDict.get( 'VO', '' ).split( ',' ) if q ] )
+            if not queue in queueVODict:
+              queueVODict[queue] = VOs
+            queueVODict[queue].add( vo )
+            if len( queueVODict[queue] - VOs ) > 0:
+              newVOs = ','.join( queueVODict[queue] )
+              self.__updateCSOption( queueSection, 'VO', '', newVOs )
 
     if self.changeList:
       body = '\n'.join( self.changeList )
@@ -331,7 +357,7 @@ class CE2CSAgent( AgentModule ):
 
       result = self.csAPI.commit()
       if not result['OK']:
-        self.log.error( "Error while commit to CS", result['Message'] )  
+        self.log.error( "Error while commit to CS", result['Message'] )
       else:
         self.log.info( "Successfully committed %d changes to CS" % len( self.changeList ) )
       return result
