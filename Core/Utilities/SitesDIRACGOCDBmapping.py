@@ -20,7 +20,7 @@ def getGOCSiteName( diracSiteName ):
   gocDBName = gConfig.getValue( '/Resources/Sites/%s/%s/Name' % ( diracSiteName.split( '.' )[0],
                                                           diracSiteName ) )
   if not gocDBName:
-    return S_ERROR( "No GOC site name for %s in CS (Not a LCG site ?)" % diracSiteName )
+    return S_ERROR( "No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName )
   else:
     return S_OK( gocDBName )
 
@@ -33,14 +33,19 @@ def getDIRACSiteName( gocSiteName ):
   :params:
     :attr:`gocSiteName` - string: GOC DB site name (e.g. 'CERN-PROD')
   """
-  sitesList = gConfig.getSections( "/Resources/Sites/LCG/" )
-  if not sitesList['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites/LCG' )
-    return sitesList
-
-  sitesList = sitesList['Value']
-  diracSites = [(site, gConfig.getValue( "/Resources/Sites/LCG/%s/Name" % site )) for site in sitesList]
-  diracSites = [dirac for (dirac, goc) in diracSites if goc == gocSiteName]
+  result = gConfig.getSections( "/Resources/Sites" )
+  if not result['OK']:
+    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
+    return result
+  gridList = result['Value']
+  for grid in gridList:
+    result = gConfig.getSections( "/Resources/Sites/%s/" % grid )
+    if not result['OK']:
+      gLogger.warn( 'Problem retrieving sections in /Resources/Sites/%s' % grid )
+      return result
+    sitesList = result['Value']    
+    diracSites = [(site, gConfig.getValue( "/Resources/Sites/%s/%s/Name" % ( grid, site ) ) ) for site in sitesList]
+    diracSites = [dirac for (dirac, goc) in diracSites if goc == gocSiteName]
 
   if diracSites:
     return S_OK( diracSites )
