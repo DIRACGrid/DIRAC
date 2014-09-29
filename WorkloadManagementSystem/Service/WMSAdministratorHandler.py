@@ -109,7 +109,7 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask( None )
 
 ##############################################################################
-  types_getSiteMaskLogging = [ [StringTypes, ListType] ]
+  types_getSiteMaskLogging = [ list( StringTypes ) + [ListType] ]
   def export_getSiteMaskLogging( self, sites ):
     """ Get the site mask logging history
     """
