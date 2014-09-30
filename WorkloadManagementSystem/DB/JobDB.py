@@ -1391,6 +1391,7 @@ class JobDB( DB ):
                   'AtticJobParameters',
                   'HeartBeatLoggingInfo',
                   'OptimizerParameters',
+                  'JobCommands',
                   'Jobs',
                   'JobJDLs']:
 
