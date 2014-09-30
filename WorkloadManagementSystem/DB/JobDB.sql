@@ -128,25 +128,6 @@ CREATE TABLE AtticJobParameters (
 );
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS TaskQueues;
-CREATE TABLE TaskQueues (
-    TaskQueueID INTEGER NOT NULL AUTO_INCREMENT,
-    Priority INTEGER NOT NULL DEFAULT 0,
-    Requirements BLOB NOT NULL,
-    NumberOfJobs INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (TaskQueueID)
-);
-
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS TaskQueue;
-CREATE TABLE TaskQueue (
-    TaskQueueID INTEGER NOT NULL,
-    JobID       INTEGER NOT NULL,
-    Rank        INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (JobID, TaskQueueID)
-);
-
--- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS SiteMask;
 CREATE TABLE SiteMask (
     Site   VARCHAR(64) NOT NULL,
