@@ -31,7 +31,7 @@ class SandboxMetadataDB( DB ):
     tablesToCreate = {}
     self.__tablesDesc = {}
 
-    self.__tablesDesc[ 'sb_Owners' ] = { 'Fields' : { 'OwnerId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+    self.__tablesDesc[ 'sb_Owners' ] = { 'Fields' : { 'OwnerId' : 'INTEGER(10) UNSIGNED AUTO_INCREMENT NOT NULL',
                                                       'Owner' : 'VARCHAR(32) NOT NULL',
                                                       'OwnerDN' : 'VARCHAR(255) NOT NULL',
                                                       'OwnerGroup' : 'VARCHAR(32) NOT NULL',
@@ -40,10 +40,10 @@ class SandboxMetadataDB( DB ):
                                         }
 
     self.__tablesDesc[ 'sb_SandBoxes' ] = { 'Fields' : { 'SBId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
-                                                         'OwnerId' : 'INTEGER UNSIGNED NOT NULL',
+                                                         'OwnerId' : 'INTEGER(10) UNSIGNED NOT NULL',
                                                          'SEName' : 'VARCHAR(64) NOT NULL',
                                                          'SEPFN' : 'VARCHAR(512) NOT NULL',
-                                                         'Bytes' : 'BIGINT NOT NULL DEFAULT 0',
+                                                         'Bytes' : 'BIGINT(20) NOT NULL DEFAULT 0',
                                                          'RegistrationTime' : 'DATETIME NOT NULL',
                                                          'LastAccessTime' : 'DATETIME NOT NULL',
                                                          'Assigned' : 'TINYINT NOT NULL DEFAULT 0',

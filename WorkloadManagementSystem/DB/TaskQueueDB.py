@@ -91,11 +91,11 @@ class TaskQueueDB( DB ):
     tablesToCreate = {}
     self.__tablesDesc = {}
 
-    self.__tablesDesc[ 'tq_TaskQueues' ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+    self.__tablesDesc[ 'tq_TaskQueues' ] = { 'Fields' : { 'TQId' : 'INTEGER(10) UNSIGNED AUTO_INCREMENT NOT NULL',
                                                           'OwnerDN' : 'VARCHAR(255) NOT NULL',
                                                           'OwnerGroup' : 'VARCHAR(32) NOT NULL',
                                                           'Setup' : 'VARCHAR(32) NOT NULL',
-                                                          'CPUTime' : 'BIGINT UNSIGNED NOT NULL',
+                                                          'CPUTime' : 'BIGINT(20) UNSIGNED NOT NULL',
                                                           'Priority' : 'FLOAT NOT NULL',
                                                           'Enabled' : 'TINYINT(1) NOT NULL DEFAULT 0'
                                                            },
@@ -105,8 +105,8 @@ class TaskQueueDB( DB ):
                                                         }
                                             }
 
-    self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER UNSIGNED NOT NULL',
-                                                    'JobId' : 'INTEGER UNSIGNED NOT NULL',
+    self.__tablesDesc[ 'tq_Jobs' ] = { 'Fields' : { 'TQId' : 'INTEGER(10) UNSIGNED NOT NULL',
+                                                    'JobId' : 'INTEGER(11) UNSIGNED NOT NULL',
                                                     'Priority' : 'INTEGER UNSIGNED NOT NULL',
                                                     'RealPriority' : 'FLOAT NOT NULL'
                                                   },
