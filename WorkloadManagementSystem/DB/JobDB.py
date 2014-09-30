@@ -13,7 +13,6 @@
     getJobParameters()
     getAllJobParameters()
     getInputData()
-    getSubjobs()
     getJobJDL()
 
     selectJobs()
@@ -1385,21 +1384,6 @@ class JobDB( DB ):
     else:
       jobIDList = jobIDs
 
-    # If this is a master job delete the children first
-    failedSubjobList = []
-    for jobID in jobIDList:
-      result = self.getJobAttribute( jobID, 'JobSplitType' )
-      if result['OK']:
-        if result['Value'] == "Master":
-          result = self.getSubjobs( jobID )
-          if result['OK']:
-            subjobs = result['Value']
-            if subjobs:
-              result = self.removeJobFromDB( subjobs )
-              if not result['OK']:
-                failedSubjobList += subjobs
-                self.log.error( "Failed to delete subjobs " + str( subjobs ) + " from JobDB" )
-
     failedTablesList = []
     jobIDString = ','.join( [str( j ) for j in jobIDList] )
     for table in ['InputData',
@@ -1416,32 +1400,11 @@ class JobDB( DB ):
         failedTablesList.append( table )
 
     result = S_OK()
-    if failedSubjobList:
-      result = S_ERROR( 'Errors while job removal' )
-      result['FailedSubjobs'] = failedSubjobList
     if failedTablesList:
       result = S_ERROR( 'Errors while job removal' )
       result['FailedTables'] = failedTablesList
 
     return result
-
-#################################################################
-  def getSubjobs( self, jobID ):
-    """ Get subjobs of the given job
-    """
-    ret = self._escapeString( jobID )
-    if not ret['OK']:
-      return ret
-    jobID = ret['Value']
-
-    cmd = "SELECT SubJobID FROM SubJobs WHERE JobID=%s" % jobID
-    result = self._query( cmd )
-    subjobs = []
-    if result['OK']:
-      subjobs = [ int( x[0] ) for x in result['Value']]
-      return S_OK( subjobs )
-    else:
-      return result
 
 #################################################################
   def rescheduleJobs( self, jobIDs ):

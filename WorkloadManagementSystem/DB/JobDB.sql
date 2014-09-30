@@ -91,13 +91,6 @@ CREATE TABLE JobJDLs (
 );
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS SubJobs;
-CREATE TABLE SubJobs (
-    JobID INTEGER NOT NULL,
-    SubJobID INTEGER NOT NULL
-);
-
--- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS InputData;
 CREATE TABLE InputData (
     JobID INTEGER NOT NULL,
