@@ -98,13 +98,6 @@ CREATE TABLE SubJobs (
 );
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS PrecursorJobs;
-CREATE TABLE PrecursorJobs (
-    JobID INTEGER NOT NULL,
-    PreJobID INTEGER NOT NULL
-);
-
--- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS InputData;
 CREATE TABLE InputData (
     JobID INTEGER NOT NULL,
