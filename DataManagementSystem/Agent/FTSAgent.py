@@ -503,9 +503,19 @@ class FTSAgent( AgentModule ):
           else:
             ftsFiles = ftsFiles['Value']
             ftsLfns = set( [ftsFile.LFN for ftsFile in ftsFiles] )
+            # Recover files not in FTSDB
             toSchedule = set( missingReplicas ) - ftsLfns
             if toSchedule:
               log.warn( '%d files in operation are not in FTSDB, reset them Waiting' % len( toSchedule ) )
+              for opFile in operation:
+                if opFile.LFN in toSchedule and opFile.Status == 'Scheduled':
+                  opFile.Status = 'Waiting'
+            # Recover files with target not in FTSDB
+            toSchedule = set( [missing for missing, missingSEs in missingReplicas.items()
+                              if not [ftsFile for ftsFile in ftsFiles
+                                      if ftsFile.LFN == missing and ftsFile.TargetSE in missingSEs]] )
+            if toSchedule:
+              log.warn( '%d targets in operation are not in FTSDB, reset files Waiting' % len( toSchedule ) )
               for opFile in operation:
                 if opFile.LFN in toSchedule and opFile.Status == 'Scheduled':
                   opFile.Status = 'Waiting'
