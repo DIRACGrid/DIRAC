@@ -222,9 +222,9 @@ class JobDB( DB ):
       since = until - datetime.timedelta( hours = 24 )
     else:
       since = None
-      for format in ( '%Y-%m-%d', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S' ):
+      for dFormat in ( '%Y-%m-%d', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S' ):
         try:
-          since = datetime.datetime.strptime( date, format )
+          since = datetime.datetime.strptime( date, dFormat )
           break
         except:
           exactTime = True
@@ -878,7 +878,7 @@ class JobDB( DB ):
       return ret
     rescheduleCounter = ret['Value']
 
-    cmd = 'INSERT INTO AtticJobParameters VALUES(%s,%s,%s,%s)' % \
+    cmd = 'INSERT INTO AtticJobParameters (JobID,RescheduleCycle,Name,Value) VALUES(%s,%s,%s,%s)' % \
          ( jobID, rescheduleCounter, key, value )
     result = self._update( cmd )
     if not result['OK']:
@@ -1009,7 +1009,6 @@ class JobDB( DB ):
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status
     """
-
     jobManifest = JobManifest()
     result = jobManifest.load( jdl )
     if not result['OK']:
