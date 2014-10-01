@@ -269,6 +269,11 @@ class Request( Record ):
     """ return index of subReq (execution order) """
     return self.__operations__.index( subReq ) if subReq in self else -1
 
+  def __nonzero__( self ):
+    """ for comparisons
+    """
+    return True
+
   def __len__( self ):
     """ nb of subRequests """
     return len( self.__operations__ )

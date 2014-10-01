@@ -21,6 +21,11 @@
 
 from DIRAC                                     import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
+<<<<<<< HEAD
+=======
+from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
+from DIRAC.Core.Utilities.PrettyPrint          import printTable 
+>>>>>>> rel-v6r12
 
 __RCSID__  = '$Id:$'
 
@@ -130,25 +135,23 @@ def tabularPrint( elementsList ):
 
   LJUST = 25
 
+  subLogger.notice( '' )
   subLogger.notice( 'Selection parameters:' )
   subLogger.notice( '  %s: %s' % ( 'element'.ljust( 15 ), switchDict[ 'element' ] ) )
   titles = []
   for key in ( 'Name', 'StatusType', 'Status', 'ElementType', 'TokenOwner' ):
     
     #Transforms from upper lower case to lower upper case
-    key = key[0].lower() + key[1:]
+    keyT = key[0].lower() + key[1:]
      
-    if switchDict[ key ] is None:
+    if switchDict[ keyT ] is None:
       titles.append( key )
     else:
-      subLogger.notice( '  %s: %s' % ( key.ljust( 15 ), switchDict[ key ] ) )
-  
-  subLogger.notice( '\n'+''.join( [ item.ljust( LJUST ) for item in titles ] ) )
-  subLogger.notice( '-' * len( titles ) * LJUST )
-  
-  for element in elementsList:
+      subLogger.notice( '  %s: %s' % ( key.ljust( 15 ), switchDict[ keyT ] ) )
+  subLogger.notice( '' )    
     
-    subLogger.notice( ''.join( [ item.ljust( LJUST ) for item in element ] ) )
+  subLogger.notice( printTable( titles, elementsList, printOut = False, 
+                                numbering = False, columnSeparator = ' | ' ) ) 
     
 #...............................................................................
 
@@ -162,7 +165,7 @@ def run():
     subLogger.error( elements )
     DIRACExit( 1 )
   elements = elements[ 'Value' ]
-  
+
   tabularPrint( elements )
   
 #...............................................................................

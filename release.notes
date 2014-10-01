@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre18]
+[v6r12-pre19]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -150,6 +150,8 @@ CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
 *ResourceStatus
 NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
 FIX: GODDBClient  - downTimeXMLParsing() can now handle the "service type" parameter properly
+CHANGE: dirac-rss-xxx commands use the printTable standard utility
+FIX: dirac-dms-ftsdb-summary - bug fix for #2096
 
 *DMS
 NEW: DataManager - add masterCatalogOnly flag in the constructor
@@ -180,6 +182,18 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p14]
+
+*WMS
+CHANGE: JobDB - removed unused tables and methods
+CHANGE: removed obsoleted tests
+
+*DMS
+FIX: FTSAgent - recover case when a target is not in FTSDB
+
+*RMS
+FIX: Make RMS objects comply with Python Data Model by adding __nonzero__ methods 
 
 [v6r11p13]
 

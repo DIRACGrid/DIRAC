@@ -521,9 +521,8 @@ class FTSDB( DB ):
             retDict["FTSFile"][status] = 0
           retDict["FTSFile"][status] += count
       else:  # # FTSHistory
-
+        newListOfHistoryDicts = []
         if v:
-          newListOfHistoryDicts = []
           for oldHistoryDict in v:
             newHistoryDict = {}
             for key, value in oldHistoryDict.items():
