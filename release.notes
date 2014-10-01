@@ -1,4 +1,4 @@
-[v6r12-pre18]
+[v6r12-pre19]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -40,6 +40,8 @@ CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
 *ResourceStatus
 NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
 FIX: GODDBClient  - downTimeXMLParsing() can now handle the "service type" parameter properly
+CHANGE: dirac-rss-xxx commands use the printTable standard utility
+FIX: dirac-dms-ftsdb-summary - bug fix for #2096
 
 *DMS
 NEW: DataManager - add masterCatalogOnly flag in the constructor
