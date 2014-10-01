@@ -32,12 +32,12 @@ USE JobDB;
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `Jobs`;
 CREATE TABLE `Jobs` (
-  `JobID` INT(11) NOT NULL DEFAULT 0,
+  `JobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `JobType` VARCHAR(32) NOT NULL DEFAULT 'user',
   `DIRACSetup` VARCHAR(32) NOT NULL DEFAULT 'test',
   `JobGroup` VARCHAR(32) NOT NULL DEFAULT '00000000',
   `JobSplitType` ENUM('Single','Master','Subjob','DAGNode') NOT NULL DEFAULT 'Single',
-  `MasterJobID` INT(11) NOT NULL DEFAULT 0,
+  `MasterJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `Site` VARCHAR(100) NOT NULL DEFAULT 'ANY',
   `JobName` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `Owner` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
@@ -85,7 +85,7 @@ CREATE TABLE `Jobs` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `JobJDLs`;
 CREATE TABLE `JobJDLs` (
-  `JobID` INT(11) NOT NULL AUTO_INCREMENT,
+  `JobID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `JDL` BLOB NOT NULL,
   `JobRequirements` BLOB NOT NULL,
   `OriginalJDL` BLOB NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE `JobJDLs` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `InputData`;
 CREATE TABLE `InputData` (
-  `JobID` INT(11) NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `LFN` VARCHAR(255) NOT NULL DEFAULT '',
   `Status` VARCHAR(32) NOT NULL DEFAULT 'AprioriGood',
   PRIMARY KEY (`JobID`,`LFN`),
@@ -105,7 +105,7 @@ CREATE TABLE `InputData` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `JobParameters`;
 CREATE TABLE `JobParameters` (
-  `JobID` INT(11) NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
   `Value` BLOB NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
@@ -115,7 +115,7 @@ CREATE TABLE `JobParameters` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `OptimizerParameters`;
 CREATE TABLE `OptimizerParameters` (
-  `JobID` INT(11) NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
   `Value` MEDIUMBLOB NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
@@ -125,10 +125,10 @@ CREATE TABLE `OptimizerParameters` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `AtticJobParameters`;
 CREATE TABLE `AtticJobParameters` (
-  `JobID` INT(11) NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
   `Value` BLOB NOT NULL,
-  `RescheduleCycle` INT(11) NOT NULL,
+  `RescheduleCycle` INT(11) UNSIGNED NOT NULL,
   PRIMARY KEY (`JobID`,`Name`,`RescheduleCycle`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -157,7 +157,7 @@ CREATE TABLE `SiteMaskLogging` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `HeartBeatLoggingInfo`;
 CREATE TABLE `HeartBeatLoggingInfo` (
-  `JobID` INT(11) NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
   `Value` BLOB NOT NULL,
   `HeartBeatTime` DATETIME NOT NULL,
@@ -168,7 +168,7 @@ CREATE TABLE `HeartBeatLoggingInfo` (
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `JobCommands`;
 CREATE TABLE `JobCommands` (
-  `JobID` INT(11) NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `Command` VARCHAR(100) NOT NULL,
   `Arguments` VARCHAR(100) NOT NULL,
   `Status` VARCHAR(64) NOT NULL DEFAULT 'Received',

@@ -39,7 +39,7 @@ class SandboxMetadataDB( DB ):
                                          'PrimaryKey' : 'OwnerId',
                                         }
 
-    self.__tablesDesc[ 'sb_SandBoxes' ] = { 'Fields' : { 'SBId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+    self.__tablesDesc[ 'sb_SandBoxes' ] = { 'Fields' : { 'SBId' : 'INTEGER(10) UNSIGNED AUTO_INCREMENT NOT NULL',
                                                          'OwnerId' : 'INTEGER(10) UNSIGNED NOT NULL',
                                                          'SEName' : 'VARCHAR(64) NOT NULL',
                                                          'SEPFN' : 'VARCHAR(512) NOT NULL',
@@ -55,7 +55,7 @@ class SandboxMetadataDB( DB ):
 
                                           }
 
-    self.__tablesDesc[ 'sb_EntityMapping' ] = { 'Fields' : { 'SBId' : 'INTEGER UNSIGNED NOT NULL',
+    self.__tablesDesc[ 'sb_EntityMapping' ] = { 'Fields' : { 'SBId' : 'INTEGER(10) UNSIGNED NOT NULL',
                                                              'EntitySetup' : 'VARCHAR(64) NOT NULL',
                                                              'EntityId' : 'VARCHAR(128) NOT NULL',
                                                              'Type' : 'VARCHAR(64) NOT NULL',

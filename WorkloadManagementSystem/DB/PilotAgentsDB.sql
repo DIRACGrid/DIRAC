@@ -32,10 +32,10 @@ USE PilotAgentsDB;
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `PilotAgents`;
 CREATE TABLE `PilotAgents` (
-  `PilotID` INT(11) NOT NULL AUTO_INCREMENT,
-  `InitialJobID` INT(11) NOT NULL DEFAULT 0,
-  `CurrentJobID` INT(11) NOT NULL DEFAULT 0,
-  `TaskQueueID` INT(11) NOT NULL DEFAULT 0,
+  `PilotID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `InitialJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `CurrentJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `TaskQueueID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `PilotJobReference` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
   `PilotStamp` VARCHAR(32) NOT NULL DEFAULT '',
   `DestinationSite` VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
@@ -51,7 +51,7 @@ CREATE TABLE `PilotAgents` (
   `LastUpdateTime` DATETIME DEFAULT NULL,
   `Status` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
   `StatusReason` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-  `ParentID` INT(11) NOT NULL DEFAULT 0,
+  `ParentID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `OutputReady` ENUM('True','False') NOT NULL DEFAULT 'False',
   `AccountingSent` ENUM('True','False') NOT NULL DEFAULT 'False',
   PRIMARY KEY (`PilotID`),
@@ -63,8 +63,8 @@ CREATE TABLE `PilotAgents` (
 
 DROP TABLE IF EXISTS `JobToPilotMapping`;
 CREATE TABLE `JobToPilotMapping` (
-  `PilotID` INT(11) NOT NULL,
-  `JobID` INT(11) NOT NULL,
+  `PilotID` INT(11) UNSIGNED NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
   `StartTime` DATETIME NOT NULL,
   KEY `JobID` (`JobID`),
   KEY `PilotID` (`PilotID`)
@@ -72,7 +72,7 @@ CREATE TABLE `JobToPilotMapping` (
 
 DROP TABLE IF EXISTS `PilotOutput`;
 CREATE TABLE `PilotOutput` (
-  `PilotID` INT(11) NOT NULL,
+  `PilotID` INT(11) UNSIGNED NOT NULL,
   `StdOutput` MEDIUMBLOB,
   `StdError` MEDIUMBLOB,
   PRIMARY KEY (`PilotID`)
@@ -80,7 +80,7 @@ CREATE TABLE `PilotOutput` (
 
 DROP TABLE IF EXISTS `PilotRequirements`;
 CREATE TABLE `PilotRequirements` (
-  `PilotID` INT(11) NOT NULL,
+  `PilotID` INT(11) UNSIGNED NOT NULL,
   `Requirements` BLOB,
   PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
