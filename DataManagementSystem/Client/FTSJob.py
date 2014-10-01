@@ -411,6 +411,11 @@ class FTSJob( Record ):
     """ get list of files statuses """
     return [ ftsFile.Status for ftsFile in self ]
 
+  def __nonzero__( self ):
+    """ for comparisons
+    """
+    return True
+
   def __len__( self ):
     """ nb of subFiles """
     return len( self.__files__ )

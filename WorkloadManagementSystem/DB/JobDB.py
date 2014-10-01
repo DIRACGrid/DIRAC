@@ -4,7 +4,6 @@
 
     The following methods are provided for public usage:
 
-    getJobID()
     getJobAttribute()
     getJobAttributes()
     getAllJobAttributes()
@@ -14,7 +13,6 @@
     getJobParameters()
     getAllJobParameters()
     getInputData()
-    getSubjobs()
     getJobJDL()
 
     selectJobs()
@@ -137,27 +135,6 @@ class JobDB( DB ):
     return S_OK()
 
 #############################################################################
-  def getJobID( self ):
-    """Get the next unique JobID and prepare the new job insertion
-    """
-
-    cmd = 'INSERT INTO Jobs (SubmissionTime) VALUES (UTC_TIMESTAMP())'
-    err = 'JobDB.getJobID: Failed to retrieve a new Id.'
-
-    res = self._update( cmd )
-    if not res['OK']:
-      return S_ERROR( '1 %s\n%s' % ( err, res['Message'] ) )
-
-    if not 'lastRowId' in res['Value']:
-      return S_ERROR( '2 %s' % err )
-
-    jobID = int( res['Value']['lastRowId'] )
-
-    self.log.info( 'JobDB: New JobID served "%s"' % jobID )
-
-    return S_OK( jobID )
-
-#############################################################################
   def getAttributesForJobList( self, jobIDList, attrList = None ):
     """ Get attributes for the jobs in the the jobIDList.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
@@ -245,9 +222,9 @@ class JobDB( DB ):
       since = until - datetime.timedelta( hours = 24 )
     else:
       since = None
-      for format in ( '%Y-%m-%d', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S' ):
+      for dFormat in ( '%Y-%m-%d', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S' ):
         try:
-          since = datetime.datetime.strptime( date, format )
+          since = datetime.datetime.strptime( date, dFormat )
           break
         except:
           exactTime = True
@@ -459,58 +436,6 @@ class JobDB( DB ):
     return S_OK( attributes )
 
 #############################################################################
-  def getJobInfo( self, jobID, parameters = None ):
-    """ Get parameters for job specified by jobID. Parameters can be
-        either job attributes ( fields in the Jobs table ) or those
-        stored in the JobParameters table.
-        The return value is a dictionary of the structure:
-        Dict[Name] = Value
-    """
-
-    resultDict = {}
-    # Parameters are not specified, get them all - parameters + attributes
-    if not parameters:
-      result = self.getJobAttributes( jobID )
-      if result['OK']:
-        resultDict = result['value']
-      else:
-        return S_ERROR( 'JobDB.getJobAttributes: can not retrieve job attributes' )
-      result = self.getJobParameters( jobID )
-      if result['OK']:
-        resultDict.update( result['value'] )
-      else:
-        return S_ERROR( 'JobDB.getJobParameters: can not retrieve job parameters' )
-      return S_OK( resultDict )
-
-    paramList = []
-    attrList = []
-    for par in parameters:
-      if par in self.jobAttributeNames:
-        attrList.append( par )
-      else:
-        paramList.append( par )
-
-    # Get Job Attributes first
-    if attrList:
-      result = self.getJobAttributes( jobID, attrList )
-      if not result['OK']:
-        return result
-      if len( result['Value'] ) > 0:
-        resultDict = result['Value']
-      else:
-        return S_ERROR( 'Job ' + str( jobID ) + ' not found' )
-
-    # Get Job Parameters
-    if paramList:
-      result = self.getJobParameters( jobID, paramList )
-      if not result['OK']:
-        return result
-      if len( result['Value'] ) > 0:
-        resultDict.update( result['Value'] )
-
-    return S_OK( resultDict )
-
-#############################################################################
   def getJobAttribute( self, jobID, attribute ):
     """ Get the given attribute of a job specified by its jobID
     """
@@ -585,40 +510,8 @@ class JobDB( DB ):
       return S_ERROR( 'JobDB.getJobOptParameters: failed to retrieve parameters' )
 
 #############################################################################
-  def getTimings( self, site, period = 3600 ):
-    """ Get CPU and wall clock times for the jobs finished in the last hour
-    """
-    ret = self._escapeString( site )
-    if not ret['OK']:
-      return ret
-    site = ret['Value']
 
-    date = str( Time.dateTime() - Time.second * period )
-    req = "SELECT JobID from Jobs WHERE Site=%s and EndExecTime > '%s' " % ( site, date )
-    result = self._query( req )
-    jobList = [ str( x[0] ) for x in result['Value'] ]
-    jobString = ','.join( jobList )
-
-    req = "SELECT SUM(Value) from JobParameters WHERE Name='TotalCPUTime(s)' and JobID in (%s)" % jobString
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    cpu = result['Value'][0][0]
-    if not cpu:
-      cpu = 0.0
-
-    req = "SELECT SUM(Value) from JobParameters WHERE Name='WallClockTime(s)' and JobID in (%s)" % jobString
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    wctime = result['Value'][0][0]
-    if not wctime:
-      wctime = 0.0
-
-    return S_OK( {"CPUTime":int( cpu ), "WallClockTime":int( wctime )} )
-
-#############################################################################
-  def getInputData ( self, jobID ):
+  def getInputData( self, jobID ):
     """Get input data for the given job
     """
     ret = self._escapeString( jobID )
@@ -633,7 +526,7 @@ class JobDB( DB ):
     return S_OK( [ i[0] for i in res['Value'] if i[0].strip() ] )
 
 #############################################################################
-  def setInputData ( self, jobID, inputData ):
+  def setInputData( self, jobID, inputData ):
     """Inserts input data for the given job
     """
     ret = self._escapeString( jobID )
@@ -704,13 +597,6 @@ class JobDB( DB ):
     return S_OK( nextOptimizer )
 
 ############################################################################
-  def countJobs( self, condDict, older = None, newer = None, timeStamp = 'LastUpdateTime' ):
-    """ Get the number of jobs matching conditions specified by condDict and time limits
-    """
-    self.log.debug ( 'JobDB.countJobs: counting Jobs' )
-    return self.countEntries( 'Jobs', condDict, older = older, newer = newer, timeStamp = timeStamp )
-
-#############################################################################
   def selectJobs( self, condDict, older = None, newer = None, timeStamp = 'LastUpdateTime',
                   orderAttribute = None, limit = None ):
     """ Select jobs matching the following conditions:
@@ -732,13 +618,6 @@ class JobDB( DB ):
     if not len( res['Value'] ):
       return S_OK( [] )
     return S_OK( [ self._to_value( i ) for i in  res['Value'] ] )
-
-#############################################################################
-  def selectJobWithStatus( self, status ):
-    """ Get the list of jobs with a given Major Status
-    """
-
-    return self.selectJobs( {'Status':status} )
 
 #############################################################################
   def setJobAttribute( self, jobID, attrName, attrValue, update = False, myDate = None ):
@@ -947,7 +826,7 @@ class JobDB( DB ):
 
     cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( e_jobID, e_name )
     if not self._update( cmd )['OK']:
-      result = S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
+      return S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
 
     result = self.insertFields( 'OptimizerParameters', ['JobID', 'Name', 'Value'], [jobID, name, value] )
     if not result['OK']:
@@ -999,7 +878,7 @@ class JobDB( DB ):
       return ret
     rescheduleCounter = ret['Value']
 
-    cmd = 'INSERT INTO AtticJobParameters VALUES(%s,%s,%s,%s)' % \
+    cmd = 'INSERT INTO AtticJobParameters (JobID,RescheduleCycle,Name,Value) VALUES(%s,%s,%s,%s)' % \
          ( jobID, rescheduleCounter, key, value )
     result = self._update( cmd )
     if not result['OK']:
@@ -1130,7 +1009,6 @@ class JobDB( DB ):
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status
     """
-
     jobManifest = JobManifest()
     result = jobManifest.load( jdl )
     if not result['OK']:
@@ -1246,6 +1124,17 @@ class JobDB( DB ):
     if not result['OK']:
       return result
 
+    # Adding the job in the Jobs table
+    result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
+    if not result['OK']:
+      return result
+
+    # Setting the Job parameters
+    result = self.__setInitialJobParameters( classAdJob, jobID )
+    if not result['OK']:
+      return result
+
+    # Looking for the Input Data
     inputData = []
     if classAdJob.lookupAttribute( 'InputData' ):
       inputData = classAdJob.getListFromExpression( 'InputData' )
@@ -1272,14 +1161,6 @@ class JobDB( DB ):
       result = self._update( cmd )
       if not result['OK']:
         return result
-
-    result = self.__setInitialJobParameters( classAdJob, jobID )
-    if not result['OK']:
-      return result
-
-    result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
-    if not result['OK']:
-      return result
 
     retVal['Status'] = 'Received'
     retVal['MinorStatus'] = 'Job accepted'
@@ -1403,31 +1284,16 @@ class JobDB( DB ):
     else:
       jobIDList = jobIDs
 
-    # If this is a master job delete the children first
-    failedSubjobList = []
-    for jobID in jobIDList:
-      result = self.getJobAttribute( jobID, 'JobSplitType' )
-      if result['OK']:
-        if result['Value'] == "Master":
-          result = self.getSubjobs( jobID )
-          if result['OK']:
-            subjobs = result['Value']
-            if subjobs:
-              result = self.removeJobFromDB( subjobs )
-              if not result['OK']:
-                failedSubjobList += subjobs
-                self.log.error( "Failed to delete subjobs " + str( subjobs ) + " from JobDB" )
-
     failedTablesList = []
     jobIDString = ','.join( [str( j ) for j in jobIDList] )
-    for table in ( 'JobJDLs',
-                   'InputData',
-                   'JobParameters',
-                   'AtticJobParameters',
-                   'HeartBeatLoggingInfo',
-                   'OptimizerParameters',
-                   'Jobs'
-                   ):
+    for table in ['InputData',
+                  'JobParameters',
+                  'AtticJobParameters',
+                  'HeartBeatLoggingInfo',
+                  'OptimizerParameters',
+                  'JobCommands',
+                  'Jobs',
+                  'JobJDLs']:
 
       cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )
       result = self._update( cmd )
@@ -1435,32 +1301,11 @@ class JobDB( DB ):
         failedTablesList.append( table )
 
     result = S_OK()
-    if failedSubjobList:
-      result = S_ERROR( 'Errors while job removal' )
-      result['FailedSubjobs'] = failedSubjobList
     if failedTablesList:
       result = S_ERROR( 'Errors while job removal' )
       result['FailedTables'] = failedTablesList
 
     return result
-
-#################################################################
-  def getSubjobs( self, jobID ):
-    """ Get subjobs of the given job
-    """
-    ret = self._escapeString( jobID )
-    if not ret['OK']:
-      return ret
-    jobID = ret['Value']
-
-    cmd = "SELECT SubJobID FROM SubJobs WHERE JobID=%s" % jobID
-    result = self._query( cmd )
-    subjobs = []
-    if result['OK']:
-      subjobs = [ int( x[0] ) for x in result['Value']]
-      return S_OK( subjobs )
-    else:
-      return result
 
 #################################################################
   def rescheduleJobs( self, jobIDs ):
@@ -1748,18 +1593,18 @@ class JobDB( DB ):
     return result
 
 #############################################################################
-  def removeSiteFromMask( self, site ):
+  def removeSiteFromMask( self, site = None ):
     """ Remove the given site from the mask
     """
-    ret = self._escapeString( site )
-    if not ret['OK']:
-      return ret
-    site = ret['Value']
-
-    if site == "All":
+    if not site:
       req = "DELETE FROM SiteMask"
     else:
+      ret = self._escapeString( site )
+      if not ret['OK']:
+        return ret
+      site = ret['Value']
       req = "DELETE FROM SiteMask WHERE Site=%s" % site
+
     return self._update( req )
 
 #############################################################################
@@ -1809,27 +1654,6 @@ class JobDB( DB ):
     return S_OK( resultDict )
 
 #############################################################################
-  def setSandboxReady( self, jobID, stype = 'InputSandbox' ):
-    """ Set the sandbox status ready for the job with jobID
-    """
-    ret = self._escapeString( jobID )
-    if not ret['OK']:
-      return ret
-    jobID = ret['Value']
-
-
-    if stype == "InputSandbox":
-      field = "ISandboxReadyFlag"
-    elif stype == "OutputSandbox":
-      field = "OSandboxReadyFlag"
-    else:
-      return S_ERROR( 'Illegal Sandbox type: ' + stype )
-
-    cmd = "UPDATE Jobs SET %s='True' WHERE JobID=%s" % ( field, jobID )
-    result = self._update( cmd )
-    return result
-
-#################################################################################
   def getSiteSummary( self ):
     """ Get the summary of jobs in a given status on all the sites
     """
@@ -1885,7 +1709,8 @@ class JobDB( DB ):
     paramNames = ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus']
     paramNames += JOB_STATES
     paramNames += ['Efficiency', 'Status']
-    siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'PIC', 'CNAF', 'RAL', 'GRIDKA']
+    #FIXME: hack!!!
+    siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'SARA', 'PIC', 'CNAF', 'RAL', 'GRIDKA', 'RRCKI']
 
     # Sort out records as requested
     sortItem = -1

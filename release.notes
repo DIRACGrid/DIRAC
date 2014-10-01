@@ -73,6 +73,18 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p14]
+
+*WMS
+CHANGE: JobDB - removed unused tables and methods
+CHANGE: removed obsoleted tests
+
+*DMS
+FIX: FTSAgent - recover case when a target is not in FTSDB
+
+*RMS
+FIX: Make RMS objects comply with Python Data Model by adding __nonzero__ methods 
+
 [v6r11p13]
 
 *DMS
