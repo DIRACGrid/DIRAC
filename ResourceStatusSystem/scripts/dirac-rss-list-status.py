@@ -21,11 +21,8 @@
 
 from DIRAC                                     import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
-<<<<<<< HEAD
-=======
 from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
 from DIRAC.Core.Utilities.PrettyPrint          import printTable 
->>>>>>> rel-v6r12
 
 __RCSID__  = '$Id:$'
 
