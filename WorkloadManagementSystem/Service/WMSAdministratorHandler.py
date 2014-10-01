@@ -50,16 +50,15 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 class WMSAdministratorHandler(RequestHandler):
 
 ###########################################################################
-  types_setMask = [StringTypes]
-  def export_setSiteMask(self, siteList, comment='No comment'):
-    """ Set the site mask for matching. The mask is given in a form of Classad
-        string.
+  types_setSiteMask = [ListType]
+  def export_setSiteMask( self, siteList ):
+    """ Set the site mask for matching. The mask is given in a form of Classad string.
     """
     result = self.getRemoteCredentials()
     dn = result['DN']
 
     maskList = [ (site,'Active') for site in siteList ]
-    result = jobDB.setSiteMask(maskList,dn,comment)
+    result = jobDB.setSiteMask( maskList, dn, 'No comment' )
     return result
 
 ##############################################################################
@@ -67,19 +66,7 @@ class WMSAdministratorHandler(RequestHandler):
   def export_getSiteMask(self):
     """ Get the site mask
     """
-
-    result = jobDB.getSiteMask('Active')
-    return result
-
-    if result['Status'] == "OK":
-      active_list = result['Value']
-      mask = []
-      for i in range(1,len(active_list),2):
-        mask.append(active_list[i])
-
-      return S_OK(mask)
-    else:
-      return S_ERROR('Failed to get the mask from the Job DB')
+    return jobDB.getSiteMask( 'Active' )
 
 ##############################################################################
   types_banSite = [StringTypes]
@@ -119,19 +106,18 @@ class WMSAdministratorHandler(RequestHandler):
     """ Clear up the entire site mask
     """
 
-    return jobDB.removeSiteFromMask("All")
+    return jobDB.removeSiteFromMask( None )
 
 ##############################################################################
-  types_getSiteMaskLogging = [ list(StringTypes)+[ListType] ]
-  def export_getSiteMaskLogging(self,sites):
+  types_getSiteMaskLogging = [ list( StringTypes ) + [ListType] ]
+  def export_getSiteMaskLogging( self, sites ):
     """ Get the site mask logging history
     """
 
     if type(sites) in StringTypes:
-      msites = [sites]
-    else:
-      msites = sites
-    return jobDB.getSiteMaskLogging(msites)
+      sites = [sites]
+
+    return jobDB.getSiteMaskLogging( sites )
 
 ##############################################################################
   types_getSiteMaskSummary = [ ]
@@ -161,7 +147,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(siteDict)
 
 ##############################################################################
-  types_getCurrentPilotCounters = [ ]
+  types_getCurrentPilotCounters = [ DictType ]
   def export_getCurrentPilotCounters( self, attrDict={}):
     """ Get pilot counters per Status with attrDict selection. Final statuses are given for
         the last day.
@@ -547,7 +533,8 @@ class WMSAdministratorHandler(RequestHandler):
         return result
       ce = result['Value']
   
-      if gridType in ["LCG","gLite","CREAM"]:
+      # FIXME: quite hacky. Should be either removed, or based on some flag
+      if gridType in ["LCG", "gLite", "CREAM", 'ARC']:
         group = getGroupOption(group,'VOMSRole',group)
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
@@ -659,6 +646,6 @@ class WMSAdministratorHandler(RequestHandler):
           userName = getUsernameForDN( status['OwnerDN'] )
           if userName['OK']:
             status['OwnerDN'] = userName['Value'] 
-        statistics[status[selector]] = count
+        statistics[status] = count
         
     return S_OK( statistics )

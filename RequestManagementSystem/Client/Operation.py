@@ -204,6 +204,11 @@ class Operation( Record ):
     """ get list of files statuses """
     return [ subFile.Status for subFile in self ]
 
+  def __nonzero__( self ):
+    """ for comparisons
+    """
+    return True
+
   def __len__( self ):
     """ nb of subFiles """
     return len( self.__files__ )
