@@ -826,7 +826,7 @@ class JobDB( DB ):
 
     cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( e_jobID, e_name )
     if not self._update( cmd )['OK']:
-      result = S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
+      return S_ERROR( 'JobDB.setJobOptParameter: operation failed.' )
 
     result = self.insertFields( 'OptimizerParameters', ['JobID', 'Name', 'Value'], [jobID, name, value] )
     if not result['OK']:
@@ -1125,6 +1125,17 @@ class JobDB( DB ):
     if not result['OK']:
       return result
 
+    # Adding the job in the Jobs table
+    result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
+    if not result['OK']:
+      return result
+
+    # Setting the Job parameters
+    result = self.__setInitialJobParameters( classAdJob, jobID )
+    if not result['OK']:
+      return result
+
+    # Looking for the Input Data
     inputData = []
     if classAdJob.lookupAttribute( 'InputData' ):
       inputData = classAdJob.getListFromExpression( 'InputData' )
@@ -1151,14 +1162,6 @@ class JobDB( DB ):
       result = self._update( cmd )
       if not result['OK']:
         return result
-
-    result = self.__setInitialJobParameters( classAdJob, jobID )
-    if not result['OK']:
-      return result
-
-    result = self.insertFields( 'Jobs', jobAttrNames, jobAttrValues )
-    if not result['OK']:
-      return result
 
     retVal['Status'] = 'Received'
     retVal['MinorStatus'] = 'Job accepted'
