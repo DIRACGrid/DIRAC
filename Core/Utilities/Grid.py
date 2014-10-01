@@ -331,6 +331,27 @@ For example result['Value'][0]['GlueSESizeFree']
   seList = seDict.values()
   return S_OK( seList )
 
+def ldapSEAccessProtocol( se, attr = None, host = None ):
+  """ SE access protocol information from bdii
+
+:param  se: se or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
+:return: standard DIRAC answer with Value equals to list of access protocols.
+
+Each ceState is dictionary which contains attributes of ce.
+For example result['Value'][0]['GlueCEStateStatus']
+  """
+  filt = '(&(objectClass=GlueSEAccessProtocol)(GlueChunkKey=GlueSEUniqueID=%s))' % se
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+
+  protocols = []
+  for value in result['Value']:
+    protocols.append( value['attr'] )
+
+  return S_OK( protocols )
+
 def getBdiiCEInfo( vo, host = None ):
   """ Get information for all the CEs/queues for a given VO
   
@@ -413,5 +434,21 @@ def getBdiiSEInfo( vo, host = None ):
     siteDict.setdefault( siteName, { "SEs": {} } )
     seID = se['GlueSEUniqueID']
     siteDict[siteName]["SEs"][seID] = se
+    result = ldapSEAccessProtocol( seID, host = host )
+    siteDict[siteName]["SEs"][seID]['AccessProtocols'] = {}
+    if result['OK']:
+      for entry in result['Value']:
+        apType = entry['GlueSEAccessProtocolType']
+        if apType in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
+          count = 0
+          for p in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
+            if p.startswith( apType+'.' ):
+              count += 1
+          apType = '%s.%d' % ( apType, count + 1 )       
+          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry    
+        else:  
+          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry
+    else:
+      continue    
 
   return S_OK( siteDict )
