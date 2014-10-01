@@ -33,19 +33,20 @@ def getDIRACSiteName( gocSiteName ):
   :params:
     :attr:`gocSiteName` - string: GOC DB site name (e.g. 'CERN-PROD')
   """
+  diracSites = []
   result = gConfig.getSections( "/Resources/Sites" )
   if not result['OK']:
     gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
     return result
   gridList = result['Value']
   for grid in gridList:
-    result = gConfig.getSections( "/Resources/Sites/%s/" % grid )
+    result = gConfig.getSections( "/Resources/Sites/%s" % grid )
     if not result['OK']:
       gLogger.warn( 'Problem retrieving sections in /Resources/Sites/%s' % grid )
       return result
     sitesList = result['Value']    
-    diracSites = [(site, gConfig.getValue( "/Resources/Sites/%s/%s/Name" % ( grid, site ) ) ) for site in sitesList]
-    diracSites = [dirac for (dirac, goc) in diracSites if goc == gocSiteName]
+    tmpList = [(site, gConfig.getValue( "/Resources/Sites/%s/%s/Name" % ( grid, site ) ) ) for site in sitesList]
+    diracSites += [dirac for (dirac, goc) in tmpList if goc == gocSiteName]
 
   if diracSites:
     return S_OK( diracSites )
