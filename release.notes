@@ -81,6 +81,7 @@ CHANGE: removed obsoleted tests
 
 *DMS
 FIX: FTSAgent - recover case when a target is not in FTSDB
+CHANGE: FTSAgent(Job) - give possibility to specify a pin life time in CS 
 
 *RMS
 FIX: Make RMS objects comply with Python Data Model by adding __nonzero__ methods 

@@ -99,7 +99,7 @@ class FTSAgent( AgentModule ):
   # # MAX FTS transfer per FTSFile
   MAX_ATTEMPT = 256
   # # stage flag
-  STAGE_FILES = False
+  PIN_TIME = 0
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -288,8 +288,8 @@ class FTSAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
-    self.STAGE_FILES = self.am_getOption( "StageFiles", self.STAGE_FILES )
-    log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.STAGE_FILES )] )
+    self.PIN_TIME = self.am_getOption( "PinTime", self.PIN_TIME )
+    log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.PIN_TIME )] )
 
     self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS )
     log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
@@ -804,7 +804,7 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submitFTS2( self.STAGE_FILES )
+        submit = ftsJob.submitFTS2( pinTime = self.PIN_TIME )
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
