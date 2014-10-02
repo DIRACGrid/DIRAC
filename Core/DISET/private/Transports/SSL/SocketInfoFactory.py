@@ -42,16 +42,36 @@ class SocketInfoFactory:
     except Exception, e:
       return S_ERROR( str( e ) )
 
-  def __socketConnect( self, hostAddress, timeout = None, retries = 2 ):
-    #osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+  def __socketConnect( self, hostAddress, timeout, retries = 2 ):
+    addrs = socket.getaddrinfo(hostAddress[0], hostAddress[1], 0, socket.SOCK_STREAM)
+    errs = []
+    for a in [a for a in addrs if a[1] == socket.AF_INET ]:
+      res = self.__sockConnect( a[0], a[1], timeout, retries )
+      if res[ 'OK' ]:
+        return res
+      else:
+        errs.append( res[ 'Message' ] )
+    for a in [a for a in addrs if a[1] == socket.AF_INET6 ]:
+      res = self.__sockConnect( a[0], a[1], timeout, retries )
+      if res[ 'OK' ]:
+        return res
+      else:
+        errs.append( res[ 'Message' ] )
+    return S_ERROR( ", ".join( errs ) )
+
+
+  def __sockConnect( self, hostAddress, sockType, timeout, retries ):
+    osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )
+    if timeout:
+      osSocket.settimeout( 5 )
     try:
-      osSocket = socket.create_connection( hostAddress, timeout )
+      osSocket.connect( hostAddress )
     except socket.error , e:
       if e.args[0] == "timed out":
         osSocket.close()
         if retries:
-          return self.__socketConnect( hostAddress, timeout, retries - 1 )
+          return self.__sockConnect( hostAddress, sockType, timeout, retries - 1 )
         else:
           return S_ERROR( "Can't connect: %s" % str( e ) )
       if e.args[0] not in ( 114, 115 ):
