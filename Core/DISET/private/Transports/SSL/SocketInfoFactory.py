@@ -42,13 +42,11 @@ class SocketInfoFactory:
     except Exception, e:
       return S_ERROR( str( e ) )
 
-  def __socketConnect( self, hostAddress, timeout, retries = 2 ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+  def __socketConnect( self, hostAddress, timeout = None, retries = 2 ):
+    #osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )
-    if timeout:
-      osSocket.settimeout( 5 )
     try:
-      osSocket.connect( hostAddress )
+      osSocket = socket.create_connection( hostAddress, timeout )
     except socket.error , e:
       if e.args[0] == "timed out":
         osSocket.close()
@@ -132,7 +130,7 @@ class SocketInfoFactory:
     return S_OK( socketInfo )
 
   def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     retVal = self.generateServerInfo( kwargs )
