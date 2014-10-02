@@ -143,7 +143,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
     # Clients
     self.fc = FileCatalog()
-    self.ftsClient = FTSClient()
+    if hasattr( self, "FTSMode" ) and getattr( self, "FTSMode" ):
+      self.ftsClient = FTSClient()
 
   def __call__( self ):
     """ call me maybe """
