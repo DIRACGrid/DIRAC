@@ -445,11 +445,11 @@ class FTSJob( Record ):
                      "-o",
                      "--compare-checksums" ]
     if self.TargetToken:
-      submitCommand.append( "-t %s" % self.TargetToken )
+      submitCommand += [ "-t", self.TargetToken]
     if self.SourceToken:
-      submitCommand.append( "-S %s" % self.SourceToken )
+      submitCommand += [ "-S", self.SourceToken ]
     if pinTime:
-      submitCommand.append( "--copy-pin-lifetime %d" % pinTime )
+      submitCommand += [ "--copy-pin-lifetime", "%d" % pinTime ]
 
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
