@@ -929,7 +929,7 @@ class FTSAgent( AgentModule ):
     reschedule = False
     submit = False
     fail = False
-    if ftsFile.Status == "Failed":
+    if ftsFile.Status in ( "Failed", 'Canceled' ):
       if ftsFile.Error == "MissingSource":
         reschedule = True
       else:
