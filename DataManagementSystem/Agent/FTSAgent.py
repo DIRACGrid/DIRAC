@@ -590,14 +590,14 @@ class FTSAgent( AgentModule ):
           log.error( rescheduleFiles["Message"] )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
-      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted' ] )
+      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted', 'Canceled' ] )
       if not ftsFiles["OK"]:
         log.error( ftsFiles["Message"] )
       else:
         retryIds = set ( [ ftsFile.FTSFileID for ftsFile in toSubmit ] )
         for ftsFile in ftsFiles["Value"]:
           if ftsFile.FTSFileID not in retryIds:
-            if ftsFile.Status == 'Failed':
+            if ftsFile.Status in ( 'Failed', 'Canceled' ):
               # If the file was not unrecoverable failed and is not yet set toSubmit
               _reschedule, submit, _fail = self.__checkFailed( ftsFile )
             elif ftsFile.Status == 'Submitted':
