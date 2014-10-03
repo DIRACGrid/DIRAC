@@ -100,6 +100,10 @@ class FTSAgent( AgentModule ):
   MAX_ATTEMPT = 256
   # # stage flag
   PIN_TIME = 0
+  # # FTS submission command
+  SUBMIT_COMMAND = 'glite-transfer-submit'
+  # # FTS monitoring command
+  MONITOR_COMMAND = 'glite-transfer-status'
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -288,6 +292,10 @@ class FTSAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
+    self.SUBMIT_COMMAND = self.am_getOption( "SubmitCommand", self.SUBMIT_COMMAND )
+    log.info( "FTS submit command = %s" % self.SUBMIT_COMMAND )
+    self.MONITOR_COMMAND = self.am_getOption( "MonitorCommand", self.MONITOR_COMMAND )
+    log.info( "FTS commands: submit = %s monitor %s" % ( self.SUBMIT_COMMAND, self.MONITOR_COMMAND ) )
     self.PIN_TIME = self.am_getOption( "PinTime", self.PIN_TIME )
     log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.PIN_TIME )] )
 
@@ -804,7 +812,7 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submitFTS2( pinTime = self.PIN_TIME )
+        submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME )
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
@@ -842,7 +850,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2()
+    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND )
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
@@ -897,7 +905,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( full = True )
+    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND, full = True )
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor

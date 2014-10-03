@@ -426,7 +426,7 @@ class FTSJob( Record ):
       surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, checksum ) )
     return "\n".join( surls )
 
-  def submitFTS2( self, pinTime = False ):
+  def submitFTS2( self, command = 'glite-transfer-submit', pinTime = False ):
     """ submit fts job using FTS2 client """
     if self.FTSGUID:
       return S_ERROR( "FTSJob already has been submitted" )
@@ -437,7 +437,7 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-    submitCommand = [ "glite-transfer-submit",
+    submitCommand = [ command,
                      "-s",
                      self.FTSServer,
                      "-f",
@@ -465,12 +465,12 @@ class FTSJob( Record ):
       ftsFile.Status = "Submitted"
     return S_OK()
 
-  def monitorFTS2( self, full = False ):
+  def monitorFTS2( self, command = "glite-transfer-status", full = False ):
     """ monitor fts job """
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
 
-    monitorCommand = [ "glite-transfer-status",
+    monitorCommand = [ command,
                        "--verbose",
                        "-s",
                        self.FTSServer,
