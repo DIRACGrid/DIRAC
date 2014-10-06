@@ -50,7 +50,6 @@ import types
 import urllib
 
 EXECUTION_RESULT = {}
-gRequestValidator = RequestValidator() 
 
 class JobWrapper:
 
@@ -1226,7 +1225,7 @@ class JobWrapper:
 
     if len( request ):
       # The request is ready, send it now
-      isValid = gRequestValidator.validate( request )
+      isValid = RequestValidator().validate( request )
       if not isValid["OK"]:
         self.log.error( "Failover request is not valid", isValid["Message"] )
       else:

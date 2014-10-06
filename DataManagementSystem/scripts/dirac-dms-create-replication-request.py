@@ -56,7 +56,6 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 reqClient = ReqClient()
 fc = FileCatalog()
-gRequestValidator = RequestValidator()
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
 
@@ -88,7 +87,7 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
     replicateAndRegister.addFile( rarFile )
 
   oRequest.addOperation( replicateAndRegister )
-  isValid = gRequestValidator.validate( oRequest )
+  isValid = RequestValidator().validate( oRequest )
   if not isValid['OK']:
     print "Request is not valid: ", isValid['Message']
     DIRAC.exit( 1 )

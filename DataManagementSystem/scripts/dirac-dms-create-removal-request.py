@@ -54,7 +54,6 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 reqClient = ReqClient()
 fc = FileCatalog()
-gRequestValidator = RequestValidator()
 
 requestOperation = 'RemoveReplica'
 if targetSE == 'All':
@@ -92,7 +91,7 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   oRequest.addOperation( oOperation )
 
-  isValid = gRequestValidator.validate( oRequest )
+  isValid = RequestValidator().validate( oRequest )
   if not isValid['OK']:
     print "Request is not valid: ", isValid['Message']
     DIRAC.exit( 1 )

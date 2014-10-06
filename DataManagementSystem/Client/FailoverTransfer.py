@@ -31,8 +31,6 @@ from DIRAC.RequestManagementSystem.Client.File              import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
 
-gRequestValidator = RequestValidator()
-
 class FailoverTransfer( object ):
   """ .. class:: FailoverTransfer
 
@@ -166,7 +164,7 @@ class FailoverTransfer( object ):
     if self.request.isEmpty():
       return S_OK()
 
-    isValid = gRequestValidator.validate( self.request )
+    isValid = RequestValidator().validate( self.request )
     if not isValid["OK"]:
       return S_ERROR( "Failover request is not valid: %s" % isValid["Message"] )
     else:

@@ -25,8 +25,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForU
 # FIXME: This should disappear!
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 
-gRequestValidator = RequestValidator()
-
 def _requestName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
@@ -155,7 +153,7 @@ class RequestTasks( TaskBase ):
         oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
-      isValid = gRequestValidator.validate( oRequest )
+      isValid = RequestValidator().validate( oRequest )
       if not isValid['OK']:
         return isValid
 
