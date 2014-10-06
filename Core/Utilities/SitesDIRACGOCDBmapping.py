@@ -6,7 +6,8 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 #############################################################################
 
@@ -36,13 +37,11 @@ def getDIRACSiteName( gocSiteName ):
   diracSites = []
   result = gConfig.getSections( "/Resources/Sites" )
   if not result['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
     return result
   gridList = result['Value']
   for grid in gridList:
     result = gConfig.getSections( "/Resources/Sites/%s" % grid )
     if not result['OK']:
-      gLogger.warn( 'Problem retrieving sections in /Resources/Sites/%s' % grid )
       return result
     sitesList = result['Value']    
     tmpList = [(site, gConfig.getValue( "/Resources/Sites/%s/%s/Name" % ( grid, site ) ) ) for site in sitesList]
@@ -52,5 +51,29 @@ def getDIRACSiteName( gocSiteName ):
     return S_OK( diracSites )
 
   return S_ERROR( "There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName )
+
+def getDIRACSesForSRM( srmService ):
+    
+  result = gConfig.getSections( "/Resources/StorageElements" )
+  if not result['OK']:
+    return result
+  diracSEs = result['Value']
+
+  resultDIRACSEs = []
+  for se in diracSEs:
+    seSection = "/Resources/StorageElements/%s" % se
+    result = gConfig.getSections( seSection )
+    if not result['OK']:\
+      continue
+    accesses = result['Value']
+    for access in accesses:
+      protocol = gConfig.getValue( cfgPath( seSection, access, 'Protocol'), 'Unknown' )
+      if protocol == 'srm':
+        seHost = gConfig.getValue( cfgPath( seSection, access, 'Host'), 'Unknown' )
+        if seHost == srmService:
+          resultDIRACSEs.append( se )
+          
+  return S_OK( resultDIRACSEs )         
+  
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
