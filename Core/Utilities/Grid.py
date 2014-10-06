@@ -201,28 +201,6 @@ For example result['Value'][0]['GlueHostBenchmarkSI00']
 
   return S_OK( ces )
 
-def ldapService( ce, attr = None, host = None ):
-  """ Service from BDII 
-
-:param  ce: ce or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
-:return: standard DIRAC answer with Value equals to list of services.
-
-Each cluster is dictionary which contains attributes of ce.
-For example result['Value'][0]['GlueHostBenchmarkSI00']
-  """
-  filt = '(GlueServiceUniqueID=%s*)' % ce
-
-  result = ldapsearchBDII( filt, attr, host )
-
-  if not result['OK']:
-    return result
-
-  ss = []
-  for value in result['Value']:
-    ss.append( value['attr'] )
-
-  return S_OK( ss )
-
 def ldapCEState( ce, vo, attr = None, host = None ):
   """ CEState information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 
@@ -337,8 +315,6 @@ def ldapSEAccessProtocol( se, attr = None, host = None ):
 :param  se: se or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
 :return: standard DIRAC answer with Value equals to list of access protocols.
 
-Each ceState is dictionary which contains attributes of ce.
-For example result['Value'][0]['GlueCEStateStatus']
   """
   filt = '(&(objectClass=GlueSEAccessProtocol)(GlueChunkKey=GlueSEUniqueID=%s))' % se
   result = ldapsearchBDII( filt, attr, host )
@@ -351,6 +327,29 @@ For example result['Value'][0]['GlueCEStateStatus']
     protocols.append( value['attr'] )
 
   return S_OK( protocols )
+
+def ldapService( serviceID = '*', serviceType = '*', vo = '*', attr = None, host = None):
+  """ Service BDII info for a given VO
+
+:param  service: service type, e.g. SRM
+:return: standard DIRAC answer with Value equals to list of services
+  """
+  voFilters = '(GlueServiceAccessControlBaseRule=VOMS:/%s/*)' % vo
+  voFilters += '(GlueServiceAccessControlBaseRule=VOMS:/%s)' % vo
+  voFilters += '(GlueServiceAccessControlBaseRule=VO:%s)' % vo
+  filt = '(&(GlueServiceType=%s)(GlueServiceUniqueID=%s)(|%s))' % ( serviceType, serviceID, voFilters )
+  
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+
+  services = []
+  for value in result['Value']:
+    services.append( value['attr'] )
+
+  return S_OK( services )
+  
 
 def getBdiiCEInfo( vo, host = None ):
   """ Get information for all the CEs/queues for a given VO
