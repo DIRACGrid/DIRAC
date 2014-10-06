@@ -16,7 +16,7 @@ from DIRAC.Resources.Catalog.PoolXMLFile                            import getGU
 from DIRAC.RequestManagementSystem.Client.Request                   import Request
 from DIRAC.RequestManagementSystem.Client.Operation                 import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient                 import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator         import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator         import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient       import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
@@ -50,6 +50,7 @@ import types
 import urllib
 
 EXECUTION_RESULT = {}
+gRequestValidator = RequestValidator() 
 
 class JobWrapper:
 

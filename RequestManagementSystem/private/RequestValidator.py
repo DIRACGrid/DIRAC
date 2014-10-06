@@ -14,13 +14,14 @@
     A general and simple request validator checking for required attributes and logic.
     It checks if required attributes are set/unset but not for their values.
 
-    There is a global singleton validator for general use defined in this module: gRequestValidator.
+    RequestValidator class implements the DIRACSingleton pattern, no global object is
+    required to keep a single instance.
 
     If you need to extend this one with your own specific checks consider:
 
     * for adding Operation or Files required attributes use :addReqAttrsCheck: function::
 
-    gRequestValidator.addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
+    RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
 
     * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
       say for functor::
@@ -40,10 +41,10 @@
         return S_ERROR("Bar not set")
       return S_OK()
 
-    and add this one to the validators set by calling gRequestValidator.addValidator, i.e.::
+    and add this one to the validators set by calling RequestValidator().addValidator, i.e.::
 
-    gRequestValidator.addValidator( MyValidator.hasFoo )
-    gRequestValidator.addValidator( hasFoo )
+    RequestValidator().addValidator( MyValidator.hasFoo )
+    RequestValidator().addValidator( hasFoo )
 
     Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
@@ -239,7 +240,3 @@ class RequestValidator( object ):
       return S_ERROR( "The following operation type(s) have no handlers defined in the CS: %s" % nonExistingHandlers )
 
     return S_OK()
-
-
-# # global instance
-gRequestValidator = RequestValidator()

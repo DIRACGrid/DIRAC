@@ -51,11 +51,12 @@ from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
-from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 reqClient = ReqClient()
 fc = FileCatalog()
+gRequestValidator = RequestValidator()
 
 for lfnList in breakListIntoChunks( lfns, 100 ):
 

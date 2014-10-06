@@ -17,9 +17,10 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.TransformationSystem.Client.FileReport           import FileReport
 from DIRAC.RequestManagementSystem.Client.Request           import Request
-from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
 
+gRequestValidator = RequestValidator()
 
 class ModuleBase( object ):
   """ Base class for Modules - works only within DIRAC workflows
