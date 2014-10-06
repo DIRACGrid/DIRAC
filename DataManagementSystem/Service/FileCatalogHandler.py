@@ -78,19 +78,19 @@ class FileCatalogHandler( RequestHandler ):
   ########################################################################
   # Path operations (not updated)
   #  
-  types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
+  types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathOwner( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
     """
     return gFileCatalogDB.changePathOwner( lfns, self.getRemoteCredentials(), recursive )
 
-  types_changePathGroup = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
+  types_changePathGroup = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathGroup( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
     """
     return gFileCatalogDB.changePathGroup( lfns, self.getRemoteCredentials(), recursive )
 
-  types_changePathMode = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
+  types_changePathMode = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathMode( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
     """
@@ -292,7 +292,7 @@ class FileCatalogHandler( RequestHandler ):
     """ Determine whether supplied path is a directory """
     return gFileCatalogDB.isDirectory( lfns, self.getRemoteCredentials() )
 
-  types_getDirectorySize = [ [ ListType, DictType ] + list( StringTypes ), BooleanType, BooleanType ]
+  types_getDirectorySize = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getDirectorySize( self, lfns, longOut = False, fromFiles = False ):
     """ Get the size of the supplied directory """
     return gFileCatalogDB.getDirectorySize( lfns, longOut, fromFiles, self.getRemoteCredentials() )

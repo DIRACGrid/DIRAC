@@ -24,7 +24,7 @@ USE FileCatalogDB;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS FC_Statuses;
+
 CREATE TABLE FC_Statuses (
     StatusID INT AUTO_INCREMENT,
     Status VARCHAR(32),
@@ -38,7 +38,7 @@ INSERT INTO FC_Statuses (StatusID, Status) values (1, 'FakeStatus');
 
 -- -----------------------------------------------------------------------------
 
-drop table if exists FC_StorageElements;
+
 CREATE TABLE FC_StorageElements (
     SEID INTEGER AUTO_INCREMENT,
     SEName VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -53,7 +53,7 @@ INSERT INTO FC_StorageElements (SEID, SEName) values (1, 'FakeSE');
 
 -- ------------------------------------------------------------------------------
 
-drop table if exists FC_Groups;
+
 CREATE TABLE FC_Groups (
     GID INTEGER NOT NULL AUTO_INCREMENT,
     GroupName VARCHAR(127) NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE FC_Groups (
 INSERT INTO FC_Groups (GID, GroupName) values (1, 'root');
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_Users;
+
 CREATE TABLE FC_Users (
     UID INTEGER NOT NULL AUTO_INCREMENT,
     UserName VARCHAR(127) NOT NULL,
@@ -81,7 +81,7 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 
 
 
--- drop table if exists FC_DirectoryList;
+-- 
 -- create table FC_DirectoryList (
 --   DirID INT NOT NULL AUTO_INCREMENT,
 --   Name varchar(255)CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -94,7 +94,7 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 -- 
 -- 
 -- 
--- drop table if exists FC_DirectoryInfo;
+-- 
 -- CREATE TABLE FC_DirectoryInfo (
 --     DirID INTEGER NOT NULL,
 --     UID INTEGER NOT NULL DEFAULT 0,
@@ -112,7 +112,7 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 -- ) ENGINE = INNODB;
 
 
-drop table if exists FC_DirectoryList;
+
 create table FC_DirectoryList (
   DirID INT NOT NULL AUTO_INCREMENT,
   UID INTEGER NOT NULL DEFAULT 0,
@@ -133,7 +133,7 @@ create table FC_DirectoryList (
 
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_DirectoryClosure;
+
 CREATE TABLE FC_DirectoryClosure (
  ClosureID INT NOT NULL AUTO_INCREMENT,
  ParentID INT NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE FC_DirectoryClosure (
 -- -------------------------------------------------------------------------------
 
 
--- drop table if exists FC_Files;
+-- 
 -- CREATE TABLE FC_Files(
 --     FileID INT AUTO_INCREMENT,
 --     DirID INT NOT NULL,
@@ -181,12 +181,12 @@ CREATE TABLE FC_DirectoryClosure (
 -- ) ENGINE = INNODB;
 -- 
 -- -- ------------------------------------------------------------------------------
--- drop table if exists FC_FileInfo;
+-- 
 -- CREATE TABLE FC_FileInfo (
 --     FileID INTEGER NOT NULL,
 --     GUID char(36) NOT NULL,
 --     Checksum VARCHAR(32),
---     CheckSumType ENUM('Adler32','MD5'),
+--     ChecksumType ENUM('Adler32','MD5'),
 --     Type ENUM('File','Link') NOT NULL DEFAULT 'File',
 --     CreationDate DATETIME,
 --     ModificationDate DATETIME,
@@ -203,7 +203,7 @@ CREATE TABLE FC_DirectoryClosure (
 
 
 
-drop table if exists FC_Files;
+
 CREATE TABLE FC_Files(
     FileID INT AUTO_INCREMENT,
     DirID INT NOT NULL,
@@ -238,7 +238,7 @@ CREATE TABLE FC_Files(
 
 -- -- -----------------------------------------------------------------------------
 -- -- do we want the delete on cascade on the SE?
--- drop table if exists FC_Replicas;
+-- 
 -- CREATE TABLE FC_Replicas (
 --     RepID INT AUTO_INCREMENT,
 --     FileID INT NOT NULL,
@@ -257,7 +257,7 @@ CREATE TABLE FC_Files(
 -- ) ENGINE = INNODB;
 -- 
 -- -- ------------------------------------------------------------------------------
--- drop table if exists FC_ReplicaInfo;
+-- 
 -- CREATE TABLE FC_ReplicaInfo (
 --     RepID INTEGER NOT NULL,
 --     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
@@ -272,7 +272,7 @@ CREATE TABLE FC_Files(
 
 -- -----------------------------------------------------------------------------
 -- do we want the delete on cascade on the SE?
-drop table if exists FC_Replicas;
+
 CREATE TABLE FC_Replicas (
     RepID INT AUTO_INCREMENT,
     FileID INT NOT NULL,
@@ -296,7 +296,7 @@ CREATE TABLE FC_Replicas (
 
 -- ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS FC_DirectoryUsage;
+
 CREATE TABLE FC_DirectoryUsage(
    DirID INTEGER NOT NULL,
    SEID INTEGER NOT NULL,
@@ -314,7 +314,7 @@ CREATE TABLE FC_DirectoryUsage(
 
 -- ------------------------------------------------------------------------------
 
-drop table if exists FC_DirMeta;
+
 CREATE TABLE FC_DirMeta (
     DirID INTEGER NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
@@ -323,7 +323,7 @@ CREATE TABLE FC_DirMeta (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileMeta;
+
 CREATE TABLE FC_FileMeta (
     FileID INTEGER NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
@@ -333,7 +333,7 @@ CREATE TABLE FC_FileMeta (
 
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaFields;
+
 CREATE TABLE FC_MetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -341,7 +341,7 @@ CREATE TABLE FC_MetaFields (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileMetaFields;
+
 CREATE TABLE FC_FileMetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -349,7 +349,7 @@ CREATE TABLE FC_FileMetaFields (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaSetNames;
+
 CREATE TABLE FC_MetaSetNames (
   MetaSetID INT AUTO_INCREMENT PRIMARY KEY,
   MetaSetName VARCHAR(64)  NOT NULL,
@@ -357,7 +357,7 @@ CREATE TABLE FC_MetaSetNames (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileAncestors;
+
 CREATE TABLE FC_FileAncestors (
   FileID INT NOT NULL DEFAULT 0,
   AncestorID INT NOT NULL DEFAULT 0,
@@ -371,7 +371,7 @@ CREATE TABLE FC_FileAncestors (
 
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaDatasets;
+
 CREATE TABLE FC_MetaDatasets (
   DatasetID INT AUTO_INCREMENT,
   DatasetName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -392,7 +392,7 @@ CREATE TABLE FC_MetaDatasets (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaDatasetFiles;
+
 CREATE TABLE FC_MetaDatasetFiles (
  MetaDatasetFileID INT AUTO_INCREMENT,
  DatasetID INT NOT NULL,
@@ -406,7 +406,7 @@ CREATE TABLE FC_MetaDatasetFiles (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_DatasetAnnotations;
+
 CREATE TABLE FC_DatasetAnnotations (
  DatasetID INT NOT NULL,
  Annotation VARCHAR(512),
@@ -425,7 +425,7 @@ CREATE TABLE FC_DatasetAnnotations (
 -- dir_id : directory id
 -- dir_lvl : directory depth
 
-DROP PROCEDURE IF EXISTS ps_find_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_find_dir
 (IN dirName varchar(255), OUT dir_id INT, OUT dir_lvl INT)
@@ -441,7 +441,7 @@ DELIMITER ;
 -- ps_find_dirs : returns the directory ids from multiple directory names
 -- dirNames : list of directory name, coma separated
 
-DROP PROCEDURE IF EXISTS ps_find_dirs;
+
 DELIMITER //
 CREATE PROCEDURE ps_find_dirs
 (IN dirNames TEXT)
@@ -461,7 +461,7 @@ DELIMITER ;
 --                delete the DirectoryInfo and DirectoryUsage entries
 -- dir_id : directory id
 
-DROP PROCEDURE IF EXISTS ps_remove_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_remove_dir
 (IN dir_id INT)
@@ -485,7 +485,7 @@ DELIMITER ;
 -- returns (errno, message)
 
 
--- DROP PROCEDURE IF EXISTS ps_insert_dir;
+-- 
 -- DELIMITER //
 -- CREATE PROCEDURE ps_insert_dir
 -- (IN parent_id INT, IN child_name varchar(255), IN UID INT,
@@ -532,7 +532,7 @@ DELIMITER ;
 -- DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_insert_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_insert_dir
 (IN parent_id INT, IN child_name varchar(255), IN UID INT,
@@ -581,7 +581,7 @@ DELIMITER ;
 -- ps_get_dirName_from_id : returns the directory name from its id
 -- dir_id : directory id
 -- dirName (out param): the name of the directory
-DROP PROCEDURE IF EXISTS ps_get_dirName_from_id;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_dirName_from_id
 (IN dir_id INT, OUT dirName varchar(255) )
@@ -593,7 +593,7 @@ DELIMITER ;
 -- ps_get_dirNames_from_ids : returns the directory names from their ids
 -- dirIds : comma separated list of ids
 -- returns (directory id, directory name)
-DROP PROCEDURE IF EXISTS ps_get_dirNames_from_ids;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_dirNames_from_ids
 (IN dirIds TEXT)
@@ -611,7 +611,7 @@ DELIMITER ;
 -- ps_get_parentIds_from_id : returns all the parent directory id, including self, ordered by depth
 -- dir_id : directory id
 -- returns : (directory id)
-DROP PROCEDURE IF EXISTS ps_get_parentIds_from_id;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_parentIds_from_id
 (IN dir_id INT )
@@ -624,7 +624,7 @@ DELIMITER ;
 -- ps_get_direct_children : returns the direct children of a directory
 -- dir_id : directory id
 -- returns : (directory id)
-DROP PROCEDURE IF EXISTS ps_get_direct_children;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_direct_children
 (IN dir_id INT )
@@ -638,7 +638,7 @@ DELIMITER ;
 -- dir_id : directory id
 -- includeParent: if true, include oneself
 -- returns (directory id, absolute level)
-DROP PROCEDURE IF EXISTS ps_get_sub_directories;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_sub_directories
 (IN dir_id INT, IN includeParent BOOLEAN )
@@ -667,7 +667,7 @@ DELIMITER ;
 -- ps_get_multiple_sub_directories : returns a disordered list of children directory ID, including self
 -- dirIds: comma separated list of directory ids
 -- returns (directory ID)
-DROP PROCEDURE IF EXISTS ps_get_multiple_sub_directories;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_multiple_sub_directories
 (IN dirIds TEXT)
@@ -686,7 +686,7 @@ DELIMITER ;
 -- includeParent : if true, counts oneself
 -- countDir (out value): amount of subdir
 
-DROP PROCEDURE IF EXISTS ps_count_sub_directories;
+
 DELIMITER //
 CREATE PROCEDURE ps_count_sub_directories
 (IN dir_id INT, IN includeParent BOOLEAN, OUT countDir INT )
@@ -702,7 +702,7 @@ BEGIN
 END //
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS ps_count_files_in_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_count_files_in_dir
 (IN dir_id INT, OUT countFile INT )
@@ -757,7 +757,7 @@ DELIMITER ;
 
 
 /*
-drop PROCEDURE if exists update_directory_usage;
+
 DELIMITER //
 CREATE PROCEDURE update_directory_usage 
 (IN file_id INT, IN se_id INT, IN size_diff INT, IN file_diff INT)
@@ -802,7 +802,7 @@ DELIMITER ;
 */
 
 
--- drop PROCEDURE if exists update_directory_usage;
+-- 
 -- DELIMITER //
 -- CREATE PROCEDURE update_directory_usage 
 -- (IN top_dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
@@ -860,7 +860,7 @@ DELIMITER ;
 
 
 
-drop PROCEDURE if exists update_directory_usage;
+
 DELIMITER //
 CREATE PROCEDURE update_directory_usage 
 (IN dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
@@ -919,7 +919,6 @@ DELIMITER ;
 -- DELIMITER ;
 
 
-drop trigger if exists trg_after_update_replica_move_size;
 DELIMITER //
 CREATE TRIGGER trg_after_update_replica_move_size AFTER UPDATE ON FC_Replicas
 FOR EACH ROW
@@ -993,7 +992,7 @@ DELIMITER ;
 
 -- example call ps_get_replicas_for_files_in_dir(6, False, "'APrioriGood'","'Trash'");
 
-DROP PROCEDURE IF EXISTS ps_get_replicas_for_files_in_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_replicas_for_files_in_dir
 (IN dir_id INT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255), IN visibleReplicaStatus VARCHAR(255) )
@@ -1021,7 +1020,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_get_file_id_from_lfn;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_file_id_from_lfn
 (IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id INT )
@@ -1039,7 +1038,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_get_file_ids_from_dir_id;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_dir_id
 (IN dir_id INT, IN file_names TEXT)
@@ -1059,7 +1058,7 @@ DELIMITER ;
 --  call ps_get_all_info_for_files_in_dir(6, True, "'testfile'", False, "'APrioriGood'");
 --  call ps_get_all_info_for_files_in_dir(6, False, "useless", True, 'useless');
 
-DROP PROCEDURE IF EXISTS ps_get_all_info_for_files_in_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_for_files_in_dir
 (IN dir_id INT, IN specificFiles BOOLEAN, IN file_names TEXT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255))
@@ -1103,7 +1102,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_get_all_info_for_file_ids;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_for_file_ids
 (IN file_ids TEXT)
@@ -1129,7 +1128,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_insert_file;
+
 DELIMITER //
 CREATE PROCEDURE ps_insert_file
 (IN dir_id INT, IN size BIGINT, IN UID INT, IN GID INT,
@@ -1157,7 +1156,7 @@ BEGIN
 --   START TRANSACTION;
 --   INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName) VALUES (dir_id, size, UID, GID, status_id, filename);
 --   SELECT LAST_INSERT_ID() INTO file_id;
---   INSERT INTO FC_FileInfo (FileID, GUID, Checksum, CheckSumType, CreationDate, ModificationDate, Mode)
+--   INSERT INTO FC_FileInfo (FileID, GUID, Checksum, ChecksumType, CreationDate, ModificationDate, Mode)
 --          VALUES (file_id, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
 --   COMMIT;
 
@@ -1179,7 +1178,7 @@ DELIMITER ;
 
 -- fileValues formated like "(a,y,z), (u,v,w)"
 -- fileDesc formated like " (DirID = x and FileName = y) OR (DirID = u and FileName = v)"
-DROP PROCEDURE IF EXISTS ps_insert_multiple_file;
+
 DELIMITER //
 CREATE PROCEDURE ps_insert_multiple_file
 (IN fileValues LONGTEXT, IN fileDesc LONGTEXT )
@@ -1215,7 +1214,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_get_file_ids_from_guids;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_guids
 (IN  guids TEXT)
@@ -1232,7 +1231,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_delete_replicas_from_file_ids;
+
 DELIMITER //
 CREATE PROCEDURE ps_delete_replicas_from_file_ids
 (IN  file_ids TEXT)
@@ -1264,7 +1263,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_delete_files;
+
 DELIMITER //
 CREATE PROCEDURE ps_delete_files
 (IN  file_ids TEXT)
@@ -1292,7 +1291,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_insert_replica;
+
 DELIMITER //
 CREATE PROCEDURE ps_insert_replica
 (IN file_id INT, IN se_id INT, IN status_id INT,
@@ -1342,7 +1341,7 @@ DELIMITER ;
 
 -- replicaValues formated like "(a,y,z), (u,v,w)"
 -- replicaDesc formated like " (FileID = x and SEID = y) OR (FileID = u and SEID = v)"
-DROP PROCEDURE IF EXISTS ps_insert_multiple_replica;
+
 DELIMITER //
 CREATE PROCEDURE ps_insert_multiple_replica
 (IN replicaValues LONGTEXT, IN replicaDesc LONGTEXT )
@@ -1380,7 +1379,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_get_replica_id;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_replica_id
 (IN  file_id INT, IN se_id INT, OUT rep_id INT) 
@@ -1399,7 +1398,7 @@ DELIMITER ;
 
 
 
--- DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
+-- 
 -- DELIMITER //
 -- CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
 -- (IN  file_id INT, IN se_id INT) 
@@ -1411,7 +1410,7 @@ DELIMITER ;
 -- 
 -- END //
 -- DELIMITER ;
-DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
+
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
 (IN  file_id INT, IN se_id INT) 
@@ -1431,7 +1430,7 @@ BEGIN
 END //
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS ps_set_replica_status;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_status
 (IN  file_id INT, IN se_id INT, IN status_id INT) 
@@ -1445,7 +1444,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_set_replica_host;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_host
 (IN  file_id INT, IN old_se_id INT, IN new_se_id INT)
@@ -1460,7 +1459,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_set_file_uid;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
 (IN  file_id INT, IN in_uid INT) 
@@ -1481,7 +1480,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_set_file_gid;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
 (IN  file_id INT, IN in_gid INT) 
@@ -1501,7 +1500,7 @@ BEGIN
 END //
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS ps_set_file_status;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_file_status
 (IN  file_id INT, IN status_id INT) 
@@ -1521,7 +1520,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_set_file_mode;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_file_mode
 (IN  file_id INT, IN in_mode SMALLINT UNSIGNED)
@@ -1540,7 +1539,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_get_all_info_of_replicas;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_of_replicas
 (IN file_id INT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
@@ -1590,7 +1589,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_get_all_directory_info;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_all_directory_info
 (IN dir_name VARCHAR(255))
@@ -1612,7 +1611,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_get_all_directory_info_from_id;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_all_directory_info_from_id
 (IN dir_id INT)
@@ -1634,7 +1633,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_set_dir_gid;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_gid
 (IN  dir_name VARCHAR(255), IN gid INT)
@@ -1650,7 +1649,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_set_dir_uid;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_uid
 (IN  dir_name VARCHAR(255), IN uid INT)
@@ -1666,7 +1665,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_set_dir_status;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_status
 (IN  dir_name VARCHAR(255), IN status_id INT)
@@ -1680,7 +1679,7 @@ BEGIN
 END //
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS ps_set_dir_mode;
+
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_mode
 (IN  dir_name VARCHAR(255), IN mode SMALLINT UNSIGNED)
@@ -1695,7 +1694,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_get_files_in_dir;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_files_in_dir
 (IN dir_id INT)
@@ -1707,7 +1706,7 @@ END //
 DELIMITER ;
 
 
--- DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
+-- 
 -- DELIMITER //
 -- CREATE PROCEDURE ps_get_dir_logical_size
 -- (IN dir_id INT)
@@ -1722,7 +1721,7 @@ DELIMITER ;
 -- END //
 -- DELIMITER ;
 
-DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
+
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_logical_size
 (IN dir_id INT)
@@ -1739,7 +1738,7 @@ END //
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_calculate_dir_logical_size;
+
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_logical_size
 (IN dir_id INT)
@@ -1761,7 +1760,7 @@ DELIMITER ;
 
 
 
--- DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
+-- 
 -- DELIMITER //
 -- CREATE PROCEDURE ps_get_dir_physical_size
 -- (IN dir_id INT)
@@ -1779,19 +1778,60 @@ DELIMITER ;
 -- DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
+-- 
+-- DELIMITER //
+-- CREATE PROCEDURE ps_get_dir_physical_size
+-- (IN dir_id INT)
+-- BEGIN
+-- 
+--   SELECT SQL_NO_CACHE SEName, SESize, SEFiles
+--   FROM FC_DirectoryUsage u
+--   JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
+--   JOIN FC_StorageElements se ON se.SEID = u.SEID
+--   WHERE c.ParentID = dir_id
+--   AND SEName != 'FakeSE'
+--   AND (SESize != 0 OR SEFiles != 0);
+-- 
+-- 
+-- END //
+-- DELIMITER ;
+-- 
+-- 
+-- 
+-- 
+-- DELIMITER //
+-- CREATE PROCEDURE ps_calculate_dir_physical_size
+-- (IN dir_id INT)
+-- BEGIN
+-- 
+--   SELECT SQL_NO_CACHE se.SEName, sum(f.Size), count(*)
+--   FROM FC_Replicas r
+--   JOIN FC_Files f ON f.FileID = r.FileID
+--   JOIN FC_StorageElements se ON se.SEID = r.SEID
+--   JOIN FC_DirectoryClosure dc ON dc.ChildID = f.DirID
+--   WHERE dc.ParentID = dir_id
+--   GROUP BY se.SEID
+--   ORDER BY NULL; 
+-- 
+-- END //
+-- DELIMITER ;
+
+
+
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE SEName, SESize, SEFiles
+  SELECT SQL_NO_CACHE SEName, SUM(SESize), SUM(SEFiles)
   FROM FC_DirectoryUsage u
   JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
   JOIN FC_StorageElements se ON se.SEID = u.SEID
   WHERE c.ParentID = dir_id
   AND SEName != 'FakeSE'
-  AND (SESize != 0 OR SEFiles != 0);
+  AND (SESize != 0 OR SEFiles != 0)
+  GROUP BY u.SEID
+  ORDER BY NULL;
 
 
 END //
@@ -1799,7 +1839,7 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS ps_calculate_dir_physical_size;
+
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_physical_size
 (IN dir_id INT)
@@ -1818,8 +1858,7 @@ END //
 DELIMITER ;
 
 
-
--- DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
+-- 
 -- DELIMITER //
 -- 
 -- CREATE PROCEDURE ps_rebuild_directory_usage()
@@ -1881,7 +1920,7 @@ DELIMITER ;
 -- END //
 -- DELIMITER ;
 /*
-DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
+
 DELIMITER //
 
 CREATE PROCEDURE ps_rebuild_directory_usage()
@@ -1915,14 +1954,14 @@ BEGIN
 
   CLOSE cur;
   
-  DROP TABLE TMP_UsageSum;
+  
   
   COMMIT;
 END //
 DELIMITER ;*/
 
 
-DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
+
 DELIMITER //
 
 CREATE PROCEDURE ps_rebuild_directory_usage()
@@ -2005,5 +2044,58 @@ DELIMITER ;
 
 -- Files without Directory
 -- SELECT f.* FROM FC_Files f LEFT OUTER JOIN FC_DirectoryList d on f.DirID = d.DirID where d.DirID is NULL;
+
+
+
+-- drop indexes for migration from LFC
+-- ALTER TABLE FC_Files DROP FOREIGN KEY FC_Files_ibfk_1,
+--                      DROP FOREIGN KEY FC_Files_ibfk_2,
+--                      DROP FOREIGN KEY FC_Files_ibfk_3,
+--                      DROP FOREIGN KEY FC_Files_ibfk_4,
+--                      DROP INDEX DirID,
+--                      DROP INDEX GUID,
+--                      DROP INDEX GID,
+--                      DROP INDEX UID,
+--                      DROP INDEX Status,
+--                      DROP INDEX FileName;
+-- 
+-- ALTER TABLE FC_DirectoryList DROP FOREIGN KEY FC_DirectoryList_ibfk_1,
+--                              DROP FOREIGN KEY FC_DirectoryList_ibfk_2,
+--                              DROP FOREIGN KEY FC_DirectoryList_ibfk_3,
+--                              DROP INDEX Name,
+--                              DROP INDEX UID,
+--                              DROP INDEX GID,
+--                              DROP INDEX Status;
+-- 
+-- ALTER TABLE FC_Replicas DROP FOREIGN KEY FC_Replicas_ibfk_1,
+--                         DROP FOREIGN KEY FC_Replicas_ibfk_2,
+--                         DROP FOREIGN KEY FC_Replicas_ibfk_3,
+--                         DROP INDEX FileID,
+--                         DROP INDEX SEID,
+--                         DROP INDEX Status;
+
+                        
+-- recreate indexes  AFTER MIGRATION                
+
+-- alter table FC_Files ADD FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
+--             ADD FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
+--             ADD FOREIGN KEY (UID) REFERENCES FC_Users(UID),
+--             ADD FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
+--             ADD UNIQUE (DirID, FileName),
+--             ADD UNIQUE(GUID), 
+--             ADD INDEX (UID,GID),
+--             ADD INDEX (Status),
+--             ADD INDEX (FileName);
+-- 
+--             
+-- ALTER TABLE FC_DirectoryList ADD FOREIGN KEY (UID) REFERENCES FC_Users(UID),
+--                              ADD FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
+--                              ADD FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
+--                              ADD UNIQUE (Name);         
+--                              
+-- ALTER TABLE FC_Replicas ADD FOREIGN KEY (FileID) REFERENCES FC_Files(FileID),
+--                         ADD FOREIGN KEY (SEID) REFERENCES FC_StorageElements(SEID), 
+--                         ADD FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
+--                         ADD UNIQUE (FileID,SEID);
 
 SET FOREIGN_KEY_CHECKS = 1;

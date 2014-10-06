@@ -667,11 +667,9 @@ class FileManagerPs( FileManagerBase ):
 
     allChunks = list( self.__chunks( lfns.keys(), chunkSize ) )
 
-    
+
     for lfnChunk in allChunks:
       result = self.__insertMultipleReplicas( repValues, lfnChunk )
-      
-      print "insert multi %s " % result['OK']
 
       if result['OK']:
         allIds = result['Value']
@@ -962,7 +960,6 @@ class FileManagerPs( FileManagerBase ):
         se = rowDict["SE"]
         repForFile = replicas.setdefault( fileID, {} )
         repForFile[se] = dict( ( key, rowDict.get( key, "Unknown metadata field" ) ) for key in fields )
-
 
     return S_OK(replicas)
 

@@ -633,7 +633,7 @@ class DirectoryClosure( DirectoryTreeBase ):
         totalSize = 0
         totalFiles = 0
         for seName, seSize, seFiles in result['Value']:
-          seDict[seName] = {'Size':seSize, 'Files':seFiles}
+          seDict[seName] = {'Size':int( seSize ), 'Files':int( seFiles )}
           totalSize += seSize
           totalFiles += seFiles
         seDict['TotalSize'] = int( totalSize )
