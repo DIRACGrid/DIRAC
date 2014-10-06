@@ -812,7 +812,8 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME )
+        seStatus = sourceSE.getStatus()['Value']
+        submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
