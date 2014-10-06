@@ -22,7 +22,7 @@ set a timeout.
        ( returncode, stdout, stderr ) the tuple will also be available upon
        timeout error or buffer overflow error.
 
-     - pythonCall( iTimeOut, function, *stArgs, **stKeyArgs )
+     - pythonCall( iTimeOut, function, \*stArgs, \*\*stKeyArgs )
        calls function with given arguments within a timeout Wrapper
        should be used to wrap third party python functions
 

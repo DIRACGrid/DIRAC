@@ -2,7 +2,9 @@
 :mod: DataLoggingClient 
  
 .. module: DataLoggingClient
+
 :synopsis: client for DataLoggingDB
+
 """
 
 ## RSCID
