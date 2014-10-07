@@ -90,6 +90,8 @@ class FTSJob( Record ):
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
 
+    self._states = tuple( set( self.INITSTATES + self.TRANSSTATES + self.FAILEDSTATES + self.FINALSTATES ) )
+
     fromDict = fromDict if fromDict else {}
     for ftsFileDict in fromDict.get( "FTSFiles", [] ):
       self +=FTSFile( ftsFileDict )
@@ -225,7 +227,8 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Submitted|Ready|Staging|Hold|Canceled|Active|Failed|Finished|FinishedDirty|Assigned" )
+    value = self._normalizedStatus( value )
+    reStatus = re.compile( '"%s"' % '|'.join( self._states ) )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
     self.__data__["Status"] = value
@@ -465,6 +468,12 @@ class FTSJob( Record ):
       ftsFile.Status = "Submitted"
     return S_OK()
 
+  def _normalizedStatus( self, status ):
+    for st in self._states:
+      if status.lower() == st.lower():
+        return st
+    return status
+
   def monitorFTS2( self, command = "glite-transfer-status", full = False ):
     """ monitor fts job """
     if not self.FTSGUID:
@@ -493,9 +502,11 @@ class FTSJob( Record ):
     # # set FTS job status
     regExp = re.compile( "Status:\s+(\S+)" )
 
+    # with FTS3 this can be uppercase
     self.Status = re.search( regExp, outputStr ).group( 1 )
 
     statusSummary = {}
+    # This is capitalized, even in FTS3!
     for state in FTSFile.ALL_STATES:
       regExp = re.compile( "\s+%s:\s+(\d+)" % state )
       if regExp.search( outputStr ):
@@ -518,6 +529,7 @@ class FTSJob( Record ):
           break
       if not candidateFile:
         continue
+      # Can be uppercase for FTS3
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
       candidateFile._duration = duration

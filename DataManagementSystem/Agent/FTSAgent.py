@@ -640,6 +640,8 @@ class FTSAgent( AgentModule ):
         log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
 
     except Exception, exceptMessage:
+      # FIXME: until we understand why exception doesn't work
+      log.error( "Exception in processRequest", exceptMessage )
       log.exception( "Exception in processRequest", exceptMessage )
     finally:
       put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
