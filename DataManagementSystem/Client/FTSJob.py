@@ -519,8 +519,13 @@ class FTSJob( Record ):
     if not full:
       return S_OK( statusSummary )
 
-    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
-    fileInfo = re.findall( regExp, outputStr )
+    # The order of informations is not the same for glite- and fts- !!!
+    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)',
+                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)' ):
+      regExp = re.compile( exptr, re.S )
+      fileInfo = re.findall( regExp, outputStr )
+      if fileInfo:
+        break
     for sourceURL, _targetURL, fileStatus, _retries, reason, duration in fileInfo:
       candidateFile = None
       for ftsFile in self:

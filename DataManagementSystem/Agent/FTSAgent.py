@@ -74,6 +74,9 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
 
+class escapeTry( Exception ):
+  pass
+
 ########################################################################
 class FTSAgent( AgentModule ):
   """
@@ -567,7 +570,8 @@ class FTSAgent( AgentModule ):
         if request.Status == "Failed":
           request.Error = "ReplicateAndRegister %s failed" % operation.Order
           log.error( "request is set to 'Failed'" )
-          return self.putRequest( request )
+          # # putRequest is done by the finally: clause... Not good to do it twice
+          raise escapeTry
 
       # # PHASE THREE - update Waiting#TargetSE FTSFiles
       if toUpdate:
@@ -639,14 +643,15 @@ class FTSAgent( AgentModule ):
       if request.Status != "Scheduled":
         log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
 
+    except escapeTry:
+      # This clause is raised when one wants to return from within the try: clause
+      pass
     except Exception, exceptMessage:
-      # FIXME: until we understand why exception doesn't work
-      log.error( "Exception in processRequest", exceptMessage )
       log.exception( "Exception in processRequest", exceptMessage )
     finally:
-      put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
-      if not put["OK"]:
-        log.error( "unable to put back request:", put["Message"] )
+      putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
+      if not putRequest["OK"]:
+        log.error( "unable to put back request:", putRequest["Message"] )
      # #  put back jobs in all cases
       if ftsJobs:
         for ftsJob in list( ftsJobs ):
@@ -657,8 +662,9 @@ class FTSAgent( AgentModule ):
         putJobs = self.putFTSJobs( ftsJobs )
         if not putJobs["OK"]:
           log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
-          return putJobs
-      return put
+          putRequest = putJobs
+    # This is where one returns from after execution of the finally: block
+    return putRequest
 
   def __checkDuplicates( self, name, toSubmit ):
     """ Check in a list of FTSFiles whether there are duplicates
