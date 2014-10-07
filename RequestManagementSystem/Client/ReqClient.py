@@ -431,9 +431,16 @@ def prettyPrint( mainItem, key = '', offset = 0 ):
                  .replace( '(\n%s[' % blanks, '[' ).replace( ']\n%s)' % blanks, ']' )
 
 def printRequest( request, status = None, full = False, verbose = True, terse = False ):
-  from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
   global output
-  ftsClient = FTSClient()
+
+  ftsClient = None
+  try:
+    from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+    ftsClient = FTSClient()
+  except Exception, e:
+    gLogger.debug( "Could not instantiate FtsClient", e )
+
+
   if full:
     output = ''
     prettyPrint( request.toJSON()['Value'] )
@@ -453,13 +460,15 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
       op = indexOperation[1]
       if not terse or op.Status == 'Failed':
         printOperation( indexOperation, verbose, onlyFailed = terse )
-  # Check if FTS job exists
-  res = ftsClient.getFTSJobsForRequest( request.RequestID )
-  if res['OK']:
-    ftsJobs = res['Value']
-    if ftsJobs:
-      gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
-                                                               for job in ftsJobs] ) )
+
+  if ftsClient:
+    # Check if FTS job exists
+    res = ftsClient.getFTSJobsForRequest( request.RequestID )
+    if res['OK']:
+      ftsJobs = res['Value']
+      if ftsJobs:
+        gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                                 for job in ftsJobs] ) )
 
 def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   global output
