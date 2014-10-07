@@ -996,10 +996,8 @@ class MySQL:
   def __getConnection( self, conn = None, trial = 0 ):
     """
     Return a new connection to the DB,
-    if conn is provided then just return it.
-    then try the Queue, if it is empty add a newConnection to the Queue and retry
-    it will retry MAXCONNECTRETRY to open a new connection and will return
-    an error if it fails.
+    Arguments are kept for backward compatibility
+    TODO: Remove ALL references to those arguments
     """
     self.log.debug( '__getConnection:' )
 
