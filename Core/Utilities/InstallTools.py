@@ -1843,7 +1843,7 @@ def installNewPortal():
     DIRAC.exit(-1)
     return error
   else:
-    gLogger.notice("Tornado has installed suceccfully!")
+    gLogger.notice("Tornado is installed successfully!")
     
   # Check that the software for the Web Portal is installed
   error = ''
