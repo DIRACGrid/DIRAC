@@ -28,15 +28,6 @@ class CommandsTestCase( PilotTestCase ):
 
   def test_GetPilotVersion( self ):
 
-    self.pp.releaseVersion = 'someVer'
-    gpv = GetPilotVersion( self.pp )
-    self.assertIsNone( gpv.execute() )
-
-    self.pp.releaseVersion = ''
-    gpv = GetPilotVersion( self.pp )
-    # no project defined
-    self.assertRaises( IOError, gpv.execute )
-
     # Now defining a local file for test, and all the necessary parameters
     fp = open( 'Test-pilot.json', 'w' )
     json.dump( {'TestSetup':{'Version':['v1r1', 'v2r2']}}, fp )
