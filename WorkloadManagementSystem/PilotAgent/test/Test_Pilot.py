@@ -20,6 +20,7 @@ class PilotTestCase( unittest.TestCase ):
     try:
       os.remove('pilot.out')
       os.remove( 'Test-pilot.json' )
+      os.remove( 'Test-pilot.json-local' )
     except IOError:
       pass
 
