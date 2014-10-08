@@ -112,7 +112,12 @@ class SRM2Storage( StorageBase ):
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
       self.voName = getVOForGroup( ret['Value']['group'] )
-    self.verbose = 0
+    # enable lcg-utils debugging for debug levels VERB and DEBUG   
+    lcgdebuglevel = 0
+    dlevel = self.log.getLevel()
+    if dlevel == 'VERB' or dlevel == 'DEBUG':
+      lcgdebuglevel = 999
+    self.verbose = lcgdebuglevel
     self.conf_file = 'ignored'
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )

@@ -92,7 +92,7 @@ class LocalConfiguration:
                          self.__setSectionByCmd )
     self.registerCmdOpt( "c:", "cert=", "Use server certificate to connect to Core Services",
                          self.__setUseCertByCmd )
-    self.registerCmdOpt( "d", "debug", "Set debug mode (-dd is extra debug)",
+    self.registerCmdOpt( "d", "debug", "Set debug mode (-ddd is extra debug)",
                          self.__setDebugMode )
     devLoader = Devloader()
     if devLoader.enabled:
