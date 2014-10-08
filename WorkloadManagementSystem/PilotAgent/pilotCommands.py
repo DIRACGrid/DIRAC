@@ -62,7 +62,7 @@ class GetPilotVersion( CommandBase ):
       if not result:
         self.log.error( "Failed to get pilot version, exiting ...")
         sys.exit( 1 )
-      fp = open( self.pilotCFGFile, 'r' )
+      fp = open( self.pilotCFGFile + '-local', 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
       pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
@@ -650,6 +650,8 @@ class ConfigureCPURequirements( CommandBase ):
     """
     # Determining the CPU normalization factor and updating pilot.cfg with it
     configFileArg = ''
+    if self.pp.useServerCertificate:
+      configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
     if self.pp.localConfigFile:
       configFileArg = '-R %s' % self.pp.localConfigFile
     retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U %s' % configFileArg,
