@@ -323,7 +323,7 @@ class CommandBase( object ):
     except ImportError:
       self.log.error( "Error importing subprocess" )
 
-class PilotParams:
+class PilotParams( object ):
   """ Class that holds the structure with all the parameters to be used across all the commands
   """
 
