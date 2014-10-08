@@ -377,6 +377,9 @@ class PilotParams( object ):
     self.executeCmd = False
     self.configureScript = 'dirac-configure'
     self.architectureScript = 'dirac-platform'
+    self.certsLocation = ''
+    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
+    self.pilotCFGFile = ''
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
@@ -472,6 +475,9 @@ class PilotParams( object ):
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
+
+    self.certsLocation = '%s/etc/grid-security' % self.workingDir
+    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
 
     self.rootPath = os.getcwd()
     self.originalRootPath = os.getcwd()

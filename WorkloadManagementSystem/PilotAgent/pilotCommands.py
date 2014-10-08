@@ -39,15 +39,6 @@ class GetPilotVersion( CommandBase ):
       This assures that a version is always got even on non-standard Grid resources.
   """
 
-  def __init__( self, pilotParams ):
-    """ c'tor
-    """
-    super( GetPilotVersion, self ).__init__( pilotParams )
-
-    # These parameters can be set by the VO
-    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
-    self.pilotCFGFile = '%s-pilot.json' % self.pp.releaseProject
-    
   def execute(self):
     """ Standard method for pilot commands
     """
@@ -55,14 +46,14 @@ class GetPilotVersion( CommandBase ):
       self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
     else:
       self.log.info( "Pilot version not requested as pilot script option, going to find it" )
-      result = retrieveUrlTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, 
-                                   self.pilotCFGFile, 
+      result = retrieveUrlTimeout( self.pp.pilotCFGFileLocation + '/' + self.pp.pilotCFGFile,
+                                   self.pp.pilotCFGFile,
                                    self.log,
                                    timeout = 120 )
       if not result:
         self.log.error( "Failed to get pilot version, exiting ...")
         sys.exit( 1 )
-      fp = open( self.pilotCFGFile + '-local', 'r' )
+      fp = open( self.pp.pilotCFGFile + '-local', 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
       pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
@@ -317,8 +308,6 @@ class ConfigureBasics( CommandBase ):
     super( ConfigureBasics, self ).__init__( pilotParams )
     self.cfg = []
 
-    self.certsLocation = '%s/etc/grid-security' % self.pp.workingDir
-
 
   def execute( self ):
     """ What is called all the times.
@@ -363,8 +352,8 @@ class ConfigureBasics( CommandBase ):
     """
     if self.pp.useServerCertificate:
       self.cfg.append( '--UseServerCertificate' )
-      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.certsLocation )
-      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
 
 
 class ConfigureSite( CommandBase ):
