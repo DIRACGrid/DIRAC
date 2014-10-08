@@ -664,8 +664,14 @@ class ConfigureCPURequirements( CommandBase ):
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
-    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s' % self.pp.localConfigFile, 
+    configFileArg = ''
+    if self.pp.useServerCertificate:
+      configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
+    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s' % configFileArg,
                                                  self.pp.installEnv )
+    if retCode:
+      self.log.error( "Failed to determine cpu time left in the queue" )
+      sys.exit( 1 )
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
