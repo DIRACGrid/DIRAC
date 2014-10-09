@@ -586,19 +586,19 @@ class ConfigureArchitecture( CommandBase ):
       Separated from the ConfigureDIRAC command for easier extensibility.
   """
 
-  def __init__( self, pilotParams ):
-    """ c'tor
-    """
-    super( ConfigureArchitecture, self ).__init__( pilotParams )
-    self.archScriptCFG = []
-
   def execute( self ):
     """ This is a simple command to call the dirac-platform utility to get the platform, and add it to the configuration
 
         The architecture script, as well as its options can be replaced in a pilot extension
     """
 
-    architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( self.archScriptCFG ) )
+    cfg = []
+    if self.pp.useServerCertificate:
+      cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      cfg.append( self.pp.localConfigFile )  # this file is as input
+
+    architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( cfg ) )
 
     retCode, localArchitecture = self.executeAndGetOutput( architectureCmd, self.pp.installEnv )
     if not retCode:
