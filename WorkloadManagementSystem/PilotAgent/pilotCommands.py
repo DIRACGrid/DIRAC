@@ -642,7 +642,7 @@ class ConfigureCPURequirements( CommandBase ):
     if self.pp.useServerCertificate:
       configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
     if self.pp.localConfigFile:
-      configFileArg = '-R %s' % self.pp.localConfigFile
+      configFileArg = '%s -R %s %s' % ( configFileArg, self.pp.localConfigFile, self.pp.localConfigFile )
     retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U %s' % configFileArg,
                                                                       self.pp.installEnv )
     if retCode:
@@ -656,7 +656,8 @@ class ConfigureCPURequirements( CommandBase ):
     configFileArg = ''
     if self.pp.useServerCertificate:
       configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
-    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s' % configFileArg,
+    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s %s' % ( configFileArg,
+                                                                                          self.pp.localConfigFile ),
                                                  self.pp.installEnv )
     if retCode:
       self.log.error( "Failed to determine cpu time left in the queue" )
