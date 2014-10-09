@@ -476,11 +476,10 @@ class PilotParams( object ):
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
 
-    self.certsLocation = '%s/etc/grid-security' % self.workingDir
-    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
-
     self.rootPath = os.getcwd()
     self.originalRootPath = os.getcwd()
     self.pilotRootPath = os.getcwd()
     self.workingDir = os.getcwd()
 
+    self.certsLocation = '%s/etc/grid-security' % self.workingDir
+    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
