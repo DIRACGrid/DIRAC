@@ -707,15 +707,15 @@ class LaunchAgent( CommandBase ):
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 
     if self.pp.userGroup:
-      self.log.info( 'Setting DIRAC Group to "%s"' % self.pp.userGroup )
+      self.log.debug( 'Setting DIRAC Group to "%s"' % self.pp.userGroup )
       self.inProcessOpts .append( '-o OwnerGroup="%s"' % self.pp.userGroup )
 
     if self.pp.userDN:
-      self.log.info( 'Setting Owner DN to "%s"' % self.pp.userDN )
+      self.log.debug( 'Setting Owner DN to "%s"' % self.pp.userDN )
       self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
 
     if self.pp.useServerCertificate:
-      self.log.info( 'Setting UseServerCertificate flag' )
+      self.log.debug( 'Setting UseServerCertificate flag' )
       self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
 
     # The instancePath is where the agent works
