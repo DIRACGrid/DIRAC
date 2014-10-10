@@ -446,7 +446,7 @@ class FTSJob( Record ):
                      "-f",
                      fileName,
                      "-o",
-                     "--compare-checksums" ]
+                     "-K" ]
     if self.TargetToken:
       submitCommand += [ "-t", self.TargetToken]
     if self.SourceToken:
@@ -459,8 +459,8 @@ class FTSJob( Record ):
     if not submit["OK"]:
       return submit
     returnCode, output, errStr = submit["Value"]
-    if not returnCode == 0:
-      return S_ERROR( errStr )
+    if returnCode != 0:
+      return S_ERROR( errStr if errStr else output )
     self.FTSGUID = output.replace( "\n", "" )
     self.Status = "Submitted"
     for ftsFile in self:
