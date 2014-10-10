@@ -1,19 +1,9 @@
 
-<<<<<<< HEAD
 --CREATE DATABASE StorageManagementDB;
 
 --use mysql;
 --GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StorageManagementDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
 --FLUSH PRIVILEGES;
-=======
--- When installing via dirac tools, the following is not needed (still here for reference)
--- 
--- DROP DATABASE IF EXISTS StorageManagementDB;
--- CREATE DATABASE StorageManagementDB;
--- use mysql;
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StorageManagementDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
--- FLUSH PRIVILEGES;
->>>>>>> rel-v6r12
 
 use StorageManagementDB;
 

@@ -2,11 +2,12 @@
 :mod: ReplicaManager
 
 .. module: ReplicaManager
+
 :synopsis: ReplicaManager links the functionalities of StorageElement and FileCatalog.
 
 This module consists ReplicaManager and related classes.
 
-DO NOT USE THIS ANYMORE!!!! USE THE DATAMANAGER CLASS
+OBSOLETED !!! DO NOT USE THIS ANYMORE!!!! USE THE DataManager CLASS
 
 """
 

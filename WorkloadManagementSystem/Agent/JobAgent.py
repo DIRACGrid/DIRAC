@@ -185,7 +185,9 @@ class JobAgent( AgentModule ):
 
     matcherInfo = jobRequest['Value']
     jobID = matcherInfo['JobID']
-    self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
+    if not self.pilotInfoReportedFlag:
+      # Check the flag after the first access to the Matcher
+      self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if not matcherInfo.has_key( param ):
@@ -245,9 +247,6 @@ class JobAgent( AgentModule ):
           jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
 
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
-      # self.__setJobSite( jobID, self.siteName )
-      if not self.pilotInfoReportedFlag:
-        self.__reportPilotInfo( jobID )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
         return self.__rescheduleFailedJob( jobID, result[ 'Message' ], params, self.stopOnApplicationFailure )

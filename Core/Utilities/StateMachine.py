@@ -8,7 +8,10 @@
 :mod: State 
  
 .. module: State
+
+
 :synopsis: state machine
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 state machine

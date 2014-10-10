@@ -1,7 +1,6 @@
 # $HeadURL:  $
 ''' 
 :mod: RssConfiguration
-======================
   
 Module that collects utility functions.
 

@@ -8,7 +8,9 @@
 :mod: FTSClient
 
 .. module: FTSClient
+
 :synopsis: FTS client
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 FTS client

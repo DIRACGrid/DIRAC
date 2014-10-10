@@ -198,8 +198,8 @@ class LocalConfiguration:
     This is the magic method that reads the command line and processes it
     It is used by the Script Base class and the dirac-service and dirac-agent scripts
     Before being called:
-      - any additional switches to be processed
-      - mandatory and default configuration configuration options must be defined.
+    - any additional switches to be processed
+    - mandatory and default configuration configuration options must be defined.
 
     """
     if self.initialized:

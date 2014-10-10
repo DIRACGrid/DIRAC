@@ -311,7 +311,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     transFiles = res['Value']
 
     if not transFiles:
-      self._logInfo( "No 'Unused' files found for transformation.",
+      self._logInfo( "No '%s' files found for transformation." % ','.join( statusList ),
                       method = "_getTransformationFiles", transID = transID )
       if transDict['Status'] == 'Flush':
         res = clients['TransformationClient'].setTransformationParameter( transID, 'Status', 'Active' )
@@ -337,11 +337,20 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
       skip = now < nextStamp
       if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
-        self._logInfo( "No new 'Unused' files found for transformation.",
+        self._logInfo( "No new '%s' files found for transformation." % ','.join( statusList ),
                         method = "_getTransformationFiles", transID = transID )
         return S_OK()
 
     self.unusedTimeStamp[transID] = now
+    # If files are not Unused, set them Unused
+    notUnused = [trFile['LFN'] for trFile in transFiles if trFile['Status'] != 'Unused']
+    if notUnused:
+      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'Unused', notUnused, force = True )
+      if not res['OK']:
+        self._logError( "Error setting %d files Unused" % len( notUnused ), res['Message'],
+                        method = "_getTransformationFiles", transID = transID )
+      else:
+        self._logVerbose( "Set %d files Unused" % len( notUnused ) )
     return S_OK( transFiles )
 
   def __applyReduction( self, lfns ):
@@ -351,7 +360,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       firstFile = 0
     else:
       firstFile = int( random.uniform( 0, len( lfns ) - self.maxFiles ) )
-    lfns = lfns[firstFile:firstFile + self.maxFiles - 1]
+    lfns = lfns[firstFile:firstFile + self.maxFiles]
 
     return lfns
 
@@ -360,6 +369,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """
     method = '__getDataReplicas'
     transID = transDict['TransformationID']
+    removeFile = 'RemoveFile' in transDict['Body']
     clearCacheFile = os.path.join( self.workDirectory, 'ClearCache_%s' % str( transID ) )
     try:
       clearCache = os.path.exists( clearCacheFile )
@@ -415,7 +425,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       newReplicas = {}
       noReplicas = []
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
-        res = self._getDataReplicasRM( transID, chunk, clients, active = active )
+        res = self._getDataReplicasRM( transID, chunk, clients, active = active, ignoreMissing = removeFile )
         if res['OK']:
           for lfn, ses in res['Value'].items():
             if ses:
@@ -429,6 +439,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       if noReplicas:
         self._logWarn( "Found %d files without replicas" % len( noReplicas ),
                          method = method, transID = transID )
+        if removeFile:
+          newReplicas.update( dict.fromkeys( noReplicas, ['None'] ) )
       self.__updateCache( transID, newReplicas )
       dataReplicas.update( newReplicas )
       self._logInfo( "Obtained %d replicas from catalog in %.1f seconds" \
@@ -436,7 +448,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                       method = method, transID = transID )
     return S_OK( dataReplicas )
 
-  def _getDataReplicasRM( self, transID, lfns, clients, active = True ):
+  def _getDataReplicasRM( self, transID, lfns, clients, active = True, ignoreMissing = False ):
     """ Get the replicas for the LFNs and check their statuses, using the replica manager
     """
     method = '_getDataReplicasRM'
@@ -486,10 +498,13 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         missingLfns.append( lfn )
     if missingLfns:
       self._logInfo( "%d files not found in the catalog" % len( missingLfns ) )
-      res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingInFC', missingLfns )
-      if not res['OK']:
-        self._logError( "Failed to update status of missing files: %s." % res['Message'],
-                        method = method, transID = transID )
+      if ignoreMissing:
+        dataReplicas.update( dict.fromkeys( missingLfns, [] ) )
+      else:
+        res = clients['TransformationClient'].setFileStatusForTransformation( transID, 'MissingInFC', missingLfns )
+        if not res['OK']:
+          self._logError( "Failed to update status of missing files: %s." % res['Message'],
+                          method = method, transID = transID )
     return S_OK( dataReplicas )
 
 

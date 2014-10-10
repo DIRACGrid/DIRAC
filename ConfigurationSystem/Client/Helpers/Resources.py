@@ -929,6 +929,29 @@ def getDIRACSiteName( gocSiteName ):
 
   return S_ERROR( "There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName )
 
+def getDIRACSesForSRM( srmService ):
+    
+  result = gConfig.getSections( "/Resources/StorageElements" )
+  if not result['OK']:
+    return result
+  diracSEs = result['Value']
+
+  resultDIRACSEs = []
+  for se in diracSEs:
+    seSection = "/Resources/StorageElements/%s" % se
+    result = gConfig.getSections( seSection )
+    if not result['OK']:\
+      continue
+    accesses = result['Value']
+    for access in accesses:
+      protocol = gConfig.getValue( cfgPath( seSection, access, 'Protocol'), 'Unknown' )
+      if protocol == 'srm':
+        seHost = gConfig.getValue( cfgPath( seSection, access, 'Host'), 'Unknown' )
+        if seHost == srmService:
+          resultDIRACSEs.append( se )
+          
+  return S_OK( resultDIRACSEs )         
+
 def getFTSServersForSites( self, siteList=None ):
   """ get FTSServers for sites 
   

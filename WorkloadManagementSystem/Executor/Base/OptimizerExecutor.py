@@ -128,7 +128,7 @@ class OptimizerExecutor( ExecutorModule ):
       # Did it go as expected? If not Failed!
       if not optResult[ 'OK' ]:
         self.jobLog.info( "Set to Failed/%s" % optResult[ 'Message' ] )
-        minorStatus = self.ex_getOption( "FailedStatus" )
+        minorStatus = minorStatus = "%s optimizer" % self.ex_optimizerName()
         return jobState.setStatus( "Failed", minorStatus = minorStatus,
                                    appStatus = optResult[ 'Message' ],
                                    source = self.ex_optimizerName() )

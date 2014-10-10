@@ -276,16 +276,16 @@ class PilotAgentsDB( DB ):
     if type( pilotIDs ) != type( [] ):
       return S_ERROR( 'Input argument is not a List' )
 
-    failed = False
-    for table in ['PilotAgents', 'PilotOutput', 'PilotRequirements', 'JobToPilotMapping']:
+    failed = []
+    for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
       result = self._update( req, conn = conn )
       if not result['OK']:
-        failed = table
+        failed.append( table )
 
     if failed:
-      return S_ERROR( 'Failed to remove pilot from %s table' % failed )
+      return S_ERROR( 'Failed to remove pilot from %s tables' % ', '.join( failed ) )
     else:
       return S_OK()
 

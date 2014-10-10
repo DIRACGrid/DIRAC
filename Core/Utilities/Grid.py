@@ -4,7 +4,9 @@ The Grid module contains several utilities for grid operations
 """
 __RCSID__ = "$Id$"
 
-import os, types
+import os
+import types
+import re
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
@@ -200,28 +202,6 @@ For example result['Value'][0]['GlueHostBenchmarkSI00']
 
   return S_OK( ces )
 
-def ldapService( ce, attr = None, host = None ):
-  """ Service from BDII 
-
-:param  ce: ce or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
-:return: standard DIRAC answer with Value equals to list of services.
-
-Each cluster is dictionary which contains attributes of ce.
-For example result['Value'][0]['GlueHostBenchmarkSI00']
-  """
-  filt = '(GlueServiceUniqueID=%s*)' % ce
-
-  result = ldapsearchBDII( filt, attr, host )
-
-  if not result['OK']:
-    return result
-
-  ss = []
-  for value in result['Value']:
-    ss.append( value['attr'] )
-
-  return S_OK( ss )
-
 def ldapCEState( ce, vo, attr = None, host = None ):
   """ CEState information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 
@@ -330,6 +310,48 @@ For example result['Value'][0]['GlueSESizeFree']
   seList = seDict.values()
   return S_OK( seList )
 
+def ldapSEAccessProtocol( se, attr = None, host = None ):
+  """ SE access protocol information from bdii
+
+:param  se: se or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
+:return: standard DIRAC answer with Value equals to list of access protocols.
+
+  """
+  filt = '(&(objectClass=GlueSEAccessProtocol)(GlueChunkKey=GlueSEUniqueID=%s))' % se
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+
+  protocols = []
+  for value in result['Value']:
+    protocols.append( value['attr'] )
+
+  return S_OK( protocols )
+
+def ldapService( serviceID = '*', serviceType = '*', vo = '*', attr = None, host = None):
+  """ Service BDII info for a given VO
+
+:param  service: service type, e.g. SRM
+:return: standard DIRAC answer with Value equals to list of services
+  """
+  voFilters = '(GlueServiceAccessControlBaseRule=VOMS:/%s/*)' % vo
+  voFilters += '(GlueServiceAccessControlBaseRule=VOMS:/%s)' % vo
+  voFilters += '(GlueServiceAccessControlBaseRule=VO:%s)' % vo
+  filt = '(&(GlueServiceType=%s)(GlueServiceUniqueID=%s)(|%s))' % ( serviceType, serviceID, voFilters )
+  
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+
+  services = []
+  for value in result['Value']:
+    services.append( value['attr'] )
+
+  return S_OK( services )
+  
+
 def getBdiiCEInfo( vo, host = None ):
   """ Get information for all the CEs/queues for a given VO
   
@@ -352,7 +374,8 @@ def getBdiiCEInfo( vo, host = None ):
     if not ceID in ceDict:
       result = ldapCluster( ceID, host = host )
       if not result['OK']:
-        print "ldapCluster: failed to get info for CE", ceID
+        continue
+      if not result['Value']:
         continue
   
       ce = result['Value'][0]
@@ -366,34 +389,29 @@ def getBdiiCEInfo( vo, host = None ):
       ceDict[ceID]['Site'] = siteID
   
       result = ldapCE( ceID, host = host )
-      if not result['OK']:
-        print "ldapCE: failed to get info for CE", ceID
-        continue
-  
-      ce = result['Value'][0]
+      ce = {}
+      if result['OK'] and result['Value']:
+        ce = result['Value'][0]  
       ceDict[ceID].update( ce )
   
       if not siteID in siteDict:
         site = {}
         result = ldapSite( siteID, host = host )
-        if not result['OK']:
-          print "ldapSite: failed to get info for site", siteID
-        elif not result['Value']:
-          print "ldapSite: site %s not found" % siteID
-        else:
+        if result['OK'] and result['Value']:
           site = result['Value'][0]
         siteDict[siteID] = site
   
   for ceID in ceDict:
     siteID = ceDict[ceID]['Site']
-    siteDict[siteID].setdefault('CEs',{})
-    siteDict[siteID]['CEs'][ceID] = ceDict[ceID]
+    if siteID in siteDict:
+      siteDict[siteID].setdefault('CEs',{})
+      siteDict[siteID]['CEs'][ceID] = ceDict[ceID]
   
   for queueID in queueDict:
     ceID = queueDict[queueID]['CE']
     siteID = ceDict[ceID]['Site']
     siteDict[siteID]['CEs'][ceID].setdefault('Queues',{})
-    queueName = queueDict[queueID]['GlueCEUniqueID'].replace('%s:8443/' % ceID,'')
+    queueName = re.split( ':\d+/', queueDict[queueID]['GlueCEUniqueID'] )[1]
     siteDict[siteID]['CEs'][ceID]['Queues'][queueName] = queueDict[queueID]
     
   return S_OK( siteDict )  
@@ -411,11 +429,26 @@ def getBdiiSEInfo( vo, host = None ):
   ses = result['Value']
 
   siteDict = {}
-  seDict = {}
   for se in ses:
     siteName = se['GlueSiteUniqueID']
     siteDict.setdefault( siteName, { "SEs": {} } )
     seID = se['GlueSEUniqueID']
     siteDict[siteName]["SEs"][seID] = se
+    result = ldapSEAccessProtocol( seID, host = host )
+    siteDict[siteName]["SEs"][seID]['AccessProtocols'] = {}
+    if result['OK']:
+      for entry in result['Value']:
+        apType = entry['GlueSEAccessProtocolType']
+        if apType in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
+          count = 0
+          for p in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
+            if p.startswith( apType+'.' ):
+              count += 1
+          apType = '%s.%d' % ( apType, count + 1 )       
+          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry    
+        else:  
+          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry
+    else:
+      continue    
 
   return S_OK( siteDict )

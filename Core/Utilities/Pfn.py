@@ -4,7 +4,9 @@
 :mod: Pfn 
  
 .. module: Pfn
+
 :synopsis: pfn URI (un)parsing
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 '''

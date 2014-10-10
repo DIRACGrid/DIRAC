@@ -39,15 +39,6 @@ class GetPilotVersion( CommandBase ):
       This assures that a version is always got even on non-standard Grid resources.
   """
 
-  def __init__( self, pilotParams ):
-    """ c'tor
-    """
-    super( GetPilotVersion, self ).__init__( pilotParams )
-
-    # These parameters can be set by the VO
-    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
-    self.pilotCFGFile = '%s-pilot.json' % self.pp.releaseProject
-    
   def execute(self):
     """ Standard method for pilot commands
     """
@@ -55,14 +46,14 @@ class GetPilotVersion( CommandBase ):
       self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
     else:
       self.log.info( "Pilot version not requested as pilot script option, going to find it" )
-      result = retrieveUrlTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile, 
-                                   self.pilotCFGFile, 
+      result = retrieveUrlTimeout( self.pp.pilotCFGFileLocation + '/' + self.pp.pilotCFGFile,
+                                   self.pp.pilotCFGFile,
                                    self.log,
                                    timeout = 120 )
       if not result:
         self.log.error( "Failed to get pilot version, exiting ...")
         sys.exit( 1 )
-      fp = open( self.pilotCFGFile, 'r' )
+      fp = open( self.pp.pilotCFGFile + '-local', 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
       pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
@@ -317,8 +308,6 @@ class ConfigureBasics( CommandBase ):
     super( ConfigureBasics, self ).__init__( pilotParams )
     self.cfg = []
 
-    self.certsLocation = '%s/etc/grid-security' % self.pp.workingDir
-
 
   def execute( self ):
     """ What is called all the times.
@@ -363,8 +352,8 @@ class ConfigureBasics( CommandBase ):
     """
     if self.pp.useServerCertificate:
       self.cfg.append( '--UseServerCertificate' )
-      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.certsLocation )
-      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
 
 
 class ConfigureSite( CommandBase ):
@@ -597,19 +586,19 @@ class ConfigureArchitecture( CommandBase ):
       Separated from the ConfigureDIRAC command for easier extensibility.
   """
 
-  def __init__( self, pilotParams ):
-    """ c'tor
-    """
-    super( ConfigureArchitecture, self ).__init__( pilotParams )
-    self.archScriptCFG = []
-
   def execute( self ):
     """ This is a simple command to call the dirac-platform utility to get the platform, and add it to the configuration
 
         The architecture script, as well as its options can be replaced in a pilot extension
     """
 
-    architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( self.archScriptCFG ) )
+    cfg = []
+    if self.pp.useServerCertificate:
+      cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      cfg.append( self.pp.localConfigFile )  # this file is as input
+
+    architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( cfg ) )
 
     retCode, localArchitecture = self.executeAndGetOutput( architectureCmd, self.pp.installEnv )
     if not retCode:
@@ -650,8 +639,10 @@ class ConfigureCPURequirements( CommandBase ):
     """
     # Determining the CPU normalization factor and updating pilot.cfg with it
     configFileArg = ''
+    if self.pp.useServerCertificate:
+      configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
     if self.pp.localConfigFile:
-      configFileArg = '-R %s' % self.pp.localConfigFile
+      configFileArg = '%s -R %s %s' % ( configFileArg, self.pp.localConfigFile, self.pp.localConfigFile )
     retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U %s' % configFileArg,
                                                                       self.pp.installEnv )
     if retCode:
@@ -662,8 +653,15 @@ class ConfigureCPURequirements( CommandBase ):
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
-    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s' % self.pp.localConfigFile, 
+    configFileArg = ''
+    if self.pp.useServerCertificate:
+      configFileArg = '-o /DIRAC/Security/UseServerCertificate=yes'
+    retCode, cpuTime = self.executeAndGetOutput( 'dirac-wms-get-queue-cpu-time %s %s' % ( configFileArg,
+                                                                                          self.pp.localConfigFile ),
                                                  self.pp.installEnv )
+    if retCode:
+      self.log.error( "Failed to determine cpu time left in the queue" )
+      sys.exit( 1 )
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
@@ -709,15 +707,15 @@ class LaunchAgent( CommandBase ):
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 
     if self.pp.userGroup:
-      self.log.info( 'Setting DIRAC Group to "%s"' % self.pp.userGroup )
+      self.log.debug( 'Setting DIRAC Group to "%s"' % self.pp.userGroup )
       self.inProcessOpts .append( '-o OwnerGroup="%s"' % self.pp.userGroup )
 
     if self.pp.userDN:
-      self.log.info( 'Setting Owner DN to "%s"' % self.pp.userDN )
+      self.log.debug( 'Setting Owner DN to "%s"' % self.pp.userDN )
       self.inProcessOpts.append( '-o OwnerDN="%s"' % self.pp.userDN )
 
     if self.pp.useServerCertificate:
-      self.log.info( 'Setting UseServerCertificate flag' )
+      self.log.debug( 'Setting UseServerCertificate flag' )
       self.inProcessOpts.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
 
     # The instancePath is where the agent works

@@ -430,20 +430,19 @@ class MatcherHandler( RequestHandler ):
                                                                                                resourceDict[ 'ReleaseProject' ] ) )
 
     # Update pilot information
-    pilotInfoReported = False
+    pilotInfoReported = resourceDict.get( 'PilotInfoReportedFlag', False )
     pilotReference = resourceDict.get( 'PilotReference', '' )
-    if pilotReference:
-      if "PilotInfoReportedFlag" in resourceDict and not resourceDict['PilotInfoReportedFlag']:
-        gridCE = resourceDict.get( 'GridCE', 'Unknown' )
-        site = resourceDict.get( 'Site', 'Unknown' )
-        benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-        gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
-        result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
-                                                gridSite = site,
-                                                destination = gridCE,
-                                                benchmark = benchmark )
-        if result['OK']:
-          pilotInfoReported = True                                        
+    if pilotReference and not pilotInfoReported:
+      gridCE = resourceDict.get( 'GridCE', 'Unknown' )
+      site = resourceDict.get( 'Site', 'Unknown' )
+      benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
+      gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
+      result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
+                                              gridSite = site,
+                                              destination = gridCE,
+                                              benchmark = benchmark )
+      if result['OK']:
+        pilotInfoReported = True                                        
     
     #Check the site mask
     if not 'Site' in resourceDict:
@@ -502,9 +501,9 @@ class MatcherHandler( RequestHandler ):
     result = gJobDB.setJobAttributes( jobID, attNames, attValues )
     # result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
     result = gJobLoggingDB.addLoggingRecord( jobID,
-                                           status = 'Matched',
-                                           minor = 'Assigned',
-                                           source = 'Matcher' )
+                                             status = 'Matched',
+                                             minor = 'Assigned',
+                                             source = 'Matcher' )
 
     result = gJobDB.getJobJDL( jobID )
     if not result['OK']:

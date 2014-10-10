@@ -1,7 +1,6 @@
 # $HeadURL:  $
 ''' 
 :mod: Utils
-===========
 
 Module that collects utility functions.
 
@@ -34,8 +33,8 @@ def voimport( base_mod ):
 def getCSTree( csPath = '' ):
   '''
     Gives the configuration rooted at path in a Python dict. The
-    result is a Python dictionnary that reflects the structure of the
-    config file.
+    result is a Python dictionary that reflects the structure of the
+    configuration file.
   '''
 
   opHelper = Operations()
