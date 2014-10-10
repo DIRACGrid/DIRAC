@@ -33,6 +33,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if host:
       self.__setHost( host )
     self.cwd = ''  
+    self.previous_cwd = ''
+    self.homeDir = ''
 
   def __setHost( self, host ):
     hostList = host.split( ':' )
@@ -67,7 +69,6 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     args = List.fromChar( args, " " )
 
-    found = False
     for cmd in cmds:
       if cmd == args[0]:
         if len( args ) != 1 + cmds[ cmd ][0]:
@@ -730,11 +731,39 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           cd <dirpath>
     """
     argss = args.split()
+    
+    if len( argss ) == 0:
+      # Return to $HOME
+      if self.homeDir:
+        self.previous_cwd = self.cwd
+        self.cwd = self.homeDir
+      else:  
+        client = SystemAdministratorClient( self.host, self.port )
+        command = 'echo $HOME'
+        result = client.executeCommand( command )
+        if not result['OK']:
+          self.__errMsg( result['Message'] )
+          return
+        status, output, _error = result['Value']
+        if not status and output:
+          self.homeDir = output.strip()
+          self.previous_cwd = self.cwd
+          self.cwd = self.homeDir
+      self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
+      return
+        
     newPath = argss[0]
-    if newPath.startswith( '/' ):
+    if newPath == '-':
+      if self.previous_cwd:
+        cwd = self.cwd
+        self.cwd = self.previous_cwd
+        self.previous_cwd = cwd
+    elif newPath.startswith( '/' ):
+      self.previous_cwd = self.cwd
       self.cwd = newPath
     else:
       newPath = self.cwd + '/' + newPath
+      self.previous_cwd = self.cwd
       self.cwd = os.path.normpath( newPath )  
     self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
 
