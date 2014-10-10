@@ -128,21 +128,62 @@ class RequestDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
+
+  def cancelRequest( self, request_name ):
+    """ Set the status of a request to Cancel
+        :param request_name : name of the request
+
+        :returns the request ID
+    """
+    query = "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request_name
+    ret = self._transaction( query )
+    if not ret["OK"]:
+      self.log.error( "putRequest: %s" % ret["Message"] )
+      return ret
+
+    reqValues = ret["Value"].get( query )
+
+    if not reqValues:
+      return S_ERROR( "No such request %s" % request_name )
+
+    ReqID = reqValues[0].get( "RequestID" )
+
+    query = "UPDATE Request set Status = 'Canceled', LastUpdate = UTC_TIMESTAMP() where RequestID = %s" % ReqID
+    res = self._transaction( query )
+    if not res["OK"]:
+      self.log.error( "cancelRequest: unable to cancel request %s" % request_name, res["Message"] )
+      return S_ERROR( "cancelRequest: unable to cancel request %s" % request_name )
+
+    return S_OK( ReqID )
+
   def putRequest( self, request ):
     """ update or insert request into db
 
     :param Request request: Request instance
     """
-    query = "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request.RequestName
-    exists = self._transaction( query )
-    if not exists["OK"]:
-      self.log.error( "putRequest: %s" % exists["Message"] )
-      return exists
-    exists = exists["Value"]
+    query = "SELECT `RequestID`, `Status` from `Request` WHERE `RequestName` = '%s'" % request.RequestName
+    ret = self._transaction( query )
+    if not ret["OK"]:
+      self.log.error( "putRequest: %s" % ret["Message"] )
+      return ret
 
-    if exists[query] and exists[query][0]["RequestID"] != request.RequestID:
+    reqValues = ret["Value"].get( query )
+
+    if reqValues:
+      existingReqID = reqValues[0].get( "RequestID" )
+      status = reqValues[0].get( "Status" )
+    else:
+      existingReqID = None
+      status = None
+
+    if existingReqID and existingReqID != request.RequestID:
       return S_ERROR( "putRequest: request '%s' already exists in the db (RequestID=%s)"\
-                       % ( request.RequestName, exists[query][0]["RequestID"] ) )
+                       % ( request.RequestName, existingReqID ) )
+
+    if status == 'Canceled':
+      self.log.info( "Request %s was canceled, don't put it back" % request.RequestName )
+      return S_OK( request.RequestID )
+
     reqSQL = request.toSQL()
     if not reqSQL["OK"]:
       return reqSQL

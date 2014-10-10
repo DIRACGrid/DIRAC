@@ -68,6 +68,15 @@ class ReqManagerHandler( RequestHandler ):
       requestID = result["Value"]
     return S_OK( requestID )
 
+
+
+  types_cancelRequest = [ StringTypes ]
+  @classmethod
+  def export_cancelRequest( cls , requestName ):
+    """ Cancel a request """
+    return cls.__requestDB.cancelRequest( requestName )
+
+
   types_putRequest = [ DictType ]
   @classmethod
   def export_putRequest( cls, requestJSON ):
