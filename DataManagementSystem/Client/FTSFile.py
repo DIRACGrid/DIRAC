@@ -38,7 +38,7 @@ class FTSFile( Record ):
   class representing a single file in the FTS job
   """
   # # all FTS states
-  ALL_STATES = ( "Submitted", "Ready", "Active", "Failed", "Finished", "Staging", "Canceled" )
+  ALL_STATES = ( "Submitted", "Ready", "Active", "Failed", "Finished", "Staging", "Canceled", 'Started' )
   # # final FTS states
   FINAL_STATES = ( "Canceled" "Failed", "Finished" )
   # # successful states
@@ -61,6 +61,7 @@ class FTSFile( Record ):
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["LastUpdate"] = now
+    self._states = self.ALL_STATES
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -302,10 +303,17 @@ class FTSFile( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Waiting.*|Submitted|Ready|Staging|Canceled|Active|Failed|Finished" )
+    value = self._normalizedStatus( value )
+    reStatus = re.compile( "Waiting.*|" + '|'.join( self._states ) )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSFile Status: %s" % str( value ) )
     self.__data__["Status"] = value
+
+  def _normalizedStatus( self, status ):
+    for st in self._states:
+      if status.lower() == st.lower():
+        return st
+    return status
 
   def toJSON( self ):
     """ dump FTSFile to JSON format """
