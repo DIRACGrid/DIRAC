@@ -1,3 +1,21 @@
+[v6r11p15]
+
+*DMS
+FIX: ReplicateAndRegister - do not create FTSClient if no FTSMode requested
+CHANGE: FTSAgent(Job,File) - allow to define the FTS2 submission command;
+        added --copy-pin-lifetime only for a tape backend
+        parse output of both commands (FTS2, FTS3)
+        consider additional state for FTS retry (Canceled)
+        
+*RMS
+FIX: Operation, Request - treat updates specially for Error fields        
+
+*TMS
+FIX: TransformationAgent - fixes in preparing json serialization of requests
+
+*WMS
+NEW: StateMonitoringAgent - sends WMS history data through MQ messages 
+
 [v6r11p14]
 
 *WMS
