@@ -16,7 +16,6 @@ from DIRAC.Core.Base.AgentModule                        import AgentModule
 from DIRAC.Core.Utilities.Grid                          import getBdiiCEInfo, getBdiiSEInfo
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
-from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.Utilities         import getGridCEs, getSiteUpdates, getSRMUpdates, \
@@ -32,8 +31,6 @@ class Bdii2CSAgent( AgentModule ):
 
   def initialize( self ):
 
-    # TODO: Have no default and if no mail is found then use the diracAdmin group
-    # and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # Create a list of alternative bdii urls
@@ -78,6 +75,8 @@ class Bdii2CSAgent( AgentModule ):
     return self.csAPI.initialize()
 
   def execute( self ):
+    """ General agent execution method
+    """
    
     # Get a "fresh" copy of the CS data
     result = self.csAPI.downloadCSData()
@@ -93,6 +92,8 @@ class Bdii2CSAgent( AgentModule ):
     return S_OK()
 
   def __lookForNewCEs( self ):
+    """ Look up BDII for CEs not yet present in the DIRAC CS
+    """
 
     bannedCEs = self.am_getOption( 'BannedCEs', [] )
     result = getCEsFromCS()
@@ -196,6 +197,8 @@ class Bdii2CSAgent( AgentModule ):
     return result
 
   def __updateCEs( self ):
+    """ Update the Site/CE/queue settings in the CS if they were changed in the BDII
+    """
 
     bdiiChangeSet = set()
 
@@ -256,6 +259,8 @@ class Bdii2CSAgent( AgentModule ):
       return S_OK()
 
   def __lookForNewSEs( self ):
+    """ Look up BDII for SEs not yet present in the DIRAC CS
+    """
     
     bannedSEs = self.am_getOption( 'BannedSEs', [] )
     result = getSEsFromCS()
@@ -299,6 +304,8 @@ class Bdii2CSAgent( AgentModule ):
     return S_OK()   
   
   def __updateSEs( self ):
+    """ Update the Storage Element settings in the CS if they were changed in the BDII
+    """
     
     bdiiChangeSet = set()
 
