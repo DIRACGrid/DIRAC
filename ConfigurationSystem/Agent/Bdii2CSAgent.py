@@ -52,11 +52,6 @@ class Bdii2CSAgent( AgentModule ):
     self.processCEs = self.am_getOption( 'ProcessCEs', True )
     self.processSEs = self.am_getOption( 'ProcessSEs', False )
 
-    # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/TestManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'TestManager' )
-
     self.voName = self.am_getOption( 'VirtualOrganization', [] )
     if not self.voName:
       self.voName = self.am_getOption( 'VO', [] )
@@ -83,14 +78,7 @@ class Bdii2CSAgent( AgentModule ):
     return self.csAPI.initialize()
 
   def execute( self ):
-
-    self.log.info( "Start Execution" )
-    result = getProxyInfo()
-    if not result['OK']:
-      return result
-    infoDict = result[ 'Value' ]
-    self.log.info( formatProxyInfoAsString( infoDict ) )
-
+   
     # Get a "fresh" copy of the CS data
     result = self.csAPI.downloadCSData()
     if not result['OK']:
@@ -246,7 +234,10 @@ class Bdii2CSAgent( AgentModule ):
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
-      self.log.info( body )
+        
+      if body:  
+        self.log.info( 'The following configuration changes were detected:' )  
+        self.log.info( body )
 
       for section, option, value, new_value in changeSet:
         if value == 'Unknown' or not value:
