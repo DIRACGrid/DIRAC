@@ -1,7 +1,6 @@
 # $HeadURL:  $
 """ 
 :mod: RSSCache
-==============
 
 Extension of DictCache to be used within RSS
 
@@ -117,7 +116,7 @@ class RSSCache( object ):
   def get( self, resourceKey ):
     '''
     Gets the resource(s) status(es). Every resource can have multiple statuses, 
-    so in order to speed up things, we store them on the cache as follows:
+    so in order to speed up things, we store them on the cache as follows::
       
       { (<resourceName>,<resourceStatusType0>) : whatever0,
         (<resourceName>,<resourceStatusType1>) : whatever1,

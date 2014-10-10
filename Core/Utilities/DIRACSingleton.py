@@ -9,7 +9,9 @@
 :mod: DIRACSingleton 
  
 .. module: DIRACSingleton
+
 :synopsis: metaclass singleton implementation
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 metaclass singleton implementation

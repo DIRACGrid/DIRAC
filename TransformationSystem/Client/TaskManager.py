@@ -15,7 +15,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request               import Request
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
 from DIRAC.RequestManagementSystem.Client.File                  import File
-from DIRAC.RequestManagementSystem.private.RequestValidator     import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator     import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
@@ -153,7 +153,7 @@ class RequestTasks( TaskBase ):
         oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
-      isValid = gRequestValidator.validate( oRequest )
+      isValid = RequestValidator().validate( oRequest )
       if not isValid['OK']:
         return isValid
 

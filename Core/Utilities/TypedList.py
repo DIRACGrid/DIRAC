@@ -9,7 +9,10 @@
 :mod: TypedList 
  
 .. module: TypedList
+
+
 :synopsis: typed list
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 typed list
@@ -24,7 +27,6 @@ __RCSID__ = "$Id $"
 # @brief Definition of TypedList class.
 
 from collections import deque
-from copy import deepcopy
 
 class Unsortable( list ):
   def sort( self, *args, **kwargs ):
