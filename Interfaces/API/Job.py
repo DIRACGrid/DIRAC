@@ -80,7 +80,6 @@ class Job( API ):
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
-    self.systemConfig = 'ANY'
     ##Add member to handle Parametric jobs
     self.parametric = {}
     self.script = script
