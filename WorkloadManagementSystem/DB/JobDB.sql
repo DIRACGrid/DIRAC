@@ -48,7 +48,7 @@ CREATE TABLE `Jobs` (
   `Status` VARCHAR(32) NOT NULL DEFAULT 'Received',
   `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
-  `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 'Unknown',
+  `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 0,
   `CPUTime` FLOAT NOT NULL DEFAULT 0.0,
   `UserPriority` INT(11) NOT NULL DEFAULT 0,
   `SystemPriority` INT(11) NOT NULL DEFAULT 0,
@@ -75,7 +75,7 @@ CREATE TABLE `Jobs` (
   KEY `MinorStatus` (`MinorStatus`),
   KEY `ApplicationStatus` (`ApplicationStatus`),
   KEY `StatusSite` (`Status`,`Site`),
-  KEY `LastUpdateTime` (`LastUpdateTime`),
+  KEY `LastUpdateTime` (`LastUpdateTime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------
