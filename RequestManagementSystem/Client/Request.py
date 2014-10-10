@@ -160,7 +160,7 @@ class Request( Record ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
         rStatus = "Done"
-        self.Error = ''
+        self.__data__['Error'] = ''
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -423,7 +423,7 @@ class Request( Record ):
     if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
     if value == 'Done':
-      self.Error = ''
+      self.__data__['Error'] = ''
     self.__data__["Status"] = value
 
   @property
@@ -449,7 +449,7 @@ class Request( Record ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column not in  ( "RequestID", "LastUpdate" ) ]
+                if ( column == 'Error' or value ) and column not in  ( "RequestID", "LastUpdate" ) ]
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.RequestID:
@@ -477,16 +477,10 @@ class Request( Record ):
   # # digest
   def toJSON( self ):
     """ serialize to JSON format """
-    digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
     digest["RequestID"] = self.RequestID
-    digest["Operations"] = []
     digest["__dirty"] = self.__dirty
-    for op in self:
-      opJSON = op.toJSON()
-      if not opJSON["OK"]:
-        return opJSON
-      digest["Operations"].append( opJSON["Value"] )
+    digest["Operations"] = [op.toJSON()['Value'] for op in self]
     return S_OK( digest )
 
   def getDigest( self ):

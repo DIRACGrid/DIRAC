@@ -133,7 +133,7 @@ class Operation( Record ):
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
-      self.Error = ''
+      self.__data__['Error'] = ''
       newStatus = 'Done'
 
     self.__data__["Status"] = newStatus
@@ -337,7 +337,7 @@ class Operation( Record ):
       if self._parent:
         self._parent._notify()
     if self.__data__['Status'] == 'Done':
-      self.Error = ''
+      self.__data__['Error'] = ''
 
   @property
   def Order( self ):
@@ -399,7 +399,7 @@ class Operation( Record ):
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) in ( str, datetime.datetime ) else str( getattr( self, column ) ) )
                 for column in self.__data__
-                if getattr( self, column ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
+                if ( column == 'Error' or getattr( self, column ) ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     colVals.append( ( "`Order`", str( self.Order ) ) )
     # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
@@ -425,17 +425,11 @@ class Operation( Record ):
 
   def toJSON( self ):
     """ get json digest """
-    digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
     digest["RequestID"] = str( self.RequestID )
     digest["Order"] = str( self.Order )
     if self.__dirty:
       digest["__dirty"] = self.__dirty
-    digest["Files"] = []
-    for opFile in self:
-      opJSON = opFile.toJSON()
-      if not opJSON["OK"]:
-        return opJSON
-      digest["Files"].append( opJSON["Value"] )
+    digest["Files"] = [opFile.toJSON()['Value'] for opFile in self]
 
     return S_OK( digest )

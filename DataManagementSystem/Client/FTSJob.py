@@ -90,6 +90,8 @@ class FTSJob( Record ):
 
     self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
 
+    self._states = tuple( set( self.INITSTATES + self.TRANSSTATES + self.FAILEDSTATES + self.FINALSTATES ) )
+
     fromDict = fromDict if fromDict else {}
     for ftsFileDict in fromDict.get( "FTSFiles", [] ):
       self +=FTSFile( ftsFileDict )
@@ -225,7 +227,8 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Submitted|Ready|Staging|Hold|Canceled|Active|Failed|Finished|FinishedDirty|Assigned" )
+    value = self._normalizedStatus( value )
+    reStatus = re.compile( '"%s"' % '|'.join( self._states ) )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
     self.__data__["Status"] = value
@@ -426,7 +429,7 @@ class FTSJob( Record ):
       surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, checksum ) )
     return "\n".join( surls )
 
-  def submitFTS2( self, pinTime = False ):
+  def submitFTS2( self, command = 'glite-transfer-submit', pinTime = False ):
     """ submit fts job using FTS2 client """
     if self.FTSGUID:
       return S_ERROR( "FTSJob already has been submitted" )
@@ -437,27 +440,27 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-    submitCommand = [ "glite-transfer-submit",
+    submitCommand = [ command,
                      "-s",
                      self.FTSServer,
                      "-f",
                      fileName,
                      "-o",
-                     "--compare-checksums" ]
+                     "-K" ]
     if self.TargetToken:
-      submitCommand.append( "-t %s" % self.TargetToken )
+      submitCommand += [ "-t", self.TargetToken]
     if self.SourceToken:
-      submitCommand.append( "-S %s" % self.SourceToken )
+      submitCommand += [ "-S", self.SourceToken ]
     if pinTime:
-      submitCommand.append( "--copy-pin-lifetime %d" % pinTime )
+      submitCommand += [ "--copy-pin-lifetime", "%d" % pinTime ]
 
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
     if not submit["OK"]:
       return submit
     returnCode, output, errStr = submit["Value"]
-    if not returnCode == 0:
-      return S_ERROR( errStr )
+    if returnCode != 0:
+      return S_ERROR( errStr if errStr else output )
     self.FTSGUID = output.replace( "\n", "" )
     self.Status = "Submitted"
     for ftsFile in self:
@@ -465,12 +468,18 @@ class FTSJob( Record ):
       ftsFile.Status = "Submitted"
     return S_OK()
 
-  def monitorFTS2( self, full = False ):
+  def _normalizedStatus( self, status ):
+    for st in self._states:
+      if status.lower() == st.lower():
+        return st
+    return status
+
+  def monitorFTS2( self, command = "glite-transfer-status", full = False ):
     """ monitor fts job """
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
 
-    monitorCommand = [ "glite-transfer-status",
+    monitorCommand = [ command,
                        "--verbose",
                        "-s",
                        self.FTSServer,
@@ -493,9 +502,11 @@ class FTSJob( Record ):
     # # set FTS job status
     regExp = re.compile( "Status:\s+(\S+)" )
 
+    # with FTS3 this can be uppercase
     self.Status = re.search( regExp, outputStr ).group( 1 )
 
     statusSummary = {}
+    # This is capitalized, even in FTS3!
     for state in FTSFile.ALL_STATES:
       regExp = re.compile( "\s+%s:\s+(\d+)" % state )
       if regExp.search( outputStr ):
@@ -508,8 +519,13 @@ class FTSJob( Record ):
     if not full:
       return S_OK( statusSummary )
 
-    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
-    fileInfo = re.findall( regExp, outputStr )
+    # The order of informations is not the same for glite- and fts- !!!
+    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)',
+                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)' ):
+      regExp = re.compile( exptr, re.S )
+      fileInfo = re.findall( regExp, outputStr )
+      if fileInfo:
+        break
     for sourceURL, _targetURL, fileStatus, _retries, reason, duration in fileInfo:
       candidateFile = None
       for ftsFile in self:
@@ -518,6 +534,7 @@ class FTSJob( Record ):
           break
       if not candidateFile:
         continue
+      # Can be uppercase for FTS3
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
       candidateFile._duration = duration

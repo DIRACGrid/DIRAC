@@ -210,15 +210,13 @@ class File( Record ):
   @property
   def Error( self ):
     """ error prop """
-    return self.__data__["Error"].strip()
+    return self.__data__["Error"]
 
   @Error.setter
   def Error( self, value ):
     """ error setter """
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
-    if value == '':
-      value = ' '
     self.__data__["Error"] = self._escapeStr( value , 255 )
 
   @property
@@ -234,7 +232,7 @@ class File( Record ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
-      self.Error = ''
+      self.__data__['Error'] = ''
     self.__data__["Status"] = value
     if self._parent:
       self._parent._notify()
@@ -250,7 +248,7 @@ class File( Record ):
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) == str else str( getattr( self, column ) ) )
                 for column in self.__data__
-                if getattr( self, column ) and column != "FileID" ]
+                if ( column == 'Error' or getattr( self, column ) ) and column != "FileID" ]
     query = []
     if self.FileID:
       query.append( "UPDATE `File` SET " )
@@ -266,7 +264,6 @@ class File( Record ):
 
   def toJSON( self ):
     """ get json """
-    digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if type( val ) != str else val for val in self.__data__.values() ] ) )
+    digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
     return S_OK( digest )
 
