@@ -21,6 +21,22 @@ from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.Pfn import pfnparse
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
+
+def getGridVOs():
+  """ Get all the VOMS VO names served by this DIRAC service
+  """
+  voNames = []
+  result = getVOs()
+  if not result['OK']:
+    return result
+  else:
+    vos = result['Value']
+    for vo in vos:
+      vomsVO = getVOOption( vo, "VOMSName" )
+      if vomsVO:
+        voNames.append( vomsVO )
+  return S_OK( voNames )
 
 def getCEsFromCS():
   """ Get all the CEs defined in the CS
@@ -70,15 +86,10 @@ def getSEsFromCS( protocol = 'srm' ):
       
   return S_OK( knownSEs )    
 
-def getUnusedGridCEs( vo, bdiiInfo = None, ceBlackList = None ):
+def getGridCEs( vo, bdiiInfo = None, ceBlackList = None ):
   """ Get all the CEs available for a given VO and having queues in Production state
   """
-  
-  result = getCEsFromCS()
-  if not result['OK']:
-    return result
-  knownCEs = result['Value']
-  knownCEs = set( knownCEs )
+  knownCEs = set()
   if ceBlackList is not None:
     knownCEs = knownCEs.union( set( ceBlackList ) )
   
@@ -276,12 +287,14 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
           if queueDict.get( 'VO', '' ):
             VOs = set( [ q.strip() for q in queueDict.get( 'VO', '' ).split( ',' ) if q ] )
           if not vo in VOs:   
-            newVOs = ','.join( VOs.add( vo ) )
+            VOs.add( vo )
+            VOs = list( VOs )    
+            newVOs = ','.join( VOs )
             addToChangeSet( ( queueSection, 'VO', '', newVOs ), changeSet ) 
     
   return S_OK( changeSet )  
 
-def getUnusedGridSEs( vo, bdiiInfo = None, seBlackList = None ):
+def getGridSEs( vo, bdiiInfo = None, seBlackList = None ):
   """ Get all the SEs available for a given VO 
   """
   seBdiiDict = bdiiInfo
@@ -291,10 +304,9 @@ def getUnusedGridSEs( vo, bdiiInfo = None, seBlackList = None ):
       return result
     seBdiiDict = result['Value']
 
-  result = getSEsFromCS()
-  if not result['OK']:
-    return result
-  knownSEs = result['Value']   
+  knownSEs = set()
+  if seBlackList is not None:
+    knownSEs = knownSEs.union( set( seBlackList ) )
     
   siteDict = {}
   for site in seBdiiDict:
@@ -324,12 +336,16 @@ def getUnusedGridSEs( vo, bdiiInfo = None, seBlackList = None ):
   result['BdiiInfo'] = seBdiiDict
   return result
   
-def getUnusedSRMs( vo ):  
+def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
   
   result = ldapService( serviceType = 'SRM', vo = vo )
   if not result['OK']:
     return result
   srmBdiiDict = result['Value']
+
+  knownSRMs = set()
+  if srmBlackList is not None:
+    knownSRMs = knownSRMs.union( set( srmBlackList ) )
 
   siteSRMDict = {}
   for srm in srmBdiiDict:
@@ -344,20 +360,28 @@ def getUnusedSRMs( vo ):
     if not srmHost:
       continue  
     
-    result = getDIRACSesForSRM( srmHost )
+    if srmHost in knownSRMs:
+      continue
+    
+    if unUsed:
+      result = getDIRACSesForSRM( srmHost )
+      if not result['OK']:
+        return result
+      diracSEs = result['Value']
+      if diracSEs:
+        # If it is a known SRM and only new SRMs are requested, continue
+        continue
+    site = srm.get( 'GlueForeignKey', '' ).replace( 'GlueSiteUniqueID=', '' )     
+    siteSRMDict.setdefault( site, {} )
+    siteSRMDict[site][srmHost] = srm
+      
+  if bdiiInfo is None:    
+    result = getBdiiSEInfo( vo )
     if not result['OK']:
       return result
-    diracSEs = result['Value']
-    if not diracSEs:
-      # This is a new SRM service
-      site = srm.get( 'GlueForeignKey', '' ).replace( 'GlueSiteUniqueID=', '' )     
-      siteSRMDict.setdefault( site, {} )
-      siteSRMDict[site][srmHost] = srm
-      
-  result = getBdiiSEInfo( vo )
-  if not result['OK']:
-    return result
-  seBdiiDict = result['Value']
+    seBdiiDict = result['Value']
+  else:
+    seBdiiDict = bdiiInfo  
  
   srmSeDict = {}  
   for site in siteSRMDict:
@@ -371,4 +395,72 @@ def getUnusedSRMs( vo ):
       
   return S_OK( srmSeDict ) 
   
+def getSRMUpdates( vo, bdiiInfo = None ):
   
+  changeSet = set()
+  
+  def addToChangeSet( entry, changeSet ):
+    _section, _option, value, new_value = entry
+    if new_value and new_value != value:
+      changeSet.add( entry )
+  
+  result = getGridSRMs( vo, bdiiInfo = bdiiInfo ) 
+  if not result['OK']:
+    return result
+  srmBdiiDict = result['Value'] 
+    
+  result = getSEsFromCS()
+  if not result['OK']:
+    return result
+  seDict = result['Value']
+  
+  result = getVOs()
+  if result['OK']:
+    csVOs = set( result['Value'] )
+  else:
+    csVOs = set( [vo] )  
+    
+  for seHost, diracSE in seDict.items():
+    seSection = '/Resources/StorageElements/%s' % diracSE[0]
+    # Look up existing values first
+    description = gConfig.getValue( cfgPath( seSection, 'Description'), 'Unknown' )
+    backend = gConfig.getValue( cfgPath( seSection, 'BackendType'), 'Unknown' )
+    vos = gConfig.getValue( cfgPath( seSection, 'VO'), 'Unknown' ).replace( ' ','' )
+    size = gConfig.getValue( cfgPath( seSection, 'TotalSize'), 'Unknown' )
+    # Look up current BDII values
+    srmDict = {}
+    seBdiiDict = {}
+    for site in srmBdiiDict:
+      if seHost in srmBdiiDict[site]:
+        srmDict = srmBdiiDict[site][seHost]['SRM']
+        seBdiiDict = srmBdiiDict[site][seHost]['SE']
+        break
+      
+    if not srmDict or not seBdiiDict:
+      continue   
+      
+    newDescription = seBdiiDict.get( 'GlueSEName', 'Unknown' )
+    newBackend = seBdiiDict.get( 'GlueSEImplementationName', 'Unknown' ) 
+    newSize = seBdiiDict.get( 'GlueSESizeTotal', 'Unknown' ) 
+    addToChangeSet( ( seSection, 'Description', description, newDescription ), changeSet )  
+    addToChangeSet( ( seSection, 'BackendType', backend, newBackend ), changeSet )    
+    addToChangeSet( ( seSection, 'TotalSize', size, newSize ), changeSet )     
+    
+    # Evaluate VOs if no space token defined, otherwise this is VO specific
+    spaceToken = ''
+    for i in range( 1, 10 ):
+      protocol = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'Protocol' ), '' ) 
+      if protocol.lower() == 'srm':
+        spaceToken = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'SpaceToken' ), '' ) 
+        break
+    if not spaceToken:
+      bdiiVOs = srmDict.get( 'GlueServiceAccessControlBaseRule', [] )
+      bdiiVOs = set( [ re.sub( '^VO:', '', rule ) for rule in bdiiVOs ] )
+      seVOs = csVOs.intersection( bdiiVOs )  
+      newVOs = ','.join( seVOs )
+      addToChangeSet( ( seSection, 'VO', vos, newVOs ), changeSet )    
+
+  return S_OK( changeSet )  
+    
+    
+    

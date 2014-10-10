@@ -44,7 +44,8 @@ def processScriptSwitches():
       doSEs = True    
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-from DIRAC.ConfigurationSystem.Client.Utilities import getUnusedGridCEs, getSiteUpdates, getUnusedSRMs
+from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getCEsFromCS, \
+                                                       getGridSRMs, getSRMUpdates
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -60,9 +61,16 @@ def checkUnusedCEs():
   global vo, dry, ceBdiiDict
   
   gLogger.notice( 'looking for new computing resources in the BDII database...' )
-  result = getUnusedGridCEs( vo )
+  
+  result = getCEsFromCS()
   if not result['OK']:
-    gLogger.error( 'ERROR: failed to get CEs', result['Message'] )
+    gLogger.error( 'ERROR: failed to get CEs from CS', result['Message'] )
+    DIRACExit( -1 )
+  knownCEs = result['Value']  
+  
+  result = getGridCEs( vo, ceBlackList = knownCEs )
+  if not result['OK']:
+    gLogger.error( 'ERROR: failed to get CEs from BDII', result['Message'] )
     DIRACExit( -1 )
   ceBdiiDict = result['BdiiInfo']  
     
@@ -85,8 +93,9 @@ def checkUnusedCEs():
     DIRACExit( 0 ) 
         
         
-  inp = raw_input( "\nDo you want to add sites ? [y/n]: ")
-  if inp != 'y':
+  inp = raw_input( "\nDo you want to add sites ? [default=yes] [yes|no]: ")
+  inp = inp.strip()
+  if not inp and inp.lower().startswith( 'n' ):
     gLogger.notice( 'Nothing else to be done, exiting' )
     DIRACExit( 0 )
     
@@ -110,7 +119,9 @@ def checkUnusedCEs():
     result = getDIRACSiteName( site )  
     if not result['OK']:
       gLogger.notice( '\nThe site %s is not yet in the CS, give it a name' % site )
-      diracSite = raw_input( '[help/<domain>.<name>.%s]: ' % country )
+      diracSite = raw_input( '[help|skip|<domain>.<name>.%s]: ' % country )
+      if diracSite.lower() == "skip":
+        continue
       if diracSite.lower() == "help":
         gLogger.notice( '%s site details:' % site )
         for k,v in ceBdiiDict[site].items():
@@ -128,7 +139,7 @@ def checkUnusedCEs():
       diracSites = result['Value']  
       
     if len( diracSites ) > 1:
-      gLogger.notice( 'Attention ! GOC site %s corresponds to more than one DIRAC sites:' % site  )
+      gLogger.notice( 'Attention! GOC site %s corresponds to more than one DIRAC sites:' % site  )
       gLogger.notice( str( diracSites ) )  
       gLogger.notice( 'Please, pay attention which DIRAC site the new CEs will join\n' )
       
@@ -139,7 +150,7 @@ def checkUnusedCEs():
       for diracSite in diracSites:
         if ce in addedCEs:
           continue
-        yn = raw_input( "Add CE %s of type %s to %s? [default yes] [y/n]: " % ( ce, ceType, diracSite ) ) 
+        yn = raw_input( "Add CE %s of type %s to %s? [default yes] [yes|no]: " % ( ce, ceType, diracSite ) ) 
         if yn == '' or yn.lower() == 'y':
           newCEs.setdefault( diracSite, [] )
           newCEs[diracSite].append( ce ) 
@@ -149,7 +160,7 @@ def checkUnusedCEs():
       if diracSite in newCEs: 
         cmd = "dirac-admin-add-site %s %s %s diractest.cfg" % ( diracSite, site, ' '.join( newCEs[diracSite] ) )    
         gLogger.notice( "\nNew site/CEs will be added with command:\n%s" % cmd )
-        yn = raw_input( "Add it ? [default yes] [y/n]: " ) 
+        yn = raw_input( "Add it ? [default yes] [yes|no]: " ) 
         if not ( yn == '' or yn.lower() == 'y' ) :
           continue
     
@@ -159,7 +170,7 @@ def checkUnusedCEs():
           result = shellCall( 0, cmd )
           if not result['OK']:
             gLogger.error( 'Error while executing dirac-admin-add-site command' )
-            yn = raw_input( "Do you want to continue ? [default no] [y/n]: " )
+            yn = raw_input( "Do you want to continue ? [default no] [yes|no]: " )
             if yn == '' or yn.lower().startswith( 'n' ):
               if sitesAdded:
                 gLogger.notice( 'CEs were added at the following sites:' )
@@ -170,7 +181,7 @@ def checkUnusedCEs():
             exitStatus, stdData, errData = result[ 'Value' ]
             if exitStatus:
               gLogger.error( 'Error while executing dirac-admin-add-site command\n', '\n'.join( [stdData, errData] ) )  
-              yn = raw_input( "Do you want to continue ? [default no] [y/n]: " )
+              yn = raw_input( "Do you want to continue ? [default no] [yes|no]: " )
               if yn == '' or yn.lower().startswith( 'n' ):
                 if sitesAdded:
                   gLogger.notice( 'CEs were added at the following sites:' )
@@ -185,15 +196,10 @@ def checkUnusedCEs():
   for site, diracSite in sitesAdded:
     gLogger.notice( "%s\t%s" % ( site, diracSite ) )  
 
-def updateSites():
+def updateCS( changeSet ):
   
   global vo, dry, ceBdiiDict
   
-  result = getSiteUpdates( vo, bdiiInfo = ceBdiiDict )
-  if not result['OK']:
-    gLogger.error( 'Failed to get site updates', result['Message'] )
-    DIRACExit( -1 )
-  changeSet = result['Value']  
   changeList = list( changeSet )
   changeList.sort()
   if dry:
@@ -216,7 +222,7 @@ def updateSites():
       else:
         csAPI.modifyValue( cfgPath( section, option ), new_value )
         
-    yn = raw_input( 'Do you want to commit changes to CS ? [default yes] [y/n]: ' )
+    yn = raw_input( 'Do you want to commit changes to CS ? [default yes] [yes|no]: ' )
     if yn == '' or yn.lower().startswith( 'y' ):    
       result = csAPI.commit()
       if not result['OK']:
@@ -224,14 +230,33 @@ def updateSites():
       else:
         gLogger.notice( "Successfully committed %d changes to CS" % len( changeSet ) )  
 
+def updateSites():
+
+  global vo, dry, ceBdiiDict
+  
+  result = getSiteUpdates( vo, bdiiInfo = ceBdiiDict )
+  if not result['OK']:
+    gLogger.error( 'Failed to get site updates', result['Message'] )
+    DIRACExit( -1 )
+  changeSet = result['Value']  
+  
+  updateCS( changeSet )
+
 def checkUnusedSEs():
   
   global vo, dry
   
-  result = getUnusedSRMs( vo )
+  result = getGridSRMs( vo, unUsed = True )
   if not result['OK']:
     gLogger.error( 'Failed to look up SRMs in BDII', result['Message'] )
   siteSRMDict = result['Value']
+
+  # Evaluate VOs
+  result = getVOs()
+  if result['OK']:
+    csVOs = set( result['Value'] )
+  else:
+    csVOs = set( [vo] ) 
 
   changeSetFull = set()
 
@@ -278,14 +303,8 @@ def checkUnusedSEs():
         gLogger.notice( 'Adding new SE %s at site %s' % ( diracSEName, diracSite ) )        
         seSection = cfgPath( '/Resources/StorageElements', diracSEName )
         changeSet.add( ( seSection, 'BackendType', seDict.get( 'GlueSEImplementationName', 'Unknown' ) ) )
-        changeSet.add( ( seSection, 'Description', seDict.get( 'GlueSEName', 'Unknown' ) ) )
-        # Evaluate VOs
-        result = getVOs()
-        if result['OK']:
-          csVOs = set( result['Value'] )
-        else:
-          csVOs = set( [vo] )  
-        bdiiVOs = [ re.sub( '^VO:', '', rule ) for rule in srmDict.get( 'GlueServiceAccessControlBaseRule', [] ) ]
+        changeSet.add( ( seSection, 'Description', seDict.get( 'GlueSEName', 'Unknown' ) ) )  
+        bdiiVOs = set( [ re.sub( '^VO:', '', rule ) for rule in srmDict.get( 'GlueServiceAccessControlBaseRule', [] ) ] )
         seVOs = csVOs.intersection( bdiiVOs )  
         changeSet.add( ( seSection, 'VO', ','.join( seVOs ) ) )
         accessSection = cfgPath( seSection, 'AccessProtocol.1' )
@@ -318,7 +337,7 @@ def checkUnusedSEs():
           changeSetFull = changeSetFull.union( changeSet )        
           
   if dry:
-    gLogger.notice( 'Skipping commit of the ne SE data in a dry run' )
+    gLogger.notice( 'Skipping commit of the new SE data in a dry run' )
     return S_OK()       
           
   if changeSetFull:
@@ -343,6 +362,18 @@ def checkUnusedSEs():
           
   return S_OK()
 
+def updateSEs():
+  
+  global vo, dry
+  
+  result = getSRMUpdates( vo )
+  if not result['OK']:
+    gLogger.error( 'Failed to get SRM updates', result['Message'] )
+    DIRACExit( -1 )
+  changeSet = result['Value']  
+  
+  updateCS( changeSet )
+
 def handler( signum, frame ):
   gLogger.notice( ' Exit is forced, bye...' )
   DIRACExit( -1 )
@@ -365,18 +396,26 @@ if __name__ == "__main__":
     DIRACExit( -1 )
   
   if doCEs:
-    yn = raw_input( 'Do you want to check/add new sites to CS ? [default yes] [y/n]: ' )
+    yn = raw_input( 'Do you want to check/add new sites to CS ? [default yes] [yes|no]: ' )
+    yn = yn.strip()
     if yn == '' or yn.lower().startswith( 'y' ):
       checkUnusedCEs()
       
-    yn = raw_input( 'Do you want to update CE details in the CS ? [default yes] [y/n]: ' )
+    yn = raw_input( 'Do you want to update CE details in the CS ? [default yes] [yes|no]: ' )
+    yn = yn.strip()
     if yn == '' or yn.lower().startswith( 'y' ):
       updateSites()
         
   if doSEs:
-    yn = raw_input( 'Do you want to check/add new storage elements to CS ? [default yes] [y/n]: ' )
+    yn = raw_input( 'Do you want to check/add new storage elements to CS ? [default yes] [yes|no]: ' )
+    yn = yn.strip()
     if yn == '' or yn.lower().startswith( 'y' ):
       result = checkUnusedSEs()
+      
+    yn = raw_input( 'Do you want to update SE details in the CS ? [default yes] [yes|no]: ' )
+    yn = yn.strip()
+    if yn == '' or yn.lower().startswith( 'y' ):
+      updateSEs()  
 
     
     
