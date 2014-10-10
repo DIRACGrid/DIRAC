@@ -264,7 +264,6 @@ class File( Record ):
 
   def toJSON( self ):
     """ get json """
-    digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if type( val ) != str else val for val in self.__data__.values() ] ) )
+    digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
     return S_OK( digest )
 

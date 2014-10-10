@@ -425,17 +425,11 @@ class Operation( Record ):
 
   def toJSON( self ):
     """ get json digest """
-    digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
     digest["RequestID"] = str( self.RequestID )
     digest["Order"] = str( self.Order )
     if self.__dirty:
       digest["__dirty"] = self.__dirty
-    digest["Files"] = []
-    for opFile in self:
-      opJSON = opFile.toJSON()
-      if not opJSON["OK"]:
-        return opJSON
-      digest["Files"].append( opJSON["Value"] )
+    digest["Files"] = [opFile.toJSON()['Value'] for opFile in self]
 
     return S_OK( digest )
