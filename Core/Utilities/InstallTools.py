@@ -2259,7 +2259,9 @@ def installDatabase( dbName ):
     sqlString = '\n'.join( x for x in cmdLines if not x.startswith( "--" ) )
 
     # Now run each command (They are seperated by ;)
-    for cmd in sqlString.split(";"):
+    # Ignore any empty ones
+    cmds = [ x.strip() for x in sqlString.split( ";" ) if x.strip() ]
+    for cmd in cmds:
       result = execMySQL( cmd, dbName )
       if not result['OK']:
         error = 'Failed to initialize Database'
