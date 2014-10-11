@@ -2254,14 +2254,20 @@ def installDatabase( dbName ):
   try:
     cmdLines = _createMySQLCMDLines( dbFile )
 
-    result = execMySQL( '\n'.join( cmdLines ), dbName )
-    if not result['OK']:
-      error = 'Failed to initialize Database'
-      gLogger.notice( '\n'.join( cmdLines ) )
-      gLogger.error( error, result['Message'] )
-      if exitOnError:
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
+    # We need to run one SQL cmd at once, mysql is much happier that way.
+    # Create a string of commands, ignoring comment lines
+    sqlString = '\n'.join( x for x in cmdLines if not x.startswith( "--" ) )
+
+    # Now run each command (They are seperated by ;)
+    for cmd in sqlString.split(";"):
+      result = execMySQL( cmd, dbName )
+      if not result['OK']:
+        error = 'Failed to initialize Database'
+        gLogger.notice( cmd )
+        gLogger.error( error, result['Message'] )
+        if exitOnError:
+          DIRAC.exit( -1 )
+        return S_ERROR( error )
 
   except Exception, e:
     gLogger.error( str( e ) )
