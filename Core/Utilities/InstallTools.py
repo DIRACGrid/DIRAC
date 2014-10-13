@@ -1929,10 +1929,6 @@ def fixMySQLScripts( startupScript = mysqlStartupScript ):
       if line.find( 'basedir=' ) == 0:
         platform = getPlatformString()
         line = 'basedir=%s\n' % os.path.join( rootPath, platform )  
-      if line.find( 'extra_args=' ) == 0:
-        line = 'extra_args="-n"\n'
-      if line.find( '$bindir/mysqld_safe --' ) >= 0:
-        line = line.replace( 'mysqld_safe', 'mysqld_safe --no-defaults' )
       fd.write( line )
     fd.close()
   except Exception:
