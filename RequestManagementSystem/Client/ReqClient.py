@@ -86,7 +86,7 @@ class ReqClient( Client ):
     if setRequestMgr["OK"]:
       return setRequestMgr
     errorsDict["RequestManager"] = setRequestMgr["Message"]
-    self.log.warn( "putRequest: unable to set request '%s' at RequestManager" % request.RequestName )
+    self.log.warn( "putRequest: unable to set request '%s' at RequestManager" % request.RequestName, setRequestMgr["Message"] )
     proxies = self.requestProxies()
     for proxyURL in randomize( proxies.keys() ):
       proxyClient = proxies[proxyURL]
