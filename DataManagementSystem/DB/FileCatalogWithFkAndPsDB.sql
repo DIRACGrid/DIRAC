@@ -144,7 +144,7 @@ CREATE TABLE FC_DirectoryClosure (
  FOREIGN KEY (ParentID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
  FOREIGN KEY (ChildID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
  
- INDEX (ParentID),
+ INDEX (ParentID, Depth),
  INDEX (ChildID)
 ) ENGINE = INNODB;
 -- ------------------------------------------------------------------------------
