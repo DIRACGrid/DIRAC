@@ -6,7 +6,6 @@ import datetime
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
-from DIRAC.AccountingSystem.private.Summaries import Summaries
 from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
