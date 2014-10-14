@@ -1,3 +1,8 @@
+[v6r11p16]
+
+*RMS
+BUGFIX: Request,Operation,File - do not cast to str None values
+
 [v6r11p15]
 
 *DMS
