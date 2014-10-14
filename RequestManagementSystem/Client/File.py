@@ -246,7 +246,7 @@ class File( Record ):
       raise AttributeError( "File does not belong to any Operation" )
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) == str
-                    else str( getattr( self, column ) ) if getattr( self, column ) != None else "''" )
+                    else str( getattr( self, column ) ) if getattr( self, column ) != None else "NULL" )
                 for column in self.__data__
                 if ( column == 'Error' or getattr( self, column ) ) and column != "FileID" ]
     query = []
@@ -264,6 +264,6 @@ class File( Record ):
 
   def toJSON( self ):
     """ get json """
-    digest = dict( [( key, str( val ) if val and val != 'None' else '' ) for key, val in self.__data__.items()] )
+    digest = dict( [( key, str( val ) if val else '' ) for key, val in self.__data__.items()] )
     return S_OK( digest )
 
