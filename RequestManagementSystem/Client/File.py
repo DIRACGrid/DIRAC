@@ -246,7 +246,7 @@ class File( Record ):
       raise AttributeError( "File does not belong to any Operation" )
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) == str
-                    else str( getattr( self, column ) ) if getattr( self, column ) else "''" )
+                    else str( getattr( self, column ) ) if getattr( self, column ) != None else "''" )
                 for column in self.__data__
                 if ( column == 'Error' or getattr( self, column ) ) and column != "FileID" ]
     query = []

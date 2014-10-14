@@ -453,7 +453,7 @@ class Request( Record ):
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value
-                  if type( value ) in ( str, datetime.datetime ) else str( value ) if value else "''" )
+                  if type( value ) in ( str, datetime.datetime ) else str( value ) if value != None else "''" )
                 for column, value in self.__data__.items()
                 if ( column == 'Error' or value ) and column not in  ( "RequestID", "LastUpdate" ) ]
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )

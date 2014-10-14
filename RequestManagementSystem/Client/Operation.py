@@ -408,7 +408,7 @@ class Operation( Record ):
       raise AttributeError( "RequestID not set" )
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
                   if type( getattr( self, column ) ) in ( str, datetime.datetime )
-                     else str( getattr( self, column ) ) if getattr( self, column ) else "''" )
+                     else str( getattr( self, column ) ) if getattr( self, column ) != None else "''" )
                 for column in self.__data__
                 if ( column == 'Error' or getattr( self, column ) ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
