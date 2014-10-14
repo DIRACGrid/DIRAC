@@ -407,7 +407,8 @@ class Operation( Record ):
     if not getattr( self, "RequestID" ):
       raise AttributeError( "RequestID not set" )
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
-                  if type( getattr( self, column ) ) in ( str, datetime.datetime ) else str( getattr( self, column ) ) )
+                  if type( getattr( self, column ) ) in ( str, datetime.datetime )
+                     else str( getattr( self, column ) ) if getattr( self, column ) != None else "NULL" )
                 for column in self.__data__
                 if ( column == 'Error' or getattr( self, column ) ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
@@ -435,7 +436,7 @@ class Operation( Record ):
 
   def toJSON( self ):
     """ get json digest """
-    digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
+    digest = dict( [( key, str( val ) if val else "" ) for key, val in self.__data__.items()] )
     digest["RequestID"] = str( self.RequestID )
     digest["Order"] = str( self.Order )
     if self.__dirty:
