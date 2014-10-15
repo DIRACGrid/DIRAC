@@ -69,8 +69,7 @@ class DBUtils:
 
   def _getBucketLengthForTime( self, typeName, momentEpoch ):
     nowEpoch = Time.toEpoch()
-    typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.calculateBucketLengthForTime( typeName, nowEpoch, momentEpoch )
+    return self._acDB.calculateBucketLengthForTime( self._setup, typeName, nowEpoch, momentEpoch )
 
   def _spanToGranularity( self, granularity, bucketsData ):
     """
