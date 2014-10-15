@@ -193,7 +193,7 @@ class ProxyInit:
     pI.certLifeTimeCheck()
     result = pI.addVOMSExtIfNeeded()
     if not result[ 'OK' ]:
-      gLogger.info( result[ 'Message' ] )
+      gLogger.error( result[ 'Message' ] )
       if self.__piParams.strict:
         return result
 
