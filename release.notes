@@ -1,4 +1,4 @@
-[v6r12-pre20]
+[v6r12-pre21]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -13,6 +13,7 @@ CHANGE: ProcessPool - exit from the working process if a task execution timed ou
 NEW: ProcessMonitor - added evaluation of the memory consumed by a process and its children   
 NEW: InstallTools - added flag to require MySQL installation
 FIX: InstallTools - correctly installing DBs extended (with sql to be sourced) 
+FIX: InstallTools - run MySQL commands one by one when creating a new database
 CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 NEW: Grid.py - ldapSA replaced by ldapSE, added getBdiiSE(CE)Info() methods
 CHANGE: CFG.py - only lines starting with ^\s*# will be treated as comments
@@ -39,6 +40,7 @@ NEW: JobWrapper, Watchdog - monitor memory consumption by the job ( in a Warning
 FIX: SandboxStoreHandler - treat the case of exception while cleaning sandboxes
 CHANGE: JobCleaningAgent - the delays of job removals become CS parameters
 BUGFIX: JobDB - %j placeholder not replaced after rescheduling
+FIX: JobDB - in the SQL schema description reorder tables to allow foreign keys
 BUGFIX: JobAgent, Matcher - logical bug in using PilotInfoReported flag
 FIX: OptimizerExecutor - when a job fails the optimization chain set the minor status 
      to the optimiser name and the app status to the fail error
@@ -63,6 +65,7 @@ CHANGE: DataManager - removed removeCatalogFile() and dirac-dms-remove-catalog-f
 CHANGE: Several components - field/parameter CheckSumType all changed to ChecksumType
 CHANGE: PoolXMLCatalog - add the SE by default in the xml dump and use the XML library 
         for dumping the XML
+FIX: XROOTStorageElement - fixes to comply with the interface formalism        
 
 *SMS
 FIX: StorageManagementDB - small bugfix to avoid SQL errors
