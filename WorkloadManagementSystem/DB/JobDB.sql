@@ -26,6 +26,16 @@
 USE JobDB;
 
 -- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobJDLs`;
+CREATE TABLE `JobJDLs` (
+  `JobID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `JDL` BLOB NOT NULL,
+  `JobRequirements` BLOB NOT NULL,
+  `OriginalJDL` BLOB NOT NULL,
+  PRIMARY KEY (`JobID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `Jobs`;
 CREATE TABLE `Jobs` (
   `JobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
@@ -76,16 +86,6 @@ CREATE TABLE `Jobs` (
   KEY `ApplicationStatus` (`ApplicationStatus`),
   KEY `StatusSite` (`Status`,`Site`),
   KEY `LastUpdateTime` (`LastUpdateTime`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `JobJDLs`;
-CREATE TABLE `JobJDLs` (
-  `JobID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `JDL` BLOB NOT NULL,
-  `JobRequirements` BLOB NOT NULL,
-  `OriginalJDL` BLOB NOT NULL,
-  PRIMARY KEY (`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------
