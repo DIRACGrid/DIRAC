@@ -44,6 +44,10 @@ class FileCatalog( object ):
       elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
         self.valid = False  
     else:
+      res = self._getCatalogs()
+    if not res['OK']:
+      self.valid = False
+    elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
       self.valid = False
 
   def isOK( self ):
