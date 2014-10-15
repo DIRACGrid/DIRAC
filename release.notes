@@ -90,6 +90,17 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p17]
+
+*DMS
+FIX: FileCatalog - in multi-VO case get common catalogs if even VO is not specified
+
+*Resources
+FIX: ComputintgElement - bugfix in available() method
+
+*WMS
+FIX: SiteDirector - if not pilots registered in the DB, pass empty list to the ce.available()
+
 [v6r11p16]
 
 *RMS

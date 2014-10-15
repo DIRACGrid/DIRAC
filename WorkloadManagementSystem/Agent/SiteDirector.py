@@ -588,7 +588,7 @@ class SiteDirector( AgentModule ):
         result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                               'Queue':queueName,
                                               'Status':['Running','Submitted','Scheduled'] } )
-        if result['OK'] and result['Value']:
+        if result['OK']:
           jobIDList = result['Value']
           
         result = ce.available( jobIDList )
