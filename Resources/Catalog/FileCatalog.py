@@ -30,19 +30,17 @@ class FileCatalog:
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
-    if self.vo:
-      self.opHelper = Operations( vo = self.vo )
-      if type( catalogs ) in types.StringTypes:
-        catalogs = [catalogs]
-      if catalogs:
-        res = self._getSelectedCatalogs( catalogs )
-      else:
-        res = self._getCatalogs()
-      if not res['OK']:
-        self.valid = False
-      elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
-        self.valid = False
+
+    self.opHelper = Operations( vo = self.vo )
+    if type( catalogs ) in types.StringTypes:
+      catalogs = [catalogs]
+    if catalogs:
+      res = self._getSelectedCatalogs( catalogs )
     else:
+      res = self._getCatalogs()
+    if not res['OK']:
+      self.valid = False
+    elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
       self.valid = False
 
   def isOK( self ):
