@@ -193,13 +193,13 @@ class ProxyInit:
     pI.certLifeTimeCheck()
     result = pI.addVOMSExtIfNeeded()
     if not result[ 'OK' ]:
-      if "returning a valid AC for the user" in res['Message']:
+      if "returning a valid AC for the user" in result['Message']:
         gLogger.error( result[ 'Message' ] )
         gLogger.error("\n Are you sure you are properly registered in the VO?")
       else:
-        gLogger.notice(res['Message'])
-        gLogger.notice("Maybe you are missing voms clients. Not a serious problem, but you can't"
-                       " access grid storage elements.")
+        gLogger.notice( result['Message'] )
+        gLogger.notice( "Maybe you are missing voms clients. Not a serious problem, but you can't"
+                        " access grid storage elements." )
       if self.__piParams.strict:
         return result
 
