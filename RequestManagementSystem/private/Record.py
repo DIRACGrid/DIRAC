@@ -36,6 +36,8 @@ class Record( object ):
   all columns should be exported as properties in the inherited classes
   """
 
+  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
+
   def __init__( self ):
     """c'tor
 

@@ -25,11 +25,15 @@ __RCSID__ = "$Id$"
 # @brief Definition of Operation class.
 # # imports
 import datetime
+import copy
+from types import StringTypes
+import json
 # # from DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 ########################################################################
 class Operation( Record ):
@@ -79,7 +83,9 @@ class Operation( Record ):
     self.__dirty = []
 
     # # init from dict
-    fromDict = fromDict if fromDict else {}
+#     fromDict = fromDict if fromDict else {}
+    fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
+
 
     self.__dirty = fromDict.get( "__dirty", [] )
     if "__dirty" in fromDict:
@@ -121,7 +127,6 @@ class Operation( Record ):
   def _notify( self ):
     """ notify self about file status change """
     fStatus = set( self.fileStatusList() )
-
     if fStatus == set( ['Failed'] ):
       # All files Failed -> Failed
       newStatus = 'Failed'
@@ -257,7 +262,7 @@ class Operation( Record ):
   @Arguments.setter
   def Arguments( self, value ):
     """ arguments setter """
-    self.__data__["Arguments"] = value if value else ""
+    self.__data__["Arguments"] = value.encode() if value else ""
 
   @property
   def SourceSE( self ):
@@ -270,7 +275,7 @@ class Operation( Record ):
     value = ",".join( self._uniqueList( value ) )
     if len( value ) > 256:
       raise ValueError( "SourceSE list too long" )
-    self.__data__["SourceSE"] = str( value )[:255] if value else ""
+    self.__data__["SourceSE"] = str( value )[:255].encode() if value else ""
 
   @property
   def sourceSEList( self ):
@@ -288,7 +293,7 @@ class Operation( Record ):
     value = ",".join( self._uniqueList( value ) )
     if len( value ) > 256:
       raise ValueError( "TargetSE list too long" )
-    self.__data__["TargetSE"] = value[:255] if value else ""
+    self.__data__["TargetSE"] = value[:255] if value.encode() else ""
 
   @property
   def targetSEList( self ):
@@ -306,7 +311,7 @@ class Operation( Record ):
     value = ",".join( self._uniqueList( value ) )
     if len( value ) > 255:
       raise ValueError( "Catalog list too long" )
-    self.__data__["Catalog"] = value if value else ""
+    self.__data__["Catalog"] = value.encode() if value else ""
 
   @property
   def catalogList( self ):
@@ -321,9 +326,9 @@ class Operation( Record ):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "Error has to be a string!" )
-    self.__data__["Error"] = self._escapeStr( value, 255 )
+    self.__data__["Error"] = self._escapeStr( value.encode(), 255 )
 
   @property
   def Status( self ):
@@ -340,10 +345,10 @@ class Operation( Record ):
     else:
       # If the status moved to Failed or Done, update the lastUpdate time
       if value in ( 'Failed', 'Done' ):
-        if self.__data__["Status"] != value:
+        if self.__data__["Status"] != value.encode():
           self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
-      self.__data__["Status"] = value
+      self.__data__["Status"] = value.encode()
       if self._parent:
         self._parent._notify()
     if self.__data__['Status'] == 'Done':
@@ -364,10 +369,10 @@ class Operation( Record ):
   @CreationTime.setter
   def CreationTime( self, value = None ):
     """ creation time setter """
-    if type( value ) not in ( datetime.datetime, str ):
+    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
       raise TypeError( "CreationTime should be a datetime.datetime!" )
-    if type( value ) == str:
-      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self.__data__["CreationTime"] = value
 
   @property
@@ -378,10 +383,10 @@ class Operation( Record ):
   @SubmitTime.setter
   def SubmitTime( self, value = None ):
     """ submit time setter """
-    if type( value ) not in ( datetime.datetime, str ):
-      raise TypeError( "SubmitTime should be a datetime.datetime!" )
-    if type( value ) == str:
-      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
+        raise TypeError( "SubmitTime should be a datetime.datetime!" )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self.__data__["SubmitTime"] = value
 
   @property
@@ -392,15 +397,17 @@ class Operation( Record ):
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
     """ last update setter """
-    if type( value ) not in ( datetime.datetime, str ):
+    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
-    if type( value ) == str:
-      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self.__data__["LastUpdate"] = value
 
   def __str__( self ):
     """ str operator """
-    return str( self.toJSON()["Value"] )
+    return self.toJSON()['Value']
+
+
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
@@ -434,13 +441,35 @@ class Operation( Record ):
       fIDs = ",".join( [ str( fid ) for fid in self.__dirty ] )
       return "DELETE FROM `File` WHERE `OperationID` = %s AND `FileID` IN (%s);\n" % ( self.OperationID, fIDs )
 
-  def toJSON( self ):
-    """ get json digest """
-    digest = dict( [( key, str( getattr( self, key ) ) if getattr( self, key ) else "" ) for key in self.__data__] )
-    digest["RequestID"] = str( self.RequestID )
-    digest["Order"] = str( self.Order )
-    if self.__dirty:
-      digest["__dirty"] = self.__dirty
-    digest["Files"] = [opFile.toJSON()['Value'] for opFile in self]
+#   def toJSON( self ):
+#     """ get json digest """
+#     digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
+#     digest["RequestID"] = str( self.RequestID )
+#     digest["Order"] = str( self.Order )
+#     if self.__dirty:
+#       digest["__dirty"] = self.__dirty
+#     digest["Files"] = [opFile.toJSON()['Value'] for opFile in self]
+#
+#     return S_OK( digest )
 
-    return S_OK( digest )
+  def toJSON( self ):
+    try:
+      jsonStr = json.dumps( self, cls = RMSEncoder )
+      return S_OK( jsonStr )
+    except Exception, e:
+      return S_ERROR( str( e ) )
+
+
+  def _getJSONData( self ):
+    """ Returns the data that have to be serialized by JSON """
+    jsonData = copy.deepcopy( self.__data__ )
+    for key in jsonData:
+      if isinstance( jsonData[key], datetime.datetime ):
+        # We convert date time to a string
+        jsonData[key] = jsonData[key].strftime( self._datetimeFormat )
+#     jsonData['RequestID'] = self.RequestID
+#     jsonData['Order'] = self.Order
+    jsonData['__dirty'] = self.__dirty
+    jsonData['Files'] = copy.deepcopy( self.__files__ )
+
+    return jsonData

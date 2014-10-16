@@ -26,12 +26,17 @@ __RCSID__ = "$Id $"
 # @brief Definition of File class.
 
 # # imports
+import datetime
+import copy
 import os
+import json
+from types import StringTypes
 # import urlparse
 # # from DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Utilities.File import checkGuid
+from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 ########################################################################
 class File( Record ):
@@ -64,7 +69,7 @@ class File( Record ):
     self.__data__["Size"] = 0
     self.__data__["Error"] = ''
     self._duration = 0
-    fromDict = fromDict if fromDict else {}
+    fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
         raise AttributeError( "unknown File attribute %s" % str( attrName ) )
@@ -141,11 +146,11 @@ class File( Record ):
   @LFN.setter
   def LFN( self, value ):
     """ lfn setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "LFN has to be a string!" )
     if not os.path.isabs( value ):
       raise ValueError( "LFN should be an absolute path!" )
-    self.__data__["LFN"] = value
+    self.__data__["LFN"] = value.encode()
 
   @property
   def PFN( self ):
@@ -155,13 +160,13 @@ class File( Record ):
   @PFN.setter
   def PFN( self, value ):
     """ PFN setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "PFN has to be a string!" )
     # isURL = urlparse.urlparse( value ).scheme
     # isABS = os.path.isabs( value )
     # if not isURL and not isABS:
     #  raise ValueError( "Wrongly formatted PFN!" )
-    self.__data__["PFN"] = value
+    self.__data__["PFN"] = value.encode()
 
   @property
   def GUID( self ):
@@ -172,11 +177,11 @@ class File( Record ):
   def GUID( self, value ):
     """ GUID setter """
     if value:
-      if type( value ) not in ( str, unicode ):
+      if type( value ) not in StringTypes:
         raise TypeError( "GUID should be a string!" )
       if not checkGuid( value ):
         raise ValueError( "'%s' is not a valid GUID!" % str( value ) )
-    self.__data__["GUID"] = value
+    self.__data__["GUID"] = value.encode()
 
   @property
   def ChecksumType( self ):
@@ -214,9 +219,9 @@ class File( Record ):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "Error has to be a string!" )
-    self.__data__["Error"] = self._escapeStr( value , 255 )
+    self.__data__["Error"] = self._escapeStr( value , 255 ).encode()
 
   @property
   def Status( self ):
@@ -232,13 +237,13 @@ class File( Record ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
       self.__data__['Error'] = ''
-    self.__data__["Status"] = value
+    self.__data__["Status"] = value.encode()
     if self._parent:
       self._parent._notify()
 
   def __str__( self ):
     """ str operator """
-    return str( self.toJSON()["Value"] )
+    return self.toJSON()['Value']
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
@@ -262,8 +267,25 @@ class File( Record ):
       query.append( " VALUES %s;\n" % values )
     return S_OK( "".join( query ) )
 
+#   def toJSON( self ):
+#     """ get json """
+#     digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
+#     return S_OK( digest )
+#
   def toJSON( self ):
-    """ get json """
-    digest = dict( [( key, str( getattr( self, key ) ) if getattr( self, key ) else '' ) for key in self.__data__] )
-    return S_OK( digest )
+    try:
+      jsonStr = json.dumps( self, cls = RMSEncoder )
+      return S_OK( jsonStr )
+    except Exception, e:
+      return S_ERROR( str( e ) )
+
+  def _getJSONData( self ):
+    """ Returns the data that have to be serialized by JSON """
+    jsonData = copy.deepcopy( self.__data__ )
+    for key in jsonData:
+      if isinstance( jsonData[key], datetime.datetime ):
+        # We convert date time to a string
+        jsonData[key] = jsonData[key].sstrftime( self._datetimeFormat )
+
+    return jsonData
 

@@ -25,12 +25,16 @@ __RCSID__ = "$Id$"
 
 # # imports
 import datetime
+import copy
+from types import StringTypes
+import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 ########################################################################
 class Request( Record ):
@@ -59,6 +63,7 @@ class Request( Record ):
     """c'tor
 
     :param self: self reference
+    :param fromDict : if false, new request. Can be json string that represents the object, or the dictionary directly
     """
     Record.__init__( self )
     self.__waiting = None
@@ -81,7 +86,7 @@ class Request( Record ):
     self.__dirty = []
     self.__operations__ = TypedList( allowedTypes = Operation )
 
-    fromDict = fromDict if fromDict else {}
+    fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
     self.__dirty = fromDict.get( "__dirty", [] )
     if "__dirty" in fromDict:
@@ -280,7 +285,7 @@ class Request( Record ):
 
   def __str__( self ):
     """ str operator """
-    return str( self.toJSON()["Value"] )
+    return self.toJSON()['Value']
 
   def subStatusList( self ):
     """ list of statuses for all operations """
@@ -306,9 +311,9 @@ class Request( Record ):
   @RequestName.setter
   def RequestName( self, value ):
     """ request name setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "RequestName should be a string" )
-    self.__data__["RequestName"] = value[:128]
+    self.__data__["RequestName"] = value[:128].encode()
 
   @property
   def OwnerDN( self ):
@@ -318,9 +323,9 @@ class Request( Record ):
   @OwnerDN.setter
   def OwnerDN( self, value ):
     """ request owner DN setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "OwnerDN should be a string!" )
-    self.__data__["OwnerDN"] = value
+    self.__data__["OwnerDN"] = value.encode()
 
   @property
   def OwnerGroup( self ):
@@ -330,9 +335,9 @@ class Request( Record ):
   @OwnerGroup.setter
   def OwnerGroup( self, value ):
     """ request owner group setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "OwnerGroup should be a string!" )
-    self.__data__["OwnerGroup"] = value
+    self.__data__["OwnerGroup"] = value.encode()
 
   @property
   def DIRACSetup( self ):
@@ -342,9 +347,9 @@ class Request( Record ):
   @DIRACSetup.setter
   def DIRACSetup( self, value ):
     """ DIRAC setup setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "setup should be a string!" )
-    self.__data__["DIRACSetup"] = value
+    self.__data__["DIRACSetup"] = value.encode()
 
   @property
   def SourceComponent( self ):
@@ -354,9 +359,9 @@ class Request( Record ):
   @SourceComponent.setter
   def SourceComponent( self, value ):
     """ source component setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "Setup should be a string!" )
-    self.__data__["SourceComponent"] = value
+    self.__data__["SourceComponent"] = value.encode()
 
   @property
   def JobID( self ):
@@ -376,10 +381,10 @@ class Request( Record ):
   @CreationTime.setter
   def CreationTime( self, value = None ):
     """ creation time setter """
-    if type( value ) not in ( datetime.datetime, str ) :
+    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ) :
       raise TypeError( "CreationTime should be a datetime.datetime!" )
-    if type( value ) == str:
-      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self.__data__["CreationTime"] = value
 
   @property
@@ -390,10 +395,10 @@ class Request( Record ):
   @SubmitTime.setter
   def SubmitTime( self, value = None ):
     """ submission time setter """
-    if type( value ) not in ( datetime.datetime, str ):
+    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
       raise TypeError( "SubmitTime should be a datetime.datetime!" )
-    if type( value ) == str:
-      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self.__data__["SubmitTime"] = value
 
   @property
@@ -404,10 +409,10 @@ class Request( Record ):
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
     """ last update setter """
-    if type( value ) not in  ( datetime.datetime, str ):
+    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
-    if type( value ) == str:
-      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self.__data__["LastUpdate"] = value
 
   @property
@@ -446,7 +451,7 @@ class Request( Record ):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    if type( value ) != str:
+    if type( value ) not in StringTypes:
       raise TypeError( "Error has to be a string!" )
     self.__data__["Error"] = self._escapeStr( value, 255 )
 
@@ -481,13 +486,34 @@ class Request( Record ):
         query.append( "DELETE FROM `File` WHERE `OperationID`=%s;\n" % opID )
       return query
   # # digest
+#   def toJSON( self ):
+#     """ serialize to JSON format """
+#     digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
+#     digest["RequestID"] = self.RequestID
+#     digest["__dirty"] = self.__dirty
+#     digest["Operations"] = [op.toJSON()['Value'] for op in self]
+#     return S_OK( digest )
+
   def toJSON( self ):
-    """ serialize to JSON format """
-    digest = dict( [( key, str( getattr( self, key ) ) if getattr( self, key ) else "" ) for key in self.__data__] )
-    digest["RequestID"] = self.RequestID
-    digest["__dirty"] = self.__dirty
-    digest["Operations"] = [op.toJSON()['Value'] for op in self]
-    return S_OK( digest )
+    try:
+      jsonStr = json.dumps( self, cls = RMSEncoder )
+      return S_OK( jsonStr )
+    except Exception, e:
+      return S_ERROR( str( e ) )
+
+
+  def _getJSONData( self ):
+    """ Returns the data that have to be serialized by JSON """
+    jsonData = copy.deepcopy( self.__data__ )
+    for key in jsonData:
+      if isinstance( jsonData[key], datetime.datetime ):
+        # We convert date time to a string
+        jsonData[key] = jsonData[key].strftime( self._datetimeFormat )
+#     jsonData['RequestID'] = self.RequestID
+    jsonData["__dirty"] = self.__dirty
+    jsonData['Operations'] = copy.deepcopy( self.__operations__ )
+
+    return jsonData
 
   def getDigest( self ):
     """ return digest for request """

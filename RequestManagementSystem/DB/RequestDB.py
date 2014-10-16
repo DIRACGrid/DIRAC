@@ -25,6 +25,7 @@ import random
 import threading
 import MySQLdb.cursors
 from MySQLdb import Error as MySQLdbError
+from types import StringTypes
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -91,7 +92,7 @@ class RequestDB( DB ):
 
   def _transaction( self, queries ):
     """ execute transaction """
-    queries = [ queries ] if type( queries ) == str else queries
+    queries = [ queries ] if type( queries ) in StringTypes else queries
     # # get cursor and connection
     getCursorAndConnection = self.dictCursor()
     if not getCursorAndConnection["OK"]:
@@ -119,6 +120,7 @@ class RequestDB( DB ):
       connection.autocommit( True )
       return ret
     except MySQLdbError, error:
+      print 'REQUEST--%s--' % queries
       self.log.exception( error )
       # # rollback
       connection.rollback()
@@ -393,6 +395,7 @@ class RequestDB( DB ):
             ORDER BY r_LastUpdate, r_RequestId, o_Order;"\
              % ( allFieldsStr, requestAttrStr, numberOfRequest, fileAttrStr )
 
+    print query
     queryResult = self._transaction( query )
     if not queryResult["OK"]:
       self.log.error( "RequestDB.getRequests: %s" % queryResult["Message"] )

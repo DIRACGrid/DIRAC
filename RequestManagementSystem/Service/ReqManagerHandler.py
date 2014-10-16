@@ -12,6 +12,7 @@
 __RCSID__ = "$Id$"
 # # imports
 from types import DictType, IntType, LongType, ListType, StringTypes
+import json
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -77,7 +78,7 @@ class ReqManagerHandler( RequestHandler ):
     return cls.__requestDB.cancelRequest( requestName )
 
 
-  types_putRequest = [ DictType ]
+  types_putRequest = [ StringTypes ]
   @classmethod
   def export_putRequest( cls, requestJSON ):
     """ put a new request into RequestDB
@@ -85,8 +86,10 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
-    requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
-    request = Request( requestJSON )
+
+    requestDict = json.loads( requestJSON )
+    requestName = requestDict.get( "RequestName", "***UNKNOWN***" )
+    request = Request( requestDict )
     optimized = request.optimize()
     if optimized.get("Value", False):
       gLogger.debug( "putRequest: request was optimized" )

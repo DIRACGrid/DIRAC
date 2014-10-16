@@ -339,15 +339,14 @@ class RequestTests( unittest.TestCase ):
     r[0].OperationID = 1
     del r[0]
     self.assertEqual( r.cleanUpSQL(),
-                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1);\n',
-                       'DELETE FROM `File` WHERE `OperationID`=1;\n'] )
+                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1);\n', 'DELETE FROM `File` WHERE `OperationID`=1;\n'],
+                      "cleanUpSQL failed after __delitem__ (opId set)" )
 
     r[0].OperationID = 2
     r[0] = Operation()
     self.assertEqual( r.cleanUpSQL(),
-                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1,2);\n',
-                       'DELETE FROM `File` WHERE `OperationID`=1;\n',
-                       'DELETE FROM `File` WHERE `OperationID`=2;\n'] )
+                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1,2);\n', 'DELETE FROM `File` WHERE `OperationID`=1;\n', 'DELETE FROM `File` WHERE `OperationID`=2;\n'],
+                      "cleanUpSQL failed after __setitem_ (opId set)" )
 
     json = r.toJSON()
     self.assertEqual( "__dirty" in json["Value"], True, "__dirty missing in json" )

@@ -276,10 +276,6 @@ class RequestExecutingAgent( AgentModule ):
         self.cacheRequest( request )
         # # serialize to JSON
         requestJSON = request.toJSON()
-        if not requestJSON["OK"]:
-          self.log.error( "JSON serialization error: %s" % requestJSON["Message"] )
-          break
-        requestJSON = requestJSON["Value"]
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )
