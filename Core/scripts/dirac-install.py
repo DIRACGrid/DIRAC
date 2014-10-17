@@ -1404,6 +1404,9 @@ def createCshrc():
                      'setenv PYTHONPATH $DIRAC'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'setenv OPENSSL_CONF /tmp'] )
+      lines.extend( ['# IPv6 support',
+                     'setenv GLOBUS_IO_IPV6 TRUE',
+                     'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
       lines.append( '' )
       f = open( cshrcFile, 'w' )
       f.write( '\n'.join( lines ) )
