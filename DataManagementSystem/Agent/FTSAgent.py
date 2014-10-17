@@ -50,6 +50,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Time import fromString
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -647,7 +648,7 @@ class FTSAgent( AgentModule ):
       # This clause is raised when one wants to return from within the try: clause
       pass
     except Exception, exceptMessage:
-      log.exception( "Exception in processRequest", exceptMessage )
+      log.exception( "Exception in processRequest", lException = exceptMessage )
     finally:
       putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not putRequest["OK"]:
@@ -792,56 +793,56 @@ class FTSAgent( AgentModule ):
           log.warn( "unable to submit new FTS job, max active jobs reached" )
           continue
 
-        # # create FTSJob
-        ftsJob = FTSJob()
-        ftsJob.RequestID = request.RequestID
-        ftsJob.OperationID = operation.OperationID
-        ftsJob.SourceSE = source
-        ftsJob.TargetSE = target
-
         sourceSE = self.getSE( source )
         sourceToken = sourceSE.getStorageParameters( "SRM2" )
         if not sourceToken["OK"]:
           log.error( "unable to get sourceSE '%s' parameters: %s" % ( source, sourceToken["Message"] ) )
           continue
-        ftsJob.SourceToken = sourceToken["Value"].get( "SpaceToken", "" )
+        seStatus = sourceSE.getStatus()['Value']
 
         targetSE = self.getSE( target )
         targetToken = targetSE.getStorageParameters( "SRM2" )
         if not targetToken["OK"]:
           log.error( "unable to get targetSE '%s' parameters: %s" % ( target, targetToken["Message"] ) )
           continue
-        ftsJob.TargetToken = targetToken["Value"].get( "SpaceToken", "" )
 
-        ftsJob.FTSServer = route.toNode.FTSServer
+        # # create FTSJob
+        for fileList in breakListIntoChunks( ftsFileList, self.MAX_FILES_PER_JOB ):
+          ftsJob = FTSJob()
+          ftsJob.RequestID = request.RequestID
+          ftsJob.OperationID = operation.OperationID
+          ftsJob.SourceSE = source
+          ftsJob.TargetSE = target
+          ftsJob.SourceToken = sourceToken["Value"].get( "SpaceToken", "" )
+          ftsJob.TargetToken = targetToken["Value"].get( "SpaceToken", "" )
+          ftsJob.FTSServer = route.toNode.FTSServer
 
-        for ftsFile in ftsFileList:
-          ftsFile.Attempt += 1
-          ftsFile.Error = ""
-          ftsJob.addFile( ftsFile )
+          for ftsFile in fileList:
+            ftsFile.Attempt += 1
+            ftsFile.Error = ""
+            ftsJob.addFile( ftsFile )
 
-        seStatus = sourceSE.getStatus()['Value']
-        submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
-        if not submit["OK"]:
-          log.error( "unable to submit FTSJob: %s" % submit["Message"] )
-          continue
+          submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
+          if not submit["OK"]:
+            log.error( "unable to submit FTSJob: %s" % submit["Message"] )
+            continue
 
-        log.info( "FTSJob '%s'@'%s' has been submitted" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+          log.info( "FTSJob '%s'@'%s' has been submitted" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
-        # # update statuses for job files
-        for ftsFile in ftsJob:
-          ftsFile.FTSGUID = ftsJob.FTSGUID
-          ftsFile.Status = "Submitted"
-          ftsFile.Attempt += 1
+          # # update statuses for job files
+          for ftsFile in ftsJob:
+            ftsFile.FTSGUID = ftsJob.FTSGUID
+            ftsFile.Status = "Submitted"
+            ftsFile.Attempt += 1
 
-        # # update graph route
-        try:
-          self.updateLock().acquire()
-          route.ActiveJobs += 1
-        finally:
-          self.updateLock().release()
+          # # update graph route
+          try:
+            self.updateLock().acquire()
+            route.ActiveJobs += 1
+          finally:
+            self.updateLock().release()
 
-        ftsJobs.append( ftsJob )
+          ftsJobs.append( ftsJob )
 
     log.info( "%s new FTSJobs have been submitted" % len( ftsJobs ) )
     return S_OK( ftsJobs )
