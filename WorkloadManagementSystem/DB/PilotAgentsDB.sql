@@ -26,54 +26,58 @@
 USE PilotAgentsDB;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS PilotAgents;
-CREATE TABLE PilotAgents (
-    PilotID INTEGER NOT NULL AUTO_INCREMENT,
-    InitialJobID INTEGER NOT NULL DEFAULT 0,
-    CurrentJobID INTEGER NOT NULL DEFAULT 0,
-    TaskQueueID INTEGER NOT NULL DEFAULT '0',
-    PilotJobReference VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-    PilotStamp VARCHAR(32) NOT NULL DEFAULT '',
-    DestinationSite VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
-    Queue VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-    GridSite VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-    Broker VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-    OwnerDN VARCHAR(255) NOT NULL,
-    OwnerGroup VARCHAR(128) NOT NULL,
-    GridType VARCHAR(32) NOT NULL DEFAULT 'LCG',
-    BenchMark DOUBLE NOT NULL DEFAULT 0.0,
-    SubmissionTime DATETIME,
-    LastUpdateTime DATETIME,
-    Status VARCHAR(32) NOT NULL DEFAULT 'Unknown',
-    StatusReason VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-    ParentID INTEGER NOT NULL DEFAULT 0,
-    OutputReady ENUM ('True','False') NOT NULL DEFAULT 'False',
-    AccountingSent ENUM ('True','False') NOT NULL DEFAULT 'False',
-    PRIMARY KEY (PilotID),
-    INDEX (PilotJobReference),
-    INDEX (Status)
-) ENGINE = InnoDB;
+DROP TABLE IF EXISTS `PilotAgents`;
+CREATE TABLE `PilotAgents` (
+  `PilotID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `InitialJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `CurrentJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `TaskQueueID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `PilotJobReference` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+  `PilotStamp` VARCHAR(32) NOT NULL DEFAULT '',
+  `DestinationSite` VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
+  `Queue` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+  `GridSite` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+  `Broker` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+  `OwnerDN` VARCHAR(255) NOT NULL,
+  `OwnerGroup` VARCHAR(128) NOT NULL,
+  `GridType` VARCHAR(32) NOT NULL DEFAULT 'LCG',
+  `GridRequirements` blob,
+  `BenchMark` DOUBLE NOT NULL DEFAULT 0.0,
+  `SubmissionTime` DATETIME DEFAULT NULL,
+  `LastUpdateTime` DATETIME DEFAULT NULL,
+  `Status` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+  `StatusReason` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+  `ParentID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `OutputReady` ENUM('True','False') NOT NULL DEFAULT 'False',
+  `AccountingSent` ENUM('True','False') NOT NULL DEFAULT 'False',
+  PRIMARY KEY (`PilotID`),
+  KEY `PilotJobReference` (`PilotJobReference`),
+  KEY `Status` (`Status`),
+  KEY `Statuskey` (`GridSite`,`DestinationSite`,`Status`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS JobToPilotMapping;
-CREATE TABLE JobToPilotMapping (
-    PilotID INTEGER NOT NULL,
-    JobID INTEGER NOT NULL,
-    StartTime DATETIME NOT NULL,
-    INDEX (PilotID),
-    INDEX (JobID)
-) ENGINE = InnoDB;
 
-DROP TABLE IF EXISTS PilotOutput;
-CREATE TABLE PilotOutput (
-    PilotID INTEGER NOT NULL,
-    StdOutput MEDIUMBLOB,
-    StdError MEDIUMBLOB,
-    PRIMARY KEY (PilotID)
-) ENGINE = InnoDB;
+DROP TABLE IF EXISTS `JobToPilotMapping`;
+CREATE TABLE `JobToPilotMapping` (
+  `PilotID` INT(11) UNSIGNED NOT NULL,
+  `JobID` INT(11) UNSIGNED NOT NULL,
+  `StartTime` DATETIME NOT NULL,
+  KEY `JobID` (`JobID`),
+  KEY `PilotID` (`PilotID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS PilotRequirements;
-CREATE TABLE PilotRequirements (
-    PilotID INTEGER NOT NULL,
-    Requirements BLOB,
-    PRIMARY KEY (PilotID)
-);
+DROP TABLE IF EXISTS `PilotOutput`;
+CREATE TABLE `PilotOutput` (
+  `PilotID` INT(11) UNSIGNED NOT NULL,
+  `StdOutput` MEDIUMBLOB,
+  `StdError` MEDIUMBLOB,
+  PRIMARY KEY (`PilotID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+DROP TABLE IF EXISTS `PilotRequirements`;
+CREATE TABLE `PilotRequirements` (
+  `PilotID` INT(11) UNSIGNED NOT NULL,
+  `Requirements` BLOB,
+  PRIMARY KEY (`PilotID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+

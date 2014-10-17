@@ -74,6 +74,9 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
 
+class escapeTry( Exception ):
+  pass
+
 ########################################################################
 class FTSAgent( AgentModule ):
   """
@@ -99,7 +102,11 @@ class FTSAgent( AgentModule ):
   # # MAX FTS transfer per FTSFile
   MAX_ATTEMPT = 256
   # # stage flag
-  STAGE_FILES = False
+  PIN_TIME = 0
+  # # FTS submission command
+  SUBMIT_COMMAND = 'glite-transfer-submit'
+  # # FTS monitoring command
+  MONITOR_COMMAND = 'glite-transfer-status'
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -288,8 +295,12 @@ class FTSAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
-    self.STAGE_FILES = self.am_getOption( "StageFiles", self.STAGE_FILES )
-    log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.STAGE_FILES )] )
+    self.SUBMIT_COMMAND = self.am_getOption( "SubmitCommand", self.SUBMIT_COMMAND )
+    log.info( "FTS submit command = %s" % self.SUBMIT_COMMAND )
+    self.MONITOR_COMMAND = self.am_getOption( "MonitorCommand", self.MONITOR_COMMAND )
+    log.info( "FTS commands: submit = %s monitor %s" % ( self.SUBMIT_COMMAND, self.MONITOR_COMMAND ) )
+    self.PIN_TIME = self.am_getOption( "PinTime", self.PIN_TIME )
+    log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.PIN_TIME )] )
 
     self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS )
     log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
@@ -503,9 +514,19 @@ class FTSAgent( AgentModule ):
           else:
             ftsFiles = ftsFiles['Value']
             ftsLfns = set( [ftsFile.LFN for ftsFile in ftsFiles] )
+            # Recover files not in FTSDB
             toSchedule = set( missingReplicas ) - ftsLfns
             if toSchedule:
               log.warn( '%d files in operation are not in FTSDB, reset them Waiting' % len( toSchedule ) )
+              for opFile in operation:
+                if opFile.LFN in toSchedule and opFile.Status == 'Scheduled':
+                  opFile.Status = 'Waiting'
+            # Recover files with target not in FTSDB
+            toSchedule = set( [missing for missing, missingSEs in missingReplicas.items()
+                              if not [ftsFile for ftsFile in ftsFiles
+                                      if ftsFile.LFN == missing and ftsFile.TargetSE in missingSEs]] )
+            if toSchedule:
+              log.warn( '%d targets in operation are not in FTSDB, reset files Waiting' % len( toSchedule ) )
               for opFile in operation:
                 if opFile.LFN in toSchedule and opFile.Status == 'Scheduled':
                   opFile.Status = 'Waiting'
@@ -549,7 +570,8 @@ class FTSAgent( AgentModule ):
         if request.Status == "Failed":
           request.Error = "ReplicateAndRegister %s failed" % operation.Order
           log.error( "request is set to 'Failed'" )
-          return self.putRequest( request )
+          # # putRequest is done by the finally: clause... Not good to do it twice
+          raise escapeTry
 
       # # PHASE THREE - update Waiting#TargetSE FTSFiles
       if toUpdate:
@@ -580,14 +602,14 @@ class FTSAgent( AgentModule ):
           log.error( rescheduleFiles["Message"] )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
-      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted' ] )
+      ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted', 'Canceled' ] )
       if not ftsFiles["OK"]:
         log.error( ftsFiles["Message"] )
       else:
         retryIds = set ( [ ftsFile.FTSFileID for ftsFile in toSubmit ] )
         for ftsFile in ftsFiles["Value"]:
           if ftsFile.FTSFileID not in retryIds:
-            if ftsFile.Status == 'Failed':
+            if ftsFile.Status in ( 'Failed', 'Canceled' ):
               # If the file was not unrecoverable failed and is not yet set toSubmit
               _reschedule, submit, _fail = self.__checkFailed( ftsFile )
             elif ftsFile.Status == 'Submitted':
@@ -621,12 +643,15 @@ class FTSAgent( AgentModule ):
       if request.Status != "Scheduled":
         log.info( "request no longer in 'Scheduled' state (%s), will put it back to RMS" % request.Status )
 
+    except escapeTry:
+      # This clause is raised when one wants to return from within the try: clause
+      pass
     except Exception, exceptMessage:
       log.exception( "Exception in processRequest", exceptMessage )
     finally:
-      put = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
-      if not put["OK"]:
-        log.error( "unable to put back request:", put["Message"] )
+      putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
+      if not putRequest["OK"]:
+        log.error( "unable to put back request:", putRequest["Message"] )
      # #  put back jobs in all cases
       if ftsJobs:
         for ftsJob in list( ftsJobs ):
@@ -637,8 +662,9 @@ class FTSAgent( AgentModule ):
         putJobs = self.putFTSJobs( ftsJobs )
         if not putJobs["OK"]:
           log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
-          return putJobs
-      return put
+          putRequest = putJobs
+    # This is where one returns from after execution of the finally: block
+    return putRequest
 
   def __checkDuplicates( self, name, toSubmit ):
     """ Check in a list of FTSFiles whether there are duplicates
@@ -794,7 +820,8 @@ class FTSAgent( AgentModule ):
           ftsFile.Error = ""
           ftsJob.addFile( ftsFile )
 
-        submit = ftsJob.submitFTS2( self.STAGE_FILES )
+        seStatus = sourceSE.getStatus()['Value']
+        submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
         if not submit["OK"]:
           log.error( "unable to submit FTSJob: %s" % submit["Message"] )
           continue
@@ -832,7 +859,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2()
+    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND )
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
@@ -887,7 +914,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( full = True )
+    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND, full = True )
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor
@@ -919,7 +946,7 @@ class FTSAgent( AgentModule ):
     reschedule = False
     submit = False
     fail = False
-    if ftsFile.Status == "Failed":
+    if ftsFile.Status in ( "Failed", 'Canceled' ):
       if ftsFile.Error == "MissingSource":
         reschedule = True
       else:

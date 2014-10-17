@@ -1,4 +1,4 @@
-[v6r12-pre18]
+[v6r12-pre21]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -13,9 +13,17 @@ CHANGE: ProcessPool - exit from the working process if a task execution timed ou
 NEW: ProcessMonitor - added evaluation of the memory consumed by a process and its children   
 NEW: InstallTools - added flag to require MySQL installation
 FIX: InstallTools - correctly installing DBs extended (with sql to be sourced) 
+FIX: InstallTools - run MySQL commands one by one when creating a new database
 CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 NEW: Grid.py - ldapSA replaced by ldapSE, added getBdiiSE(CE)Info() methods
 CHANGE: CFG.py - only lines starting with ^\s*# will be treated as comments
+CHANGE: Shifter - Agents will now have longer proxies cached to prevent errors 
+        for heavy duty agents, closes #2110
+NEW: Bdii2CSAgent - reworked to apply also for SEs and use the same utilities for the
+     corresponding command line tool
+NEW: dirac-admin-add-resources - an interactive tool to add and update sites, CEs, SEs
+     to the DIRAC CS             
+
 
 *Accounting
 NEW: Allow to have more than one DB for accounting
@@ -32,6 +40,10 @@ NEW: JobWrapper, Watchdog - monitor memory consumption by the job ( in a Warning
 FIX: SandboxStoreHandler - treat the case of exception while cleaning sandboxes
 CHANGE: JobCleaningAgent - the delays of job removals become CS parameters
 BUGFIX: JobDB - %j placeholder not replaced after rescheduling
+FIX: JobDB - in the SQL schema description reorder tables to allow foreign keys
+BUGFIX: JobAgent, Matcher - logical bug in using PilotInfoReported flag
+FIX: OptimizerExecutor - when a job fails the optimization chain set the minor status 
+     to the optimiser name and the app status to the fail error
 
 *Resources
 NEW: StorageElement - added a cache of already created SE objects
@@ -40,6 +52,8 @@ CHANGE: SSHTorqueComputingElement - mv getCEStatus to remote script
 *ResourceStatus
 NEW: ResourceManagementClient/DB, DowntimeCommand - distinguish Disk and Tape storage 
 FIX: GODDBClient  - downTimeXMLParsing() can now handle the "service type" parameter properly
+CHANGE: dirac-rss-xxx commands use the printTable standard utility
+FIX: dirac-dms-ftsdb-summary - bug fix for #2096
 
 *DMS
 NEW: DataManager - add masterCatalogOnly flag in the constructor
@@ -49,6 +63,9 @@ FIX: FileCatalog - fixes in using file and replica status
 CHANGE: DataManager - added a new argument to the constructor - vo
 CHANGE: DataManager - removed removeCatalogFile() and dirac-dms-remove-catalog-file adjusted
 CHANGE: Several components - field/parameter CheckSumType all changed to ChecksumType
+CHANGE: PoolXMLCatalog - add the SE by default in the xml dump and use the XML library 
+        for dumping the XML
+FIX: XROOTStorageElement - fixes to comply with the interface formalism        
 
 *SMS
 FIX: StorageManagementDB - small bugfix to avoid SQL errors
@@ -64,12 +81,61 @@ FIX: OperationHandlerBase - don't erase the original message when reaching the m
 FIX: removed some deprecated codes
 FIX: RequestTask - always set useServerCerificate flag to tru in case of executing inside
      an agent
+CHANGE: gRequestValidator removed to avoid object instantiation at import   
+NEW: dirac-rms-cancel-request command and related additions to the db and service classes  
 
 *TMS
 NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p17]
+
+*DMS
+FIX: FileCatalog - in multi-VO case get common catalogs if even VO is not specified
+
+*Resources
+FIX: ComputintgElement - bugfix in available() method
+
+*WMS
+FIX: SiteDirector - if not pilots registered in the DB, pass empty list to the ce.available()
+
+[v6r11p16]
+
+*RMS
+BUGFIX: Request,Operation,File - do not cast to str None values
+
+[v6r11p15]
+
+*DMS
+FIX: ReplicateAndRegister - do not create FTSClient if no FTSMode requested
+CHANGE: FTSAgent(Job,File) - allow to define the FTS2 submission command;
+        added --copy-pin-lifetime only for a tape backend
+        parse output of both commands (FTS2, FTS3)
+        consider additional state for FTS retry (Canceled)
+        
+*RMS
+FIX: Operation, Request - treat updates specially for Error fields        
+
+*TMS
+FIX: TransformationAgent - fixes in preparing json serialization of requests
+
+*WMS
+NEW: StateMonitoringAgent - sends WMS history data through MQ messages 
+
+[v6r11p14]
+
+*WMS
+CHANGE: JobDB - removed unused tables and methods
+CHANGE: removed obsoleted tests
+
+*DMS
+FIX: FTSAgent - recover case when a target is not in FTSDB
+CHANGE: FTSAgent(Job) - give possibility to specify a pin life time in CS 
+
+*RMS
+FIX: Make RMS objects comply with Python Data Model by adding __nonzero__ methods 
 
 [v6r11p13]
 

@@ -10,7 +10,7 @@ MySQL, DB's, Services's, Agents
 
 It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
-The Following Options are used:
+The Following Options are used::
 
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
@@ -30,7 +30,7 @@ The Following Options are used:
   /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
   /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
 
-The setupSite method (used by the dirac-setup-site command) will use the following info:
+The setupSite method (used by the dirac-setup-site command) will use the following info::
 
   /LocalInstallation/Systems:       List of Systems to be defined for this instance in the CS (default: Configuration, Framework)
   /LocalInstallation/Databases:     List of Databases to be installed and configured
@@ -40,7 +40,7 @@ The setupSite method (used by the dirac-setup-site command) will use the followi
   /LocalInstallation/ConfigurationMaster: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
   /LocalInstallation/PrivateConfiguration: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
 
-If a Master Configuration Server is being installed the following Options can be used:
+If a Master Configuration Server is being installed the following Options can be used::
 
   /LocalInstallation/ConfigurationName: Name of the Configuration (default: Setup )
   /LocalInstallation/AdminUserName:  Name of the Admin user (default: None )
@@ -1843,7 +1843,7 @@ def installNewPortal():
     DIRAC.exit(-1)
     return error
   else:
-    gLogger.notice("Tornado has installed suceccfully!")
+    gLogger.notice("Tornado is installed successfully!")
     
   # Check that the software for the Web Portal is installed
   error = ''
@@ -2254,14 +2254,22 @@ def installDatabase( dbName ):
   try:
     cmdLines = _createMySQLCMDLines( dbFile )
 
-    result = execMySQL( '\n'.join( cmdLines ), dbName )
-    if not result['OK']:
-      error = 'Failed to initialize Database'
-      gLogger.notice( '\n'.join( cmdLines ) )
-      gLogger.error( error, result['Message'] )
-      if exitOnError:
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
+    # We need to run one SQL cmd at once, mysql is much happier that way.
+    # Create a string of commands, ignoring comment lines
+    sqlString = '\n'.join( x for x in cmdLines if not x.startswith( "--" ) )
+
+    # Now run each command (They are seperated by ;)
+    # Ignore any empty ones
+    cmds = [ x.strip() for x in sqlString.split( ";" ) if x.strip() ]
+    for cmd in cmds:
+      result = execMySQL( cmd, dbName )
+      if not result['OK']:
+        error = 'Failed to initialize Database'
+        gLogger.notice( cmd )
+        gLogger.error( error, result['Message'] )
+        if exitOnError:
+          DIRAC.exit( -1 )
+        return S_ERROR( error )
 
   except Exception, e:
     gLogger.error( str( e ) )

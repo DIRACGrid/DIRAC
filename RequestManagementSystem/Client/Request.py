@@ -159,7 +159,7 @@ class Request( Record ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
         rStatus = "Done"
-        self.Error = ''
+        self.__data__['Error'] = ''
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -268,6 +268,11 @@ class Request( Record ):
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
     return self.__operations__.index( subReq ) if subReq in self else -1
+
+  def __nonzero__( self ):
+    """ for comparisons
+    """
+    return True
 
   def __len__( self ):
     """ nb of subRequests """
@@ -423,7 +428,7 @@ class Request( Record ):
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
     if value == 'Done':
-      self.Error = ''
+      self.__data__['Error'] = ''
     self.__data__["Status"] = value
 
   @property
@@ -447,10 +452,11 @@ class Request( Record ):
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
+    colVals = [ ( "`%s`" % column, "'%s'" % value
+                  if type( value ) in ( str, datetime.datetime ) else str( value ) if value != None else "NULL" )
                 for column, value in self.__data__.items()
-                if value and column not in  ( "RequestID" ) ]
-    # colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+                if ( column == 'Error' or value ) and column not in  ( "RequestID", "LastUpdate" ) ]
+    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.RequestID:
       query.append( "UPDATE `Request` SET " )
@@ -477,16 +483,10 @@ class Request( Record ):
   # # digest
   def toJSON( self ):
     """ serialize to JSON format """
-    digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest = dict( [( key, str( val ) if val else "" ) for key, val in self.__data__.items()] )
     digest["RequestID"] = self.RequestID
-    digest["Operations"] = []
     digest["__dirty"] = self.__dirty
-    for op in self:
-      opJSON = op.toJSON()
-      if not opJSON["OK"]:
-        return opJSON
-      digest["Operations"].append( opJSON["Value"] )
+    digest["Operations"] = [op.toJSON()['Value'] for op in self]
     return S_OK( digest )
 
   def getDigest( self ):

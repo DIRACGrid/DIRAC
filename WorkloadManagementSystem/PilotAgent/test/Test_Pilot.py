@@ -20,6 +20,7 @@ class PilotTestCase( unittest.TestCase ):
     try:
       os.remove('pilot.out')
       os.remove( 'Test-pilot.json' )
+      os.remove( 'Test-pilot.json-local' )
     except IOError:
       pass
 
@@ -27,15 +28,6 @@ class PilotTestCase( unittest.TestCase ):
 class CommandsTestCase( PilotTestCase ):
 
   def test_GetPilotVersion( self ):
-
-    self.pp.releaseVersion = 'someVer'
-    gpv = GetPilotVersion( self.pp )
-    self.assertIsNone( gpv.execute() )
-
-    self.pp.releaseVersion = ''
-    gpv = GetPilotVersion( self.pp )
-    # no project defined
-    self.assertRaises( IOError, gpv.execute )
 
     # Now defining a local file for test, and all the necessary parameters
     fp = open( 'Test-pilot.json', 'w' )

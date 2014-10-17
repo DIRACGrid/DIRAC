@@ -533,7 +533,6 @@ class ProcessPool( object ):
   .. class:: ProcessPool
   
   ProcessPool
-  ===========
   
   This class is managing multiprocessing execution of tasks (:ProcessTask: instances) in a separate 
   sub-processes (:WorkingProcess:).
@@ -565,7 +564,7 @@ class ProcessPool( object ):
 
   Finalisation
 
-  Finsalization fo task processing is done in several steps:
+  Finalization for task processing is done in several steps:
   
     * if pool is working in daemon mode, background result processing thread is joined and stopped
     * :pendingQueue: is emptied by :ProcessPool.processAllResults: function, all enqueued tasks are executed
@@ -575,7 +574,7 @@ class ProcessPool( object ):
       by SIGKILL
 
   :warn: Be carefull and choose wisely :timeout: argument to :ProcessPool.finalize:. Too short time period can
-  cause that all workers will be killed.  
+         cause that all workers will be killed.  
   
   """
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
@@ -830,8 +829,8 @@ class ProcessPool( object ):
 
     :param self: self reference
 
-    :warning: results may be misleading if elements put into the 
-    queue are big
+    :warning: results may be misleading if elements put into the queue are big
+    
     """
     return not self.__pendingQueue.empty()
 
@@ -841,8 +840,8 @@ class ProcessPool( object ):
 
     :param self: self reference
 
-    :warning: results may be misleading if elements put into the queue 
-    are big
+    :warning: results may be misleading if elements put into the queue are big
+    
     """
     return self.__pendingQueue.full()
 

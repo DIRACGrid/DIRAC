@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 
-class TimeSeries:
+class TimeSeries( object ):
 
   ###########################################################################
   def __init__( self, maxEntries = False, maxAge = False, minAge = False ):
@@ -22,6 +22,12 @@ class TimeSeries:
   ###########################################################################
   def __str__( self ):
     return str( self.convertToList() )
+
+  ###########################################################################
+  def __nonzero__( self ):
+    """ for comparisons
+    """
+    return True
 
   ###########################################################################
   def __len__( self ):

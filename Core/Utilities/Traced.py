@@ -8,7 +8,10 @@
 :mod: Traced
  
 .. module: Traced
+
+
 :synopsis: watched mutable metaclass
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 watched mutable metaclass tracing all updated indexes or keys

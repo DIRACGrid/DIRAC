@@ -1,5 +1,5 @@
 import cStringIO
-#from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph
+from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph
 
 from DIRAC import S_OK, S_ERROR
 

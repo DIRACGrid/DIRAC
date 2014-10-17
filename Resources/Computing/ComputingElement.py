@@ -249,25 +249,24 @@ class ComputingElement(object):
     
     # If there are no already registered jobs
     if jobIDList is not None and len( jobIDList ) == 0:
-      runningJobs = 0
-      waitingJobs = 0
-      submittedJobs = 0
-      ceInfoDict = {}
-    else:  
+      result = S_OK()
+      result['RunningJobs'] = 0
+      result['WaitingJobs'] = 0
+      result['SubmittedJobs'] = 0
+    else:
       result = self.__getParameters( 'CEType' )
       if result['OK'] and result['Value'] == 'CREAM':
         result = self.getCEStatus( jobIDList )
-      else:  
+      else:
         result = self.getCEStatus()
       if not result['OK']:
         #self.log.warn( 'Could not obtain CE dynamic information' )
         #self.log.warn( result['Message'] )
         return result
-      else:
-        runningJobs = result['RunningJobs']
-        waitingJobs = result['WaitingJobs']
-        submittedJobs = result['SubmittedJobs']
-        ceInfoDict = dict(result)
+    runningJobs = result['RunningJobs']
+    waitingJobs = result['WaitingJobs']
+    submittedJobs = result['SubmittedJobs']
+    ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
     ceInfoDict['MaxTotalJobs'] = maxTotalJobs

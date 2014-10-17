@@ -72,15 +72,25 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
     except Exception, x:
       expectedBytes = 0
-    localFD = open( fileName, "wb" )
     data = remoteFD.read()
-    localFD.write( data )        
-    localFD.close()
+    if fileName:
+      localFD = open( fileName + '-local', "wb" )
+      localFD.write( data )
+      localFD.close()
+    else:
+      urlData += data
     remoteFD.close()
     if len( data ) != expectedBytes and expectedBytes > 0:
       log.error( 'URL retrieve: expected size does not match the received one' )
       return False
-    return True
+
+    if timeout:
+      signal.alarm( 0 )
+    if fileName:
+      return True
+    else:
+      return urlData
+
   except urllib2.HTTPError, x:
     if x.code == 404:
       log.error( "URL retrieve: %s does not exist" % url )
@@ -97,6 +107,7 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
       signal.alarm( 0 )
     raise x  
   
+
 class ObjectLoader( object ):
   """ Simplified class for loading objects from a DIRAC installation.
 
@@ -312,7 +323,7 @@ class CommandBase( object ):
     except ImportError:
       self.log.error( "Error importing subprocess" )
 
-class PilotParams:
+class PilotParams( object ):
   """ Class that holds the structure with all the parameters to be used across all the commands
   """
 
@@ -366,6 +377,9 @@ class PilotParams:
     self.executeCmd = False
     self.configureScript = 'dirac-configure'
     self.architectureScript = 'dirac-platform'
+    self.certsLocation = ''
+    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
+    self.pilotCFGFile = ''
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
@@ -467,3 +481,5 @@ class PilotParams:
     self.pilotRootPath = os.getcwd()
     self.workingDir = os.getcwd()
 
+    self.certsLocation = '%s/etc/grid-security' % self.workingDir
+    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
