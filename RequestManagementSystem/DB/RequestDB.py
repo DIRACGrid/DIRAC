@@ -107,6 +107,7 @@ class RequestDB( DB ):
     try:
       # # execute queries
       for query in queries:
+        print 'QUERY %s' % query
         cursor.execute( query )
         queryRes[query] = list( cursor.fetchall() )
       # # commit
