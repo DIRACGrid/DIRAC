@@ -227,10 +227,9 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    value = self._normalizedStatus( value )
-    reStatus = re.compile( '"%s"' % '|'.join( self._states ) )
-    if not reStatus.match( value ):
-      raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
+    value = self._normalizedStatus( value.strip() )
+    if value not in self._states:
+      raise ValueError( "Unknown FTSJob Status: '%s'" % str( value ) )
     self.__data__["Status"] = value
 
   @property
@@ -440,8 +439,8 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-    submitCommand = [ command,
-                     "-s",
+    submitCommand = command.split() + \
+                     [ "-s",
                      self.FTSServer,
                      "-f",
                      fileName,
@@ -452,7 +451,7 @@ class FTSJob( Record ):
     if self.SourceToken:
       submitCommand += [ "-S", self.SourceToken ]
     if pinTime:
-      submitCommand += [ "--copy-pin-lifetime", "%d" % pinTime ]
+      submitCommand += [ "--copy-pin-lifetime", "%d" % pinTime, "--bring-online", '86400' ]
 
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
@@ -479,8 +478,8 @@ class FTSJob( Record ):
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
 
-    monitorCommand = [ command,
-                       "--verbose",
+    monitorCommand = command.split() + \
+                       ["--verbose",
                        "-s",
                        self.FTSServer,
                        self.FTSGUID ]
@@ -514,7 +513,7 @@ class FTSJob( Record ):
 
     total = sum( statusSummary.values() )
     completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
-    self.Completeness = 100 * completed / total
+    self.Completeness = 100 * completed / total if total else 0
 
     if not full:
       return S_OK( statusSummary )
