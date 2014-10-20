@@ -495,6 +495,7 @@ class JobAgent( AgentModule ):
     return jobStatus
 
   #############################################################################
+  # FIXME: this is not called anywhere...?
   def __reportPilotInfo( self, jobID ):
     """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
        service.
@@ -518,6 +519,7 @@ class JobAgent( AgentModule ):
     return S_OK()
 
   #############################################################################
+  # FIXME: this is not called anywhere...?
   def __setJobSite( self, jobID, site ):
     """Wraps around setJobSite of state update client
     """
