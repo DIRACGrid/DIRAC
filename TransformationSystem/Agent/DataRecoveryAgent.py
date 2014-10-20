@@ -22,7 +22,7 @@ Data recovery agent: sets as unused files that are really undone.
     - Mark the recovered input file status as 'Unused' in the ProductionDB
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
