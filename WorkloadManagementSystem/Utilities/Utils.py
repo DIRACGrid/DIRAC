@@ -1,12 +1,12 @@
 """ Utilities for WMS
 """
 
-import os, time, sys
+import os, sys
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
 def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
-                      extraOptions = '', signature = 'unknown',
+                      extraOptions = '',
                       defaultWrapperLocation = 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py',
                       log = gLogger, logLevel = 'INFO' ):
   """ This method creates a job wrapper filled with the CE and Job parameters to execute the job.
@@ -38,10 +38,6 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   wrapperTemplate = fd.read()
   fd.close()
 
-  dateStr = time.strftime( "%Y-%m-%d", time.localtime( time.time() ) )
-  timeStr = time.strftime( "%H:%M", time.localtime( time.time() ) )
-  date_time = '%s %s' % ( dateStr, timeStr )
-
   if jobParams.has_key( 'LogLevel' ):
     logLevel = jobParams['LogLevel']
     log.info( 'Found Job LogLevel JDL parameter with value: %s' % ( logLevel ) )
@@ -54,9 +50,6 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   dPython = realPythonPath
 
   # Making real substitutions
-  wrapperTemplate = wrapperTemplate.replace( "@SIGNATURE@", str( signature ) )
-  wrapperTemplate = wrapperTemplate.replace( "@JOBID@", str( jobID ) )
-  wrapperTemplate = wrapperTemplate.replace( "@DATESTRING@", str( date_time ) )
   wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
   wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", str( siteRoot ) )
 

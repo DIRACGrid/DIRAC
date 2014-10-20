@@ -394,8 +394,7 @@ class JobAgent( AgentModule ):
     defaultWrapperLocation = self.am_getOption( 'JobWrapperTemplate',
                                                 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' )
     result = createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
-                               extraOptions = self.extraOptions,
-                               signature = __RCSID__, defaultWrapperLocation = defaultWrapperLocation,
+                               extraOptions = self.extraOptions, defaultWrapperLocation = defaultWrapperLocation,
                                log = self.log, logLevel = logLevel )
     if not result['OK']:
       return result
