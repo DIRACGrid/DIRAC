@@ -6,7 +6,7 @@ import os, time, sys
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
 def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
-                      signature = 'unknown',
+                      extraOptions = '', signature = 'unknown',
                       defaultWrapperLocation = 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py',
                       log = gLogger, logLevel = 'INFO' ):
   """ This method creates a job wrapper filled with the CE and Job parameters to execute the job.
@@ -66,8 +66,8 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
   jobFileContents = \
 """#!/bin/sh
-%s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
-""" % ( dPython, jobWrapperFile, logLevel )
+%s %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
+""" % ( dPython, jobWrapperFile, extraOptions, logLevel )
   jobFile = open( jobExeFile, 'w' )
   jobFile.write( jobFileContents )
   jobFile.close()

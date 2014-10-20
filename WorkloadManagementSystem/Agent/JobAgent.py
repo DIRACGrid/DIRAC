@@ -66,6 +66,7 @@ class JobAgent( AgentModule ):
     self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', 10 )
     self.jobCount = 0
     self.matchFailedCount = 0
+    self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', '' )
     #Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
@@ -215,6 +216,9 @@ class JobAgent( AgentModule ):
 
     if not params.has_key( 'CPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
+
+    if self.extraOptions:
+      params['Arguments'] = params['Arguments'] + ' ' + self.extraOptions
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
     self.log.info( 'Received JobID=%s, JobType=%s' % ( jobID, jobType ) )
@@ -389,8 +393,10 @@ class JobAgent( AgentModule ):
     logLevel = self.am_getOption( 'DefaultLogLevel', 'INFO' )
     defaultWrapperLocation = self.am_getOption( 'JobWrapperTemplate',
                                                 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' )
-    result = createJobWrapper( jobID, jobParams, resourceParams, optimizerParams, __RCSID__,
-                               defaultWrapperLocation = defaultWrapperLocation, log = self.log, logLevel = logLevel )
+    result = createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
+                               extraOptions = self.extraOptions,
+                               signature = __RCSID__, defaultWrapperLocation = defaultWrapperLocation,
+                               log = self.log, logLevel = logLevel )
     if not result['OK']:
       return result
 
