@@ -322,7 +322,7 @@ class Synchronizer( object ):
     ftsCS = CSHelpers.getFTS()
     if not ftsCS[ 'OK' ]:
       return ftsCS
-    ftsCS = ftsCS[ 'Value' ]        
+    ftsCS = ftsCS[ 'Value' ]
     
     gLogger.verbose( '%s FTS endpoints found in CS' % len( ftsCS ) )
     
