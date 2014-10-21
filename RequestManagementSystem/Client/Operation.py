@@ -31,12 +31,22 @@ import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
-from DIRAC.RequestManagementSystem.private.Record import Record
+from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.hybrid import hybrid_property
+
+
+
+
 ########################################################################
-class Operation( Record ):
+class Operation( RMSBase ):
   """
   .. class:: Operation
 
@@ -59,26 +69,51 @@ class Operation( Record ):
   # # final states
   FINAL_STATES = ( "Failed", "Done", "Canceled" )
 
+  __tablename__ = 'Operation'
+  TargetSE = Column( String( 255 ) )
+  _CreationTime = Column( 'CreationTime', DateTime )
+  SourceSE = Column( String( 255 ) )
+  Arguments = Column( BLOB )
+  Error = Column( String( 255 ) )
+  Type = Column( String( 64 ), nullable = False )
+  _Order = Column( 'Order', Integer, nullable = False )
+  _Status = Column( Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), default = 'Queued' )
+  _LastUpdate = Column( 'LastUpdate', DateTime )
+  _SubmitTime = Column( 'SubmitTime', DateTime )
+  _Catalog = Column( 'Catalog', String( 255 ) )
+  OperationID = Column( Integer, primary_key = True )
+  _RequestID = Column( 'RequestID', Integer, ForeignKey( 'Request.RequestID' ), nullable = False )
+
+  __files__ = relationship( 'File', backref = '_parent' )
+
+
   def __init__( self, fromDict = None ):
     """ c'tor
 
     :param self: self reference
     :param dict fromDict: attributes dictionary
     """
-    Record.__init__( self )
     self._parent = None
     # # sub-request attributes
     # self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
-    self.__data__["SubmitTime"] = now
-    self.__data__["LastUpdate"] = now
-    self.__data__["CreationTime"] = now
-    self.__data__["OperationID"] = 0
-    self.__data__["RequestID"] = 0
-    self.__data__["Status"] = "Queued"
+#     self.__data__["SubmitTime"] = now
+#     self.__data__["LastUpdate"] = now
+#     self.__data__["CreationTime"] = now
+#     self.__data__["OperationID"] = 0
+#     self.__data__["RequestID"] = 0
+#     self.__data__["Status"] = "Queued"
+    self._SubmitTime = now
+    self._LastUpdate = now
+    self._CreationTime = now
+    self.OperationID = 0
+    self._RequestID = 0
+    self._Status = "Queued"
+    self.SourceSE = ""
+    self.TargetSE = ""
 
     # # operation files
-    self.__files__ = TypedList( allowedTypes = File )
+#     self.__files__ = TypedList( allowedTypes = File )
     # # dirty fileIDs
     self.__dirty = []
 
@@ -97,8 +132,10 @@ class Operation( Record ):
       del fromDict["Files"]
 
     for key, value in fromDict.items():
-      if key not in self.__data__:
-        raise AttributeError( "Unknown Operation attribute '%s'" % key )
+#       if key not in self.__data__:
+#         raise AttributeError( "Unknown Operation attribute '%s'" % key )
+      if type( value ) in StringTypes:
+        value = value.encode()
       if key != "Order" and value:
         setattr( self, key, value )
 
@@ -137,28 +174,28 @@ class Operation( Record ):
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
-      self.__data__['Error'] = ''
+      self.Error = ''
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
     if newStatus in ('Failed', 'Done'):
-      if self.__data__["Status"] != newStatus:
+      if self._Status != newStatus:
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
 
-    self.__data__["Status"] = newStatus
+    self.__Status = newStatus
     if self._parent:
       self._parent._notify()
 
   def _setQueued( self, caller ):
     """ don't touch """
     if caller == self._parent:
-      self.__data__["Status"] = "Queued"
+      self._Status = "Queued"
 
   def _setWaiting( self, caller ):
     """ don't touch as well """
     if caller == self._parent:
-      self.__data__["Status"] = "Waiting"
+      self._Status = "Waiting"
 
   # # Files arithmetics
   def __contains__( self, opFile ):
@@ -224,7 +261,7 @@ class Operation( Record ):
     return len( self.__files__ )
 
   # # properties
-  @property
+  @hybrid_property
   def RequestID( self ):
     """ RequestID getter (RO) """
     return self._parent.RequestID if self._parent else -1
@@ -232,50 +269,7 @@ class Operation( Record ):
   @RequestID.setter
   def RequestID( self, value ):
     """ can't set RequestID by hand """
-    self.__data__["RequestID"] = self._parent.RequestID if self._parent else -1
-
-  @property
-  def OperationID( self ):
-    """ OperationID getter """
-    return self.__data__["OperationID"]
-
-  @OperationID.setter
-  def OperationID( self, value ):
-    """ OperationID setter """
-    self.__data__["OperationID"] = long( value ) if value else 0
-
-  @property
-  def Type( self ):
-    """ operation type prop """
-    return self.__data__["Type"]
-
-  @Type.setter
-  def Type( self, value ):
-    """ operation type setter """
-    self.__data__["Type"] = str( value )
-
-  @property
-  def Arguments( self ):
-    """ arguments getter """
-    return self.__data__["Arguments"]
-
-  @Arguments.setter
-  def Arguments( self, value ):
-    """ arguments setter """
-    self.__data__["Arguments"] = value.encode() if value else ""
-
-  @property
-  def SourceSE( self ):
-    """ source SE prop """
-    return self.__data__["SourceSE"] if self.__data__["SourceSE"] else ""
-
-  @SourceSE.setter
-  def SourceSE( self, value ):
-    """ source SE setter """
-    value = ",".join( self._uniqueList( value ) )
-    if len( value ) > 256:
-      raise ValueError( "SourceSE list too long" )
-    self.__data__["SourceSE"] = str( value )[:255].encode() if value else ""
+    self._RequestID = self._parent.RequestID if self._parent else -1
 
   @property
   def sourceSEList( self ):
@@ -283,27 +277,14 @@ class Operation( Record ):
     return self.SourceSE.split( "," )
 
   @property
-  def TargetSE( self ):
-    """ target SE prop """
-    return self.__data__["TargetSE"] if self.__data__["TargetSE"] else ""
-
-  @TargetSE.setter
-  def TargetSE( self, value ):
-    """ target SE setter """
-    value = ",".join( self._uniqueList( value ) )
-    if len( value ) > 256:
-      raise ValueError( "TargetSE list too long" )
-    self.__data__["TargetSE"] = value[:255] if value.encode() else ""
-
-  @property
   def targetSEList( self ):
     """ helper property returning target SEs as a list"""
     return self.TargetSE.split( "," )
 
-  @property
+  @hybrid_property
   def Catalog( self ):
     """ catalog prop """
-    return self.__data__["Catalog"]
+    return self._Catalog
 
   @Catalog.setter
   def Catalog( self, value ):
@@ -311,29 +292,17 @@ class Operation( Record ):
     value = ",".join( self._uniqueList( value ) )
     if len( value ) > 255:
       raise ValueError( "Catalog list too long" )
-    self.__data__["Catalog"] = value.encode() if value else ""
+    self._Catalog = value.encode() if value else ""
 
   @property
   def catalogList( self ):
     """ helper property returning catalogs as list """
-    return self.__data__["Catalog"].split( "," )
+    return self._Catalog.split( "," )
 
-  @property
-  def Error( self ):
-    """ error prop """
-    return self.__data__["Error"]
-
-  @Error.setter
-  def Error( self, value ):
-    """ error setter """
-    if type( value ) not in StringTypes:
-      raise TypeError( "Error has to be a string!" )
-    self.__data__["Error"] = self._escapeStr( value.encode(), 255 )
-
-  @property
+  @hybrid_property
   def Status( self ):
     """ Status prop """
-    return self.__data__["Status"]
+    return self._Status
 
   @Status.setter
   def Status( self, value ):
@@ -345,26 +314,26 @@ class Operation( Record ):
     else:
       # If the status moved to Failed or Done, update the lastUpdate time
       if value in ( 'Failed', 'Done' ):
-        if self.__data__["Status"] != value.encode():
+        if self._Status != value:
           self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
-      self.__data__["Status"] = value.encode()
+      self._Status = value
       if self._parent:
         self._parent._notify()
-    if self.__data__['Status'] == 'Done':
-      self.__data__['Error'] = ''
+    if self._Status == 'Done':
+      self.Error = ''
 
-  @property
+  @hybrid_property
   def Order( self ):
     """ order prop """
     if self._parent:
-      self.__data__["Order"] = self._parent.indexOf( self ) if self._parent else -1
-    return self.__data__["Order"]
+      self._Order = self._parent.indexOf( self ) if self._parent else -1
+    return self._Order
 
-  @property
+  @hybrid_property
   def CreationTime( self ):
     """ operation creation time prop """
-    return self.__data__["CreationTime"]
+    return self._CreationTime
 
   @CreationTime.setter
   def CreationTime( self, value = None ):
@@ -373,12 +342,12 @@ class Operation( Record ):
       raise TypeError( "CreationTime should be a datetime.datetime!" )
     if type( value ) in StringTypes:
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
-    self.__data__["CreationTime"] = value
+    self._CreationTime = value
 
-  @property
+  @hybrid_property
   def SubmitTime( self ):
     """ subrequest's submit time prop """
-    return self.__data__["SubmitTime"]
+    return self._SubmitTime
 
   @SubmitTime.setter
   def SubmitTime( self, value = None ):
@@ -387,12 +356,12 @@ class Operation( Record ):
         raise TypeError( "SubmitTime should be a datetime.datetime!" )
     if type( value ) in StringTypes:
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
-    self.__data__["SubmitTime"] = value
+    self._SubmitTime = value
 
-  @property
+  @hybrid_property
   def LastUpdate( self ):
     """ last update prop """
-    return self.__data__["LastUpdate"]
+    return self._LastUpdate
 
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
@@ -401,7 +370,7 @@ class Operation( Record ):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
     if type( value ) in StringTypes:
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
-    self.__data__["LastUpdate"] = value
+    self._LastUpdate = value
 
   def __str__( self ):
     """ str operator """
@@ -473,3 +442,12 @@ class Operation( Record ):
     jsonData['Files'] = copy.deepcopy( self.__files__ )
 
     return jsonData
+
+  @staticmethod
+  def _uniqueList( value, sep = "," ):
+    """ make unique list from :value: """
+    if type( value ) not in ( str, unicode, list ):
+      raise TypeError( "wrong type for value" )
+    if type( value ) in ( str, unicode ):
+      value = value.split( sep )
+    return list ( set ( [ str( item ).strip() for item in value if str( item ).strip() ] ) )

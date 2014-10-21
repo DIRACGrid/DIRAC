@@ -23,17 +23,24 @@ __RCSID__ = "$Id $"
 # # imports
 import random
 import threading
+import socket
 import MySQLdb.cursors
 from MySQLdb import Error as MySQLdbError
 from types import StringTypes
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import stringListToString
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 ########################################################################
 class RequestDB( DB ):
   """
@@ -41,26 +48,109 @@ class RequestDB( DB ):
 
   db holding requests
   """
+#
+#   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+#     """c'tor
+#
+#     :param self: self reference
+#     """
+#     self.getIdLock = threading.Lock()
+#     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
+
+
+  def __getDBConnectionInfo( self, fullname ):
+    """ Collect from the CS all the info needed to connect to the DB.
+        This should be in a base class eventually
+    """
+    self.fullname = fullname
+    self.cs_path = getDatabaseSection( self.fullname )
+
+    self.dbHost = ''
+    result = gConfig.getOption( self.cs_path + '/Host' )
+    if not result['OK']:
+      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
+    self.dbHost = result['Value']
+    # Check if the host is the local one and then set it to 'localhost' to use
+    # a socket connection
+    if self.dbHost != 'localhost':
+      localHostName = socket.getfqdn()
+      if localHostName == self.dbHost:
+        self.dbHost = 'localhost'
+
+    self.dbPort = 3306
+    result = gConfig.getOption( self.cs_path + '/Port' )
+    if not result['OK']:
+      # No individual port number found, try at the common place
+      result = gConfig.getOption( '/Systems/Databases/Port' )
+      if result['OK']:
+        self.dbPort = int( result['Value'] )
+    else:
+      self.dbPort = int( result['Value'] )
+
+    self.dbUser = ''
+    result = gConfig.getOption( self.cs_path + '/User' )
+    if not result['OK']:
+      # No individual user name found, try at the common place
+      result = gConfig.getOption( '/Systems/Databases/User' )
+      if not result['OK']:
+        raise RuntimeError( 'Failed to get the configuration parameters: User' )
+    self.dbUser = result['Value']
+    self.dbPass = ''
+    result = gConfig.getOption( self.cs_path + '/Password' )
+    if not result['OK']:
+      # No individual password found, try at the common place
+      result = gConfig.getOption( '/Systems/Databases/Password' )
+      if not result['OK']:
+        raise RuntimeError( 'Failed to get the configuration parameters: Password' )
+    self.dbPass = result['Value']
+    self.dbName = ''
+    result = gConfig.getOption( self.cs_path + '/DBName' )
+    if not result['OK']:
+      raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
+    self.dbName = result['Value']
+
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
     """c'tor
 
     :param self: self reference
     """
-    self.getIdLock = threading.Lock()
-    DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
+    self.__getDBConnectionInfo( 'RequestManagement/ReqDB' )
+
+    # Create an engine that stores data in the local directory's
+    # sqlalchemy_example.db file.
+    self.engine = create_engine( 'mysql://%s:%s@%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbName ) )
+
+    # Create all tables in the engine. This is equivalent to "Create Table"
+    # statements in raw SQL.
+    # Base.metadata.create_all(engine)
+
+    RMSBase.metadata.bind = self.engine
+
+    DBSession = sessionmaker( bind = self.engine )
+    self.session = DBSession()
+
+
+#   def createTables( self, toCreate = None, force = False ):
+#     """ create tables """
+#     toCreate = toCreate if toCreate else []
+#     if not toCreate:
+#       return S_OK()
+#     tableMeta = self.getTableMeta()
+#     metaCreate = {}
+#     for tableName in toCreate:
+#       metaCreate[tableName] = tableMeta[tableName]
+#     if metaCreate:
+#       return self._createTables( metaCreate, force )
+#     return S_OK()
+
 
   def createTables( self, toCreate = None, force = False ):
     """ create tables """
-    toCreate = toCreate if toCreate else []
-    if not toCreate:
-      return S_OK()
-    tableMeta = self.getTableMeta()
-    metaCreate = {}
-    for tableName in toCreate:
-      metaCreate[tableName] = tableMeta[tableName]
-    if metaCreate:
-      return self._createTables( metaCreate, force )
+    try:
+      RMSBase.metadata.create_all( self.engine )
+    except Exception, e:
+      return S_ERROR( e )
     return S_OK()
 
   @staticmethod
@@ -253,29 +343,36 @@ class RequestDB( DB ):
 
     return S_OK( request.RequestID )
 
+#   def getScheduledRequest( self, operationID ):
+#     """ read scheduled request given its FTS operationID """
+#     query = "SELECT `Request`.`RequestName` FROM `Request` JOIN `Operation` ON "\
+#       "`Request`.`RequestID`=`Operation`.`RequestID` WHERE `OperationID` = %s;" % operationID
+#     requestName = self._query( query )
+#     if not requestName["OK"]:
+#       self.log.error( "getScheduledRequest: %s" % requestName["Message"] )
+#       return requestName
+#     requestName = requestName["Value"]
+#     if not requestName:
+#       return S_OK()
+#     return self.getRequest( requestName[0][0] )
+
   def getScheduledRequest( self, operationID ):
-    """ read scheduled request given its FTS operationID """
-    query = "SELECT `Request`.`RequestName` FROM `Request` JOIN `Operation` ON "\
-      "`Request`.`RequestID`=`Operation`.`RequestID` WHERE `OperationID` = %s;" % operationID
-    requestName = self._query( query )
-    if not requestName["OK"]:
-      self.log.error( "getScheduledRequest: %s" % requestName["Message"] )
-      return requestName
-    requestName = requestName["Value"]
-    if not requestName:
+    requestName = None
+    try:
+      requestName = self.session.query( Request.RequestName ).join( Request.__operations__ ).filter( Operation.OperationID == operationID ).one()
+      return requestName[0]
+    except NoResultFound, e:
       return S_OK()
-    return self.getRequest( requestName[0][0] )
+    return self.getRequest( requestName[0] )
 
   def getRequestName( self, requestID ):
     """ get Request.RequestName for a given Request.RequestID """
-    query = "SELECT `RequestName` FROM `Request` WHERE `RequestID` = %s" % requestID
-    query = self._query( query )
-    if not query["OK"]:
-      self.log.error( "getRequestName: %s" % query["Message"] )
-    query = query["Value"]
-    if not query:
+
+    try:
+      requestName = self.session.query( Request.RequestName ).filter( Request.RequestID == requestID ).one()
+      return requestName[0]
+    except NoResultFound, e:
       return S_ERROR( "getRequestName: no request found for RequestID=%s" % requestID )
-    return S_OK( query[0][0] )
 
 
   def getRequest( self, requestName = '', assigned = True ):

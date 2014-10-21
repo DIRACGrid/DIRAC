@@ -34,12 +34,17 @@ from types import StringTypes
 # import urlparse
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.private.Record import Record
+from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB, BigInteger
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
+
+
 ########################################################################
-class File( Record ):
+class File( RMSBase ):
   """
   .. class:: File
 
@@ -49,30 +54,47 @@ class File( Record ):
   :param dict __data__: attrs dict
   """
 
+  __tablename__ = 'File'
+  FileID = Column( Integer, primary_key = True )
+  _OperationID = Column( 'OperationID', Integer, ForeignKey( 'Operation.OperationID' ), nullable = False )
+  _Status = Column( Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), default = 'Waiting' )
+  _LFN = Column( 'LFN', String( 255 ), index = True )
+  PFN = Column( String( 255 ) )
+  _ChecksumType = Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), default = '' )
+  Checksum = Column( String( 255 ) )
+  _GUID = Column( 'GUID', String( 36 ) )
+  Size = Column(BigInteger)
+  Attempt = Column(Integer)
+  Error = Column( String( 255 ) )
+
+
   def __init__( self, fromDict = None ):
     """c'tor
 
     :param self: self reference
     :param dict fromDict: property dict
     """
-    Record.__init__( self )
     self._parent = None
-    self.__data__["FileID"] = 0
-    self.__data__["OperationID"] = 0
-    self.__data__["Status"] = "Waiting"
-    self.__data__["LFN"] = ''
-    self.__data__["PFN"] = ''
-    self.__data__["ChecksumType"] = ''
-    self.__data__["Checksum"] = ''
-    self.__data__["GUID"] = ''
-    self.__data__["Attempt"] = 0
-    self.__data__["Size"] = 0
-    self.__data__["Error"] = ''
+    self.FileID = 0
+    self._OperationID = 0
+    self._Status = 'Waiting'
+    self._LFN = ''
+    self.PFN = ''
+    self._ChecksumType = ''
+    self.Checksum = ''
+    self._GUID = ''
+    self.Attempt = 0
+    self.Size = 0
+    self.Error = ''
     self._duration = 0
+
     fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
+
     for attrName, attrValue in fromDict.items():
-      if attrName not in self.__data__:
-        raise AttributeError( "unknown File attribute %s" % str( attrName ) )
+#       if attrName not in self.__data__:
+#         raise AttributeError( "unknown File attribute %s" % str( attrName ) )
+      if type( attrValue ) in StringTypes:
+        attrValue = attrValue.encode()
       if attrValue:
         setattr( self, attrName, attrValue )
 
@@ -97,51 +119,22 @@ class File( Record ):
 
   # # properties
 
-  @property
-  def FileID( self ):
-    """ FileID getter """
-    return self.__data__["FileID"]
-
-  @FileID.setter
-  def FileID( self, value ):
-    """ FileID setter """
-    self.__data__["FileID"] = int( value ) if value else 0
-
-  @property
+  @hybrid_property
   def OperationID( self ):
     """ operation ID (RO) """
-    self.__data__["OperationID"] = self._parent.OperationID if self._parent else 0
-    return self.__data__["OperationID"]
+    self._OperationID = self._parent.OperationID if self._parent else 0
+    return self._OperationID
 
   @OperationID.setter
   def OperationID( self, value ):
     """ operation ID (RO) """
-    self.__data__["OperationID"] = self._parent.OperationID if self._parent else 0
+    self._OperationID = self._parent.OperationID if self._parent else 0
 
-  @property
-  def Attempt( self ):
-    """ attempt getter """
-    return self.__data__["Attempt"]
 
-  @Attempt.setter
-  def Attempt( self, value ):
-    """ attempt setter """
-    self.__data__["Attempt"] = int( value ) if value else 0
-
-  @property
-  def Size( self ):
-    """ file size getter """
-    return self.__data__["Size"]
-
-  @Size.setter
-  def Size( self, value ):
-    """ file size setter """
-    self.__data__["Size"] = long( value ) if value else 0
-
-  @property
+  @hybrid_property
   def LFN( self ):
     """ LFN prop """
-    return self.__data__["LFN"]
+    return self._LFN
 
   @LFN.setter
   def LFN( self, value ):
@@ -150,28 +143,13 @@ class File( Record ):
       raise TypeError( "LFN has to be a string!" )
     if not os.path.isabs( value ):
       raise ValueError( "LFN should be an absolute path!" )
-    self.__data__["LFN"] = value.encode()
+    self._LFN = value
 
-  @property
-  def PFN( self ):
-    """ PFN prop """
-    return self.__data__["PFN"]
 
-  @PFN.setter
-  def PFN( self, value ):
-    """ PFN setter """
-    if type( value ) not in StringTypes:
-      raise TypeError( "PFN has to be a string!" )
-    # isURL = urlparse.urlparse( value ).scheme
-    # isABS = os.path.isabs( value )
-    # if not isURL and not isABS:
-    #  raise ValueError( "Wrongly formatted PFN!" )
-    self.__data__["PFN"] = value.encode()
-
-  @property
+  @hybrid_property
   def GUID( self ):
     """ GUID prop """
-    return self.__data__["GUID"]
+    return self._GUID
 
   @GUID.setter
   def GUID( self, value ):
@@ -181,54 +159,33 @@ class File( Record ):
         raise TypeError( "GUID should be a string!" )
       if not checkGuid( value ):
         raise ValueError( "'%s' is not a valid GUID!" % str( value ) )
-    self.__data__["GUID"] = value.encode()
+    self._GUID = value
 
-  @property
+  @hybrid_property
   def ChecksumType( self ):
     """ checksum type prop """
-    return self.__data__["ChecksumType"]
+    return self._ChecksumType
 
   @ChecksumType.setter
   def ChecksumType( self, value ):
     """ checksum type setter """
     if not value:
-      self.__data__["ChecksumType"] = ""
+      self._ChecksumType = ""
     elif value and str( value ).strip().upper() not in ( "ADLER32", "MD5", "SHA1" ):
       if str( value ).strip().upper() == 'AD':
-        self.__data__["ChecksumType"] = 'ADLER32'
+        self._ChecksumType = 'ADLER32'
       else:
         raise ValueError( "unknown checksum type: %s" % value )
     else:
-      self.__data__["ChecksumType"] = str( value ).strip().upper()
+      self._ChecksumType = str( value ).strip().upper()
 
-  @property
-  def Checksum( self ):
-    """ checksum prop """
-    return self.__data__["Checksum"]
 
-  @Checksum.setter
-  def Checksum( self, value ):
-    """ checksum setter """
-    self.__data__["Checksum"] = str( value ) if value else ""
-
-  @property
-  def Error( self ):
-    """ error prop """
-    return self.__data__["Error"]
-
-  @Error.setter
-  def Error( self, value ):
-    """ error setter """
-    if type( value ) not in StringTypes:
-      raise TypeError( "Error has to be a string!" )
-    self.__data__["Error"] = self._escapeStr( value , 255 ).encode()
-
-  @property
+  @hybrid_property
   def Status( self ):
     """ status prop """
-    if not self.__data__["Status"]:
-      self.__data__["Status"] = "Waiting"
-    return self.__data__["Status"]
+    if not self._Status:
+      self._Status = 'Waiting'
+    return self._Status
 
   @Status.setter
   def Status( self, value ):
@@ -236,8 +193,8 @@ class File( Record ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
-      self.__data__['Error'] = ''
-    self.__data__["Status"] = value.encode()
+      self.Error = ''
+    self._Status = value
     if self._parent:
       self._parent._notify()
 
