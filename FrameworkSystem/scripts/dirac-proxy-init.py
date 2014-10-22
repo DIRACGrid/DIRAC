@@ -193,7 +193,13 @@ class ProxyInit:
     pI.certLifeTimeCheck()
     result = pI.addVOMSExtIfNeeded()
     if not result[ 'OK' ]:
-      gLogger.info( result[ 'Message' ] )
+      if "returning a valid AC for the user" in result['Message']:
+        gLogger.error( result[ 'Message' ] )
+        gLogger.error("\n Are you sure you are properly registered in the VO?")
+      elif "Missing voms-proxy" in res['Message']:
+        gLogger.notice( "No standard grid interface installed" )
+      else:
+        gLogger.error( result['Message'] )
       if self.__piParams.strict:
         return result
 
