@@ -1,7 +1,10 @@
-# $HeadURL:  $
 ''' Synchronizer
 
-  Module that keeps the database 
+  Module that keeps the database synchronized with the CS
+  Module that updates the RSS database ( ResourceStatusDB ) with the information
+  in the Resources section. If there are additions in the CS, those are incorporated
+  to the DB. If there are deletions, entries in RSS tables for those elements are
+  deleted ( except the Logs table ).
 
 '''
 
@@ -34,8 +37,21 @@ class Synchronizer( object ):
   
   def sync( self, _eventName, _params ):
     '''
-      Main synchronizer method. It syncs the three types of elements: Sites,
-      Resources and Nodes.
+    Main synchronizer method. It synchronizes the three types of elements: Sites,
+    Resources and Nodes. Each _syncX method returns a dictionary with the additions
+    and deletions.
+    
+    examples:
+      >>> s.sync( None, None )
+          S_OK()
+    
+    :Parameters:
+      **_eventName** - any
+        this parameter is ignored, but needed by caller function.
+      **_params** - any
+        this parameter is ignored, but needed by caller function.
+    
+    :return: S_OK
     '''
     
     syncSites = self._syncSites()
@@ -306,7 +322,7 @@ class Synchronizer( object ):
     ftsCS = CSHelpers.getFTS()
     if not ftsCS[ 'OK' ]:
       return ftsCS
-    ftsCS = ftsCS[ 'Value' ]        
+    ftsCS = ftsCS[ 'Value' ]
     
     gLogger.verbose( '%s FTS endpoints found in CS' % len( ftsCS ) )
     
