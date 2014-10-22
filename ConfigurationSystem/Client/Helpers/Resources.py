@@ -56,7 +56,7 @@ def getFTSServersForSites( self, siteList = None ):
       return siteList
     siteList = siteList["Value"]
   ftsServers = dict()
-  defaultServ = gConfig.getValue( cfgPath( gBaseResourcesSection, 'FTSEndPoints/Default', 'FTSEndpoint' ), '' )
+  defaultServ = gConfig.getValue( cfgPath( gBaseResourcesSection, 'FTSEndpoints/Default', 'FTSEndpoint' ), '' )
   for site in siteList:
     serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "FTSEndpoints", site ), defaultServ )
     if serv:

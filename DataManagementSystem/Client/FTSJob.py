@@ -227,10 +227,9 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    value = self._normalizedStatus( value )
-    reStatus = re.compile( '"%s"' % '|'.join( self._states ) )
-    if not reStatus.match( value ):
-      raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
+    value = self._normalizedStatus( value.strip() )
+    if value not in self._states:
+      raise ValueError( "Unknown FTSJob Status: '%s'" % str( value ) )
     self.__data__["Status"] = value
 
   @property
@@ -440,8 +439,8 @@ class FTSJob( Record ):
     surlFile = os.fdopen( fd, 'w' )
     surlFile.write( surls )
     surlFile.close()
-    submitCommand = [ command,
-                     "-s",
+    submitCommand = command.split() + \
+                     [ "-s",
                      self.FTSServer,
                      "-f",
                      fileName,
@@ -452,7 +451,7 @@ class FTSJob( Record ):
     if self.SourceToken:
       submitCommand += [ "-S", self.SourceToken ]
     if pinTime:
-      submitCommand += [ "--copy-pin-lifetime", "%d" % pinTime ]
+      submitCommand += [ "--copy-pin-lifetime", "%d" % pinTime, "--bring-online", '86400' ]
 
     submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
@@ -479,8 +478,8 @@ class FTSJob( Record ):
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
 
-    monitorCommand = [ command,
-                       "--verbose",
+    monitorCommand = command.split() + \
+                       ["--verbose",
                        "-s",
                        self.FTSServer,
                        self.FTSGUID ]
@@ -500,7 +499,7 @@ class FTSJob( Record ):
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
 
     # # set FTS job status
-    regExp = re.compile( "Status:\s+(\S+)" )
+    regExp = re.compile( "Status:\\s+(\\S+)" )
 
     # with FTS3 this can be uppercase
     self.Status = re.search( regExp, outputStr ).group( 1 )
@@ -508,25 +507,27 @@ class FTSJob( Record ):
     statusSummary = {}
     # This is capitalized, even in FTS3!
     for state in FTSFile.ALL_STATES:
-      regExp = re.compile( "\s+%s:\s+(\d+)" % state )
+      regExp = re.compile( "\\s+%s:\\s+(\\d+)" % state )
       if regExp.search( outputStr ):
         statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
 
     total = sum( statusSummary.values() )
     completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
-    self.Completeness = 100 * completed / total
+    self.Completeness = 100 * completed / total if total else 0
 
     if not full:
       return S_OK( statusSummary )
 
     # The order of informations is not the same for glite- and fts- !!!
-    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)',
-                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)' ):
+    # In order: new fts-, old fts-, glite-
+    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)',
+                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
+                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)' ):
       regExp = re.compile( exptr, re.S )
       fileInfo = re.findall( regExp, outputStr )
       if fileInfo:
         break
-    for sourceURL, _targetURL, fileStatus, _retries, reason, duration in fileInfo:
+    for sourceURL, _targetURL, fileStatus, _retries, reason, duration in fileInfo[:6]:
       candidateFile = None
       for ftsFile in self:
         if ftsFile.SourceSURL == sourceURL:
@@ -543,7 +544,9 @@ class FTSJob( Record ):
         for missingSource in self.missingSourceErrors:
           if missingSource.match( reason ):
             candidateFile.Error = "MissingSource"
-
+    # If the staging info was present, record it
+    if len( fileInfo ) > 6:
+      candidateFile._staging = fileInfo[6]
     # # register successful files
     if self.Status in FTSJob.FINALSTATES:
       return self.finalize()
