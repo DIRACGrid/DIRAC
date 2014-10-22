@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL: $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -51,7 +50,7 @@ import urllib
 
 EXECUTION_RESULT = {}
 
-class JobWrapper:
+class JobWrapper( object ):
 
   #############################################################################
   def __init__( self, jobID = None, jobReport = None ):

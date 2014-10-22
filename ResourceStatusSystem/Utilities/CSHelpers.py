@@ -118,7 +118,21 @@ def getStorageElementEndpoints( storageElements = None ):
       continue
     storageElementEndpoints.append( seEndpoint[ 'Value' ] )
   
-  return S_OK( list( set( storageElementEndpoints ) ) )
+  return S_OK( list( set( storageElementEndpoints ) ) )     
+  
+def getFTS():
+  '''
+    Gets all storage elements from /Resources/FTSEndpoints
+  '''
+  
+  _basePath = 'Resources/FTSEndpoints'
+    
+  ftsEndpoints = gConfig.getOptions( _basePath )
+  ftsEndpointDefaultLocation = gConfig.getValue( '/Resources/FTSEndpoints/Default/FTSEndpoint', '' )
+  if ftsEndpoints['OK'] and ftsEndpointDefaultLocation:
+    ftsEndpoints['Value'].append( ftsEndpointDefaultLocation )
+
+  return ftsEndpoints 
 
 def getSpaceTokenEndpoints():
   ''' Get Space Token Endpoints '''

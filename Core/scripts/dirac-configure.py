@@ -178,7 +178,7 @@ def setArchitecture( optionValue ):
 def setLocalSE( optionValue ):
   global localSE
   localSE = optionValue
-  Script.localCfg.addDefaultEntry( '/LocalSite/localSE', localSE )
+  Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'LocalSE' ), localSE )
   return DIRAC.S_OK()
 

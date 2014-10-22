@@ -239,7 +239,7 @@ def getSiteNamesDict( siteList_ ):
   siteList = siteList_
   if type( siteList_ ) != ListType:
     siteList = [siteList_] 
-  
+
   for site in siteList:
     result = getSiteName( site )
     if not result['OK']:

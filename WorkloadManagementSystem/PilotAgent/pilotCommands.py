@@ -692,8 +692,6 @@ class LaunchAgent( CommandBase ):
     self.log.info( 'User Id    = %s' % localUid )
     self.inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
-    self.inProcessOpts.append( '-o GridCE=%s' % self.pp.ceName )
-    self.inProcessOpts.append( '-o LocalAccountString=%s' % localUser )
     # FIXME: this is artificial
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
@@ -723,6 +721,7 @@ class LaunchAgent( CommandBase ):
 
     # The file pilot.cfg has to be created previously by ConfigureDIRAC
     if self.pp.localConfigFile:
+      self.inProcessOpts.append( ' -o /AgentJobRequirements/ExtraOptions=%s' % self.pp.localConfigFile )
       self.inProcessOpts.append( self.pp.localConfigFile )
 
 

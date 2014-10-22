@@ -95,7 +95,7 @@ class SEManagerDB( SEManagerBase ):
     self.lock.release()
     return S_OK()
 
-  def __addSE( self, seName, connection = False ):
+  def __addSE( self, seName ):
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()
@@ -105,7 +105,7 @@ class SEManagerDB( SEManagerBase ):
       gLogger.debug( "SEManager AddSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
       self.lock.release()
       return S_OK( seid )
-    connection = self.db._getConnection( connection )
+    connection = self.db._getConnection()
     res = self.db._insert( 'FC_StorageElements', ['SEName'], [seName], connection )
     if not res['OK']:
       gLogger.debug( "SEManager AddSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
@@ -126,8 +126,8 @@ class SEManagerDB( SEManagerBase ):
     self.lock.release()
     return S_OK( seid )
 
-  def __removeSE( self, seName, connection = False ):
-    connection = self._getConnection( connection )
+  def __removeSE( self, seName ):
+    connection = self.db._getConnection()
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()

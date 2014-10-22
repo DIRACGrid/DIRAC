@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre21]
+[v6r12-pre22]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -132,7 +132,8 @@ CHANGE: Shifter - Agents will now have longer proxies cached to prevent errors
 NEW: Bdii2CSAgent - reworked to apply also for SEs and use the same utilities for the
      corresponding command line tool
 NEW: dirac-admin-add-resources - an interactive tool to add and update sites, CEs, SEs
-     to the DIRAC CS             
+     to the DIRAC CS   
+CHANGE: dirac-proxy-init - added message in case of impossibility to add VOMS extension               
 
 
 *Accounting
@@ -199,6 +200,15 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p18]
+
+*DMS
+FIX: FTSAgent(Job) - fixes for transfers requiring staging (bringOnline) and adaptation 
+     to the FTS3 interface
+
+*WMS
+FIX: StatesMonitoringAgent - resend the records in case of failure
 
 [v6r11p17]
 

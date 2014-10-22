@@ -1,6 +1,6 @@
-# $HeadURL:  $
 ''' Synchronizer
 
+  Module that keeps the database synchronized with the CS
   Module that updates the RSS database ( ResourceStatusDB ) with the information
   in the Resources section. If there are additions in the CS, those are incorporated
   to the DB. If there are deletions, entries in RSS tables for those elements are
@@ -33,8 +33,7 @@ class Synchronizer( object ):
     
     self.log        = gLogger.getSubLogger( self.__class__.__name__ )
     self.operations = Operations()
-    self.resources  = Resources()
-    
+    self.resources  = Resources()    
     self.rStatus    = ResourceStatusClient.ResourceStatusClient()  
     self.rssConfig  = RssConfiguration()
   
