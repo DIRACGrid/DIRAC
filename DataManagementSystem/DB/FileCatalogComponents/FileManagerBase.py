@@ -61,14 +61,16 @@ class FileManagerBase( object ):
     req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_FileInfo)"
     res = self.db._query( req, connection )
     if not res['OK']:
-      return res
-    resultDict['Files w/o FileInfo'] = res['Value'][0][0]
+      resultDict['Files w/o FileInfo'] = 0
+    else:
+      resultDict['Files w/o FileInfo'] = res['Value'][0][0]
 
     req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN ( SELECT FileID FROM FC_Files)"
     res = self.db._query( req, connection )
     if not res['OK']:
-      return res
-    resultDict['FileInfo w/o Files'] = res['Value'][0][0]
+      resultDict['FileInfo w/o Files'] = 0
+    else:
+      resultDict['FileInfo w/o Files'] = res['Value'][0][0]
 
     return S_OK( resultDict )
 
