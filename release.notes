@@ -1,4 +1,4 @@
-[v6r12-pre21]
+[v6r12-pre22]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -22,7 +22,8 @@ CHANGE: Shifter - Agents will now have longer proxies cached to prevent errors
 NEW: Bdii2CSAgent - reworked to apply also for SEs and use the same utilities for the
      corresponding command line tool
 NEW: dirac-admin-add-resources - an interactive tool to add and update sites, CEs, SEs
-     to the DIRAC CS             
+     to the DIRAC CS   
+CHANGE: dirac-proxy-init - added message in case of impossibility to add VOMS extension               
 
 
 *Accounting
