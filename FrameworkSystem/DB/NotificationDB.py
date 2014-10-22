@@ -828,8 +828,8 @@ class NotificationDB( DB ):
     for msg in messages:
       self.__sendMailToUser( msg[1], 'Notification defered to mail', msg[2] )
       ids.append( str( msg[0] ) )
-    self.log.info( "Defered %s notifications" % len( ids ) )
-    return self._update( "DELTE FROM `ntf_Notifications` WHERE Id in (%s)" % ",".join( ids ) )
+    self.log.info( "Deferred %s notifications" % len( ids ) )
+    return self._update( "DELETE FROM `ntf_Notifications` WHERE Id in (%s)" % ",".join( ids ) )
 
 
 
