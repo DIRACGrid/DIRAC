@@ -1059,10 +1059,10 @@ class FTSAgent( AgentModule ):
     accountingDict["Source"] = ftsJob.SourceSE
     accountingDict["Destination"] = ftsJob.TargetSE
 
-    dt = ftsJob.LastUpdate - ftsJob.SubmitTime
-    transferTime = dt.days * 86400 + dt.seconds
-    accountingDict["TransferTime"] = transferTime
-    # accountingDict['TransferTime'] = sum( [f._duration for f in ftsJob])
+    # dt = ftsJob.LastUpdate - ftsJob.SubmitTime
+    # transferTime = dt.days * 86400 + dt.seconds
+    # accountingDict["TransferTime"] = transferTime
+    accountingDict['TransferTime'] = sum( [int( f._duration ) for f in ftsJob if f.Status in FTSFile.SUCCESS_STATES ] )
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 
