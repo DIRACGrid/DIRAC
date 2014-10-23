@@ -94,7 +94,10 @@ class JobAgent( AgentModule ):
         
         # Update local configuration to be used by submitted job wrappers
         localCfg = CFG()
-        localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
+        if self.extraOptions:
+          localConfigFile = os.path.join( rootPath, self.extraOptions )
+        else:
+          localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
         localCfg.loadFromFile( localConfigFile )
         if not localCfg.isSection('/LocalSite'):
           localCfg.createNewSection('/LocalSite')
