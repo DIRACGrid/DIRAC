@@ -10,17 +10,12 @@
 """
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig, gLogger
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
+from DIRAC                                               import rootPath
+from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile, random
+import os, socket
 
 CE_NAME = 'SSHBatch'
 
@@ -62,11 +57,14 @@ class SSHBatchComputingElement( SSHComputingElement ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )    
       
     # Prepare all the hosts  
-    for h in self.ceParameters['SSHHost'].strip().split( ',' ):
-      host = h.strip().split('/')[0]
+    for hPar in self.ceParameters['SSHHost'].strip().split( ',' ):
+      host = hPar.strip().split('/')[0]
       result = self._prepareRemoteHost( host = host )
-      self.log.info( 'Host %s registered for usage' % host )
-      self.sshHost.append( h.strip() )
+      if result['OK']:
+        self.log.info( 'Host %s registered for usage' % host )
+        self.sshHost.append( hPar.strip() )
+      else:
+        self.log.error( 'Failed to initialize host', host  )  
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
