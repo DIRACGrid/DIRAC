@@ -196,8 +196,8 @@ class ProxyInit:
       if "returning a valid AC for the user" in result['Message']:
         gLogger.error( result[ 'Message' ] )
         gLogger.error("\n Are you sure you are properly registered in the VO?")
-      elif "Missing voms-proxy" in res['Message']:
-        gLogger.notice( "Failed to add VOMS extension: no standard grid interface installed" )
+      elif "Missing voms-proxy" in result['Message']:
+        gLogger.notice( "Failed to add VOMS extension: no standard grid interface available" )
       else:
         gLogger.error( result['Message'] )
       if self.__piParams.strict:

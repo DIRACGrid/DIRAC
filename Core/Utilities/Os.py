@@ -13,6 +13,7 @@ import multiprocessing
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
+import distutils.spawn
 
 DEBUG = 0
 
@@ -200,6 +201,8 @@ def getNumberOfCores():
       
   return cores    
   
+def which( executable ):
   
+  return distutils.spawn.find_executable( executable )  
   
   
