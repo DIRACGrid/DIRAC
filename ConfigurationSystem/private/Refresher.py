@@ -47,7 +47,8 @@ class Refresher( threading.Thread ):
   def enable( self ):
     self.__refreshEnabled = True
     if self.__lastRefreshExpired():
-      self.forceRefresh()
+      return self.forceRefresh()
+    return S_OK()
 
   def isEnabled( self ):
     return self.__refreshEnabled
