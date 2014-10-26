@@ -527,7 +527,8 @@ class FTSJob( Record ):
       fileInfo = re.findall( regExp, outputStr )
       if fileInfo:
         break
-    for sourceURL, _targetURL, fileStatus, _retries, reason, duration in fileInfo[:6]:
+    for info in fileInfo:
+      sourceURL, _targetURL, fileStatus, _retries, reason, duration = info[0:6]
       candidateFile = None
       for ftsFile in self:
         if ftsFile.SourceSURL == sourceURL:
@@ -544,9 +545,9 @@ class FTSJob( Record ):
         for missingSource in self.missingSourceErrors:
           if missingSource.match( reason ):
             candidateFile.Error = "MissingSource"
-    # If the staging info was present, record it
-    if len( fileInfo ) > 6:
-      candidateFile._staging = fileInfo[6]
+      # If the staging info was present, record it
+      if len( info ) > 6:
+        candidateFile._staging = info[6]
     # # register successful files
     if self.Status in FTSJob.FINALSTATES:
       return self.finalize()
