@@ -1,3 +1,23 @@
+[v6r11p18]
+
+*DMS
+FIX: FTSAgent(Job) - fixes for transfers requiring staging (bringOnline) and adaptation 
+     to the FTS3 interface
+
+*WMS
+FIX: StatesMonitoringAgent - resend the records in case of failure
+
+[v6r11p17]
+
+*DMS
+FIX: FileCatalog - in multi-VO case get common catalogs if even VO is not specified
+
+*Resources
+FIX: ComputintgElement - bugfix in available() method
+
+*WMS
+FIX: SiteDirector - if not pilots registered in the DB, pass empty list to the ce.available()
+
 [v6r11p16]
 
 *RMS
