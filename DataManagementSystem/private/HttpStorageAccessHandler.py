@@ -12,9 +12,7 @@
 __RCS__ = "$Id$"
 
 import os
-import posixpath
 import BaseHTTPServer
-import urllib
 import shutil
 import random
 

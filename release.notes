@@ -114,7 +114,7 @@ NEW: StorageManagementDB - use python table description
 NEW: Changes to make the DISET protocol IP V6 ready
 
 *RMS
-CHANGE: Removed files of the previous generation RMS
+CHANGE: Removed files from the previous generation RMS
 
 [v6r12]
 
