@@ -131,17 +131,17 @@ class RequestValidatorTests(unittest.TestCase):
     self.file.Checksum = "abcdef"
     self.file.ChecksumType = "adler32"
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+    self.assertEqual( ret, {'OK': True, 'Value': None} )
     
     ## both unset
     self.file.Checksum = ""
     self.file.ChecksumType = None
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+    self.assertEqual( ret, {'OK': True, 'Value': None} )
 
     ## all OK
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+    self.assertEqual( ret, {'OK': True, 'Value': None} )
 
     
 ## test suite execution 
