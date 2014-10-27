@@ -717,7 +717,10 @@ def printStartupStatus( rDict ):
   records = []
   try:
     for comp in rDict:
-      records.append( [comp, rDict[comp]['RunitStatus'], rDict[comp]['Timeup'], rDict[comp]['PID'] ] )
+      records.append( [comp, 
+                       rDict[comp]['RunitStatus'], 
+                       rDict[comp]['Timeup'], 
+                       str( rDict[comp]['PID'] ) ] )
     printTable( fields, records )
   except Exception, x:
     print "Exception while gathering data for printing: %s" % str( x )
@@ -1928,6 +1931,10 @@ def fixMySQLScripts( startupScript = mysqlStartupScript ):
       if line.find( 'basedir=' ) == 0:
         platform = getPlatformString()
         line = 'basedir=%s\n' % os.path.join( rootPath, platform )  
+      if line.find( 'extra_args=' ) == 0:
+        line = 'extra_args="-n"\n'
+      if line.find( '$bindir/mysqld_safe --' ) >= 0:
+        line = line.replace( 'mysqld_safe', 'mysqld_safe --no-defaults' )
       fd.write( line )
     fd.close()
   except Exception:

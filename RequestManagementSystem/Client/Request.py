@@ -483,7 +483,7 @@ class Request( Record ):
   # # digest
   def toJSON( self ):
     """ serialize to JSON format """
-    digest = dict( [( key, str( val ) if val else "" ) for key, val in self.__data__.items()] )
+    digest = dict( [( key, str( getattr( self, key ) ) if getattr( self, key ) else "" ) for key in self.__data__] )
     digest["RequestID"] = self.RequestID
     digest["__dirty"] = self.__dirty
     digest["Operations"] = [op.toJSON()['Value'] for op in self]

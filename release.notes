@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r12-pre23]
+[v6r12-pre24]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -124,6 +124,7 @@ NEW: ProcessMonitor - added evaluation of the memory consumed by a process and i
 NEW: InstallTools - added flag to require MySQL installation
 FIX: InstallTools - correctly installing DBs extended (with sql to be sourced) 
 FIX: InstallTools - run MySQL commands one by one when creating a new database
+FIX: InstallTools - fixMySQLScripts() fixes the mysql start script to ognore /etc/my.cnf file
 CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 NEW: Grid.py - ldapSA replaced by ldapSE, added getBdiiSE(CE)Info() methods
 CHANGE: CFG.py - only lines starting with ^\s*# will be treated as comments
@@ -200,6 +201,16 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p19]
+
+*DMS
+FIX: FTSJob - fix FTS job monitoring a la FTS2
+
+*RMS
+CHANGE: ReqClient - added setServer() method
+FIX: File,Operation,Request - call the getters to fetch the up-to-date information 
+     from the parent
 
 [v6r11p18]
 
