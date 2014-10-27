@@ -718,7 +718,10 @@ def printStartupStatus( rDict ):
   records = []
   try:
     for comp in rDict:
-      records.append( [comp, rDict[comp]['RunitStatus'], rDict[comp]['Timeup'], rDict[comp]['PID'] ] )
+      records.append( [comp, 
+                       rDict[comp]['RunitStatus'], 
+                       rDict[comp]['Timeup'], 
+                       str( rDict[comp]['PID'] ) ] )
     printTable( fields, records )
   except Exception, x:
     print "Exception while gathering data for printing: %s" % str( x )
