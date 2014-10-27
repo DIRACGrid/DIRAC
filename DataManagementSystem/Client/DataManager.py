@@ -1145,7 +1145,7 @@ class DataManager( object ):
     if not res['OK']:
       errStr = "__removeReplica: Failed to remove physical replicas."
       self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      return S_ERROR( res['Message'] )
 
     failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
     # Here we use the FC PFN...
