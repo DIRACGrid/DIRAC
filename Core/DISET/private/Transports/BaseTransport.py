@@ -277,6 +277,6 @@ class BaseTransport:
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
     else:
       peerId = ""
-    return "(%s:%s)%s" % ( address[0],
-                           address[1],
-                           peerId )
+    if address[0].find( ":" ) > -1:
+      return "([%s]:%s)%s" % ( address[0], address[1], peerId )
+    return "(%s:%s)%s" % ( address[0], address[1], peerId )
