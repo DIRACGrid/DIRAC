@@ -27,11 +27,11 @@ __VERSION__ = "$Revision: $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.Time import dateTime
 from DIRAC.Core.Workflow.Workflow import fromXMLString
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -49,7 +49,6 @@ class DataRecoveryAgent(AgentModule):
     self.name = 'DataRecoveryAgent'
     self.log = gLogger
     self.enableFlag = False
-    self.replicaManager = None
     self.prodDB = None
     self.requestClient = None
     self.taskIDName = ''
@@ -62,7 +61,6 @@ class DataRecoveryAgent(AgentModule):
   def initialize(self):
     """Sets defaults
     """
-    self.replicaManager = ReplicaManager()
     self.prodDB = TransformationClient()
     self.requestClient = RequestClient()
     self.taskIDName = 'TaskID'
@@ -372,7 +370,8 @@ class DataRecoveryAgent(AgentModule):
       commons['JobType'] = jtype
       out = constructProductionLFNs(commons)
       expectedlfns = out['Value']['ProductionOutputData']
-      res = self.replicaManager.getCatalogFileMetadata(expectedlfns)
+      fcClient = FileCatalogClient()
+      res = fcClient.getFileMetadata(expectedlfns)
       if not res['OK']:
         self.log.error('Getting metadata failed')
         contactfailed.append(filep)
