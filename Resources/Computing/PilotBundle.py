@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py $
 # File :   PilotBundle.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -11,6 +10,7 @@ __RCSID__ = "$Id: DIRACPilotDirector.py 28536 2010-09-23 06:08:40Z rgracian $"
 
 import os, base64, bz2, types, tempfile
 
+# FIXME: Unused
 def getExecutableScript( executable, arguments=[], proxy=None, sandboxDict = {}, environDict={}, execDir='' ):
   """
    Prepare a wrapper script for executable including as required environment, proxy, sandbox,...

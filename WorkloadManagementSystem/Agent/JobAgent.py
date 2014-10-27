@@ -94,7 +94,10 @@ class JobAgent( AgentModule ):
         
         # Update local configuration to be used by submitted job wrappers
         localCfg = CFG()
-        localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
+        if self.extraOptions:
+          localConfigFile = os.path.join( rootPath, self.extraOptions )
+        else:
+          localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
         localCfg.loadFromFile( localConfigFile )
         if not localCfg.isSection('/LocalSite'):
           localCfg.createNewSection('/LocalSite')
@@ -219,6 +222,7 @@ class JobAgent( AgentModule ):
 
     if self.extraOptions:
       params['Arguments'] = params['Arguments'] + ' ' + self.extraOptions
+      params['ExtraOptions'] = self.extraOptions
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
     self.log.info( 'Received JobID=%s, JobType=%s' % ( jobID, jobType ) )
