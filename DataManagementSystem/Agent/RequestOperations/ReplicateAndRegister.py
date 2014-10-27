@@ -114,7 +114,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
   ReplicateAndRegister operation handler
   """
 
-  def __init__( self, operation = None, csPath = None, fc = None, ftsClient = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
@@ -144,19 +144,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     self.seCache = {}
 
     # Clients
-<<<<<<< HEAD
     self.fc = FileCatalog()
     if hasattr( self, "FTSMode" ) and getattr( self, "FTSMode" ):
-=======
-    if fc:
-      self.fc = fc
-    else:
-      self.fc = FileCatalog()
-
-    if ftsClient:
-      self.ftsClient = ftsClient
-    else:
->>>>>>> 365f7ec... Just fixed the test
       self.ftsClient = FTSClient()
 
   def __call__( self ):
