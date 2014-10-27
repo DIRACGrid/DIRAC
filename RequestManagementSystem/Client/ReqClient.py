@@ -39,12 +39,17 @@ class ReqClient( Client ):
     self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
     self.setServer( "RequestManagement/ReqManager" )
 
+  def setServer( self, url ):
+    Client.setServer( self, url )
+    self.__requestManager = None
+    self.requestManager()
+
   def requestManager( self, timeout = 120 ):
     """ facade for RequestManager RPC client """
     if not self.__requestManager:
-      url = PathFinder.getServiceURL( "RequestManagement/ReqManager" )
+      url = PathFinder.getServiceURL( self.serverURL )
       if not url:
-        raise RuntimeError( "CS option RequestManagement/ReqManager URL is not set!" )
+        raise RuntimeError( "CS option %s URL is not set!" % self.serverURL )
       self.__requestManager = RPCClient( url, timeout = timeout )
     return self.__requestManager
 

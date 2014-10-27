@@ -92,6 +92,16 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p19]
+
+*DMS
+FIX: FTSJob - fix FTS job monitoring a la FTS2
+
+*RMS
+CHANGE: ReqClient - added setServer() method
+FIX: File,Operation,Request - call the getters to fetch the up-to-date information 
+     from the parent
+
 [v6r11p18]
 
 *DMS
