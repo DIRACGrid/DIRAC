@@ -222,6 +222,7 @@ class JobAgent( AgentModule ):
 
     if self.extraOptions:
       params['Arguments'] = params['Arguments'] + ' ' + self.extraOptions
+      params['ExtraOptions'] = self.extraOptions
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
     self.log.info( 'Received JobID=%s, JobType=%s' % ( jobID, jobType ) )
