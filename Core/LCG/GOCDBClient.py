@@ -279,7 +279,10 @@ class GOCDBClient( object ):
                                                   'FORMATED_END_DATE', 'DESCRIPTION',
                                                   'GOCDB_PORTAL_URL', 'SERVICE_TYPE' ] )
 
-      dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) ] = elements
+      try:
+        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['HOSTNAME'] ] = elements
+      except Exception:
+        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['SITENAME'] ] = elements
 
     for dt_ID in dtDict.keys():
       if siteOrRes in ( 'Site', 'Sites' ):

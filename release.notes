@@ -142,7 +142,8 @@ NEW: Bdii2CSAgent - reworked to apply also for SEs and use the same utilities fo
      corresponding command line tool
 NEW: dirac-admin-add-resources - an interactive tool to add and update sites, CEs, SEs
      to the DIRAC CS   
-CHANGE: dirac-proxy-init - added message in case of impossibility to add VOMS extension               
+CHANGE: dirac-proxy-init - added message in case of impossibility to add VOMS extension   
+FIX: GOCDBClient - handle correctly the case of multiple elements in the same DT            
 
 
 *Accounting
@@ -209,6 +210,12 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p20]
+
+*DMS
+BUGFIX: DataManager - in __SEActive() use resolved SE name to deal with aliases
+BUGFIX: FileMetadata - multiple bugs in __buildUserMetaQuery()
 
 [v6r11p19]
 

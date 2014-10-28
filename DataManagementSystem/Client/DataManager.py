@@ -1476,9 +1476,9 @@ class DataManager( object ):
       return S_ERROR( 'SE not known' )
 
     seStatus = { 'Read' : True, 'Write' : True }
-    if res['Value'][se].get( 'ReadAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
+    if res['Value'][resolvedName].get( 'ReadAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
       seStatus[ 'Read' ] = False
-    if res['Value'][se].get( 'WriteAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
+    if res['Value'][resolvedName].get( 'WriteAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
       seStatus[ 'Write' ] = False
 
     return S_OK( seStatus )
