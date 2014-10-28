@@ -319,7 +319,7 @@ class AgentModule:
         raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
     except Exception, e:
-      self.log.exception( "Exception while calling %s method" % name )
+      self.log.exception( "Agent exception while calling method", name )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 
 
@@ -328,7 +328,7 @@ class AgentModule:
       result = setupShifterProxyInEnv( self.__moduleProperties[ "shifterProxy" ],
                                        self.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
-        self.log.error( result['Message'] )
+        self.log.error( "Failed to set shifter proxy", result['Message'] )
         return result
     return S_OK()
 

@@ -477,7 +477,7 @@ class CSAPI:
         self.sortUsersAndGroups()
       retVal = self.__csMod.commit()
       if not retVal[ 'OK' ]:
-        gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
+        gLogger.error( "Can't commit new configuration data", "%s" % retVal[ 'Message' ] )
         return retVal
       return self.downloadCSData()
     return S_OK()
@@ -490,7 +490,7 @@ class CSAPI:
     if self.__csModified:
       retVal = self.__csMod.commit()
       if not retVal[ 'OK' ]:
-        gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
+        gLogger.error( "Can't commit new configuration data", "%s" % retVal[ 'Message' ] )
         return retVal
       return self.downloadCSData()
     return S_OK()
