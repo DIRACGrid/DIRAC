@@ -324,6 +324,7 @@ class FileMetadata:
 
     insertValueList = []
     for fileID in fileList:
+      #FIXME: There is somethingwrong here, meta not defined
       insertValueList.append( "( %d,'%s' )" % ( fileID, meta ) )
 
     req = "INSERT INTO FC_FileMeta_%s (FileID,Value) VALUES %s" % ( metaname, ', '.join( insertValueList ) )
@@ -498,7 +499,7 @@ class FileMetadata:
             escapedOperand = self.db._escapeString( operand )
             if not escapedOperand['OK']:
               return escapedOperand
-            escapedOperand = escapeValue['Value']
+            escapedOperand = escapedOperand['Value']
 
           if operation in ['>', '<', '>=', '<=']:
             if type( operand ) == types.ListType:
