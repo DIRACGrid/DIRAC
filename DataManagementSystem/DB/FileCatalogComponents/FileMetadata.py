@@ -317,14 +317,8 @@ class FileMetadata:
     if not result['Value']:
       return S_OK()
 
-    fileDict = {}
-    for fileID, meta in result['Value']:
-      fileDict[fileID] = meta
-    fileList = fileDict.keys()
-
     insertValueList = []
-    for fileID in fileList:
-      #FIXME: There is somethingwrong here, meta not defined
+    for fileID, meta in result['Value']:
       insertValueList.append( "( %d,'%s' )" % ( fileID, meta ) )
 
     req = "INSERT INTO FC_FileMeta_%s (FileID,Value) VALUES %s" % ( metaname, ', '.join( insertValueList ) )
