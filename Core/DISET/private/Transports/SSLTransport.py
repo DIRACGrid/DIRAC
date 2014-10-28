@@ -196,7 +196,7 @@ def checkSanity( urlTuple, kwargs ):
     useCerts = True
   elif "proxyString" in kwargs:
     if type( kwargs[ 'proxyString' ] ) != types.StringType:
-      gLogger.error( "proxyString parameter is not a valid type" )
+      gLogger.error( "proxyString parameter is not a valid type", str( type( kwargs[ 'proxyString' ] ) ) )
       return S_ERROR( "proxyString parameter is not a valid type" )
   else:
     if "proxyLocation" in kwargs:
@@ -207,7 +207,7 @@ def checkSanity( urlTuple, kwargs ):
       gLogger.error( "No proxy found" )
       return S_ERROR( "No proxy found" )
     elif not os.path.isfile( certFile ):
-      gLogger.error( "%s proxy file does not exist" % certFile )
+      gLogger.error( "Proxy file does not exist", certFile )
       return S_ERROR( "%s proxy file does not exist" % certFile )
 
   #For certs always check CA's. For clients skipServerIdentityCheck
@@ -232,7 +232,7 @@ def checkSanity( urlTuple, kwargs ):
 
   retVal = certObj.hasExpired()
   if not retVal[ 'OK' ]:
-    gLogger.error( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
+    gLogger.error( "Can't verify proxy or certificate file", "%s:%s" % ( certFile, retVal[ 'Message' ] ) )
     return S_ERROR( "Can't verify file %s:%s" % ( certFile, retVal[ 'Message' ] ) )
   else:
     if retVal[ 'Value' ]:

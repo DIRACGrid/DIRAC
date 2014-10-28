@@ -1326,7 +1326,7 @@ def setupSite( scriptCfg, cfg = None ):
     result = execCommand( 0, ['ps', '-ef'] )
     if not result['OK']:
       if exitOnError:
-        gLogger.error( result['Message'] )
+        gLogger.error( 'Failed to verify runsvdir running', result['Message'] )
         DIRAC.exit( -1 )
       return S_ERROR( result['Message'] )
     processList = result['Value'][1].split( '\n' )
@@ -1441,7 +1441,7 @@ def setupSite( scriptCfg, cfg = None ):
     result = getDatabases()
     if not result['OK']:
       if exitOnError:
-        gLogger.error( result['Message'] )
+        gLogger.error( 'Failed to get databases', result['Message'] )
         DIRAC.exit( -1 )
       return result
     installedDatabases = result['Value']
@@ -2221,7 +2221,7 @@ def installDatabase( dbName ):
       if line.lower().find( ( 'use %s;' % dbName ).lower() ) > -1:
         result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
         if not result['OK']:
-          gLogger.error( result['Message'] )
+          gLogger.error( 'Failed to create database', result['Message'] )
           if exitOnError:
             DIRAC.exit( -1 )
           return result
@@ -2251,7 +2251,7 @@ def installDatabase( dbName ):
         dbAdded = True
         result = execMySQL( 'FLUSH PRIVILEGES' )
         if not result['OK']:
-          gLogger.error( result['Message'] )
+          gLogger.error( 'Failed to FLUSH PRIVILEGES', result['Message'] )
           if exitOnError:
             exit( -1 )
           return result
@@ -2437,8 +2437,7 @@ def execCommand( timeout, cmd ):
   if not result['OK']:
     if timeout and result['Message'].find( 'Timeout' ) == 0:
       return result
-    gLogger.error( 'Failed to execute', cmd[0] )
-    gLogger.error( result['Message'] )
+    gLogger.error( 'Failed to execute command', '%s: %s' % ( cmd[0], result['Message'] ) )
     if exitOnError:
       DIRAC.exit( -1 )
     return result
