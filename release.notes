@@ -1,3 +1,9 @@
+[v6r11p20]
+
+*DMS
+BUGFIX: DataManager - in __SEActive() use resolved SE name to deal with aliases
+BUGFIX: FileMetadata - in __buildUserMetaQuery()
+
 [v6r11p19]
 
 *DMS
