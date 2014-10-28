@@ -1009,7 +1009,7 @@ class ProxyDB( DB ):
     userName = result[ 'Value' ]
     userEMail = Registry.getUserOption( userName, "Email", "" )
     if not userEMail:
-      gLogger.error( "Could not discover email for user", userName )
+      gLogger.error( "Could not discover %s's email" % userName )
       return False
     daysLeft = int( lTime / 86400 )
     msgSubject = "Your proxy uploaded to DIRAC will expire in %d days" % daysLeft
