@@ -467,7 +467,7 @@ class FileMetadata:
     for meta, value in userMetaDict.items():
       table = 'FC_FileMeta_%s' % meta
 
-      if type( value ) in types.StringTypes and value.tolower() == 'any':
+      if type( value ) in types.StringTypes and value.lower() == 'any':
         # 'ANY' 
         query = ''
         result.append( ( table, query ) )
@@ -525,7 +525,6 @@ class FileMetadata:
         escapedValue = self.db._escapeString( value )
         if not escapedValue['OK']:
           return escapedValue
-        escapedValue = escapedValue['Value']
         query = '%%s.Value = %s' % escapedValue['Value']
         result.append( ( table, query ) )
 
