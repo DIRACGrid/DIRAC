@@ -244,6 +244,9 @@ class JobAgent( AgentModule ):
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
+      # Save the job jdl for external monitoring
+      self.__saveJobJDLRequest( jobID, jobJDL )
+
       software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
         self.log.error( 'Failed to install software for job %s' % ( jobID ) )
@@ -291,6 +294,18 @@ class JobAgent( AgentModule ):
     self.scaledCPUTime = scaledCPUTime
 
     return S_OK( 'Job Agent cycle complete' )
+
+  #############################################################################
+  def __saveJobJDLRequest( self, jobID, jobJDL ):
+    """Save job JDL local to JobAgent.
+    """
+    classAdJob = ClassAd( jobJDL )
+    classAdJob.insertAttributeString( 'LocalCE', self.ceName )
+    jdlFileName = jobID + '.jdl'
+    jdlFile = open( jdlFileName, 'w' )
+    jdl = classAdJob.asJDL()
+    jdlFile.write( jdl )
+    jdlFile.close()
 
   #############################################################################
   def __getCPUTimeLeft( self ):
