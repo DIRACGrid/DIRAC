@@ -128,7 +128,8 @@ shutil.rmtree( workingDirectory )
         self.log.verbose( 'Executing site admin command: %s' % command )
         result = shellCall( 30, command, callbackFunction = self.sendOutput )
         if not result['OK'] or result['Value'][0]:
-          self.log.error( 'Error during "%s":' % command, result )
+          self.log.error( 'Error executing command', 
+                          '"%s":' % command, result )
           return S_ERROR( 'Error executing %s CE AdminCommands' % CE_NAME )
 
     # if no proxy is supplied, the executable can be submitted directly

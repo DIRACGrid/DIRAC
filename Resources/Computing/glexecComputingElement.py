@@ -97,7 +97,8 @@ class glexecComputingElement( ComputingElement ):
     try:
       os.chmod( os.path.abspath( executableFile ), 0755 )
     except Exception, x:
-      self.log.error( 'Failed to change permissions of executable to 0755 with exception:\n%s' % ( x ) )
+      self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
+                      '\n%s' % ( x ) )
 
     result = self.glexecExecute( os.path.abspath( executableFile ), glexecLocation )
     if not result['OK']:
@@ -223,9 +224,9 @@ class glexecComputingElement( ComputingElement ):
         error = msg
 
     if not error:
-      self.log.error( 'glexec exit code %s not in expected list' % ( status ) )
+      self.log.error( 'glexec exit code not in expected list', '%s' % status )
     else:
-      self.log.error( 'Resolved glexec return code %s = %s' % ( status, error ) )
+      self.log.error( 'Error in glexec return code', '%s = %s' % ( status, error ) )
 
     return S_OK( error )
 
@@ -250,7 +251,8 @@ class glexecComputingElement( ComputingElement ):
     try:
       os.chmod( os.path.abspath( testFile ), 0755 )
     except Exception, x:
-      self.log.error( 'Failed to change permissions of test script to 0755 with exception:\n%s' % ( x ) )
+      self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
+                      '\n%s' % ( x ) )
       return S_ERROR( 'Could not change permissions of test script' )
 
     return self.glexecExecute( os.path.abspath( testFile ), glexecLocation )

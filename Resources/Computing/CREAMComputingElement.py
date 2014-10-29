@@ -113,7 +113,7 @@ class CREAMComputingElement( ComputingElement ):
       cmd = [ 'glite-ce-delegate-proxy', '-e', '%s' % self.ceName, '%s' % delegationID ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       if not result['OK']:
-        self.log.error( 'Failed to delegate proxy: %s' % result['Message'] )
+        self.log.error( 'Failed to delegate proxy', result['Message'] )
         return result
       for _i in range( numberOfJobs ):
         jdlName, diracStamp = self.__writeJDL( executableFile )
