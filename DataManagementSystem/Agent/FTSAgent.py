@@ -600,7 +600,7 @@ class FTSAgent( AgentModule ):
         log.info( "==> found %s Files to reschedule" % len( toReschedule ) )
         rescheduleFiles = self.__reschedule( request, operation, toReschedule )
         if not rescheduleFiles["OK"]:
-          log.error( rescheduleFiles["Message"] )
+          log.error( 'Failed to reschedule files', rescheduleFiles["Message"] )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
       ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted', 'Canceled' ] )

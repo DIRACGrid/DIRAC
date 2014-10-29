@@ -102,7 +102,7 @@ class glexecComputingElement( ComputingElement ):
     result = self.glexecExecute( os.path.abspath( executableFile ), glexecLocation )
     if not result['OK']:
       self.analyseExitCode( result['Value'] ) #take no action as we currently default to InProcess
-      self.log.error( result )
+      self.log.error( 'Failed glexecExecute', result )
       return result
 
     self.log.debug( 'glexec CE result OK' )
@@ -331,7 +331,7 @@ class glexecComputingElement( ComputingElement ):
       self.log.info( 'Rerunning glexec without arguments to renew payload proxy' )
       result = self.glexecExecute( None, glexecLocation )
       if not result['OK']:
-        self.log.error( result )
+        self.log.error( 'Failed glexecExecute', result )
     else:
       self.log.info( 'Running without glexec, checking local proxy' )
 

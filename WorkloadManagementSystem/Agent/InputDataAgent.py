@@ -152,7 +152,7 @@ class InputDataAgent( OptimizerModule ):
       self.log.info( param )
       result = self.setJobParam( job, self.am_getModuleParam( 'optimizerName' ), param )
       if not result['OK']:
-        self.log.error( result['Message'] )
+        self.log.error( 'Failed to set job parameter', result['Message'] )
       return S_ERROR( 'Input Data Not Available' )
 
     return self.__getSiteCandidates( replicaDict['Successful'] )

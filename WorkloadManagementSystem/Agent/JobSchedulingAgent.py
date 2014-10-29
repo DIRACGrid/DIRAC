@@ -61,7 +61,7 @@ class JobSchedulingAgent( OptimizerModule ):
     # Check if the job was recently rescheduled
     result = self.jobDB.getJobAttributes( job, ['RescheduleCounter', 'RescheduleTime', 'ApplicationStatus'] )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to get job attributes', result['Message'] )
       return S_ERROR( 'Can not get job attributes from JobDB' )
     jobDict = result['Value']
     reCounter = int( jobDict['RescheduleCounter'] )
@@ -118,7 +118,7 @@ class JobSchedulingAgent( OptimizerModule ):
     result = self.jobDB.getInputData( job )
     if not result['OK']:
       self.log.warn( 'Failed to get input data from JobDB for %s' % ( job ) )
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to get job input data', result['Message'] )
       return S_ERROR( 'Failed to get input data from JobDB' )
 
     if not result['Value']:
