@@ -265,4 +265,4 @@ class RRDManager:
     try:
       os.unlink( "%s/%s" % ( self.rrdLocation, rrdFile ) )
     except Exception, e:
-      self.log.error( "Could not delete rrd file %s: %s" % ( rrdFile, str( e ) ) )
+      self.log.error( "Could not delete rrd file", "%s: %s" % ( rrdFile, str( e ) ) )

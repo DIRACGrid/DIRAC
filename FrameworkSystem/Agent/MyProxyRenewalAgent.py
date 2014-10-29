@@ -36,7 +36,7 @@ class MyProxyRenewalAgent(AgentModule):
                                             userGroup,
                                             lifeTime = lifeTime )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Failed to renew for %s@%s : %s" %( userDN, userGroup, retVal[ 'Message' ] ) )
+      gLogger.error( "Failed to renew proxy", "for %s@%s : %s" %( userDN, userGroup, retVal[ 'Message' ] ) )
     else:
       gLogger.info( "Renewed proxy for %s@%s" % ( userDN, userGroup ) )
 

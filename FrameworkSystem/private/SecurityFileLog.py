@@ -67,7 +67,7 @@ class SecurityFileLog( threading.Thread ):
       gLogger.info( "Unlinking file %s" % filePath )
       os.unlink( filePath )
     except Exception, e:
-      gLogger.error( "Can't unlink old log file %s: %s" % ( filePath, str(e) ) )
+      gLogger.error( "Can't unlink old log file", "%s: %s" % ( filePath, str(e) ) )
       return 1
     return 0
 
@@ -104,7 +104,7 @@ class SecurityFileLog( threading.Thread ):
             os.rmdir( entryPath )
             numEntries -= 1
           except Exception, e:
-            gLogger.error( "Can't delete directory %s: %s" % ( entryPath, str(e) ) )
+            gLogger.error( "Can't delete directory", "%s: %s" % ( entryPath, str(e) ) )
       elif os.path.isfile( entryPath ):
         numEntries += 1
         if reLog.match( entry ):
