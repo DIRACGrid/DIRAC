@@ -338,7 +338,7 @@ class FileManager(FileManagerBase):
       req = "DELETE FROM %s WHERE FileID in (%s)" % (table,fileIDString)
       res = self.db._update(req,connection)
       if not res['OK']:
-        gLogger.error("Failed to remove files from %s" % table,res['Message'])
+        gLogger.error("Failed to remove files from table", "%s" % table,res['Message'])
         failed.append(table)
     if failed:
       return S_ERROR("Failed to remove files from %s" % stringListToString(failed))
@@ -520,7 +520,7 @@ class FileManager(FileManagerBase):
       req = "DELETE FROM %s WHERE RepID in (%s)" % (table,repIDString)
       res = self.db._update(req,connection)
       if not res['OK']:
-        gLogger.error("Failed to remove replicas from %s" % table,res['Message'])
+        gLogger.error("Failed to remove replicas from table", "%s" % table,res['Message'])
         failed.append(table)
     if failed:
       return S_ERROR("Failed to remove replicas from %s" % stringListToString(failed))

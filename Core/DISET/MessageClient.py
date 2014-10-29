@@ -73,7 +73,7 @@ class MessageClient( BaseClient ):
     if not self.__trid:
       return
     if self.__trid != trid:
-      gLogger.error( "OOps. trid's don't match. This shouldn't happen! (%s vs %s)" % ( self.__trid, trid ) )
+      gLogger.error( "OOps. trid's don't match. This shouldn't happen!", "(%s vs %s)" % ( self.__trid, trid ) )
       return S_ERROR( "OOOPS" )
     self.__trid = False
     try:
@@ -95,7 +95,7 @@ class MessageClient( BaseClient ):
       try:
         result = cb( self, msgObj )
         if not isReturnStructure( result ):
-          gLogger.error( "Callback for message %s does not return S_OK/S_ERROR" % msgObj.getName() )
+          gLogger.error( "Callback for message does not return S_OK/S_ERROR", msgObj.getName() )
           return S_ERROR( "No response" )
         if not result[ 'OK' ]:
           return result
@@ -109,7 +109,7 @@ class MessageClient( BaseClient ):
     try:
       result = self.__callbacks[ msgName ]( msgObj )
       if not isReturnStructure( result ):
-        gLogger.error( "Callback for message %s does not return S_OK/S_ERROR" % msgName )
+        gLogger.error( "Callback for message does not return S_OK/S_ERROR", msgName )
         return S_ERROR( "No response" )
       return result
     except:

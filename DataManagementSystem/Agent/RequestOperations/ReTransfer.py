@@ -90,13 +90,13 @@ class ReTransfer( DMSRequestOperationsBase ):
       reTransfer = se.retransferOnlineFile( opFile.PFN )
       if not reTransfer["OK"]:
         opFile.Error = reTransfer["Message"]
-        self.log.error( "%s retransfer failed: %s" % opFile.Error )
+        self.log.error( "Retransfer failed", opFile.Error )
         gMonitor.addMark( "FileReTransferFail", 1 )
         continue
       reTransfer = reTransfer["Value"]
       if opFile.PFN in reTransfer["Failed"]:
         opFile.Error = reTransfer["Failed"][opFile.PFN]
-        self.log.error( "%s retransfer failed: %s" % opFile.Error )
+        self.log.error( "Retransfer failed", opFile.Error )
         gMonitor.addMark( "FileReTransferFail", 1 )
         continue
       opFile.Status = "Done"

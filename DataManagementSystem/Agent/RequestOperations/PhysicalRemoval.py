@@ -85,7 +85,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
       # # 1st - bulk removal
       bulkRemoval = self.bulkRemoval( toRemoveDict, targetSE )
       if not bulkRemoval["OK"]:
-        self.log.error( bulkRemoval["Message"] )
+        self.log.error( 'Failed bulk removal', bulkRemoval["Message"] )
         self.operation.Error = bulkRemoval["Message"]
         return bulkRemoval
 
