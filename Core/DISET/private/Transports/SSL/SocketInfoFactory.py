@@ -44,6 +44,8 @@ class SocketInfoFactory:
 
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
     addrs = socket.getaddrinfo(hostAddress[0], hostAddress[1], 0, socket.SOCK_STREAM)
+    # addrs = list of tuples, with each tuple in the format / containing
+    #         (family, socktype, proto, canonname, sockaddr)
     errs = []
     for a in [a for a in addrs if a[0] == socket.AF_INET ]:
       res = self.__sockConnect( a[4], a[0], timeout, retries )
