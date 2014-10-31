@@ -44,15 +44,17 @@ class SocketInfoFactory:
 
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
     addrs = socket.getaddrinfo(hostAddress[0], hostAddress[1], 0, socket.SOCK_STREAM)
+    # addrs = list of tuples, with each tuple in the format / containing
+    #         (family, socktype, proto, canonname, sockaddr)
     errs = []
-    for a in [a for a in addrs if a[1] == socket.AF_INET ]:
-      res = self.__sockConnect( a[0], a[1], timeout, retries )
+    for a in [a for a in addrs if a[0] == socket.AF_INET ]:
+      res = self.__sockConnect( a[4], a[0], timeout, retries )
       if res[ 'OK' ]:
         return res
       else:
         errs.append( res[ 'Message' ] )
-    for a in [a for a in addrs if a[1] == socket.AF_INET6 ]:
-      res = self.__sockConnect( a[0], a[1], timeout, retries )
+    for a in [a for a in addrs if a[0] == socket.AF_INET6 ]:
+      res = self.__sockConnect( a[4], a[0], timeout, retries )
       if res[ 'OK' ]:
         return res
       else:
@@ -61,6 +63,7 @@ class SocketInfoFactory:
 
 
   def __sockConnect( self, hostAddress, sockType, timeout, retries ):
+    # sockType here really = socket family (AF_INET / AF_INET6 / AF_UNIX)
     osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )
     if timeout:
