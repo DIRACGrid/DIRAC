@@ -158,7 +158,7 @@ def checkUnusedCEs():
       
     for diracSite in diracSites:  
       if diracSite in newCEs: 
-        cmd = "dirac-admin-add-site %s %s %s diractest.cfg" % ( diracSite, site, ' '.join( newCEs[diracSite] ) )    
+        cmd = "dirac-admin-add-site %s %s %s" % ( diracSite, site, ' '.join( newCEs[diracSite] ) )    
         gLogger.notice( "\nNew site/CEs will be added with command:\n%s" % cmd )
         yn = raw_input( "Add it ? [default yes] [yes|no]: " ) 
         if not ( yn == '' or yn.lower() == 'y' ) :
@@ -192,9 +192,12 @@ def checkUnusedCEs():
               sitesAdded.append( ( site, diracSite ) )    
               gLogger.notice( stdData )    
   
-  gLogger.notice( 'CEs were added at the following sites:' )
-  for site, diracSite in sitesAdded:
-    gLogger.notice( "%s\t%s" % ( site, diracSite ) )  
+  if sitesAdded:
+    gLogger.notice( 'CEs were added at the following sites:' )
+    for site, diracSite in sitesAdded:
+      gLogger.notice( "%s\t%s" % ( site, diracSite ) )  
+  else:
+    gLogger.notice( 'No new CEs were added this time' )    
 
 def updateCS( changeSet ):
   
@@ -375,7 +378,7 @@ def updateSEs():
   updateCS( changeSet )
 
 def handler( signum, frame ):
-  gLogger.notice( ' Exit is forced, bye...' )
+  gLogger.notice( '\nExit is forced, bye...' )
   DIRACExit( -1 )
 
 if __name__ == "__main__":
