@@ -29,7 +29,6 @@ from DIRAC.RequestManagementSystem.private.OperationHandlerBase import Operation
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 
 ########################################################################
 class OperationHandlerBaseTests( unittest.TestCase ):
@@ -66,8 +65,6 @@ class OperationHandlerBaseTests( unittest.TestCase ):
     self.assertRaises( NotImplementedError, self.baseOp )
     # # replica manager
     self.assertEqual( isinstance( self.baseOp.dm, DataManager ), True, "DataManager is missing" )
-    # # DataLoggingClient
-    self.assertEqual( isinstance( self.baseOp.dataLoggingClient(), DataLoggingClient ), True, "DataLoggingClient is missing" )
 
 # # tests execution
 if __name__ == "__main__":

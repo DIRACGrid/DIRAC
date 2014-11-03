@@ -110,7 +110,7 @@ class PutAndRegister( DMSRequestOperationsBase ):
                                                              checksum = checksum )
       if not putAndRegister["OK"]:
         gMonitor.addMark( "PutFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+#         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
         self.log.error( "completely failed to put and register file: %s" % putAndRegister["Message"] )
         opFile.Error = str( putAndRegister["Message"] )
         self.operation.Error = str( putAndRegister["Message"] )
@@ -120,7 +120,7 @@ class PutAndRegister( DMSRequestOperationsBase ):
 
       if lfn in putAndRegister["Failed"]:
         gMonitor.addMark( "PutFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+#         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
         reason = putAndRegister["Failed"][lfn]
         self.log.error( "failed to put and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
@@ -134,7 +134,7 @@ class PutAndRegister( DMSRequestOperationsBase ):
         if "put" not in putAndRegister[lfn]:
 
           gMonitor.addMark( "PutFail", 1 )
-          self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+#           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
           self.log.info( "failed to put %s to %s" % ( lfn, targetSE ) )
 
@@ -147,8 +147,8 @@ class PutAndRegister( DMSRequestOperationsBase ):
           gMonitor.addMark( "PutOK", 1 )
           gMonitor.addMark( "RegisterFail", 1 )
 
-          self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
-          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
+#           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
+#           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
 
           self.log.info( "put of %s to %s took %s seconds" % ( lfn, targetSE, putAndRegister[lfn]["put"] ) )
           self.log.error( "register of %s to %s failed" % ( lfn, targetSE ) )
@@ -164,8 +164,8 @@ class PutAndRegister( DMSRequestOperationsBase ):
         gMonitor.addMark( "PutOK", 1 )
         gMonitor.addMark( "RegisterOK", 1 )
 
-        self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
-        self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
+#         self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
+#         self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
 
         opFile.Status = "Done"
         for op in ( "put", "register" ):
