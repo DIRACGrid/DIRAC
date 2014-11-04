@@ -42,7 +42,7 @@ class OperationTests( unittest.TestCase ):
     """ test set up """
     self.fromDict = { "Type" : "replicateAndRegister",
                       "TargetSE" : "CERN-USER,PIC-USER",
-                      "SourceSE" : "" }
+                      "SourceSE" : None }
     self.subFile = File( { "LFN" : "/lhcb/user/c/cibak/testFile",
                            "Checksum" : "1234567",
                            "ChecksumType" : "ADLER32",
@@ -64,7 +64,6 @@ class OperationTests( unittest.TestCase ):
     operation = Operation( self.fromDict )
     self.assertEqual( isinstance( operation, Operation ), True, "fromDict ctor failed" )
     for key, value in self.fromDict.items():
-
       self.assertEqual( getattr( operation, key ), value, "wrong attr value %s (%s) %s" % ( key,
                                                                                             getattr( operation, key ),
                                                                                             value ) )
@@ -86,10 +85,6 @@ class OperationTests( unittest.TestCase ):
 
     # # valid values
     operation = Operation()
-    operation.OperationID = 1
-    self.assertEqual( operation.OperationID, 1, "wrong OperationID" )
-    operation.OperationID = "1"
-    self.assertEqual( operation.OperationID, 1, "wrong OperationID" )
 
     operation.Arguments = "foobar"
     self.assertEqual( operation.Arguments, "foobar", "wrong Arguments" )
@@ -144,38 +139,6 @@ class OperationTests( unittest.TestCase ):
     operation.addFile( File( { "Status" : "Waiting", "LFN": "/a" } ) )
 
 
-  def test03sql( self ):
-    """ sql insert or update """
-    operation = Operation()
-    operation.Type = "ReplicateAndRegister"
-
-    request = Request()
-    request.RequestName = "testRequest"
-    request.RequestID = 1
-
-    # # no parent request set
-    try:
-      operation.toSQL()
-    except Exception, error:
-      self.assertEqual( isinstance( error, AttributeError ), True, "wrong exc raised" )
-      self.assertEqual( str( error ), "RequestID not set", "wrong exc reason" )
-
-    # # parent set, no OperationID, INSERT
-    request.addOperation( operation )
-    toSQL = operation.toSQL()
-    self.assertEqual( toSQL["OK"], True, "toSQL error" )
-    self.assertEqual( toSQL["Value"].startswith( "INSERT" ), True, "OperationID not set, but SQL start with UPDATE" )
-
-    op2 = Operation()
-    op2.Type = "RemoveReplica"
-
-    request.insertBefore( op2, operation )
-
-    # # OperationID set = UPDATE
-    operation.OperationID = 1
-    toSQL = operation.toSQL()
-    self.assertEqual( toSQL["OK"], True, "toSQL error" )
-    self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True, "OperationID set, but SQL starts with INSERT" )
 
   def test04StateMachine( self ):
     """ state machine """
@@ -231,27 +194,8 @@ class OperationTests( unittest.TestCase ):
     # # opID set
     op.OperationID = 1
     del op[0]
-    self.assertEqual( op.cleanUpSQL(), None, "cleanUp failed after __delitem__" )
 
-    op[0].FileID = 1
-    del op[0]
-    self.assertEqual( op.cleanUpSQL(),
-                      "DELETE FROM `File` WHERE `OperationID` = 1 AND `FileID` IN (1);\n",
-                      "cleanUp failed after __delitem__" )
 
-    op[0].FileID = 2
-    op[0] = File( {"FileID": 2 } )
-    self.assertEqual( op.cleanUpSQL(),
-                      "DELETE FROM `File` WHERE `OperationID` = 1 AND `FileID` IN (1,2);\n",
-                      "cleanUp failed after __setitem__" )
-
-    json = op.toJSON()
-    self.assertEqual( "__dirty" in json["Value"], True, "missing __dirty" )
-
-    op2 = Operation( json["Value"] )
-    self.assertEqual( op2.cleanUpSQL(),
-                      "DELETE FROM `File` WHERE `OperationID` = 1 AND `FileID` IN (1,2);\n",
-                      "cleanUp failed after JSON" )
 
 
 

@@ -39,10 +39,12 @@ class ReqClient( Client ):
     self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
     self.setServer( "RequestManagement/ReqManager" )
 
+
   def setServer( self, url ):
     Client.setServer( self, url )
     self.__requestManager = None
     self.requestManager()
+
 
   def requestManager( self, timeout = 120 ):
     """ facade for RequestManager RPC client """

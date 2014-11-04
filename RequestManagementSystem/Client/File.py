@@ -38,6 +38,7 @@ from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
+
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -56,11 +57,14 @@ class File( RMSBase ):
 
   __tablename__ = 'File'
   FileID = Column( Integer, primary_key = True )
-  _OperationID = Column( 'OperationID', Integer, ForeignKey( 'Operation.OperationID' ), nullable = False )
-  _Status = Column( Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), default = 'Waiting' )
+  OperationID = Column( Integer,
+                        ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
+                        nullable = False )
+
+  _Status = Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' )
   _LFN = Column( 'LFN', String( 255 ), index = True )
   PFN = Column( String( 255 ) )
-  _ChecksumType = Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), default = '' )
+  _ChecksumType = Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' )
   Checksum = Column( String( 255 ) )
   _GUID = Column( 'GUID', String( 36 ) )
   Size = Column(BigInteger)
@@ -74,9 +78,9 @@ class File( RMSBase ):
     :param self: self reference
     :param dict fromDict: property dict
     """
-    self._parent = None
-    self.FileID = 0
-    self._OperationID = 0
+#     self._parent = None
+#     self.FileID = 0
+#     self._OperationID = 0
     self._Status = 'Waiting'
     self._LFN = ''
     self.PFN = ''
@@ -85,7 +89,7 @@ class File( RMSBase ):
     self._GUID = ''
     self.Attempt = 0
     self.Size = 0
-    self.Error = ''
+#     self.Error = ''
     self._duration = 0
 
     fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
@@ -119,16 +123,16 @@ class File( RMSBase ):
 
   # # properties
 
-  @hybrid_property
-  def OperationID( self ):
-    """ operation ID (RO) """
-    self._OperationID = self._parent.OperationID if self._parent else 0
-    return self._OperationID
-
-  @OperationID.setter
-  def OperationID( self, value ):
-    """ operation ID (RO) """
-    self._OperationID = self._parent.OperationID if self._parent else 0
+#   @hybrid_property
+#   def OperationID( self ):
+#     """ operation ID (RO) """
+#     self._OperationID = self._parent.OperationID if self._parent else 0
+#     return self._OperationID
+#
+#   @OperationID.setter
+#   def OperationID( self, value ):
+#     """ operation ID (RO) """
+#     self._OperationID = self._parent.OperationID if self._parent else 0
 
 
   @hybrid_property
@@ -238,11 +242,21 @@ class File( RMSBase ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    jsonData = copy.deepcopy( self.__data__ )
-    for key in jsonData:
-      if isinstance( jsonData[key], datetime.datetime ):
+    attrNames = ["FileID", "OperationID", "Status", "LFN",
+                 "PFN", "ChecksumType", "Checksum", "GUID",
+                 "Size", "Error"]
+
+    jsonData = {}
+
+    for attrName in attrNames :
+      jsonData[attrName] = getattr( self, attrName )
+      value = getattr( self, attrName )
+
+      if isinstance( value, datetime.datetime ):
         # We convert date time to a string
-        jsonData[key] = jsonData[key].sstrftime( self._datetimeFormat )
+        jsonData[attrName] = value.strftime( self._datetimeFormat )
+      else:
+        jsonData[attrName] = value
 
     return jsonData
 

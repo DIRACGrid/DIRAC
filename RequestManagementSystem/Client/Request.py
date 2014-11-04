@@ -25,11 +25,10 @@ __RCSID__ = "$Id$"
 
 # # imports
 import datetime
-import copy
 from types import StringTypes
 import json
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -42,6 +41,9 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.orderinglist import ordering_list
+
+
 
 
 ########################################################################
@@ -68,19 +70,31 @@ class Request( RMSBase ):
   FINAL_STATES = ( "Done", "Failed", "Canceled" )
 
   __tablename__ = 'Request'
+
   DIRACSetup = Column( String( 32 ) )
   _CreationTime = Column( 'CreationTime', DateTime )
-  JobID = Column( Integer )
+  JobID = Column( Integer, server_default = '0' )
+  OwnerDN = Column( String( 255 ) )
   RequestName = Column( String( 255 ), nullable = False, unique = True )
   Error = Column( String( 255 ) )
-  _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), default = 'Waiting' )
+  _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' )
   _LastUpdate = Column( 'LastUpdate', DateTime )
   OwnerGroup = Column( String( 32 ) )
   _SubmitTime = Column( 'SubmitTime', DateTime )
   RequestID = Column( Integer, primary_key = True )
   SourceComponent = Column( BLOB )
 
-  __operations__ = relationship( 'Operation', backref = '_parent' )
+
+#   __dirty = []
+  #__operations__ = relationship( 'Operation', backref = '_parent', order_by='Operation.Order' )
+  __operations__ = relationship( 'Operation',
+                                  backref = backref( '_parent', lazy = 'immediate' ),
+                                  order_by = 'Operation._Order',
+                                  lazy = 'immediate',
+                                  passive_deletes = True,
+                                  cascade = "all, delete-orphan"
+                                )
+#   __operations__ = relationship( 'Operation', backref = '_parent', order_by = 'Operation._Order', collection_class = ordering_list( '_Order' ) )
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -102,7 +116,7 @@ class Request( RMSBase ):
     self._LastUpdate = now
     self._Status = "Done"
     self.JobID = 0
-    self.RequestID = 0
+#     self.RequestID = -1
 
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
@@ -111,16 +125,17 @@ class Request( RMSBase ):
         self.OwnerDN = proxyInfo["identity"]
         self.OwnerGroup = proxyInfo["group"]
 
-    self.__dirty = []
+#     self.__dirty = []
+
 
     # The attribute __operations__ is set by the foreign key constrain in the Operation object
 #     self.__operations__ = relationship( 'Operation', backref = '_parent' )
 
     fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
-    self.__dirty = fromDict.get( "__dirty", [] )
-    if "__dirty" in fromDict:
-      del fromDict["__dirty"]
+#     self.__dirty = fromDict.get( "__dirty", [] )
+#     if "__dirty" in fromDict:
+#       del fromDict["__dirty"]
 
     for opDict in fromDict.get( "Operations", [] ):
       self +=Operation( opDict )
@@ -165,6 +180,11 @@ class Request( RMSBase ):
     """ simple state machine for sub request statuses """
     self.__waiting = None
     # # update operations statuses
+
+
+    # Update the Order in Operation
+    for i in range( len( self.__operations__ ) ):
+      self.__operations__[i].Order = i
 
     rStatus = "Waiting"
     opStatusList = [ ( op.Status, op ) for op in self ]
@@ -227,7 +247,7 @@ class Request( RMSBase ):
     """
     if operation not in self:
       self.__operations__.append( operation )
-      operation._parent = self
+#       operation._parentOld = self
       self._notify()
     return self
 
@@ -243,7 +263,7 @@ class Request( RMSBase ):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ), newOperation )
-    newOperation._parent = self
+#     newOperation._parentOld = self
     self._notify()
     return S_OK()
 
@@ -259,7 +279,7 @@ class Request( RMSBase ):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ) + 1, newOperation )
-    newOperation._parent = self
+#     newOperation._parentOld = self
     self._notify()
     return S_OK()
 
@@ -289,22 +309,23 @@ class Request( RMSBase ):
 
   def __setitem__( self, i, value ):
     """ self[i] = val """
-    self.__operations__._typeCheck( value )
-    if self[i].OperationID:
-      self.__dirty.append( self[i].OperationID )
+#     self.__operations__._typeCheck( value )
+#     if self[i].OperationID:
+#       self.__dirty.append( self[i].OperationID )
     self.__operations__.__setitem__( i, value )
-    value._parent = self
+#     value._parentOld = self
+
     self._notify()
 
   def __delitem__( self, i ):
     """ del self[i]"""
-    if not self.RequestID:
-      self.__operations__.__delitem__( i )
-    else:
-      opId = self[i].OperationID
-      if opId:
-        self.__dirty.append( opId )
-      self.__operations__.__delitem__( i )
+#     if not self.RequestID:
+#       self.__operations__.__delitem__( i )
+#     else:
+#       opId = self[i].OperationID
+#       if opId:
+#         self.__dirty.append( opId )
+    self.__operations__.__delitem__( i )
     self._notify()
 
   def indexOf( self, subReq ):
@@ -400,63 +421,69 @@ class Request( RMSBase ):
     return opStatuses.index( "Waiting" ) if "Waiting" in opStatuses else len( opStatuses )
 
 
-  def toSQL( self ):
-    """ prepare SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value
-                  if type( value ) in ( str, datetime.datetime ) else str( value ) if value != None else "NULL" )
-                for column, value in self.__data__.items()
-                if ( column == 'Error' or value ) and column not in  ( "RequestID", "LastUpdate" ) ]
-    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
-    query = []
-    if self.RequestID:
-      query.append( "UPDATE `Request` SET " )
-      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `RequestID`=%d;\n" % self.RequestID )
-    else:
-      query.append( "INSERT INTO `Request` " )
-      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
-      query.append( columns )
-      query.append( " VALUES %s;" % values )
-    return S_OK( "".join( query ) )
+#   def toSQL( self ):
+#     """ prepare SQL INSERT or UPDATE statement """
+#     colVals = [ ( "`%s`" % column, "'%s'" % value
+#                   if type( value ) in ( str, datetime.datetime ) else str( value ) if value != None else "NULL" )
+#                 for column, value in self.__data__.items()
+#                 if ( column == 'Error' or value ) and column not in  ( "RequestID", "LastUpdate" ) ]
+#     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+#     query = []
+#     if self.RequestID:
+#       query.append( "UPDATE `Request` SET " )
+#       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+#       query.append( " WHERE `RequestID`=%d;\n" % self.RequestID )
+#     else:
+#       query.append( "INSERT INTO `Request` " )
+#       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+#       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+#       query.append( columns )
+#       query.append( " VALUES %s;" % values )
+#     return S_OK( "".join( query ) )
 
-  def cleanUpSQL( self ):
-    """ delete query for dirty operations """
-    query = []
-    if self.RequestID and self.__dirty:
-      opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
-      query.append( "DELETE FROM `Operation` WHERE `RequestID`=%s AND `OperationID` IN (%s);\n" % ( self.RequestID,
-                                                                                                    opIDs ) )
-      for opID in self.__dirty:
-        query.append( "DELETE FROM `File` WHERE `OperationID`=%s;\n" % opID )
-      return query
-  # # digest
+#   def cleanUpSQL( self ):
+#     """ delete query for dirty operations """
+#     query = []
+#     if self.RequestID and self.__dirty:
+#       opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
+#       query.append( "DELETE FROM `Operation` WHERE `RequestID`=%s AND `OperationID` IN (%s);\n" % ( self.RequestID,
+#                                                                                                     opIDs ) )
+#       for opID in self.__dirty:
+#         query.append( "DELETE FROM `File` WHERE `OperationID`=%s;\n" % opID )
+#       return query
+
+
 #   def toJSON( self ):
-#     """ serialize to JSON format """
-#     digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
-#     digest["RequestID"] = self.RequestID
-#     digest["__dirty"] = self.__dirty
-#     digest["Operations"] = [op.toJSON()['Value'] for op in self]
-#     return S_OK( digest )
-
+#     try:
+#       jsonStr = json.dumps( self, cls = RMSEncoder )
+#       return S_OK( jsonStr )
+#     except Exception, e:
+#       return S_ERROR( str( e ) )
   def toJSON( self ):
-    try:
-      jsonStr = json.dumps( self, cls = RMSEncoder )
-      return S_OK( jsonStr )
-    except Exception, e:
-      return S_ERROR( str( e ) )
+
+    jsonStr = json.dumps( self, cls = RMSEncoder )
+    return S_OK( jsonStr )
 
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    jsonData = copy.deepcopy( self.__data__ )
-    for key in jsonData:
-      if isinstance( jsonData[key], datetime.datetime ):
+    attrNames = ["RequestID", "RequestName", "OwnerDN", "OwnerGroup",
+                 "Status", "Error", "DIRACSetup", "SourceComponent",
+                  "JobID", "CreationTime", "SubmitTime", "LastUpdate"]
+    jsonData = {}
+
+    for attrName in attrNames :
+      jsonData[attrName] = getattr( self, attrName )
+      value = getattr( self, attrName )
+
+      if isinstance( value, datetime.datetime ):
         # We convert date time to a string
-        jsonData[key] = jsonData[key].strftime( self._datetimeFormat )
+        jsonData[attrName] = value.strftime( self._datetimeFormat )
+      else:
+        jsonData[attrName] = value
 #     jsonData['RequestID'] = self.RequestID
-    jsonData["__dirty"] = self.__dirty
-    jsonData['Operations'] = copy.deepcopy( self.__operations__ )
+#     jsonData["__dirty"] = self.__dirty
+    jsonData['Operations'] = self.__operations__
 
     return jsonData
 

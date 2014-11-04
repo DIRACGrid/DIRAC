@@ -25,7 +25,6 @@ __RCSID__ = "$Id$"
 # @brief Definition of Operation class.
 # # imports
 import datetime
-import copy
 from types import StringTypes
 import json
 # # from DIRAC
@@ -37,13 +36,17 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, validates
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.hybrid import hybrid_property
 
 
-
+# def order_from_parent( context ):
+#   print 'context %s' % context.compiled_parameters
+#   orderFromparent = context.current_parameters['Order']
+#   print 'order %s' % orderFromparent
+#   return orderFromparent
 
 ########################################################################
 class Operation( RMSBase ):
@@ -70,6 +73,7 @@ class Operation( RMSBase ):
   FINAL_STATES = ( "Failed", "Done", "Canceled" )
 
   __tablename__ = 'Operation'
+
   TargetSE = Column( String( 255 ) )
   _CreationTime = Column( 'CreationTime', DateTime )
   SourceSE = Column( String( 255 ) )
@@ -77,14 +81,24 @@ class Operation( RMSBase ):
   Error = Column( String( 255 ) )
   Type = Column( String( 64 ), nullable = False )
   _Order = Column( 'Order', Integer, nullable = False )
-  _Status = Column( Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), default = 'Queued' )
+  _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Queued' )
   _LastUpdate = Column( 'LastUpdate', DateTime )
   _SubmitTime = Column( 'SubmitTime', DateTime )
   _Catalog = Column( 'Catalog', String( 255 ) )
   OperationID = Column( Integer, primary_key = True )
-  _RequestID = Column( 'RequestID', Integer, ForeignKey( 'Request.RequestID' ), nullable = False )
 
-  __files__ = relationship( 'File', backref = '_parent' )
+  RequestID = Column( 'RequestID', Integer,
+                      ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
+                      nullable = False )
+
+
+  __files__ = relationship( 'File',
+                            backref = backref( '_parent', lazy = 'immediate' ),
+                            lazy = 'immediate',
+                            passive_deletes = True,
+                            cascade = "all, delete-orphan" )
+
+#   __dirty = []
 
 
   def __init__( self, fromDict = None ):
@@ -106,25 +120,25 @@ class Operation( RMSBase ):
     self._SubmitTime = now
     self._LastUpdate = now
     self._CreationTime = now
-    self.OperationID = 0
-    self._RequestID = 0
+#     self.OperationID = 0
+#     self._RequestID = 0
     self._Status = "Queued"
-    self.SourceSE = ""
-    self.TargetSE = ""
+#     self.SourceSE = ""
+#     self.TargetSE = ""
 
     # # operation files
 #     self.__files__ = TypedList( allowedTypes = File )
     # # dirty fileIDs
-    self.__dirty = []
+#     self.__dirty = []
 
     # # init from dict
 #     fromDict = fromDict if fromDict else {}
     fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
 
-    self.__dirty = fromDict.get( "__dirty", [] )
-    if "__dirty" in fromDict:
-      del fromDict["__dirty"]
+#     self.__dirty = fromDict.get( "__dirty", [] )
+#     if "__dirty" in fromDict:
+#       del fromDict["__dirty"]
 
     for fileDict in fromDict.get( "Files", [] ):
       self.addFile( File( fileDict ) )
@@ -180,10 +194,10 @@ class Operation( RMSBase ):
     # If the status moved to Failed or Done, update the lastUpdate time
     if newStatus in ('Failed', 'Done'):
       if self._Status != newStatus:
-        self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+        self._LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
 
-    self.__Status = newStatus
+    self._Status = newStatus
     if self._parent:
       self._parent._notify()
 
@@ -229,20 +243,20 @@ class Operation( RMSBase ):
 
   def __delitem__( self, i ):
     """ remove file from op, only if OperationID is NOT set """
-    if not self.OperationID:
-      self.__files__.__delitem__( i )
-    else:
-      if self[i].FileID:
-        self.__dirty.append( self[i].FileID )
-      self.__files__.__delitem__( i )
+#     if not self.OperationID:
+#       self.__files__.__delitem__( i )
+#     else:
+#       if self[i].FileID:
+#         self.__dirty.append( self[i].FileID )
+    self.__files__.__delitem__( i )
     self._notify()
 
   def __setitem__( self, i, opFile ):
     """ overwrite opFile """
-    self.__files__._typeCheck( opFile )
-    toDelete = self[i]
-    if toDelete.FileID:
-      self.__dirty.append( toDelete.FileID )
+#     self.__files__._typeCheck( opFile )
+#     toDelete = self[i]
+#     if toDelete.FileID:
+#       self.__dirty.append( toDelete.FileID )
     self.__files__.__setitem__( i, opFile )
     opFile._parent = self
     self._notify()
@@ -260,16 +274,16 @@ class Operation( RMSBase ):
     """ nb of subFiles """
     return len( self.__files__ )
 
-  # # properties
-  @hybrid_property
-  def RequestID( self ):
-    """ RequestID getter (RO) """
-    return self._parent.RequestID if self._parent else -1
-
-  @RequestID.setter
-  def RequestID( self, value ):
-    """ can't set RequestID by hand """
-    self._RequestID = self._parent.RequestID if self._parent else -1
+#   # # properties
+#   @hybrid_property
+#   def RequestID( self ):
+#     """ RequestID getter (RO) """
+#     return self._parent.RequestID if self._parent else -1
+#
+#   @RequestID.setter
+#   def RequestID( self, value ):
+#     """ can't set RequestID by hand """
+#     self._RequestID = self._parent.RequestID if self._parent else -1
 
   @property
   def sourceSEList( self ):
@@ -315,7 +329,7 @@ class Operation( RMSBase ):
       # If the status moved to Failed or Done, update the lastUpdate time
       if value in ( 'Failed', 'Done' ):
         if self._Status != value:
-          self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+          self._LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
       self._Status = value
       if self._parent:
@@ -329,6 +343,12 @@ class Operation( RMSBase ):
     if self._parent:
       self._Order = self._parent.indexOf( self ) if self._parent else -1
     return self._Order
+
+  @Order.setter
+  def Order( self, value ):
+    """ order prop """
+    self._Order = value
+
 
   @hybrid_property
   def CreationTime( self ):
@@ -378,37 +398,37 @@ class Operation( RMSBase ):
 
 
 
-  def toSQL( self ):
-    """ get SQL INSERT or UPDATE statement """
-    if not getattr( self, "RequestID" ):
-      raise AttributeError( "RequestID not set" )
-    colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
-                  if type( getattr( self, column ) ) in ( str, datetime.datetime )
-                     else str( getattr( self, column ) ) if getattr( self, column ) != None else "NULL" )
-                for column in self.__data__
-                if ( column == 'Error' or getattr( self, column ) ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
-    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
-    colVals.append( ( "`Order`", str( self.Order ) ) )
-    # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
-    query = []
-    if self.OperationID:
-      query.append( "UPDATE `Operation` SET " )
-      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `OperationID`=%d;\n" % self.OperationID )
-    else:
-      query.append( "INSERT INTO `Operation` " )
-      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
-      query.append( columns )
-      query.append( " VALUES %s;\n" % values )
+#   def toSQL( self ):
+#     """ get SQL INSERT or UPDATE statement """
+#     if not getattr( self, "RequestID" ):
+#       raise AttributeError( "RequestID not set" )
+#     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
+#                   if type( getattr( self, column ) ) in ( str, datetime.datetime )
+#                      else str( getattr( self, column ) ) if getattr( self, column ) != None else "NULL" )
+#                 for column in self.__data__
+#                 if ( column == 'Error' or getattr( self, column ) ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
+#     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+#     colVals.append( ( "`Order`", str( self.Order ) ) )
+#     # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
+#     query = []
+#     if self.OperationID:
+#       query.append( "UPDATE `Operation` SET " )
+#       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+#       query.append( " WHERE `OperationID`=%d;\n" % self.OperationID )
+#     else:
+#       query.append( "INSERT INTO `Operation` " )
+#       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+#       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+#       query.append( columns )
+#       query.append( " VALUES %s;\n" % values )
+#
+#     return S_OK( "".join( query ) )
 
-    return S_OK( "".join( query ) )
-
-  def cleanUpSQL( self ):
-    """ query deleting dirty records from File table """
-    if self.OperationID and self.__dirty:
-      fIDs = ",".join( [ str( fid ) for fid in self.__dirty ] )
-      return "DELETE FROM `File` WHERE `OperationID` = %s AND `FileID` IN (%s);\n" % ( self.OperationID, fIDs )
+#   def cleanUpSQL( self ):
+#     """ query deleting dirty records from File table """
+#     if self.OperationID and self.__dirty:
+#       fIDs = ",".join( [ str( fid ) for fid in self.__dirty ] )
+#       return "DELETE FROM `File` WHERE `OperationID` = %s AND `FileID` IN (%s);\n" % ( self.OperationID, fIDs )
 
 #   def toJSON( self ):
 #     """ get json digest """
@@ -431,15 +451,24 @@ class Operation( RMSBase ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    jsonData = copy.deepcopy( self.__data__ )
-    for key in jsonData:
-      if isinstance( jsonData[key], datetime.datetime ):
+
+    attrNames = ["OperationID", "RequestID", "Type", "Status", "Arguments",
+                 "Order", "SourceSE", "TargetSE", "Catalog", "Error",
+                  "CreationTime", "SubmitTime", "LastUpdate"]
+    jsonData = {}
+
+    for attrName in attrNames :
+      jsonData[attrName] = getattr( self, attrName )
+      value = getattr( self, attrName )
+
+      if isinstance( value, datetime.datetime ):
         # We convert date time to a string
-        jsonData[key] = jsonData[key].strftime( self._datetimeFormat )
-#     jsonData['RequestID'] = self.RequestID
-#     jsonData['Order'] = self.Order
-    jsonData['__dirty'] = self.__dirty
-    jsonData['Files'] = copy.deepcopy( self.__files__ )
+        jsonData[attrName] = value.strftime( self._datetimeFormat )
+      else:
+        jsonData[attrName] = value
+
+#     jsonData['__dirty'] = self.__dirty
+    jsonData['Files'] = self.__files__
 
     return jsonData
 
