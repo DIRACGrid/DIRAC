@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 import signal
 import pprint
 import re
+import os
 from DIRAC.Core.Base import Script
 
 def processScriptSwitches():
@@ -323,14 +324,21 @@ def checkUnusedSEs():
         changeSet.add( ( accessSection, 'Host', host ) ) 
         changeSet.add( ( accessSection, 'Port', port ) ) 
         changeSet.add( ( accessSection, 'Access', 'remote' ) )
-        # Try to guess the Path
-        domain = '.'.join( host.split( '.' )[-2:] )
-        path = '/dpm/%s/home' % domain
+        if 'VOPath' in seDict:
+          path = seDict['VOPath']
+          voFromPath = os.path.basename( path )
+          if voFromPath != vo:
+            gLogger.notice( '\n!!! Warning: non-conventional VO path: %s\n' % path )
+          path = os.path.dirname( path )  
+        else:  
+          # Try to guess the Path
+          domain = '.'.join( host.split( '.' )[-2:] )
+          path = '/dpm/%s/home' % domain
         changeSet.add( ( accessSection, 'Path', path ) ) 
         changeSet.add( ( accessSection, 'SpaceToken', '' ) )
         changeSet.add( ( accessSection, 'WSUrl', '/srm/managerv2?SFN=' ) ) 
         
-        gLogger.notice( 'SE %s will be added with the following parameters' )
+        gLogger.notice( 'SE %s will be added with the following parameters' % diracSEName )
         changeList = list( changeSet )
         changeList.sort()
         for entry in changeList:
@@ -340,9 +348,12 @@ def checkUnusedSEs():
           changeSetFull = changeSetFull.union( changeSet )        
           
   if dry:
-    gLogger.notice( 'Skipping commit of the new SE data in a dry run' )
-    return S_OK()       
-          
+    if changeSetFull:
+      gLogger.notice( 'Skipping commit of the new SE data in a dry run' )
+    else:
+      gLogger.notice( "No new SE to be added" )
+    return S_OK()
+
   if changeSetFull:
     csAPI = CSAPI()
     csAPI.initialize()
@@ -350,19 +361,21 @@ def checkUnusedSEs():
     if not result['OK']:
       gLogger.error( 'Failed to initialize CSAPI object', result['Message'] )
       DIRACExit( -1 )
-    changeList = list( changeSetFull )  
+    changeList = list( changeSetFull )
     changeList.sort()
     for section, option, value in changeList:
       csAPI.setOption( cfgPath( section, option ), value )
-        
-    yn = raw_input( 'New SE data is accumulated\n Do you want to commit changes to CS ? default yes [yes|no]: ' )   
+
+    yn = raw_input( 'New SE data is accumulated\n Do you want to commit changes to CS ? default yes [yes|no]: ' )
     if not yn or yn.lower().startswith( 'y' ):
       result = csAPI.commit()
       if not result['OK']:
         gLogger.error( "Error while commit to CS", result['Message'] )
       else:
-        gLogger.notice( "Successfully committed %d changes to CS" % len( changeSetFull ) )  
-          
+        gLogger.notice( "Successfully committed %d changes to CS" % len( changeSetFull ) )
+  else:
+    gLogger.notice( "No new SE to be added" )
+
   return S_OK()
 
 def updateSEs():
