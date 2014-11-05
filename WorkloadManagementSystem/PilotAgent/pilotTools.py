@@ -368,10 +368,7 @@ class PilotParams( object ):
     self.releaseProject = ''
     self.gateway = ""
     self.useServerCertificate = False
-    self.rootPath = ''
-    self.pilotRootPath = ''
     self.pilotScriptName = ''
-    self.workingDir = ''
     # DIRAC client installation environment
     self.diracInstalled = False
     self.diracExtensions = []
