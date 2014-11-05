@@ -45,5 +45,6 @@ USE JobLoggingDB;
 --		the trigger generates a proper sequence for each JobID
 --
 
-CREATE TRIGGER SeqNumGenerator BEFORE INSERT ON LoggingInfo
-FOR EACH ROW SET NEW.SeqNum= (SELECT IFNULL(MAX(SeqNum) + 1,1) FROM LoggingInfo WHERE JobID=NEW.JobID);
+-- We can't create a trigger if we haven't created the database
+-- CREATE TRIGGER SeqNumGenerator BEFORE INSERT ON LoggingInfo
+-- FOR EACH ROW SET NEW.SeqNum= (SELECT IFNULL(MAX(SeqNum) + 1,1) FROM LoggingInfo WHERE JobID=NEW.JobID);
