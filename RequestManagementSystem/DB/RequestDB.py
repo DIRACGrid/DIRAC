@@ -411,7 +411,7 @@ class RequestDB( DB ):
 
       session.add( request )
       session.commit()
-      session.expunge_all
+      session.expunge_all()
   
       return S_OK( request.RequestID )
 
