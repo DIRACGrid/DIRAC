@@ -335,6 +335,11 @@ class PilotParams( object ):
         param names and defaults are defined here
     """
 
+    self.rootPath = os.getcwd()
+    self.originalRootPath = os.getcwd()
+    self.pilotRootPath = os.getcwd()
+    self.workingDir = os.getcwd()
+
     self.optList = {}
     self.debugFlag = False
     self.local = False
@@ -377,9 +382,9 @@ class PilotParams( object ):
     self.executeCmd = False
     self.configureScript = 'dirac-configure'
     self.architectureScript = 'dirac-platform'
-    self.certsLocation = ''
+    self.certsLocation = '%s/etc/grid-security' % self.workingDir
+    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
     self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
-    self.pilotCFGFile = ''
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
@@ -410,6 +415,7 @@ class PilotParams( object ):
                      ( 's:', 'section=', 'Set base section for relative parsed options' ),
                      ( 'o:', 'option=', 'Option=value to add' ),
                      ( 'c', 'cert', 'Use server certificate instead of proxy' ),
+                     ( 'C', 'certLocation', 'Specify server certificate location' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
                    )
@@ -468,6 +474,8 @@ class PilotParams( object ):
         self.gateway = v
       elif o == '-c' or o == '--cert':
         self.useServerCertificate = True
+      elif o == '-C' or o == '--certLocation':
+        self.certsLocation = v
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
@@ -476,10 +484,3 @@ class PilotParams( object ):
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
 
-    self.rootPath = os.getcwd()
-    self.originalRootPath = os.getcwd()
-    self.pilotRootPath = os.getcwd()
-    self.workingDir = os.getcwd()
-
-    self.certsLocation = '%s/etc/grid-security' % self.workingDir
-    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
