@@ -36,14 +36,14 @@ class TorqueComputingElement( ComputingElement ):
     ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
 
-    self.queue = self.ceConfigDict['Queue']
-    self.execQueue = self.ceConfigDict['ExecQueue']
+    self.queue = self.ceParameters['Queue']
+    self.execQueue = self.ceParameters['ExecQueue']
     self.log.info( "Using queue: ", self.queue )
     self.hostname = socket.gethostname()
-    self.sharedArea = self.ceConfigDict['SharedArea']
-    self.batchOutput = self.ceConfigDict['BatchOutput']
-    self.batchError = self.ceConfigDict['BatchError']
-    self.userName = self.ceConfigDict['UserName']
+    self.sharedArea = self.ceParameters['SharedArea']
+    self.batchOutput = self.ceParameters['BatchOutput']
+    self.batchError = self.ceParameters['BatchError']
+    self.userName = self.ceParameters['UserName']
     self.removeOutput = True
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
@@ -57,20 +57,20 @@ class TorqueComputingElement( ComputingElement ):
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
     # Now Torque specific ones
-    if 'ExecQueue' not in self.ceConfigDict:
-      self.ceConfigDict['ExecQueue'] = self.ceConfigDict['Queue']
+    if 'ExecQueue' not in self.ceParameters:
+      self.ceParameters['ExecQueue'] = self.ceParameters['Queue']
 
-    if 'SharedArea' not in self.ceConfigDict:
-      self.ceConfigDict['SharedArea'] = ''
+    if 'SharedArea' not in self.ceParameters:
+      self.ceParameters['SharedArea'] = ''
 
-    if 'UserName' not in self.ceConfigDict:
-      self.ceConfigDict['UserName'] = ''
+    if 'UserName' not in self.ceParameters:
+      self.ceParameters['UserName'] = ''
 
-    if 'BatchOutput' not in self.ceConfigDict:
-      self.ceConfigDict['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+    if 'BatchOutput' not in self.ceParameters:
+      self.ceParameters['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
-    if 'BatchError' not in self.ceConfigDict:
-      self.ceConfigDict['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
+    if 'BatchError' not in self.ceParameters:
+      self.ceParameters['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
   #############################################################################
   def makeProxyExecutableFile( self, executableFile, proxy ):

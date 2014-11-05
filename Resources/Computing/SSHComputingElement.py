@@ -22,9 +22,6 @@ from types import StringTypes
 
 __RCSID__ = "$Id$"
 
-CE_NAME = 'SSH'
-MANDATORY_PARAMETERS = [ 'Queue' ]
-
 class SSH:
 
   def __init__( self, user = None, host = None, password = None, key = None, parameters = {}, options = "" ):
@@ -154,10 +151,10 @@ class SSHComputingElement( ComputingElement ):
     """
     ComputingElement.__init__( self, ceUniqueID )
 
-    self.ceType = CE_NAME
-    self.controlScript = 'sshce'
+    self.ceType = 'SSH'
+    self.execution = "SSH"
+    self.batchSystem = 'Host'
     self.submittedJobs = 0
-    self.mandatoryParameters = MANDATORY_PARAMETERS
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -186,10 +183,7 @@ class SSHComputingElement( ComputingElement ):
       self.ceParameters['InfoArea'] = 'info'
       
     if 'WorkArea' not in self.ceParameters:
-      self.ceParameters['WorkArea'] = 'work'  
-      
-    if 'SubmitOptions' not in self.ceParameters:
-      self.ceParameters['SubmitOptions'] = '-'    
+      self.ceParameters['WorkArea'] = 'work'     
 
   def _reset( self ):
     """ Process CE parameters and make necessary adjustments
