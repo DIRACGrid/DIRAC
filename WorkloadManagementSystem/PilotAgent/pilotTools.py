@@ -413,6 +413,7 @@ class PilotParams( object ):
                      ( 'o:', 'option=', 'Option=value to add' ),
                      ( 'c', 'cert', 'Use server certificate instead of proxy' ),
                      ( 'C:', 'certLocation=', 'Specify server certificate location' ),
+                     ( 'L:', 'pilotCFGLocation=', 'Specify pilot CFG location' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
                    )
@@ -473,6 +474,8 @@ class PilotParams( object ):
         self.useServerCertificate = True
       elif o == '-C' or o == '--certLocation':
         self.certsLocation = v
+      elif o == '-L' or o == '--pilotCFGLocation':
+        self.pilotCFGFileLocation = v
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
