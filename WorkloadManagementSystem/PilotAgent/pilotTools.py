@@ -380,7 +380,7 @@ class PilotParams( object ):
     self.configureScript = 'dirac-configure'
     self.architectureScript = 'dirac-platform'
     self.certsLocation = '%s/etc/grid-security' % self.workingDir
-    self.pilotCFGFile = '%s-pilot.json' % self.releaseProject
+    self.pilotCFGFile = 'pilot.json'
     self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
 
     # Pilot command options
