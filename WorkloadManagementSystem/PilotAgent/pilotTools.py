@@ -411,7 +411,7 @@ class PilotParams( object ):
                      ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
                      ( 's:', 'section=', 'Set base section for relative parsed options' ),
                      ( 'o:', 'option=', 'Option=value to add' ),
-                     ( 'c:', 'cert', 'Use server certificate instead of proxy' ),
+                     ( 'c', 'cert', 'Use server certificate instead of proxy' ),
                      ( 'C:', 'certLocation', 'Specify server certificate location' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
