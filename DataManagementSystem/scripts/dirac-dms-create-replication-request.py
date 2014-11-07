@@ -78,13 +78,17 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
   lfnMetadata = res['Value']['Successful']
 
   for lfn in lfnMetadata:
-    rarFile = File()
-    rarFile.LFN = lfn
-    rarFile.Size = lfnMetadata[lfn]['Size']
-    rarFile.Checksum = lfnMetadata[lfn]['Checksum']
-    rarFile.GUID = lfnMetadata[lfn]['GUID']
-    rarFile.ChecksumType = 'ADLER32'
-    replicateAndRegister.addFile( rarFile )
+    try:
+      rarFile = File()
+      rarFile.LFN = lfn
+      rarFile.Size = lfnMetadata[lfn]['Size']
+      rarFile.Checksum = lfnMetadata[lfn]['Checksum']
+      rarFile.GUID = lfnMetadata[lfn]['GUID']
+      rarFile.ChecksumType = 'ADLER32'
+      replicateAndRegister.addFile( rarFile )
+    except ValueError as err:
+      print "Error", str(err), lfn
+      continue
 
   oRequest.addOperation( replicateAndRegister )
   isValid = gRequestValidator.validate( oRequest )
