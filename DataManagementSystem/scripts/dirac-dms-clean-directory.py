@@ -17,20 +17,21 @@ Usage:
 """ % Script.scriptName)
 
 Script.parseCommandLine()
-import sys,os
+import os, sys
 
-from DIRAC.Core.Utilities.List import sortList,randomize
+from DIRAC.Core.Utilities.List import sortList
 
-if len(sys.argv) < 2:
+args = Script.getPositionalArgs()
+if len(args) < 1:
   Script.showHelp()
   DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
+  inputFileName = args[0]
 
 if os.path.exists(inputFileName):
-  inputFile = open(inputFileName,'r')
+  inputFile = open(inputFileName, 'r')
   string = inputFile.read()
-  lfns = sortList(string.splitlines(),True)
+  lfns = sortList(string.splitlines(), True)
   inputFile.close()
 else:
   lfns = [inputFileName]
