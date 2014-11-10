@@ -1,7 +1,6 @@
 ########################################################################
 # $HeadURL $
 # File: File.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/03 15:02:53
 ########################################################################
 """
@@ -10,8 +9,6 @@
 .. module: File
   :synopsis: RMS operation file
 
-.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
 operation file
 """
 # for properties
@@ -19,33 +16,21 @@ operation file
 
 __RCSID__ = "$Id $"
 
-# #
-# @file File.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/08/03 15:03:03
-# @brief Definition of File class.
-
 # # imports
 import datetime
-import copy
 import os
 import json
 from types import StringTypes
-# import urlparse
-# # from DIRAC
+
 from DIRAC import S_OK, S_ERROR
-# from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB, BigInteger
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 
 
 ########################################################################
-# class File( RMSBase ):
 class File( object ):
 
   """
@@ -55,23 +40,15 @@ class File( object ):
 
   :param Operation _parent: reference to parent Operation
   :param dict __data__: attrs dict
+
+
+    It is managed by SQLAlchemy, so the OperationID, FileID should never be set by hand
+  (except when constructed from JSON of course...)
+  In principle, the _parent attribute could be totally managed by SQLAlchemy. However, it is
+  set only when inserted into the DB, this is why I manually set it in the Operation
   """
 
-#   __tablename__ = 'File'
-#   FileID = Column( Integer, primary_key = True )
-#   OperationID = Column( Integer,
-#                         ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
-#                         nullable = False )
-#
-#   _Status = Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' )
-#   _LFN = Column( 'LFN', String( 255 ), index = True )
-#   PFN = Column( String( 255 ) )
-#   _ChecksumType = Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' )
-#   Checksum = Column( String( 255 ) )
-#   _GUID = Column( 'GUID', String( 36 ) )
-#   Size = Column(BigInteger)
-#   Attempt = Column(Integer)
-#   Error = Column( String( 255 ) )
+
 
 
   def __init__( self, fromDict = None ):
@@ -81,8 +58,6 @@ class File( object ):
     :param dict fromDict: property dict
     """
     self._parent = None
-#     self.FileID = 0
-#     self._OperationID = 0
     self._Status = 'Waiting'
     self._LFN = None
     self.PFN = None
@@ -93,50 +68,20 @@ class File( object ):
     self.Size = 0
     self.Error = None
     self._duration = 0
-#     self.FileID = -1
-#     self.OperationID = -2
 
-    fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
+
+    fromDict = fromDict if isinstance( fromDict, dict )\
+               else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
+               else {}
 
     for attrName, attrValue in fromDict.items():
-#       if attrName not in self.__data__:
-#         raise AttributeError( "unknown File attribute %s" % str( attrName ) )
+      # The JSON module forces the use of UTF-8, which is not properly
+      # taken into account in DIRAC.
+      # One would need to replace all the '== str' with 'in StringTypes'
       if type( attrValue ) in StringTypes:
         attrValue = attrValue.encode()
       if attrValue:
         setattr( self, attrName, attrValue )
-
-#   @staticmethod
-#   def tableDesc():
-#     """ get table desc """
-#     return { "Fields" :
-#              { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
-#                "OperationID" : "INTEGER NOT NULL",
-#                "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled') DEFAULT 'Waiting'",
-#                "LFN" : "VARCHAR(255)",
-#                "PFN" : "VARCHAR(255)",
-#                "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', '') DEFAULT ''",
-#                "Checksum" : "VARCHAR(255)",
-#                "GUID" : "VARCHAR(36)",
-#                "Size" : "BIGINT",
-#                "Attempt": "INTEGER",
-#                "Error" : "VARCHAR(255)" },
-#              "PrimaryKey" : "FileID",
-#              'ForeignKeys': {'OperationID': 'Operation.OperationID' },
-#              "Indexes" : { "LFN" : [ "LFN" ] } }
-
-  # # properties
-
-#   @hybrid_property
-#   def OperationID( self ):
-#     """ operation ID (RO) """
-#     self._OperationID = self._parent.OperationID if self._parent else 0
-#     return self._OperationID
-#
-#   @OperationID.setter
-#   def OperationID( self, value ):
-#     """ operation ID (RO) """
-#     self._OperationID = self._parent.OperationID if self._parent else 0
 
 
   @hybrid_property
@@ -210,34 +155,10 @@ class File( object ):
     """ str operator """
     return self.toJSON()['Value']
 
-  def toSQL( self ):
-    """ get SQL INSERT or UPDATE statement """
-    if not self._parent:
-      raise AttributeError( "File does not belong to any Operation" )
-    colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
-                  if type( getattr( self, column ) ) == str
-                    else str( getattr( self, column ) ) if getattr( self, column ) != None else "NULL" )
-                for column in self.__data__
-                if ( column == 'Error' or getattr( self, column ) ) and column != "FileID" ]
-    query = []
-    if self.FileID:
-      query.append( "UPDATE `File` SET " )
-      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `FileID`=%d;\n" % self.FileID )
-    else:
-      query.append( "INSERT INTO `File` " )
-      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
-      query.append( columns )
-      query.append( " VALUES %s;\n" % values )
-    return S_OK( "".join( query ) )
 
-#   def toJSON( self ):
-#     """ get json """
-#     digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
-#     return S_OK( digest )
-#
+
   def toJSON( self ):
+    """ Returns the json formated string that describes the File """
     try:
       jsonStr = json.dumps( self, cls = RMSEncoder )
       return S_OK( jsonStr )
@@ -246,19 +167,18 @@ class File( object ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    attrNames = [ "Status", "LFN",
+    attrNames = ['FileID', 'OperationID', "Status", "LFN",
                  "PFN", "ChecksumType", "Checksum", "GUID",
                  "Size", "Error"]
 
     jsonData = {}
 
-    if hasattr( self, 'OperationID' ):
-      jsonData['OperationID'] = getattr( self, 'OperationID' )
-
-    if hasattr( self, 'FileID' ):
-      jsonData['FileID'] = getattr( self, 'FileID' )
-
     for attrName in attrNames :
+
+      # FileID and OperationID might not be set since they are managed by SQLAlchemy
+      if not hasattr( self, attrName ):
+        continue
+
       jsonData[attrName] = getattr( self, attrName )
       value = getattr( self, attrName )
 

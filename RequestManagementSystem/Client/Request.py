@@ -1,7 +1,6 @@
 ########################################################################
 # $HeadURL $
 # File: Request.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/16 13:43:45
 ########################################################################
 """
@@ -10,38 +9,26 @@
 .. module: Request
   :synopsis: request implementation
 
-.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
 request implementation
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,C0103
 __RCSID__ = "$Id$"
-# #
-# @file Request.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/07/16 13:44:00
-# @brief Definition of Request class.
+
 
 # # imports
 import datetime
 from types import StringTypes
 import json
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.TypedList import TypedList
-from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.orderinglist import ordering_list
+
 
 
 
@@ -63,6 +50,9 @@ class Request( object ):
   :param datetime.datetime LastUpdate: UTC datetime
   :param str Status: request's status
   :param TypedList operations: list of operations
+
+  It is managed by SQLAlchemy, so the RequestID should never be set by hand (except when constructed from
+  JSON of course...)
   """
 
   ALL_STATES = ( "Waiting", "Failed", "Done", "Scheduled", "Assigned", "Canceled" )
@@ -70,35 +60,7 @@ class Request( object ):
   FINAL_STATES = ( "Done", "Failed", "Canceled" )
 
   _datetimeFormat = '%Y-%m-%d %H:%M:%S'
-#   RequestID = -1
 
-
-#   __tablename__ = 'Request'
-#
-#   DIRACSetup = Column( String( 32 ) )
-#   _CreationTime = Column( 'CreationTime', DateTime )
-#   JobID = Column( Integer, server_default = '0' )
-#   OwnerDN = Column( String( 255 ) )
-#   RequestName = Column( String( 255 ), nullable = False, unique = True )
-#   Error = Column( String( 255 ) )
-#   _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' )
-#   _LastUpdate = Column( 'LastUpdate', DateTime )
-#   OwnerGroup = Column( String( 32 ) )
-#   _SubmitTime = Column( 'SubmitTime', DateTime )
-#   RequestID = Column( Integer, primary_key = True )
-#   SourceComponent = Column( BLOB )
-#
-#
-# #   __dirty = []
-#   #__operations__ = relationship( 'Operation', backref = '_parent', order_by='Operation.Order' )
-#   __operations__ = relationship( 'Operation',
-#                                   backref = backref( '_parent', lazy = 'immediate' ),
-#                                   order_by = 'Operation._Order',
-#                                   lazy = 'immediate',
-#                                   passive_deletes = True,
-#                                   cascade = "all, delete-orphan"
-#                                 )
-#   __operations__ = relationship( 'Operation', backref = '_parent', order_by = 'Operation._Order', collection_class = ordering_list( '_Order' ) )
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -109,12 +71,7 @@ class Request( object ):
     self.__waiting = None
 
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
-#     self.__data__["CreationTime"] = now
-#     self.__data__["SubmitTime"] = now
-#     self.__data__["LastUpdate"] = now
-#     self.__data__["Status"] = "Done"
-#     self.__data__["JobID"] = 0
-#     self.__data__["RequestID"] = 0
+
     self._CreationTime = now
     self._SubmitTime = now
     self._LastUpdate = now
@@ -136,27 +93,20 @@ class Request( object ):
 
     self.__operations__ = []
 
-#     self.__dirty = []
+    fromDict = fromDict if isinstance( fromDict, dict )\
+               else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
+                else {}
 
 
-    # The attribute __operations__ is set by the foreign key constrain in the Operation object
-#     self.__operations__ = relationship( 'Operation', backref = '_parent' )
 
-    fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
-#     self.__dirty = fromDict.get( "__dirty", [] )
-#     if "__dirty" in fromDict:
-#       del fromDict["__dirty"]
-
-    for opDict in fromDict.get( "Operations", [] ):
-      self +=Operation( opDict )
     if "Operations" in fromDict:
+      for opDict in fromDict.get( "Operations", [] ):
+        self +=Operation( opDict )
+
       del fromDict["Operations"]
 
     for key, value in fromDict.items():
-#       if key not in self.__data__:
-#         raise AttributeError( "Unknown Request attribute '%s'" % key )
-
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
       # One would need to replace all the '== str' with 'in StringTypes'
@@ -165,27 +115,9 @@ class Request( object ):
 
       if value:
         setattr( self, key, value )
+
     self._notify()
 
-#   @staticmethod
-#   def tableDesc():
-#     """ get table desc """
-#     return { "Fields" :
-#              { "RequestID" : "INTEGER NOT NULL AUTO_INCREMENT",
-#                "RequestName" : "VARCHAR(255) NOT NULL",
-#                "OwnerDN" : "VARCHAR(255)",
-#                "OwnerGroup" : "VARCHAR(32)",
-#                "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled') DEFAULT 'Waiting'",
-#                "Error" : "VARCHAR(255)",
-#                "DIRACSetup" : "VARCHAR(32)",
-#                "SourceComponent" : "BLOB",
-#                "JobID" : "INTEGER DEFAULT 0",
-#                "CreationTime" : "DATETIME",
-#                "SubmitTime" : "DATETIME",
-#                "LastUpdate" : "DATETIME"  },
-#              "PrimaryKey" : [ "RequestID" ],
-#              'UniqueIndexes': {'RequestName' : [ 'RequestName'] }
-#            }
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
@@ -193,14 +125,13 @@ class Request( object ):
     self.__waiting = None
 
 
-    # Update the Order in Operation
+    # Update the Order in Operation, and set the parent
     for i in range( len( self.__operations__ ) ):
       self.__operations__[i].Order = i
       self.__operations__[i]._parent = self
 
     rStatus = "Waiting"
     opStatusList = [ ( op.Status, op ) for op in self ]
-
 
 
     while opStatusList:
@@ -275,7 +206,6 @@ class Request( object ):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ), newOperation )
-#     newOperation._parent = self
     self._notify()
     return S_OK()
 
@@ -291,7 +221,6 @@ class Request( object ):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ) + 1, newOperation )
-#     newOperation._parent = self
     self._notify()
     return S_OK()
 
@@ -321,22 +250,13 @@ class Request( object ):
 
   def __setitem__( self, i, value ):
     """ self[i] = val """
-#     self.__operations__._typeCheck( value )
-#     if self[i].OperationID:
-#       self.__dirty.append( self[i].OperationID )
-    self.__operations__.__setitem__( i, value )
-#     value._parent = self
 
+    self.__operations__.__setitem__( i, value )
     self._notify()
 
   def __delitem__( self, i ):
     """ del self[i]"""
-#     if not self.RequestID:
-#       self.__operations__.__delitem__( i )
-#     else:
-#       opId = self[i].OperationID
-#       if opId:
-#         self.__dirty.append( opId )
+
     self.__operations__.__delitem__( i )
     self._notify()
 
@@ -361,7 +281,6 @@ class Request( object ):
     """ list of statuses for all operations """
     return [ subReq.Status for subReq in self ]
 
-  # # properties
   @hybrid_property
   def CreationTime( self ):
     """ creation time getter """
@@ -433,45 +352,8 @@ class Request( object ):
     return opStatuses.index( "Waiting" ) if "Waiting" in opStatuses else len( opStatuses )
 
 
-#   def toSQL( self ):
-#     """ prepare SQL INSERT or UPDATE statement """
-#     colVals = [ ( "`%s`" % column, "'%s'" % value
-#                   if type( value ) in ( str, datetime.datetime ) else str( value ) if value != None else "NULL" )
-#                 for column, value in self.__data__.items()
-#                 if ( column == 'Error' or value ) and column not in  ( "RequestID", "LastUpdate" ) ]
-#     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
-#     query = []
-#     if self.RequestID:
-#       query.append( "UPDATE `Request` SET " )
-#       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-#       query.append( " WHERE `RequestID`=%d;\n" % self.RequestID )
-#     else:
-#       query.append( "INSERT INTO `Request` " )
-#       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-#       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
-#       query.append( columns )
-#       query.append( " VALUES %s;" % values )
-#     return S_OK( "".join( query ) )
-
-#   def cleanUpSQL( self ):
-#     """ delete query for dirty operations """
-#     query = []
-#     if self.RequestID and self.__dirty:
-#       opIDs = ",".join( [ str( opID ) for opID in self.__dirty ] )
-#       query.append( "DELETE FROM `Operation` WHERE `RequestID`=%s AND `OperationID` IN (%s);\n" % ( self.RequestID,
-#                                                                                                     opIDs ) )
-#       for opID in self.__dirty:
-#         query.append( "DELETE FROM `File` WHERE `OperationID`=%s;\n" % opID )
-#       return query
-
-
-#   def toJSON( self ):
-#     try:
-#       jsonStr = json.dumps( self, cls = RMSEncoder )
-#       return S_OK( jsonStr )
-#     except Exception, e:
-#       return S_ERROR( str( e ) )
   def toJSON( self ):
+    """ Returns the JSON formated string that describes the request """
 
     jsonStr = json.dumps( self, cls = RMSEncoder )
     return S_OK( jsonStr )
@@ -479,16 +361,18 @@ class Request( object ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    attrNames = ["RequestName", "OwnerDN", "OwnerGroup",
+
+    attrNames = ['RequestID', "RequestName", "OwnerDN", "OwnerGroup",
                  "Status", "Error", "DIRACSetup", "SourceComponent",
                   "JobID", "CreationTime", "SubmitTime", "LastUpdate"]
     jsonData = {}
 
-
-    if hasattr( self, 'RequestID' ):
-      jsonData['RequestID'] = getattr( self, 'RequestID' )
-
     for attrName in attrNames :
+
+      # RequestID might not be set since it is managed by SQLAlchemy
+      if not hasattr( self, attrName ):
+        continue
+
       value = getattr( self, attrName )
 
       if isinstance( value, datetime.datetime ):
@@ -497,8 +381,6 @@ class Request( object ):
       else:
         jsonData[attrName] = value
 
-#     jsonData['RequestID'] = self.RequestID
-#     jsonData["__dirty"] = self.__dirty
     jsonData['Operations'] = self.__operations__
 
     return jsonData

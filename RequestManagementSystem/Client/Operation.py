@@ -1,7 +1,6 @@
 ########################################################################
 # $HeadURL$
 # File: Operation.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/24 12:12:05
 ########################################################################
 
@@ -11,42 +10,24 @@
 .. module: Operation
   :synopsis: Operation implementation
 
-.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
 Operation implementation
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
 __RCSID__ = "$Id$"
-# #
-# @file Operation.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/07/24 12:12:18
-# @brief Definition of Operation class.
-# # imports
+
 import datetime
 from types import StringTypes
 import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.TypedList import TypedList
-from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref, validates
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy.ext.hybrid import hybrid_property
 
 
-# def order_from_parent( context ):
-#   print 'context %s' % context.compiled_parameters
-#   orderFromparent = context.current_parameters['Order']
-#   print 'order %s' % orderFromparent
-#   return orderFromparent
 
 ########################################################################
 class Operation( object ):
@@ -63,6 +44,13 @@ class Operation( object ):
   :param str Catalog: catalog to use as comma separated list
   :param str Error: error string if any
   :param Request parent: parent Request instance
+
+
+  It is managed by SQLAlchemy, so the RequestID, OperationID should never be set by hand
+  (except when constructed from JSON of course...)
+  In principle, the _parent attribute could be totally managed by SQLAlchemy. However, it is
+  set only when inserted into the DB, this is why I manually set it in the Request _notify
+
   """
   # # max files in a single operation
   MAX_FILES = 100
@@ -71,37 +59,9 @@ class Operation( object ):
   ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
   # # final states
   FINAL_STATES = ( "Failed", "Done", "Canceled" )
-  
+
   _datetimeFormat = '%Y-%m-%d %H:%M:%S'
 
-
-#   __tablename__ = 'Operation'
-
-#   TargetSE = Column( String( 255 ) )
-#   _CreationTime = Column( 'CreationTime', DateTime )
-#   SourceSE = Column( String( 255 ) )
-#   Arguments = Column( BLOB )
-#   Error = Column( String( 255 ) )
-#   Type = Column( String( 64 ), nullable = False )
-#   _Order = Column( 'Order', Integer, nullable = False )
-#   _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Queued' )
-#   _LastUpdate = Column( 'LastUpdate', DateTime )
-#   _SubmitTime = Column( 'SubmitTime', DateTime )
-#   _Catalog = Column( 'Catalog', String( 255 ) )
-#   OperationID = Column( Integer, primary_key = True )
-#
-#   RequestID = Column( 'RequestID', Integer,
-#                       ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
-#                       nullable = False )
-#
-#
-#   __files__ = relationship( 'File',
-#                             backref = backref( '_parent', lazy = 'immediate' ),
-#                             lazy = 'immediate',
-#                             passive_deletes = True,
-#                             cascade = "all, delete-orphan" )
-
-#   __dirty = []
 
 
   def __init__( self, fromDict = None ):
@@ -111,10 +71,8 @@ class Operation( object ):
     :param dict fromDict: attributes dictionary
     """
     self._parent = None
-    # # sub-request attributes
-    # self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
-    now = datetime.datetime.utcnow().replace( microsecond = 0 )
 
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self._SubmitTime = now
     self._LastUpdate = now
     self._CreationTime = now
@@ -129,50 +87,28 @@ class Operation( object ):
     self.Error = None
     self.Type = None
     self._Catalog = None
-#     self.OperationID = -1
-#     self.RequestID = -2
-
-    fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
 
-#     self.__dirty = fromDict.get( "__dirty", [] )
-#     if "__dirty" in fromDict:
-#       del fromDict["__dirty"]
+    fromDict = fromDict if isinstance( fromDict, dict )\
+               else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
+               else {}
 
 
-    for fileDict in fromDict.get( "Files", [] ):
-      self.addFile( File( fileDict ) )
     if "Files" in fromDict:
+      for fileDict in fromDict.get( "Files", [] ):
+        self.addFile( File( fileDict ) )
+
       del fromDict["Files"]
 
     for key, value in fromDict.items():
-#       if key not in self.__data__:
-#         raise AttributeError( "Unknown Operation attribute '%s'" % key )
+      # The JSON module forces the use of UTF-8, which is not properly
+      # taken into account in DIRAC.
+      # One would need to replace all the '== str' with 'in StringTypes'
       if type( value ) in StringTypes:
         value = value.encode()
-      if key != "Order" and value:
+      if value:
         setattr( self, key, value )
 
-  @staticmethod
-  def tableDesc():
-    """ get table desc """
-    return { "Fields" :
-             { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
-               "RequestID" : "INTEGER NOT NULL",
-               "Type" : "VARCHAR(64) NOT NULL",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled') "\
-                 "DEFAULT 'Queued'",
-               "Arguments" : "MEDIUMBLOB",
-               "Order" : "INTEGER NOT NULL",
-               "SourceSE" : "VARCHAR(255)",
-               "TargetSE" : "VARCHAR(255)",
-               "Catalog" : "VARCHAR(255)",
-               "Error": "VARCHAR(255)",
-               "CreationTime" : "DATETIME",
-               "SubmitTime" : "DATETIME",
-               "LastUpdate" : "DATETIME" },
-             'ForeignKeys': {'RequestID': 'Request.RequestID' },
-             "PrimaryKey" : "OperationID" }
 
   # # protected methods for parent only
   def _notify( self ):
@@ -243,20 +179,11 @@ class Operation( object ):
 
   def __delitem__( self, i ):
     """ remove file from op, only if OperationID is NOT set """
-#     if not self.OperationID:
-#       self.__files__.__delitem__( i )
-#     else:
-#       if self[i].FileID:
-#         self.__dirty.append( self[i].FileID )
     self.__files__.__delitem__( i )
     self._notify()
 
   def __setitem__( self, i, opFile ):
     """ overwrite opFile """
-#     self.__files__._typeCheck( opFile )
-#     toDelete = self[i]
-#     if toDelete.FileID:
-#       self.__dirty.append( toDelete.FileID )
     self.__files__.__setitem__( i, opFile )
     opFile._parent = self
     self._notify()
@@ -405,18 +332,17 @@ class Operation( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ["Type", "Status", "Arguments",
+    attrNames = ['OperationID', 'RequestID', "Type", "Status", "Arguments",
                  "Order", "SourceSE", "TargetSE", "Catalog", "Error",
                   "CreationTime", "SubmitTime", "LastUpdate"]
     jsonData = {}
 
-
-    if hasattr( self, 'OperationID' ):
-      jsonData['OperationID'] = getattr( self, 'OperationID' )
-    if hasattr( self, 'RequestID' ):
-      jsonData['RequestID'] = getattr( self, 'RequestID' )
-
     for attrName in attrNames :
+
+      # RequestID and OperationID might not be set since they are managed by SQLAlchemy
+      if not hasattr( self, attrName ):
+        continue
+
       value = getattr( self, attrName )
 
       if isinstance( value, datetime.datetime ):
@@ -429,11 +355,3 @@ class Operation( object ):
 
     return jsonData
 
-  @staticmethod
-  def _uniqueList( value, sep = "," ):
-    """ make unique list from :value: """
-    if type( value ) not in ( str, unicode, list ):
-      raise TypeError( "wrong type for value" )
-    if type( value ) in ( str, unicode ):
-      value = value.split( sep )
-    return list ( set ( [ str( item ).strip() for item in value if str( item ).strip() ] ) )
