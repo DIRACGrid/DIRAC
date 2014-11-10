@@ -49,7 +49,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 #   return orderFromparent
 
 ########################################################################
-class Operation( RMSBase ):
+class Operation( object ):
   """
   .. class:: Operation
 
@@ -71,32 +71,35 @@ class Operation( RMSBase ):
   ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
   # # final states
   FINAL_STATES = ( "Failed", "Done", "Canceled" )
-
-  __tablename__ = 'Operation'
-
-  TargetSE = Column( String( 255 ) )
-  _CreationTime = Column( 'CreationTime', DateTime )
-  SourceSE = Column( String( 255 ) )
-  Arguments = Column( BLOB )
-  Error = Column( String( 255 ) )
-  Type = Column( String( 64 ), nullable = False )
-  _Order = Column( 'Order', Integer, nullable = False )
-  _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Queued' )
-  _LastUpdate = Column( 'LastUpdate', DateTime )
-  _SubmitTime = Column( 'SubmitTime', DateTime )
-  _Catalog = Column( 'Catalog', String( 255 ) )
-  OperationID = Column( Integer, primary_key = True )
-
-  RequestID = Column( 'RequestID', Integer,
-                      ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
-                      nullable = False )
+  
+  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
 
 
-  __files__ = relationship( 'File',
-                            backref = backref( '_parent', lazy = 'immediate' ),
-                            lazy = 'immediate',
-                            passive_deletes = True,
-                            cascade = "all, delete-orphan" )
+#   __tablename__ = 'Operation'
+
+#   TargetSE = Column( String( 255 ) )
+#   _CreationTime = Column( 'CreationTime', DateTime )
+#   SourceSE = Column( String( 255 ) )
+#   Arguments = Column( BLOB )
+#   Error = Column( String( 255 ) )
+#   Type = Column( String( 64 ), nullable = False )
+#   _Order = Column( 'Order', Integer, nullable = False )
+#   _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Queued' )
+#   _LastUpdate = Column( 'LastUpdate', DateTime )
+#   _SubmitTime = Column( 'SubmitTime', DateTime )
+#   _Catalog = Column( 'Catalog', String( 255 ) )
+#   OperationID = Column( Integer, primary_key = True )
+#
+#   RequestID = Column( 'RequestID', Integer,
+#                       ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
+#                       nullable = False )
+#
+#
+#   __files__ = relationship( 'File',
+#                             backref = backref( '_parent', lazy = 'immediate' ),
+#                             lazy = 'immediate',
+#                             passive_deletes = True,
+#                             cascade = "all, delete-orphan" )
 
 #   __dirty = []
 
@@ -111,34 +114,31 @@ class Operation( RMSBase ):
     # # sub-request attributes
     # self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
-#     self.__data__["SubmitTime"] = now
-#     self.__data__["LastUpdate"] = now
-#     self.__data__["CreationTime"] = now
-#     self.__data__["OperationID"] = 0
-#     self.__data__["RequestID"] = 0
-#     self.__data__["Status"] = "Queued"
+
     self._SubmitTime = now
     self._LastUpdate = now
     self._CreationTime = now
-#     self.OperationID = 0
-#     self._RequestID = 0
+
     self._Status = "Queued"
-#     self.SourceSE = ""
-#     self.TargetSE = ""
+    self._Order = 0
+    self.__files__ = []
 
-    # # operation files
-#     self.__files__ = TypedList( allowedTypes = File )
-    # # dirty fileIDs
-#     self.__dirty = []
+    self.TargetSE = None
+    self.SourceSE = None
+    self.Arguments = None
+    self.Error = None
+    self.Type = None
+    self._Catalog = None
+#     self.OperationID = -1
+#     self.RequestID = -2
 
-    # # init from dict
-#     fromDict = fromDict if fromDict else {}
     fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
 
 #     self.__dirty = fromDict.get( "__dirty", [] )
 #     if "__dirty" in fromDict:
 #       del fromDict["__dirty"]
+
 
     for fileDict in fromDict.get( "Files", [] ):
       self.addFile( File( fileDict ) )
@@ -452,21 +452,26 @@ class Operation( RMSBase ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ["OperationID", "RequestID", "Type", "Status", "Arguments",
+    attrNames = ["Type", "Status", "Arguments",
                  "Order", "SourceSE", "TargetSE", "Catalog", "Error",
                   "CreationTime", "SubmitTime", "LastUpdate"]
     jsonData = {}
 
+
+    if hasattr( self, 'OperationID' ):
+      jsonData['OperationID'] = getattr( self, 'OperationID' )
+    if hasattr( self, 'RequestID' ):
+      jsonData['RequestID'] = getattr( self, 'RequestID' )
+
     for attrName in attrNames :
-      jsonData[attrName] = getattr( self, attrName )
-      value = getattr( self, attrName )
+#         jsonData[attrName] = getattr( self, attrName )
+        value = getattr( self, attrName )
 
-      if isinstance( value, datetime.datetime ):
-        # We convert date time to a string
-        jsonData[attrName] = value.strftime( self._datetimeFormat )
-      else:
-        jsonData[attrName] = value
-
+        if isinstance( value, datetime.datetime ):
+          # We convert date time to a string
+          jsonData[attrName] = value.strftime( self._datetimeFormat )
+        else:
+          jsonData[attrName] = value
 #     jsonData['__dirty'] = self.__dirty
     jsonData['Files'] = self.__files__
 

@@ -34,7 +34,7 @@ from types import StringTypes
 # import urlparse
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
+# from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
@@ -45,7 +45,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 
 ########################################################################
-class File( RMSBase ):
+# class File( RMSBase ):
+class File( object ):
+
   """
   .. class:: File
 
@@ -55,21 +57,21 @@ class File( RMSBase ):
   :param dict __data__: attrs dict
   """
 
-  __tablename__ = 'File'
-  FileID = Column( Integer, primary_key = True )
-  OperationID = Column( Integer,
-                        ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
-                        nullable = False )
-
-  _Status = Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' )
-  _LFN = Column( 'LFN', String( 255 ), index = True )
-  PFN = Column( String( 255 ) )
-  _ChecksumType = Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' )
-  Checksum = Column( String( 255 ) )
-  _GUID = Column( 'GUID', String( 36 ) )
-  Size = Column(BigInteger)
-  Attempt = Column(Integer)
-  Error = Column( String( 255 ) )
+#   __tablename__ = 'File'
+#   FileID = Column( Integer, primary_key = True )
+#   OperationID = Column( Integer,
+#                         ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
+#                         nullable = False )
+#
+#   _Status = Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' )
+#   _LFN = Column( 'LFN', String( 255 ), index = True )
+#   PFN = Column( String( 255 ) )
+#   _ChecksumType = Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' )
+#   Checksum = Column( String( 255 ) )
+#   _GUID = Column( 'GUID', String( 36 ) )
+#   Size = Column(BigInteger)
+#   Attempt = Column(Integer)
+#   Error = Column( String( 255 ) )
 
 
   def __init__( self, fromDict = None ):
@@ -78,19 +80,21 @@ class File( RMSBase ):
     :param self: self reference
     :param dict fromDict: property dict
     """
-#     self._parent = None
+    self._parent = None
 #     self.FileID = 0
 #     self._OperationID = 0
     self._Status = 'Waiting'
-    self._LFN = ''
-    self.PFN = ''
-    self._ChecksumType = ''
-    self.Checksum = ''
-    self._GUID = ''
+    self._LFN = None
+    self.PFN = None
+    self._ChecksumType = None
+    self.Checksum = None
+    self._GUID = None
     self.Attempt = 0
     self.Size = 0
-#     self.Error = ''
+    self.Error = None
     self._duration = 0
+#     self.FileID = -1
+#     self.OperationID = -2
 
     fromDict = fromDict if isinstance( fromDict, dict ) else json.loads( fromDict ) if isinstance( fromDict, StringTypes ) else {}
 
@@ -102,24 +106,24 @@ class File( RMSBase ):
       if attrValue:
         setattr( self, attrName, attrValue )
 
-  @staticmethod
-  def tableDesc():
-    """ get table desc """
-    return { "Fields" :
-             { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
-               "OperationID" : "INTEGER NOT NULL",
-               "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled') DEFAULT 'Waiting'",
-               "LFN" : "VARCHAR(255)",
-               "PFN" : "VARCHAR(255)",
-               "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', '') DEFAULT ''",
-               "Checksum" : "VARCHAR(255)",
-               "GUID" : "VARCHAR(36)",
-               "Size" : "BIGINT",
-               "Attempt": "INTEGER",
-               "Error" : "VARCHAR(255)" },
-             "PrimaryKey" : "FileID",
-             'ForeignKeys': {'OperationID': 'Operation.OperationID' },
-             "Indexes" : { "LFN" : [ "LFN" ] } }
+#   @staticmethod
+#   def tableDesc():
+#     """ get table desc """
+#     return { "Fields" :
+#              { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
+#                "OperationID" : "INTEGER NOT NULL",
+#                "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled') DEFAULT 'Waiting'",
+#                "LFN" : "VARCHAR(255)",
+#                "PFN" : "VARCHAR(255)",
+#                "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', '') DEFAULT ''",
+#                "Checksum" : "VARCHAR(255)",
+#                "GUID" : "VARCHAR(36)",
+#                "Size" : "BIGINT",
+#                "Attempt": "INTEGER",
+#                "Error" : "VARCHAR(255)" },
+#              "PrimaryKey" : "FileID",
+#              'ForeignKeys': {'OperationID': 'Operation.OperationID' },
+#              "Indexes" : { "LFN" : [ "LFN" ] } }
 
   # # properties
 
@@ -242,11 +246,17 @@ class File( RMSBase ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    attrNames = ["FileID", "OperationID", "Status", "LFN",
+    attrNames = [ "Status", "LFN",
                  "PFN", "ChecksumType", "Checksum", "GUID",
                  "Size", "Error"]
 
     jsonData = {}
+
+    if hasattr( self, 'OperationID' ):
+      jsonData['OperationID'] = getattr( self, 'OperationID' )
+
+    if hasattr( self, 'FileID' ):
+      jsonData['FileID'] = getattr( self, 'FileID' )
 
     for attrName in attrNames :
       jsonData[attrName] = getattr( self, attrName )

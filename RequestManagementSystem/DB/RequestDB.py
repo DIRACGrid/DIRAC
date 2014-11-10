@@ -39,11 +39,119 @@ from DIRAC.RequestManagementSystem.private.RMSBase import RMSBase
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all
+from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
 from sqlalchemy import create_engine
 from sqlalchemy.sql import update
 from sqlalchemy import inspect
-from sqlalchemy import func
+from sqlalchemy import func, Table, Column, MetaData
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum, BLOB, BigInteger
+
+
+
+
+
+fileTable = Table( 'File', RMSBase.metadata,
+            Column( 'FileID', Integer, primary_key = True ),
+            Column( 'OperationID', Integer,
+                        ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
+                        nullable = False ),
+            Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' ),
+            Column( 'LFN', String( 255 ), index = True ),
+            Column( 'PFN', String( 255 ) ),
+            Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' ),
+            Column( 'Checksum', String( 255 ) ),
+            Column( 'GUID', String( 36 ) ),
+            Column( 'Size', BigInteger ),
+            Column( 'Attempt', Integer ),
+            Column( 'Error', String( 255 ) ),
+            mysql_engine = 'InnoDB'
+        )
+
+mapper( File, fileTable, properties = {
+   '_Status': fileTable.c.Status,
+   '_LFN': fileTable.c.LFN,
+   '_ChecksumType' : fileTable.c.ChecksumType,
+   '_GUID' : fileTable.c.GUID,
+} )
+
+
+
+operationTable = Table( 'Operation', RMSBase.metadata,
+                        Column( 'TargetSE', String( 255 ) ),
+                        Column( 'CreationTime', DateTime ),
+                        Column( 'SourceSE', String( 255 ) ),
+                        Column( 'Arguments', BLOB ),
+                        Column( 'Error', String( 255 ) ),
+                        Column( 'Type', String( 64 ), nullable = False ),
+                        Column( 'Order', Integer, nullable = False ),
+                        Column( 'Status', Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Queued' ),
+                        Column( 'LastUpdate', DateTime ),
+                        Column( 'SubmitTime', DateTime ),
+                        Column( 'Catalog', String( 255 ) ),
+                        Column( 'OperationID', Integer, primary_key = True ),
+                        Column( 'RequestID', Integer,
+                                  ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
+                                  nullable = False ),
+                       mysql_engine = 'InnoDB'
+                       )
+
+
+
+mapper(Operation, operationTable, properties={
+   '_CreationTime': operationTable.c.CreationTime,
+   '_Order': operationTable.c.Order,
+   '_Status': operationTable.c.Status,
+   '_LastUpdate': operationTable.c.LastUpdate,
+   '_SubmitTime': operationTable.c.SubmitTime,
+   '_Catalog': operationTable.c.Catalog,
+   '__files__':relationship( File,
+                            backref = backref( '_parent', lazy = 'immediate' ),
+                            lazy = 'immediate',
+                            passive_deletes = True,
+                            cascade = "all, delete-orphan" )
+
+})
+
+
+requestTable = Table( 'Request', RMSBase.metadata,
+                        Column( 'DIRACSetup', String( 32 ) ),
+                        Column( 'CreationTime', DateTime ),
+                        Column( 'JobID', Integer, server_default = '0' ),
+                        Column( 'OwnerDN', String( 255 ) ),
+                        Column( 'RequestName', String( 255 ), nullable = False, unique = True ),
+                        Column( 'Error', String( 255 ) ),
+                        Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' ),
+                        Column( 'LastUpdate', DateTime ),
+                        Column( 'OwnerGroup', String( 32 ) ),
+                        Column( 'SubmitTime', DateTime ),
+                        Column( 'RequestID', Integer, primary_key = True ),
+                        Column( 'SourceComponent', BLOB ),
+                        mysql_engine = 'InnoDB'
+
+                       )
+
+
+
+mapper( Request, requestTable, properties = {
+   '_CreationTime': requestTable.c.CreationTime,
+   '_Status': requestTable.c.Status,
+   '_LastUpdate': requestTable.c.LastUpdate,
+   '_SubmitTime': requestTable.c.SubmitTime,
+   '__operations__' : relationship( Operation,
+                                  backref = backref( '_parent', lazy = 'immediate' ),
+                                  order_by = operationTable.c.Order,
+                                  lazy = 'immediate',
+                                  passive_deletes = True,
+                                  cascade = "all, delete-orphan"
+                                )
+
+} )
+
+
+
+
+
+
 
 ########################################################################
 class RequestDB( DB ):
@@ -126,7 +234,9 @@ class RequestDB( DB ):
 
     # Create an engine that stores data in the local directory's
     # sqlalchemy_example.db file.
-    self.engine = create_engine( 'mysql://%s:%s@%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbName ) )
+
+    runDebug = ( gLogger.getLevel() == 'DEBUG' )
+    self.engine = create_engine( 'mysql://%s:%s@%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbName ), echo = runDebug )
 
     # Create all tables in the engine. This is equivalent to "Create Table"
     # statements in raw SQL.
@@ -281,7 +391,7 @@ class RequestDB( DB ):
 
     except Exception, e:
       session.rollback()
-      self.log.exception( "cancelRequest: unexpected exception", e )
+      self.log.exception( "cancelRequest: unexpected exception", lException = e )
       return S_ERROR( "cancelRequest: unexpected exception %s" % e )
     finally:
       session.close()
@@ -417,7 +527,7 @@ class RequestDB( DB ):
 
     except Exception, e:
       session.rollback()
-      self.log.exception( "putRequest: unexpected exception", e )
+      self.log.exception( "putRequest: unexpected exception", lException = e )
       return S_ERROR( "putRequest: unexpected exception %s" % e )
     finally:
       session.close()
@@ -455,7 +565,7 @@ class RequestDB( DB ):
     session = self.DBSession()
     try:
       requestName = session.query( Request.RequestName ).filter( Request.RequestID == requestID ).one()
-      return requestName[0]
+      return S_OK( requestName[0] )
     except NoResultFound, e:
       return S_ERROR( "getRequestName: no request found for RequestID=%s" % requestID )
     finally:
@@ -1138,7 +1248,9 @@ class RequestDB( DB ):
     session = self.DBSession( expire_on_commit = False )
 
     try:
-      ret = session.query( Request.JobID, Request ).filter( Request.JobID.in_( jobIDs ) ).all()
+      ret = session.query( Request.JobID, Request )\
+                   .options( joinedload_all( '__operations__.__files__' ) )\
+                   .filter( Request.JobID.in_( jobIDs ) ).all()
       reqDict['Successful'] = dict( ( jobId, reqObj ) for jobId, reqObj in ret )
       reqDict['Failed'] = dict( ( jobid, 'Request not found' ) for jobid in jobIDs - set( reqDict['Successful'] ) )
       session.expunge_all()

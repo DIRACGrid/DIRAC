@@ -47,7 +47,7 @@ from sqlalchemy.ext.orderinglist import ordering_list
 
 
 ########################################################################
-class Request( RMSBase ):
+class Request( object ):
   """
   .. class:: Request
 
@@ -69,31 +69,35 @@ class Request( RMSBase ):
 
   FINAL_STATES = ( "Done", "Failed", "Canceled" )
 
-  __tablename__ = 'Request'
-
-  DIRACSetup = Column( String( 32 ) )
-  _CreationTime = Column( 'CreationTime', DateTime )
-  JobID = Column( Integer, server_default = '0' )
-  OwnerDN = Column( String( 255 ) )
-  RequestName = Column( String( 255 ), nullable = False, unique = True )
-  Error = Column( String( 255 ) )
-  _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' )
-  _LastUpdate = Column( 'LastUpdate', DateTime )
-  OwnerGroup = Column( String( 32 ) )
-  _SubmitTime = Column( 'SubmitTime', DateTime )
-  RequestID = Column( Integer, primary_key = True )
-  SourceComponent = Column( BLOB )
+  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
+#   RequestID = -1
 
 
-#   __dirty = []
-  #__operations__ = relationship( 'Operation', backref = '_parent', order_by='Operation.Order' )
-  __operations__ = relationship( 'Operation',
-                                  backref = backref( '_parent', lazy = 'immediate' ),
-                                  order_by = 'Operation._Order',
-                                  lazy = 'immediate',
-                                  passive_deletes = True,
-                                  cascade = "all, delete-orphan"
-                                )
+#   __tablename__ = 'Request'
+#
+#   DIRACSetup = Column( String( 32 ) )
+#   _CreationTime = Column( 'CreationTime', DateTime )
+#   JobID = Column( Integer, server_default = '0' )
+#   OwnerDN = Column( String( 255 ) )
+#   RequestName = Column( String( 255 ), nullable = False, unique = True )
+#   Error = Column( String( 255 ) )
+#   _Status = Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' )
+#   _LastUpdate = Column( 'LastUpdate', DateTime )
+#   OwnerGroup = Column( String( 32 ) )
+#   _SubmitTime = Column( 'SubmitTime', DateTime )
+#   RequestID = Column( Integer, primary_key = True )
+#   SourceComponent = Column( BLOB )
+#
+#
+# #   __dirty = []
+#   #__operations__ = relationship( 'Operation', backref = '_parent', order_by='Operation.Order' )
+#   __operations__ = relationship( 'Operation',
+#                                   backref = backref( '_parent', lazy = 'immediate' ),
+#                                   order_by = 'Operation._Order',
+#                                   lazy = 'immediate',
+#                                   passive_deletes = True,
+#                                   cascade = "all, delete-orphan"
+#                                 )
 #   __operations__ = relationship( 'Operation', backref = '_parent', order_by = 'Operation._Order', collection_class = ordering_list( '_Order' ) )
 
   def __init__( self, fromDict = None ):
@@ -116,7 +120,12 @@ class Request( RMSBase ):
     self._LastUpdate = now
     self._Status = "Done"
     self.JobID = 0
-#     self.RequestID = -1
+    self.Error = None
+    self.DIRACSetup = None
+    self.OwnerDN = None
+    self.RequestName = None
+    self.OwnerGroup = None
+    self.SourceComponent = None
 
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
@@ -124,6 +133,8 @@ class Request( RMSBase ):
       if proxyInfo["validGroup"] and proxyInfo["validDN"]:
         self.OwnerDN = proxyInfo["identity"]
         self.OwnerGroup = proxyInfo["group"]
+
+    self.__operations__ = []
 
 #     self.__dirty = []
 
@@ -467,13 +478,16 @@ class Request( RMSBase ):
 
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
-    attrNames = ["RequestID", "RequestName", "OwnerDN", "OwnerGroup",
+    attrNames = ["RequestName", "OwnerDN", "OwnerGroup",
                  "Status", "Error", "DIRACSetup", "SourceComponent",
                   "JobID", "CreationTime", "SubmitTime", "LastUpdate"]
     jsonData = {}
 
+
+    if hasattr( self, 'RequestID' ):
+      jsonData['RequestID'] = getattr( self, 'RequestID' )
+
     for attrName in attrNames :
-      jsonData[attrName] = getattr( self, attrName )
       value = getattr( self, attrName )
 
       if isinstance( value, datetime.datetime ):
@@ -481,6 +495,7 @@ class Request( RMSBase ):
         jsonData[attrName] = value.strftime( self._datetimeFormat )
       else:
         jsonData[attrName] = value
+
 #     jsonData['RequestID'] = self.RequestID
 #     jsonData["__dirty"] = self.__dirty
     jsonData['Operations'] = self.__operations__
