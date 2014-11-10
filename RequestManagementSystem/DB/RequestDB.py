@@ -548,17 +548,25 @@ class RequestDB( object ):
     session = self.DBSession()
  
     try:
-      requestQuery = session.query(Request._Status, func.count(Request.RequestID)).group_by(Request._Status).all()
+      requestQuery = session.query( Request._Status, func.count( Request.RequestID ) )\
+                            .group_by( Request._Status )\
+                            .all()
+
       for status, count in requestQuery:
         retDict["Request"][status] = count
  
       operationQuery = session.query(Operation.Type, Operation._Status, func.count(Operation.OperationID))\
-                              .group_by(Operation.Type, Operation._Status).all()
+                              .group_by( Operation.Type, Operation._Status )\
+                              .all()
+
       for oType, status, count in operationQuery:
         retDict['Operation'].setdefault( oType, {} )[status] = count
       
       
-      fileQuery = session.query(File._Status, func.count(File.FileID)).group_by(File._Status).all()
+      fileQuery = session.query( File._Status, func.count( File.FileID ) )\
+                         .group_by( File._Status )\
+                         .all()
+
       for status, count in fileQuery:
         retDict["File"][status] = count
  
@@ -571,6 +579,90 @@ class RequestDB( object ):
     return S_OK( retDict )
 
 
+#   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
+#     """ get db summary for web
+# 
+#     :param dict selectDict: whatever
+#     :param list sortList: whatever
+#     :param int startItem: limit
+#     :param int maxItems: limit
+# 
+# 
+#     """
+#     resultDict = {}
+#     rparameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup']
+#     sparameterList = [ 'Type', 'Status', 'Operation']
+#     parameterList = rparameterList + sparameterList + [ "Error", "CreationTime", "LastUpdate"]
+#     # parameterList.append( 'Error' )
+#     # parameterList.append( 'CreationTime' )
+#     # parameterList.append( 'LastUpdateTime' )
+# 
+#     req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
+#     req += "O.Type, O.Status, O.Type, O.Error, O.CreationTime, O.LastUpdate FROM Request as R, Operation as O "
+# 
+#     new_selectDict = {}
+#     older = None
+#     newer = None
+#     for key, value in selectDict.items():
+#       if key in rparameterList:
+#         new_selectDict['R.' + key] = value
+#       elif key in sparameterList:
+#         new_selectDict['O.' + key] = value
+#       elif key == 'ToDate':
+#         older = value
+#       elif key == 'FromDate':
+#         newer = value
+# 
+#     condition = ''
+#     if new_selectDict or older or newer:
+#       condition = self.__buildCondition( new_selectDict, older = older, newer = newer )
+#       req += condition
+# 
+#     if condition:
+#       req += " AND R.RequestID=O.RequestID"
+#     else:
+#       req += " WHERE R.RequestID=O.RequestID"
+# 
+#     if sortList:
+#       req += " ORDER BY %s %s" % ( sortList[0][0], sortList[0][1] )
+#     result = self._query( req )
+#     if not result['OK']:
+#       return result
+# 
+#     if not result['Value']:
+#       resultDict['ParameterNames'] = parameterList
+#       resultDict['Records'] = []
+#       return S_OK( resultDict )
+# 
+#     nRequests = len( result['Value'] )
+# 
+#     if startItem <= len( result['Value'] ):
+#       firstIndex = startItem
+#     else:
+#       return S_ERROR( 'Requested index out of range' )
+# 
+#     if ( startItem + maxItems ) <= len( result['Value'] ):
+#       secondIndex = startItem + maxItems
+#     else:
+#       secondIndex = len( result['Value'] )
+# 
+#     records = []
+#     columnWidth = [ 0 for x in range( len( parameterList ) ) ]
+#     for i in range( firstIndex, secondIndex ):
+#       row = result['Value'][i]
+#       records.append( [ str( x ) for x in row] )
+#       for ind in range( len( row ) ):
+#         if len( str( row[ind] ) ) > columnWidth[ind]:
+#           columnWidth[ind] = len( str( row[ind] ) )
+# 
+#     resultDict['ParameterNames'] = parameterList
+#     resultDict['ColumnWidths'] = columnWidth
+#     resultDict['Records'] = records
+#     resultDict['TotalRecords'] = nRequests
+# 
+#     return S_OK( resultDict )
+
+
   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ get db summary for web
 
@@ -581,78 +673,79 @@ class RequestDB( object ):
 
 
     """
+
+
+    rparameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup', 'Status']
+    parameterList = rparameterList + [ 'Type', "Error", "CreationTime", "LastUpdate"]
     resultDict = {}
-    rparameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup']
-    sparameterList = [ 'Type', 'Status', 'Operation']
-    parameterList = rparameterList + sparameterList + [ "Error", "CreationTime", "LastUpdate"]
-    # parameterList.append( 'Error' )
-    # parameterList.append( 'CreationTime' )
-    # parameterList.append( 'LastUpdateTime' )
 
-    req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
-    req += "O.Type, O.Status, O.Type, O.Error, O.CreationTime, O.LastUpdate FROM Request as R, Operation as O "
+    session = self.DBSession()
 
-    new_selectDict = {}
-    older = None
-    newer = None
-    for key, value in selectDict.items():
-      if key in rparameterList:
-        new_selectDict['R.' + key] = value
-      elif key in sparameterList:
-        new_selectDict['O.' + key] = value
-      elif key == 'ToDate':
-        older = value
-      elif key == 'FromDate':
-        newer = value
+    try:
+      summaryQuery = session.query( Request.RequestID, Request.RequestName,
+                                        Request.JobID, Request.OwnerDN, Request.OwnerGroup,
+                                        Operation.Type, Operation._Status, Operation.Error,
+                                        Operation._CreationTime, Operation._LastUpdate )
 
-    condition = ''
-    if new_selectDict or older or newer:
-      condition = self.__buildCondition( new_selectDict, older = older, newer = newer )
-      req += condition
+      for key, value in selectDict.items():
+        if key in rparameterList:
+          summaryQuery = summaryQuery.filter( eval( 'Request.%s' % key ) == value )
+        elif key == 'ToDate':
+          summaryQuery = summaryQuery.filter( Operation._LastUpdate < value )
+        elif key == 'FromDate':
+          summaryQuery = summaryQuery.filter( Operation._LastUpdate > value )
 
-    if condition:
-      req += " AND R.RequestID=O.RequestID"
-    else:
-      req += " WHERE R.RequestID=O.RequestID"
+      if sortList:
+        summaryQuery = summaryQuery.order_by( eval( 'Request.%s.%s()' % ( sortList[0][0], sortList[0][1] ) ) )
+        
+      print summaryQuery
+      try:
+        requestLists = summaryQuery.all()
+        print requestLists
+      except NoResultFound, e:
+        resultDict['ParameterNames'] = parameterList
+        resultDict['Records'] = []
+        
+        return S_OK( resultDict )
+      except Exception, e:
+        return S_ERROR( 'Error getting the webSummary %s' % e )
 
-    if sortList:
-      req += " ORDER BY %s %s" % ( sortList[0][0], sortList[0][1] )
-    result = self._query( req )
-    if not result['OK']:
-      return result
+      nRequests = len( requestLists )
 
-    if not result['Value']:
+      if startItem <= len( requestLists ):
+        firstIndex = startItem
+      else:
+        return S_ERROR( 'getRequestSummaryWeb: Requested index out of range' )
+
+      if ( startItem + maxItems ) <= len( requestLists ):
+        secondIndex = startItem + maxItems
+      else:
+        secondIndex = len( requestLists )
+
+      records = []
+      columnWidth = [ 0 for x in range( len( parameterList ) ) ]
+      for i in range( firstIndex, secondIndex ):
+        row = requestLists[i]
+        print 'row %s' % ( row, )
+        records.append( [ str( x ) for x in row] )
+        for ind in range( len( row ) ):
+          if len( str( row[ind] ) ) > columnWidth[ind]:
+            columnWidth[ind] = len( str( row[ind] ) )
+
       resultDict['ParameterNames'] = parameterList
-      resultDict['Records'] = []
+      resultDict['ColumnWidths'] = columnWidth
+      resultDict['Records'] = records
+      resultDict['TotalRecords'] = nRequests
+
       return S_OK( resultDict )
 
-    nRequests = len( result['Value'] )
+    except Exception, e:
+      self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
+      return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
 
-    if startItem <= len( result['Value'] ):
-      firstIndex = startItem
-    else:
-      return S_ERROR( 'Requested index out of range' )
+    finally:
+      session.close()
 
-    if ( startItem + maxItems ) <= len( result['Value'] ):
-      secondIndex = startItem + maxItems
-    else:
-      secondIndex = len( result['Value'] )
-
-    records = []
-    columnWidth = [ 0 for x in range( len( parameterList ) ) ]
-    for i in range( firstIndex, secondIndex ):
-      row = result['Value'][i]
-      records.append( [ str( x ) for x in row] )
-      for ind in range( len( row ) ):
-        if len( str( row[ind] ) ) > columnWidth[ind]:
-          columnWidth[ind] = len( str( row[ind] ) )
-
-    resultDict['ParameterNames'] = parameterList
-    resultDict['ColumnWidths'] = columnWidth
-    resultDict['Records'] = records
-    resultDict['TotalRecords'] = nRequests
-
-    return S_OK( resultDict )
 
 
   def getRequestNamesForJobs( self, jobIDs ):
