@@ -274,16 +274,6 @@ class Operation( object ):
     """ nb of subFiles """
     return len( self.__files__ )
 
-#   # # properties
-#   @hybrid_property
-#   def RequestID( self ):
-#     """ RequestID getter (RO) """
-#     return self._parent.RequestID if self._parent else -1
-#
-#   @RequestID.setter
-#   def RequestID( self, value ):
-#     """ can't set RequestID by hand """
-#     self._RequestID = self._parent.RequestID if self._parent else -1
 
   @property
   def sourceSEList( self ):
@@ -303,7 +293,13 @@ class Operation( object ):
   @Catalog.setter
   def Catalog( self, value ):
     """ catalog setter """
-    value = ",".join( self._uniqueList( value ) )
+    if type( value ) not in ( str, unicode, list ):
+      raise TypeError( "wrong type for value" )
+    if type( value ) in ( str, unicode ):
+      value = value.split( ',' )
+
+    value = ",".join( list ( set ( [ str( item ).strip() for item in value if str( item ).strip() ] ) ) )
+
     if len( value ) > 255:
       raise ValueError( "Catalog list too long" )
     self._Catalog = value.encode() if value else ""
@@ -373,7 +369,7 @@ class Operation( object ):
   def SubmitTime( self, value = None ):
     """ submit time setter """
     if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
-        raise TypeError( "SubmitTime should be a datetime.datetime!" )
+      raise TypeError( "SubmitTime should be a datetime.datetime!" )
     if type( value ) in StringTypes:
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._SubmitTime = value
@@ -397,51 +393,8 @@ class Operation( object ):
     return self.toJSON()['Value']
 
 
-
-#   def toSQL( self ):
-#     """ get SQL INSERT or UPDATE statement """
-#     if not getattr( self, "RequestID" ):
-#       raise AttributeError( "RequestID not set" )
-#     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
-#                   if type( getattr( self, column ) ) in ( str, datetime.datetime )
-#                      else str( getattr( self, column ) ) if getattr( self, column ) != None else "NULL" )
-#                 for column in self.__data__
-#                 if ( column == 'Error' or getattr( self, column ) ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
-#     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
-#     colVals.append( ( "`Order`", str( self.Order ) ) )
-#     # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
-#     query = []
-#     if self.OperationID:
-#       query.append( "UPDATE `Operation` SET " )
-#       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-#       query.append( " WHERE `OperationID`=%d;\n" % self.OperationID )
-#     else:
-#       query.append( "INSERT INTO `Operation` " )
-#       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-#       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
-#       query.append( columns )
-#       query.append( " VALUES %s;\n" % values )
-#
-#     return S_OK( "".join( query ) )
-
-#   def cleanUpSQL( self ):
-#     """ query deleting dirty records from File table """
-#     if self.OperationID and self.__dirty:
-#       fIDs = ",".join( [ str( fid ) for fid in self.__dirty ] )
-#       return "DELETE FROM `File` WHERE `OperationID` = %s AND `FileID` IN (%s);\n" % ( self.OperationID, fIDs )
-
-#   def toJSON( self ):
-#     """ get json digest """
-#     digest = dict( [( key, str( val ) ) for key, val in self.__data__.items()] )
-#     digest["RequestID"] = str( self.RequestID )
-#     digest["Order"] = str( self.Order )
-#     if self.__dirty:
-#       digest["__dirty"] = self.__dirty
-#     digest["Files"] = [opFile.toJSON()['Value'] for opFile in self]
-#
-#     return S_OK( digest )
-
   def toJSON( self ):
+    """ Returns the JSON description string of the Operation """
     try:
       jsonStr = json.dumps( self, cls = RMSEncoder )
       return S_OK( jsonStr )
@@ -464,15 +417,14 @@ class Operation( object ):
       jsonData['RequestID'] = getattr( self, 'RequestID' )
 
     for attrName in attrNames :
-#         jsonData[attrName] = getattr( self, attrName )
-        value = getattr( self, attrName )
+      value = getattr( self, attrName )
 
-        if isinstance( value, datetime.datetime ):
-          # We convert date time to a string
-          jsonData[attrName] = value.strftime( self._datetimeFormat )
-        else:
-          jsonData[attrName] = value
-#     jsonData['__dirty'] = self.__dirty
+      if isinstance( value, datetime.datetime ):
+        # We convert date time to a string
+        jsonData[attrName] = value.strftime( self._datetimeFormat )
+      else:
+        jsonData[attrName] = value
+
     jsonData['Files'] = self.__files__
 
     return jsonData

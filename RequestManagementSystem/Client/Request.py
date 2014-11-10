@@ -189,18 +189,19 @@ class Request( object ):
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
-    self.__waiting = None
     # # update operations statuses
+    self.__waiting = None
 
 
     # Update the Order in Operation
     for i in range( len( self.__operations__ ) ):
       self.__operations__[i].Order = i
+      self.__operations__[i]._parent = self
 
     rStatus = "Waiting"
     opStatusList = [ ( op.Status, op ) for op in self ]
 
-    self.__waiting = None
+
 
     while opStatusList:
       # # Scan all status in order!
@@ -258,7 +259,7 @@ class Request( object ):
     """
     if operation not in self:
       self.__operations__.append( operation )
-#       operation._parentOld = self
+      operation._parent = self
       self._notify()
     return self
 
@@ -274,7 +275,7 @@ class Request( object ):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ), newOperation )
-#     newOperation._parentOld = self
+#     newOperation._parent = self
     self._notify()
     return S_OK()
 
@@ -290,7 +291,7 @@ class Request( object ):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ) + 1, newOperation )
-#     newOperation._parentOld = self
+#     newOperation._parent = self
     self._notify()
     return S_OK()
 
@@ -324,7 +325,7 @@ class Request( object ):
 #     if self[i].OperationID:
 #       self.__dirty.append( self[i].OperationID )
     self.__operations__.__setitem__( i, value )
-#     value._parentOld = self
+#     value._parent = self
 
     self._notify()
 
