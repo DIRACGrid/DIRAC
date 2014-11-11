@@ -45,20 +45,13 @@ class SocketInfoFactory:
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
     addrs = socket.getaddrinfo(hostAddress[0], hostAddress[1], 0, socket.SOCK_STREAM)
     errs = []
-    for a in [a for a in addrs if a[1] == socket.AF_INET ]:
-      res = self.__sockConnect( a[0], a[1], timeout, retries )
-      if res[ 'OK' ]:
-        return res
-      else:
-        errs.append( res[ 'Message' ] )
-    for a in [a for a in addrs if a[1] == socket.AF_INET6 ]:
-      res = self.__sockConnect( a[0], a[1], timeout, retries )
+    for addr in addrs:
+      res = self.__sockConnect( addr[4], addr[0], timeout, retries )
       if res[ 'OK' ]:
         return res
       else:
         errs.append( res[ 'Message' ] )
     return S_ERROR( ", ".join( errs ) )
-
 
   def __sockConnect( self, hostAddress, sockType, timeout, retries ):
     osSocket = socket.socket( sockType, socket.SOCK_STREAM )

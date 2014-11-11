@@ -1,6 +1,6 @@
 import unittest, itertools, os, copy, shutil
 
-from mock import Mock
+from mock import MagicMock as Mock
 
 from DIRAC import gLogger
 
@@ -9,7 +9,7 @@ class ModulesTestCase( unittest.TestCase ):
   """
   def setUp( self ):
 
-    gLogger.setLevel( 'DEBUG' )
+    gLogger.setLevel( 'ERROR' )
 #    import sys
 #    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
 #    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -18,6 +18,7 @@ class ModulesTestCase( unittest.TestCase ):
     self.jr_mock.setApplicationStatus.return_value = {'OK': True, 'Value': ''}
     self.jr_mock.generateRequest.return_value = {'OK': True, 'Value': 'pippo'}
     self.jr_mock.setJobParameter.return_value = {'OK': True, 'Value': 'pippo'}
+    self.jr_mock.generateForwardDISET.return_value = {'OK': True, 'Value': 'pippo'}
 #    self.jr_mock.setJobApplicationStatus.return_value = {'OK': True, 'Value': 'pippo'}
 
     self.fr_mock = Mock()
@@ -32,6 +33,7 @@ class ModulesTestCase( unittest.TestCase ):
     rc_mock.isEmpty.return_value = {'OK': True, 'Value': ''}
     rc_mock.toXML.return_value = {'OK': True, 'Value': ''}
     rc_mock.getDigest.return_value = {'OK': True, 'Value': ''}
+    rc_mock.__len__.return_value = 1
     self.rc_mock = rc_mock
 
     ar_mock = Mock()
@@ -181,6 +183,7 @@ class ModulesTestCase( unittest.TestCase ):
     self.mb.request = self.rc_mock
     self.mb.jobReport = self.jr_mock
     self.mb.fileReport = self.fr_mock
+    self.mb.workflow_commons = self.wf_commons[0]
 
     from DIRAC.Workflow.Modules.FailoverRequest import FailoverRequest
     self.fr = FailoverRequest()
@@ -383,7 +386,7 @@ class ModuleBaseSuccess( ModulesTestCase ):
     self.mb.jobID = self.wms_job_id
     self.mb.workflowStatus = self.workflowStatus
     self.mb.stepStatus = self.stepStatus
-    self.mb.workflow_commons = self.wf_commons
+    self.mb.workflow_commons = self.wf_commons[0] ##APS: this is needed
     self.mb.step_commons = self.step_commons[0]
     self.mb.step_number = self.step_number
     self.mb.step_id = self.step_id

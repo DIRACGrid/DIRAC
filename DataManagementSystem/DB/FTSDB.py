@@ -217,12 +217,12 @@ class FTSDB( DB ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()
     if not ftsFileSQL['OK']:
-      self.log.error( ftsFileSQL['Message'] )
+      self.log.error( "Failed ftsFile.toSQL", ftsFileSQL['Message'] )
       return ftsFileSQL
     ftsFileSQL = ftsFileSQL['Value']
     putFTSFile = self._transaction( ftsFileSQL )
     if not putFTSFile['OK']:
-      self.log.error( putFTSFile['Message'] )
+      self.log.error( 'Failed ftsFileSQL', putFTSFile['Message'] )
     return putFTSFile
 
   def getFTSFile( self, ftsFileID ):
@@ -230,7 +230,7 @@ class FTSDB( DB ):
     select = "SELECT * FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
     select = self._transaction( [ select ] )
     if not select['OK']:
-      self.log.error( select['Message'] )
+      self.log.error( 'Failed FTS file selection', select['Message'] )
       return select
     select = select['Value']
     if not select.values()[0]:
@@ -261,7 +261,7 @@ class FTSDB( DB ):
                                                                                      stringListToString( statusList ) )
     ftsJobs = self._transaction( [ query ] )
     if not ftsJobs['OK']:
-      self.log.error( "getFTSJobsForRequest: %s" % ftsJobs['Message'] )
+      self.log.error( "Failed getFTSJobsForRequest", "%s" % ftsJobs['Message'] )
       return ftsJobs
 
     ftsJobs = ftsJobs['Value'][query] if query in ftsJobs['Value'] else []
@@ -273,7 +273,7 @@ class FTSDB( DB ):
                                                                                       requestID )
       ftsFiles = self._transaction( [ query ] )
       if not ftsFiles['OK']:
-        self.log.error( "getFTSJobsForRequest: %s" % ftsFiles['Message'] )
+        self.log.error( "Failed getFTSJobsForRequest", "%s" % ftsFiles['Message'] )
         return ftsFiles
       ftsFiles = ftsFiles['Value'][query] if query in ftsFiles['Value'] else []
       for ftsFileDict in ftsFiles:
@@ -288,7 +288,7 @@ class FTSDB( DB ):
                                                                                        stringListToString( statusList ) )
     ftsFiles = self._transaction( [ query ] )
     if not ftsFiles['OK']:
-      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      self.log.error( "Failed getFTSFilesForRequest", "%s" % ftsFiles['Message'] )
       return ftsFiles
     ftsFiles = ftsFiles['Value'].get( query, [] )
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
@@ -299,7 +299,7 @@ class FTSDB( DB ):
     query = "SELECT * FROM `FTSFile` WHERE `RequestID` = %s;" % ( requestID )
     ftsFiles = self._transaction( [ query ] )
     if not ftsFiles['OK']:
-      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      self.log.error( "Failed getFTSFilesForRequest", "%s" % ftsFiles['Message'] )
       return ftsFiles
     ftsFiles = ftsFiles['Value'].get( query, [] )
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles ] )
@@ -342,7 +342,7 @@ class FTSDB( DB ):
 
     putJob = self._transaction( putJob )
     if not putJob['OK']:
-      self.log.error( putJob['Message'] )
+      self.log.error( 'Failed ftsFileSQL', putJob['Message'] )
     return putJob
 
   def getFTSJob( self, ftsJobID = None ):
@@ -351,7 +351,7 @@ class FTSDB( DB ):
     getJob = [ "SELECT * FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID ]
     getJob = self._transaction( getJob )
     if not getJob['OK']:
-      self.log.error( getJob['Message'] )
+      self.log.error( 'Failed ftsFileSQL', getJob['Message'] )
       return getJob
     getJob = getJob['Value']
     if not getJob:
@@ -359,7 +359,7 @@ class FTSDB( DB ):
     ftsJob = FTSJob( getJob.values()[0][0] )
     selectFiles = self._transaction( [ "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID ] )
     if not selectFiles['OK']:
-      self.log.error( selectFiles['Message'] )
+      self.log.error( 'Failed ftsFileSQL', selectFiles['Message'] )
       return selectFiles
     selectFiles = selectFiles['Value']
     ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
@@ -373,7 +373,7 @@ class FTSDB( DB ):
     setAssigned = "UPDATE `FTSJob` SET `Status`='%s' WHERE `FTSJobID` = %s;" % ( status, ftsJobID )
     setAssigned = self._update( setAssigned )
     if not setAssigned['OK']:
-      self.log.error( setAssigned['Message'] )
+      self.log.error( 'Failed ftsJobSQL', setAssigned['Message'] )
       return setAssigned
     return setAssigned
 
@@ -382,7 +382,7 @@ class FTSDB( DB ):
     delete = "DELETE FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID
     delete = self._transaction( [ delete ] )
     if not delete['OK']:
-      self.log.error( delete['Message'] )
+      self.log.error( 'Failed ftsJobSQL', delete['Message'] )
     return delete
 
   def getFTSJobIDs( self, statusList = [ "Submitted", "Active", "Ready" ] ):
@@ -390,7 +390,7 @@ class FTSDB( DB ):
     query = "SELECT `FTSJobID` FROM `FTSJob` WHERE `Status` IN (%s);" % stringListToString( statusList )
     query = self._query( query )
     if not query['OK']:
-      self.log.error( query['Message'] )
+      self.log.error( 'Failed ftsJobSQL', query['Message'] )
       return query
     # # convert to list of longs
     return S_OK( [ item[0] for item in query['Value'] ] )
@@ -401,7 +401,7 @@ class FTSDB( DB ):
     query = "SELECT `FTSFileID` FROM `FTSFile` WHERE `Status` IN (%s);" % stringListToString( statusList );
     query = self._query( query )
     if not query['OK']:
-      self.log.error( query['Message'] )
+      self.log.error( 'Failed ftsFileSQL', query['Message'] )
       return query
     return S_OK( [ item[0] for item in query['Value'] ] )
 
@@ -412,14 +412,14 @@ class FTSDB( DB ):
                                                                                                      limit )
     trn = self._transaction( [ query ] )
     if not trn['OK']:
-      self.log.error( "getFTSJobList: %s" % trn['Message'] )
+      self.log.error( 'Failed ftsJobSQL', "getFTSJobList: %s" % trn['Message'] )
       return trn
     ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in trn['Value'][query] ]
     for ftsJob in ftsJobs:
       query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID
       trn = self._transaction( query )
       if not trn['OK']:
-        self.log.error( "getFTSJobList: %s" % trn['Message'] )
+        self.log.error( 'Failed ftsFileSQL', "getFTSJobList: %s" % trn['Message'] )
         return trn
       ftsFiles = [ FTSFile( ftsFileDict ) for ftsFileDict in trn['Value'][query] ]
       for ftsFile in ftsFiles:
@@ -435,7 +435,7 @@ class FTSDB( DB ):
     for ftsFile in ftsFileList:
       ftsFileSQL = ftsFile.toSQL()
       if not ftsFileSQL['OK']:
-        gLogger.error( "putFTSFileList: %s" % ftsFileSQL['Message'] )
+        gLogger.error( "Failed putFTSFileList", "%s" % ftsFileSQL['Message'] )
         return ftsFileSQL
       queries.append( ftsFileSQL['Value'] )
     if not queries:
@@ -443,7 +443,7 @@ class FTSDB( DB ):
 
     put = self._transaction( queries )
     if not put['OK']:
-      gLogger.error( "putFTSFileList: %s" % put['Message'] )
+      gLogger.error( "Failed putFTSFileList", "%s" % put['Message'] )
     return put
 
   def getFTSFileList( self, statusList = None, limit = 1000 ):
@@ -468,7 +468,7 @@ class FTSDB( DB ):
     query = "SELECT * FROM `FTSFile` %s ORDER BY `LastUpdate` DESC LIMIT %s;" % ( whereClause, limit )
     trn = self._transaction( [query] )
     if not trn['OK']:
-      self.log.error( "getFTSFileList: %s" % trn['Message'] )
+      self.log.error( "Failed getFTSFileList", "%s" % trn['Message'] )
       return trn
     return S_OK( [ FTSFile( fileDict ) for fileDict in trn['Value'][query] ] )
 
@@ -502,7 +502,7 @@ class FTSDB( DB ):
     ret = self._transaction( transQueries.keys() )
 
     if not ret['OK']:
-      self.log.error( "getDBSummary: %s" % ret['Message'] )
+      self.log.error( "Failed getDBSummary", "%s" % ret['Message'] )
       return ret
     ret = ret['Value']
     for k, v in ret.items():

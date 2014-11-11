@@ -472,7 +472,7 @@ class ComputingElement(object):
     """ Method to submit job, should be overridden in sub-class.
     """
     name = 'submitJob()'
-    self.log.error( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
+    self.log.error( 'ComputingElement should be implemented in a subclass', name )
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
@@ -480,7 +480,7 @@ class ComputingElement(object):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'
-    self.log.error( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
+    self.log.error( 'ComputingElement should be implemented in a subclass', name )
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
 def getLocalCEConfigDict( ceName ):

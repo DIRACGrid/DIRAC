@@ -152,13 +152,14 @@ class JobAgent( AgentModule ):
           return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "seconds timeout" ) != -1:
-        self.log.error( jobRequest['Message'] )
+        self.log.error( 'Timeout while requesting job', jobRequest['Message'] )
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
           return self.__finish( 'Nothing to do for more than %d cycles' % self.stopAfterFailedMatches )
         return S_OK( jobRequest['Message'] )
       elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
-        self.log.error( jobRequest['Message'] )
+        errorMsg = 'Pilot version does not match the production version'
+        self.log.error( errorMsg, jobRequest['Message'].replace( errorMsg, '' ) )
         return S_ERROR( jobRequest['Message'] )
       else:
         self.log.notice( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
@@ -249,7 +250,7 @@ class JobAgent( AgentModule ):
 
       software = self.__checkInstallSoftware( jobID, params, ceDict )
       if not software['OK']:
-        self.log.error( 'Failed to install software for job %s' % ( jobID ) )
+        self.log.error( 'Failed to install software for job', '%s' % ( jobID ) )
         errorMsg = software['Message']
         if not errorMsg:
           errorMsg = 'Failed software installation'
@@ -334,7 +335,7 @@ class JobAgent( AgentModule ):
     if gConfig.getValue( '/DIRAC/Security/UseServerCertificate' , False ):
       proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
       if not proxyResult['OK']:
-        self.log.error( 'Invalid Proxy', proxyResult['Message'] )
+        self.log.error( 'Failed to setup proxy', proxyResult['Message'] )
         return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Message' ] )
       return S_OK( proxyResult['Value'] )
     else:
@@ -374,7 +375,7 @@ class JobAgent( AgentModule ):
     retVal = gProxyManager.getPayloadProxyFromDIRACGroup( ownerDN, ownerGroup,
                                                           self.defaultProxyLength, token )
     if not retVal[ 'OK' ]:
-      self.log.error( 'Could not retrieve proxy' )
+      self.log.error( 'Could not retrieve payload proxy', retVal['Message'] )
       self.log.warn( retVal )
       os.system( 'dirac-proxy-info' )
       sys.stdout.flush()
@@ -428,7 +429,7 @@ class JobAgent( AgentModule ):
     #Pass proxy to the CE
     proxy = proxyChain.dumpAllToString()
     if not proxy['OK']:
-      self.log.error( proxy )
+      self.log.error( 'Invalid proxy', proxy )
       return S_ERROR( 'Payload Proxy Not Found' )
 
     payloadProxy = proxy['Value']
@@ -627,7 +628,6 @@ class JobAgent( AgentModule ):
              }
     accountingReport.setValuesFromDict( acData )
     accountingReport.commit()
-
 
   #############################################################################
   def finalize( self ):

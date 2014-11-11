@@ -104,7 +104,7 @@ class FailoverTransfer( object ):
 
       result = self._setRegistrationRequest( lfn, se, fileMetaDict, fileCatalog )
       if not result['OK']:
-        self.log.error( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
+        self.log.error( 'Failed to set registration request', 'SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
         errorList.append( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
         continue
       else:
@@ -116,7 +116,7 @@ class FailoverTransfer( object ):
         metadata['registration'] = 'request'
         return S_OK( metadata )
 
-    self.log.error( 'Encountered %s errors during attempts to upload output data' % len( errorList ) )
+    self.log.error( 'Failed to upload output data file', 'Encountered %s errors' % len( errorList ) )
     return S_ERROR( 'Failed to upload output data file' )
 
   #############################################################################
@@ -236,7 +236,7 @@ class FailoverTransfer( object ):
       se = StorageElement( targetSE )
       pfn = se.getPfnForLfn( lfn )
       if not pfn["OK"] or lfn not in pfn["Value"]['Successful']:
-        self.log.error( "unable to get PFN for LFN: %s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
+        self.log.error( "Unable to get PFN for LFN", "%s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
         return pfn
       regFile.PFN = pfn["Value"]['Successful'][lfn]
 

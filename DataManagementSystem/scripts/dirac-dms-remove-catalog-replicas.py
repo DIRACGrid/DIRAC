@@ -21,13 +21,13 @@ Script.parseCommandLine()
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 dm = DataManager()
 import os, sys
-
-if len( sys.argv ) < 3:
+args = Script.getPositionalArgs()
+if len( args ) < 2:
   Script.showHelp()
   DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  storageElementName = sys.argv[2]
+  inputFileName = args[0]
+  storageElementName = args[1]
 
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
@@ -40,7 +40,7 @@ else:
 res = dm.removeReplicaFromCatalog( storageElementName, lfns )
 if not res['OK']:
   print res['Message']
-  sys.exit()
+  DIRACExit(0)
 for lfn in sorted( res['Value']['Failed'] ):
   message = res['Value']['Failed'][lfn]
   print 'Failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )

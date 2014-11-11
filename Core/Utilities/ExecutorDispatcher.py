@@ -577,7 +577,7 @@ class ExecutorDispatcher:
       eTask = self.__tasks[ taskId ]
     except IndexError:
       msg = "Task %s was deleted prematurely while being dispatched" % taskId
-      self.__log.error( msg )
+      self.__log.error( "Task was deleted prematurely while being dispatched", "%s" % taskId )
       return S_ERROR( msg )
     try:
       result = self.__cbHolder.cbDispatch( taskId, eTask.taskObj, tuple( eTask.pathExecuted ) )
@@ -638,14 +638,14 @@ class ExecutorDispatcher:
       eTask = self.__tasks[ taskId ]
     except KeyError:
       errMsg = "Task %s is not known" % taskId
-      self.__log.error( errMsg )
+      self.__log.error( "Task is not known", "%s" % taskId )
       return S_ERROR( errMsg )
     if not self.__states.removeTask( taskId, eId ):
       self.__log.info( "Executor %s says it's processed task %s but it didn't have it" % ( eId, taskId ) )
       return S_OK()
     if eTask.eType not in self.__idMap[ eId ]:
       errMsg = "Executor type invalid for %s. Redoing task %s" % ( eId, taskId )
-      self.__log.error( errMsg )
+      self.__log.error( "Executor type invalid. Redoing task", "Type %s, Task %s" % ( eId, taskId ) )
       self.removeExecutor( eId )
       self.__dispatchTask( taskId )
       return S_ERROR( errMsg )
@@ -677,7 +677,7 @@ class ExecutorDispatcher:
     try:
       self.__tasks[ taskId ].taskObj = taskObj
     except KeyError:
-      self.__log.error( "Task %s seems to have been removed while being processed!" % taskId )
+      self.__log.error( "Task seems to have been removed while being processed!", "%s" % taskId )
       self.__sendTaskToExecutor( eId, eType )
       return S_OK()
     self.__freezeTask( taskId, "Freeze request by %s executor" % eType,
@@ -713,7 +713,7 @@ class ExecutorDispatcher:
       self.__tasks[ taskId ].taskObj = taskObj
       self.__tasks[ taskId ].pathExecuted.append( eType )
     except KeyError:
-      self.__log.error( "Task %s seems to have been removed while being processed!" % taskId )
+      self.__log.error( "Task seems to have been removed while being processed!", "%s" % taskId )
       self.__sendTaskToExecutor( eId, eType )
       return S_OK()
     self.__log.verbose( "Executor %s processed task %s" % ( eId, taskId ) )
@@ -724,7 +724,7 @@ class ExecutorDispatcher:
   def retryTask( self, eId, taskId ):
     if taskId not in self.__tasks:
       errMsg = "Task %s is not known" % taskId
-      self.__log.error( errMsg )
+      self.__log.error( "Task is not known", "%s" % taskId )
       return S_ERROR( errMsg )
     if not self.__states.removeTask( taskId, eId ):
       self.__log.info( "Executor %s says it's processed task %s but it didn't have it" % ( eId, taskId ) )
@@ -734,7 +734,7 @@ class ExecutorDispatcher:
     try:
       self.__tasks[ taskId ].retries += 1
     except KeyError:
-      self.__log.error( "Task %s seems to have been removed while waiting for retry!" % taskId )
+      self.__log.error( "Task seems to have been removed while waiting for retry!", "%s" % taskId )
       return S_OK()
     return self.__dispatchTask( taskId )
 
@@ -748,7 +748,7 @@ class ExecutorDispatcher:
     while eId:
       result = self.__sendTaskToExecutor( eId, eType )
       if not result[ 'OK' ]:
-        self.__log.error( "Could not send task to executor: %s" % result[ 'Message' ] )
+        self.__log.error( "Could not send task to executor", "%s" % result[ 'Message' ] )
       else:
         if not result[ 'Value' ]:
           #No more tasks for eType

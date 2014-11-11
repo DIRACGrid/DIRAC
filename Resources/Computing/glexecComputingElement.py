@@ -417,6 +417,30 @@ os.execl( "$executable" )
 
     return S_OK()
 
+  #############################################################################
+  def glexecTest( self, glexecLocation ):
+    """Ensure that the current DIRAC distribution is group readable e.g. dirac-proxy-info
+       also check the status code of the glexec call.
+    """
+    if not glexecLocation:
+      return S_OK( 'Nothing to test' )
+
+    testFile = 'glexecTest.sh'
+    cmds = ['#!/bin/sh']
+    cmds.append( 'id' )
+    cmds.append( 'hostname' )
+    cmds.append( 'date' )
+    cmds.append( '%s/scripts/dirac-proxy-info' % DIRAC.rootPath )
+    fopen = open( testFile, 'w' )
+    fopen.write( '\n'.join( cmds ) )
+    fopen.close()
+    self.log.info( 'Changing permissions of test script to 0755' )
+    try:
+      os.chmod( os.path.abspath( testFile ), 0755 )
+    except Exception, x:
+      self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
+                      '\n%s' % ( x ) )
+      return S_ERROR( 'Could not change permissions of test script' )
 
   def __execute( self, executableList ):
     """Run glexec with checking of the exit status code. With no executable it will renew the glexec proxy
@@ -498,7 +522,7 @@ os.execl( "$executable" )
       self.log.info( 'Rerunning glexec without arguments to renew payload proxy' )
       result = self.__execute()
       if not result['OK']:
-        self.log.error( result )
+        self.log.error( 'Failed glexecExecute', result )
     else:
       self.log.info( 'Running without glexec, checking local proxy' )
 

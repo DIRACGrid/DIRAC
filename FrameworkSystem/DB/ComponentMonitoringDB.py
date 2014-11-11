@@ -106,7 +106,7 @@ class ComponentMonitoringDB( DB ):
     self.log.info( "Trying to register %s" % compLogName )
     result = self._query( "SELECT id FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
     if not result[ 'OK' ]:
-      self.log.error( "Cannot register %s: %s" % ( compLogName, result[ 'Message' ] ) )
+      self.log.error( "Cannot register component", "%s: %s" % ( compLogName, result[ 'Message' ] ) )
       return result
     if len( result[ 'Value' ] ):
       compId = result[ 'Value' ][0][0]

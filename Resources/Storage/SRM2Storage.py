@@ -255,7 +255,7 @@ class SRM2Storage( StorageBase ):
     """
     pfnDict = pfnparse( path )
     if not pfnDict["OK"]:
-      self.log.error( "getUrl: %s" % pfnDict["Message"] )
+      self.log.error( "Failed getUrl", "%s" % pfnDict["Message"] )
       return pfnDict
     pfnDict = pfnDict['Value']
     if not pfnDict['Path'].startswith( self.path ):
@@ -378,7 +378,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "removeFile: Performing the removal of %s file(s)" % len( urls ) )
     resDict = self.__gfaldeletesurls_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error( "removeFile: %s" % resDict["Message"] )
+      self.log.error( "Failed removeFile", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict['Value']
     failed = resDict['Failed']
@@ -388,7 +388,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "removeFile: %s" % pathSURL["Message"] )
+          self.log.error( "Failed removeFile", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -433,7 +433,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )
     if not resDict["OK"]:
-      self.log.error( "getTransportURL: %s" % resDict["Message"] )
+      self.log.error( "Failed getTransportURL", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict['Value']
     failed = resDict['Failed']
@@ -443,7 +443,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "getTransportURL: %s" % pathSURL["Message"] )
+          self.log.error( "Failed getTransportURL", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -476,7 +476,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "prestageFile: Attempting to issue stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfal_prestage_wrapper( urls, lifetime )
     if not resDict["OK"]:
-      self.log.error( "prestageFile: %s" % resDict["Message"] )
+      self.log.error( "Failed prestageFile", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -486,7 +486,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "prestageFile: %s" % pathSURL["Message"] )
+          self.log.error( "Failed prestageFile", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -522,7 +522,7 @@ class SRM2Storage( StorageBase ):
                     "of stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfal_prestagestatus_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error( "prestageFileStatus: %s" % resDict["Message"] )
+      self.log.error( "Failed prestageFileStatus", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -532,7 +532,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "prestageFileStatus: %s" % pathSURL["Message"] )
+          self.log.error( "Failed prestageFileStatus", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -564,7 +564,7 @@ class SRM2Storage( StorageBase ):
     for url in res['Value']:
       pathSURL = self.getUrl( url )
       if not pathSURL['OK']:
-        self.log.error( "getFileMetadata: %s" % pathSURL["Message"] )
+        self.log.error( "Failed getFileMetadata:", "%s" % pathSURL["Message"] )
         failed[ url ] = pathSURL["Message"]
       else:
         urls[pathSURL['Value'] ] = url
@@ -572,7 +572,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "getFileMetadata: Obtaining metadata for %s file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error( "getFileMetadata: %s" % resDict["Message"] )
+      self.log.error( "Failed getFileMetadata:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed.update( resDict['Failed'] )
@@ -616,7 +616,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "isFile: Checking whether %s path(s) are file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error( "isFile: %s" % resDict["Message"] )
+      self.log.error( "Failed isFile:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -626,7 +626,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "isFile: %s" % pathSURL["Message"] )
+          self.log.error( "Failed isFile:", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -667,7 +667,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "pinFile: Attempting to pin %s file(s)." % len( urls ) )
     resDict = self.__gfal_pin_wrapper( urls, lifetime )
     if not resDict["OK"]:
-      self.log.error( "pinFile: %s" % resDict["Message"] )
+      self.log.error( "Failed pinFile:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -677,7 +677,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "pinFile: %s" % pathSURL["Message"] )
+          self.log.error( "Failed pinFile:", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -709,7 +709,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "releaseFile: Attempting to release %s file(s)." % len( urls ) )
     resDict = self.__gfal_release_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error( "releaseFile: %s" % resDict["Message"] )
+      self.log.error( "Failed releaseFile:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -719,12 +719,12 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "releaseFile: %s" % pathSURL["Message"] )
+          self.log.error( "Failed releaseFile:", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
         if urlDict['status'] == 0:
-          self.log.debug( "releaseFile: Issued release request for file %s." % pathSURL )
+          self.log.debug( "Failed releaseFile:", "Issued release request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "releaseFile: File does not exist."
@@ -747,7 +747,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.exists: Checking the existance of %s path(s)" % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error( "exists: %s" % resDict["Message"] )
+      self.log.error( "Failed exists:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -757,7 +757,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         pathSURL = self.getUrl( urlDict["surl"] )
         if not pathSURL["OK"]:
-          self.log.error( "SRM2Storage.exists: %s" % pathSURL["Message"] )
+          self.log.error( "Failed exists:", "%s" % pathSURL["Message"] )
           failed[ urlDict["surl"] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL["Value"]
@@ -789,7 +789,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.getFileSize: Obtaining the size of %s file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error( "getFileSize: %s" % resDict["Message"] )
+      self.log.error( "Failed getFileSize:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -1116,7 +1116,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.isDirectory: Checking whether %s path(s) are directory(ies)" % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error( "isDirectory: %s" % resDict["Message"] )
+      self.log.error( "Failed isDirectory:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -1126,7 +1126,7 @@ class SRM2Storage( StorageBase ):
       if urlDict.get( 'surl' ):
         dirSURL = self.getUrl( urlDict['surl'] )
         if not dirSURL["OK"]:
-          self.log.error( "isDirectory: %s" % dirSURL["Message"] )
+          self.log.error( "Failed isDirectory:", "%s" % dirSURL["Message"] )
           failed[ urlDict['surl'] ] = dirSURL["Message"]
           continue
         dirSURL = dirSURL['Value']
@@ -1165,7 +1165,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "getDirectoryMetadata: Attempting to obtain metadata for %s directories." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
     if not resDict["OK"]:
-      self.log.error( "getDirectoryMetadata: %s" % resDict["Message"] )
+      self.log.error( "Failed getDirectoryMetadata:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']
@@ -1175,7 +1175,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "getDirectoryMetadata: %s" % pathSURL["Message"] )
+          self.log.error( "Failed getDirectoryMetadata:", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -1253,7 +1253,7 @@ class SRM2Storage( StorageBase ):
 
     resDict = self.__gfal_lsdir_wrapper( directories )
     if not resDict["OK"]:
-      self.log.error( "listDirectory: %s" % resDict["Message"] )
+      self.log.error( "Failed listDirectory:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     # resDict = self.__gfalls_wrapper(directories,1)['Value']
@@ -1264,7 +1264,7 @@ class SRM2Storage( StorageBase ):
       if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )
         if not pathSURL["OK"]:
-          self.log.error( "listDirectory: %s" % pathSURL["Message"] )
+          self.log.error( "Failed listDirectory:", "%s" % pathSURL["Message"] )
           failed[ urlDict['surl'] ] = pathSURL["Message"]
           continue
         pathSURL = pathSURL['Value']
@@ -1473,7 +1473,7 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.__removeDirectory: Attempting to remove %s directories." % len( urls ) )
     resDict = self.__gfal_removedir_wrapper( urls )
     if not resDict["OK"]:
-      self.log.error( "__removeDirectory: %s" % resDict["Message"] )
+      self.log.error( "Failed  __removeDirectory:", "%s" % resDict["Message"] )
       return resDict
     resDict = resDict["Value"]
     failed = resDict['Failed']

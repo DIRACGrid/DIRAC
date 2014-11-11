@@ -189,7 +189,6 @@ def getSiteFullNames( site_ ):
 def getSiteName( site_, verify=False ):
   """ Get the site name in its basic form
   """
-
   site = None
   if not '.' in site_:
     if verify:

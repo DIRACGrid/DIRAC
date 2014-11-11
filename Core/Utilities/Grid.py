@@ -78,13 +78,16 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   if filt == None:
     filt = ''
   if attr == None:
-    attr = '*'
+    attr = ''
   if host == None:
     host = 'lcg-bdii.cern.ch:2170'
   if base == None:
     base = 'Mds-Vo-name=local,o=grid'
 
-  cmd = 'ldapsearch -x -LLL -h %s -b %s "%s" "%s"' % ( host, base, filt, attr )
+  if type( attr ) == types.ListType:
+    attr = ' '.join( attr )
+
+  cmd = 'ldapsearch -x -LLL -h %s -b %s "%s" %s' % ( host, base, filt, attr )
   result = shellCall( 0, cmd )
 
   response = []
@@ -351,6 +354,23 @@ def ldapService( serviceID = '*', serviceType = '*', vo = '*', attr = None, host
 
   return S_OK( services )
   
+def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBaseRule"], host = None ):
+  """ VOInfo for a given SE
+  """  
+  filt = '(GlueChunkKey=GlueSEUniqueID=%s)' % seID
+  filt += '(GlueVOInfoAccessControlBaseRule=VO:%s*)' % vo
+  filt += '(objectClass=GlueVOInfo)'
+  filt = '(&%s)' % filt
+
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+  voInfo = []
+  for value in result['Value']:
+    voInfo.append( value['attr'] )
+    
+  return S_OK( voInfo )    
 
 def getBdiiCEInfo( vo, host = None ):
   """ Get information for all the CEs/queues for a given VO
@@ -426,7 +446,21 @@ def getBdiiSEInfo( vo, host = None ):
   result = ldapSE( '*', vo, host = host )
   if not result['OK']:
     return result
+
   ses = result['Value']
+
+  pathDict = {}
+  result = ldapSEVOInfo( vo, '*' )
+  if result['OK']:
+    for entry in result['Value']:
+      voPath = entry['GlueVOInfoPath']
+      seID = ''
+      for en in entry['GlueChunkKey']:
+        if en.startswith( 'GlueSEUniqueID=' ):
+          seID = en.replace( 'GlueSEUniqueID=', '' )
+          break
+      if seID:
+        pathDict[seID] = voPath
 
   siteDict = {}
   for se in ses:
@@ -444,11 +478,13 @@ def getBdiiSEInfo( vo, host = None ):
           for p in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
             if p.startswith( apType+'.' ):
               count += 1
-          apType = '%s.%d' % ( apType, count + 1 )       
-          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry    
-        else:  
+          apType = '%s.%d' % ( apType, count + 1 )
+          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry
+        else:
           siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry
     else:
-      continue    
+      continue
+    if seID in pathDict:
+      siteDict[siteName]["SEs"][seID]['VOPath'] = pathDict[seID]
 
   return S_OK( siteDict )

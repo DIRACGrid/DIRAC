@@ -30,7 +30,7 @@ class TransformationManagerHandler( RequestHandler ):
 
   def _parseRes( self, res ):
     if not res['OK']:
-      gLogger.error( res['Message'] )
+      gLogger.error( 'TransformationManager failure', res['Message'] )
     return res
 
   def setDatabase( self, oDatabase ):

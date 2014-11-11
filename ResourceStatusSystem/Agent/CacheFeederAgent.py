@@ -130,7 +130,7 @@ class CacheFeederAgent( AgentModule ):
         results = commandObject.doCommand()
                     
         if not results[ 'OK' ]:
-          self.log.error( results[ 'Message' ] )
+          self.log.error( 'Failed to execute command', '%s: %s' % ( commandModule, results[ 'Message' ] ) )
           continue
         results = results[ 'Value' ]
 

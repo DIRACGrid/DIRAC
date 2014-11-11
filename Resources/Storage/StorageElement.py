@@ -597,7 +597,7 @@ class StorageElementItem( object ):
 
     res = self.isValid( "getPfnPath" )
     if not res['OK']:
-      self.log.error( "StorageElement.getLfnForPfn: Failed to instantiate StorageElement at %s" % self.name )
+      self.log.error( "StorageElement.getLfnForPfn: Failed to instantiate StorageElement at", "%s" % self.name )
       return res
     retDict = { "Successful" : {}, "Failed" : {} }
     for pfn in pfnDict:

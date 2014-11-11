@@ -55,8 +55,8 @@ class BOINCComputingElement( ComputingElement ):
         import logging
         logging.basicConfig(format="%(asctime)-15s %(message)s")
         self.BOINCClient = Client(self.wsdl)
-      except Exception, x:
-        self.log.error( 'Creation of the soap client failed: %s' % str( x ) )
+      except Exception,x:
+        self.log.error( 'Creation of the soap client failed', '%s' % str( x ) )
         pass
 
 
@@ -135,7 +135,8 @@ EOF
 #  print self.BOINCClient
         result = self.BOINCClient.service.submitJob( jobID, wrapperContent,self.ceParameters['Platform'][0], self.ceParameters['MarketPlaceID'] )
       except:
-        self.log.error( 'Could not submit the pilot %s to the BOINC CE %s, communication failed!' % (jobID, self.wsdl ))
+        self.log.error( 'Could not submit the pilot to the BOINC CE', 
+                        'Pilot %s, BOINC CE %s' % (jobID, self.wsdl ))
         break;        
 
       if not result['ok']:
@@ -168,7 +169,7 @@ EOF
     try:
       result = self.BOINCClient.service.getDynamicInfo( )
     except:
-      self.log.error( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
+      self.log.error( 'Could not get the BOINC CE dynamic jobs information', self.wsdl )
       return S_ERROR( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
 
     if not result['ok']:
@@ -208,7 +209,7 @@ EOF
     try:  
       result = self.BOINCClient.service.getJobStatus( wsdl_jobIDList )
     except:
-      self.log.error( 'Could not get the status about jobs in the list from the BONIC CE %s, commnication failed!' % self.wsdl )
+      self.log.error( 'Could not get the status about jobs in the list from the BONIC CE', self.wsdl )
       return S_ERROR( 'Could not get the status about jobs in the list from the BONIC CE %s, commnication failed!' % self.wsdl )
 
     if not result['ok']:
@@ -243,7 +244,8 @@ EOF
     try:
       result = self.BOINCClient.service.getJobOutput( tempID )
     except:
-      self.log.error( 'Could not get the outputs of job %s from the BONIC CE %s, commnication failed!' % (jobID, self.wsdl) )
+      self.log.error( 'Could not get the outputs of job from the BONIC CE', 
+                      'Job %s, BOINC SE' % (jobID, self.wsdl) )
       return S_ERROR( 'Could not get the outputs of job %s from the BONIC CE %s, commnication failed!' % (jobID, self.wsdl) )
     if not result['ok']:
       self.log.warn( 'Did not get the outputs of job %s from the BONIC CE %s, the value returned is false!' % (jobID, self.wsdl) )

@@ -199,8 +199,8 @@ class FTSRequest( object ):
     if self.__cksmTest:
       res = self.oSourceSE.getChecksumType()
       if not res["OK"]:
-        self.log.error( "Unable to get checksum type for SourceSE %s: %s" % ( self.sourceSE,
-                                                                             res["Message"] ) )
+        self.log.error( "Unable to get checksum type for SourceSE", 
+                        "%s: %s" % ( self.sourceSE, res["Message"] ) )
         cksmType = res["Value"]
         if cksmType in ( "NONE", "NULL" ):
           self.log.warn( "Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
@@ -272,8 +272,8 @@ class FTSRequest( object ):
     if self.__cksmTest:
       res = self.oTargetSE.getChecksumType()
       if not res["OK"]:
-        self.log.error( "Unable to get checksum type for TargetSE %s: %s" % ( self.targetSE,
-                                                                             res["Message"] ) )
+        self.log.error( "Unable to get checksum type for TargetSE", 
+                        "%s: %s" % ( self.targetSE, res["Message"] ) )
         cksmType = res["Value"]
         if cksmType in ( "NONE", "NULL" ):
           self.log.warn( "Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
@@ -777,7 +777,7 @@ class FTSRequest( object ):
       gLogger.warn( "resolveSource: %s source files not cached, prestaging..." % len( toStage ) )
       stage = self.oSourceSE.prestageFile( toStage )
       if not stage["OK"]:
-        gLogger.error( "resolveSource: error is prestaging - %s" % stage["Message"] )
+        gLogger.error( "resolveSource: error is prestaging", stage["Message"] )
         for pfn in toStage:
           lfn = toResolve[pfn]
           self.__setFileParameter( lfn, 'Reason', stage["Message"] )

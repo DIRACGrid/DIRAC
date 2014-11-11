@@ -45,7 +45,7 @@ class FileCatalogFactory:
     objectLoader = ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Catalog.%sClient' % catalogType, catalogType+'Client' )
     if not result['OK']:
-      gLogger.error( 'Failed to load catalog object: %s' % result['Message'] )
+      gLogger.error( 'Failed to load catalog object', '%s' % result['Message'] )
       return result
 
     catalogClass = result['Value']

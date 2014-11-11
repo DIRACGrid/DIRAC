@@ -1460,6 +1460,7 @@ class DataManager( object ):
       for se in replicas.keys():
         # Fix the caching
         readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
+
         if not readStatus:
           replicas.pop( se )
 

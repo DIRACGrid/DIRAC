@@ -78,7 +78,7 @@ for the agent restart
 
     result = self.__markStalledJobs( stalledTime )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to detect stalled jobs', result['Message'] )
 
     #Note, jobs will be revived automatically during the heartbeat signal phase and
     #subsequent status changes will result in jobs not being selected by the
@@ -86,16 +86,16 @@ for the agent restart
 
     result = self.__failStalledJobs( failedTime )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to process stalled jobs', result['Message'] )
 
     result = self.__failCompletedJobs()
 
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to process completed jobs', result['Message'] )
 
     result = self.__kickStuckJobs()
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to kick stuck jobs', result['Message'] )
 
     return S_OK( 'Stalled Job Agent cycle complete' )
 
@@ -155,7 +155,7 @@ for the agent restart
             failedCounter += 1
             result = self.__sendAccounting( job )
             if not result['OK']:
-              self.log.error( result['Message'] )
+              self.log.error( 'Failed to send accounting', result['Message'] )
               break
             continue
 
@@ -170,7 +170,7 @@ for the agent restart
           failedCounter += 1
           result = self.__sendAccounting( job )
           if not result['OK']:
-            self.log.error( result['Message'] )
+            self.log.error( 'Failed to send accounting', result['Message'] )
             break
 
     recoverCounter = 0
@@ -185,7 +185,7 @@ for the agent restart
         for job in jobs:
           result = self.__sendAccounting( job )
           if not result['OK']:
-            self.log.error( result['Message'] )
+            self.log.error( 'Failed to send accounting', result['Message'] )
             continue
 
           recoverCounter += 1
@@ -215,7 +215,7 @@ for the agent restart
       if "No pilots found" in result['Message']:
         self.log.warn( result['Message'] )
         return S_OK( 'NoPilot' )
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to get pilot information', result['Message'] )
       return S_ERROR( 'Failed to get the pilot status' )
     pilotStatus = result['Value'][pilotReference]['Status']
 
@@ -248,7 +248,7 @@ the stalledTime limit.
 """
     result = self.jobDB.getJobAttributes( job, ['HeartBeatTime', 'LastUpdateTime'] )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to get job attributes', result['Message'] )
     if not result['OK'] or not result['Value']:
       return S_ERROR( 'Could not get attributes for job', '%s' % job )
 
@@ -463,7 +463,7 @@ used to fail jobs due to the optimizer chain.
     checkTime = str( dateTime() - self.matchedTime * second )
     result = self.jobDB.selectJobs( {'Status':'Matched'}, older = checkTime )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to select jobs', result['Message'] )
       return result
 
     jobIDs = result['Value']
@@ -476,7 +476,7 @@ used to fail jobs due to the optimizer chain.
     checkTime = str( dateTime() - self.rescheduledTime * second )
     result = self.jobDB.selectJobs( {'Status':'Rescheduled'}, older = checkTime )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to select jobs', result['Message'] )
       return result
 
     jobIDs = result['Value']
@@ -503,7 +503,7 @@ used to fail jobs due to the optimizer chain.
     checkTime = str( dateTime() - self.completedTime * second )
     result = self.jobDB.selectJobs( {'Status':'Completed'}, older = checkTime )
     if not result['OK']:
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to select jobs', result['Message'] )
       return result
 
     jobIDs = result['Value']
@@ -514,7 +514,7 @@ used to fail jobs due to the optimizer chain.
     for jobID in jobIDs:
       result = self.jobDB.getJobAttributes( jobID, ['Status','MinorStatus'] )
       if not result['OK']:
-        self.log.error( result['Message'] )
+        self.log.error( 'Failed to get job attributes', result['Message'] )
         continue
       if result['Value']['Status'] != "Completed":
         continue
@@ -525,7 +525,7 @@ used to fail jobs due to the optimizer chain.
                                        "Job died during finalization" )
       result = self.__sendAccounting( jobID )
       if not result['OK']:
-        self.log.error( result['Message'] )
+        self.log.error( 'Failed to send accounting', result['Message'] )
         continue
 
     return S_OK()

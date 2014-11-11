@@ -140,19 +140,19 @@ class ProxyDB( DB ):
       if not userName:
         result = Registry.getUsernameForDN( userDN )
         if not result[ 'OK' ]:
-          self.log.error( "Could not retrieve username for DN %s" % userDN )
+          self.log.error( "Could not retrieve username for DN", userDN )
           continue
         userName = result[ 'Value' ]
         try:
           userName = self._escapeString( userName )[ 'Value' ]
           userDN = self._escapeString( userDN )[ 'Value' ]
         except KeyError:
-          self.log.error( "Could not escape username %s or DN %s" % ( userName, userDN ) )
+          self.log.error( "Could not escape username or DN", "%s %s" % ( userName, userDN ) )
           continue
         userName = result[ 'Value' ]
         result = self._update( "UPDATE `%s` SET UserName=%s WHERE UserDN=%s" % ( tableName, userName, userDN ) )
         if not result[ 'OK' ]:
-          self.log.error( "Could update username for DN %s: %s" % ( userDN, result[ 'Message' ] ) )
+          self.log.error( "Could update username for DN", "%s: %s" % ( userDN, result[ 'Message' ] ) )
           continue
         self.log.info( "UserDN %s has user %s" % ( userDN, userName ) )
     return S_OK()

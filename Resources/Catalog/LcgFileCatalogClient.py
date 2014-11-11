@@ -1693,7 +1693,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_OK()
     totalError = ""
     for link, error in res['Value']['Failed'].items():
-      gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link for %s." % link, error )
+      gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link", 
+                     "for %s: " % ( link, error ) )
       totalError = "%s\n %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 
@@ -1727,7 +1728,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_OK()
     totalError = ""
     for link, error in res['Value']['Failed'].items():
-      gLogger.error( "LcgFileCatalogClient.__removeFilesFromDataset: Failed to remove link %s." % link, error )
+      gLogger.error( "LcgFileCatalogClient.__removeFilesFromDataset: Failed to remove link", 
+                     "%s: %s" % ( link, error ) )
       totalError = "%s %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 
