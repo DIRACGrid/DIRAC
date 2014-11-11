@@ -1,3 +1,11 @@
+[v6r12p1]
+
+*Configuration
+FIX: Core.Utilities.Grid, dirac-admin-add-resources - fix to make a best effort to 
+     guess the proper VO specific path of a new SE
+*WMS
+FIX: dirac-configure, pilotCommands, pilotTools - fixes to use server certificate
+
 [v6r12]
 
 *Core
