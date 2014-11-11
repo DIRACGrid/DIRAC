@@ -101,6 +101,15 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p21]
+
+*DMS
+BUGFIX: dirac-dms-remove-replicas - continue in case of single replica failure
+FIX: dirac-rms-xxx scripts - use Script.getPositionalArgs() instead of sys.argv
+
+*Workflow
+FIX: Test_Modules.py - fix in mocking functions, less verbose logging
+
 [v6r11p20]
 
 *DMS

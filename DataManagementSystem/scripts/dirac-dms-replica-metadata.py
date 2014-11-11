@@ -18,14 +18,14 @@ Script.parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-import os, sys
-
-if not len( sys.argv ) == 3:
+import os
+args = Script.getPositionalArgs()
+if not len( args ) == 2:
   Script.showHelp()
   DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  storageElement = sys.argv[2]
+  inputFileName = args[0]
+  storageElement = args[1]
 
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )

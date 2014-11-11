@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-
+from DIRAC import exit as dexit
 Script.setUsageMessage( """
 Remove the given file or a list of files from the File Catalog
 
@@ -19,13 +19,15 @@ Script.parseCommandLine()
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 fc = FileCatalog()
-import os, sys
+import os
 
-if len( sys.argv ) < 2:
+args = Script.getPositionalArgs()
+
+if len( args) < 1:
   Script.showHelp()
   DIRAC.exit( -1 )
 else:
-  inputFileName = sys.argv[1]
+  inputFileName = args[0]
 
 if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
@@ -38,7 +40,7 @@ else:
 res = fc.removeFile( lfns )
 if not res['OK']:
   print "Error:", res['Message']
-  sys.exit()
+  dexit(1)
 for lfn in sortList( res['Value']['Failed'].keys() ):
   message = res['Value']['Failed'][lfn]
   print 'Error: failed to remove %s: %s' % ( lfn, message )
