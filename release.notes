@@ -12,6 +12,14 @@ NEW: Native use of the FTS3 services:
 *RMS
 CHANGE: Removed files from the previous generation RMS
 
+[v6r12p1]
+
+*Configuration
+FIX: Core.Utilities.Grid, dirac-admin-add-resources - fix to make a best effort to 
+     guess the proper VO specific path of a new SE
+*WMS
+FIX: dirac-configure, pilotCommands, pilotTools - fixes to use server certificate
+
 [v6r12]
 
 *Core
@@ -106,6 +114,15 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p21]
+
+*DMS
+BUGFIX: dirac-dms-remove-replicas - continue in case of single replica failure
+FIX: dirac-rms-xxx scripts - use Script.getPositionalArgs() instead of sys.argv
+
+*Workflow
+FIX: Test_Modules.py - fix in mocking functions, less verbose logging
 
 [v6r11p20]
 

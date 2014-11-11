@@ -407,6 +407,11 @@ class ConfigureSite( CommandBase ):
     if self.boincHostName:
       self.cfg.append( '-o /LocalSite/BoincHostName=%s' % self.boincHostName )
 
+    if self.pp.useServerCertificate:
+      self.cfg.append( '--UseServerCertificate' )
+      self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+      self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+
     # these are needed as this is not the fist time we call dirac-configure
     self.cfg.append( '-FDMH' )
     if self.pp.localConfigFile:  
@@ -415,8 +420,6 @@ class ConfigureSite( CommandBase ):
 
     if self.debugFlag:
       self.cfg.append( '-ddd' )
-    if self.pp.useServerCertificate:
-      self.cfg.append( '--UseServerCertificate' )
 
     configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
 
