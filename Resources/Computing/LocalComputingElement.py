@@ -29,29 +29,18 @@ class LocalComputingElement( ComputingElement ):
     """
     ComputingElement.__init__( self, ceUniqueID )
 
-    self.ceType = 'Local'
+    self.ceType = ''
     self.execution = "Local"
-    self.batchSystem = 'Host'
+    self.batchSystem = self.ceParameters.get( 'BatchSystem', 'Host' )
     self.batchModuleFile = None
     self.submittedJobs = 0
     self.userName = getpass.getuser()
-    self.batch = None
 
   def _reset( self ):
     """ Process CE parameters and make necessary adjustments
     """
-
-    self.batchSystem = self.ceParameters['BatchSystem']
-    self.ceType += self.batchSystem
-    objectLoader = ObjectLoader()
-    result = objectLoader.loadObject( 'Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem )
-    if not result['OK']:
-      gLogger.error( 'Failed to load batch object: %s' % result['Message'] )
-      return result
-    batchClass = result['Value']
-    self.batchModuleFile = result['ModuleFile']
-    self.batch = batchClass()
-    self.log.info( "Batch system class from module: ", self.batchModuleFile )
+    self.batchSystem = self.ceParameters.get( 'BatchSystem', 'Host' )
+    self.loadBatchSystem()
 
     self.queue = self.ceParameters['Queue']
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
@@ -283,10 +272,15 @@ class LocalComputingElement( ComputingElement ):
       return result
     jobStamp = result['Value']['FileName']
     host = result['Value']['Host']
-
-    output = '%s/%s.out' % ( self.batchOutput, jobStamp )
-    error = '%s/%s.out' % ( self.batchError, jobStamp )
-
+    
+    if hasattr( self.batch, 'getOutputFiles' ):
+      output, error = self.batch.getOutputFiles( jobStamp, 
+                                                 self.batchOutput,
+                                                 self.batchError )
+    else:
+      output = '%s/%s.out' % ( self.batchOutput, jobStamp )
+      error = '%s/%s.out' % ( self.batchError, jobStamp )
+  
     return S_OK( ( jobStamp, host, output, error ) )
 
 

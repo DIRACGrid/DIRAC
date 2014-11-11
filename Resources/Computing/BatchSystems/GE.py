@@ -1,19 +1,23 @@
 ############################################################################
-#
-#  SGEBatch class representing SGE batch system
+#  $HeadURL$
+#  GE class representing SGE batch system
+#  10.11.2014
 #  Author: A.T.
-#
 ############################################################################
 
-""" The script relies on the SubmitOptions parameter to choose the right queue.
+""" Torque.py is a DIRAC independent class representing Torque batch system.
+    Torque objects are used as backend batch system representation for
+    LocalComputingElement and SSHComputingElement classes 
+    
+    The GE relies on the SubmitOptions parameter to choose the right queue.
     This should be specified in the Queue description in the CS. e.g.
     
     SubmitOption = -l ct=6000
 """
 
-import re, commands, os
+__RCSID__ = "$Id$"
 
-MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 'NJobs', 'SubmitOptions' ]
+import re, commands, os
 
 class GE( object ):
 
@@ -22,6 +26,7 @@ class GE( object ):
     """
     resultDict = {}
     
+    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 'SubmitOptions' ]
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
         resultDict['Status'] = -1
@@ -59,23 +64,32 @@ class GE( object ):
     
     resultDict = {}
     
+    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
+    
     jobIDList = kwargs.get( 'JobIDList' )
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
     
-    result = 0
     successful = []
     failed = []
     for job in jobIDList:
-      status,output = commands.getstatusoutput( 'qdel %s' % job )
+      status, output = commands.getstatusoutput( 'qdel %s' % job )
       if status != 0:
-        result += 1
         failed.append( job )
       else:
         successful.append( job )  
     
+    resultDict['Status'] = 0
+    if failed:
+      resultDict['Status'] = 1
+      resultDict['Message'] = output
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
@@ -84,6 +98,13 @@ class GE( object ):
     """ Get status of the jobs in the given list
     """
     resultDict = {}
+    
+    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
     
     user = kwargs.get( 'User' )
     if not user:
@@ -184,4 +205,12 @@ class GE( object ):
     resultDict['Status'] = 0
     resultDict["Waiting"] = waitingJobs
     resultDict["Running"] = runningJobs
+    resultDict["Done"] = doneJobs
     return resultDict
+
+  def getJobOutputFiles( self, jobStamp, outputDir, errorDir ):
+    """ Get output file names for the specific CE 
+    """
+    output = '%s/DIRACPilot.o%s' % ( outputDir, jobStamp )
+    error = '%s/DIRACPilot.e%s' % ( errorDir, jobStamp )
+    return ( output, error )

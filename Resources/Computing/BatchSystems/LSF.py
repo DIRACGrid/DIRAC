@@ -1,87 +1,186 @@
-#!/bin/env python
+#########################################################################################
+# $HeadURL$
+# LSF.py
+# 10.11.2014
+# Author: A.T.
+#########################################################################################
 
-import re, sys, tempfile, commands, os, urllib
+""" LSF.py is a DIRAC independent class representing LSF batch system.
+    LSF objects are used as backend batch system representation for
+    LocalComputingElement and SSHComputingElement classes 
+"""
 
-def submitJob( executable,outputDir,errorDir,nJobs,jobDir,queue,submitOptions ):
-  """ Submit nJobs to the condor batch system
-  """
-  outputs = []
-  for i in range( int(nJobs) ):
-    cmd = "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % ( outputDir,
-                                                           errorDir,
-                                                           queue,
-                                                           submitOptions,
-                                                           executable )
-    status,output = commands.getstatusoutput(cmd)
-    if status == 0:
-      outputs.append(output)
-    else:
-      break                                                         
+__RCSID__ = "$Id$"
 
-  if outputs:
-    print 0
-    for output in outputs:
-      match = re.search('Job <(\d*)>',output)
-      if match:
-        print match.groups()[0]
-  else:
-    print status
-    print output
+import re, commands
+
+class LSF( object ):
+  
+  def submitJob( self, **kwargs ):
+    """ Submit nJobs to the condor batch system
+    """
     
-  return status
-
-def killJob( jobList ):
-  """ Kill jobs in the given list
-  """
+    resultDict = {}
+    
+    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 'SubmitOptions', 'Queue' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
+      
+    nJobs = kwargs.get( 'NJobs', 1 )  
+    
+    outputs = []
+    for _i in range( int(nJobs) ):
+      cmd = "bsub -o %(OutputDir)s -e %(ErrorDir)s -q %(Queue)s -J DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
+      status,output = commands.getstatusoutput( cmd )
+      if status == 0:
+        outputs.append(output)
+      else:
+        break                                                         
   
-  result = 0
-  successful = []
-  failed = []
-  for job in jobList:
-    status,output = commands.getstatusoutput( 'bkill %s' % job )
-    if status != 0:
-      result += 1
-      failed.append( job )
+    if outputs:
+      resultDict['Status'] = 0
+      resultDict['Jobs'] = []      
+      for output in outputs:
+        match = re.search('Job <(\d*)>',output)
+        if match:
+          resultDict['Jobs'].append( match.groups()[0] )
     else:
-      successful.append( job )  
+      resultDict['Status'] = status
+      resultDict['Message'] = output
+      
+    return resultDict
   
-  print result
-  for job in successful:
-    print job
-  return result
+  def killJob( self, **kwargs ):
+    """ Kill jobs in the given list
+    """
+    
+    resultDict = {}
+    
+    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
+    
+    jobIDList = kwargs.get( 'JobIDList' )
+    if not jobIDList:
+      resultDict['Status'] = -1
+      resultDict['Message'] = 'Empty job list'
+      return resultDict
+    
+    successful = []
+    failed = []
+    for job in jobIDList:
+      status, output = commands.getstatusoutput( 'bkill %s' % job )
+      if status != 0:
+        failed.append( job )
+      else:
+        successful.append( job )  
+    
+    resultDict['Status'] = 0
+    if failed:
+      resultDict['Status'] = 1
+      resultDict['Message'] = output
+    resultDict['Successful'] = successful
+    resultDict['Failed'] = failed
+    return resultDict
   
-def getJobStatus( jobList, user ):
+  def getCEStatus( self, **kwargs ):
+    """ Method to return information on running and pending jobs.
+    """
 
-  print -1
-  return -1
+    resultDict = {}
+
+    MANDATORY_PARAMETERS = [ 'Queue' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
+      
+    queue = kwargs['Queue'] 
+
+    cmd = "bjobs -q %s -a" % queue 
+    status, output = commands.getstatusoutput( cmd )
+
+    if status != 0:
+      resultDict['Status'] = status
+      resultDict['Output'] = output
+      return resultDict
+
+    waitingJobs = 0
+    runningJobs = 0
+    lines = output.split( "\n" )
+    for line in lines:
+      if line.count( "PEND" ) or line.count( 'PSUSP' ):
+        waitingJobs += 1
+      if line.count( "RUN" ) or line.count( 'USUSP' ):
+        runningJobs += 1
+
+    # Final output
+    resultDict['Status'] = 0
+    resultDict["Waiting"] = waitingJobs
+    resultDict["Running"] = runningJobs
+    return resultDict
   
-def getCEStatus( user ):
+  def getJobStatus( self, **kwargs ):
+    """ Get the status information for the given list of jobs
+    """
 
-  print -1
-  return -1
+    resultDict = {}
+    
+    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
+      
+    jobIDList = kwargs['JobIDList']  
+    if not jobIDList:
+      resultDict['Status'] = -1
+      resultDict['Message'] = 'Empty job list'
+      return resultDict
+    
+    cmd = 'bjobs' + ' '.join( jobIDList )
+    status, output = commands.getstatusoutput( cmd )
+    
+    if status != 0:
+      resultDict['Status'] = status
+      resultDict['Output'] = output
+      return resultDict
+    
+    output = output.replace( '\r', '' )
+    lines = output.split( '\n' )
+    statusDict = {}
+    for job in jobIDList:
+      statusDict[job] = 'Unknown'
+      for line in lines:
+        if line.find( job ) != -1:
+          if line.find( 'UNKWN' ) != -1:
+            statusDict[job] = 'Unknown'
+          else:
+            lsfStatus = line.split()[2]
+            if lsfStatus in ['DONE', 'EXIT']:
+              statusDict[job] = 'Done'
+            elif lsfStatus in ['RUN', 'SSUSP']:
+              statusDict[job] = 'Running'
+            elif lsfStatus in ['PEND', 'PSUSP']:
+              statusDict[job] = 'Waiting'
 
-#####################################################################################
-
-# Get standard arguments and pass to the interface implementation functions
-
-command = sys.argv[1]
-print "============= Start output ==============="
-if command == "submit_job":
-  executable,outputDir,errorDir,workDir,nJobs,infoDir,jobStamps,queue,submitOptions = sys.argv[2:]
-  submitOptions = urllib.unquote(submitOptions)
-  if submitOptions == '-':
-    submitOptions = ''
-  status = submitJob( executable, outputDir, errorDir, nJobs, outputDir, queue, submitOptions )
-elif command == "kill_job":
-  jobStamps,infoDir = sys.argv[2:]
-  jobList = jobStamps.split('#')
-  status = killJob( jobList )
-elif command == "job_status":
-  jobStamps,infoDir,user = sys.argv[2:]
-  jobList = jobStamps.split('#')
-  status = getJobStatus( jobList, user )  
-elif command == "status_info":
-  infoDir,workDir,user,queue = sys.argv[2:]
-  status = getCEStatus( user )   
-
-sys.exit(status)
+    # Final output
+    status = 0
+    resultDict['Status'] = 0
+    resultDict['Jobs'] = statusDict 
+    return resultDict  
+  
+  def getJobOutputFiles( self, jobStamp, outputDir, errorDir ):
+    """ Get output file names for the specific CE 
+    """
+    output = '%s/DIRACPilot.o%s' % ( outputDir, jobStamp )
+    error = '%s/DIRACPilot.e%s' % ( errorDir, jobStamp )
+    return ( output, error )  

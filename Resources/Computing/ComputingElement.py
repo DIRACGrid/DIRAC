@@ -40,6 +40,7 @@ from DIRAC.Core.Security                              import CS
 from DIRAC.Core.Security                              import Properties
 from DIRAC.Core.Utilities.Time                        import dateTime, second
 from DIRAC                                            import S_OK, S_ERROR, gLogger, version
+from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
 import os
 
 INTEGER_PARAMETERS = ['CPUTime']
@@ -62,6 +63,7 @@ class ComputingElement(object):
     self.proxy = ''
     self.valid = None
     self.mandatoryParameters = []
+    self.batch = None
 
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
@@ -151,6 +153,21 @@ class ComputingElement(object):
     """ Make specific CE parameter adjustments after they are collected or added
     """
     pass
+
+  def loadBatchSystem( self ):
+    """ Instantiate object representing the backend batch system
+    """
+    self.batchSystem = self.ceParameters['BatchSystem']
+    self.ceType += self.batchSystem
+    objectLoader = ObjectLoader()
+    result = objectLoader.loadObject( 'Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem )
+    if not result['OK']:
+      gLogger.error( 'Failed to load batch object: %s' % result['Message'] )
+      return result
+    batchClass = result['Value']
+    self.batchModuleFile = result['ModuleFile']
+    self.batch = batchClass()
+    self.log.info( "Batch system class from module: ", self.batchModuleFile )
 
   def setParameters( self, ceOptions ):
     """ Add parameters from the given dictionary overriding the previous values

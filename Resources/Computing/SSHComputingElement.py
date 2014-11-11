@@ -495,6 +495,8 @@ class SSHComputingElement( ComputingElement ):
     
     result['RunningJobs'] = resultHost['Value'].get( 'Running',0 )
     result['WaitingJobs'] = resultHost['Value'].get( 'Waiting',0 )
+    if "AvailableCores" in resultHost['Value']:
+      result['AvailableCores'] = resultHost['Value']['AvailableCores'] 
     self.log.verbose( 'Waiting Jobs: ', result['WaitingJobs'] )
     self.log.verbose( 'Running Jobs: ', result['RunningJobs'] )
 
@@ -563,18 +565,23 @@ class SSHComputingElement( ComputingElement ):
     return S_OK( resultDict )
 
   def _getJobOutputFiles( self, jobID ):
-    """ Get output file names for the specific CE 
+    """ Get output file names for the specific CE
     """
     result = pfnparse( jobID )
     if not result['OK']:
       return result
     jobStamp = result['Value']['FileName']
     host = result['Value']['Host']
-
-    output = '%s/%s.out' % ( self.batchOutput, jobStamp )
-    error = '%s/%s.err' % ( self.batchError, jobStamp )
-
-    return S_OK( (jobStamp,host,output,error) )
+    
+    if hasattr( self.batch, 'getOutputFiles' ):
+      output, error = self.batch.getOutputFiles( jobStamp, 
+                                                 self.batchOutput,
+                                                 self.batchError )
+    else:
+      output = '%s/%s.out' % ( self.batchOutput, jobStamp )
+      error = '%s/%s.out' % ( self.batchError, jobStamp )
+  
+    return S_OK( ( jobStamp, host, output, error ) )
 
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
