@@ -47,6 +47,7 @@ Usage:
       res = dm.removeReplica( storageElementName, lfnList )
       if not res['OK']:
         print 'Error:', res['Message']
+        continue
       for lfn in sortList( res['Value']['Successful'].keys() ):
         print 'Successfully removed %s replica of %s' % ( storageElementName, lfn )
       for lfn in sortList( res['Value']['Failed'].keys() ):
