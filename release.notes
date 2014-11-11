@@ -1,3 +1,12 @@
+[v6r11p21]
+
+*DMS
+BUGFIX: dirac-dms-remove-replicas - continue in case of single replica failure
+FIX: dirac-rms-xxx scripts - use Script.getPositionalArgs() instead of sys.argv
+
+*Workflow
+FIX: Test_Modules.py - fix in mocking functions, less verbose logging
+
 [v6r11p20]
 
 *DMS
