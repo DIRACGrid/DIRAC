@@ -3,6 +3,7 @@
 # File: RequestDB.py
 # Date: 2012/12/04 08:06:30
 ########################################################################
+from types import ListType
 """ :mod: RequestDB
     =======================
 
@@ -675,28 +676,35 @@ class RequestDB( object ):
     """
 
 
-    rparameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup', 'Status']
-    parameterList = rparameterList + [ 'Type', "Error", "CreationTime", "LastUpdate"]
+
+    parameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup',
+                      'Status', "Error", "CreationTime", "LastUpdate"]
     resultDict = {}
 
     session = self.DBSession()
 
-    try:
+#     try:
+    if True:
       summaryQuery = session.query( Request.RequestID, Request.RequestName,
                                         Request.JobID, Request.OwnerDN, Request.OwnerGroup,
-                                        Operation.Type, Operation._Status, Operation.Error,
-                                        Operation._CreationTime, Operation._LastUpdate )
+                                        Request._Status, Request.Error,
+                                        Request._CreationTime, Request._LastUpdate )
 
       for key, value in selectDict.items():
-        if key in rparameterList:
-          summaryQuery = summaryQuery.filter( eval( 'Request.%s' % key ) == value )
+        if key in parameterList:
+          if key == 'Status':
+            key = '_Status'
+          if type( value ) == ListType:
+            summaryQuery = summaryQuery.filter( eval( 'Request.%s.in_(%s)' % ( key, value ) ) )
+          else:
+            summaryQuery = summaryQuery.filter( eval( 'Request.%s == %s' % ( key, value ) ) )
         elif key == 'ToDate':
-          summaryQuery = summaryQuery.filter( Operation._LastUpdate < value )
+          summaryQuery = summaryQuery.filter( Request._LastUpdate < value )
         elif key == 'FromDate':
-          summaryQuery = summaryQuery.filter( Operation._LastUpdate > value )
+          summaryQuery = summaryQuery.filter( Request._LastUpdate > value )
 
       if sortList:
-        summaryQuery = summaryQuery.order_by( eval( 'Request.%s.%s()' % ( sortList[0][0], sortList[0][1] ) ) )
+        summaryQuery = summaryQuery.order_by( eval( 'Request.%s.%s()' % ( sortList[0][0], sortList[0][1].lower() ) ) )
         
       print summaryQuery
       try:
@@ -738,13 +746,13 @@ class RequestDB( object ):
       resultDict['TotalRecords'] = nRequests
 
       return S_OK( resultDict )
-
-    except Exception, e:
-      self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
-      return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
-
-    finally:
-      session.close()
+#
+#     except Exception, e:
+#       self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
+#       return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
+#
+#     finally:
+#       session.close()
 
 
 
