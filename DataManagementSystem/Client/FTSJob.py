@@ -558,7 +558,7 @@ class FTSJob( Record ):
 
     return S_OK()
 
-  def submitFTS3( self, stageFiles = False ):
+  def submitFTS3( self, pinTime = False ):
     """ submit fts job using FTS3 rest API """
 
     if self.FTSGUID:
@@ -575,11 +575,12 @@ class FTSJob( Record ):
 
     source_spacetoken = self.SourceToken if self.SourceToken else None
     dest_spacetoken = self.TargetToken if self.TargetToken else None
-    copy_pin_lifetime = 86400 if stageFiles else None
+    copy_pin_lifetime = pinTime if pinTime else None
+    bring_online = 86400 if pinTime else None
 
     job = fts3.new_job(transfers = transfers, overwrite = True,
             source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
-            copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
+            bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
 
     try:
       context = fts3.Context( self.FTSServer )
@@ -650,24 +651,24 @@ class FTSJob( Record ):
       return self.finalize()
 
 
-  def monitorFTS( self, ftsVersion, full = False):
+  def monitorFTS( self, ftsVersion, command = "glite-transfer-status", full = False ):
     """ Wrapper calling the proper method for a given version of FTS"""
 
     if ftsVersion == "FTS2":
-      return self.monitorFTS2( full = full )
+      return self.monitorFTS2( command = command, full = full )
     elif ftsVersion == "FTS3":
       return self.monitorFTS3( full = full )
     else:
       return S_ERROR("monitorFTS: unknown FTS version %s"%ftsVersion)
 
 
-  def submitFTS( self, ftsVersion, stageFiles = False ):
+  def submitFTS( self, ftsVersion, command = 'glite-transfer-submit', pinTime = False ):
     """ Wrapper calling the proper method for a given version of FTS"""
 
     if ftsVersion == "FTS2":
-      return self.submitFTS2( stageFiles = stageFiles )
+      return self.submitFTS2( command = command, pinTime = pinTime )
     elif ftsVersion == "FTS3":
-      return self.submitFTS3( stageFiles = stageFiles )
+      return self.submitFTS3( pinTime = pinTime )
     else:
       return S_ERROR( "submitFTS: unknown FTS version %s" % ftsVersion )
 
