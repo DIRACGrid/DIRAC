@@ -149,7 +149,7 @@ class TransformationManagerHandler( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, [StringType, DictType]]
+  types_setFileStatusForTransformation = [TransTypes, [StringType, DictType]]
   def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = [], force = False ):
     """ Sets the file status for the transformation.
 
