@@ -18,15 +18,15 @@ Script.parseCommandLine()
 
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 catalog = FileCatalog()
-import sys,os
-
-if not len(sys.argv) == 4:
+import os
+args = Script.getPositionalArgs()
+if not len(args) == 3:
   Script.showHelp()
   DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  se = sys.argv[2]
-  newStatus = sys.argv[3]
+  inputFileName = args[0]
+  se = args[1]
+  newStatus = args[2]
 
 if os.path.exists(inputFileName):
   inputFile = open(inputFileName,'r')
