@@ -123,16 +123,16 @@ class AccountingDB( DB ):
           keyFields = [ f[0] for f in definitionKeyFields ]
           if keyFields != self.dbCatalog[ typeName ][ 'keys' ]:
             keyFields = self.dbCatalog[ typeName ][ 'keys' ]
-            self.log.error( "Definition fields have changed for type %s" % typeName )
+            self.log.error( "Definition fields have changed", "Type %s" % typeName )
           valueFields = [ f[0] for f in definitionAccountingFields ]
           if valueFields != self.dbCatalog[ typeName ][ 'values' ]:
             valueFields = self.dbCatalog[ typeName ][ 'values' ]
-            self.log.error( "Accountable fields have changed for type %s" % typeName )
+            self.log.error( "Accountable fields have changed", "Type %s" % typeName )
         #Try to re register to check all the tables are there
         retVal = self.registerType( typeName, definitionKeyFields,
                                     definitionAccountingFields, bucketsLength )
         if not retVal[ 'OK' ]:
-          self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
+          self.log.error( "Can't register type", "%s: %s" % ( typeName, retVal[ 'Message' ] ) )
         #If it has been properly registered, update info
         elif retVal[ 'Value' ]:
           #Set the timespan
@@ -375,7 +375,7 @@ class AccountingDB( DB ):
     if tables:
       retVal = self._createTables( tables )
       if not retVal[ 'OK' ]:
-        self.log.error( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
+        self.log.error( "Can't create type", "%s: %s" % ( name, retVal[ 'Message' ] ) )
         return S_ERROR( "Can't create type %s: %s" % ( name, retVal[ 'Message' ] ) )
     if updateDBCatalog:
       bucketsLength.sort()
@@ -1181,7 +1181,7 @@ class AccountingDB( DB ):
         retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList )
         if not retVal[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
-          self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+          self.log.error( "[COMPACT] Error while compacting data for record", "%s: %s" % ( typeName, retVal[ 'Value' ] ) )
       self.log.info( "[COMPACT] Finished compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
     return S_OK()
@@ -1235,7 +1235,7 @@ class AccountingDB( DB ):
           valuesList = record[:-2]
           retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList )
           if not retVal[ 'OK' ]:
-            self.log.error( "[COMPACT] Error while compacting data for buckets in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+            self.log.error( "[COMPACT] Error while compacting data for buckets", "%s: %s" % ( typeName, retVal[ 'Value' ] ) )
         totalCompacted += len( bucketsData )
         insertElapsedTime = time.time() - deleteEndTime
         self.log.info( "[COMPACT] Records compacted (took %.2f secs, %.2f secs/bucket)" % ( insertElapsedTime,

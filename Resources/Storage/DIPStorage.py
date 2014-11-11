@@ -308,7 +308,8 @@ class DIPStorage( StorageBase ):
         else:
           failed[url] = 'File does not exist'
       else:
-        gLogger.error( "DIPStorage.isFile: Failed to get metdata for %s." % url, res['Message'] )
+        gLogger.error( "DIPStorage.isFile: Failed to get metadata for url", 
+                       "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -362,7 +363,8 @@ class DIPStorage( StorageBase ):
         else:
           failed[url] = 'File does not exist'
       else:
-        gLogger.error( "DIPStorage.getFileMetadata: Failed to get metdata for %s." % url, res['Message'] )
+        gLogger.error( "DIPStorage.getFileMetadata: Failed to get metadata for url", 
+                       "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -424,7 +426,8 @@ class DIPStorage( StorageBase ):
         else:
           failed[url] = 'Directory does not exist'
       else:
-        gLogger.error( "DIPStorage.isDirectory: Failed to get metdata for %s." % url, res['Message'] )
+        gLogger.error( "DIPStorage.isDirectory: Failed to get metadata for url", 
+                       "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -472,7 +475,8 @@ class DIPStorage( StorageBase ):
         else:
           failed[url] = 'Directory does not exist'
       else:
-        gLogger.error( "DIPStorage.getFileMetadata: Failed to get metdata for %s." % url, res['Message'] )
+        gLogger.error( "DIPStorage.getFileMetadata: Failed to get metadata for url", 
+                       "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )

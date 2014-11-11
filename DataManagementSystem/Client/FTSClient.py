@@ -70,7 +70,7 @@ class FTSClient( Client ):
     limit = limit if limit else 1000
     getFTSFileList = self.ftsManager.getFTSFileList( statusList, limit )
     if not getFTSFileList['OK']:
-      self.log.error( "getFTSFileList: %s" % getFTSFileList['Message'] )
+      self.log.error( "Failed getFTSFileList", "%s" % getFTSFileList['Message'] )
       return getFTSFileList
     getFTSFileList = getFTSFileList['Value']
     return S_OK( [ FTSFile( ftsFile ) for ftsFile in getFTSFileList ] )
@@ -81,7 +81,7 @@ class FTSClient( Client ):
     limit = limit if limit else 500
     getFTSJobList = self.ftsManager.getFTSJobList( statusList, limit )
     if not getFTSJobList['OK']:
-      self.log.error( "getFTSJobList: %s" % getFTSJobList['Message'] )
+      self.log.error( "Failed getFTSJobList", "%s" % getFTSJobList['Message'] )
       return getFTSJobList
     getFTSJobList = getFTSJobList['Value']
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
@@ -94,7 +94,7 @@ class FTSClient( Client ):
     """
     ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, statusList )
     if not ftsFiles['OK']:
-      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      self.log.error( "Failed getFTSFilesForRequest", "%s" % ftsFiles['Message'] )
       return ftsFiles
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles['Value'] ] )
 
@@ -105,7 +105,7 @@ class FTSClient( Client ):
     """
     ftsFiles = self.ftsManager.getAllFTSFilesForRequest( requestID )
     if not ftsFiles['OK']:
-      self.log.error( "getFTSFilesForRequest: %s" % ftsFiles['Message'] )
+      self.log.error( "Failed getFTSFilesForRequest", "%s" % ftsFiles['Message'] )
       return ftsFiles
     return S_OK( [ FTSFile( ftsFileDict ) for ftsFileDict in ftsFiles['Value'] ] )
 
@@ -120,7 +120,7 @@ class FTSClient( Client ):
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     getJobs = self.ftsManager.getFTSJobsForRequest( requestID, statusList )
     if not getJobs['OK']:
-      self.log.error( "getFTSJobsForRequest: %s" % getJobs['Message'] )
+      self.log.error( "Failed getFTSJobsForRequest", "%s" % getJobs['Message'] )
       return getJobs
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getJobs['Value'] ] )
 
@@ -131,7 +131,7 @@ class FTSClient( Client ):
     """
     getFile = self.ftsManager.getFTSFile( ftsFileID )
     if not getFile['OK']:
-      self.log.error( getFile['Message'] )
+      self.log.error( 'Failed to get FTS file', getFile['Message'] )
     # # de-serialize
     if getFile['Value']:
       ftsFile = FTSFile( getFile['Value'] )
@@ -144,11 +144,11 @@ class FTSClient( Client ):
     """
     ftsJobJSON = ftsJob.toJSON()
     if not ftsJobJSON['OK']:
-      self.log.error( ftsJobJSON['Message'] )
+      self.log.error( 'Failed to get JSON of an FTS job', ftsJobJSON['Message'] )
       return ftsJobJSON
     isValid = self.ftsValidator.validate( ftsJob )
     if not isValid['OK']:
-      self.log.error( isValid['Message'], str( ftsJobJSON['Value'] ) )
+      self.log.error( "Failed to validate FTS job", "%s %s" % ( isValid['Message'], str( ftsJobJSON['Value'] ) ) )
       return isValid
     return self.ftsManager.putFTSJob( ftsJobJSON['Value'] )
 
@@ -159,11 +159,11 @@ class FTSClient( Client ):
     """
     getJob = self.ftsManager.getFTSJob( ftsJobID )
     if not getJob['OK']:
-      self.log.error( getJob['Message'] )
+      self.log.error( 'Failed to get FTS job', getJob['Message'] )
       return getJob
     setStatus = self.ftsManager.setFTSJobStatus( ftsJobID, 'Assigned' )
     if not setStatus['OK']:
-      self.log.error( setStatus['Message'] )
+      self.log.error( 'Failed to set status of FTS job', setStatus['Message'] )
     # # de-serialize
 #    if getJob['Value']:
 #      getJob = FTSJob( getJob['Value'] )
@@ -176,7 +176,7 @@ class FTSClient( Client ):
     """
     getJob = self.ftsManager.getFTSJob( ftsJobID )
     if not getJob['OK']:
-      self.log.error( getJob['Message'] )
+      self.log.error( 'Failed to get FTS job', getJob['Message'] )
       return getJob
     return getJob
 
@@ -187,7 +187,7 @@ class FTSClient( Client ):
     """
     deleteJob = self.ftsManager.deleteFTSJob( ftsJobID )
     if not deleteJob['OK']:
-      self.log.error( deleteJob['Message'] )
+      self.log.error( 'Failed to delete FTS job', deleteJob['Message'] )
     return deleteJob
 
   def getFTSJobIDs( self, statusList = None ):
@@ -195,7 +195,7 @@ class FTSClient( Client ):
     statusList = statusList if statusList else [ "Submitted", "Ready", "Active" ]
     ftsJobIDs = self.ftsManager.getFTSJobIDs( statusList )
     if not ftsJobIDs['OK']:
-      self.log.error( ftsJobIDs['Message'] )
+      self.log.error( 'Failed to get FTS job IDs', ftsJobIDs['Message'] )
     return ftsJobIDs
 
   def getFTSFileIDs( self, statusList = None ):
@@ -203,14 +203,14 @@ class FTSClient( Client ):
     statusList = statusList if statusList else [ "Waiting" ]
     ftsFileIDs = self.ftsManager.getFTSFileIDs( statusList )
     if not ftsFileIDs['OK']:
-      self.log.error( ftsFileIDs['Message'] )
+      self.log.error( 'Failed to get FTS file IDs', ftsFileIDs['Message'] )
     return ftsFileIDs
 
   def getFTSHistory( self ):
     """ get FTS history snapshot """
     getFTSHistory = self.ftsManager.getFTSHistory()
     if not getFTSHistory['OK']:
-      self.log.error( getFTSHistory['Message'] )
+      self.log.error( 'Failed to get FTS history', getFTSHistory['Message'] )
       return getFTSHistory
     getFTSHistory = getFTSHistory['Value']
     return S_OK( [ FTSHistoryView( ftsHistory ) for ftsHistory in getFTSHistory ] )
@@ -219,7 +219,7 @@ class FTSClient( Client ):
     """ get FTDB summary """
     dbSummary = self.ftsManager.getDBSummary()
     if not dbSummary['OK']:
-      self.log.error( "getDBSummary: %s" % dbSummary['Message'] )
+      self.log.error( "Failed getDBSummary", "%s" % dbSummary['Message'] )
     return dbSummary
 
   def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList = None ):
@@ -257,7 +257,7 @@ class FTSClient( Client ):
     fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in fList ]
     res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
-      self.log.error( "ftsSchedule: %s" % res['Message'] )
+      self.log.error( "Failed ftsSchedule", "%s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
 
     ftsFiles = []
@@ -278,7 +278,7 @@ class FTSClient( Client ):
 
       res = self.dataManager.getActiveReplicas( lfn )
       if not res['OK']:
-        self.log.error( "ftsSchedule: %s" % res['Message'] )
+        self.log.error( "Failed ftsSchedule", "%s" % res['Message'] )
         result["Failed"][fileID] = res['Message']
         continue
       replicaDict = res['Value']
@@ -297,7 +297,7 @@ class FTSClient( Client ):
 
       tree = self.ftsManager.getReplicationTree( sourceSEs, targetSEs, size )
       if not tree['OK']:
-        self.log.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
+        self.log.error( "Failed ftsSchedule", "%s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
         result["Failed"][fileID] = tree['Message']
         continue
       tree = tree['Value']
@@ -351,7 +351,7 @@ class FTSClient( Client ):
     ftsFilesJSONList = [ftsFile.toJSON()['Value'] for ftsFile in ftsFiles]
     res = self.ftsManager.putFTSFileList( ftsFilesJSONList )
     if not res['OK']:
-      self.log.error( "ftsSchedule: %s" % res['Message'] )
+      self.log.error( "Failed ftsSchedule", "%s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
 
     result['Successful'] += [ fileID for fileID in fileIDs if fileID not in result['Failed']]
@@ -372,7 +372,8 @@ class FTSClient( Client ):
     res = self.storageFactory.getStorages( targetSE, protocolList = ["SRM2"] )
     if not res['OK']:
       errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res['Message'] )
-      self.log.error( errStr )
+      self.log.error( "_getSurlForLFN: Failed to create SRM2 storage", 
+                      "%s: %s" % ( targetSE, res['Message'] ) )
       return S_ERROR( errStr )
     storageObjects = res['Value']["StorageObjects"]
     for storageObject in storageObjects:
@@ -397,7 +398,7 @@ class FTSClient( Client ):
     # # get targetSURL
     res = self._getSurlForLFN( hopTargetSE, lfn )
     if not res['OK']:
-      self.log.error( "_getTransferURLs: %s" % res['Message'] )
+      self.log.error( "Failed _getTransferURLs", "%s" % res['Message'] )
       return res
     targetSURL = res['Value']
 
@@ -409,7 +410,7 @@ class FTSClient( Client ):
     res = self._getSurlForLFN( hopSourceSE, lfn )
     sourceSURL = res.get( 'Value', replicaDict.get( hopSourceSE, None ) )
     if not sourceSURL:
-      self.log.error( "_getTransferURLs: %s" % res['Message'] )
+      self.log.error( "Failed _getTransferURLs", "%s" % res['Message'] )
       return res
 
     return S_OK( ( sourceSURL, targetSURL, status ) )

@@ -589,7 +589,7 @@ class DataIntegrityClient( Client ):
 
   def __returnProblematicError( self, fileID, res ):
     self.incrementProblematicRetry( fileID )
-    gLogger.error( res['Message'] )
+    gLogger.error( 'DataIntegrityClient failure', res['Message'] )
     return res
 
   def __getRegisteredPFNLFN( self, pfn, storageElement ):
@@ -891,7 +891,7 @@ class DataIntegrityClient( Client ):
         gLogger.info( "LFNZeroReplicas file (%d) did not have storage files. Removing..." % fileID )
         res = returnSingleResult( self.fc.removeFile( lfn ) )
         if not res['OK']:
-          gLogger.error( res['Message'] )
+          gLogger.error( 'DataIntegrityClient: failed to remove file', res['Message'] )
           # Increment the number of retries for this file
           self.server.incrementProblematicRetry( fileID )
           return res

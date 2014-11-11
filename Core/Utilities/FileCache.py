@@ -71,7 +71,7 @@ class FileCache:
         gLogger.verbose( "Purging %s" % fileName )
         os.unlink( "%s/%s" % ( self.__filesLocation, fileName ) )
       except Exception, e:
-        gLogger.error( "Can't delete file file %s: %s" % ( fileName, str( e ) ) )
+        gLogger.error( "Can't delete file", " %s: %s" % ( fileName, str( e ) ) )
       del( self.__cachedFiles[ fileName ] )
 
   @gSynchro

@@ -228,12 +228,12 @@ class LocalConfiguration:
         shortOption += "%s" % optionTuple[0]
       else:
         if optionTuple[0]:
-          gLogger.error( "Short option -%s has been already defined" % optionTuple[0] )
+          gLogger.error( "Short option has been already defined", "-%s" % optionTuple[0] )
       if not optionTuple[1] in longOptionList:
         longOptionList.append( "%s" % optionTuple[1] )
       else:
         if optionTuple[1]:
-          gLogger.error( "Long option --%s has been already defined" % optionTuple[1] )
+          gLogger.error( "Long option has been already defined", "--%s" % optionTuple[1] )
 
     try:
       opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )

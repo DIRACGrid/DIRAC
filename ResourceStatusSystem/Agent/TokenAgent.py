@@ -187,7 +187,7 @@ class TokenAgent( AgentModule ):
 
       resNotify = self._notify( tokenOwner, expired, expiring )
       if not resNotify[ 'OK' ]:
-        self.log.error( resNotify[ 'Message' ] )
+        self.log.error( 'Failed to notify token owner', resNotify[ 'Message' ] )
 
     if ( adminExpired or adminExpiring ) and self.__adminMail:
       return self._notify( self.__adminMail, adminExpired, adminExpiring )

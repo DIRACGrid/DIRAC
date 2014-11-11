@@ -127,7 +127,7 @@ class ExecutorModule( object ):
     self.log.verbose( "Task %s: Received" % str( taskId ) )
     result = self.__deserialize( taskId, taskStub )
     if not result[ 'OK' ]:
-      self.log.error( "Task %s: Cannot deserialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
+      self.log.error( "Can not deserialize task", "Task %s: %s" % ( str( taskId ), result[ 'Message' ] ) )
       return result
     taskObj = result[ 'Value' ]
     #Shifter proxy?

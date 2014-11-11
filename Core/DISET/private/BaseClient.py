@@ -209,7 +209,7 @@ and this is thread %s
 ===============================================================""" % ( str( self ),
                                                                          self.__allowedThreadID,
                                                                          cThID )
-      gLogger.error( msgTxt )
+      gLogger.error( "DISET client thread safety error", msgTxt )
       #raise Exception( msgTxt )
 
 

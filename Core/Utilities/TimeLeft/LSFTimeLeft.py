@@ -83,9 +83,7 @@ class LSFTimeLeft:
         l1 = lines[0].split()
         l2 = lines[1].split()
         if len( l1 ) > len( l2 ):
-          self.log.error( cmd )
-          self.log.error( lines[0] )
-          self.log.error( lines[1] )
+          self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
         else:
           for i in range( len( l1 ) ):
             if l1[i] == 'cpuf':
@@ -166,9 +164,7 @@ class LSFTimeLeft:
         l1 = lines[0].split()
         l2 = lines[1].split()
         if len( l1 ) > len( l2 ):
-          self.log.error( cmd )
-          self.log.error( lines[0] )
-          self.log.error( lines[1] )
+          self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
         else:
           for i in range( len( l1 ) ):
             if l1[i] == 'cpuf':
@@ -205,9 +201,7 @@ class LSFTimeLeft:
     l1 = lines[0].split()
     l2 = lines[1].split()
     if len( l1 ) > len( l2 ):
-      self.log.error( cmd )
-      self.log.error( lines[0] )
-      self.log.error( lines[1] )
+      self.log.error( "Failed bjobs command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
       return S_ERROR( 'Can not parse LSF output' )
 
     sCPU = None

@@ -36,7 +36,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     for checkSE in checkSEs:
       seStatus = self.rssSEStatus( checkSE, access, retries = 5 )
       if not seStatus["OK"]:
-        self.log.error( seStatus["Message"] )
+        self.log.error( 'Failed to get SE status', seStatus["Message"] )
         error = "unknown %s: %s" % ( seType, checkSE )
         for opFile in self.operation:
           opFile.Error = error

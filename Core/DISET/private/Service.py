@@ -252,7 +252,7 @@ class Service:
       try:
         value = getattr( self._handler[ 'module' ], prop[0] )
       except Exception, e:
-        gLogger.error( "Missing %s" % prop[0] )
+        gLogger.error( "Missing property", prop[0] )
         value = 'unset'
       self._monitor.setComponentExtraParam( prop[1], value )
     for secondaryName in self._cfg.registerAlsoAs():

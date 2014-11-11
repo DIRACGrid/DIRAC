@@ -262,7 +262,7 @@ class Subprocess:
     :param boolean recursive: flag to kill all descendants
     """
     if self.childPID < 1:
-      self.log.error( "Could not kill child. Child PID is %s" % self.childPID )
+      self.log.error( "Could not kill child", "Child PID is %s" % self.childPID )
       return - 1
     os.kill( self.childPID, signal.SIGSTOP )
     if recursive:

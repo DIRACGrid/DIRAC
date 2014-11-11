@@ -340,7 +340,7 @@ class NotificationDB( DB ):
     sqlQuery = "SELECT Notifications FROM `ntf_Alarms` WHERE AlarmId=%s" % alarmId
     result = self._query( sqlQuery )
     if not result[ 'OK' ] or not result[ 'Value' ]:
-      self.log.error( "Could not retrieve default notifications for alarm %s" % alarmId )
+      self.log.error( "Could not retrieve default notifications for alarm", "%s" % alarmId )
       return S_OK( alarmId )
     notificationsDict = DEncode.decode( result[ 'Value' ][0][0] )[0]
     for v in self.__validAlarmNotifications:
