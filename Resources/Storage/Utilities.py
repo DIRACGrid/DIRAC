@@ -1,6 +1,8 @@
 """ Just an utilities collector
 """
 
+__RCSID__ = "$Id$"
+
 import types
 from  DIRAC import S_OK, S_ERROR
 
