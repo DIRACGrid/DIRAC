@@ -11,7 +11,7 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, LongType, ListType, StringTypes
+from types import DictType, IntType, LongType, ListType, StringTypes, StringType
 import json
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -186,26 +186,42 @@ class ReqManagerHandler( RequestHandler ):
   types_getRequestSummaryWeb = [ DictType, ListType, IntType, IntType ]
   @classmethod
   def export_getRequestSummaryWeb( cls, selectDict, sortList, startItem, maxItems ):
-    """ Get summary of the request/operations info in the standard form for the web
+    """ Returns a list of Request for the web portal
 
-    :param dict selectDict: selection dict
-    :param list sortList: whatever
-    :param int startItem: start item
-    :param int maxItems: max items
+        :param dict selectDict: parameter on which to restrain the query {key : Value}
+                                key can be any of the Request columns, 'Type' (interpreted as Operation.Type)
+                                and 'FromData' and 'ToData' are matched against the LastUpdate field
+        :param list sortList: [sorting column, ASC/DESC]
+        :param int startItem: start item (for pagination)
+        :param int maxItems: max items (for pagination)
     """
     return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
 
-  types_getDistinctValues = [ StringTypes ]
+  types_getDistinctValuesWeb = [ StringTypes ]
   @classmethod
-  def export_getDistinctValues( cls, attribute ):
-    """ Get distinct values for a given (sub)request attribute """
-    onames = ['Type', 'Status']
-    rnames = ['OwnerDN', 'OwnerGroup']
-    if attribute in onames:
-      return cls.__requestDB.getDistinctAttributeValues('Operation', attribute)
-    elif attribute in rnames:
-      return cls.__requestDB.getDistinctAttributeValues('Request', attribute)
-    return S_ERROR('Invalid attribute %s' % attribute)
+  def export_getDistinctValuesWeb( cls, attribute ):
+    """ Get distinct values for a given request attribute. 'Type' is interpreted as
+        the operation type """
+
+    tableName = 'Request'
+    if attribute == 'Type':
+      tableName = 'Operation'
+    return cls.__requestDB.getDistinctValues( tableName, attribute )
+
+
+  types_getRequestCountersWeb = [ StringTypes, DictType ]
+  @classmethod
+  def export_getRequestCountersWeb( cls, groupingAttribute, selectDict ):
+    """ For the web portal.
+        Returns a dictionary {value : counts} for a given key.
+        The key can be any field from the RequestTable. or "Type",
+        which will be interpreted as 'Operation.Type'
+
+        :param groupingAttribute : attribute used for grouping
+        :param selectDict : selection criteria
+    """
+
+    return cls.__requestDB.getRequestCountersWeb( groupingAttribute, selectDict )
 
   types_deleteRequest = [ StringTypes ]
   @classmethod

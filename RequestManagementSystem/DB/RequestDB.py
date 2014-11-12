@@ -30,7 +30,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
-                       Integer, String, DateTime, Enum, BLOB, BigInteger
+                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
 
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -580,136 +580,62 @@ class RequestDB( object ):
     return S_OK( retDict )
 
 
-#   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
-#     """ get db summary for web
-# 
-#     :param dict selectDict: whatever
-#     :param list sortList: whatever
-#     :param int startItem: limit
-#     :param int maxItems: limit
-# 
-# 
-#     """
-#     resultDict = {}
-#     rparameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup']
-#     sparameterList = [ 'Type', 'Status', 'Operation']
-#     parameterList = rparameterList + sparameterList + [ "Error", "CreationTime", "LastUpdate"]
-#     # parameterList.append( 'Error' )
-#     # parameterList.append( 'CreationTime' )
-#     # parameterList.append( 'LastUpdateTime' )
-# 
-#     req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
-#     req += "O.Type, O.Status, O.Type, O.Error, O.CreationTime, O.LastUpdate FROM Request as R, Operation as O "
-# 
-#     new_selectDict = {}
-#     older = None
-#     newer = None
-#     for key, value in selectDict.items():
-#       if key in rparameterList:
-#         new_selectDict['R.' + key] = value
-#       elif key in sparameterList:
-#         new_selectDict['O.' + key] = value
-#       elif key == 'ToDate':
-#         older = value
-#       elif key == 'FromDate':
-#         newer = value
-# 
-#     condition = ''
-#     if new_selectDict or older or newer:
-#       condition = self.__buildCondition( new_selectDict, older = older, newer = newer )
-#       req += condition
-# 
-#     if condition:
-#       req += " AND R.RequestID=O.RequestID"
-#     else:
-#       req += " WHERE R.RequestID=O.RequestID"
-# 
-#     if sortList:
-#       req += " ORDER BY %s %s" % ( sortList[0][0], sortList[0][1] )
-#     result = self._query( req )
-#     if not result['OK']:
-#       return result
-# 
-#     if not result['Value']:
-#       resultDict['ParameterNames'] = parameterList
-#       resultDict['Records'] = []
-#       return S_OK( resultDict )
-# 
-#     nRequests = len( result['Value'] )
-# 
-#     if startItem <= len( result['Value'] ):
-#       firstIndex = startItem
-#     else:
-#       return S_ERROR( 'Requested index out of range' )
-# 
-#     if ( startItem + maxItems ) <= len( result['Value'] ):
-#       secondIndex = startItem + maxItems
-#     else:
-#       secondIndex = len( result['Value'] )
-# 
-#     records = []
-#     columnWidth = [ 0 for x in range( len( parameterList ) ) ]
-#     for i in range( firstIndex, secondIndex ):
-#       row = result['Value'][i]
-#       records.append( [ str( x ) for x in row] )
-#       for ind in range( len( row ) ):
-#         if len( str( row[ind] ) ) > columnWidth[ind]:
-#           columnWidth[ind] = len( str( row[ind] ) )
-# 
-#     resultDict['ParameterNames'] = parameterList
-#     resultDict['ColumnWidths'] = columnWidth
-#     resultDict['Records'] = records
-#     resultDict['TotalRecords'] = nRequests
-# 
-#     return S_OK( resultDict )
-
-
   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
-    """ get db summary for web
+    """ Returns a list of Request for the web portal
 
-    :param dict selectDict: whatever
-    :param list sortList: whatever
-    :param int startItem: limit
-    :param int maxItems: limit
-
-
+    :param dict selectDict: parameter on which to restrain the query {key : Value}
+                            key can be any of the Request columns, 'Type' (interpreted as Operation.Type)
+                            and 'FromData' and 'ToData' are matched against the LastUpdate field
+    :param list sortList: [sorting column, ASC/DESC]
+    :param int startItem: start item (for pagination)
+    :param int maxItems: max items (for pagination)
     """
 
 
 
     parameterList = [ 'RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup',
                       'Status', "Error", "CreationTime", "LastUpdate"]
+
+
     resultDict = {}
 
     session = self.DBSession()
 
-#     try:
-    if True:
+    try:
       summaryQuery = session.query( Request.RequestID, Request.RequestName,
                                         Request.JobID, Request.OwnerDN, Request.OwnerGroup,
                                         Request._Status, Request.Error,
                                         Request._CreationTime, Request._LastUpdate )
 
+
+
       for key, value in selectDict.items():
-        if key in parameterList:
-          if key == 'Status':
-            key = '_Status'
-          if type( value ) == ListType:
-            summaryQuery = summaryQuery.filter( eval( 'Request.%s.in_(%s)' % ( key, value ) ) )
-          else:
-            summaryQuery = summaryQuery.filter( eval( 'Request.%s == %s' % ( key, value ) ) )
-        elif key == 'ToDate':
+
+        if key == 'ToDate':
           summaryQuery = summaryQuery.filter( Request._LastUpdate < value )
         elif key == 'FromDate':
           summaryQuery = summaryQuery.filter( Request._LastUpdate > value )
+        else:
+
+          tableName = 'Request'
+
+          if key == 'Type':
+            summaryQuery = summaryQuery.join( Request.__operations__ )\
+                                       .group_by( Request.RequestID )
+            tableName = 'Operation'
+          elif key == 'Status':
+            key = '_Status'
+
+          if type( value ) == ListType:
+            summaryQuery = summaryQuery.filter( eval( '%s.%s.in_(%s)' % ( tableName, key, value ) ) )
+          else:
+            summaryQuery = summaryQuery.filter( eval( '%s.%s' % ( tableName, key ) ) == value )
 
       if sortList:
         summaryQuery = summaryQuery.order_by( eval( 'Request.%s.%s()' % ( sortList[0][0], sortList[0][1].lower() ) ) )
         
-      print summaryQuery
       try:
         requestLists = summaryQuery.all()
-        print requestLists
       except NoResultFound, e:
         resultDict['ParameterNames'] = parameterList
         resultDict['Records'] = []
@@ -731,29 +657,104 @@ class RequestDB( object ):
         secondIndex = len( requestLists )
 
       records = []
-      columnWidth = [ 0 for x in range( len( parameterList ) ) ]
       for i in range( firstIndex, secondIndex ):
         row = requestLists[i]
-        print 'row %s' % ( row, )
         records.append( [ str( x ) for x in row] )
-        for ind in range( len( row ) ):
-          if len( str( row[ind] ) ) > columnWidth[ind]:
-            columnWidth[ind] = len( str( row[ind] ) )
 
       resultDict['ParameterNames'] = parameterList
-      resultDict['ColumnWidths'] = columnWidth
       resultDict['Records'] = records
       resultDict['TotalRecords'] = nRequests
 
       return S_OK( resultDict )
 #
-#     except Exception, e:
-#       self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
-#       return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
-#
-#     finally:
-#       session.close()
+    except Exception, e:
+      self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
+      return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
 
+    finally:
+      session.close()
+
+
+  def getRequestCountersWeb( self, groupingAttribute, selectDict ):
+    """ For the web portal.
+        Returns a dictionary {value : counts} for a given key.
+        The key can be any field from the RequestTable. or "Type",
+        which will be interpreted as 'Operation.Type'
+    """
+
+    resultDict = {}
+
+    session = self.DBSession()
+
+    if groupingAttribute == 'Type':
+      groupingAttribute = 'Operation.Type'
+    elif groupingAttribute == 'Status':
+      groupingAttribute = 'Request._Status'
+    else:
+      groupingAttribute = 'Request.%s' % groupingAttribute
+
+    try:
+      summaryQuery = session.query( eval( groupingAttribute ), func.count( Request.RequestID ) )
+
+      for key, value in selectDict.items():
+        if key == 'ToDate':
+          summaryQuery = summaryQuery.filter( Request._LastUpdate < value )
+        elif key == 'FromDate':
+          summaryQuery = summaryQuery.filter( Request._LastUpdate > value )
+        else:
+
+          objectType = 'Request'
+          if key == 'Type':
+            summaryQuery = summaryQuery.join( Request.__operations__ )
+            objectType = 'Operation'
+          elif key == 'Status':
+            key = '_Status'
+
+          if type( value ) == ListType:
+            summaryQuery = summaryQuery.filter( eval( '%s.%s.in_(%s)' % ( objectType, key, value ) ) )
+          else:
+            summaryQuery = summaryQuery.filter( eval( '%s.%s' % ( objectType, key ) ) == value )
+
+      summaryQuery = summaryQuery.group_by( groupingAttribute )
+
+      try:
+        requestLists = summaryQuery.all()
+        resultDict = dict( requestLists )
+      except NoResultFound, e:
+        pass
+      except Exception, e:
+        return S_ERROR( 'Error getting the webCounters %s' % e )
+
+
+
+      return S_OK( resultDict )
+
+    except Exception, e:
+      self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
+      return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
+
+    finally:
+      session.close()
+
+
+  def getDistinctValues( self, tableName, columnName ):
+    """ For a given table and a given field, return the list of of distinct values in the DB"""
+
+    session = self.DBSession()
+    distinctValues = []
+    try:
+      result = session.query( distinct( eval ( "%s.%s" % ( tableName, columnName ) ) ) ).all()
+      distinctValues = [dist[0] for dist in result]
+    except NoResultFound, e:
+      pass
+    except Exception, e:
+      self.log.exception( "getDistinctValues: unexpected exception", lException = e )
+      return S_ERROR( "getDistinctValues: unexpected exception : %s" % e )
+
+    finally:
+      session.close()
+
+    return S_OK( distinctValues )
 
 
   def getRequestNamesForJobs( self, jobIDs ):
