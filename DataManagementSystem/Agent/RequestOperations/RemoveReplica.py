@@ -88,7 +88,7 @@ class RemoveReplica( DMSRequestOperationsBase ):
       # # 1st step - bulk removal
       bulkRemoval = self.bulkRemoval( toRemoveDict, targetSE )
       if not bulkRemoval["OK"]:
-        self.log.error( bulkRemoval["Message"] )
+        self.log.error( 'Bulk replica removal failed', bulkRemoval["Message"] )
         return bulkRemoval
       bulkRemoval = bulkRemoval["Value"]
 

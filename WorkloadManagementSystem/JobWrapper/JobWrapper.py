@@ -911,7 +911,7 @@ class JobWrapper( object ):
                                                                       fileMetaDict,
                                                                       self.defaultCatalog )
       if not result['OK']:
-        self.log.error( 'Completely failed to upload file to failover SEs with result:\n%s' % result )
+        self.log.error( 'Completely failed to upload file to failover SEs', result['Message'] )
         missing.append( outputFile )
       else:
         self.log.info( 'File %s successfully uploaded to failover storage element' % lfn )
@@ -1244,8 +1244,8 @@ class JobWrapper( object ):
             self.jobReport.setJobParameter( 'PendingRequest', digest )
             break
           else:
-            self.log.error( 'Failed to set failover request', '%d: %s. Re-trying...' % ( counter,
-                                                                                         result['Message'] ) )
+            self.log.error( 'Failed to set failover request', 
+                            '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
             del requestClient
             time.sleep( counter ** 3 )
         if not result['OK']:

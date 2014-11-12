@@ -20,20 +20,21 @@ Script.parseCommandLine()
 from DIRAC.Core.Utilities.List                          import sortList
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-import os, sys
+import os
+args = Script.getPositionalArgs()
 
-if not len(sys.argv) >= 2:
+if not len(args) >= 1:
   Script.showHelp()
   DIRACExit( -1 )
 else:
-  inputFileName = sys.argv[1]
+  inputFileName = args[0]
   catalogs = []
-  if len(sys.argv) == 3:
-    catalogs = [sys.argv[2]]  
+  if len(args) == 2:
+    catalogs = [args[1]]
   
 
 if os.path.exists(inputFileName):
-  inputFile = open(inputFileName,'r')
+  inputFile = open(inputFileName, 'r')
   string = inputFile.read()
   lfns = string.splitlines()
   inputFile.close()

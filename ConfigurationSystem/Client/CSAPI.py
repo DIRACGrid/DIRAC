@@ -229,15 +229,15 @@ class CSAPI:
       return self.__initialized
     for prop in ( "DN", "Groups" ):
       if prop not in properties:
-        gLogger.error( "Missing %s property for user %s" % ( prop, username ) )
+        gLogger.error( "Missing property for user", "%s: %s" % ( prop, username ) )
         return S_OK( False )
     if username in self.listUsers()['Value']:
-      gLogger.error( "User %s is already registered" % username )
+      gLogger.error( "User is already registered", username )
       return S_OK( False )
     groups = self.listGroups()['Value']
     for userGroup in properties[ 'Groups' ]:
       if not userGroup in groups:
-        gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
+        gLogger.error( "User group is not a valid group", "%s %s" % ( username, userGroup ) )
         return S_OK( False )
     self.__csMod.createSection( "%s/Users/%s" % ( self.__baseSecurity, username ) )
     for prop in properties:
@@ -269,7 +269,7 @@ class CSAPI:
       if createIfNonExistant:
         gLogger.info( "Registering user %s" % username )
         return self.addUser( username, properties )
-      gLogger.error( "User %s is not registered" % username )
+      gLogger.error( "User is not registered", username )
       return S_OK( False )
     for prop in properties:
       if prop == "Groups":
@@ -283,7 +283,7 @@ class CSAPI:
       groups = self.listGroups()['Value']
       for userGroup in properties[ 'Groups' ]:
         if not userGroup in groups:
-          gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
+          gLogger.error( "User group is not a valid group", "%s %s" % ( username, userGroup ) )
           return S_OK( False )
       groupsToBeDeletedFrom = []
       groupsToBeAddedTo = []
@@ -321,7 +321,7 @@ class CSAPI:
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     if groupname in self.listGroups()['Value']:
-      gLogger.error( "Group %s is already registered" % groupname )
+      gLogger.error( "Group is already registered", groupname )
       return S_OK( False )
     self.__csMod.createSection( "%s/Groups/%s" % ( self.__baseSecurity, groupname ) )
     for prop in properties:
@@ -348,7 +348,7 @@ class CSAPI:
       if createIfNonExistant:
         gLogger.info( "Registering group %s" % groupname )
         return self.addGroup( groupname, properties )
-      gLogger.error( "Group %s is not registered" % groupname )
+      gLogger.error( "Group is not registered", groupname )
       return S_OK( False )
     for prop in properties:
       prevVal = self.__csMod.getValue( "%s/Groups/%s/%s" % ( self.__baseSecurity, groupname, prop ) )
@@ -377,10 +377,10 @@ class CSAPI:
       return self.__initialized
     for prop in ( "DN", ):
       if prop not in properties:
-        gLogger.error( "Missing %s property for host %s" % ( prop, hostname ) )
+        gLogger.error( "Missing property for host", "%s %s" % ( prop, hostname ) )
         return S_OK( False )
     if hostname in self.listHosts()['Value']:
-      gLogger.error( "Host %s is already registered" % hostname )
+      gLogger.error( "Host is already registered", hostname )
       return S_OK( False )
     self.__csMod.createSection( "%s/Hosts/%s" % ( self.__baseSecurity, hostname ) )
     for prop in properties:
@@ -407,7 +407,7 @@ class CSAPI:
       if createIfNonExistant:
         gLogger.info( "Registering host %s" % hostname )
         return self.addHost( hostname, properties )
-      gLogger.error( "Host %s is not registered" % hostname )
+      gLogger.error( "Host is not registered", hostname )
       return S_OK( False )
     for prop in properties:
       prevVal = self.__csMod.getValue( "%s/Hosts/%s/%s" % ( self.__baseSecurity, hostname, prop ) )

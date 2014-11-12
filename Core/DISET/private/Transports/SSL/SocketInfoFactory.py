@@ -59,7 +59,6 @@ class SocketInfoFactory:
         errs.append( res[ 'Message' ] )
     return S_ERROR( ", ".join( errs ) )
 
-
   def __sockConnect( self, hostAddress, sockType, timeout, retries ):
     osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )

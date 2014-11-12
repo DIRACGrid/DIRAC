@@ -222,7 +222,7 @@ class RequestExecutingAgent( AgentModule ):
     for requestName in self.__requestCache.keys():
       reset = self.putRequest( requestName )
       if not reset["OK"]:
-        self.log.error( reset["Message"] )
+        self.log.error( 'Failed to put request', reset["Message"] )
       else:
         self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()

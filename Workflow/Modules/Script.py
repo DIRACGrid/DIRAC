@@ -80,12 +80,11 @@ class Script( ModuleBase ):
                             bufferLimit = self.bufferLimit )
     if not outputDict['OK']:
       failed = True
-      self.log.error( 'Shell call execution failed:' )
-      self.log.error( outputDict['Message'] )
+      self.log.error( 'Shell call execution failed:', '\n' + str( outputDict['Message'] ) )
     status, stdout, stderr = outputDict['Value'][0:3]
     if status:
       failed = True
-      self.log.error( "Non-zero status %s while executing %s" % ( status, self.command ) )
+      self.log.error( "Non-zero status while executing", "%s: %s" % ( status, self.command ) )
     else:
       self.log.info( "%s execution completed with status %s" % ( self.executable, status ) )
 

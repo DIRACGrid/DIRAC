@@ -418,7 +418,7 @@ class MySQL:
     self.__initialized = True
     result = self._connect()
     if not result[ 'OK' ]:
-      gLogger.error( "Cannot connect to to DB: %s" % result[ 'Message' ] )
+      gLogger.error( "Cannot connect to to DB", " %s" % result[ 'Message' ] )
 
     if debug:
       try:
@@ -758,7 +758,7 @@ class MySQL:
         self.log.debug( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
         createView = self._query( viewQuery )
         if not createView["OK"]:
-          gLogger.error( createView["Message"] )
+          gLogger.error( 'Can not create view', createView["Message"] )
           return createView
     return S_OK()
 

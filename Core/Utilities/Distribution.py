@@ -96,7 +96,7 @@ class Distribution:
     remoteData = remoteFile.read()
     remoteFile.close()
     if not remoteData:
-      gLogger.error( "Could not retrieve versions for package %s" % self.package )
+      gLogger.error( "Could not retrieve versions for package", self.package )
       sys.exit( 1 )
     versions = []
     rePackage = ".*"

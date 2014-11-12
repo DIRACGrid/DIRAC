@@ -28,11 +28,12 @@ from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.LockRing import LockRing
 # from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
-from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
-
+from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+from DIRAC.DataManagementSystem.private.FTS2.FTS2Graph import FTS2Graph
 
 ########################################################################
-class FTSStrategy( object ):
+class FTS2Strategy( object ):
   """
   .. class:: FTSStrategy
 
@@ -44,7 +45,7 @@ class FTSStrategy( object ):
   # # list of supported strategies
   __supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
   # # FTS graph
-  __ftsGraph = None
+  ftsGraph = None
   # # lock
   __graphLock = None
   # # resources
@@ -100,7 +101,7 @@ class FTSStrategy( object ):
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
 
-    self.ftsGraph = FTSGraph( "FTSGraph",
+    self.ftsGraph = FTS2Graph( "FTSGraph",
                               ftsHistoryViews,
                               self.acceptableFailureRate,
                               self.acceptableFailedFiles,
@@ -131,7 +132,7 @@ class FTSStrategy( object ):
     ftsGraph = None
     try:
       cls.graphLock().acquire()
-      ftsGraph = FTSGraph( "FTSGraph",
+      ftsGraph = FTS2Graph( "FTSGraph",
                            ftsHistoryViews,
                            cls.acceptableFailureRate,
                            cls.acceptableFailedFiles,
@@ -251,6 +252,7 @@ class FTSStrategy( object ):
     :param list targetSEs: list of target SEs
     :param str lfn: logical file name
     """
+
     tree = {}
     primarySources = sourceSEs
     while targetSEs:
@@ -276,6 +278,8 @@ class FTSStrategy( object ):
 
       for ch, s, t in channels:
         self.log.info( "%s %s %s" % ( ch.routeName, ch.fromNode.SEs[s]["read"], ch.toNode.SEs[t]["write"] ) )
+
+
 
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]

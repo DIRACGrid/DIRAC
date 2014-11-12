@@ -52,7 +52,8 @@ class SSHTorqueComputingElement( SSHComputingElement ):
     self.log.debug( "stderr:", stderr )
 
     if status:
-      self.log.error( 'Failed remote execution of command "%s": %s:' % (' '.join(cmd), stderr) )
+      self.log.error( 'Failed remote execution of command', 
+                      '"%s": %s:' % (' '.join(cmd), stderr) )
       return S_ERROR( stderr )
 
     return S_OK(stdout)

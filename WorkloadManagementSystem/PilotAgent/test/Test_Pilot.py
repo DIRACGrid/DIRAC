@@ -5,7 +5,6 @@
 import unittest
 import json
 import os
-# from mock import MagicMock
 
 from pilotTools import PilotParams
 from pilotCommands import GetPilotVersion
@@ -19,8 +18,8 @@ class PilotTestCase( unittest.TestCase ):
   def tearDown( self ):
     try:
       os.remove('pilot.out')
-      os.remove( 'Test-pilot.json' )
-      os.remove( 'Test-pilot.json-local' )
+      os.remove( 'pilot.json' )
+      os.remove( 'pilot.json-local' )
     except IOError:
       pass
 
@@ -30,13 +29,12 @@ class CommandsTestCase( PilotTestCase ):
   def test_GetPilotVersion( self ):
 
     # Now defining a local file for test, and all the necessary parameters
-    fp = open( 'Test-pilot.json', 'w' )
+    fp = open( 'pilot.json', 'w' )
     json.dump( {'TestSetup':{'Version':['v1r1', 'v2r2']}}, fp )
     fp.close()
-    self.pp.releaseProject = 'Test'
     self.pp.setup = 'TestSetup'
+    self.pp.pilotCFGFileLocation = 'file://%s' % os.getcwd()
     gpv = GetPilotVersion( self.pp )
-    gpv.pilotCFGFileLocation = 'file://%s' % os.getcwd()
     self.assertIsNone( gpv.execute() )
     self.assertEqual( gpv.pp.releaseVersion, 'v1r1' )
 

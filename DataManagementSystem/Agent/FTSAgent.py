@@ -45,6 +45,8 @@ import re
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from CS
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
 # # from Core
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
@@ -55,7 +57,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
+from DIRAC.DataManagementSystem.private.FTSPlacement import FTSPlacement
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 # # from RMS
@@ -71,6 +73,9 @@ from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+
+from DIRAC.ConfigurationSystem.Client.PathFinder        import getServiceSection
+
 
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
@@ -88,10 +93,8 @@ class FTSAgent( AgentModule ):
   Requests and associated FTSJobs (and so FTSFiles) are kept in cache.
 
   """
-  # # fts graph refresh in seconds
-  FTSGRAPH_REFRESH = FTSHistoryView.INTERVAL / 2
-  # # SE R/W access refresh in seconds
-  RW_REFRESH = 600
+  # # fts placement refresh in seconds
+  FTSPLACEMENT_REFRESH = FTSHistoryView.INTERVAL / 2
   # # placeholder for max job per channel
   MAX_ACTIVE_JOBS = 50
   # # min threads
@@ -111,18 +114,20 @@ class FTSAgent( AgentModule ):
 
   # # placeholder for FTS client
   __ftsClient = None
+  # # placeholder for the FTS version
+  __ftsVersion = None
   # # placeholder for request client
   __requestClient = None
   # # placeholder for resources helper
   __resources = None
   # # placeholder for RSS client
   __rssClient = None
-  # # placeholder for FTSGraph
-  __ftsGraph = None
-  # # graph regeneration time delta
-  __ftsGraphValidStamp = None
-  # # r/w access valid stamp
-  __rwAccessValidStamp = None
+  # # placeholder for FTSPlacement
+  __ftsPlacement = None
+
+  # # placement regeneration time delta
+  __ftsPlacementValidStamp = None
+
   # # placeholder for threadPool
   __threadPool = None
   # # update lock
@@ -243,42 +248,28 @@ class FTSAgent( AgentModule ):
       self.__threadPool.daemonize()
     return self.__threadPool
 
-  def resetFTSGraph( self ):
-    """ create fts graph """
-    log = gLogger.getSubLogger( "ftsGraph" )
+
+  def resetFTSPlacement( self ):
+    """ create fts Placement """
 
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
-      log.error( "unable to get FTS history: %s" % ftsHistory["Message"] )
+      self.log.error( "unable to get FTS history: %s" % ftsHistory["Message"] )
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
     try:
       self.updateLock().acquire()
-      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory )
+      if not self.__ftsPlacement:
+        self.__ftsPlacement = FTSPlacement( csPath = None, ftsHistoryViews = ftsHistory )
+      else:
+        self.__ftsPlacement.refresh( ftsHistoryViews = ftsHistory )
     finally:
       self.updateLock().release()
 
-    log.debug( "FTSSites: %s" % len( self.__ftsGraph.nodes() ) )
-    for i, site in enumerate( self.__ftsGraph.nodes() ):
-      log.debug( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
-    log.debug( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
-    for i, route in enumerate( self.__ftsGraph.edges() ):
-      log.debug( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
-                                                                             route.routeName,
-                                                                             route.ActiveJobs,
-                                                                             route.toNode.MaxActiveJobs ) )
-    # # save graph stamp
-    self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
+    # # save time stamp
+    self.__ftsPlacementValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    # # refresh SE R/W access
-    try:
-      self.updateLock().acquire()
-      self.__ftsGraph.updateRWAccess()
-    finally:
-      self.updateLock().release()
-    # # save rw access stamp
-    self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
 
     return S_OK()
 
@@ -291,10 +282,9 @@ class FTSAgent( AgentModule ):
 
     log = self.log.getSubLogger( "initialize" )
 
-    self.FTSGRAPH_REFRESH = self.am_getOption( "FTSGraphValidityPeriod", self.FTSGRAPH_REFRESH )
-    log.info( "FTSGraph validity period       = %s s" % self.FTSGRAPH_REFRESH )
-    self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
-    log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
+    self.FTSPLACEMENT_REFRESH = self.am_getOption( "FTSPlacementValidityPeriod", self.FTSPLACEMENT_REFRESH )
+    log.info( "FTSPlacement validity period       = %s s" % self.FTSPLACEMENT_REFRESH )
+
 
     self.SUBMIT_COMMAND = self.am_getOption( "SubmitCommand", self.SUBMIT_COMMAND )
     log.info( "FTS submit command = %s" % self.SUBMIT_COMMAND )
@@ -319,17 +309,20 @@ class FTSAgent( AgentModule ):
     log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
     log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
 
-    log.info( "initialize: creation of FTSGraph..." )
-    createGraph = self.resetFTSGraph()
-    if not createGraph["OK"]:
-      log.error( "initialize: %s" % createGraph["Message"] )
-      return createGraph
+    self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
+    log.info( "FTSVersion : %s" % self.__ftsVersion )
+    log.info( "initialize: creation of FTSPlacement..." )
+    createPlacement = self.resetFTSPlacement()
+    if not createPlacement["OK"]:
+      log.error( "initialize: %s" % createPlacement["Message"] )
+      return createPlacement
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
     log.info( "will use DataManager proxy" )
+
 
     # # gMonitor stuff here
     gMonitor.registerActivity( "RequestsAtt", "Attempted requests executions",
@@ -386,24 +379,15 @@ class FTSAgent( AgentModule ):
   def execute( self ):
     """ one cycle execution """
     log = gLogger.getSubLogger( "execute" )
-    # # reset FTSGraph if expired
+    # # reset FTSPlacement if expired
     now = datetime.datetime.now()
-    if now > self.__ftsGraphValidStamp:
-      log.info( "resetting expired FTS graph..." )
-      resetFTSGraph = self.resetFTSGraph()
-      if not resetFTSGraph["OK"]:
-        log.error( "FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
-        return resetFTSGraph
-      self.__ftsGraphValidStamp = now + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
-    # # update R/W access in FTSGraph if expired
-    if now > self.__rwAccessValidStamp:
-      log.info( "updating expired R/W access for SEs..." )
-      try:
-        self.updateLock().acquire()
-        self.__ftsGraph.updateRWAccess()
-      finally:
-        self.updateLock().release()
-        self.__rwAccessValidStamp = now + datetime.timedelta( seconds = self.RW_REFRESH )
+    if now > self.__ftsPlacementValidStamp:
+      log.info( "resetting expired FTS placement..." )
+      resetFTSPlacement = self.resetFTSPlacement()
+      if not resetFTSPlacement["OK"]:
+        log.error( "FTSPlacement recreation error: %s" % resetFTSPlacement["Message"] )
+        return resetFTSPlacement
+      self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
     requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
     if not requestNames["OK"]:
@@ -600,7 +584,7 @@ class FTSAgent( AgentModule ):
         log.info( "==> found %s Files to reschedule" % len( toReschedule ) )
         rescheduleFiles = self.__reschedule( request, operation, toReschedule )
         if not rescheduleFiles["OK"]:
-          log.error( rescheduleFiles["Message"] )
+          log.error( 'Failed to reschedule files', rescheduleFiles["Message"] )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
       ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted', 'Canceled' ] )
@@ -773,24 +757,16 @@ class FTSAgent( AgentModule ):
 
         log.info( "found %s files to submit from %s to %s" % ( len( ftsFileList ), source, target ) )
 
-        route = self.__ftsGraph.findRoute( source, target )
+        route = self.__ftsPlacement.findRoute( source, target )
         if not route["OK"]:
           log.error( route["Message"] )
           continue
         route = route["Value"]
 
-        sourceRead = route.fromNode.SEs[source]["read"]
-        if not sourceRead:
-          log.error( "SourceSE %s is banned for reading right now" % source )
-          continue
-
-        targetWrite = route.toNode.SEs[target]["write"]
-        if not targetWrite:
-          log.error( "TargetSE %s is banned for writing right now" % target )
-          continue
-
-        if route.ActiveJobs > route.toNode.MaxActiveJobs:
-          log.warn( "unable to submit new FTS job, max active jobs reached" )
+        routeValid = self.__ftsPlacement.isRouteValid( route )
+        
+        if not routeValid['OK']:
+          log.error( "Route invalid : %s" % routeValid['Message'] )
           continue
 
         sourceSE = self.getSE( source )
@@ -822,7 +798,7 @@ class FTSAgent( AgentModule ):
             ftsFile.Error = ""
             ftsJob.addFile( ftsFile )
 
-          submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
+          submit = ftsJob.submitFTS( self.__ftsVersion, command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
           if not submit["OK"]:
             log.error( "unable to submit FTSJob: %s" % submit["Message"] )
             continue
@@ -835,10 +811,12 @@ class FTSAgent( AgentModule ):
             ftsFile.Status = "Submitted"
             ftsFile.Attempt += 1
 
+
+
           # # update graph route
           try:
             self.updateLock().acquire()
-            route.ActiveJobs += 1
+            self.__ftsPlacement.startTransferOnRoute( route )
           finally:
             self.updateLock().release()
 
@@ -848,7 +826,7 @@ class FTSAgent( AgentModule ):
     return S_OK( ftsJobs )
 
   def __monitorJob( self, request, ftsJob ):
-    """ execute FTSJob.monitorFTS2 for a given :ftsJob:
+    """ execute FTSJob.monitorFTS for a given :ftsJob:
         if ftsJob is in a final state, finalize it
 
     :param Request request: ReqDB.Request instance
@@ -860,7 +838,7 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND )
+    monitor = ftsJob.monitorFTS( self.__ftsVersion , command = self.MONITOR_COMMAND )
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
@@ -915,7 +893,8 @@ class FTSAgent( AgentModule ):
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND, full = True )
+
+    monitor = ftsJob.monitorFTS(self.__ftsVersion, command = self.MONITOR_COMMAND, full = True )
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor
@@ -931,11 +910,11 @@ class FTSAgent( AgentModule ):
     self.__sendAccounting( ftsJob, request.OwnerDN )
 
     # # update graph - remove this job from graph
-    route = self.__ftsGraph.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
+    route = self.__ftsPlacement.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
     if route["OK"]:
       try:
         self.updateLock().acquire()
-        route["Value"].ActiveJobs -= 1
+        self.__ftsPlacement.finishTransferOnRoute( route['Value'] )
       finally:
         self.updateLock().release()
 

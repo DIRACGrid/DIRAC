@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 import signal
 import pprint
 import re
+import os
 from DIRAC.Core.Base import Script
 
 def processScriptSwitches():
@@ -158,7 +159,7 @@ def checkUnusedCEs():
       
     for diracSite in diracSites:  
       if diracSite in newCEs: 
-        cmd = "dirac-admin-add-site %s %s %s diractest.cfg" % ( diracSite, site, ' '.join( newCEs[diracSite] ) )    
+        cmd = "dirac-admin-add-site %s %s %s" % ( diracSite, site, ' '.join( newCEs[diracSite] ) )    
         gLogger.notice( "\nNew site/CEs will be added with command:\n%s" % cmd )
         yn = raw_input( "Add it ? [default yes] [yes|no]: " ) 
         if not ( yn == '' or yn.lower() == 'y' ) :
@@ -192,9 +193,12 @@ def checkUnusedCEs():
               sitesAdded.append( ( site, diracSite ) )    
               gLogger.notice( stdData )    
   
-  gLogger.notice( 'CEs were added at the following sites:' )
-  for site, diracSite in sitesAdded:
-    gLogger.notice( "%s\t%s" % ( site, diracSite ) )  
+  if sitesAdded:
+    gLogger.notice( 'CEs were added at the following sites:' )
+    for site, diracSite in sitesAdded:
+      gLogger.notice( "%s\t%s" % ( site, diracSite ) )  
+  else:
+    gLogger.notice( 'No new CEs were added this time' )    
 
 def updateCS( changeSet ):
   
@@ -320,14 +324,21 @@ def checkUnusedSEs():
         changeSet.add( ( accessSection, 'Host', host ) ) 
         changeSet.add( ( accessSection, 'Port', port ) ) 
         changeSet.add( ( accessSection, 'Access', 'remote' ) )
-        # Try to guess the Path
-        domain = '.'.join( host.split( '.' )[-2:] )
-        path = '/dpm/%s/home' % domain
+        if 'VOPath' in seDict:
+          path = seDict['VOPath']
+          voFromPath = os.path.basename( path )
+          if voFromPath != vo:
+            gLogger.notice( '\n!!! Warning: non-conventional VO path: %s\n' % path )
+          path = os.path.dirname( path )  
+        else:  
+          # Try to guess the Path
+          domain = '.'.join( host.split( '.' )[-2:] )
+          path = '/dpm/%s/home' % domain
         changeSet.add( ( accessSection, 'Path', path ) ) 
         changeSet.add( ( accessSection, 'SpaceToken', '' ) )
         changeSet.add( ( accessSection, 'WSUrl', '/srm/managerv2?SFN=' ) ) 
         
-        gLogger.notice( 'SE %s will be added with the following parameters' )
+        gLogger.notice( 'SE %s will be added with the following parameters' % diracSEName )
         changeList = list( changeSet )
         changeList.sort()
         for entry in changeList:
@@ -337,9 +348,12 @@ def checkUnusedSEs():
           changeSetFull = changeSetFull.union( changeSet )        
           
   if dry:
-    gLogger.notice( 'Skipping commit of the new SE data in a dry run' )
-    return S_OK()       
-          
+    if changeSetFull:
+      gLogger.notice( 'Skipping commit of the new SE data in a dry run' )
+    else:
+      gLogger.notice( "No new SE to be added" )
+    return S_OK()
+
   if changeSetFull:
     csAPI = CSAPI()
     csAPI.initialize()
@@ -347,19 +361,21 @@ def checkUnusedSEs():
     if not result['OK']:
       gLogger.error( 'Failed to initialize CSAPI object', result['Message'] )
       DIRACExit( -1 )
-    changeList = list( changeSetFull )  
+    changeList = list( changeSetFull )
     changeList.sort()
     for section, option, value in changeList:
       csAPI.setOption( cfgPath( section, option ), value )
-        
-    yn = raw_input( 'New SE data is accumulated\n Do you want to commit changes to CS ? default yes [yes|no]: ' )   
+
+    yn = raw_input( 'New SE data is accumulated\n Do you want to commit changes to CS ? default yes [yes|no]: ' )
     if not yn or yn.lower().startswith( 'y' ):
       result = csAPI.commit()
       if not result['OK']:
         gLogger.error( "Error while commit to CS", result['Message'] )
       else:
-        gLogger.notice( "Successfully committed %d changes to CS" % len( changeSetFull ) )  
-          
+        gLogger.notice( "Successfully committed %d changes to CS" % len( changeSetFull ) )
+  else:
+    gLogger.notice( "No new SE to be added" )
+
   return S_OK()
 
 def updateSEs():
@@ -375,7 +391,7 @@ def updateSEs():
   updateCS( changeSet )
 
 def handler( signum, frame ):
-  gLogger.notice( ' Exit is forced, bye...' )
+  gLogger.notice( '\nExit is forced, bye...' )
   DIRACExit( -1 )
 
 if __name__ == "__main__":

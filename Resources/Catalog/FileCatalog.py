@@ -86,7 +86,8 @@ class FileCatalog( object ):
       if not res['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs
-          gLogger.error( "FileCatalog.w_execute: Failed to execute %s on master catalog %s." % ( self.call, catalogName ), res['Message'] )
+          gLogger.error( "FileCatalog.w_execute: Failed to execute call on master catalog",
+                         "%s on %s" % ( self.call, catalogName ), res['Message'] )
           return res
         else:
           # Otherwise we keep the failed catalogs so we can update their state later

@@ -195,7 +195,8 @@ class LocalComputingElement( ComputingElement ):
     result = systemCall( 120, cmdTuple )
 
     if not result['OK']:
-      self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
+      self.log.error( 'Job submission failed', 
+                      'CE type %s: %s' % ( self.ceType, result['Message'] ) )
       return result
 
     status = result['Value'][0]
