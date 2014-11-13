@@ -7,7 +7,7 @@ import types, re
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
-from DIRAC.Resources.Utilities.Utils                        import checkArgumentFormat
+from DIRAC.Resources.Utilities                              import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 
 class FileCatalog( object ):
