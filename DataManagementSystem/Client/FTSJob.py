@@ -520,7 +520,7 @@ class FTSJob( Record ):
 
     # The order of informations is not the same for glite- and fts- !!!
     # In order: new fts-, old fts-, glite-
-    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)',
+    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)' ):
       regExp = re.compile( exptr, re.S )
