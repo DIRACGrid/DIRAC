@@ -2,26 +2,28 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Script                     import parseCommandLine
+from DIRAC.Core.Base.Script                     import parseCommandLine, getPositionalArgs
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Core.Utilities.File                  import getSize
 from types                                      import *
 import unittest, time, os, shutil, sys
 
-if len( sys.argv ) < 3:
+positionalArgs = getPositionalArgs()
+
+if len( positionalArgs ) < 2:
   print 'Usage: TestStoragePlugIn.py StorageElement protocol'
   sys.exit()
 else:
-  storageElementToTest = sys.argv[1]
-  protocol = sys.argv[2]
+  storageElementToTest = positionalArgs[0]
+  protocol = positionalArgs[1]
 
 class StoragePlugInTestCase( unittest.TestCase ):
   """ Base class for the StoragePlugin test cases
   """
   def setUp( self ):
 
-    factory = StorageFactory()
+    factory = StorageFactory( 'lhcb' )
     res = factory.getStorages( storageElementToTest, [protocol] )
     self.assert_( res['OK'] )
     storageDetails = res['Value']
@@ -97,7 +99,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     # Check the non existant directory operation
     self.assert_( nonExistantDirRes['OK'] )
     self.assert_( nonExistantDirRes['Value']['Failed'].has_key( dummyDir ) )
-    expectedError = 'Directory does not exist'
+    expectedError = 'Path does not exist'
     self.assert_( expectedError in nonExistantDirRes['Value']['Failed'][dummyDir] )
 
   def test_putGetDirectoryMetadata( self ):
