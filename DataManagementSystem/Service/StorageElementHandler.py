@@ -301,7 +301,8 @@ class StorageElementHandler( RequestHandler ):
         colon (:) separated file/directory names.
         token is used for access rights confirmation.
     """
-    tmpList = fileId.split( ':' )
+    fileInput = self.__resolveFileID( fileId )
+    tmpList = fileInput.split( ':' )
     tmpList = [ os.path.join( BASE_PATH, x ) for x in tmpList ]
     strippedFiles = []
     compress = False
