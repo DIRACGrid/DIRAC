@@ -113,7 +113,7 @@ requestTable = Table( 'Request', metadata,
                         Column( 'CreationTime', DateTime ),
                         Column( 'JobID', Integer, server_default = '0' ),
                         Column( 'OwnerDN', String( 255 ) ),
-                        Column( 'RequestName', String( 255 ), nullable = False, unique = True ),
+                        Column( 'RequestName', String( 255 ), nullable = False ),
                         Column( 'Error', String( 255 ) ),
                         Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' ),
                         Column( 'LastUpdate', DateTime ),
@@ -249,11 +249,11 @@ class RequestDB( object ):
     """ Return the table names """
     return S_OK( metadata.tables.keys() )
 
-  def cancelRequest(self, request_name):
+  def cancelRequest( self, requestID ):
     session = self.DBSession()
     try:
       updateRet = session.execute( update( Request )\
-                         .where( Request.RequestName == request_name )\
+                         .where( Request.RequestID == requestID )\
                          .values( {Request._Status : 'Canceled',
                                    Request._LastUpdate : datetime.datetime.utcnow()\
                                                         .strftime( Request._datetimeFormat )
@@ -264,7 +264,7 @@ class RequestDB( object ):
       
       # No row was changed
       if not updateRet.rowcount:
-        return S_ERROR("No such request %s"%request_name)
+        return S_ERROR( "No such request %s" % requestID )
 
       return S_OK()
 
@@ -286,17 +286,15 @@ class RequestDB( object ):
     try:
 
       try:
-        existingReqID, status = session.query( Request.RequestID, Request._Status )\
-                                   .filter( Request.RequestName == request.RequestName )\
-                                   .one()
+        if hasattr( request, 'RequestID' ):
 
-        if existingReqID and existingReqID != request.RequestID:
-          return S_ERROR( "putRequest: request '%s' already exists in the db (RequestID=%s)"\
-                         % ( request.RequestName, existingReqID ) )
-  
-        if status == 'Canceled':
-          self.log.info( "Request %s was canceled, don't put it back" % request.RequestName )
-          return S_OK( request.RequestID )
+          status = session.query( Request._Status )\
+                          .filter( Request.RequestID == request.RequestID )\
+                          .one()
+
+          if status[0] == 'Canceled':
+            self.log.info( "Request %s(%s) was canceled, don't put it back" % ( request.RequestID, request.RequestName ) )
+            return S_OK( request.RequestID )
 
       except NoResultFound, e:
         pass
@@ -320,36 +318,37 @@ class RequestDB( object ):
   def getScheduledRequest( self, operationID ):
     session = self.DBSession()
     try:
-      requestName = session.query( Request.RequestName )\
+      requestID = session.query( Request.RequestID )\
                            .join( Request.__operations__ )\
                            .filter( Operation.OperationID == operationID )\
                            .one()
-      return self.getRequest( requestName[0] )
+      return self.getRequest( requestID[0] )
     except NoResultFound, e:
       return S_OK()
     finally:
       session.close()
 
+#
+#   def getRequestName( self, requestID ):
+#     """ get Request.RequestName for a given Request.RequestID """
+#
+#     session = self.DBSession()
+#     try:
+#       requestName = session.query( Request.RequestName )\
+#                            .filter( Request.RequestID == requestID )\
+#                            .one()
+#       return S_OK( requestName[0] )
+#     except NoResultFound, e:
+#       return S_ERROR( "getRequestName: no request found for RequestID=%s" % requestID )
+#     finally:
+#       session.close()
 
-  def getRequestName( self, requestID ):
-    """ get Request.RequestName for a given Request.RequestID """
 
-    session = self.DBSession()
-    try:
-      requestName = session.query( Request.RequestName )\
-                           .filter( Request.RequestID == requestID )\
-                           .one()
-      return S_OK( requestName[0] )
-    except NoResultFound, e:
-      return S_ERROR( "getRequestName: no request found for RequestID=%s" % requestID )
-    finally:
-      session.close()
-
-
-  def getRequest( self, requestName = '', assigned = True ):
+  def getRequest( self, reqID = 0, assigned = True ):
     """ read request for execution
 
-    :param str requestName: request's name (default None)
+    :param reqID: request's ID (default 0) If 0, take a pseudo random one
+
     """
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
@@ -357,21 +356,23 @@ class RequestDB( object ):
     log = self.log.getSubLogger( 'getRequest' if assigned else 'peekRequest' )
 
     requestID = None
+
     try:
 
-      if requestName:
+      if reqID:
+        requestID = reqID
 
-        log.verbose( "selecting request '%s'%s" % ( requestName, ' (Assigned)' if assigned else '' ) )
+        log.verbose( "selecting request '%s'%s" % ( reqID, ' (Assigned)' if assigned else '' ) )
         status = None
         try:
-          requestID, status = session.query( Request.RequestID, Request._Status )\
-                                     .filter( Request.RequestName == requestName )\
-                                     .one()
+          status = session.query( Request._Status )\
+                          .filter( Request.RequestID == reqID )\
+                          .one()
         except NoResultFound, e:
-          return S_ERROR( "getRequest: request '%s' not exists" % requestName )
+          return S_ERROR( "getRequest: request '%s' not exists" % reqID )
   
-        if requestID and status and status == "Assigned" and assigned:
-          return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % requestName )
+        if status and status == "Assigned" and assigned:
+          return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % reqID )
 
       else:
         reqIDs = set()
@@ -407,8 +408,8 @@ class RequestDB( object ):
                        .filter( Request.RequestID == requestID )\
                        .one()
   
-      if not requestName:
-        log.verbose( "selected request '%s'%s" % ( request.RequestName, ' (Assigned)' if assigned else '' ) )
+      if not reqID:
+        log.verbose( "selected request %s('%s')%s" % ( request.RequestID, request.RequestName, ' (Assigned)' if assigned else '' ) )
   
   
       if assigned:
@@ -481,23 +482,23 @@ class RequestDB( object ):
 
 
 
-  def peekRequest( self, requestName ):
+  def peekRequest( self, requestID ):
     """ get request (ro), no update on states
 
-    :param str requestName: Request.RequestName
+    :param requestID: Request.RequestID
     """
-    return self.getRequest( requestName, False )
+    return self.getRequest( requestID, False )
 
 
 
-  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
+  def getRequestIDsList( self, statusList = None, limit = None, since = None, until = None ):
     """ select requests with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     session = self.DBSession()
-    requests = []
+    requestIDs = []
     try:
-      reqQuery = session.query( Request.RequestName )\
+      reqQuery = session.query( Request.RequestID, Request._Status, Request._LastUpdate )\
                         .filter( Request._Status.in_( statusList ) )
       if since:
         reqQuery = reqQuery.filter( Request._LastUpdate > since )
@@ -506,30 +507,30 @@ class RequestDB( object ):
 
       reqQuery = reqQuery.order_by( Request._LastUpdate )\
                          .limit( limit )
-      requests = [reqNameTuple[0] for reqNameTuple in reqQuery.all()]
+      requestIDs = [reqIDTuple[0] for reqIDTuple in reqQuery.all()]
 
     except Exception, e:
       session.rollback()
-      self.log.exception( "getRequestNamesList: unexpected exception", lException = e )
-      return S_ERROR( "getRequestNamesList: unexpected exception : %s" % e )
+      self.log.exception( "getRequestIDsList: unexpected exception", lException = e )
+      return S_ERROR( "getRequestIDsList: unexpected exception : %s" % e )
     finally:
       session.close()
 
-    return S_OK( requests )
+    return S_OK( requestIDs )
 
 
 
-  def deleteRequest( self, requestName ):
-    """ delete request given its name
+  def deleteRequest( self, requestID ):
+    """ delete request given its ID
 
-    :param str requestName: request.RequestName
+    :param str requestID: request.RequestID
     :param mixed connection: connection to use if any
     """
     
     session = self.DBSession()
 
     try:
-      session.query( Request ).filter( Request.RequestName == requestName ).delete()
+      session.query( Request ).filter( Request.RequestID == requestID ).delete()
       session.commit()
     except Exception, e:
       session.rollback()
@@ -757,12 +758,12 @@ class RequestDB( object ):
     return S_OK( distinctValues )
 
 
-  def getRequestNamesForJobs( self, jobIDs ):
-    """ read request names for jobs given jobIDs
+  def getRequestIDsForJobs( self, jobIDs ):
+    """ read request ids for jobs given jobIDs
 
     :param list jobIDs: list of jobIDs
     """
-    self.log.debug( "getRequestForJobs: got %s jobIDs to check" % str( jobIDs ) )
+    self.log.debug( "getRequestIDsForJobs: got %s jobIDs to check" % str( jobIDs ) )
     if not jobIDs:
       return S_ERROR( "Must provide jobID list as argument." )
     if type( jobIDs ) in ( long, int ):
@@ -774,15 +775,15 @@ class RequestDB( object ):
     session = self.DBSession()
 
     try:
-      ret = session.query( Request.JobID, Request.RequestName )\
+      ret = session.query( Request.JobID, Request.RequestID )\
                    .filter( Request.JobID.in_( jobIDs ) )\
                   .all()
 
-      reqDict['Successful'] = dict((jobId, reqName) for jobId, reqName in ret)
+      reqDict['Successful'] = dict( ( jobId, reqID ) for jobId, reqID in ret )
       reqDict['Failed'] = dict( (jobid, 'Request not found') for jobid in jobIDs - set(reqDict['Successful']))
     except Exception, e:
-      self.log.exception( "getRequestNamesForJobs: unexpected exception", lException = e )
-      return S_ERROR( "getRequestNamesForJobs: unexpected exception : %s" % e )
+      self.log.exception( "getRequestIDsForJobs: unexpected exception", lException = e )
+      return S_ERROR( "getRequestIDsForJobs: unexpected exception : %s" % e )
     finally:
       session.close()
 
@@ -826,32 +827,25 @@ class RequestDB( object ):
     return S_OK( reqDict )
 
 
-  def getRequestStatus( self, requestName ):
-    """ get request status for a given request name """
-    self.log.debug( "getRequestStatus: checking status for '%s' request" % requestName )
+  def getRequestStatus( self, requestID ):
+    """ get request status for a given request ID """
+    self.log.debug( "getRequestStatus: checking status for '%s' request" % requestID )
     session = self.DBSession()
     try:
-      status = session.query( Request._Status ).filter( Request.RequestName == requestName ).one()
+      status = session.query( Request._Status ).filter( Request.RequestID == requestID ).one()
     except  NoResultFound, e:
-      return S_ERROR( "Request %s does not exist" % requestName )
+      return S_ERROR( "Request %s does not exist" % requestID )
     finally:
       session.close()
     return S_OK( status[0] )
 
 
-  def getRequestFileStatus( self, requestName, lfnList ):
-    """ get status for files in request given its name
+  def getRequestFileStatus( self, requestID, lfnList ):
+    """ get status for files in request given its id
 
-    :param str requestName: Request.RequestName
+    :param str requestID: Request.RequestID
     :param list lfnList: list of LFNs
     """
-    if type( requestName ) == int:
-      requestName = self.getRequestName( requestName )
-      if not requestName["OK"]:
-        self.log.error( "getRequestFileStatus: %s" % requestName["Message"] )
-        return requestName
-      else:
-        requestName = requestName["Value"]
 
     session = self.DBSession()
     try:
@@ -859,7 +853,7 @@ class RequestDB( object ):
       requestRet = session.query( File._LFN, File._Status )\
                        .join( Request.__operations__ )\
                        .join( Operation.__files__ )\
-                       .filter( Request.RequestName == requestName )\
+                       .filter( Request.RequestID == requestID )\
                        .filter( File._LFN.in_( lfnList ) )\
                        .all()
 
@@ -874,7 +868,7 @@ class RequestDB( object ):
       session.close()
 
 
-  def getRequestInfo( self, requestNameOrID ):
+  def getRequestInfo( self, requestID ):
     """ get request info given Request.RequestID """
 
     session = self.DBSession()
@@ -884,12 +878,9 @@ class RequestDB( object ):
       requestInfoQuery = session.query( Request.RequestID, Request._Status, Request.RequestName,
                                         Request.JobID, Request.OwnerDN, Request.OwnerGroup,
                                         Request.DIRACSetup, Request.SourceComponent, Request._CreationTime,
-                                        Request._SubmitTime, Request._LastUpdate )
+                                        Request._SubmitTime, Request._LastUpdate )\
+                                .filter( Request.RequestID == requestID )
 
-      if type( requestNameOrID ) == int:
-        requestInfoQuery = requestInfoQuery.filter( Request.RequestID == requestNameOrID )
-      else:
-        requestInfoQuery = requestInfoQuery.filter( Request.RequestName == requestNameOrID )
 
       try:
         requestInfo = requestInfoQuery.one()
@@ -905,13 +896,13 @@ class RequestDB( object ):
     finally:
       session.close()
 
-  def getDigest( self, requestName ):
-    """ get digest for request given its name
+  def getDigest( self, requestID ):
+    """ get digest for request given its id
 
-    :param str requestName: request name
+    :param str requestName: request id
     """
-    self.log.debug( "getDigest: will create digest for request '%s'" % requestName )
-    request = self.getRequest( requestName, False )
+    self.log.debug( "getDigest: will create digest for request '%s'" % requestID )
+    request = self.getRequest( requestID, False )
     if not request["OK"]:
       self.log.error( "getDigest: %s" % request["Message"] )
     request = request["Value"]
@@ -919,3 +910,34 @@ class RequestDB( object ):
       self.log.info( "getDigest: request '%s' not found" )
       return S_OK()
     return request.getDigest()
+
+
+  def getRequestIDForName( self, requestName ):
+    """ read request id for given name
+        if the name is not unique, an error is returned
+
+    :param requestName : name of the request
+    """
+    session = self.DBSession()
+
+    reqID = 0
+    try:
+      ret = session.query( Request.RequestID )\
+                   .filter( Request.RequestName == requestName )\
+                   .all()
+      if not ret:
+        return S_ERROR( 'No such request %s' % requestName )
+      elif len( ret ) > 1:
+        return S_ERROR( 'RequestName %s not unique (%s matches)' % ( requestName, len( ret ) ) )
+
+      reqID = ret[0][0]
+
+    except NoResultFound, e:
+      return S_ERROR( 'No such request' )
+    except Exception, e:
+      self.log.exception( "getRequestIDsForName: unexpected exception", lException = e )
+      return S_ERROR( "getRequestIDsForName: unexpected exception : %s" % e )
+    finally:
+      session.close()
+
+    return S_OK( reqID )

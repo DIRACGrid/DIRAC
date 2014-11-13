@@ -178,19 +178,19 @@ class FTSAgent( AgentModule ):
     return cls.__seCache
 
   @classmethod
-  def getRequest( cls, reqName ):
+  def getRequest( cls, reqID ):
     """ get Requests systematically and refresh cache """
-    getRequest = cls.requestClient().getRequest( reqName )
+    getRequest = cls.requestClient().getRequest( reqID )
     if not getRequest["OK"]:
-      cls.__reqCache.pop( reqName, None )
+      cls.__reqCache.pop( reqID, None )
       return getRequest
     getRequest = getRequest["Value"]
     if not getRequest:
-      cls.__reqCache.pop( reqName, None )
-      return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
-    cls.__reqCache[reqName] = getRequest
+      cls.__reqCache.pop( reqID, None )
+      return S_ERROR( "request of id '%s' not found in ReqDB" % reqID )
+    cls.__reqCache[reqID] = getRequest
 
-    return S_OK( cls.__reqCache[reqName] )
+    return S_OK( cls.__reqCache[reqID] )
 
   @classmethod
   def putRequest( cls, request, clearCache = True ):
@@ -202,19 +202,19 @@ class FTSAgent( AgentModule ):
     also finalize request if status == Done
     """
     # # put back request
-    if request.RequestName not in cls.__reqCache:
+    if request.RequestID not in cls.__reqCache:
       return S_OK()
     put = cls.requestClient().putRequest( request )
     if not put["OK"]:
       return put
     # # finalize first if possible
     if request.Status == "Done" and request.JobID:
-      finalizeRequest = cls.requestClient().finalizeRequest( request.RequestName, request.JobID )
+      finalizeRequest = cls.requestClient().finalizeRequest( request.RequestID, request.JobID )
       if not finalizeRequest["OK"]:
         request.Status = "Scheduled"
     # # del request from cache if needed
     if clearCache:
-      cls.__reqCache.pop( request.RequestName, None )
+      cls.__reqCache.pop( request.RequestID, None )
     return S_OK()
 
   @classmethod
@@ -389,31 +389,31 @@ class FTSAgent( AgentModule ):
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
-    if not requestNames["OK"]:
-      log.error( "unable to read scheduled request names: %s" % requestNames["Message"] )
-      return requestNames
-    if not requestNames["Value"]:
-      requestNames = self.__reqCache.keys()
+    requestIDs = self.requestClient().getRequestIDsList( [ "Scheduled" ] )
+    if not requestIDs["OK"]:
+      log.error( "unable to read scheduled request ids: %s" % requestIDs["Message"] )
+      return requestIDs
+    if not requestIDs["Value"]:
+      requestIDs = self.__reqCache.keys()
     else:
-      requestNames = [ req[0] for req in requestNames["Value"] ]
-      requestNames = list( set ( requestNames + self.__reqCache.keys() ) )
+      requestIDs = [ req[0] for req in requestIDs["Value"] ]
+      requestIDs = list( set ( requestIDs + self.__reqCache.keys() ) )
 
-    if not requestNames:
+    if not requestIDs:
       log.info( "no 'Scheduled' requests to process" )
       return S_OK()
 
-    log.info( "found %s requests to process:" % len( requestNames ) )
+    log.info( "found %s requests to process:" % len( requestIDs ) )
     log.info( " => from internal cache: %s" % ( len( self.__reqCache ) ) )
-    log.info( " =>   new read from RMS: %s" % ( len( requestNames ) - len( self.__reqCache ) ) )
+    log.info( " =>   new read from RMS: %s" % ( len( requestIDs ) - len( self.__reqCache ) ) )
 
-    for requestName in requestNames:
-      request = self.getRequest( requestName )
+    for requestID in requestIDs:
+      request = self.getRequest( requestID )
       if not request["OK"]:
         log.error( request["Message"] )
         continue
       request = request["Value"]
-      sTJId = request.RequestName
+      sTJId = request.RequestID
       while True:
         queue = self.threadPool().generateJobAndQueueIt( self.processRequest,
                                                          args = ( request, ),
@@ -433,7 +433,7 @@ class FTSAgent( AgentModule ):
 
     :param Request request: ReqDB.Request
     """
-    log = self.log.getSubLogger( request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s" % ( request.RequestID, request.RequestName ) )
 
     operation = request.getWaiting()
     if not operation["OK"]:
@@ -616,7 +616,7 @@ class FTSAgent( AgentModule ):
           log.info( "Found %d FTSFiles to submit while request is no longer in Scheduled status (%s)" \
                     % ( len( toSubmit ), request.Status ) )
         else:
-          self.__checkDuplicates( request.RequestName, toSubmit )
+          self.__checkDuplicates( request.RequestID, toSubmit )
           log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
           submit = self.__submit( request, operation, toSubmit )
           if not submit["OK"]:
@@ -651,11 +651,11 @@ class FTSAgent( AgentModule ):
     # This is where one returns from after execution of the finally: block
     return putRequest
 
-  def __checkDuplicates( self, name, toSubmit ):
+  def __checkDuplicates( self, reqID, toSubmit ):
     """ Check in a list of FTSFiles whether there are duplicates
     """
     tupleList = []
-    log = self.log.getSubLogger( "%s/checkDuplicates" % name )
+    log = self.log.getSubLogger( "%s/checkDuplicates" % reqID )
     for ftsFile in list( toSubmit ):
       fTuple = ( ftsFile.LFN, ftsFile.SourceSE, ftsFile.TargetSE )
       if fTuple in tupleList:
@@ -673,7 +673,7 @@ class FTSAgent( AgentModule ):
     :param Operation operation:
     :param list toReschedule: list of FTSFiles
     """
-    log = self.log.getSubLogger( "%s/reschedule" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/reschedule" % ( request.RequestID, request.RequestName ) )
 
     ftsFileIDs = [ftsFile.FileID for ftsFile in toReschedule]
     for opFile in operation:
@@ -739,7 +739,7 @@ class FTSAgent( AgentModule ):
 
     :return: [ FTSJob, FTSJob, ...]
     """
-    log = self.log.getSubLogger( "%s/submit" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/submit" % ( request.RequestID, request.RequestName ) )
 
     bySourceAndTarget = {}
     for ftsFile in toSubmit:
@@ -832,7 +832,7 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-    log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSGUID ) )
+    log = self.log.getSubLogger( "req_%s/%s/monitor/%s" % ( request.RequestID, request.requestName, ftsJob.FTSGUID ) )
     log.info( "FTSJob '%s'@'%s'" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
@@ -887,7 +887,9 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-    log = self.log.getSubLogger( "%s/monitor/%s/finalize" % ( request.RequestName, ftsJob.FTSJobID ) )
+    log = self.log.getSubLogger( "req_%s/%s/monitor/%s/finalize" % ( request.RequestID,
+                                                                     request.RequestName,
+                                                                     ftsJob.FTSJobID ) )
     log.info( "finalizing FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
@@ -977,7 +979,7 @@ class FTSAgent( AgentModule ):
     :param Operation transferOp: 'ReplicateAndRegister' operation for this FTSJob
     :param list toRegister: [ FTSDB.FTSFile, ... ] - files that failed to register
     """
-    log = self.log.getSubLogger( "%s/registerFiles" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/registerFiles" % ( request.RequestID, request.RequestName ) )
 
     byTarget = {}
     for ftsFile in toRegister:
@@ -1047,7 +1049,7 @@ class FTSAgent( AgentModule ):
 
   def __checkReadyReplicas( self, request, operation ):
     """ check ready replicas for transferOperation """
-    log = self.log.getSubLogger( "%s/checkReadyReplicas" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/checkReadyReplicas" % ( request.RequestID, request.RequestName ) )
 
     targetSESet = set( operation.targetSEList )
 

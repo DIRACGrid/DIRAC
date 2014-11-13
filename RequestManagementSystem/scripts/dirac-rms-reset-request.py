@@ -11,9 +11,9 @@ Script.registerSwitch( '', 'Maximum=', '   max number of requests to reset' )
 Script.registerSwitch( '', 'All', '   reset requests even if irrecoverable' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] [requestName|requestID]' % Script.scriptName,
+                                     ' %s [option|cfgfile] requestID' % Script.scriptName,
                                      'Arguments:',
-                                     ' requestName: a request name' ] ) )
+                                     ' requestID: a request ID' ] ) )
 # # execution
 if __name__ == "__main__":
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     if len( args ) == 1:
       requests = args[0].split( ',' )
   else:
-    res = reqClient.getRequestNamesForJobs( jobs )
+    res = reqClient.getRequestIDsForJobs( jobs )
     if not res['OK']:
       gLogger.fatal( "Error getting request for jobs", res['Message'] )
       DIRAC.exit( 2 )
@@ -60,11 +60,11 @@ if __name__ == "__main__":
 
   if resetFailed:
     all = False
-    res = reqClient.getRequestNamesList( ['Failed'], maxReset );
+    res = reqClient.getRequestIDsList( ['Failed'], maxReset );
     if not res['OK']:
         print "Error", res['Message'];
     elif res['Value']:
-      requests = [reqName for reqName, _x, _y in res['Value']]
+      requests = [reqID for reqID, _x, _y in res['Value']]
 
   if not requests:
     print "No requests to reset"
@@ -74,10 +74,10 @@ if __name__ == "__main__":
     notReset = 0
     if len( requests ) > 1:
       gLogger.always( "Resetting now %d requests" % len( requests ) )
-    for reqName in requests:
+    for reqID in requests:
       if len( requests ) > 1:
-        gLogger.always( '============ Request %s =============' % reqName )
-      ret = reqClient.resetFailedRequest( reqName, all = all )
+        gLogger.always( '============ Request %s =============' % reqID )
+      ret = reqClient.resetFailedRequest( reqID, all = all )
       if not ret['OK']:
         notReset += 1
         print "Error", ret['Message']

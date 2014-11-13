@@ -5,7 +5,7 @@ __RCSID__ = "$Id: $"
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] <Request list>' % Script.scriptName ] ) )
+                                     ' %s [option|cfgfile] <RequestID list>' % Script.scriptName ] ) )
 
 if __name__ == "__main__":
 
@@ -21,20 +21,20 @@ if __name__ == "__main__":
 
   args = Script.getPositionalArgs()
   if len( args ) == 1:
-    requests = [reqName for reqName in args[0].split( ',' ) if reqName]
+    requests = [requestID for requestID in args[0].split( ',' ) if requestID]
 
   if not requests:
     DIRAC.gLogger.fatal( "Need at least one request name" )
     Script.showHelp()
     DIRAC.exit( 1 )
 
-  for reqName in requests:
-    reqName = reqName.strip()
-    res = reqClient.cancelRequest( reqName )
+  for requestID in requests:
+    reqID = int( requestID.strip() )
+    res = reqClient.cancelRequest( reqID )
     if res['OK']:
-      DIRAC.gLogger.always( "Request %s canceled" % reqName )
+      DIRAC.gLogger.always( "Request %s canceled" % reqID )
     else:
-      DIRAC.gLogger.error( "Error canceling request %s" % reqName, res['Message'] )
+      DIRAC.gLogger.error( "Error canceling request %s" % reqID, res['Message'] )
 
   DIRAC.exit( 0 )
 
