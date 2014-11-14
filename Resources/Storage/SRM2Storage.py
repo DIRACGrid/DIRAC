@@ -1017,7 +1017,7 @@ class SRM2Storage( StorageBase ):
             successful[dirSURL] = False
         elif urlDict['status'] == 2:
           self.log.debug( "SRM2Storage.isDirectory: Supplied path does not exist: %s" % dirSURL )
-          failed[dirSURL] = 'Directory does not exist'
+          failed[dirSURL] = 'Path does not exist'
         else:
           errStr = "SRM2Storage.isDirectory: Failed to get file metadata."
           errMessage = urlDict['ErrorMessage']
@@ -1060,6 +1060,8 @@ class SRM2Storage( StorageBase ):
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['Directory']:
+            statDict['Exists'] = True
+            statDict['Type'] = 'Directory'
             successful[pathSURL] = statDict
           else:
             errStr = "SRM2Storage.getDirectoryMetadata: Supplied path is not a directory."

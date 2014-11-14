@@ -405,6 +405,7 @@ class DIPStorage( StorageBase ):
       if res['OK']:
         if res['Value']['Exists']:
           if res['Value']['Type'] == 'Directory':
+            res['Value']['Directory'] = True
             gLogger.debug( "DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url )
             successful[url] = res['Value']
           else:

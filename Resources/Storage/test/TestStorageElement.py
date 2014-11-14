@@ -83,9 +83,9 @@ class GetInfoTestCase( StorageElementTestCase ):
 
   def test_getStorageParameters( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet storage parameters test\n'
-    res = self.storageElement.getStorageParameters( 'DIP' )
-    self.assert_( res['OK'] )
-    resDict = res['Value']
+    result = self.storageElement.getStorageParameters( 'DIP' )
+    self.assert_( result['OK'] )
+    resDict = result['Value']
     self.assertEqual( resDict['Protocol'], 'dips' )
     #self.assertEqual( resDict['SpaceToken'], 'LHCb_RAW' )
     #self.assertEqual( resDict['WSUrl'], '/srm/managerv2?SFN=' )
