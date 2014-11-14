@@ -544,8 +544,8 @@ class StorageElementItem( object ):
       res = storage.isNativePfn( pfn )
       if res['OK']:
         if res['Value']:
-          res = storage.getParameters()
-          saPath = res['Value']['Path']
+          parameters = storage.getParameters()
+          saPath = parameters['Path']
           if not saPath:
             # If the sa path doesn't exist then the pfn path is the entire string
             pfnPath = fullPfnPath
@@ -596,7 +596,7 @@ class StorageElementItem( object ):
         retDict["Failed"][pfn] = res["Message"]
     return S_OK( retDict )
 
-  def __getSinglePfnForLfn( self, lfn ):
+  def __getSinglePfnForLfn( self, lfn, withPort = False ):
     """ Get the full PFN constructed from the LFN.
         :param lfn : input lfn or lfns (list/dict)
     """
@@ -612,7 +612,7 @@ class StorageElementItem( object ):
     self.log.debug( errStr )
     return S_ERROR( errStr )
 
-  def getPfnForLfn( self, lfns ):
+  def getPfnForLfn( self, lfns, withPort = False ):
     """ get PFNs for supplied LFNs at :storageElementName: SE
 
     :param self: self reference
@@ -632,7 +632,7 @@ class StorageElementItem( object ):
 
     retDict = { "Successful" : {}, "Failed" : {} }
     for lfn in lfnDict:
-      res = self.__getSinglePfnForLfn( lfn )
+      res = self.__getSinglePfnForLfn( lfn, withPort = withPort )
       if res["OK"]:
         retDict["Successful"][lfn] = res["Value"]
       else:

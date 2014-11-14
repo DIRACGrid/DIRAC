@@ -30,7 +30,8 @@ class StorageElementTestCase( unittest.TestCase ):
     self.localSourceFile = fileToTest
     self.localFileSize = getSize( self.localSourceFile )
     self.destDirectory = lfnDirToTest
-    destinationDir = returnSingleResult( self.storageElement.getPfnForLfn( self.destDirectory ) )['Value']
+    #destinationDir = returnSingleResult( self.storageElement.getPfnForLfn( self.destDirectory ) )['Value']
+    destinationDir = self.destDirectory
     res = self.storageElement.createDirectory( destinationDir )
     self.assert_( res['OK'] )
 
