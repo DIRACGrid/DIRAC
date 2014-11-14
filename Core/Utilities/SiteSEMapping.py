@@ -35,7 +35,6 @@ def getSiteSEMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
     if not sites['OK']:
@@ -45,8 +44,6 @@ def getSiteSEMapping( gridName = '' ):
       candidateSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, candidate ), [] )
       if candidateSEs:
         siteSEMapping[candidate] = candidateSEs
-      else:
-        gLogger.debug( 'No SEs defined for site %s' % candidate )
 
   # Add Sites from the SiteLocalSEMapping in the CS
   cfgLocalSEPath = cfgPath( 'SiteLocalSEMapping' )
@@ -90,7 +87,6 @@ def getSESiteMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
     if not sites['OK']:  # gConfig returns S_ERROR for empty sections until version
@@ -242,7 +238,6 @@ def getSitesGroupedByTierLevel( siteName = '' ):
 
   gridTypes = gridTypes['Value']
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
     if not sites['OK']:  # gConfig returns S_ERROR for empty sections until version
