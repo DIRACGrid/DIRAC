@@ -257,17 +257,26 @@ class StorageBase:
     return pfnunparse( pfnDict )
   
   def isPfn( self, path ):
-    """ Guess if the path looks like PFN
-    
+    """ Guess if the path looks like a PFN
+
     :param self: self reference
     :param string path: input file LFN or PFN
     :returns boolean: True if PFN, False otherwise
     """
+    if self.basePath and path.startswith( self.basePath ):
+      return S_OK( True )
+
     result = pfnparse( path )
     if not result['OK']:
       return result
-    
-    return S_OK( len( result['Value']['Protocol'] ) != 0 )
+
+    if len( result['Value']['Protocol'] ) != 0:
+      return S_OK( True )
+
+    if result['Value']['Path'].startswith( self.basePath ):
+      return S_OK( True )
+
+    return S_OK( False )
   
   def getPfn( self, lfn, withPort = False ):
     """ Construct PFN from the given LFN according to the VO convention 
