@@ -281,6 +281,11 @@ class StorageBase:
     if result['Value']:
       return self.updatePfn( lfn, withPort = withPort )
     
+    # Check the LFN convention
+    voLFN = lfn.split( '/' )[1]
+    if voLFN != self.se.vo:
+      return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
+    
     result = self.getPFNBase( withPort = withPort )
     if not result['OK']:
       return result

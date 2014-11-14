@@ -481,8 +481,8 @@ class StorageElementItem( object ):
       return S_ERROR( errStr )
     # Check all available storages for required protocol then construct the PFN
     for storage in self.storages:
-      result = storage.getParameters()
-      if result['Value']['ProtocolName'] in protocolsToTry:
+      parameters = storage.getParameters()
+      if parameters['ProtocolName'] in protocolsToTry:
         result = storage.updatePfn( pfn, withPort )
         if result['OK']:
           return result
