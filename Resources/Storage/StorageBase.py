@@ -27,12 +27,14 @@ These are the methods for manipulating the client:
       getCurrentDirectory()
       getName()
       getParameters()
-      getProtocolPfn()
       getCurrentURL()
 """
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
+
+PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
 
 class StorageBase:
   """
@@ -40,11 +42,41 @@ class StorageBase:
   
   """
 
-  def __init__( self, name, rootdir ):
-    self.isok = True
+  def __init__( self, name, parameterDict ):
+        
     self.name = name
-    self.rootdir = rootdir
-    self.cwd = self.rootdir
+    self.protocolName = ''
+    self.protocolParameters = {}
+    self.basePath = parameterDict['BasePath']
+    
+    self.__updateParameters( parameterDict )
+    
+    self.isok = True
+    self.cwd = self.basePath
+    self.se = None
+    
+  def setStorageElement( self, se ):
+    self.se = se  
+
+  def setParameters( self, parameterDict ):
+    """ Set standard parameters, method can be overriden in subclasses
+        to process specific parameters
+    """
+    self.__updateParameters( parameterDict )
+
+  def __updateParameters( self, parameterDict ):
+    """ setParameters implementation method
+    """
+    for item in PROTOCOL_PARAMETERS:
+      self.protocolParameters[item] = parameterDict.get( item, '' )
+  
+  def getParameters( self ):
+    """ Get the parameters with which the storage was instantiated
+    """
+    parameterDict = dict( self.protocolParameters )
+    parameterDict["StorageName"] = self.name
+    parameterDict["ProtocolName"] = self.protocolName
+    return parameterDict    
 
   def exists( self, *parms, **kws ):
     """Check if the given path exists
@@ -169,38 +201,122 @@ class StorageBase:
   def isOK( self ):
     return self.isok
 
-  def changeDirectory( self, newdir ):
-    """ Change the current directory
+  def resetCurrentDirectory( self ):
+    """ Reset the working directory to the base dir
     """
-    self.cwd = newdir
-    return S_OK()
+    self.cwd = self.basePath
+
+  def changeDirectory( self, directory ):
+    """ Change the directory to the supplied directory
+    """
+    if directory.startswith( '/' ):
+      self.cwd = "%s/%s" % ( self.basePath, directory )
+    else:
+      self.cwd = '%s/%s' % ( self.cwd, directory )
 
   def getCurrentDirectory( self ):
     """ Get the current directory
     """
-    return S_OK( self.cwd )
+    return self.cwd
+  
+  def getCurrentURL( self, fileName ):
+    """ Obtain the current file URL from the current working directory and the filename
 
+    :param self: self reference
+    :param str fileName: path on storage
+    """
+    if fileName.startswith( '/' ):
+      # Assume full path is given, e.g. LFN
+      return self.getPfn( fileName )
+    
+    pfnDict = dict( self.protocolParameters )
+    pfnDict['Path'] = self.cwd
+    result = pfnunparse( pfnDict )
+    if not result['OK']:
+      return result
+    cwdUrl = result['Value']
+    fullUrl = '%s/%s' % ( cwdUrl, fileName )
+    return S_OK( fullUrl )
+    
   def getName( self ):
     """ The name with which the storage was instantiated
     """
-    return S_OK( self.name )
+    return self.name
+
+  def getPFNBase( self, withPort = False ):
+    """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
+
+    :param self: self reference
+    :param bool withPort: flag to include port
+    :returns PFN
+    """
+    pfnDict = dict( self.protocolParameters )
+    if not withPort:
+      pfnDict['Port'] = ''  
+      pfnDict['WSUrl'] = ''  
+    return pfnunparse( pfnDict )
   
-  def setParameters( self, parameters ):
-    """ Set extra storage parameters, non-mandatory method
+  def isPfn( self, path ):
+    """ Guess if the path looks like PFN
+    
+    :param self: self reference
+    :param string path: input file LFN or PFN
+    :returns boolean: True if PFN, False otherwise
     """
-    return S_OK()
+    result = pfnparse( path )
+    if not result['OK']:
+      return result
+    
+    return S_OK( len( result['Value']['Protocol'] ) != 0 )
+  
+  def getPfn( self, lfn, withPort = False ):
+    """ Construct PFN from the given LFN according to the VO convention 
+    """
+    
+    result = self.isPfn( lfn )
+    if not result['OK']:
+      return result
+    
+    # If we are given a PFN, update it
+    if result['Value']:
+      return self.updatePfn( lfn, withPort = withPort )
+    
+    result = self.getPFNBase( withPort = withPort )
+    if not result['OK']:
+      return result
+    pfnBase = result['Value']
+    # Strip of the top level directory from LFN corresponding to VO
+    # and merge with the pfn base containing the VOPath
+    pfn = '%s/%s' % ( pfnBase, '%s' % '/'.join( lfn.split( '/' )[2:] ) )    
+    return S_OK( pfn )    
+  
+  def updatePfn( self, pfn, withPort = False ):
+    """ Update the PFN according to the current SE parameters
+    """
+    result = pfnparse( pfn )
+    if not result['OK']:
+      return result
+    pfnDict = result['Value']
+    
+    pfnDict['Protocol'] = self.protocolParameters['Protocol']
+    pfnDict['Host'] = self.protocolParameters['Host']
+    if withPort:
+      pfnDict['Port'] = self.protocolParameters['Port']
+      pfnDict['WSUrl'] = self.protocolParameters['WSUrl']
+    else:
+      pfnDict['Port'] = ''
+      pfnDict['WSUrl'] = ''
+    return pfnunparse( pfnDict )
+  
+  def isNativePfn( self, pfn ):
+    """ Check if PFN :pfn: is valid for :self.protocol:
 
-  def getParameters( self, *parms, **kws ):
-    """ Get the parameters with which the storage was instantiated
+    :param self: self reference
+    :param str pfn: PFN
     """
-    return S_ERROR( "Storage.getParameters: implement me!" )
-
-  def getProtocolPfn( self, *parms, **kws ):
-    """ Get the PFN for the protocol with or without the port
-    """
-    return S_ERROR( "Storage.getProtocolPfn: implement me!" )
-
-  def getCurrentURL( self, *parms, **kws ):
-    """ Create the full URL for the storage using the configuration, self.cwd and the fileName
-    """
-    return S_ERROR( "Storage.getCurrentURL: implement me!" )
+    res = pfnparse( pfn )
+    if not res['OK']:
+      return res
+    pfnDict = res['Value']
+    return S_OK( pfnDict['Protocol'] == self.protocolParameters['Protocol'] )
+  

@@ -14,21 +14,21 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                            import gLogger, gConfig, S_OK, S_ERROR, rootPath
+from DIRAC                                            import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List                        import sortList
-from DIRAC.ConfigurationSystem.Client.Helpers         import getInstalledExtensions
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-import os
+from DIRAC.Core.Utilities                             import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers.Path    import cfgPath
 
 class StorageFactory:
 
-  def __init__( self, useProxy = False ):
+  def __init__( self, vo, useProxy = False ):
 
     self.rootConfigPath = '/Resources/StorageElements'
-    self.valid = True
     self.proxy = False
     self.proxy = useProxy
     self.resourceStatus = ResourceStatus()
+    self.vo = vo
 
 
   ###########################################################################################
@@ -58,39 +58,7 @@ class StorageFactory:
       gLogger.error( errStr )
       return S_ERROR( errStr )
 
-    # The other options need not always be specified
-    if parameterDict.has_key( 'Protocol' ):
-      protocol = parameterDict['Protocol']
-    else:
-      protocol = ''
-
-    if parameterDict.has_key( 'Port' ):
-      port = parameterDict['Port']
-    else:
-      port = ''
-
-    if parameterDict.has_key( 'Host' ):
-      host = parameterDict['Host']
-    else:
-      host = ''
-
-    if parameterDict.has_key( 'Path' ):
-      path = parameterDict['Path']
-    else:
-      path = ''
-
-    if parameterDict.has_key( 'SpaceToken' ):
-      spaceToken = parameterDict['SpaceToken']
-    else:
-      spaceToken = ''
-
-    if parameterDict.has_key( 'WSUrl' ):
-      wsPath = parameterDict['WSUrl']
-    else:
-      wsPath = ''
-
-    return self.__generateStorageObject( storageName, protocolName, protocol, path, host, port, spaceToken, wsPath, parameterDict )
-
+    return self.__generateStorageObject( storageName, protocolName, parameterDict )
 
   def getStorages( self, storageName, protocolList = [] ):
     """ Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
@@ -104,11 +72,12 @@ class StorageFactory:
     self.options = {}
     self.protocolDetails = []
     self.storages = []
+    if not self.vo:
+      return S_ERROR( 'Mandatory vo parameter is not defined' )
 
     # Get the name of the storage provided
     res = self._getConfigStorageName( storageName )
     if not res['OK']:
-      self.valid = False
       return res
     storageName = res['Value']
     self.name = storageName
@@ -116,14 +85,12 @@ class StorageFactory:
     # Get the options defined in the CS for this storage
     res = self._getConfigStorageOptions( storageName )
     if not res['OK']:
-      self.valid = False
       return res
     self.options = res['Value']
 
     # Get the protocol specific details
     res = self._getConfigStorageProtocols( storageName )
     if not res['OK']:
-      self.valid = False
       return res
     self.protocolDetails = res['Value']
 
@@ -135,31 +102,20 @@ class StorageFactory:
     self.storages = []
     for protocolDict in self.protocolDetails:
       protocolName = protocolDict['ProtocolName']
-      protocolRequested = True
-      if protocolList:
-        if protocolName not in protocolList:
-          protocolRequested = False
-      if protocolRequested:
-        protocol = protocolDict['Protocol']
-        host = protocolDict['Host']
-        path = protocolDict['Path']
-        port = protocolDict['Port']
-        spaceToken = protocolDict['SpaceToken']
-        wsUrl = protocolDict['WSUrl']
-        res = self.__generateStorageObject( storageName, protocolName, protocol,
-                                            path = path, host = host, port = port,
-                                            spaceToken = spaceToken, wsUrl = wsUrl,
-                                            parameters = protocolDict )
-        if res['OK']:
-          self.storages.append( res['Value'] )
-          if protocolName in self.localProtocols:
-            turlProtocols.append( protocol )
-            requestedLocalProtocols.append( protocolName )
-          if protocolName in self.remoteProtocols:
-            requestedRemoteProtocols.append( protocolName )
-          requestedProtocolDetails.append( protocolDict )
-        else:
-          gLogger.info( res['Message'] )
+      if protocolList and protocolName not in protocolList:
+          continue
+      protocol = protocolDict['Protocol']
+      result = self.__generateStorageObject( storageName, protocolName, protocolDict )
+      if result['OK']:
+        self.storages.append( result['Value'] )
+        if protocolName in self.localProtocols:
+          turlProtocols.append( protocol )
+          requestedLocalProtocols.append( protocolName )
+        if protocolName in self.remoteProtocols:
+          requestedRemoteProtocols.append( protocolName )
+        requestedProtocolDetails.append( protocolDict )
+      else:
+        gLogger.info( res['Message'] )
 
     if len( self.storages ) > 0:
       resDict = {}
@@ -198,7 +154,7 @@ class StorageFactory:
       gLogger.error( errStr, configPath )
       return S_ERROR( errStr )
     if 'Alias' in res['Value']:
-      configPath = '%s/%s/Alias' % ( self.rootConfigPath, storageName )
+      configPath = cfgPath( self.rootConfigPath, storageName, 'Alias' )
       aliasName = gConfig.getValue( configPath )
       result = self._getConfigStorageName( aliasName )
       if not result['OK']:
@@ -213,7 +169,7 @@ class StorageFactory:
   def _getConfigStorageOptions( self, storageName ):
     """ Get the options associated to the StorageElement as defined in the CS
     """
-    storageConfigPath = '%s/%s' % ( self.rootConfigPath, storageName )
+    storageConfigPath = cfgPath( self.rootConfigPath, storageName )
     res = gConfig.getOptions( storageConfigPath )
     if not res['OK']:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
@@ -225,7 +181,7 @@ class StorageFactory:
 
       if option in [ 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']:
         continue
-      optionConfigPath = '%s/%s' % ( storageConfigPath, option )
+      optionConfigPath = cfgPath( storageConfigPath, option )
       optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
 
     res = self.resourceStatus.getStorageElementStatus( storageName )
@@ -246,7 +202,7 @@ class StorageFactory:
   def _getConfigStorageProtocols( self, storageName ):
     """ Protocol specific information is present as sections in the Storage configuration
     """
-    storageConfigPath = '%s/%s' % ( self.rootConfigPath, storageName )
+    storageConfigPath = cfgPath( self.rootConfigPath, storageName )
     res = gConfig.getSections( storageConfigPath )
     if not res['OK']:
       errStr = "StorageFactory._getConfigStorageProtocols: Failed to get storage sections"
@@ -268,7 +224,7 @@ class StorageFactory:
       Parse the contents of the protocol block
     """
     # First obtain the options that are available
-    protocolConfigPath = '%s/%s/%s' % ( self.rootConfigPath, storageName, protocol )
+    protocolConfigPath = cfgPath( self.rootConfigPath, storageName, protocol )
     res = gConfig.getOptions( protocolConfigPath )
     if not res['OK']:
       errStr = "StorageFactory.__getProtocolDetails: Failed to get protocol options."
@@ -279,15 +235,26 @@ class StorageFactory:
     # We must have certain values internally even if not supplied in CS
     protocolDict = {'Access':'', 'Host':'', 'Path':'', 'Port':'', 'Protocol':'', 'ProtocolName':'', 'SpaceToken':'', 'WSUrl':''}
     for option in options:
-      configPath = '%s/%s' % ( protocolConfigPath, option )
+      configPath = cfgPath( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
+    protocolDict['BasePath'] = protocolDict['Path']  
+    
+    # Evaluate the base path including the VO specific part 
+    result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )
+    voPath = ''
+    if result['OK']:
+      voPath = result['Value'].get( self.vo, '' )
+    if voPath:
+      protocolDict['Path'] = voPath
+    else:
+      protocolDict['Path'] += '/%s' % self.vo     
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
-    if protocolDict['Access'] == 'remote':
+    if protocolDict['Access'].lower() == 'remote':
       self.remoteProtocols.append( protocolDict['ProtocolName'] )
-    elif protocolDict['Access'] == 'local':
+    elif protocolDict['Access'].lower() == 'local':
       self.localProtocols.append( protocolDict['ProtocolName'] )
     else:
       errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocol )
@@ -298,6 +265,7 @@ class StorageFactory:
       errStr = "StorageFactory.__getProtocolDetails: 'ProtocolName' option is not defined."
       gLogger.error( errStr, "%s: %s" % ( storageName, protocol ) )
       return S_ERROR( errStr )
+    
     return S_OK( protocolDict )
 
   ###########################################################################################
@@ -305,58 +273,27 @@ class StorageFactory:
   # Below is the method for obtaining the object instantiated for a provided storage configuration
   #
 
-  def __generateStorageObject( self, storageName, protocolName, protocol, path = None,
-                              host = None, port = None, spaceToken = None, wsUrl = None, parameters = {} ):
+  def __generateStorageObject( self, storageName, protocolName, parameters ):
 
     storageType = protocolName
     if self.proxy:
       storageType = 'Proxy'
 
-    moduleRootPaths = getInstalledExtensions()
-    moduleLoaded = False
-    path = path.rstrip( '/' )
-    if not path:
-      path = '/'
-    for moduleRootPath in moduleRootPaths:
-      if moduleLoaded:
-        break
-      gLogger.debug( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Storage", "%sStorage.py" % storageType )
-      gLogger.debug( "Looking for file %s" % moduleFile )
-      if not os.path.isfile( moduleFile ):
-        continue
-      try:
-        # This inforces the convention that the plug in must be named after the protocol
-        moduleName = "%sStorage" % ( storageType )
-        storageModule = __import__( '%s.Resources.Storage.%s' % ( moduleRootPath, moduleName ),
-                                    globals(), locals(), [moduleName] )
-      except Exception, x:
-        errStr = "StorageFactory._generateStorageObject: Failed to import %s: %s" % ( storageName, x )
-        gLogger.exception( errStr )
-        return S_ERROR( errStr )
+    objectLoader = ObjectLoader.ObjectLoader()
+    result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage' )
+    if not result['OK']:
+      gLogger.error( 'Failed to load storage object: %s' % result['Message'] )
+      return result
 
-      try:
-        evalString = "storageModule.%s(storageName,protocol,path,host,port,spaceToken,wsUrl)" % moduleName
-        storage = eval( evalString )
-        if not storage.isOK():
-          errStr = "StorageFactory._generateStorageObject: Failed to instantiate storage plug in."
-          gLogger.error( errStr, "%s" % ( moduleName ) )
-          return S_ERROR( errStr )
-      except Exception, x:
-        errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s(): %s" % ( moduleName, x )
-        gLogger.exception( errStr )
-        return S_ERROR( errStr )
+    storageClass = result['Value']
+    try:
+      storage = storageClass( storageName, parameters )
+    except Exception, x:
+      errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s: %s" % ( storageName, x )
+      gLogger.exception( errStr )
+      return S_ERROR( errStr )
 
-      # Set extra parameters if any
-      if parameters:
-        result = storage.setParameters( parameters )
-        if not result['OK']:
-          return result
-
-      # If use proxy, keep the original protocol name
-      if self.proxy:
-        storage.protocolName = protocolName
-      return S_OK( storage )
-
-    if not moduleLoaded:
-      return S_ERROR( 'Failed to find storage plugin %s' % protocolName )
+    # If use proxy, keep the original protocol name
+    if self.proxy:
+      storage.protocolName = protocolName
+    return S_OK( storage )
