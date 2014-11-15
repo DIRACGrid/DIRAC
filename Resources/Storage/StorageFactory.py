@@ -182,7 +182,10 @@ class StorageFactory:
       if option in [ 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']:
         continue
       optionConfigPath = cfgPath( storageConfigPath, option )
-      optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
+      if option in [ 'VO' ]:
+        optionsDict[option] = gConfig.getValue( optionConfigPath, [] )
+      else:
+        optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
 
     res = self.resourceStatus.getStorageElementStatus( storageName )
     if not res[ 'OK' ]:

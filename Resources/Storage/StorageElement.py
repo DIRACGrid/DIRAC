@@ -308,8 +308,13 @@ class StorageElementItem( object ):
 
     :param str operation: operation name
     """
-    self.log.verbose( "StorageElement.isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name,
-                                                                                             operation ) )
+    self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for VO %s" % ( self.name,
+                                                                                                            self.vo ) )
+    if 'VO' in self.options and not self.vo in self.options['VO']:
+      self.log.debug( "StorageElementisValid: StorageElement is not allowed for VO %s" % self.vo )
+      return S_ERROR( "StorageElement.isValid: StorageElement is not allowed for VO" ) 
+    self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for %s" % ( self.name,
+                                                                                                         operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
 
