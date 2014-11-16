@@ -168,39 +168,39 @@ class SSH:
         destinationPath = destinationPath.replace( '$', '\\\\\$' )
         postUploadCommand = postUploadCommand.replace( '$', '\\\\\$' )
         command = "/bin/sh -c 'cat %s | %s -q %s %s@%s \"%s \\\"cat > %s; %s\\\"\"' " % ( localFile, 
-                                                                                       self.sshType,
-                                                                                       self.options, 
-                                                                                       self.user, 
-                                                                                       self.host,
-                                                                                       self.sshTunnel, 
-                                                                                       destinationPath,
-                                                                                       postUploadCommand )
+                                                                                          self.sshType,
+                                                                                          self.options, 
+                                                                                          self.user, 
+                                                                                          self.host,
+                                                                                          self.sshTunnel, 
+                                                                                          destinationPath,
+                                                                                          postUploadCommand )
       else:
         #destinationPath = destinationPath.replace( '$', '\$' )
         #postUploadCommand = postUploadCommand.replace( '$', '\$' )
         command = "/bin/sh -c \"cat %s | %s -q %s %s@%s 'cat > %s; %s'\" " % ( localFile, 
-                                                                            self.sshType,
-                                                                            self.options, 
-                                                                            self.user, 
-                                                                            self.host, 
-                                                                            destinationPath,
-                                                                            postUploadCommand )
+                                                                               self.sshType,
+                                                                               self.options, 
+                                                                               self.user, 
+                                                                               self.host, 
+                                                                               destinationPath,
+                                                                               postUploadCommand )
     else:
       if self.sshTunnel:
-        destinationPath = destinationPath.replace( '$', '\\\\$' )
-        command = "/bin/sh -c '%s -q %s -l %s %s \"%s \\\"cat %s\\\"\" | cat > %s'" % (self.sshType, 
-                                                                                    self.options, 
-                                                                                    self.user, 
-                                                                                    self.host, 
-                                                                                    self.sshTunnel, 
-                                                                                    destinationPath, localFile )
+        destinationPath = destinationPath.replace( '$', '\\\\\\$' )
+        command = "/bin/sh -c '%s -q %s -l %s %s \"%s \\\"cat %s\\\"\" | cat > %s'" % ( self.sshType, 
+                                                                                        self.options, 
+                                                                                        self.user, 
+                                                                                        self.host, 
+                                                                                        self.sshTunnel, 
+                                                                                        destinationPath, localFile )
       else:  
         destinationPath = destinationPath.replace( '$', '\$' )
         command = "/bin/sh -c '%s -q %s -l %s %s \"cat %s\" | cat > %s'" % ( self.sshType,
-                                                                          self.options, 
-                                                                          self.user, 
-                                                                          self.host, 
-                                                                          destinationPath, localFile )      
+                                                                             self.options, 
+                                                                             self.user, 
+                                                                             self.host, 
+                                                                             destinationPath, localFile )      
     self.log.debug( "SSH copy command: %s" % command )
     return self.__ssh_call( command, timeout )
 
