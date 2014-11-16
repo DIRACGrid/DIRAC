@@ -23,24 +23,50 @@ from types import StringTypes
 __RCSID__ = "$Id$"
 
 class SSH:
+  """ SSH class encapsulates passing commands and files through an SSH tunnel
+      to a remote host. It can use either ssh or gsissh access. The final host
+      where the commands will be executed and where the files will copied/retrieved
+      can be reached through an intermediate host if SSHTunnel parameters is defined.
+      
+      SSH constructor parameters are defined in a SSH accessible Computing Element
+      in the Configuration System:
+      
+      - SSHHost: SSH host name
+      - SSHUser: SSH user login
+      - SSHPassword: SSH password
+      - SSHPort: port number if not standard, e.g. for the gsissh access
+      - SSHKey: location of the ssh private key for no-password connection
+      - SSHOptions: any other SSH options to be used
+      - SSHTunnel: string defining the use of intermediate SSH host. Example:
+                   'ssh -i /private/key/location -l final_user final_host'
+      - SSHType: ssh ( default ) or gsissh     
+      
+      The class public interface includes two methods:
+      
+      sshCall( timeout, command_sequence )
+      scpCall( timeout, local_file, remote_file, upload = False/True )        
+  """
+  
+  def __init__( self, host = None, parameters = {} ):
 
-  def __init__( self, user = None, host = None, password = None, key = None, parameters = {}, options = "" ):
-
-    self.user = user
-    if not user:
-      self.user = parameters.get( 'SSHUser', '' )
     self.host = host
     if not host:
       self.host = parameters.get( 'SSHHost', '' )
-    self.password = password
-    if not password:
-      self.password = parameters.get( 'SSHPassword', '' )
-    self.key = key
-    if not key:
-      self.key = parameters.get( 'SSHKey', '' )
-    self.options = options
-    if not len(options):
-      self.options = parameters.get( 'SSHOptions', '' )
+    
+    self.user = parameters.get( 'SSHUser', '' )
+    self.password = parameters.get( 'SSHPassword', '' )
+    self.port = parameters.get( 'SSHPort', '' )
+    self.key = parameters.get( 'SSHKey', '' )
+    self.options = parameters.get( 'SSHOptions', '' )
+    self.sshTunnel = parameters.get( 'SSHTunnel', '' )  
+    self.sshType = parameters.get( 'SSHType', 'ssh' )  
+    
+    if self.port:
+      self.options += ' -p %s' % self.port
+    if self.key:
+      self.options += ' -i %s' % self.key
+    self.options = self.options.strip()   
+    
     self.log = gLogger.getSubLogger( 'SSH' )  
 
   def __ssh_call( self, command, timeout ):
@@ -103,12 +129,12 @@ class SSH:
     if type( cmdSeq ) == type( [] ):
       command = ' '.join( cmdSeq )
 
-    key = ''
-    if self.key:
-      key = ' -i %s ' % self.key
-
-    pattern = "'===><==='"
-    command = 'ssh -q %s -l %s %s %s "echo %s;%s"' % ( key, self.user, self.host, self.options, pattern, command )    
+    pattern = "__DIRAC__"
+    
+    if self.sshTunnel:
+      command = '%s -q %s -l %s %s \'%s "echo %s; %s"\'' % ( self.sshType, self.options, self.user, self.host, self.sshTunnel, pattern, command )    
+    else:
+      command = '%s -q %s -l %s %s "echo %s;%s"' % ( self.sshType, self.options, self.user, self.host, pattern, command )    
     self.log.debug( "SSH command %s" % command )
     result = self.__ssh_call( command, timeout )    
     self.log.debug( "SSH command result %s" % str( result ) )
@@ -116,12 +142,12 @@ class SSH:
       return result
     
     # Take the output only after the predefined pattern
-    ind = result['Value'][1].find('===><===')
+    ind = result['Value'][1].find('__DIRAC__')
     if ind == -1:
       return result
 
     status,output,error = result['Value']
-    output = output[ind+8:]
+    output = output[ind+9:]
     if output.startswith('\r'):
       output = output[1:]
     if output.startswith('\n'):
@@ -133,14 +159,38 @@ class SSH:
   def scpCall( self, timeout, localFile, destinationPath, upload = True ):
     """ Execute scp copy
     """
-    key = ''
-    if self.key:
-      key = ' -i %s ' % self.key
+
     if upload:
-      command = "scp %s %s %s %s@%s:%s" % ( key, self.options, localFile, self.user, self.host, destinationPath )
+      if self.sshTunnel:
+        command = "/bin/sh -c 'cat %s | %s %s %s@%s \"%s \\\"cat > %s\\\"\"' " % ( localFile, 
+                                                                                   self.sshType,
+                                                                                   self.options, 
+                                                                                   self.user, 
+                                                                                   self.host,
+                                                                                   self.sshTunnel, 
+                                                                                   destinationPath )
+      else:
+        command = "/bin/sh -c \"cat %s | %s %s %s@%s 'cat > %s'\" " % ( localFile, 
+                                                                        self.sshType,
+                                                                        self.options, 
+                                                                        self.user, 
+                                                                        self.host, 
+                                                                        destinationPath )
     else:
-      command = "scp %s %s %s@%s:%s %s" % ( key, self.options, self.user, self.host, destinationPath, localFile )
-    self.log.debug( "SCP command %s" % command )
+      if self.sshTunnel:
+        command = "/bin/sh -c '%s %s -l %s %s \"%s \\\"cat %s\\\"\" | cat > %s'" % (self.sshType, 
+                                                                                    self.options, 
+                                                                                    self.user, 
+                                                                                    self.host, 
+                                                                                    self.sshTunnel, 
+                                                                                    destinationPath, localFile )
+      else:  
+        command = "/bin/sh -c '%s %s -l %s %s \"cat %s\" | cat > %s'" % ( self.sshType,
+                                                                          self.options, 
+                                                                          self.user, 
+                                                                          self.host, 
+                                                                          destinationPath, localFile )      
+    self.log.debug( "SSH copy command: %s" % command )
     return self.__ssh_call( command, timeout )
 
 class SSHComputingElement( ComputingElement ):
@@ -242,7 +292,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed creating working directories: %s' % result['Message'][1] )
       return result
-    status,output,error = result['Value']
+    status, output, _error = result['Value']
     if status == -1:
       self.log.warn( 'TImeout while creating directories' )
       return S_ERROR( 'TImeout while creating directories' )
@@ -257,7 +307,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed uploading control script: %s' % result['Message'][1] )
       return result
-    status,output,error = result['Value']
+    status, output, _error = result['Value']
     if status != 0:
       if status == -1:
         self.log.warn( 'Timeout while uploading control script' )
@@ -272,7 +322,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
       return result
-    status,output,error = result['Value']
+    status, output, _error = result['Value']
     if status != 0:
       if status == -1:
         self.log.warn( 'Timeout while chmod control script' )
@@ -313,12 +363,12 @@ class SSHComputingElement( ComputingElement ):
     ssh = SSH( host = host, parameters = self.ceParameters )
     # Copy the executable
     sFile = os.path.basename( executableFile )
-    result = ssh.scpCall( 10, executableFile, '%s/%s' % ( self.executableArea, os.path.basename( executableFile ) ) )
+    result = ssh.scpCall( 10, executableFile, '%s/%s' % ( self.executableArea, sFile ) )
     if not result['OK']:
       return result  
     
     jobStamps = []
-    for i in range( numberOfJobs ):
+    for _i in range( numberOfJobs ):
       jobStamps.append( makeGuid()[:8] )
     jobStamp = '#'.join( jobStamps )
     
@@ -348,11 +398,7 @@ class SSHComputingElement( ComputingElement ):
     sshStdout = result['Value'][1]
     sshStderr = result['Value'][2]
     
-    # Examine results of the job submission
-    submitHost = host
-    if host is None:
-      submitHost = self.ceParameters['SSHHost'].split('/')[0]
-        
+    # Examine results of the job submission        
     if sshStatus == 0:
       outputLines = sshStdout.strip().replace('\r','').split('\n')
       try:
@@ -371,7 +417,7 @@ class SSHComputingElement( ComputingElement ):
         return S_ERROR( 'Failed job submission, reason: %s' % message )   
       else:
         batchIDs = outputLines[1:]
-        jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+id for id in batchIDs ]    
+        jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in batchIDs ]    
     else:
       return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
 
@@ -390,7 +436,6 @@ class SSHComputingElement( ComputingElement ):
   def _killJobOnHost( self, jobIDList, host = None ):
     """ Kill the jobs for the given list of job IDs
     """ 
-    resultDict = {}
     ssh = SSH( host = host, parameters = self.ceParameters )
     jobDict = {}
     for job in jobIDList:      
@@ -592,7 +637,7 @@ class SSHComputingElement( ComputingElement ):
     if not result['OK']:
       return result
     
-    jobStamp,host,outputFile,errorFile = result['Value']
+    jobStamp, _host, outputFile, errorFile = result['Value']
     
     self.log.verbose( 'Getting output for jobID %s' % jobID )
 
