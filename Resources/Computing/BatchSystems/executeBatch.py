@@ -1,3 +1,5 @@
+
+
 ###########################################################
 #  Simple executor script for Batch class methods
 ###########################################################  
@@ -10,8 +12,8 @@ if __name__ == "__main__":
   inputDict = json.loads( urllib.unquote( arguments ) )
 
   method = inputDict.pop('Method')
-  backend = inputDict.pop('Backend')
-  batch = locals()['%sBatch' % backend]()
+  batchSystem = inputDict.pop('BatchSystem')
+  batch = locals()[batchSystem]()
 
   result = getattr( batch, method )( **inputDict )
 

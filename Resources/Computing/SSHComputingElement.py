@@ -221,7 +221,7 @@ class SSHComputingElement( ComputingElement ):
 
     if 'SharedArea' not in self.ceParameters:
       #. isn't a good location, move to $HOME  
-      self.ceParameters['SharedArea'] = '$HOME'
+      self.ceParameters['SharedArea'] = '\$HOME'
 
     if 'BatchOutput' not in self.ceParameters:
       self.ceParameters['BatchOutput'] = 'data' 
@@ -244,6 +244,7 @@ class SSHComputingElement( ComputingElement ):
     self.batchSystem = self.ceParameters.get( 'BatchSystem', 'Host' )
     self.loadBatchSystem()
 
+    self.user = self.ceParameters['SSHUser']
     self.queue = self.ceParameters['Queue']
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
       self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
@@ -353,7 +354,7 @@ class SSHComputingElement( ComputingElement ):
     if not ssh:
       ssh = SSH( host = host, parameters = self.ceParameters )
     
-    options['Batch'] = self.batchSystem
+    options['BatchSystem'] = self.batchSystem
     options['Method'] = command
     options['OutputDir'] = self.batchOutput
     options['ErrorDir'] = self.batchError
@@ -362,11 +363,12 @@ class SSHComputingElement( ComputingElement ):
     options['ExecutionContext'] = self.execution
     options['User'] = self.user
     options['Queue'] = self.queue
+    
   
     options = json.dumps( options ) 
     options = urllib.quote( options )
     
-    cmd = "bash --login -c '%s/execute_batch %s'" % ( self.sharedArea, options )
+    cmd = "bash --login -c 'python %s/execute_batch %s'" % ( self.sharedArea, options )
                                                                                  
     self.log.verbose( 'CE submission command: %s' %  cmd )
 
