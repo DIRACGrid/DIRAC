@@ -35,7 +35,7 @@ class Host( object ):
 
     args = dict( kwargs )
 
-    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir',
+    MANDATORY_PARAMETERS = [ 'Executable', 'SharedDir', 'OutputDir', 'ErrorDir', 'WorkDir',
                              'InfoDir', 'ExecutionContext', 'JobStamps' ]
 
     for argument in MANDATORY_PARAMETERS:
@@ -51,9 +51,11 @@ class Host( object ):
     nCores = args.get( 'NCores', 1 )
 
     # Prepare the executor command
-    if os.path.isfile( 'run_detached.sh' ):
-      os.unlink( 'run_detached.sh' )
-    runFile = open( 'run_detached.sh', 'w' )
+    runFileName = os.path.join( args['SharedDir'], 'run_detached.sh' )
+    runFileName = os.path.expandvars( runFileName )
+    if os.path.isfile( runFileName ):
+      os.unlink( runFileName )
+    runFile = open( runFileName, 'w' )
     runFile.write( """
 ( exec </dev/null
 #  echo $2
@@ -68,19 +70,20 @@ echo $!
 exit 0
 """ )
     runFile.close()
-    os.chmod( 'run_detached.sh', stat.S_IXUSR | stat.S_IRUSR )
+    os.chmod( runFileName, stat.S_IXUSR | stat.S_IRUSR )
     jobs = []
     output = ''
-    args['CWD'] = os.getcwd()
+    args['RunFile'] = runFileName
     for _i in range( int(nJobs) ):
       args['Stamp'] = stamps[_i]
       envDict = os.environ
       envDict[jobidName] = stamps[_i]
       try:
         jobDir = '%(WorkDir)s/%(Stamp)s' % args
+        jobDir = os.path.expandvars( jobDir )
         os.makedirs( jobDir )
         os.chdir( jobDir )
-        popenObject = subprocess.Popen( [ "%(CWD)s/run_detached.sh %(CWD)s/%(Executable)s %(OutputDir)s/%(Stamp)s.out %(ErrorDir)s/%(Stamp)s.err" % args ],
+        popenObject = subprocess.Popen( [ "%(RunFile)s %(Executable)s %(OutputDir)s/%(Stamp)s.out %(ErrorDir)s/%(Stamp)s.err" % args ],
                                         stdout = subprocess.PIPE,
                                         shell = True,
                                         env = envDict )
@@ -98,6 +101,7 @@ exit 0
                   }
         jobString = json.dumps( jobInfo )
         pidFileName = "%(InfoDir)s/%(Stamp)s.info" % args
+        pidFileName = os.path.expandvars( pidFileName )
         pidFile = open( pidFileName, 'w' )
         pidFile.write( jobString )
         pidFile.close()
@@ -135,6 +139,7 @@ exit 0
 
     jobInfo = {}
     infoFileName = os.path.join( infoDir, '%s.info' % stamp )
+    infoFileName = os.path.expandvars( infoFileName )
     if os.path.exists( infoFileName ):
       infoFile = open( infoFileName, 'r' )
       jobInfo = infoFile.read().strip()
@@ -164,8 +169,10 @@ exit 0
 
     running = 0
     usedCores = 0
+    infoDir = os.path.expandvars( infoDir )
     infoFiles = glob.glob( '%s/*.info' % infoDir )
     for infoFileName in infoFiles:
+      infoFileName = os.path.expandvars( infoFileName )
       infoFile = open( infoFileName, 'r' )
       jobInfo = infoFile.read().strip()
       infoFile.close()
@@ -206,30 +213,6 @@ exit 0
 
     resultDict = {}
 
-    MANDATORY_PARAMETERS = [ 'InfoDir', 'JobStamps', 'User' ]
-
-    for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
-        resultDict['Status'] = -1
-        resultDict['Message'] = 'No %s' % argument
-        return resultDict
-
-    user = kwargs.get( 'User' )
-    infoDir = kwargs.get( 'InfoDir' )
-    jobStamps = kwargs.get( 'JobStamps' )
-    jobDict = {}
-    for stamp in jobStamps:
-      pid = self.__getJobInfo( infoDir, stamp ).get( 'PID', 0 )
-      jobDict[stamp] = self.__checkPid( pid, user )
-
-    resultDict['Status'] = 0
-    resultDict['Jobs'] = jobDict
-    return resultDict
-
-  def killJob( self, **kwargs ):
-
-    resultDict = {}
-
     MANDATORY_PARAMETERS = [ 'InfoDir', 'JobIDList', 'User' ]
 
     for argument in MANDATORY_PARAMETERS:
@@ -244,8 +227,37 @@ exit 0
     jobDict = {}
     for stamp in jobStamps:
       pid = self.__getJobInfo( infoDir, stamp ).get( 'PID', 0 )
+      jobDict[stamp] = self.__checkPid( pid, user )
+
+    resultDict['Status'] = 0
+    resultDict['Jobs'] = jobDict
+    return resultDict
+
+  def killJob( self, **kwargs ):
+
+    resultDict = {}
+
+    MANDATORY_PARAMETERS = [ 'InfoDir', 'WorkDir', 'OutputDir', 
+                             'ErrorDir', 'JobIDList', 'User' ]
+
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict
+
+    user = kwargs.get( 'User' )
+    infoDir = kwargs.get( 'InfoDir' )
+    workDir = kwargs.get( 'WorkDir' )
+    outputDir = kwargs.get( 'OutputDir' )
+    errorDir = kwargs.get( 'ErrorDir' )
+    jobStamps = kwargs.get( 'JobIDList' )
+    jobDict = {}
+    for stamp in jobStamps:
+      pid = self.__getJobInfo( infoDir, stamp ).get( 'PID', 0 )
       if self.__checkPid( pid, user ) == 'Running':
         os.kill( pid, signal.SIGKILL )
+        self.__cleanJob( stamp, infoDir, workDir, outputDir, errorDir )
         jobDict[stamp] = 'Killed'
       else:
         jobDict[stamp] = 'Done'

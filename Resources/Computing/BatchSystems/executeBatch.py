@@ -1,7 +1,15 @@
 
 
 ###########################################################
-#  Simple executor script for Batch class methods
+#
+#  Simple executor script for Batch class methods.
+#  
+#  The script is concatenated on the fly with the required
+#  batch system class definition
+#
+#  15.11.2014
+#  Author: A.T.
+#
 ###########################################################  
 
 if __name__ == "__main__":

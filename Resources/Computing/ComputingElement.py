@@ -158,7 +158,6 @@ class ComputingElement(object):
     """ Instantiate object representing the backend batch system
     """
     self.batchSystem = self.ceParameters['BatchSystem']
-    self.ceType += self.batchSystem
     objectLoader = ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem )
     if not result['OK']:
