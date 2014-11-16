@@ -15,8 +15,9 @@ from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
 from DIRAC                                               import gLogger
+from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 
-import os, urllib
+import os, urllib, json
 import shutil, tempfile
 from types import StringTypes
 
@@ -156,26 +157,28 @@ class SSH:
     result['Value'] = ( status,output,error )
     return result
 
-  def scpCall( self, timeout, localFile, destinationPath, upload = True ):
+  def scpCall( self, timeout, localFile, destinationPath, postUploadCommand = '', upload = True ):
     """ Execute scp copy
     """
 
     if upload:
       if self.sshTunnel:
-        command = "/bin/sh -c 'cat %s | %s %s %s@%s \"%s \\\"cat > %s\\\"\"' " % ( localFile, 
-                                                                                   self.sshType,
-                                                                                   self.options, 
-                                                                                   self.user, 
-                                                                                   self.host,
-                                                                                   self.sshTunnel, 
-                                                                                   destinationPath )
+        command = "/bin/sh -c 'cat %s | %s %s %s@%s \"%s \\\"cat > %s; %s\\\"\"' " % ( localFile, 
+                                                                                       self.sshType,
+                                                                                       self.options, 
+                                                                                       self.user, 
+                                                                                       self.host,
+                                                                                       self.sshTunnel, 
+                                                                                       destinationPath,
+                                                                                       postUploadCommand )
       else:
-        command = "/bin/sh -c \"cat %s | %s %s %s@%s 'cat > %s'\" " % ( localFile, 
-                                                                        self.sshType,
-                                                                        self.options, 
-                                                                        self.user, 
-                                                                        self.host, 
-                                                                        destinationPath )
+        command = "/bin/sh -c \"cat %s | %s %s %s@%s 'cat > %s; %s'\" " % ( localFile, 
+                                                                            self.sshType,
+                                                                            self.options, 
+                                                                            self.user, 
+                                                                            self.host, 
+                                                                            destinationPath,
+                                                                            postUploadCommand )
     else:
       if self.sshTunnel:
         command = "/bin/sh -c '%s %s -l %s %s \"%s \\\"cat %s\\\"\" | cat > %s'" % (self.sshType, 
@@ -238,6 +241,8 @@ class SSHComputingElement( ComputingElement ):
   def _reset( self ):
     """ Process CE parameters and make necessary adjustments
     """
+    self.batchSystem = self.ceParameters.get( 'BatchSystem', 'Host' )
+    self.loadBatchSystem()
 
     self.queue = self.ceParameters['Queue']
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
@@ -263,6 +268,8 @@ class SSHComputingElement( ComputingElement ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )  
       
     result = self._prepareRemoteHost()
+    if not result['OK']:
+      return result
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -271,6 +278,8 @@ class SSHComputingElement( ComputingElement ):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
         self.removeOutput = False
+        
+    return S_OK()    
 
   def _prepareRemoteHost(self, host=None ):
     """ Prepare remote directories and upload control script 
@@ -301,9 +310,15 @@ class SSHComputingElement( ComputingElement ):
       return S_ERROR( 'Failed to create directories: %s' % output )
     
     # Upload the control script now
-    sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", self.controlScript )
-    self.log.verbose( 'Uploading %s script to %s' % ( self.controlScript, self.ceParameters['SSHHost'] ) )
-    result = ssh.scpCall( 30, sshScript, self.sharedArea )
+    batchSystemDir = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "BatchSystems" )
+    batchSystemScript = os.path.join( batchSystemDir, '%s.py' % self.batchSystem )
+    batchSystemExecutor = os.path.join( batchSystemDir, 'executeBatch.py' )
+    self.log.verbose( 'Uploading %s script to %s' % ( self.batchSystem, self.ceParameters['SSHHost'] ) )
+    remoteScript = '%s/execute_batch' % self.sharedArea
+    result = ssh.scpCall( 30, 
+                          '%s %s' % ( batchSystemScript, batchSystemExecutor ), 
+                          remoteScript,
+                          postUploadCommand = 'chmod +x %s' % remoteScript )
     if not result['OK']:
       self.log.warn( 'Failed uploading control script: %s' % result['Message'][1] )
       return result
@@ -317,21 +332,69 @@ class SSHComputingElement( ComputingElement ):
         return S_ERROR( 'Failed uploading control script' )
       
     # Chmod the control scripts
-    self.log.verbose( 'Chmod +x control script' )
-    result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
-    if not result['OK']:
-      self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
-      return result
-    status, output, _error = result['Value']
-    if status != 0:
-      if status == -1:
-        self.log.warn( 'Timeout while chmod control script' )
-        return S_ERROR( 'Timeout while chmod control script' )
-      else:  
-        self.log.warn( 'Failed uploading chmod script: %s' % output )
-        return S_ERROR( 'Failed uploading chmod script' )
+    #self.log.verbose( 'Chmod +x control script' )
+    #result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
+    #if not result['OK']:
+    #  self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
+    #  return result
+    #status, output, _error = result['Value']
+    #if status != 0:
+    #  if status == -1:
+    #    self.log.warn( 'Timeout while chmod control script' )
+    #    return S_ERROR( 'Timeout while chmod control script' )
+    #  else:  
+    #    self.log.warn( 'Failed uploading chmod script: %s' % output )
+    #    return S_ERROR( 'Failed uploading chmod script' )
     
     return S_OK()
+
+  def __executeHostCommand( self, command, options, ssh = None, host = None ):
+    
+    if not ssh:
+      ssh = SSH( host = host, parameters = self.ceParameters )
+    
+    options['Batch'] = self.batchSystem
+    options['Method'] = command
+    options['OutputDir'] = self.batchOutput
+    options['ErrorDir'] = self.batchError
+    options['WorkDir'] = self.workArea
+    options['InfoDir'] = self.infoArea
+    options['ExecutionContext'] = self.execution
+    options['User'] = self.user
+    options['Queue'] = self.queue
+  
+    options = json.dumps( options ) 
+    options = urllib.quote( options )
+    
+    cmd = "bash --login -c '%s/execute_batch %s'" % ( self.sharedArea, options )
+                                                                                 
+    self.log.verbose( 'CE submission command: %s' %  cmd )
+
+    result = ssh.sshCall( 120, cmd )
+    if not result['OK']:
+      self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
+      return result
+
+    sshStatus = result['Value'][0]
+    sshStdout = result['Value'][1]
+    sshStderr = result['Value'][2]
+    
+    # Examine results of the job submission        
+    if sshStatus == 0:
+      output = sshStdout.strip().replace('\r','').strip()
+      try:
+        index = output.index('============= Start output ===============')
+        output = output[index+42:]
+      except:
+        return S_ERROR( "Invalid output from job submission: %s" % output ) 
+      try:
+        output = urllib.unquote( output ) 
+        result = json.loads( output )
+        return S_OK( result )
+      except:
+        return S_ERROR( 'Invalid return structure from job submission' )
+    else:
+      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )  
 
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
 
@@ -362,66 +425,36 @@ class SSHComputingElement( ComputingElement ):
     """
     ssh = SSH( host = host, parameters = self.ceParameters )
     # Copy the executable
-    sFile = os.path.basename( executableFile )
-    result = ssh.scpCall( 10, executableFile, '%s/%s' % ( self.executableArea, sFile ) )
+    submitFile = '%s/%s' % ( self.executableArea, os.path.basename( executableFile ) )
+    result = ssh.scpCall( 10, executableFile, submitFile )
     if not result['OK']:
       return result  
     
     jobStamps = []
     for _i in range( numberOfJobs ):
       jobStamps.append( makeGuid()[:8] )
-    jobStamp = '#'.join( jobStamps )
     
-    subOptions = urllib.quote( self.submitOptions )
+    # Collect command options
+    commandOptions = { 'Executable': submitFile,
+                       'NJobs': numberOfJobs,
+                       'SubmitOptions': self.submitOptions,
+                       'JobStamps': jobStamps }
     
-    cmd = "bash --login -c '%s/%s submit_job %s/%s %s %s %s %d %s %s %s %s'" % ( self.sharedArea, 
-                                                                                 self.controlScript, 
-                                                                                 self.executableArea, 
-                                                                                 os.path.basename( executableFile ),  
-                                                                                 self.batchOutput, 
-                                                                                 self.batchError,
-                                                                                 self.workArea,
-                                                                                 numberOfJobs,
-                                                                                 self.infoArea,
-                                                                                 jobStamp,
-                                                                                 self.execQueue,
-                                                                                 subOptions )
-
-    self.log.verbose( 'CE submission command: %s' %  cmd )
-
-    result = ssh.sshCall( 120, cmd )
-    if not result['OK']:
-      self.log.error( '%s CE job submission failed' % self.ceType, result['Message'] )
-      return result
-
-    sshStatus = result['Value'][0]
-    sshStdout = result['Value'][1]
-    sshStderr = result['Value'][2]
+    resultCommand = self.__executeHostCommand( 'submitJob', commandOptions, ssh = ssh, host = host )
+    if not resultCommand['OK']:
+      return resultCommand
     
-    # Examine results of the job submission        
-    if sshStatus == 0:
-      outputLines = sshStdout.strip().replace('\r','').split('\n')
-      try:
-        index = outputLines.index('============= Start output ===============')
-        outputLines = outputLines[index+1:]
-      except:
-        return S_ERROR( "Invalid output from job submission: %s" % outputLines[0] )  
-      try:
-        status = int( outputLines[0] )
-      except:
-        return S_ERROR( "Failed local batch job submission: %s" % outputLines[0] )
-      if status != 0:
-        message = "Unknown reason"
-        if len( outputLines ) > 1:
-          message = outputLines[1]
-        return S_ERROR( 'Failed job submission, reason: %s' % message )   
-      else:
-        batchIDs = outputLines[1:]
-        jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in batchIDs ]    
+    result = resultCommand['Value']         
+    if result['Status'] != 0:
+      return S_ERROR( 'Failed job submission: %s' % result['Message'] )  
     else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+      batchIDs = result['Jobs']
+      if batchIDs:
+        jobIDs = [ '%s%s://%s/%s' % ( self.execution, self.ceType.lower(), self.ceName, _id ) for _id in batchIDs ]
+      else:
+        return S_ERROR( 'No jobs IDs returned' )      
 
-    result = S_OK ( jobIDs )
+    result = S_OK( jobIDs )
     self.submittedJobs += len( batchIDs )
 
     return result
@@ -436,7 +469,6 @@ class SSHComputingElement( ComputingElement ):
   def _killJobOnHost( self, jobIDList, host = None ):
     """ Kill the jobs for the given list of job IDs
     """ 
-    ssh = SSH( host = host, parameters = self.ceParameters )
     jobDict = {}
     for job in jobIDList:      
       result = pfnparse( job )
@@ -448,83 +480,33 @@ class SSHComputingElement( ComputingElement ):
       jobDict[stamp] = job
     stampList = jobDict.keys()   
 
-    cmd = "bash --login -c '%s/%s kill_job %s %s'" % ( self.sharedArea, self.controlScript, '#'.join( stampList ), self.infoArea )
-    result = ssh.sshCall( 10, cmd )
-    if not result['OK']:
-      return result
+    commandOptions = { 'JobIDList': stampList, 'User': self.user }
+    resultCommand = self.__executeHostCommand( 'killJob', commandOptions, host = host )
+    if not resultCommand['OK']:
+      return resultCommand
     
-    sshStatus = result['Value'][0]
-    sshStdout = result['Value'][1]
-    sshStderr = result['Value'][2]
+    result = resultCommand['Value']         
+    if result['Status'] != 0:
+      return S_ERROR( 'Failed job kill: %s' % result['Message'] )
     
-    # Examine results of the job submission
-    if sshStatus == 0:
-      outputLines = sshStdout.strip().replace('\r','').split('\n')
-      try:
-        index = outputLines.index('============= Start output ===============')
-        outputLines = outputLines[index+1:]
-      except:
-        return S_ERROR( "Invalid output from job kill: %s" % outputLines[0] )  
-      try:
-        status = int( outputLines[0] )
-      except:
-        return S_ERROR( "Failed local batch job kill: %s" % outputLines[0] )
-      if status != 0:
-        message = "Unknown reason"
-        if len( outputLines ) > 1:
-          message = outputLines[1]
-        return S_ERROR( 'Failed job kill, reason: %s' % message )      
-    else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+    if result['Failed']:
+      return S_ERROR( '%d jobs failed killing' % len( result['Failed'] ) )
     
     return S_OK()
 
   def _getHostStatus( self, host = None ):
     """ Get jobs running at a given host
     """
-    ssh = SSH( host = host, parameters = self.ceParameters ) 
-    cmd = "bash --login -c '%s/%s status_info %s %s %s %s'" % ( self.sharedArea, 
-                                                             self.controlScript, 
-                                                             self.infoArea,
-                                                             self.workArea,
-                                                             self.ceParameters['SSHUser'],
-                                                             self.execQueue )
-
-    result = ssh.sshCall( 10, cmd )
-    if not result['OK']:
-      return result
     
-    sshStatus = result['Value'][0]
-    sshStdout = result['Value'][1]
-    sshStderr = result['Value'][2]
+    resultCommand = self.__executeHostCommand( 'getCEStatus', {}, host = host )
+    if not resultCommand['OK']:
+      return resultCommand
     
-    # Examine results of the job submission
-    resultDict = {}
-    if sshStatus == 0:
-      outputLines = sshStdout.strip().replace('\r','').split('\n')
-      try:
-        index = outputLines.index('============= Start output ===============')
-        outputLines = outputLines[index+1:]
-      except:
-        return S_ERROR( "Invalid output from CE get status: %s" % outputLines[0] )  
-      try:
-        status = int( outputLines[0] )
-      except:
-        return S_ERROR( "Failed to get CE status: %s" % outputLines[0] )
-      if status != 0:
-        message = "Unknown reason"
-        if len( outputLines ) > 1:
-          message = outputLines[1]
-        return S_ERROR( 'Failed to get CE status, reason: %s' % message )  
-      else:
-        for line in outputLines[1:]:          
-          if ':::' in line:
-            jobStatus, nJobs = line.split( ':::' )
-            resultDict[jobStatus] = int( nJobs )    
-    else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
+    result = resultCommand['Value']         
+    if result['Status'] != 0:
+      return S_ERROR( 'Failed to get CE status: %s' % result['Message'] )
     
-    return S_OK( resultDict )
+    return S_OK( result )
 
   def getCEStatus( self, jobIDList = None ):
     """ Method to return information on running and pending jobs.
@@ -555,10 +537,8 @@ class SSHComputingElement( ComputingElement ):
   def _getJobStatusOnHost( self, jobIDList, host = None ):
     """ Get the status information for the given list of jobs
     """
-#    self.log.verbose( '*** getUnitJobStatus %s - %s\n' % ( jobIDList, host) )
 
-    resultDict = {}
-    ssh = SSH( host = host, parameters = self.ceParameters )
+    resultDict = {}    
     jobDict = {}
     for job in jobIDList:
       result = pfnparse( job )
@@ -570,43 +550,18 @@ class SSHComputingElement( ComputingElement ):
       jobDict[stamp] = job
     stampList = jobDict.keys()   
 
-    cmd = "bash --login -c '%s/%s job_status %s %s %s'" % ( self.sharedArea, 
-                                                         self.controlScript, 
-                                                         '#'.join( stampList ), 
-                                                         self.infoArea,
-                                                         self.ceParameters['SSHUser'] )    
-    result = ssh.sshCall( 30, cmd )
-    if not result['OK']:
-      return result
-    sshStatus = result['Value'][0]
-    sshStdout = result['Value'][1]
-    sshStderr = result['Value'][2]
+    for jobList in breakListIntoChunks( stampList, 100 ):
 
-    if sshStatus == 0:
-      outputLines = sshStdout.strip().replace('\r','').split('\n')
-      try:
-        index = outputLines.index('============= Start output ===============')
-        outputLines = outputLines[index+1:]
-      except:
-        return S_ERROR( "Invalid output from job get status: %s" % outputLines[0] )  
-      try:
-        status = int( outputLines[0] )
-      except:
-        return S_ERROR( "Failed local batch job status: %s" % outputLines[0] )
-      if status != 0:
-        message = "Unknown reason"
-        if len( outputLines ) > 1:
-          message = outputLines[1]
-        return S_ERROR( 'Failed job kill, reason: %s' % message )      
-      else:
-        for line in outputLines[1:]:
-          jbundle = line.split( ':::' )
-          if ( len( jbundle ) == 2 ):
-            resultDict[jobDict[jbundle[0]]] = jbundle[1]
-    else:
-      return S_ERROR( '\n'.join( [sshStdout,sshStderr] ) )
-
-#    self.log.verbose( ' !!! getUnitJobStatus will return : %s\n' % resultDict )
+      resultCommand = self.__executeHostCommand( 'getJobStatus', { 'JobIDList': jobList }, host = host )
+      if not resultCommand['OK']:
+        return resultCommand
+      
+      result = resultCommand['Value']         
+      if result['Status'] != 0:
+        return S_ERROR( 'Failed to get CE status: %s' % result['Message'] )
+      
+      resultDict.update( result['Jobs'] )
+    
     return S_OK( resultDict )
 
   def _getJobOutputFiles( self, jobID ):
