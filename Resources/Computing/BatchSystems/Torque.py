@@ -178,10 +178,36 @@ class Torque( object ):
     resultDict['Failed'] = failed
     return resultDict
   
-  def getJobOutputFiles( self, jobStamp, outputDir, errorDir ):
-    """ Get output file names for the specific CE 
+  def getJobOutputFiles( self, **kwargs ):
+    """ Get output file names and templates for the specific CE 
     """
-    output = '%s/DIRACPilot.o%s' % ( outputDir, jobStamp )
-    error = '%s/DIRACPilot.e%s' % ( errorDir, jobStamp )
-    return ( output, error )  
-  
+    resultDict = {}
+    MANDATORY_PARAMETERS = [ 'JobIDList', 'OutputDir', 'ErrorDir' ]
+    for argument in MANDATORY_PARAMETERS:
+      if not argument in kwargs:
+        resultDict['Status'] = -1
+        resultDict['Message'] = 'No %s' % argument
+        return resultDict   
+      
+    outputDir = kwargs['OutputDir']
+    errorDir = kwargs['ErrorDir']  
+      
+    outputTemplate = '%s/DIRACPilot.o%%s' % outputDir  
+    errorTemplate = '%s/DIRACPilot.e%%s' % errorDir  
+    outputTemplate = os.path.expandvars( outputTemplate )
+    errorTemplate = os.path.expandvars( errorTemplate )
+    
+    jobIDList = kwargs['JobIDList']
+    
+    jobDict = {}
+    for job in jobIDList:
+      jobDict[job] = {}
+      jobDict[job]['Output'] = outputTemplate % job
+      jobDict[job]['Error'] = errorTemplate % job
+
+    resultDict['Status'] = 0
+    resultDict['Jobs'] = jobDict
+    resultDict['OutputTemplate'] = outputTemplate
+    resultDict['ErrorTemplate'] = errorTemplate
+
+    return resultDict
