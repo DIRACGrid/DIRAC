@@ -121,6 +121,7 @@ requestTable = Table( 'Request', metadata,
                         Column( 'SubmitTime', DateTime ),
                         Column( 'RequestID', Integer, primary_key = True ),
                         Column( 'SourceComponent', BLOB ),
+                        Column( 'NotBefore', DateTime ),
                         mysql_engine = 'InnoDB'
 
                        )
@@ -132,6 +133,7 @@ mapper( Request, requestTable, properties = {
    '_Status': requestTable.c.Status,
    '_LastUpdate': requestTable.c.LastUpdate,
    '_SubmitTime': requestTable.c.SubmitTime,
+   '_NotBefore': requestTable.c.NotBefore,
    '__operations__' : relationship( Operation,
                                   backref = backref( '_parent', lazy = 'immediate' ),
                                   order_by = operationTable.c.Order,
@@ -299,8 +301,9 @@ class RequestDB( object ):
       except NoResultFound, e:
         pass
 
-    
-
+      # Since the object request is not attached to the session, we merge it to have an update
+      # instead of an insert with duplicate primary key
+      request = session.merge( request )
       session.add( request )
       session.commit()
       session.expunge_all()
@@ -375,10 +378,12 @@ class RequestDB( object ):
           return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % reqID )
 
       else:
+        now = datetime.datetime.utcnow().replace( microsecond = 0 )
         reqIDs = set()
         try:
           reqAscIDs = session.query( Request.RequestID )\
                              .filter( Request._Status == 'Waiting' )\
+                             .filter( Request._NotBefore < now )\
                              .order_by( Request._LastUpdate )\
                              .limit( 100 )\
                              .all()
@@ -387,6 +392,7 @@ class RequestDB( object ):
 
           reqDescIDs = session.query( Request.RequestID )\
                               .filter( Request._Status == 'Waiting' )\
+                              .filter( Request._NotBefore < now )\
                               .order_by( Request._LastUpdate.desc() )\
                               .limit( 50 )\
                               .all()
@@ -394,6 +400,9 @@ class RequestDB( object ):
           reqIDs |= set( [reqID[0] for reqID in reqDescIDs] )
         # No Waiting requests
         except NoResultFound, e:
+          return S_OK()
+
+        if not reqIDs:
           return S_OK()
   
         reqIDs = list( reqIDs )
@@ -415,13 +424,15 @@ class RequestDB( object ):
       if assigned:
         session.execute( update( Request )\
                          .where( Request.RequestID == requestID )\
-                         .values( {Request._Status : 'Assigned'} )
+                         .values( {Request._Status : 'Assigned',
+                                   Request._LastUpdate : datetime.datetime.utcnow()\
+                                                        .strftime( Request._datetimeFormat )} )
                        )
         session.commit()
 
       session.expunge_all()
       return S_OK( request )
-    
+
     except Exception, e:
       session.rollback()
       log.exception( "getRequest: unexpected exception", lException = e )

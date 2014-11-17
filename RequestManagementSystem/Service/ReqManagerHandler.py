@@ -20,6 +20,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
+import datetime
+import math
 
 class ReqManagerHandler( RequestHandler ):
   """
@@ -87,8 +89,9 @@ class ReqManagerHandler( RequestHandler ):
     :param str requestJSON: request serialized to JSON format
     """
 
+
     requestDict = json.loads( requestJSON )
-    requestName = requestDict.get( "RequestName", "***UNKNOWN***" )
+    requestName = requestDict.get( "RequestID", requestDict.get( 'RequestName', "***UNKNOWN***" ) )
     request = Request( requestDict )
     optimized = request.optimize()
     if optimized.get("Value", False):
@@ -100,6 +103,25 @@ class ReqManagerHandler( RequestHandler ):
     if not valid["OK"]:
       gLogger.error( "putRequest: request %s not valid: %s" % ( requestName, valid["Message"] ) )
       return valid
+
+
+    # If NotBefore is not set or user defined, we calculate its value
+
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
+    extraDelay = datetime.timedelta( 0 )
+    if request.Status not in Request.FINAL_STATES and ( not request.NotBefore or request.NotBefore < now ) :
+      op = request.getWaiting().get( 'Value' )
+
+      # If there is a waiting Operation with Files
+      if op and len( op ):
+        maxWaitingAttempt = max( [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ] )
+        # In case it is the first attempt, extraDelay is 0
+        # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
+        extraDelay = datetime.timedelta( minutes = 2 * math.log( maxWaitingAttempt )  if maxWaitingAttempt else 0 )
+      request.NotBefore = now + extraDelay
+
+    gLogger.info( "putRequest: request %s not before %s (extra delay %s)" % ( request.RequestName, request.NotBefore, extraDelay ) )
+
     requestName = request.RequestName
     gLogger.info( "putRequest: Attempting to set request '%s'" % requestName )
     return cls.__requestDB.putRequest( request )

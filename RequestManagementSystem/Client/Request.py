@@ -26,6 +26,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
+from types import NoneType
 
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -48,6 +49,7 @@ class Request( object ):
   :param datetime.datetime CreationTime: UTC datetime
   :param datetime.datetime SubmissionTime: UTC datetime
   :param datetime.datetime LastUpdate: UTC datetime
+  :param datetime.datetime NotBefore: UTC datetime
   :param str Status: request's status
   :param TypedList operations: list of operations
 
@@ -75,6 +77,9 @@ class Request( object ):
     self._CreationTime = now
     self._SubmitTime = now
     self._LastUpdate = now
+    # the time before which the request should not be executed
+    # If None, no delay
+    self._NotBefore = now
     self._Status = "Done"
     self.JobID = 0
     self.Error = None
@@ -96,8 +101,6 @@ class Request( object ):
     fromDict = fromDict if isinstance( fromDict, dict )\
                else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
                 else {}
-
-
 
 
     if "Operations" in fromDict:
@@ -309,6 +312,23 @@ class Request( object ):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._SubmitTime = value
 
+
+
+  @hybrid_property
+  def NotBefore( self ):
+    """ Getter for NotBefore time"""
+    return self._NotBefore
+
+  @NotBefore.setter
+  def NotBefore( self, value = None ):
+    """ Setter for the NotBefore time """
+    if type( value ) not in ( [NoneType] + [datetime.datetime] + list( StringTypes ) ):
+      raise TypeError( "NotBefore should be a datetime.datetime!" )
+    if type( value ) in StringTypes:
+      value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
+    self._NotBefore = value
+
+
   @hybrid_property
   def LastUpdate( self ):
     """ last update getter """
@@ -364,7 +384,7 @@ class Request( object ):
 
     attrNames = ['RequestID', "RequestName", "OwnerDN", "OwnerGroup",
                  "Status", "Error", "DIRACSetup", "SourceComponent",
-                  "JobID", "CreationTime", "SubmitTime", "LastUpdate"]
+                  "JobID", "CreationTime", "SubmitTime", "LastUpdate", "NotBefore"]
     jsonData = {}
 
     for attrName in attrNames :
@@ -429,7 +449,7 @@ class Request( object ):
 
     # If the RequestID is not the default one (0), it probably means
     # the Request is already in the DB, so we don't touch anything
-    if self.RequestID != 0:
+    if hasattr( self, 'RequestID' ) and not self.RequestID:
       return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
 
     # We could do it with a single loop (the 2nd one), but by doing this,

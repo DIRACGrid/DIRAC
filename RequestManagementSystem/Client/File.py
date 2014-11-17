@@ -70,6 +70,10 @@ class File( object ):
     self._duration = 0
 
 
+    # This variable is used in the setter to know whether they are called
+    # because of the json initialization or not
+    self.initialLoading = True
+
     fromDict = fromDict if isinstance( fromDict, dict )\
                else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
                else {}
@@ -83,6 +87,8 @@ class File( object ):
       if attrValue:
         setattr( self, attrName, attrValue )
 
+
+    self.initialLoading = False
 
   @hybrid_property
   def LFN( self ):
@@ -145,6 +151,7 @@ class File( object ):
     """ status setter """
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
+
     if value == 'Done':
       self.Error = ''
     self._Status = value
@@ -168,7 +175,7 @@ class File( object ):
   def _getJSONData( self ):
     """ Returns the data that have to be serialized by JSON """
     attrNames = ['FileID', 'OperationID', "Status", "LFN",
-                 "PFN", "ChecksumType", "Checksum", "GUID",
+                 "PFN", "ChecksumType", "Checksum", "GUID", "Attempt",
                  "Size", "Error"]
 
     jsonData = {}
