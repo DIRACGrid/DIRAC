@@ -278,7 +278,7 @@ class StorageFactory:
     if self.proxy:
       storageType = 'Proxy'
 
-    objectLoader = ObjectLoader.ObjectLoader()
+    objectLoader = ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage' )
     if not result['OK']:
       gLogger.error( 'Failed to load storage object: %s' % result['Message'] )
