@@ -14,8 +14,7 @@ from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import gLogger, gConfig
-from DIRAC.Core.Utilities.ObjectLoader                   import ObjectLoader
+from DIRAC                                               import gConfig
 
 import os
 import shutil, tempfile
@@ -66,6 +65,8 @@ class LocalComputingElement( ComputingElement ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )
 
     result = self._prepareHost()
+    if not result['OK']:
+      return result
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -74,6 +75,8 @@ class LocalComputingElement( ComputingElement ):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
         self.removeOutput = False
+        
+    return S_OK()    
 
   #############################################################################
   def _addCEConfigDefaults( self ):
