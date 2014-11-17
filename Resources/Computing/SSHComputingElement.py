@@ -18,7 +18,6 @@ from DIRAC                                               import gLogger
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 
 import os, urllib, json
-import shutil, tempfile
 from types import StringTypes
 
 __RCSID__ = "$Id$"
@@ -124,6 +123,9 @@ class SSH:
 
   def sshCall( self, timeout, cmdSeq ):
     """ Execute remote command via a ssh remote call
+    
+    :param int timeout: timeout of the command
+    :param list cmdSeq: list of command components 
     """
 
     command = cmdSeq
@@ -160,12 +162,20 @@ class SSH:
     result['Value'] = ( status,output,error )
     return result
 
-  def scpCall( self, timeout, localFile, destinationPath, postUploadCommand = '', upload = True ):
-    """ Execute scp copy
+  def scpCall( self, timeout, localFile, remoteFile, postUploadCommand = '', upload = True ):
+    """ Perform file copy through an SSH magic. 
+    
+    :param int timeout: timeout of the command
+    :param str localFile: local file path, serves as source for uploading and destination for downloading.
+                          Can take 'Memory' as value, in this case the downloaded contents is returned
+                          as result['Value'] 
+    :param str remoteFile: remote file full path
+    :param str postUploadCommand: command executed on the remote side after file upload
+    :param bool upload: upload if True, download otherwise                          
     """
     if upload:
       if self.sshTunnel:
-        destinationPath = destinationPath.replace( '$', '\\\\\$' )
+        remoteFile = remoteFile.replace( '$', '\\\\\$' )
         postUploadCommand = postUploadCommand.replace( '$', '\\\\\$' )
         command = "/bin/sh -c 'cat %s | %s -q %s %s@%s \"%s \\\"cat > %s; %s\\\"\"' " % ( localFile, 
                                                                                           self.sshType,
@@ -173,34 +183,38 @@ class SSH:
                                                                                           self.user, 
                                                                                           self.host,
                                                                                           self.sshTunnel, 
-                                                                                          destinationPath,
+                                                                                          remoteFile,
                                                                                           postUploadCommand )
       else:
-        #destinationPath = destinationPath.replace( '$', '\$' )
-        #postUploadCommand = postUploadCommand.replace( '$', '\$' )
         command = "/bin/sh -c \"cat %s | %s -q %s %s@%s 'cat > %s; %s'\" " % ( localFile, 
                                                                                self.sshType,
                                                                                self.options, 
                                                                                self.user, 
                                                                                self.host, 
-                                                                               destinationPath,
+                                                                               remoteFile,
                                                                                postUploadCommand )
     else:
+      finalCat = '| cat > %s' % localFile
+      if localFile.lower() == 'memory':
+        finalCat = ''
       if self.sshTunnel:
-        destinationPath = destinationPath.replace( '$', '\\\\\\$' )
-        command = "/bin/sh -c '%s -q %s -l %s %s \"%s \\\"cat %s\\\"\" | cat > %s'" % ( self.sshType, 
+        remoteFile = remoteFile.replace( '$', '\\\\\\$' )
+        command = "/bin/sh -c '%s -q %s -l %s %s \"%s \\\"cat %s\\\"\" %s'" % ( self.sshType, 
                                                                                         self.options, 
                                                                                         self.user, 
                                                                                         self.host, 
                                                                                         self.sshTunnel, 
-                                                                                        destinationPath, localFile )
+                                                                                        remoteFile, 
+                                                                                        finalCat )
       else:  
-        destinationPath = destinationPath.replace( '$', '\$' )
-        command = "/bin/sh -c '%s -q %s -l %s %s \"cat %s\" | cat > %s'" % ( self.sshType,
+        remoteFile = remoteFile.replace( '$', '\$' )
+        command = "/bin/sh -c '%s -q %s -l %s %s \"cat %s\" %s'" % ( self.sshType,
                                                                              self.options, 
                                                                              self.user, 
                                                                              self.host, 
-                                                                             destinationPath, localFile )      
+                                                                             remoteFile, 
+                                                                             finalCat )      
+  
     self.log.debug( "SSH copy command: %s" % command )
     return self.__ssh_call( command, timeout )
 
@@ -216,6 +230,8 @@ class SSHComputingElement( ComputingElement ):
     self.execution = "SSH"
     self.batchSystem = 'Host'
     self.submittedJobs = 0
+    self.outputTemplate = ''
+    self.errorTemplate = ''
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -577,7 +593,7 @@ class SSHComputingElement( ComputingElement ):
     
     return S_OK( resultDict )
 
-  def _getJobOutputFiles( self, jobID ):
+  def _getJobOutputFiles( self, jobID, host = None ):
     """ Get output file names for the specific CE
     """
     result = pfnparse( jobID )
@@ -586,10 +602,25 @@ class SSHComputingElement( ComputingElement ):
     jobStamp = result['Value']['FileName']
     host = result['Value']['Host']
     
-    if hasattr( self.batch, 'getOutputFiles' ):
-      output, error = self.batch.getOutputFiles( jobStamp, 
-                                                 self.batchOutput,
-                                                 self.batchError )
+    if self.outputTemplate:
+      output = self.outputTemplate % jobStamp
+      error = self.errorTemplate % jobStamp
+      
+    elif hasattr( self.batch, 'getJobOutputFiles' ):
+      resultCommand = self.__executeHostCommand( 'getJobOutputFiles', { 'JobIDList': [jobStamp] }, host = host )
+      if not resultCommand['OK']:
+        return resultCommand
+      
+      result = resultCommand['Value']         
+      if result['Status'] != 0:
+        return S_ERROR( 'Failed to get job output files: %s' % result['Message'] )
+      
+      if 'OutputTemplate' in result:
+        self.outputTemplate = result['OutputTemplate']
+        self.errorTemplate = result['ErrorTemplate']
+        
+      output = result['Jobs'][jobStamp]['Output']
+      error = result['Jobs'][jobStamp]['Error']  
     else:
       output = '%s/%s.out' % ( self.batchOutput, jobStamp )
       error = '%s/%s.err' % ( self.batchError, jobStamp )
@@ -606,41 +637,30 @@ class SSHComputingElement( ComputingElement ):
       return result
     
     jobStamp, _host, outputFile, errorFile = result['Value']
-    
     self.log.verbose( 'Getting output for jobID %s' % jobID )
 
-    if not localDir:
-      tempDir = tempfile.mkdtemp()
+    if localDir:
+      localOutputFile = '%s/%s.out' % ( localDir, jobStamp )
+      localErrorFile = '%s/%s.err' % ( localDir, jobStamp )
     else:
-      tempDir = localDir
+      localOutputFile = 'Memory'
+      localErrorFile = 'Memory'
 
     ssh = SSH( parameters = self.ceParameters )
-    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobStamp ), '%s' % outputFile, upload = False )
+    result = ssh.scpCall( 20, localOutputFile, outputFile, upload = False )
     if not result['OK']:
       return result
-    if not os.path.exists( '%s/%s.out' % ( tempDir, jobStamp ) ):
-      os.system( 'touch %s/%s.out' % ( tempDir, jobStamp ) )
-    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobStamp ), '%s' % errorFile, upload = False )
-    if not result['OK']:
-      return result
-    if not os.path.exists( '%s/%s.err' % ( tempDir, jobStamp ) ):
-      os.system( 'touch %s/%s.err' % ( tempDir, jobStamp ) )
-
-    # The result is OK, we can remove the output
-    if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/%s.out %s/%s.err' % ( self.batchOutput, jobStamp, self.batchError, jobStamp ) )
-
+    output = result['Value']
     if localDir:
-      return S_OK( ( '%s/%s.out' % ( tempDir, jobStamp ), '%s/%s.err' % ( tempDir, jobStamp ) ) )
-    else:
-      # Return the output as a string
-      outputFile = open( '%s/%s.out' % ( tempDir, jobStamp ), 'r' )
-      output = outputFile.read()
-      outputFile.close()
-      outputFile = open( '%s/%s.err' % ( tempDir, jobStamp ), 'r' )
-      error = outputFile.read()
-      outputFile.close()
-      shutil.rmtree( tempDir )
-      return S_OK( ( output, error ) )
+      output = localOutputFile
+    
+    result = ssh.scpCall( 20, localErrorFile, errorFile, upload = False )    
+    if not result['OK']:
+      return result
+    error = result['Value']
+    if localDir:
+      error = localErrorFile
+      
+    return S_OK( ( output, error ) )  
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
