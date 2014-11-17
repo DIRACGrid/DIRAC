@@ -8,7 +8,6 @@
 __RCSID__ = "$Id$"
 # # custom duty
 import re
-from types import ListType, StringType, StringTypes, DictType
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
@@ -19,8 +18,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
-
-
 
 class StorageElementCache( object ):
 
@@ -172,8 +169,8 @@ class StorageElementItem( object ):
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
 
     self.readMethods = [ 'getFile',
-                         'getAccessUrl',
-                         'getTransportURL',
+                         'getURLForProtocol',
+                         'getLfnForPfn',
                          'prestageFile',
                          'prestageFileStatus',
                          'getDirectory']
@@ -199,13 +196,9 @@ class StorageElementItem( object ):
                            ]
 
     self.okMethods = [ 'getLocalProtocols',
-                       'getPfnForProtocol',
-                       'getPfnForLfn',
-                       'getPfnPath',
                        'getProtocols',
                        'getRemoteProtocols',
                        'getStorageElementName',
-                       'getStorageElementOption',
                        'getStorageParameters',
                        'isLocalSE' ]
 
@@ -394,22 +387,6 @@ class StorageElementItem( object ):
       return S_ERROR( self.errorReason )
     return S_OK( self.localProtocols )
 
-  def getStorageElementOption( self, option ):
-    """ Get the value for the option supplied from self.options
-        :param option : option we are interested in
-    """
-    self.log.verbose( "StorageElement.getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option,
-                                                                                                 self.name ) )
-    if not self.valid:
-      return S_ERROR( self.errorReason )
-    if option in self.options:
-      optionValue = self.options[option]
-      return S_OK( optionValue )
-    else:
-      errStr = "StorageElement.getStorageElementOption: Option not defined for SE."
-      self.log.debug( errStr, "%s for %s" % ( option, self.name ) )
-      return S_ERROR( errStr )
-
   def getStorageParameters( self, protocol ):
     """ Get protocol specific options
       :param protocol : protocol we are interested in
@@ -432,7 +409,7 @@ class StorageElementItem( object ):
     self.log.debug( errStr, "%s for %s" % ( protocol, self.name ) )
     return S_ERROR( errStr )
 
-  def isLocalSE( self ):
+  def __isLocalSE( self ):
     """ Test if the Storage Element is local in the current context
     """
     self.log.verbose( "StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name )
@@ -449,89 +426,7 @@ class StorageElementItem( object ):
   # These are the basic get functions for lfn manipulation
   #
 
-
-  def __getSinglePfnForProtocol( self, pfn, protocol, withPort = True ):
-    """ Transform the input pfn into a pfn with the given protocol for the Storage Element.
-      :param pfn : input PFN
-      :param protocol : string or list of string of the protocol we want
-      :param withPort : includes the port in the returned pfn
-    """
-    self.log.verbose( "StorageElement.getSinglePfnForProtocol: Getting pfn for given protocols in %s." % self.name )
-
-
-    # This test of the available protocols could actually be done in getPfnForProtocol once for all
-    # but it is safer to put it here in case we decide to call this method internally (which I doubt!)
-    res = self.getProtocols()
-    if not res['OK']:
-      return res
-    if type( protocol ) == StringType:
-      protocols = [protocol]
-    elif type( protocol ) == ListType:
-      protocols = protocol
-    else:
-      errStr = "StorageElement.getSinglePfnForProtocol: Supplied protocol must be string or list of strings."
-      self.log.debug( errStr, "%s %s" % ( protocol, self.name ) )
-      return S_ERROR( errStr )
-    availableProtocols = res['Value']
-    protocolsToTry = []
-    for protocol in protocols:
-      if protocol in availableProtocols:
-        protocolsToTry.append( protocol )
-      else:
-        errStr = "StorageElement.getSinglePfnForProtocol: Requested protocol not available for SE."
-        self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
-    if not protocolsToTry:
-      errStr = "StorageElement.getSinglePfnForProtocol: None of the requested protocols were available for SE."
-      self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
-      return S_ERROR( errStr )
-    # Check all available storages for required protocol then construct the PFN
-    for storage in self.storages:
-      parameters = storage.getParameters()
-      if parameters['ProtocolName'] in protocolsToTry:
-        result = storage.updatePfn( pfn, withPort )
-        if result['OK']:
-          return result
-    errStr = "StorageElement.getSinglePfnForProtocol: Failed to get PFN for requested protocols."
-    self.log.debug( errStr, "%s for %s" % ( protocols, self.name ) )
-    return S_ERROR( errStr )
-
-  def getPfnForProtocol( self, pfns, protocol = "SRM2", withPort = True ):
-    """ create PFNs strings using protocol :protocol:
-
-    :param self: self reference
-    :param list pfns: list of PFNs
-    :param str protocol: protocol name (default: 'SRM2')
-    :param bool withPort: flag to include port in PFN (default: True)
-    """
-
-    if type( pfns ) in StringTypes:
-      pfnDict = {pfns:False}
-    elif type( pfns ) == ListType:
-      pfnDict = {}
-      for pfn in pfns:
-        pfnDict[pfn] = False
-    elif type( pfns ) == DictType:
-      pfnDict = pfns
-    else:
-      errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-
-
-    res = self.isValid( "getPfnForProtocol" )
-    if not res["OK"]:
-      return res
-    retDict = { "Successful" : {}, "Failed" : {}}
-    for pfn in pfnDict:
-      res = self.__getSinglePfnForProtocol( pfn, protocol, withPort = withPort )
-      if res["OK"]:
-        retDict["Successful"][pfn] = res["Value"]
-      else:
-        retDict["Failed"][pfn] = res["Message"]
-    return S_OK( retDict )
-
-
-  def getPfnPath( self, pfn ):
+  def __getPfnPath( self, pfn ):
     """  Get the part of the PFN path below the basic storage path.
          This path must coincide with the LFN of the file in order to be compliant with the DIRAC conventions.
     """
@@ -567,26 +462,17 @@ class StorageElementItem( object ):
     self.log.debug( errStr )
     return S_ERROR( errStr )
 
-
-
   def getLfnForPfn( self, pfns ):
     """ Get the LFN from the PFNS .
         :param lfn : input lfn or lfns (list/dict)
     """
-
-    if type( pfns ) in StringTypes:
-      pfnDict = {pfns:False}
-    elif type( pfns ) == ListType:
-      pfnDict = {}
-      for pfn in pfns:
-        pfnDict[pfn] = False
-    elif type( pfns ) == DictType:
-      pfnDict = pfns.copy()
-    else:
+    result = checkArgumentFormat( pfns )
+    if result['OK']:
+      pfnDict = result['Value']
+    else:  
       errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
       self.log.debug( errStr )
       return S_ERROR( errStr )
-
 
     res = self.isValid( "getPfnPath" )
     if not res['OK']:
@@ -594,55 +480,11 @@ class StorageElementItem( object ):
       return res
     retDict = { "Successful" : {}, "Failed" : {} }
     for pfn in pfnDict:
-      res = self.getPfnPath( pfn )
+      res = self.__getPfnPath( pfn )
       if res["OK"]:
         retDict["Successful"][pfn] = res["Value"]
       else:
         retDict["Failed"][pfn] = res["Message"]
-    return S_OK( retDict )
-
-  def __getSinglePfnForLfn( self, lfn, withPort = False ):
-    """ Get the full PFN constructed from the LFN.
-        :param lfn : input lfn or lfns (list/dict)
-    """
-    self.log.debug( "StorageElement.__getSinglePfnForLfn: Getting pfn from lfn in %s." % self.name )
-
-    for storage in self.storages:
-      res = storage.getPfn( lfn )
-      if res['OK']:
-        pfn = res['Value']
-        return S_OK( pfn )
-    # This should never happen. DANGER!!
-    errStr = "StorageElement.__getSinglePfnForLfn: Failed to get the full pfn for any of the protocols (%s)!!" % ( self.name )
-    self.log.debug( errStr )
-    return S_ERROR( errStr )
-
-  def getPfnForLfn( self, lfns, withPort = False ):
-    """ get PFNs for supplied LFNs at :storageElementName: SE
-
-    :param self: self reference
-    :param list lfns: list of LFNs
-    :param str stotrageElementName: DIRAC SE name
-    """
-
-    result = checkArgumentFormat( lfns )
-    if not result['OK']:
-      errStr = "StorageElement.getPfnForLfn: Supplied lfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-    lfnDict = result['Value']
-
-    if not self.valid:
-      return S_ERROR( self.errorReason )
-
-    retDict = { "Successful" : {}, "Failed" : {} }
-    for lfn in lfnDict:
-      res = self.__getSinglePfnForLfn( lfn, withPort = withPort )
-      if res["OK"]:
-        retDict["Successful"][lfn] = res["Value"]
-      else:
-        retDict["Failed"][lfn] = res["Message"]
-
     return S_OK( retDict )
 
   ###########################################################################################
@@ -650,7 +492,7 @@ class StorageElementItem( object ):
   # This is the generic wrapper for file operations
   #
 
-  def getAccessUrl( self, lfn, protocol = False, singleFile = None ):
+  def getURLForProtocol( self, lfn, protocol = False ):
     """ execute 'getTransportURL' operation.
       :param str lfn: string, list or dictionary of lfns
       :param protocol: if no protocol is specified, we will request self.turlProtocols
@@ -663,13 +505,8 @@ class StorageElementItem( object ):
     else:
       protocols = [protocol]
 
-
-    argDict = {"protocols" : protocols}
-    if singleFile is not None:
-      argDict["singleFile"] = singleFile
-
     self.methodName = "getTransportURL"
-    return self.__executeMethod( lfn, **argDict )
+    return self.__executeMethod( lfn, protocols = protocols )
 
 
   def __generatePfnDict( self, lfns, storage ):
@@ -717,7 +554,7 @@ class StorageElementItem( object ):
     # args should normaly be empty to avoid problem...
     if len( args ):
       self.log.verbose( "StorageElement.__executeMethod: args should be empty!%s" % args )
-      # because there is normaly normaly only one kw argument, I can move it from args to kwargs
+      # because there is normally only one kw argument, I can move it from args to kwargs
       methDefaultArgs = StorageElementItem.__defaultsArguments.get( self.methodName, {} ).keys()
       if len( methDefaultArgs ):
         kwargs[methDefaultArgs[0] ] = args[0]
@@ -761,7 +598,7 @@ class StorageElementItem( object ):
 
     successful = {}
     failed = {}
-    localSE = self.isLocalSE()['Value']
+    localSE = self.__isLocalSE()['Value']
     # Try all of the storages one by one
     for storage in self.storages:
       # Determine whether to use this storage object
