@@ -241,17 +241,14 @@ class StorageFactory:
       configPath = cfgPath( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
-    protocolDict['BasePath'] = protocolDict['Path']  
     
-    # Evaluate the base path including the VO specific part 
+    # Evaluate the base path taking into account possible VO specific setting 
     result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )
     voPath = ''
     if result['OK']:
       voPath = result['Value'].get( self.vo, '' )
     if voPath:
       protocolDict['Path'] = voPath
-    else:
-      protocolDict['Path'] += '/%s' % self.vo     
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.

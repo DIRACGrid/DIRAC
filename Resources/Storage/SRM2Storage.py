@@ -159,7 +159,7 @@ class SRM2Storage( StorageBase ):
     :param self: self reference
     :param str path: file path
     """
-    return self.getPfn( path, withPort = True)
+    return self.getPfn( path, withWSUrl = True)
 
   #############################################################
   #

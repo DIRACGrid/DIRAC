@@ -36,8 +36,6 @@ class StorageElementCache( object ):
 
     return seObj
 
-
-
 class StorageElementItem( object ):
   """
   .. class:: StorageElement
@@ -409,18 +407,6 @@ class StorageElementItem( object ):
     self.log.debug( errStr, "%s for %s" % ( protocol, self.name ) )
     return S_ERROR( errStr )
 
-  def __isLocalSE( self ):
-    """ Test if the Storage Element is local in the current context
-    """
-    self.log.verbose( "StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name )
-
-    import DIRAC
-    localSEs = getSEsForSite( DIRAC.siteName() )['Value']
-    if self.name in localSEs:
-      return S_OK( True )
-    else:
-      return S_OK( False )
-
   #################################################################################################
   #
   # These are the basic get functions for lfn manipulation
@@ -454,8 +440,6 @@ class StorageElementItem( object ):
               # Remove the sa path from the fullPfnPath
               pfnPath = fullPfnPath.replace( saPath, '' )
       if pfnPath:
-        # saPath contains the <VO> top level directory, restore it now
-        pfnPath = '/%s/%s' % ( self.vo, pfnPath )
         return S_OK( pfnPath )
     # This should never happen. DANGER!!
     errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
@@ -508,6 +492,17 @@ class StorageElementItem( object ):
     self.methodName = "getTransportURL"
     return self.__executeMethod( lfn, protocols = protocols )
 
+  def __isLocalSE( self ):
+    """ Test if the Storage Element is local in the current context
+    """
+    self.log.verbose( "StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name )
+
+    import DIRAC
+    localSEs = getSEsForSite( DIRAC.siteName() )['Value']
+    if self.name in localSEs:
+      return S_OK( True )
+    else:
+      return S_OK( False )
 
   def __generatePfnDict( self, lfns, storage ):
     """ Generates a dictionary (pfn : lfn ), where the pfn are constructed
@@ -524,7 +519,7 @@ class StorageElementItem( object ):
       if ":" in lfn:
         errStr = "StorageElement.__generatePfnDict: received a pfn as input. It should not happen anymore, please check your code"
         self.log.verbose( errStr, lfn )
-      res = storage.getPfn( lfn, withPort = True )
+      res = storage.getPfn( lfn, withWSUrl = True )
       if not res['OK']:
         errStr = "StorageElement.__generatePfnDict %s." % res['Message']
         self.log.debug( errStr, 'for %s' % ( lfn ) )

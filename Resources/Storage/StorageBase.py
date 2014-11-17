@@ -47,11 +47,10 @@ class StorageBase:
     self.name = name
     self.protocolName = ''
     self.protocolParameters = {}
-    self.basePath = parameterDict['BasePath']
     
     self.__updateParameters( parameterDict )
     
-    self.isok = True
+    self.basePath = parameterDict['Path']
     self.cwd = self.basePath
     self.se = None
     
@@ -243,16 +242,15 @@ class StorageBase:
     """
     return self.name
 
-  def getPFNBase( self, withPort = False ):
+  def getPFNBase( self, withWSUrl = False ):
     """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
 
     :param self: self reference
-    :param bool withPort: flag to include port
+    :param bool withWSUrl: flag to include Web Service part of the url
     :returns PFN
     """
     pfnDict = dict( self.protocolParameters )
-    if not withPort:
-      pfnDict['Port'] = ''  
+    if not withWSUrl:
       pfnDict['WSUrl'] = ''  
     return pfnunparse( pfnDict )
   
@@ -278,7 +276,7 @@ class StorageBase:
 
     return S_OK( False )
   
-  def getPfn( self, lfn, withPort = False ):
+  def getPfn( self, lfn, withWSUrl = False ):
     """ Construct PFN from the given LFN according to the VO convention 
     """
     
@@ -288,23 +286,21 @@ class StorageBase:
     
     # If we are given a PFN, update it
     if result['Value']:
-      return self.updatePfn( lfn, withPort = withPort )
+      return self.updatePfn( lfn, withWSUrl = withWSUrl )
     
     # Check the LFN convention
     voLFN = lfn.split( '/' )[1]
     if voLFN != self.se.vo:
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
     
-    result = self.getPFNBase( withPort = withPort )
+    result = self.getPFNBase( withWSUrl = withWSUrl )
     if not result['OK']:
       return result
     pfnBase = result['Value']
-    # Strip of the top level directory from LFN corresponding to VO
-    # and merge with the pfn base containing the VOPath
-    pfn = '%s/%s' % ( pfnBase, '%s' % '/'.join( lfn.split( '/' )[2:] ) )    
+    pfn = '%s/%s' % ( pfnBase, lfn )    
     return S_OK( pfn )    
   
-  def updatePfn( self, pfn, withPort = False ):
+  def updatePfn( self, pfn, withWSUrl = False ):
     """ Update the PFN according to the current SE parameters
     """
     result = pfnparse( pfn )
@@ -314,12 +310,11 @@ class StorageBase:
     
     pfnDict['Protocol'] = self.protocolParameters['Protocol']
     pfnDict['Host'] = self.protocolParameters['Host']
-    if withPort:
-      pfnDict['Port'] = self.protocolParameters['Port']
+    pfnDict['Port'] = self.protocolParameters['Port']
+    pfnDict['WSUrl'] = ''
+    if withWSUrl:
       pfnDict['WSUrl'] = self.protocolParameters['WSUrl']
-    else:
-      pfnDict['Port'] = ''
-      pfnDict['WSUrl'] = ''
+      
     return pfnunparse( pfnDict )
   
   def isNativePfn( self, pfn ):
