@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import unittest, types
+import unittest
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 
 class StorageFactoryTestCase( unittest.TestCase ):
@@ -37,17 +37,17 @@ class StorageFactoryTestCase( unittest.TestCase ):
     parameters = storageStub.getParameters()
     self.assertEqual( parameters, storageDict )
 
-    res = storageStub.getPFNBase( withPort = False )
+    res = storageStub.getPFNBase( withWSUrl = False )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr/pnfs/in2p3.fr/data/lhcb' )
-    res = storageStub.getPFNBase( withPort = True )
+    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/pnfs/in2p3.fr/data/lhcb' )
+    res = storageStub.getPFNBase( withWSUrl = True )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb' )
 
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withPort = False )
+    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = False )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withPort = True )
+    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
+    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = True )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
 
@@ -72,17 +72,17 @@ class StorageFactoryTestCase( unittest.TestCase ):
     parameterDict = storageStub.getParameters()
     self.assertEqual( parameterDict, storageDict )
 
-    res = storageStub.getPFNBase( withPort = False )
+    res = storageStub.getPFNBase( withWSUrl = False )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr/pnfs/in2p3.fr/data/lhcb' )
-    res = storageStub.getPFNBase( withPort = True )
+    res = storageStub.getPFNBase( withWSUrl = True )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb' )
 
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withPort = False )
+    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = False )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withPort = True )
+    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = True )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
 
