@@ -1,4 +1,4 @@
-[v6r13-pre2]
+[v6r13-pre3]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -7,7 +7,8 @@ CHANGE: Separating fixed and variable parts of error log messages for multiple s
 NEW: Changes to make the DISET protocol IP V6 ready
 
 *DMS
-NEW: Native use of the FTS3 services: 
+NEW: Native use of the FTS3 services
+CHANGE: Removed the use of current DataLogging service
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
