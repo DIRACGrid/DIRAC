@@ -62,7 +62,7 @@ class Condor( object ):
     
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
      
     submittedJobs = 0
@@ -156,7 +156,7 @@ class Condor( object ):
     
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = stdout_q
+      resultDict['Message'] = stdout_q
       return resultDict
       
     status_history, stdout_history = commands.getstatusoutput( 'condor_history | grep %s' % user )  
@@ -216,7 +216,7 @@ class Condor( object ):
         resultDict["Running"] = runningJobs
         return resultDict
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
     
     if "no record" in output:
