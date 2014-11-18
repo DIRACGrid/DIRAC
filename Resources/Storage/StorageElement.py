@@ -168,7 +168,7 @@ class StorageElementItem( object ):
 
     self.readMethods = [ 'getFile',
                          'getURLForProtocol',
-                         'getLfnForPfn',
+                         'getLFNForURL',
                          'prestageFile',
                          'prestageFileStatus',
                          'getDirectory']
@@ -412,63 +412,59 @@ class StorageElementItem( object ):
   # These are the basic get functions for lfn manipulation
   #
 
-  def __getPfnPath( self, pfn ):
-    """  Get the part of the PFN path below the basic storage path.
+  def __getURLPath( self, url ):
+    """  Get the part of the URL path below the basic storage path.
          This path must coincide with the LFN of the file in order to be compliant with the DIRAC conventions.
     """
-    self.log.verbose( "StorageElement.getPfnPath: Getting path from pfn in %s." % self.name )
+    self.log.verbose( "StorageElement.__getURLPath: Getting path from url in %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    res = pfnparse( pfn )
+    res = pfnparse( url )
     if not res['OK']:
       return res
-    fullPfnPath = '%s/%s' % ( res['Value']['Path'], res['Value']['FileName'] )
+    fullURLPath = '%s/%s' % ( res['Value']['Path'], res['Value']['FileName'] )
 
-    # Check all available storages and check whether the pfn is for that protocol
-    pfnPath = ''
+    # Check all available storages and check whether the url is for that protocol
+    urlPath = ''
     for storage in self.storages:
-      res = storage.isNativePfn( pfn )
+      res = storage.isNativeURL( url )
       if res['OK']:
         if res['Value']:
           parameters = storage.getParameters()
           saPath = parameters['Path']
           if not saPath:
-            # If the sa path doesn't exist then the pfn path is the entire string
-            pfnPath = fullPfnPath
+            # If the sa path doesn't exist then the url path is the entire string
+            urlPath = fullURLPath
           else:
-            if re.search( saPath, fullPfnPath ):
-              # Remove the sa path from the fullPfnPath
-              pfnPath = fullPfnPath.replace( saPath, '' )
-      if pfnPath:
-        return S_OK( pfnPath )
+            if re.search( saPath, fullURLPath ):
+              # Remove the sa path from the fullURLPath
+              urlPath = fullURLPath.replace( saPath, '' )
+      if urlPath:
+        return S_OK( urlPath )
     # This should never happen. DANGER!!
-    errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
+    errStr = "StorageElement.__getURLPath: Failed to get the url path for any of the protocols!!"
     self.log.debug( errStr )
     return S_ERROR( errStr )
 
-  def getLfnForPfn( self, pfns ):
+  def getLFNForURL( self, urls ):
     """ Get the LFN from the PFNS .
         :param lfn : input lfn or lfns (list/dict)
     """
-    result = checkArgumentFormat( pfns )
+    result = checkArgumentFormat( urls )
     if result['OK']:
-      pfnDict = result['Value']
+      urlDict = result['Value']
     else:  
-      errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
+      errStr = "StorageElement.getLFNForURL: Supplied urls must be string, list of strings or a dictionary."
       self.log.debug( errStr )
       return S_ERROR( errStr )
 
-    res = self.isValid( "getPfnPath" )
-    if not res['OK']:
-      self.log.error( "StorageElement.getLfnForPfn: Failed to instantiate StorageElement at", "%s" % self.name )
-      return res
     retDict = { "Successful" : {}, "Failed" : {} }
-    for pfn in pfnDict:
-      res = self.__getPfnPath( pfn )
+    for url in urlDict:
+      res = self.__getURLPath( url )
       if res["OK"]:
-        retDict["Successful"][pfn] = res["Value"]
+        retDict["Successful"][url] = res["Value"]
       else:
-        retDict["Failed"][pfn] = res["Message"]
+        retDict["Failed"][url] = res["Message"]
     return S_OK( retDict )
 
   ###########################################################################################
@@ -504,31 +500,31 @@ class StorageElementItem( object ):
     else:
       return S_OK( False )
 
-  def __generatePfnDict( self, lfns, storage ):
-    """ Generates a dictionary (pfn : lfn ), where the pfn are constructed
-        from the lfn using the getProtocolPfn method of the storage plugins.
+  def __generateURLDict( self, lfns, storage ):
+    """ Generates a dictionary (url : lfn ), where the url are constructed
+        from the lfn using the getURL method of the storage plugins.
         :param: lfns : dictionary {lfn:whatever}
-        :returns dictionary {constructed pfn : lfn}
+        :returns dictionary {constructed url : lfn}
     """
-    self.log.verbose( "StorageElement.__generatePfnDict: generating pfn dict for %s lfn in %s." % ( len( lfns ), self.name ) )
+    self.log.verbose( "StorageElement.__generateURLDict: generating url dict for %s lfn in %s." % ( len( lfns ), self.name ) )
 
-    pfnDict = {}  # pfn : lfn
+    urlDict = {}  # url : lfn
     failed = {}  # lfn : string with errors
     for lfn in lfns:
 
       if ":" in lfn:
-        errStr = "StorageElement.__generatePfnDict: received a pfn as input. It should not happen anymore, please check your code"
+        errStr = "StorageElement.__generateURLDict: received a url as input. It should not happen anymore, please check your code"
         self.log.verbose( errStr, lfn )
-      res = storage.getPfn( lfn, withWSUrl = True )
+      res = storage.getURL( lfn, withWSUrl = True )
       if not res['OK']:
-        errStr = "StorageElement.__generatePfnDict %s." % res['Message']
+        errStr = "StorageElement.__generateURLDict %s." % res['Message']
         self.log.debug( errStr, 'for %s' % ( lfn ) )
         if lfn not in failed:
           failed[lfn] = ''
         failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if failed[lfn] else errStr
       else:
-        pfnDict[res['Value']] = lfn
-    res = S_OK( pfnDict )
+        urlDict[res['Value']] = lfn
+    res = S_OK( urlDict )
     res['Failed'] = failed
     return res
 
@@ -611,47 +607,47 @@ class StorageElementItem( object ):
         self.log.debug( "StorageElement.__executeMethod: Local protocol not appropriate for remote use: %s." % protocolName )
         continue
 
-      self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol PFNs for %s." % ( len( lfnDict ),
+      self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol URLs for %s." % ( len( lfnDict ),
                                                                                                   protocolName ) )
-      res = self.__generatePfnDict( lfnDict, storage )
-      pfnDict = res['Value']  # pfn : lfn
+      res = self.__generateURLDict( lfnDict, storage )
+      urlDict = res['Value']  # url : lfn
       failed.update( res['Failed'] )
-      if not len( pfnDict ):
-        self.log.verbose( "StorageElement.__executeMethod No pfns generated for protocol %s." % protocolName )
+      if not len( urlDict ):
+        self.log.verbose( "StorageElement.__executeMethod No urls generated for protocol %s." % protocolName )
       else:
         self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' for %s physical files" % ( self.methodName,
-                                                                                                    len( pfnDict ) ) )
+                                                                                                    len( urlDict ) ) )
         fcn = None
         if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
           fcn = getattr( storage, self.methodName )
         if not fcn:
           return S_ERROR( "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
 
-        pfnsToUse = {}  # pfn : the value of the lfn dictionary for the lfn of this pfn
-        for pfn in pfnDict:
-          pfnsToUse[pfn] = lfnDict[pfnDict[pfn]]
+        urlsToUse = {}  # url : the value of the lfn dictionary for the lfn of this url
+        for url in urlDict:
+          urlsToUse[url] = lfnDict[urlDict[url]]
 
-        res = fcn( pfnsToUse, *args, **kwargs )
+        res = fcn( urlsToUse, *args, **kwargs )
 
         if not res['OK']:
           errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName
           self.log.debug( errStr, '%s for protocol %s: %s' % ( self.name, protocolName, res['Message'] ) )
-          for lfn in pfnDict.values():
+          for lfn in urlDict.values():
             if lfn not in failed:
               failed[lfn] = ''
             failed[lfn] = "%s %s" % ( failed[lfn], res['Message'] ) if failed[lfn] else res['Message']
         else:
-          for pfn, lfn in pfnDict.items():
-            if pfn not in res['Value']['Successful']:
+          for url, lfn in urlDict.items():
+            if url not in res['Value']['Successful']:
               if lfn not in failed:
                 failed[lfn] = ''
-              if pfn in res['Value']['Failed']:
-                failed[lfn] = "%s %s" % ( failed[lfn], res['Value']['Failed'][pfn] ) if failed[lfn] else res['Value']['Failed'][pfn]
+              if url in res['Value']['Failed']:
+                failed[lfn] = "%s %s" % ( failed[lfn], res['Value']['Failed'][url] ) if failed[lfn] else res['Value']['Failed'][url]
               else:
                 errStr = 'No error returned from plug-in'
                 failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if failed[lfn] else errStr
             else:
-              successful[lfn] = res['Value']['Successful'][pfn]
+              successful[lfn] = res['Value']['Successful'][url]
               if lfn in failed:
                 failed.pop( lfn )
               lfnDict.pop( lfn )
