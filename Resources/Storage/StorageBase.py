@@ -226,11 +226,11 @@ class StorageBase:
     """
     if fileName.startswith( '/' ):
       # Assume full path is given, e.g. LFN
-      return self.getPfn( fileName )
+      return self.getURL( fileName )
     
-    pfnDict = dict( self.protocolParameters )
-    pfnDict['Path'] = self.cwd
-    result = pfnunparse( pfnDict )
+    urlDict = dict( self.protocolParameters )
+    urlDict['Path'] = self.cwd
+    result = pfnunparse( urlDict )
     if not result['OK']:
       return result
     cwdUrl = result['Value']
@@ -242,24 +242,24 @@ class StorageBase:
     """
     return self.name
 
-  def getPFNBase( self, withWSUrl = False ):
-    """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
+  def getURLBase( self, withWSUrl = False ):
+    """ This will get the URL base. This is then appended with the LFN in DIRAC convention.
 
     :param self: self reference
     :param bool withWSUrl: flag to include Web Service part of the url
-    :returns PFN
+    :returns URL
     """
-    pfnDict = dict( self.protocolParameters )
+    urlDict = dict( self.protocolParameters )
     if not withWSUrl:
-      pfnDict['WSUrl'] = ''  
-    return pfnunparse( pfnDict )
+      urlDict['WSUrl'] = ''  
+    return pfnunparse( urlDict )
   
-  def isPfn( self, path ):
-    """ Guess if the path looks like a PFN
+  def isURL( self, path ):
+    """ Guess if the path looks like a URL
 
     :param self: self reference
-    :param string path: input file LFN or PFN
-    :returns boolean: True if PFN, False otherwise
+    :param string path: input file LFN or URL
+    :returns boolean: True if URL, False otherwise
     """
     if self.basePath and path.startswith( self.basePath ):
       return S_OK( True )
@@ -276,56 +276,56 @@ class StorageBase:
 
     return S_OK( False )
   
-  def getPfn( self, lfn, withWSUrl = False ):
-    """ Construct PFN from the given LFN according to the VO convention 
+  def getURL( self, lfn, withWSUrl = False ):
+    """ Construct URL from the given LFN according to the VO convention 
     """
     
-    result = self.isPfn( lfn )
+    result = self.isURL( lfn )
     if not result['OK']:
       return result
     
-    # If we are given a PFN, update it
+    # If we are given a URL, update it
     if result['Value']:
-      return self.updatePfn( lfn, withWSUrl = withWSUrl )
+      return self.updateURL( lfn, withWSUrl = withWSUrl )
     
     # Check the LFN convention
     voLFN = lfn.split( '/' )[1]
     if voLFN != self.se.vo:
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
     
-    result = self.getPFNBase( withWSUrl = withWSUrl )
+    result = self.getURLBase( withWSUrl = withWSUrl )
     if not result['OK']:
       return result
-    pfnBase = result['Value']
-    pfn = '%s/%s' % ( pfnBase, lfn )    
-    return S_OK( pfn )    
+    urlBase = result['Value']
+    url = '%s/%s' % ( urlBase, lfn )    
+    return S_OK( url )    
   
-  def updatePfn( self, pfn, withWSUrl = False ):
-    """ Update the PFN according to the current SE parameters
+  def updateURL( self, url, withWSUrl = False ):
+    """ Update the URL according to the current SE parameters
     """
-    result = pfnparse( pfn )
+    result = pfnparse( url )
     if not result['OK']:
       return result
-    pfnDict = result['Value']
+    urlDict = result['Value']
     
-    pfnDict['Protocol'] = self.protocolParameters['Protocol']
-    pfnDict['Host'] = self.protocolParameters['Host']
-    pfnDict['Port'] = self.protocolParameters['Port']
-    pfnDict['WSUrl'] = ''
+    urlDict['Protocol'] = self.protocolParameters['Protocol']
+    urlDict['Host'] = self.protocolParameters['Host']
+    urlDict['Port'] = self.protocolParameters['Port']
+    urlDict['WSUrl'] = ''
     if withWSUrl:
-      pfnDict['WSUrl'] = self.protocolParameters['WSUrl']
+      urlDict['WSUrl'] = self.protocolParameters['WSUrl']
       
-    return pfnunparse( pfnDict )
+    return pfnunparse( urlDict )
   
-  def isNativePfn( self, pfn ):
-    """ Check if PFN :pfn: is valid for :self.protocol:
+  def isNativeURL( self, url ):
+    """ Check if URL :url: is valid for :self.protocol:
 
     :param self: self reference
-    :param str pfn: PFN
+    :param str url: URL
     """
-    res = pfnparse( pfn )
+    res = pfnparse( url )
     if not res['OK']:
       return res
-    pfnDict = res['Value']
-    return S_OK( pfnDict['Protocol'] == self.protocolParameters['Protocol'] )
+    urlDict = res['Value']
+    return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
   
