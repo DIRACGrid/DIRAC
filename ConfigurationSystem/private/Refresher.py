@@ -143,6 +143,11 @@ class Refresher( threading.Thread ):
     else:
       lInitialListOfServers = gConfigurationData.getServers()
       gLogger.debug( "Refreshing from list %s" % str( lInitialListOfServers ) )
+      
+    # If no servers in the initial list, we are supposed to use the local configuration only
+    if not lInitialListOfServers:
+      return S_OK()    
+      
     lRandomListOfServers = List.randomize( lInitialListOfServers )
     gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
 
