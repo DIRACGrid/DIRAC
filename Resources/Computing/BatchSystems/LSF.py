@@ -22,7 +22,8 @@ class LSF( object ):
     
     resultDict = {}
     
-    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 'SubmitOptions', 'Queue' ]
+    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 
+                             'WorkDir', 'SubmitOptions', 'Queue' ]
     for argument in MANDATORY_PARAMETERS:
       if not argument in kwargs:
         resultDict['Status'] = -1
@@ -32,8 +33,20 @@ class LSF( object ):
     nJobs = kwargs.get( 'NJobs', 1 )  
     
     outputs = []
+    outputDir = kwargs['OutputDir']
+    errorDir = kwargs['ErrorDir']
+    executable = kwargs['Executable']
+    queue = kwargs['Queue']
+    submitOptions = kwargs['SubmitOptions']
+    outputDir = os.path.expandvars( outputDir )
+    errorDir = os.path.expandvars( errorDir )
+    executable = os.path.expandvars( executable )
     for _i in range( int(nJobs) ):
-      cmd = "bsub -o %(OutputDir)s -e %(ErrorDir)s -q %(Queue)s -J DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
+      cmd = "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % ( outputDir,
+                                                             errorDir,
+                                                             queue,
+                                                             submitOptions,
+                                                             executable )
       status,output = commands.getstatusoutput( cmd )
       if status == 0:
         outputs.append(output)
@@ -109,7 +122,7 @@ class LSF( object ):
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
 
     waitingJobs = 0
@@ -146,12 +159,12 @@ class LSF( object ):
       resultDict['Message'] = 'Empty job list'
       return resultDict
     
-    cmd = 'bjobs' + ' '.join( jobIDList )
+    cmd = 'bjobs ' + ' '.join( jobIDList )
     status, output = commands.getstatusoutput( cmd )
     
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
     
     output = output.replace( '\r', '' )
@@ -178,36 +191,3 @@ class LSF( object ):
     resultDict['Jobs'] = statusDict 
     return resultDict  
   
-  def getJobOutputFiles( self, **kwargs ):
-    """ Get output file names and templates for the specific CE 
-    """
-    resultDict = {}
-    MANDATORY_PARAMETERS = [ 'JobIDList', 'OutputDir', 'ErrorDir' ]
-    for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
-        resultDict['Status'] = -1
-        resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    outputDir = kwargs['OutputDir']
-    errorDir = kwargs['ErrorDir']  
-      
-    outputTemplate = '%s/DIRACPilot.o%%s' % outputDir  
-    errorTemplate = '%s/DIRACPilot.e%%s' % errorDir  
-    outputTemplate = os.path.expandvars( outputTemplate )
-    errorTemplate = os.path.expandvars( errorTemplate )
-    
-    jobIDList = kwargs['JobIDList']
-    
-    jobDict = {}
-    for job in jobIDList:
-      jobDict[job] = {}
-      jobDict[job]['Output'] = outputTemplate % job
-      jobDict[job]['Error'] = errorTemplate % job
-
-    resultDict['Status'] = 0
-    resultDict['Jobs'] = jobDict
-    resultDict['OutputTemplate'] = outputTemplate
-    resultDict['ErrorTemplate'] = errorTemplate
-
-    return resultDict
