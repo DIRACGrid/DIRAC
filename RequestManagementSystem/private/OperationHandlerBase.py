@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: OperationHandlerBase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 13:48:52
@@ -18,7 +17,6 @@
 
     Helper functions and tools:
 
-    * self.dataLoggingClient() -- returns DataLoggingClient
     * self.rssClient() -- returns RSSClient
     * self.getProxyForLFN( LFN ) -- sets X509_USER_PROXY environment variable to LFN owner proxy
     * self.rssSEStatus( SE, status ) returns S_OK(True/False) depending of RSS :status:
@@ -69,7 +67,7 @@ class OperationHandlerBase( object ):
   __metaclass__ = DynamicProps
 
   # # private data logging client
-  __dataLoggingClient = None
+#   __dataLoggingClient = None
   # # private ResourceStatusClient
   __rssClient = None
   # # shifter list
@@ -136,13 +134,13 @@ class OperationHandlerBase( object ):
                                                       self.operation.Type ) )
 
 
-  @classmethod
-  def dataLoggingClient( cls ):
-    """ DataLoggingClient getter """
-    if not cls.__dataLoggingClient:
-      from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-      cls.__dataLoggingClient = DataLoggingClient()
-    return cls.__dataLoggingClient
+#   @classmethod
+#   def dataLoggingClient( cls ):
+#     """ DataLoggingClient getter """
+#     if not cls.__dataLoggingClient:
+#       from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
+#       cls.__dataLoggingClient = DataLoggingClient()
+#     return cls.__dataLoggingClient
 
   @classmethod
   def rssClient( cls ):

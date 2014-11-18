@@ -20,7 +20,12 @@ import json
 try:
   import pika
 except Exception, e:
-   raise RuntimeError( e )
+  from DIRAC import systemCall
+  result = systemCall( False, ["pip", "install", "pika"] )
+  if not result['OK']:
+    raise RuntimeError( result['Message'] )
+  else:
+    import pika
 
 
 class StatesMonitoringAgent( AgentModule ):
@@ -123,7 +128,7 @@ class StatesMonitoringAgent( AgentModule ):
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
-      gLogger.info("Start sending records!")
+      gLogger.info( "Start sending records!" )
       for record in values:
         recordSetup = record[0]
         if recordSetup not in validSetups:
@@ -143,7 +148,7 @@ class StatesMonitoringAgent( AgentModule ):
         rD['metric'] = 'WMSHistory'
         message = json.dumps( rD )
         self.sendRecords( message )
-      gLogger.info("The records are successfully sent!")
+      gLogger.info( "The records are successfully sent!" )
         
     return S_OK()
 
