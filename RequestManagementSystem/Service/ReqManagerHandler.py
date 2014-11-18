@@ -11,7 +11,8 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, LongType, ListType, StringTypes
+from types import DictType, IntType, LongType, ListType, StringTypes, StringType
+import json
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -19,6 +20,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
+import datetime
+import math
 
 class ReqManagerHandler( RequestHandler ):
   """
@@ -57,12 +60,12 @@ class ReqManagerHandler( RequestHandler ):
       cls.__validator = RequestValidator()
     return cls.__validator.validate( request )
 
+  types_getRequestIDForName = [ StringTypes ]
   @classmethod
-  def __getRequestID( cls, requestName ):
+  def export_getRequestIDForName( cls, requestName ):
     """ get requestID for given :requestName: """
-    requestID = requestName
     if type( requestName ) in StringTypes:
-      result = cls.__requestDB.getRequestProperties( requestName, [ "RequestID" ] )
+      result = cls.__requestDB.getRequestIDForName( requestName )
       if not result["OK"]:
         return result
       requestID = result["Value"]
@@ -70,14 +73,14 @@ class ReqManagerHandler( RequestHandler ):
 
 
 
-  types_cancelRequest = [ StringTypes ]
+  types_cancelRequest = [ ( IntType, LongType ) ]
   @classmethod
-  def export_cancelRequest( cls , requestName ):
+  def export_cancelRequest( cls , requestID ):
     """ Cancel a request """
-    return cls.__requestDB.cancelRequest( requestName )
+    return cls.__requestDB.cancelRequest( requestID )
 
 
-  types_putRequest = [ DictType ]
+  types_putRequest = [ StringTypes ]
   @classmethod
   def export_putRequest( cls, requestJSON ):
     """ put a new request into RequestDB
@@ -85,8 +88,11 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
-    requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
-    request = Request( requestJSON )
+
+
+    requestDict = json.loads( requestJSON )
+    requestName = requestDict.get( "RequestID", requestDict.get( 'RequestName', "***UNKNOWN***" ) )
+    request = Request( requestDict )
     optimized = request.optimize()
     if optimized.get("Value", False):
       gLogger.debug( "putRequest: request was optimized" )
@@ -97,6 +103,25 @@ class ReqManagerHandler( RequestHandler ):
     if not valid["OK"]:
       gLogger.error( "putRequest: request %s not valid: %s" % ( requestName, valid["Message"] ) )
       return valid
+
+
+    # If NotBefore is not set or user defined, we calculate its value
+
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
+    extraDelay = datetime.timedelta( 0 )
+    if request.Status not in Request.FINAL_STATES and ( not request.NotBefore or request.NotBefore < now ) :
+      op = request.getWaiting().get( 'Value' )
+
+      # If there is a waiting Operation with Files
+      if op and len( op ):
+        maxWaitingAttempt = max( [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ] )
+        # In case it is the first attempt, extraDelay is 0
+        # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
+        extraDelay = datetime.timedelta( minutes = 2 * math.log( maxWaitingAttempt )  if maxWaitingAttempt else 0 )
+      request.NotBefore = now + extraDelay
+
+    gLogger.info( "putRequest: request %s not before %s (extra delay %s)" % ( request.RequestName, request.NotBefore, extraDelay ) )
+
     requestName = request.RequestName
     gLogger.info( "putRequest: Attempting to set request '%s'" % requestName )
     return cls.__requestDB.putRequest( request )
@@ -122,11 +147,11 @@ class ReqManagerHandler( RequestHandler ):
     """ Get the summary of requests in the Request DB """
     return cls.__requestDB.getDBSummary()
 
-  types_getRequest = [ StringTypes ]
+  types_getRequest = [ ( LongType, IntType ) ]
   @classmethod
-  def export_getRequest( cls, requestName = "" ):
+  def export_getRequest( cls, requestID = 0 ):
     """ Get a request of given type from the database """
-    getRequest = cls.__requestDB.getRequest( requestName )
+    getRequest = cls.__requestDB.getRequest( requestID )
     if not getRequest["OK"]:
       gLogger.error( "getRequest: %s" % getRequest["Message"] )
       return getRequest
@@ -166,11 +191,11 @@ class ReqManagerHandler( RequestHandler ):
     return S_OK()
 
 
-  types_peekRequest = [ StringTypes ]
+  types_peekRequest = [ ( LongType, IntType ) ]
   @classmethod
-  def export_peekRequest( cls, requestName = "" ):
-    """ peek request given its name """
-    peekRequest = cls.__requestDB.peekRequest( requestName )
+  def export_peekRequest( cls, requestID = 0 ):
+    """ peek request given its id """
+    peekRequest = cls.__requestDB.peekRequest( requestID )
     if not peekRequest["OK"]:
       gLogger.error( "peekRequest: %s" % peekRequest["Message"] )
       return peekRequest
@@ -183,51 +208,67 @@ class ReqManagerHandler( RequestHandler ):
   types_getRequestSummaryWeb = [ DictType, ListType, IntType, IntType ]
   @classmethod
   def export_getRequestSummaryWeb( cls, selectDict, sortList, startItem, maxItems ):
-    """ Get summary of the request/operations info in the standard form for the web
+    """ Returns a list of Request for the web portal
 
-    :param dict selectDict: selection dict
-    :param list sortList: whatever
-    :param int startItem: start item
-    :param int maxItems: max items
+        :param dict selectDict: parameter on which to restrain the query {key : Value}
+                                key can be any of the Request columns, 'Type' (interpreted as Operation.Type)
+                                and 'FromData' and 'ToData' are matched against the LastUpdate field
+        :param list sortList: [sorting column, ASC/DESC]
+        :param int startItem: start item (for pagination)
+        :param int maxItems: max items (for pagination)
     """
     return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
 
-  types_getDistinctValues = [ StringTypes ]
+  types_getDistinctValuesWeb = [ StringTypes ]
   @classmethod
-  def export_getDistinctValues( cls, attribute ):
-    """ Get distinct values for a given (sub)request attribute """
-    onames = ['Type', 'Status']
-    rnames = ['OwnerDN', 'OwnerGroup']
-    if attribute in onames:
-      return cls.__requestDB.getDistinctAttributeValues('Operation', attribute)
-    elif attribute in rnames:
-      return cls.__requestDB.getDistinctAttributeValues('Request', attribute)
-    return S_ERROR('Invalid attribute %s' % attribute)
+  def export_getDistinctValuesWeb( cls, attribute ):
+    """ Get distinct values for a given request attribute. 'Type' is interpreted as
+        the operation type """
 
-  types_deleteRequest = [ StringTypes ]
-  @classmethod
-  def export_deleteRequest( cls, requestName ):
-    """ Delete the request with the supplied name"""
-    return cls.__requestDB.deleteRequest( requestName )
+    tableName = 'Request'
+    if attribute == 'Type':
+      tableName = 'Operation'
+    return cls.__requestDB.getDistinctValues( tableName, attribute )
 
-  types_getRequestNamesList = [ ListType, IntType, StringTypes ]
+
+  types_getRequestCountersWeb = [ StringTypes, DictType ]
   @classmethod
-  def export_getRequestNamesList( cls, statusList = None, limit = None, since = None, until = None ):
-    """ get requests' names with status in :statusList: """
+  def export_getRequestCountersWeb( cls, groupingAttribute, selectDict ):
+    """ For the web portal.
+        Returns a dictionary {value : counts} for a given key.
+        The key can be any field from the RequestTable. or "Type",
+        which will be interpreted as 'Operation.Type'
+
+        :param groupingAttribute : attribute used for grouping
+        :param selectDict : selection criteria
+    """
+
+    return cls.__requestDB.getRequestCountersWeb( groupingAttribute, selectDict )
+
+  types_deleteRequest = [ ( IntType, LongType ) ]
+  @classmethod
+  def export_deleteRequest( cls, requestID ):
+    """ Delete the request with the supplied ID"""
+    return cls.__requestDB.deleteRequest( requestID )
+
+  types_getRequestIDsList = [ ListType, IntType, StringTypes ]
+  @classmethod
+  def export_getRequestIDsList( cls, statusList = None, limit = None, since = None, until = None ):
+    """ get requests' IDs with status in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     since = since if since else ""
     until = until if until else ""
-    reqNamesList = cls.__requestDB.getRequestNamesList( statusList, limit, since = since, until = until )
-    if not reqNamesList["OK"]:
-      gLogger.error( "getRequestNamesList: %s" % reqNamesList["Message"] )
-    return reqNamesList
+    reqIDsList = cls.__requestDB.getRequestIDsList( statusList, limit, since = since, until = until )
+    if not reqIDsList["OK"]:
+      gLogger.error( "getRequestIDsList: %s" % reqIDsList["Message"] )
+    return reqIDsList
 
-  types_getRequestNamesForJobs = [ ListType ]
+  types_getRequestIDsForJobs = [ ListType ]
   @classmethod
-  def export_getRequestNamesForJobs( cls, jobIDs ):
-    """ Select the request names for supplied jobIDs """
-    return cls.__requestDB.getRequestNamesForJobs( jobIDs )
+  def export_getRequestIDsForJobs( cls, jobIDs ):
+    """ Select the request IDs for supplied jobIDs """
+    return cls.__requestDB.getRequestIDsForJobs( jobIDs )
 
   types_readRequestsForJobs = [ ListType ]
   @classmethod
@@ -241,50 +282,50 @@ class ReqManagerHandler( RequestHandler ):
       requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
     return requests
 
-  types_getDigest = [ StringTypes ]
+  types_getDigest = [ ( IntType, LongType ) ]
   @classmethod
-  def export_getDigest( cls, requestName ):
-    """ get digest for a request given its name
+  def export_getDigest( cls, requestID ):
+    """ get digest for a request given its id
 
-    :param str requestName: request's name
+    :param str requestID: request's id
     :return: S_OK( json_str )
     """
-    return cls.__requestDB.getDigest( requestName )
+    return cls.__requestDB.getDigest( requestID )
 
-  types_getRequestStatus = [ StringTypes ]
+  types_getRequestStatus = [ ( IntType, LongType ) ]
   @classmethod
-  def export_getRequestStatus( cls, requestName ):
-    """ get request status given its name """
-    status = cls.__requestDB.getRequestStatus( requestName )
+  def export_getRequestStatus( cls, requestID ):
+    """ get request status given its id """
+    status = cls.__requestDB.getRequestStatus( requestID )
     if not status["OK"]:
       gLogger.error( "getRequestStatus: %s" % status["Message"] )
     return status
 
-  types_getRequestFileStatus = [ list( StringTypes ) + [ IntType, LongType ], list( StringTypes ) + [ListType] ]
+  types_getRequestFileStatus = [ [ IntType, LongType ], list( StringTypes ) + [ListType] ]
   @classmethod
-  def export_getRequestFileStatus( cls, requestName, lfnList ):
-    """ get request file status for a given LFNs list and requestID/Name """
+  def export_getRequestFileStatus( cls, requestID, lfnList ):
+    """ get request file status for a given LFNs list and requestID """
     if type( lfnList ) == str:
       lfnList = [lfnList]
-    res = cls.__requestDB.getRequestFileStatus( requestName, lfnList )
+    res = cls.__requestDB.getRequestFileStatus( requestID, lfnList )
     if not res["OK"]:
       gLogger.error( "getRequestFileStatus: %s" % res["Message"] )
     return res
 
-  types_getRequestName = [ ( IntType, LongType ) ]
-  @classmethod
-  def export_getRequestName( cls, requestID ):
-    """ get request name for a given requestID """
-    requestName = cls.__requestDB.getRequestName( requestID )
-    if not requestName["OK"]:
-      gLogger.error( "getRequestName: %s" % requestName["Message"] )
-    return requestName
+#   types_getRequestName = [ ( IntType, LongType ) ]
+#   @classmethod
+#   def export_getRequestName( cls, requestID ):
+#     """ get request name for a given requestID """
+#     requestName = cls.__requestDB.getRequestName( requestID )
+#     if not requestName["OK"]:
+#       gLogger.error( "getRequestName: %s" % requestName["Message"] )
+#     return requestName
 
-  types_getRequestInfo = [ list( StringTypes ) + [ IntType, LongType ] ]
+  types_getRequestInfo = [ [ IntType, LongType ] ]
   @classmethod
-  def export_getRequestInfo( cls, requestName ):
-    """ get request info for a given requestID/Name """
-    requestInfo = cls.__requestDB.getRequestInfo( requestName )
+  def export_getRequestInfo( cls, requestID ):
+    """ get request info for a given requestID """
+    requestInfo = cls.__requestDB.getRequestInfo( requestID )
     if not requestInfo["OK"]:
       gLogger.error( "getRequestInfo: %s" % requestInfo["Message"] )
     return requestInfo

@@ -1,5 +1,5 @@
 #!/bin/env python
-""" Show request given its name, a jobID or a transformation and a task """
+""" Show request given its ID, a jobID or a transformation and a task """
 __RCSID__ = "$Id: $"
 
 import datetime
@@ -30,9 +30,9 @@ Script.registerSwitch( '', 'All', '      (if --Status Failed) all requests, othe
 Script.registerSwitch( '', 'Reset', '   Reset Failed files to Waiting if any' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] [requestName|requestID]' % Script.scriptName,
+                                     ' %s [option|cfgfile] requestID/requestName(if unique)' % Script.scriptName,
                                      'Arguments:',
-                                     ' requestName: a request name' ] ) )
+                                     ' requestID: a request ID' ] ) )
 
 # # execution
 if __name__ == "__main__":
@@ -43,7 +43,7 @@ if __name__ == "__main__":
   from DIRAC import gLogger
 
   jobs = []
-  requestName = ""
+  requestID = 0
   transID = None
   taskIDs = None
   tasks = None
@@ -106,15 +106,18 @@ if __name__ == "__main__":
       gLogger.fatal( "If Transformation is set, a list of Tasks should also be set" )
       Script.showHelp()
       DIRAC.exit( 2 )
+    # In principle, the task name is unique, so the request name should be unique as well
+    # If ever this would not work anymore, we would need to use the transformationClient
+    # to fetch the ExternalID
     requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]
 
   elif not jobs:
     args = Script.getPositionalArgs()
     if len( args ) == 1:
       all = True
-      requests = [reqName for reqName in args[0].split( ',' ) if reqName]
+      requests = [reqID for reqID in args[0].split( ',' ) if reqID]
   else:
-    res = reqClient.getRequestNamesForJobs( jobs )
+    res = reqClient.getRequestIDsForJobs( jobs )
     if not res['OK']:
       gLogger.fatal( "Error getting request for jobs", res['Message'] )
       DIRAC.exit( 2 )
@@ -127,12 +130,12 @@ if __name__ == "__main__":
 
   if status and not requests:
     all = all or status != 'Failed'
-    res = reqClient.getRequestNamesList( [status], limit = 999999999, since = since, until = until )
+    res = reqClient.getRequestIDsList( [status], limit = 999999999, since = since, until = until )
 
     if not res['OK']:
       gLogger.error( "Error getting requests:", res['Message'] )
       DIRAC.exit( 2 )
-    requests = [reqName for reqName, _st, updTime in res['Value'] if updTime > since and updTime <= until and reqName]
+    requests = [reqID for reqID, _st, updTime in res['Value'] if updTime > since and updTime <= until and reqID]
     gLogger.always( 'Obtained %d requests %s between %s and %s' % ( len( requests ), status, since, until ) )
   if not requests:
     gLogger.always( 'No request selected....' )
@@ -140,22 +143,25 @@ if __name__ == "__main__":
     DIRAC.exit( 2 )
   okRequests = []
   warningPrinted = False
-  for requestName in requests:
+  for reqID in requests:
+    # We allow reqID to be the requestName if it is unique
     try:
-      requestName = reqClient.getRequestName( int( requestName ) )
-      if requestName['OK']:
-        requestName = requestName['Value']
+      requestID = int( reqID )
     except ValueError:
-      pass
+      requestID = reqClient.getRequestIDForName( reqID )
+      if not requestID['OK']:
+        gLogger.always( requestID['Message'] )
+        continue
+      requestID = requestID['Value']
 
-    request = reqClient.peekRequest( requestName )
+    request = reqClient.peekRequest( requestID )
     if not request["OK"]:
       gLogger.error( request["Message"] )
       DIRAC.exit( -1 )
 
     request = request["Value"]
     if not request:
-      gLogger.error( "no such request %s" % requestName )
+      gLogger.error( "no such request %s" % requestID )
       continue
     if status and request.Status != status:
       if not warningPrinted:
@@ -164,16 +170,16 @@ if __name__ == "__main__":
       continue
 
     if all or recoverableRequest( request ):
-      okRequests.append( requestName )
+      okRequests.append( requestID )
       if reset:
-        gLogger.always( '============ Request %s =============' % requestName )
-        ret = reqClient.resetFailedRequest( requestName, all = all )
+        gLogger.always( '============ Request %s =============' % requestID )
+        ret = reqClient.resetFailedRequest( requestID, all = all )
         if not ret['OK']:
-          gLogger.error( "Error resetting request %s" % requestName, ret['Message'] )
+          gLogger.error( "Error resetting request %s" % requestID, ret['Message'] )
       else:
         if len( requests ) > 1:
           gLogger.always( '\n===================================' )
-        dbStatus = reqClient.getRequestStatus( requestName ).get( 'Value', 'Unknown' )
+        dbStatus = reqClient.getRequestStatus( requestID ).get( 'Value', 'Unknown' )
 
         printRequest( request, status = dbStatus, full = full, verbose = verbose, terse = terse )
   if status and okRequests:

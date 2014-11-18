@@ -39,10 +39,12 @@ class ReqClient( Client ):
     self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
     self.setServer( "RequestManagement/ReqManager" )
 
+
   def setServer( self, url ):
     Client.setServer( self, url )
     self.__requestManager = None
     self.requestManager()
+
 
   def requestManager( self, timeout = 120 ):
     """ facade for RequestManager RPC client """
@@ -114,18 +116,18 @@ class ReqClient( Client ):
     errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'" % request.RequestName
     return errorsDict
 
-  def getRequest( self, requestName = "" ):
+  def getRequest( self, requestID = 0 ):
     """ get request from RequestDB
 
     :param self: self reference
-    :param str requestType: type of request
+    :param requestID : ID of the request. If 0, choice is made for you
 
     :return: S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.debug( "getRequest: attempting to get request." )
-    getRequest = self.requestManager().getRequest( requestName )
+    getRequest = self.requestManager().getRequest( requestID )
     if not getRequest["OK"]:
-      self.log.error( "getRequest: unable to get request", "request: '%s' %s" % ( requestName, getRequest["Message"] ) )
+      self.log.error( "getRequest: unable to get request", "request: '%s' %s" % ( requestID, getRequest["Message"] ) )
       return getRequest
     if not getRequest["Value"]:
       return getRequest
@@ -155,48 +157,39 @@ class ReqClient( Client ):
     reqInstances = dict( ( rId, Request( jsonReq[rId] ) ) for rId in jsonReq )
     return S_OK( {"Successful" : reqInstances, "Failed" : getRequests["Value"]["Failed"] } )
 
-  def peekRequest( self, requestName ):
+  def peekRequest( self, requestID ):
     """ peek request """
     self.log.debug( "peekRequest: attempting to get request." )
-    peekRequest = self.requestManager().peekRequest( requestName )
+    peekRequest = self.requestManager().peekRequest( int( requestID ) )
     if not peekRequest["OK"]:
-      self.log.error( "peekRequest: unable to peek request", "request: '%s' %s" % ( requestName, peekRequest["Message"] ) )
+      self.log.error( "peekRequest: unable to peek request", "request: '%s' %s" % ( requestID, peekRequest["Message"] ) )
       return peekRequest
     if not peekRequest["Value"]:
       return peekRequest
     return S_OK( Request( peekRequest["Value"] ) )
 
-  def deleteRequest( self, requestName ):
-    """ delete request given it's name
+  def deleteRequest( self, requestID ):
+    """ delete request given it's ID
 
     :param self: self reference
-    :param str requestName: request name
+    :param str requestID: request ID
     """
-    try:
-      requestName = int( requestName )
-    except ValueError:
-      pass
-    if type( requestName ) == int:
-      res = self.getRequestName( requestName )
-      if not res['OK']:
-        return res
-      else:
-        requestName = res['Value']
-    self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
-    deleteRequest = self.requestManager().deleteRequest( requestName )
+    requestID = int( requestID )
+    self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestID )
+    deleteRequest = self.requestManager().deleteRequest( requestID )
     if not deleteRequest["OK"]:
       self.log.error( "deleteRequest: unable to delete request", 
-                      "'%s' request: %s" % ( requestName, deleteRequest["Message"] ) )
+                      "'%s' request: %s" % ( requestID, deleteRequest["Message"] ) )
     return deleteRequest
 
-  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
-    """ get at most :limit: request names with statuses in :statusList: """
+  def getRequestIDsList( self, statusList = None, limit = None, since = None, until = None ):
+    """ get at most :limit: request ids with statuses in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
     since = since.strftime( '%Y-%m-%d' ) if since else ""
     until = until.strftime( '%Y-%m-%d' ) if until else ""
 
-    return self.requestManager().getRequestNamesList( statusList, limit, since, until )
+    return self.requestManager().getRequestIDsList( statusList, limit, since, until )
 
   def getScheduledRequest( self, operationID ):
     """ get scheduled request given its scheduled OperationID """
@@ -217,76 +210,76 @@ class ReqClient( Client ):
       self.log.error( "getDBSummary: unable to get RequestDB summary", dbSummary["Message"] )
     return dbSummary
 
-  def getDigest( self, requestName ):
-    """ Get the request digest given a request name.
+  def getDigest( self, requestID ):
+    """ Get the request digest given a request ID.
 
     :param self: self reference
-    :param str requestName: request name
+    :param str requestID: request id
     """
-    self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
-    digest = self.requestManager().getDigest( requestName )
+    self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestID )
+    digest = self.requestManager().getDigest( int( requestID ) )
     if not digest["OK"]:
-      self.log.error( "getDigest: unable to get digest for request", 
-                      "request: '%s' %s" % ( requestName, digest["Message"] ) )
+      self.log.error( "getDigest: unable to get digest for request",
+                      "request: '%s' %s" % ( requestID, digest["Message"] ) )
     return digest
 
-  def getRequestStatus( self, requestName ):
-    """ Get the request status given a request name.
+  def getRequestStatus( self, requestID ):
+    """ Get the request status given a request id.
 
     :param self: self reference
-    :param str requestName: name of teh request
+    :param str requestID: id of the request
     """
-    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
-    requestStatus = self.requestManager().getRequestStatus( requestName )
+    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestID )
+    requestStatus = self.requestManager().getRequestStatus( requestID )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for request",
-                      "request: '%s' %s" % ( requestName, requestStatus["Message"] ) )
+                      "request: '%s' %s" % ( requestID, requestStatus["Message"] ) )
     return requestStatus
 
-  def getRequestName( self, requestID ):
-    """ get request name for a given requestID """
-    return self.requestManager().getRequestName( requestID )
+#   def getRequestName( self, requestID ):
+#     """ get request name for a given requestID """
+#     return self.requestManager().getRequestName( requestID )
 
-  def getRequestInfo( self, requestName ):
+  def getRequestInfo( self, requestID ):
     """ The the request info given a request id.
 
     :param self: self reference
-    :param str requestName: request name
+    :param str requestID: request nid
     """
-    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
-    requestInfo = self.requestManager().getRequestInfo( requestName )
+    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestID )
+    requestInfo = self.requestManager().getRequestInfo( int( requestID ) )
     if not requestInfo["OK"]:
       self.log.error( "getRequestInfo: unable to get status for request",
-                      "request: '%s' %s" % ( requestName, requestInfo["Message"] ) )
+                      "request: '%s' %s" % ( requestID, requestInfo["Message"] ) )
     return requestInfo
 
-  def getRequestFileStatus( self, requestName, lfns ):
+  def getRequestFileStatus( self, requestID, lfns ):
     """ Get file status for request given a request id.
 
     :param self: self reference
-    :param int requestID: request name
+    :param int requestID: request id
     :param list lfns: list of LFNs
     """
-    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
-    fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
+    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestID )
+    fileStatus = self.requestManager().getRequestFileStatus( int( requestID ), lfns )
     if not fileStatus["OK"]:
       self.log.error( "getRequestFileStatus: unable to get file status for request",
-                      "request: '%s' %s" % ( requestName, fileStatus["Message"] ) )
+                      "request: '%s' %s" % ( requestID, fileStatus["Message"] ) )
     return fileStatus
 
-  def finalizeRequest( self, requestName, jobID ):
+  def finalizeRequest( self, requestID, jobID ):
     """ check request status and perform finalization if necessary
         update the request status and the corresponding job parameter
 
     :param self: self reference
-    :param str requestName: request name
+    :param str requestID: request id
     :param int jobID: job id
     """
     stateServer = RPCClient( "WorkloadManagement/JobStateUpdate", useCertificates = True )
 
     # update the job pending request digest in any case since it is modified
     self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
-    digest = self.getDigest( requestName )
+    digest = self.getDigest( requestID )
     if digest["OK"]:
       digest = digest["Value"]
       self.log.verbose( digest )
@@ -297,17 +290,17 @@ class ReqClient( Client ):
         return res
     else:
       self.log.error( "finalizeRequest: Failed to get request digest",
-                      "request: '%s' %s" % ( requestName, digest["Message"] ) )
+                      "request: '%s' %s" % ( requestID, digest["Message"] ) )
 
     # Checking if to update the job status - we should fail here, so it will be re-tried later
     # Checking the state, first
-    res = self.getRequestStatus( requestName )
+    res = self.getRequestStatus( requestID )
     if not res['OK']:
       self.log.error( "finalizeRequest: failed to get request",
-                      "request: %s status: %s" % ( requestName, res["Message"] ) )
+                      "request: %s status: %s" % ( requestID, res["Message"] ) )
       return res
     if res["Value"] != "Done":
-      return S_ERROR( "The request %s isn't 'Done' but '%s', this should never happen, why are we here?" % ( requestName, res['Value'] ) )
+      return S_ERROR( "The request %s isn't 'Done' but '%s', this should never happen, why are we here?" % ( requestID, res['Value'] ) )
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
@@ -344,18 +337,18 @@ class ReqClient( Client ):
 
     return S_OK()
 
-  def getRequestNamesForJobs( self, jobIDs ):
-    """ get the request names for the supplied jobIDs.
+  def getRequestIDsForJobs( self, jobIDs ):
+    """ get the request ids for the supplied jobIDs.
 
     :param self: self reference
     :param list jobID: list of job IDs (integers)
-    :return: S_ERROR or S_OK( "Successful": { jobID1: requestName1, jobID2: requestName2, ... },
+    :return: S_ERROR or S_OK( "Successful": { jobID1: reqID1, jobID2: requID2, ... },
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
-    self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
-    requests = self.requestManager().getRequestNamesForJobs( jobIDs )
+    self.log.info( "getRequestIDsForJobs: attempt to get request(s) for job %s" % jobIDs )
+    requests = self.requestManager().getRequestIDsForJobs( jobIDs )
     if not requests["OK"]:
-      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs", 
+      self.log.error( "getRequestIDsForJobs: unable to get request(s) for jobs",
                       "%s: %s" % ( jobIDs, requests["Message"] ) )
     return requests
 
@@ -376,16 +369,12 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestName, all = False ):
-    """ Reset a failed request to "Waiting" status - requestName can also be the RequestID
+  def resetFailedRequest( self, requestID, all = False ):
+    """ Reset a failed request to "Waiting" status
     """
-    try:
-      requestName = self.getRequestName( int( requestName ) )['Value']
-    except ValueError:
-      pass
 
     # # we can safely only peek the request as it is Failed and therefore not owned by an agent
-    res = self.peekRequest( requestName )
+    res = self.peekRequest( requestID )
     if not res['OK']:
       return res
     req = res['Value']

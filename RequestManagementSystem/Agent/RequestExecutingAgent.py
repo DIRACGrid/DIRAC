@@ -187,28 +187,28 @@ class RequestExecutingAgent( AgentModule ):
     """
     count = 5
     # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache
-    while request.RequestName in self.__requestCache:
+    while request.RequestID in self.__requestCache:
       count -= 1
       if not count:
         self.requestClient().putRequest( request )
-        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestName )
+        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
       time.sleep( 1 )
-    self.__requestCache[ request.RequestName ] = request
+    self.__requestCache[ request.RequestID ] = request
     return S_OK()
 
-  def putRequest( self, requestName, taskResult = None ):
-    """ put back :requestName: to RequestClient
+  def putRequest( self, requestID, taskResult = None ):
+    """ put back :requestID: to RequestClient
 
-    :param str requestName: request's name
+    :param str requestID: request's id
     """
-    if requestName in self.__requestCache:
-      request = self.__requestCache.pop( requestName )
+    if requestID in self.__requestCache:
+      request = self.__requestCache.pop( requestID )
       if taskResult and taskResult['OK']:
         request = taskResult['Value']
 
       reset = self.requestClient().putRequest( request )
       if not reset["OK"]:
-        return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestID, reset["Message"] ) )
     else:
       return S_ERROR( 'Not in cache' )
     return S_OK()
@@ -219,12 +219,12 @@ class RequestExecutingAgent( AgentModule ):
     :param self: self reference
     """
     self.log.info( "putAllRequests: will put %s back requests" % len( self.__requestCache ) )
-    for requestName in self.__requestCache.keys():
-      reset = self.putRequest( requestName )
+    for requestID in self.__requestCache.keys():
+      reset = self.putRequest( requestID )
       if not reset["OK"]:
         self.log.error( 'Failed to put request', reset["Message"] )
       else:
-        self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestName )
+        self.log.debug( "putAllRequests: request %s has been put back with its initial state" % requestID )
     return S_OK()
 
   def initialize( self ):
@@ -271,15 +271,11 @@ class RequestExecutingAgent( AgentModule ):
 
       for request in requestsToExecute:
         # # set task id
-        taskID = request.RequestName
+        taskID = request.RequestID
         # # save current request in cache
         self.cacheRequest( request )
         # # serialize to JSON
         requestJSON = request.toJSON()
-        if not requestJSON["OK"]:
-          self.log.error( "JSON serialization error: %s" % requestJSON["Message"] )
-          break
-        requestJSON = requestJSON["Value"]
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )
@@ -294,7 +290,7 @@ class RequestExecutingAgent( AgentModule ):
             if looping:
               self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
             looping = 0
-            self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
+            self.log.info( "spawning task for request '%s/%s'" % ( request.RequestID, request.RequestName ) )
             timeOut = self.getTimeout( request )
             enqueue = self.processPool().createAndQueueTask( RequestTask,
                                                              kwargs = { "requestJSON" : requestJSON,
@@ -332,7 +328,7 @@ class RequestExecutingAgent( AgentModule ):
         perOp = self.timeOuts[op.Type].get( "PerOperation", self.__operationTimeout )
         perFiles = self.timeOuts[op.Type].get( "PerFile", self.__fileTimeout ) * len( op )
         timeout += perOp + perFiles
-    self.log.info( "estimated timeOut for request %s is %s" % ( request.RequestName, timeout ) )
+    self.log.info( "estimated timeOut for request (%s/%s) is %s" % ( request.RequestID, request.RequestName, timeout ) )
     return timeout
 
   def finalize( self ):
@@ -345,7 +341,7 @@ class RequestExecutingAgent( AgentModule ):
   def resultCallback( self, taskID, taskResult ):
     """ definition of request callback function
 
-    :param str taskID: Request.RequestName
+    :param str taskID: Request.RequestID
     :param dict taskResult: task result S_OK(Request)/S_ERROR(Message)
     """
     # # clean cache
@@ -360,7 +356,7 @@ class RequestExecutingAgent( AgentModule ):
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
 
-    :param str taskID: Request.RequestName
+    :param str taskID: Request.RequestID
     :param Exception taskException: Exception instance
     """
     self.log.error( "exceptionCallback: %s was hit by exception %s" % ( taskID, taskException ) )
