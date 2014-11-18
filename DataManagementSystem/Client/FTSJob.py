@@ -522,15 +522,30 @@ class FTSJob( Record ):
 
     # The order of informations is not the same for glite- and fts- !!!
     # In order: new fts-, old fts-, glite-
-    for exptr in ( '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)',
+    iExptr = None
+    for iExptr, exptr in enumerate( ( 
+                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
-                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)' ):
+                   '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)'
+                   ) ):
       regExp = re.compile( exptr, re.S )
       fileInfo = re.findall( regExp, outputStr )
       if fileInfo:
         break
+    if not fileInfo:
+      return S_ERROR( "Error monitoring job (no regexp match)" )
     for info in fileInfo:
-      sourceURL, _targetURL, fileStatus, _retries, reason, duration = info[0:6]
+      if iExptr == 0:
+        # version >= 3.2.30
+        sourceURL, _targetURL, fileStatus, reason, duration, _retries, _staging = info
+      elif iExptr == 1:
+        # version FTS3 < 3.2.30
+        sourceURL, _targetURL, fileStatus, reason, duration, _retries = info
+      elif iExptr == 2:
+        # version FTS2
+        sourceURL, _targetURL, fileStatus, _retries, reason, duration = info
+      else:
+        return S_ERROR( 'Error monitoring job (implement match %d)' % iExptr )
       candidateFile = None
       for ftsFile in self:
         if ftsFile.SourceSURL == sourceURL:

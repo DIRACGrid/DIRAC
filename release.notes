@@ -111,6 +111,15 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p22]
+
+*DMS
+FIX: FTSJob - fixes in the glite-transfer-status command outpu parsing
+FIX: TransformationClient - allow single lfn in setFileStatusForTransformation()
+
+*WMS
+FIX: StatesMonitoringAgent - install pika on the fly as a temporary solution
+
 [v6r11p21]
 
 *DMS
