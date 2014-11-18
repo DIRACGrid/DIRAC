@@ -11,7 +11,6 @@ from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript    
 from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
-from DIRAC.Core.Utilities.Pfn                            import pfnparse 
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
 from DIRAC                                               import gLogger
@@ -19,6 +18,7 @@ from DIRAC.Core.Utilities.List                           import breakListIntoChu
 
 import os, urllib, json
 from types import StringTypes
+from urlparse import urlparse
 
 __RCSID__ = "$Id$"
 
@@ -75,7 +75,6 @@ class SSH:
       import DIRAC.Resources.Computing.pexpect as pexpect
       expectFlag = True
     except Exception, x:
-      print str(x)
       from DIRAC import shellCall
       expectFlag = False
 
@@ -455,7 +454,7 @@ class SSHComputingElement( ComputingElement ):
     ssh = SSH( host = host, parameters = self.ceParameters )
     # Copy the executable
     submitFile = '%s/%s' % ( self.executableArea, os.path.basename( executableFile ) )
-    result = ssh.scpCall( 10, executableFile, submitFile, postUploadCommand = 'chmod +x %s' % submitFile )
+    result = ssh.scpCall( 30, executableFile, submitFile, postUploadCommand = 'chmod +x %s' % submitFile )
     if not result['OK']:
       return result  
     
@@ -500,12 +499,7 @@ class SSHComputingElement( ComputingElement ):
     """ 
     jobDict = {}
     for job in jobIDList:      
-      result = pfnparse( job )
-      if result['OK']:
-        stamp = result['Value']['FileName'] 
-      else:
-        self.log.error( 'Invalid job id', job )
-        continue 
+      stamp = os.path.basename( urlparse( job ).path )
       jobDict[stamp] = job
     stampList = jobDict.keys()   
 
@@ -570,17 +564,11 @@ class SSHComputingElement( ComputingElement ):
     resultDict = {}    
     jobDict = {}
     for job in jobIDList:
-      result = pfnparse( job )
-      if result['OK']:
-        stamp = result['Value']['FileName'] 
-      else:
-        self.log.error( 'Invalid job id', job )
-        continue  
+      stamp = os.path.basename( urlparse( job ).path )
       jobDict[stamp] = job
     stampList = jobDict.keys()   
 
     for jobList in breakListIntoChunks( stampList, 100 ):
-
       resultCommand = self.__executeHostCommand( 'getJobStatus', { 'JobIDList': jobList }, host = host )
       if not resultCommand['OK']:
         return resultCommand
@@ -596,16 +584,21 @@ class SSHComputingElement( ComputingElement ):
   def _getJobOutputFiles( self, jobID, host = None ):
     """ Get output file names for the specific CE
     """
-    result = pfnparse( jobID )
-    if not result['OK']:
-      return result
-    jobStamp = result['Value']['FileName']
-    host = result['Value']['Host']
+    jobStamp = os.path.basename( urlparse( jobID ).path )
+    host = urlparse( jobID ).hostname
+    
+    if 'OutputTemplate' in self.ceParameters:
+      self.outputTemplate = self.ceParameters['OutputTemplate']
+      self.errorTemplate = self.ceParameters['ErrorTemplate']
     
     if self.outputTemplate:
       output = self.outputTemplate % jobStamp
       error = self.errorTemplate % jobStamp
-      
+    elif 'OutputTemplate' in self.ceParameters:
+      self.outputTemplate = self.ceParameters['OutputTemplate']
+      self.errorTemplate = self.ceParameters['ErrorTemplate']  
+      output = self.outputTemplate % jobStamp
+      error = self.errorTemplate % jobStamp
     elif hasattr( self.batch, 'getJobOutputFiles' ):
       resultCommand = self.__executeHostCommand( 'getJobOutputFiles', { 'JobIDList': [jobStamp] }, host = host )
       if not resultCommand['OK']:
@@ -647,14 +640,14 @@ class SSHComputingElement( ComputingElement ):
       localErrorFile = 'Memory'
 
     ssh = SSH( parameters = self.ceParameters )
-    result = ssh.scpCall( 20, localOutputFile, outputFile, upload = False )
+    result = ssh.scpCall( 30, localOutputFile, outputFile, upload = False )
     if not result['OK']:
       return result
     output = result['Value']
     if localDir:
       output = localOutputFile
     
-    result = ssh.scpCall( 20, localErrorFile, errorFile, upload = False )    
+    result = ssh.scpCall( 30, localErrorFile, errorFile, upload = False )    
     if not result['OK']:
       return result
     error = result['Value']
