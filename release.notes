@@ -1,3 +1,12 @@
+[v6r11p22]
+
+*DMS
+FIX: FTSJob - fixes in the glite-transfer-status command outpu parsing
+FIX: TransformationClient - allow single lfn in setFileStatusForTransformation()
+
+*WMS
+FIX: StatesMonitoringAgent - install pika on the fly as a temporary solution
+
 [v6r11p21]
 
 *DMS
