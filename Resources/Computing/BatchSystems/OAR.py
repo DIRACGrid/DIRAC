@@ -140,19 +140,19 @@ class OAR( object ):
     status, output = commands.getstatusoutput( "oarstat --sql \"project = '%s'\" -J" % user )
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
   
     try:
       output = json.loads( output )
     except Exception , x:
       resultDict['Status'] = 2048
-      resultDict['Output'] = str( x )
+      resultDict['Message'] = str( x )
       return resultDict
   
     if not len( output ) > 0:
       resultDict['Status'] = 1024
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
   
     statusDict = {}
@@ -212,14 +212,14 @@ class OAR( object ):
     status , output = commands.getstatusoutput( 'oarstat -u %s -J' % user )
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
   
     try:
       output = json.loads( output )
     except Exception , x:
       resultDict['Status'] = 2048
-      resultDict['Output'] = str( x )
+      resultDict['Message'] = str( x )
       return resultDict
   
     if output > 0:
