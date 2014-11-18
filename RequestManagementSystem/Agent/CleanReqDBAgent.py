@@ -86,30 +86,34 @@ class CleanReqDBAgent( AgentModule ):
 
     # # kick
     statusList = [ "Assigned" ]
-    requestNamesList = self.requestClient().getRequestNamesList( statusList, self.KICK_LIMIT )
-    if not requestNamesList["OK"]:
-      self.log.error( "execute: %s" % requestNamesList["Message"] )
-      return requestNamesList
+    requestIDsList = self.requestClient().getRequestIDsList( statusList, self.KICK_LIMIT )
+    if not requestIDsList["OK"]:
+      self.log.error( "execute: %s" % requestIDsList["Message"] )
+      return requestIDsList
 
-    requestNamesList = requestNamesList["Value"]
+    requestIDsList = requestIDsList["Value"]
     kicked = 0
-    for requestName, status, lastUpdate in requestNamesList:
-      reqStatus = self.requestClient().getRequestStatus( requestName )
+    for requestID, status, lastUpdate in requestIDsList:
+      reqStatus = self.requestClient().getRequestStatus( requestID )
       if not reqStatus['OK']:
         self.log.error( ( "execute: unable to get request status", reqStatus['Message'] ) )
         continue
       status = reqStatus['Value']
       if lastUpdate < kickTime and status == 'Assigned':
-        getRequest = self.requestClient().peekRequest( requestName )
+        getRequest = self.requestClient().peekRequest( requestID )
         if not getRequest["OK"]:
-          self.log.error( "execute: unable to read request '%s': %s" % ( requestName, getRequest["Message"] ) )
+          self.log.error( "execute: unable to read request '%s': %s" % ( requestID, getRequest["Message"] ) )
           continue
         getRequest = getRequest["Value"]
         if getRequest and getRequest.LastUpdate < kickTime:
-          self.log.info( "execute: kick assigned request '%s' in status %s" % ( requestName, getRequest.Status ) )
+          self.log.info( "execute: kick assigned request (%s/'%s') in status %s" % ( requestID,
+                                                                                      getRequest.RequestName,
+                                                                                      getRequest.Status ) )
           putRequest = self.requestClient().putRequest( getRequest )
           if not putRequest["OK"]:
-            self.log.error( "execute: unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )
+            self.log.error( "execute: unable to put request (%s/'%s'): %s" % ( requestID,
+                                                                               getRequest.RequestName,
+                                                                               putRequest["Message"] ) )
             continue
           else:
             self.log.verbose( "Kicked request %d" % putRequest['Value'] )
@@ -117,19 +121,19 @@ class CleanReqDBAgent( AgentModule ):
 
     # # delete
     statusList = [ "Done", "Failed", "Canceled" ] if self.DEL_FAILED else [ "Done" ]
-    requestNamesList = self.requestClient().getRequestNamesList( statusList, self.DEL_LIMIT )
-    if not requestNamesList["OK"]:
-      self.log.error( "execute: %s" % requestNamesList["Message"] )
-      return requestNamesList
+    requestIDsList = self.requestClient().getRequestIDsList( statusList, self.DEL_LIMIT )
+    if not requestIDsList["OK"]:
+      self.log.error( "execute: %s" % requestIDsList["Message"] )
+      return requestIDsList
 
-    requestNamesList = requestNamesList["Value"]
+    requestIDsList = requestIDsList["Value"]
     deleted = 0
-    for requestName, status, lastUpdate in requestNamesList:
+    for requestID, status, lastUpdate in requestIDsList:
       if lastUpdate < rmTime:
-        self.log.info( "execute: deleting request '%s' with status %s" % ( requestName, status ) )
-        delRequest = self.requestClient().deleteRequest( requestName )
+        self.log.info( "execute: deleting request '%s' with status %s" % ( requestID, status ) )
+        delRequest = self.requestClient().deleteRequest( requestID )
         if not delRequest["OK"]:
-          self.log.error( "execute: unable to delete request '%s': %s" % ( requestName, delRequest["Message"] ) )
+          self.log.error( "execute: unable to delete request '%s': %s" % ( requestID, delRequest["Message"] ) )
           continue
         deleted += 1
 

@@ -197,7 +197,7 @@ class RequestTasks( TaskBase ):
     for taskDict in taskDicts:
       requestName = _requestName( taskDict['TransformationID'], taskDict['TaskID'] )
 
-      reqID = self.__getRequestID( requestName )
+      reqID = taskDict['ExternalID']
 
       if reqID:
         requestNameIDs[requestName] = reqID
@@ -205,14 +205,6 @@ class RequestTasks( TaskBase ):
         noTasks.append( requestName )
     return S_OK( {'NoTasks':noTasks, 'TaskNameIDs':requestNameIDs} )
 
-  def __getRequestID( self, requestName ):
-    """ Getting the info from the new RMS
-    """
-    res = self.requestClient.getRequestInfo( requestName )
-    if res['OK']:
-      return res['Value'][0]
-    else:
-      return 0
 
   def getSubmittedTaskStatus( self, taskDicts ):
     updateDict = {}
@@ -221,9 +213,8 @@ class RequestTasks( TaskBase ):
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
-      requestName = _requestName( transID, taskID )
 
-      newStatus = self.__getRequestStatus( requestName )
+      newStatus = self.__getRequestStatus( taskDict['ExternalID'] )
 
       if not newStatus:
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
@@ -231,10 +222,10 @@ class RequestTasks( TaskBase ):
         updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
-  def __getRequestStatus( self, requestName ):
+  def __getRequestStatus( self, requestID ):
     """ Getting the Request status from the new RMS
     """
-    res = self.requestClient.getRequestStatus( requestName )
+    res = self.requestClient.getRequestStatus( requestID )
     if res['OK']:
       return res['Value']
     else:
@@ -243,6 +234,7 @@ class RequestTasks( TaskBase ):
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
     submittedTasks = {}
+    externalIds = {}
     # Don't try and get status of not submitted tasks!
     for fileDict in fileDicts:
       submittedTasks.setdefault( fileDict['TransformationID'], set() ).add( int( fileDict['TaskID'] ) )
@@ -252,6 +244,7 @@ class RequestTasks( TaskBase ):
         return res
       for taskDict in res['Value']:
         taskID = taskDict['TaskID']
+        externalIds[taskID] = taskDict['ExternalID']
         if taskDict['ExternalStatus'] == 'Created':
           submittedTasks[transID].remove( taskID )
 
@@ -259,14 +252,14 @@ class RequestTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = int( fileDict['TaskID'] )
       if taskID in submittedTasks[transID]:
-        requestName = _requestName( transID, taskID )
-        taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
+        requestID = externalIds[taskID]
+        taskFiles.setdefault( requestID, {} )[fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
-    for requestName in sorted( taskFiles ):
-      lfnDict = taskFiles[requestName]
+    for requestID in sorted( taskFiles ):
+      lfnDict = taskFiles[requestID]
 
-      statusDict = self.__getRequestFileStatus( requestName, lfnDict.keys() )
+      statusDict = self.__getRequestFileStatus( requestID, lfnDict.keys() )
 
       if not statusDict:
         self.log.warn( "getSubmittedFileStatus: Failed to get files status for request" )
@@ -281,10 +274,10 @@ class RequestTasks( TaskBase ):
           updateDict[lfn] = 'Problematic'
     return S_OK( updateDict )
 
-  def __getRequestFileStatus( self, requestName, lfns ):
+  def __getRequestFileStatus( self, requestID, lfns ):
     """ Getting the Request status from the new RMS
     """
-    res = self.requestClient.getRequestFileStatus( requestName, lfns )
+    res = self.requestClient.getRequestFileStatus( requestID, lfns )
     if res['OK']:
       return res['Value']
     else:

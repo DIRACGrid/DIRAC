@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre3]
+[v6r13-pre4]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -122,6 +122,7 @@ CHANGE: Removed the use of current DataLogging service
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
+CHANGE: RMS refactored based on SQLAlchemy 
 
 [v6r12p2]
 

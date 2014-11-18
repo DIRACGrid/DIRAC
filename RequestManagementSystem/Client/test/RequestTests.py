@@ -66,17 +66,6 @@ class RequestTests( unittest.TestCase ):
     fromJSON = toJSON["Value"]
     req = Request( fromJSON )
 
-    toSQL = req.toSQL()
-    self.assertEqual( toSQL["OK"], True )
-    toSQL = toSQL["Value"]
-    self.assertEqual( toSQL.startswith( "INSERT" ), True )
-
-    req.RequestID = 1
-
-    toSQL = req.toSQL()
-    self.assertEqual( toSQL["OK"], True )
-    toSQL = toSQL["Value"]
-    self.assertEqual( toSQL.startswith( "UPDATE" ), True )
 
   def test02Props( self ):
     """ props """
@@ -90,8 +79,6 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( req.RequestName, "test" )
 
     req.JobID = 1
-    self.assertEqual( req.JobID, 1 )
-    req.JobID = "1"
     self.assertEqual( req.JobID, 1 )
 
     req.CreationTime = "1970-01-01 00:00:00"
@@ -332,28 +319,7 @@ class RequestTests( unittest.TestCase ):
     del r[0]
     self.assertEqual( len( r ), 4, "__delitem__ failed" )
 
-    r.RequestID = 1
-    del r[0]
-    self.assertEqual( r.cleanUpSQL(), None, "cleanUpSQL failed after __delitem__ (no opId)" )
 
-    r[0].OperationID = 1
-    del r[0]
-    self.assertEqual( r.cleanUpSQL(),
-                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1);\n',
-                       'DELETE FROM `File` WHERE `OperationID`=1;\n'] )
-
-    r[0].OperationID = 2
-    r[0] = Operation()
-    self.assertEqual( r.cleanUpSQL(),
-                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1,2);\n',
-                       'DELETE FROM `File` WHERE `OperationID`=1;\n',
-                       'DELETE FROM `File` WHERE `OperationID`=2;\n'] )
-
-    json = r.toJSON()
-    self.assertEqual( "__dirty" in json["Value"], True, "__dirty missing in json" )
-
-    r2 = Request( json["Value"] )
-    self.assertEqual( r.cleanUpSQL(), r2.cleanUpSQL(), "wrong cleanUpSQL after json" )
 
 # # test execution
 if __name__ == "__main__":

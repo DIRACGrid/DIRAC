@@ -515,8 +515,8 @@ class TransformationCleaningAgent( AgentModule ):
     """ This will remove requests from the RMS system -
     """
     rIDs = [ int( long( j ) ) for j in requestIDs if long( j ) ]
-    for requestName in rIDs:
-      self.reqClient.deleteRequest( requestName )
+    for reqID in rIDs:
+      self.reqClient.deleteRequest( reqID )
 
     return S_OK()
 
@@ -567,23 +567,23 @@ class TransformationCleaningAgent( AgentModule ):
 
     failed = 0
     failoverRequests = {}
-    res = self.reqClient.getRequestNamesForJobs( jobIDs )
+    res = self.reqClient.getRequestIDsForJobs( jobIDs )
     if not res['OK']:
       self.log.error( "Failed to get requestID for jobs.", res['Message'] )
       return res
     failoverRequests.update( res['Value']['Successful'] )
     if not failoverRequests:
       return S_OK()
-    for jobID, requestName in res['Value']['Successful'].items():
+    for jobID, requestID in res['Value']['Successful'].items():
       # Put this check just in case, tasks must have associated jobs
       if jobID == 0 or jobID == '0':
         continue
-      res = self.reqClient.deleteRequest( requestName )
+      res = self.reqClient.deleteRequest( requestID )
       if not res['OK']:
         self.log.error( "Failed to remove request from RequestDB", res['Message'] )
         failed += 1
       else:
-        self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
+        self.log.verbose( "Removed request %s associated to job %d." % ( requestID, jobID ) )
 
 
     if failed:
