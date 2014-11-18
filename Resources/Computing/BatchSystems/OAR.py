@@ -43,6 +43,9 @@ class OAR( object ):
     
     outFile = os.path.join( outputDir , "%jobid%" )
     errFile = os.path.join( errorDir , "%jobid%" )
+    outFile = os.path.expandvars( outFile )
+    errFile = os.path.expandvars( errFile )
+    executable = os.path.expandvars( executable ) 
     jobIDs = []
     for _i in range( nJobs ):
       cmd = "oarsub -O %s.out -E %s.err -q %s -n DIRACPilot %s %s" % ( outFile,
