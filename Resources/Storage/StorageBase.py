@@ -289,8 +289,9 @@ class StorageBase:
       return self.updateURL( lfn, withWSUrl = withWSUrl )
     
     # Check the LFN convention
-    voLFN = lfn.split( '/' )[1]
-    if voLFN != self.se.vo:
+    lfnSplitList = lfn.split( '/' )
+    voLFN = lfnSplitList[1]
+    if voLFN != self.se.vo or self.se.vo in lfnSplitList[2:]:
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
     
     result = self.getURLBase( withWSUrl = withWSUrl )
