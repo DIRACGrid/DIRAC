@@ -1583,57 +1583,57 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def dataLoggingInfo( self, lfn, printOutput = False ):
-    """Retrieve logging information for a given dataset.
-
-       Example Usage:
-
-       >>> print dirac.dataLoggingInfo('/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
-       {'OK': True, 'Value': [('AddedToTransformation', 'Transformation 3', datetime.datetime(2008, 5, 18, 13, 54, 15)]}
-
-       :param lfn: Logical File Name (LFN)
-       :type lfn: string
-       :param printOutput: Optional flag to print result
-       :type printOutput: boolean
-       :returns: S_OK,S_ERROR
-    """
-    if type( lfn ) == type( " " ):
-      lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string for LFN' )
-
-    dataLogging = RPCClient( 'DataManagement/DataLogging' )
-    result = dataLogging.getFileLoggingInfo( lfn )
-    if not result['OK']:
-      return self._errorReport( 'Problem during getFileLoggingInfo call', result['Message'] )
-    if not printOutput:
-      return result
-
-    loggingTupleList = result['Value']
-    headers = ( 'Status', 'MinorStatus', 'DateTime', 'Source' )
-    line = ''
-
-    statAdj = 0
-    mStatAdj = 0
-    dtAdj = 25
-    sourceAdj = 0
-
-    for i in loggingTupleList:
-      if len( str( i[0] ) ) > statAdj:
-        statAdj = len( str( i[0] ) ) + 4
-      if len( str( i[1] ) ) > mStatAdj:
-        mStatAdj = len( str( i[1] ) ) + 4
-      if len( str( i[3] ) ) > sourceAdj:
-        sourceAdj = len( str( i[3] ) ) + 4
-
-    print '\n' + headers[0].ljust( statAdj ) + headers[1].ljust( mStatAdj ) + \
-                 headers[2].ljust( dtAdj ) + headers[3].ljust( sourceAdj ) + '\n'
-    for i in loggingTupleList:
-      line = i[0].ljust( statAdj ) + i[1].ljust( mStatAdj ) + \
-             toString( i[2] ).ljust( dtAdj ) + i[3].ljust( sourceAdj )
-      print line
-
-    return result
+#   def dataLoggingInfo( self, lfn, printOutput = False ):
+#     """Retrieve logging information for a given dataset.
+#
+#        Example Usage:
+#
+#        >>> print dirac.dataLoggingInfo('/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
+#        {'OK': True, 'Value': [('AddedToTransformation', 'Transformation 3', datetime.datetime(2008, 5, 18, 13, 54, 15)]}
+#
+#        :param lfn: Logical File Name (LFN)
+#        :type lfn: string
+#        :param printOutput: Optional flag to print result
+#        :type printOutput: boolean
+#        :returns: S_OK,S_ERROR
+#     """
+#     if type( lfn ) == type( " " ):
+#       lfn = lfn.replace( 'LFN:', '' )
+#     else:
+#       return self._errorReport( 'Expected single string for LFN' )
+#
+#     dataLogging = RPCClient( 'DataManagement/DataLogging' )
+#     result = dataLogging.getFileLoggingInfo( lfn )
+#     if not result['OK']:
+#       return self._errorReport( 'Problem during getFileLoggingInfo call', result['Message'] )
+#     if not printOutput:
+#       return result
+#
+#     loggingTupleList = result['Value']
+#     headers = ( 'Status', 'MinorStatus', 'DateTime', 'Source' )
+#     line = ''
+#
+#     statAdj = 0
+#     mStatAdj = 0
+#     dtAdj = 25
+#     sourceAdj = 0
+#
+#     for i in loggingTupleList:
+#       if len( str( i[0] ) ) > statAdj:
+#         statAdj = len( str( i[0] ) ) + 4
+#       if len( str( i[1] ) ) > mStatAdj:
+#         mStatAdj = len( str( i[1] ) ) + 4
+#       if len( str( i[3] ) ) > sourceAdj:
+#         sourceAdj = len( str( i[3] ) ) + 4
+#
+#     print '\n' + headers[0].ljust( statAdj ) + headers[1].ljust( mStatAdj ) + \
+#                  headers[2].ljust( dtAdj ) + headers[3].ljust( sourceAdj ) + '\n'
+#     for i in loggingTupleList:
+#       line = i[0].ljust( statAdj ) + i[1].ljust( mStatAdj ) + \
+#              toString( i[2] ).ljust( dtAdj ) + i[3].ljust( sourceAdj )
+#       print line
+#
+#     return result
 
   #############################################################################
   def _sendJob( self, jdl ):

@@ -1,4 +1,4 @@
-[v6r13-pre2]
+[v6r13-pre3]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -7,10 +7,21 @@ CHANGE: Separating fixed and variable parts of error log messages for multiple s
 NEW: Changes to make the DISET protocol IP V6 ready
 
 *DMS
-NEW: Native use of the FTS3 services: 
+NEW: Native use of the FTS3 services
+CHANGE: Removed the use of current DataLogging service
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
+
+[v6r12p2]
+
+*Core
+FIX: dirac-install - svn.cern.ch rather than svnweb.cern.ch is now needed for direct 
+     HTTP access to files in SVN
+
+*WMS
+FIX: dirac-wms-cpu-normalization - when re-configuring, do not try to dump in the 
+     diracConfigFilePath
 
 [v6r12p1]
 
@@ -114,6 +125,15 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p22]
+
+*DMS
+FIX: FTSJob - fixes in the glite-transfer-status command outpu parsing
+FIX: TransformationClient - allow single lfn in setFileStatusForTransformation()
+
+*WMS
+FIX: StatesMonitoringAgent - install pika on the fly as a temporary solution
 
 [v6r11p21]
 
