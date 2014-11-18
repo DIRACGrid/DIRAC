@@ -10,7 +10,6 @@
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 from DIRAC.Core.Utilities.List                           import uniqueElements
-from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC                                               import S_OK, S_ERROR
@@ -19,6 +18,7 @@ from DIRAC                                               import gConfig
 import os
 import shutil, tempfile
 import getpass
+from urlparse import urlparse
 
 class LocalComputingElement( ComputingElement ):
 
@@ -270,11 +270,8 @@ class LocalComputingElement( ComputingElement ):
   def _getJobOutputFiles( self, jobID ):
     """ Get output file names for the specific CE
     """
-    result = pfnparse( jobID )
-    if not result['OK']:
-      return result
-    jobStamp = result['Value']['FileName']
-    host = result['Value']['Host']
+    jobStamp = os.path.basename( urlparse( jobID ).path )
+    host = urlparse( jobID ).hostname
     
     if hasattr( self.batch, 'getOutputFiles' ):
       output, error = self.batch.getOutputFiles( jobStamp, 

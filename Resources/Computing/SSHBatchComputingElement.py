@@ -10,12 +10,12 @@
 """
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
-from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 
 import os, socket
+from urlparse import urlparse
 
 CE_NAME = 'SSHBatch'
 
@@ -151,10 +151,8 @@ class SSHBatchComputingElement( SSHComputingElement ):
     
     hostDict = {}
     for job in jobIDList:      
-      result = pfnparse( job )
-      if not result['OK']:
-        continue
-      host = result['Value']['Host']
+      
+      host = urlparse( job ).hostname
       hostDict.setdefault(host,[])
       hostDict[host].append( job )
       
@@ -197,10 +195,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
     """
     hostDict = {}
     for job in jobIDList:
-      result = pfnparse( job )
-      if not result['OK']:
-        continue
-      host = result['Value']['Host']
+      host = urlparse( job ).hostname
       hostDict.setdefault(host,[])
       hostDict[host].append( job )
 
