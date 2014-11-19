@@ -45,7 +45,7 @@ class StorageBase:
   def __init__( self, name, parameterDict ):
         
     self.name = name
-    self.protocolName = ''
+    self.pluginName = ''
     self.protocolParameters = {}
     
     self.__updateParameters( parameterDict )
@@ -74,7 +74,7 @@ class StorageBase:
     """
     parameterDict = dict( self.protocolParameters )
     parameterDict["StorageName"] = self.name
-    parameterDict["ProtocolName"] = self.protocolName
+    parameterDict["PluginName"] = self.pluginName
     return parameterDict    
 
   def exists( self, *parms, **kws ):
@@ -117,11 +117,6 @@ class StorageBase:
     """Get the physical size of the given file
     """
     return S_ERROR( "Storage.getFileSize: implement me!" )
-
-  def getTransportURL( self, *parms, **kws ):
-    """ Obtain the TURLs for the supplied path and protocols
-    """
-    return S_ERROR( "Storage.getTransportURL: implement me!" )
 
   def prestageFile( self, *parms, **kws ):
     """ Issue prestage request for file
@@ -276,18 +271,35 @@ class StorageBase:
 
     return S_OK( False )
   
+  def getTransportURL( self, url, protocols ):
+    """ Get URL for a given file specification 
+    """
+    
+    if not self.protocolParameters['Protocol'] in protocols:
+      return S_ERROR( 'No native protocol requested' )  
+    
+    # If we are given a URL already 
+    result = self.isURL( lfn_url )
+    if not result['OK']:
+      return result
+    if result['Value']:
+      result = self.isNativeProtocol( lfn_url )
+      if not result['OK']:
+        return result
+      if result['Value']:
+        return self.updateURL( lfn_url )
+      else:
+        return S_ERROR( 'Not native protocol' )
+    
+    # This is an LFN, make a URL if the protocol is
+    return self.getURL( lfn_url )
+      
+    return S_ERROR( 'No native protocol requested' )  
+  
   def getURL( self, lfn, withWSUrl = False ):
     """ Construct URL from the given LFN according to the VO convention 
     """
-    
-    result = self.isURL( lfn )
-    if not result['OK']:
-      return result
-    
-    # If we are given a URL, update it
-    if result['Value']:
-      return self.updateURL( lfn, withWSUrl = withWSUrl )
-    
+  
     # Check the LFN convention:
     # 1. LFN must start with the VO name as the top level directory
     # 2. VO name must not appear as any subdirectory or file name

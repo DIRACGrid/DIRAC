@@ -115,11 +115,11 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
-  def __init__( self, name, protocols = None, vo = None ):
+  def __init__( self, name, plugins = None, vo = None ):
     """ c'tor
 
     :param str name: SE name
-    :param list protocols: requested protocols
+    :param list plugins: requested storage plugins
     :param vo
     """
 
@@ -144,10 +144,10 @@ class StorageElementItem( object ):
       useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
 
     self.valid = True
-    if protocols == None:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, protocolList = [] )
+    if plugins == None:
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [] )
     else:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, protocolList = protocols )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins )
     if not res['OK']:
       self.valid = False
       self.name = name
@@ -360,51 +360,51 @@ class StorageElementItem( object ):
         return S_ERROR( "StorageElement.isValid: Remove access not currently permitted." )
     return S_OK()
 
-  def getProtocols( self ):
-    """ Get the list of all the protocols defined for this Storage Element
+  def getPlugins( self ):
+    """ Get the list of all the plugins defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getProtocols : Obtaining all protocols of %s." % self.name )
+    self.log.verbose( "StorageElement.getPlugins : Obtaining all plugins of %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    allProtocols = self.localProtocols + self.remoteProtocols
-    return S_OK( allProtocols )
+    allPlugins = self.localPlugins + self.remotePlugins
+    return S_OK( allPlugins )
 
-  def getRemoteProtocols( self ):
+  def getRemotePlugins( self ):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name )
+    self.log.verbose( "StorageElement.getRemotePlugins: Obtaining remote protocols for %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    return S_OK( self.remoteProtocols )
+    return S_OK( self.remotePlugins )
 
-  def getLocalProtocols( self ):
+  def getLocalPlugins( self ):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name )
+    self.log.verbose( "StorageElement.getLocalPlugins: Obtaining local protocols for %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    return S_OK( self.localProtocols )
+    return S_OK( self.localPlugins )
 
-  def getStorageParameters( self, protocol ):
-    """ Get protocol specific options
-      :param protocol : protocol we are interested in
+  def getStorageParameters( self, plugin ):
+    """ Get plugin specific options
+      :param plugin : plugin we are interested in
     """
-    self.log.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s protocol %s." % ( self.name,
-                                                                                                   protocol ) )
-    res = self.getProtocols()
+    self.log.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s plugin %s." % ( self.name,
+                                                                                                                plugin ) )
+    res = self.getPlugins()
     if not res['OK']:
       return res
-    availableProtocols = res['Value']
-    if not protocol in availableProtocols:
-      errStr = "StorageElement.getStorageParameters: Requested protocol not available for SE."
-      self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
+    availablePlugins = res['Value']
+    if not plugin in availablePlugins:
+      errStr = "StorageElement.getStorageParameters: Requested plugin not available for SE."
+      self.log.debug( errStr, '%s for %s' % ( plugin, self.name ) )
       return S_ERROR( errStr )
     for storage in self.storages:
       storageParameters = storage.getParameters()
-      if storageParameters['ProtocolName'] == protocol:
+      if storageParameters['PluginName'] == plugin or storageParameters['ProtocolName'] == plugin :
         return S_OK( storageParameters )
-    errStr = "StorageElement.getStorageParameters: Requested protocol supported but no object found."
-    self.log.debug( errStr, "%s for %s" % ( protocol, self.name ) )
+    errStr = "StorageElement.getStorageParameters: Requested plugin supported but no object found."
+    self.log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
     return S_ERROR( errStr )
 
   #################################################################################################
@@ -446,7 +446,7 @@ class StorageElementItem( object ):
     self.log.debug( errStr )
     return S_ERROR( errStr )
 
-  def getLFNForURL( self, urls ):
+  def getLFNFromURL( self, urls ):
     """ Get the LFN from the PFNS .
         :param lfn : input lfn or lfns (list/dict)
     """
@@ -454,7 +454,7 @@ class StorageElementItem( object ):
     if result['OK']:
       urlDict = result['Value']
     else:  
-      errStr = "StorageElement.getLFNForURL: Supplied urls must be string, list of strings or a dictionary."
+      errStr = "StorageElement.getLFNFromURL: Supplied urls must be string, list of strings or a dictionary."
       self.log.debug( errStr )
       return S_ERROR( errStr )
 
