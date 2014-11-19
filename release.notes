@@ -1,6 +1,12 @@
 [v6r12p3]
 
+*Configuration
+CHANGE: dirac-admin-add-resources - define VOPath/ option when adding new SE 
+
+*Resources
 NEW: StorageFactory - modify protocol Path for VO specific value
+
+*DMS
 FIX: FileCatalog - check for empty input in checkArgumentFormat utility
 FIX: DataManager - protect against FC queries with empty input
 
