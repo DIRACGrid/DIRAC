@@ -53,7 +53,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.Grid import ldapService, getBdiiSEInfo
 from DIRAC.Core.Utilities.Pfn import pfnparse
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
 
 ceBdiiDict = None
 
@@ -324,11 +324,13 @@ def checkUnusedSEs():
         changeSet.add( ( accessSection, 'Host', host ) ) 
         changeSet.add( ( accessSection, 'Port', port ) ) 
         changeSet.add( ( accessSection, 'Access', 'remote' ) )
+        voPathSection = cfgPath( accessSection, 'VOPath' )
         if 'VOPath' in seDict:
           path = seDict['VOPath']
           voFromPath = os.path.basename( path )
-          if voFromPath != vo:
+          if voFromPath != diracVO:
             gLogger.notice( '\n!!! Warning: non-conventional VO path: %s\n' % path )
+            changeSet.add( ( voPathSection, diracVO, path ) )
           path = os.path.dirname( path )  
         else:  
           # Try to guess the Path
@@ -410,6 +412,9 @@ if __name__ == "__main__":
   if not vo:
     gLogger.error( 'No VO specified' )
     DIRACExit( -1 )
+    
+  diracVO = vo
+  vo = getVOOption( vo, 'VOMSName', vo )  
   
   if doCEs:
     yn = raw_input( 'Do you want to check/add new sites to CS ? [default yes] [yes|no]: ' )
@@ -432,20 +437,3 @@ if __name__ == "__main__":
     yn = yn.strip()
     if yn == '' or yn.lower().startswith( 'y' ):
       updateSEs()  
-
-    
-    
-    
-    
-    
-    
-    
-    
-  
-        
-  
-  
-      
-  
-  
-  
