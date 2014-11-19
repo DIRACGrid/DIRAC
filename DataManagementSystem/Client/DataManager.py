@@ -1106,6 +1106,8 @@ class DataManager( object ):
         failed[lfn] = "Failed to remove sole replica"
       else:
         replicaTuples.append( ( lfn, repDict[storageElementName] ) )
+    if not replicaTuples:
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )    
     res = self.__removeReplica( storageElementName, replicaTuples )
     if not res['OK']:
       return res
