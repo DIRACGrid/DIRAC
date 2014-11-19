@@ -149,7 +149,7 @@ class DataManager( object ):
     :param str storageElement: DIRAC SE name
     """
 
-    se = StorageElement( storageElement )
+    se = StorageElement( storageElement, vo = self.vo )
     res = returnSingleResult( se.exists( directory ) )
 
     if not res['OK']:
@@ -316,7 +316,7 @@ class DataManager( object ):
     if not res['OK']:
       return res
     for storageElementName in res['Value']:
-      se = StorageElement( storageElementName )
+      se = StorageElement( storageElementName, vo = self.vo )
       physicalFile = replicas[storageElementName]
 
       oDataOperation = self.__initialiseAccountingObject( 'getFile', storageElementName, 1 )
@@ -434,7 +434,7 @@ class DataManager( object ):
 
     ##########################################################
     #  Instantiate the destination storage element here.
-    storageElement = StorageElement( diracSE )
+    storageElement = StorageElement( diracSE, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "putAndRegister: The storage element is not currently valid."
@@ -688,7 +688,7 @@ class DataManager( object ):
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
     self.log.debug( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
-    destStorageElement = StorageElement( destSE )
+    destStorageElement = StorageElement( destSE, vo = self.vo )
     res = destStorageElement.isValid()
     if not res['OK']:
       errStr = "%s The storage element is not currently valid." % logStr
@@ -781,7 +781,7 @@ class DataManager( object ):
         self.log.debug( "%s %s is currently not allowed as a source." % ( logStr, diracSE ) )
       else:
         self.log.debug( "%s %s is available for use." % ( logStr, diracSE ) )
-        storageElement = StorageElement( diracSE )
+        storageElement = StorageElement( diracSE, vo = self.vo )
         res = storageElement.isValid()
         if not res['OK']:
           errStr = "%s The storage element is not currently valid." % logStr
@@ -922,7 +922,7 @@ class DataManager( object ):
     failed = {}
     replicaTuples = []
     for storageElementName, replicaTuple in seDict.items():
-      destStorageElement = StorageElement( storageElementName )
+      destStorageElement = StorageElement( storageElementName, vo = self.vo )
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "__registerReplica: The storage element is not currently valid."
@@ -1106,6 +1106,8 @@ class DataManager( object ):
         failed[lfn] = "Failed to remove sole replica"
       else:
         replicaTuples.append( ( lfn, repDict[storageElementName] ) )
+    if not replicaTuples:
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )    
     res = self.__removeReplica( storageElementName, replicaTuples )
     if not res['OK']:
       return res
@@ -1118,7 +1120,8 @@ class DataManager( object ):
     """ remove replica """
     lfnDict = {}
     failed = {}
-    se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
+    successful = {}
+    se = None if self.useCatalogPFN else StorageElement( storageElementName, vo = self.vo )  # Placeholder for the StorageElement object
     if se:
       res = se.isValid( 'removeFile' )
       if not res['OK']:
@@ -1150,6 +1153,9 @@ class DataManager( object ):
     failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
     # Here we use the FC PFN...
     replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[pfn]], storageElementName ) for pfn in res['Value']['Successful']]
+
+    if not replicaTuples:
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
@@ -1318,7 +1324,7 @@ class DataManager( object ):
     """ remove replica from storage element """
     self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
                                                                                          storageElementName ) )
-    storageElement = StorageElement( storageElementName )
+    storageElement = StorageElement( storageElementName, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
@@ -1394,7 +1400,7 @@ class DataManager( object ):
 
     ##########################################################
     #  Instantiate the destination storage element here.
-    storageElement = StorageElement( diracSE )
+    storageElement = StorageElement( diracSE, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "put: The storage element is not currently valid."
@@ -1530,7 +1536,7 @@ class DataManager( object ):
             se_lfn.setdefault( se, [] ).append( lfn )
 
         for se in se_lfn:
-          seObj = StorageElement( se )
+          seObj = StorageElement( se, vo = self.vo )
           succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
           for lfn in succPfn:
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
@@ -1575,7 +1581,7 @@ class DataManager( object ):
         if self.useCatalogPFN:
           pfn = replicas[storageElementName]
         else:
-          se = se if se else StorageElement( storageElementName )
+          se = se if se else StorageElement( storageElementName, vo = self.vo )
           res = se.getPfnForLfn( lfn )
           pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
         pfnDict[pfn] = lfn
@@ -1585,7 +1591,7 @@ class DataManager( object ):
         retDict["Failed"][lfn] = errStr
 
     # # call StorageElement function at least
-    se = se = se if se else StorageElement( storageElementName )
+    se = se = se if se else StorageElement( storageElementName, vo = self.vo )
     fcn = getattr( se, method )
     res = fcn( pfnDict.keys(), **argsDict )
     # # check result

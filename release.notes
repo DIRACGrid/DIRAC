@@ -14,6 +14,18 @@ CHANGE: Removed the use of current DataLogging service
 CHANGE: Removed files from the previous generation RMS
 CHANGE: RMS refactored based on SQLAlchemy 
 
+[v6r12p3]
+
+*Configuration
+CHANGE: dirac-admin-add-resources - define VOPath/ option when adding new SE 
+
+*Resources
+NEW: StorageFactory - modify protocol Path for VO specific value
+
+*DMS
+FIX: FileCatalog - check for empty input in checkArgumentFormat utility
+FIX: DataManager - protect against FC queries with empty input
+
 [v6r12p2]
 
 *Core
