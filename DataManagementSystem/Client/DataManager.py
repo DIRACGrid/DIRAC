@@ -1120,6 +1120,7 @@ class DataManager( object ):
     """ remove replica """
     lfnDict = {}
     failed = {}
+    successful = {}
     se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
     if se:
       res = se.isValid( 'removeFile' )
@@ -1152,6 +1153,9 @@ class DataManager( object ):
     failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
     # Here we use the FC PFN...
     replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[pfn]], storageElementName ) for pfn in res['Value']['Successful']]
+
+    if not replicaTuples:
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
