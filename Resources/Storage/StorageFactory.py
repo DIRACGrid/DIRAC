@@ -18,18 +18,19 @@ from DIRAC                                            import gLogger, gConfig, S
 from DIRAC.Core.Utilities.List                        import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers         import getInstalledExtensions
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ConfigurationSystem.Client.Helpers.Path    import cfgPath
 import os
 
 class StorageFactory:
 
-  def __init__( self, useProxy = False ):
+  def __init__( self, useProxy = False, vo = None ):
 
     self.rootConfigPath = '/Resources/StorageElements'
     self.valid = True
     self.proxy = False
     self.proxy = useProxy
     self.resourceStatus = ResourceStatus()
-
+    self.vo = vo
 
   ###########################################################################################
   #
@@ -282,6 +283,15 @@ class StorageFactory:
       configPath = '%s/%s' % ( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
+      
+    # Evaluate the base path taking into account possible VO specific setting 
+    if self.vo:
+      result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )
+      voPath = ''
+      if result['OK']:
+        voPath = result['Value'].get( self.vo, '' )
+      if voPath:
+        protocolDict['Path'] = voPath  
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
