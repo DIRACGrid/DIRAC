@@ -454,7 +454,7 @@ def getBdiiSEInfo( vo, host = None ):
     for entry in result['Value']:
       voPath = entry['GlueVOInfoPath']
       seID = ''
-      for en in entry['GlueChunkKey']:
+      for en in entry['dn'].split(','):  
         if en.startswith( 'GlueSEUniqueID=' ):
           seID = en.replace( 'GlueSEUniqueID=', '' )
           break
