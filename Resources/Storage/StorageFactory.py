@@ -5,7 +5,7 @@
     getStorageName():  Resolves links in the CS to the target SE name.
 
     getStorage():      This creates a single storage stub based on the parameters passed in a dictionary.
-                      This dictionary must have the following keys: 'StorageName','ProtocolName','Protocol'
+                      This dictionary must have the following keys: 'StorageName','PluginName','Protocol'
                       Other optional keys are 'Port','Host','Path','SpaceToken'
 
     getStorages()      This takes a DIRAC SE definition and creates storage stubs for the protocols found in the CS.
@@ -48,24 +48,27 @@ class StorageFactory:
       gLogger.error( errStr )
       return S_ERROR( errStr )
 
-    # ProtocolName must be supplied otherwise nothing with work.
-    if parameterDict.has_key( 'ProtocolName' ):
-      protocolName = parameterDict['ProtocolName']
+    # PluginName must be supplied otherwise nothing with work.
+    if parameterDict.has_key( 'PluginName' ):
+      pluginName = parameterDict['PluginName']
+    # Temporary fix for backward compatibility
+    elif parameterDict.has_key( 'ProtocolName' ):
+      pluginName = parameterDict['ProtocolName']  
     else:
-      errStr = "StorageFactory.getStorage: ProtocolName must be supplied"
+      errStr = "StorageFactory.getStorage: PluginName must be supplied"
       gLogger.error( errStr )
       return S_ERROR( errStr )
 
-    return self.__generateStorageObject( storageName, protocolName, parameterDict )
+    return self.__generateStorageObject( storageName, pluginName, parameterDict )
 
-  def getStorages( self, storageName, protocolList = [] ):
+  def getStorages( self, storageName, pluginList = [] ):
     """ Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
 
         'storageName' is the DIRAC SE name i.e. 'CERN-RAW'
-        'protocolList' is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
+        'pluginList' is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
     """
-    self.remoteProtocols = []
-    self.localProtocols = []
+    self.remotePlugins = []
+    self.localPlugins = []
     self.name = ''
     self.options = {}
     self.protocolDetails = []
@@ -92,25 +95,25 @@ class StorageFactory:
       return res
     self.protocolDetails = res['Value']
 
-    requestedLocalProtocols = []
-    requestedRemoteProtocols = []
+    requestedLocalPlugins = []
+    requestedRemotePlugins = []
     requestedProtocolDetails = []
     turlProtocols = []
     # Generate the protocol specific plug-ins
     self.storages = []
     for protocolDict in self.protocolDetails:
-      protocolName = protocolDict['ProtocolName']
-      if protocolList and protocolName not in protocolList:
-          continue
+      pluginName = protocolDict['PluginName']
+      if pluginList and pluginName not in pluginList:
+        continue
       protocol = protocolDict['Protocol']
-      result = self.__generateStorageObject( storageName, protocolName, protocolDict )
+      result = self.__generateStorageObject( storageName, pluginName, protocolDict )
       if result['OK']:
         self.storages.append( result['Value'] )
-        if protocolName in self.localProtocols:
+        if pluginName in self.localPlugins:
           turlProtocols.append( protocol )
-          requestedLocalProtocols.append( protocolName )
-        if protocolName in self.remoteProtocols:
-          requestedRemoteProtocols.append( protocolName )
+          requestedLocalPlugins.append( pluginName )
+        if pluginName in self.remotePlugins:
+          requestedRemotePlugins.append( pluginName )
         requestedProtocolDetails.append( protocolDict )
       else:
         gLogger.info( res['Message'] )
@@ -120,8 +123,8 @@ class StorageFactory:
       resDict['StorageName'] = self.name
       resDict['StorageOptions'] = self.options
       resDict['StorageObjects'] = self.storages
-      resDict['LocalProtocols'] = requestedLocalProtocols
-      resDict['RemoteProtocols'] = requestedRemoteProtocols
+      resDict['LocalPlugins'] = requestedLocalPlugins
+      resDict['RemotePlugins'] = requestedRemotePlugins
       resDict['ProtocolOptions'] = requestedProtocolDetails
       resDict['TurlProtocols'] = turlProtocols
       return S_OK( resDict )
@@ -210,31 +213,30 @@ class StorageFactory:
       gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
       return S_ERROR( errStr )
     protocolSections = res['Value']
-    sortedProtocols = sortList( protocolSections )
+    sortedProtocolSections = sortList( protocolSections )
     protocolDetails = []
-    for protocol in sortedProtocols:
-      res = self._getConfigStorageProtocolDetails( storageName, protocol )
+    for protocolSection in sortedProtocolSections:
+      res = self._getConfigStorageProtocolDetails( storageName, protocolSection )
       if not res['OK']:
         return res
       protocolDetails.append( res['Value'] )
-    self.protocols = self.localProtocols + self.remoteProtocols
     return S_OK( protocolDetails )
 
-  def _getConfigStorageProtocolDetails( self, storageName, protocol ):
+  def _getConfigStorageProtocolDetails( self, storageName, protocolSection ):
     """
       Parse the contents of the protocol block
     """
     # First obtain the options that are available
-    protocolConfigPath = cfgPath( self.rootConfigPath, storageName, protocol )
+    protocolConfigPath = cfgPath( self.rootConfigPath, storageName, protocolSection )
     res = gConfig.getOptions( protocolConfigPath )
     if not res['OK']:
       errStr = "StorageFactory.__getProtocolDetails: Failed to get protocol options."
-      gLogger.error( errStr, "%s: %s" % ( storageName, protocol ) )
+      gLogger.error( errStr, "%s: %s" % ( storageName, protocolSection ) )
       return S_ERROR( errStr )
     options = res['Value']
 
     # We must have certain values internally even if not supplied in CS
-    protocolDict = {'Access':'', 'Host':'', 'Path':'', 'Port':'', 'Protocol':'', 'ProtocolName':'', 'SpaceToken':'', 'WSUrl':''}
+    protocolDict = {'Access':'', 'Host':'', 'Path':'', 'Port':'', 'Protocol':'', 'PluginName':'', 'SpaceToken':'', 'WSUrl':''}
     for option in options:
       configPath = cfgPath( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
@@ -252,17 +254,17 @@ class StorageFactory:
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
     if protocolDict['Access'].lower() == 'remote':
-      self.remoteProtocols.append( protocolDict['ProtocolName'] )
+      self.remotePlugins.append( protocolDict['PluginName'] )
     elif protocolDict['Access'].lower() == 'local':
-      self.localProtocols.append( protocolDict['ProtocolName'] )
+      self.localPlugins.append( protocolDict['PluginName'] )
     else:
-      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocol )
+      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
       gLogger.warn( errStr )
 
-    # The ProtocolName option must be defined
-    if not protocolDict['ProtocolName']:
-      errStr = "StorageFactory.__getProtocolDetails: 'ProtocolName' option is not defined."
-      gLogger.error( errStr, "%s: %s" % ( storageName, protocol ) )
+    # The PluginName option must be defined
+    if not protocolDict['PluginName']:
+      errStr = "StorageFactory.__getProtocolDetails: 'PluginName' option is not defined."
+      gLogger.error( errStr, "%s: %s" % ( storageName, protocolSection ) )
       return S_ERROR( errStr )
     
     return S_OK( protocolDict )
@@ -272,9 +274,9 @@ class StorageFactory:
   # Below is the method for obtaining the object instantiated for a provided storage configuration
   #
 
-  def __generateStorageObject( self, storageName, protocolName, parameters ):
+  def __generateStorageObject( self, storageName, pluginName, parameters ):
 
-    storageType = protocolName
+    storageType = pluginName
     if self.proxy:
       storageType = 'Proxy'
 
@@ -294,5 +296,5 @@ class StorageFactory:
 
     # If use proxy, keep the original protocol name
     if self.proxy:
-      storage.protocolName = protocolName
+      storage.pluginName = pluginName
     return S_OK( storage )
