@@ -158,9 +158,9 @@ class StorageElementItem( object ):
 
     self.valid = True
     if protocols == None:
-      res = StorageFactory( useProxy ).getStorages( name, protocolList = [] )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, protocolList = [] )
     else:
-      res = StorageFactory( useProxy ).getStorages( name, protocolList = protocols )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, protocolList = protocols )
     if not res['OK']:
       self.valid = False
       self.name = name
