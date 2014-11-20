@@ -46,7 +46,12 @@ for jdl in args:
   if result['OK']:
     print 'JobID = %s' % ( result['Value'] )
     if jFile != None:
-      jFile.write( str( result['Value'] )+'\n' )
+      # parametric jobs
+      if isinstance( result['Value'], list ):
+        jFile.write( '\n'.join(str(p) for p in result['Value']) )
+        jFile.write( '\n' )
+      else:  
+        jFile.write( str( result['Value'] )+'\n' )
   else:
     errorList.append( ( jdl, result['Message'] ) )
     exitCode = 2
