@@ -51,21 +51,21 @@ class GetInfoTestCase( StorageElementTestCase ):
     res = self.storageElement.isValid()
     self.assert_( res['OK'] )
 
-  def test_getRemoteProtocols( self ):
+  def test_getRemotePlugins( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet remote protocols test\n'
-    res = self.storageElement.getRemoteProtocols()
+    res = self.storageElement.getRemotePlugins()
     self.assert_( res['OK'] )
     self.assertEqual( type( res['Value'] ), types.ListType )
 
-  def test_getLocalProtocols( self ):
+  def test_getLocalPlugins( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet local protocols test\n'
-    res = self.storageElement.getLocalProtocols()
+    res = self.storageElement.getLocalPlugins()
     self.assert_( res['OK'] )
     self.assertEqual( type( res['Value'] ), types.ListType )
 
-  def test_getProtocols( self ):
+  def test_getPlugins( self ):
     print '\n\n#########################################################################\n\n\t\t\tGet protocols test\n'
-    res = self.storageElement.getProtocols()
+    res = self.storageElement.getPlugins()
     self.assert_( res['OK'] )
     self.assertEqual( type( res['Value'] ), types.ListType )
 
@@ -384,7 +384,7 @@ class FileTestCases( StorageElementTestCase ):
 #     self.assert_( removeFileRes['OK'] )
 #     self.assert_( removeFileRes['Value'] )
 
-  def test_getAccessUrl( self ):
+  def test_getURLForProtocol( self ):
     print '\n\n#########################################################################\n\n\t\tGet access url test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
@@ -396,7 +396,7 @@ class FileTestCases( StorageElementTestCase ):
     # Remove the destination file
     removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
     # Get missing turl res
-    getMissingTurlRes = self.storageElement.getURLFroProtocol( destinationFilePath, singleFile = True )
+    getMissingTurlRes = self.storageElement.getURLForProtocol( destinationFilePath, protocol = 'dips' )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )
@@ -405,7 +405,8 @@ class FileTestCases( StorageElementTestCase ):
     # Check that we can get the tURL properly
     self.assert_( getTurlRes['OK'] )
     self.assert_( getTurlRes['Value'] )
-    self.assert_( type( getTurlRes['Value'] ) in types.StringTypes )
+    self.assert_( type( getTurlRes['Value'] ) == types.DictType )
+    self.assert_( type( getTurlRes['Value']['Successful'][destinationFilePath] ) in types.StringTypes )
     # Check that the removal was done correctly
     self.assert_( removeFileRes['OK'] )
     self.assert_( removeFileRes['Value'] )
@@ -656,7 +657,8 @@ class DirectoryTestCases( StorageElementTestCase ):
     # Now remove the remove directory
     removeDirRes = self.storageElement.removeDirectory( destDirectory, recursive = True )
     #Clean up the locally created directory
-    shutil.rmtree( localDir )
+    if os.path.exists( localDir ): 
+      shutil.rmtree( localDir )
 
     # Perform the checks for the put dir operation
     self.assert_( putDirRes['OK'] )

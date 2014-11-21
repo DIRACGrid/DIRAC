@@ -12,11 +12,11 @@ import unittest, time, os, shutil, sys
 positionalArgs = getPositionalArgs()
 
 if len( positionalArgs ) < 2:
-  print 'Usage: TestStoragePlugIn.py StorageElement protocol'
+  print 'Usage: TestStoragePlugIn.py StorageElement plugin'
   sys.exit()
 else:
   storageElementToTest = positionalArgs[0]
-  protocol = positionalArgs[1]
+  plugin = positionalArgs[1]
 
 class StoragePlugInTestCase( unittest.TestCase ):
   """ Base class for the StoragePlugin test cases
@@ -24,7 +24,7 @@ class StoragePlugInTestCase( unittest.TestCase ):
   def setUp( self ):
 
     factory = StorageFactory( 'lhcb' )
-    res = factory.getStorages( storageElementToTest, [protocol] )
+    res = factory.getStorages( storageElementToTest, [plugin] )
     self.assert_( res['OK'] )
     storageDetails = res['Value']
     self.storage = storageDetails['StorageObjects'][0]

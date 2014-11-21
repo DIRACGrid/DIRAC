@@ -23,36 +23,26 @@ class StorageFactoryTestCase( unittest.TestCase ):
 
     storageDict = {}
     storageDict['StorageName'] = 'IN2P3-disk'
-    storageDict['ProtocolName'] = 'SRM2'
+    storageDict['PluginName'] = 'SRM2'
     storageDict['Protocol'] = 'srm'
     storageDict['Host'] = 'ccsrmtestv2.in2p3.fr'
     storageDict['Port'] = '8443'
     storageDict['WSUrl'] = '/srm/managerv2?SFN='
-    storageDict['Path'] = '/pnfs/in2p3.fr/data/lhcb'
+    storageDict['Path'] = '/pnfs/in2p3.fr/data'
     storageDict['SpaceToken'] = 'LHCb_FAKE'
-    factory = StorageFactory( 'lhcb' )
+    factory = StorageFactory( vo = 'lhcb' )
     res = factory.getStorage( storageDict )
     self.assert_( res['OK'] )
     storageStub = res['Value']
     parameters = storageStub.getParameters()
     self.assertEqual( parameters, storageDict )
 
-    res = storageStub.getPFNBase( withWSUrl = False )
+    res = storageStub.getTransportURL( '/lhcb/user' )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/pnfs/in2p3.fr/data/lhcb' )
-    res = storageStub.getPFNBase( withWSUrl = True )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb' )
-
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = False )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = True )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrmtestv2.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
+    self.assertEqual( res['Value']['Successful']['/lhcb/user'], 'srm://ccsrmtestv2.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb/user' )
 
   def test_getStorages( self ):
-    factory = StorageFactory( 'lhcb' )
+    factory = StorageFactory( vo = 'lhcb' )
     storageName = 'IN2P3-disk'
     protocolList = ['SRM2']
     res = factory.getStorages( storageName, protocolList )
@@ -62,7 +52,7 @@ class StorageFactoryTestCase( unittest.TestCase ):
 
     storageDict = {}
     storageDict['StorageName'] = 'IN2P3-disk'
-    storageDict['ProtocolName'] = 'SRM2'
+    storageDict['PluginName'] = 'SRM2'
     storageDict['Protocol'] = 'srm'
     storageDict['Host'] = 'ccsrm02.in2p3.fr'
     storageDict['Port'] = '8443'
@@ -72,17 +62,7 @@ class StorageFactoryTestCase( unittest.TestCase ):
     parameterDict = storageStub.getParameters()
     self.assertEqual( parameterDict, storageDict )
 
-    res = storageStub.getPFNBase( withWSUrl = False )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr/pnfs/in2p3.fr/data/lhcb' )
-    res = storageStub.getPFNBase( withWSUrl = True )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb' )
-
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = False )
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
-    res = storageStub.getPfn( '/lhcb/production/DC06/test.file', withWSUrl = True )
+    res = storageStub.getTransportURL( '/lhcb/production/DC06/test.file' )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], 'srm://ccsrm02.in2p3.fr:8443/srm/managerv2?SFN=/pnfs/in2p3.fr/data/lhcb/production/DC06/test.file' )
 
