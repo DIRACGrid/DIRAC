@@ -273,6 +273,11 @@ class StorageBase:
     return S_OK( False )
   
   def __getSingleTransportURL( self, url ):
+    """ Check and update the given URL
+    
+    :param str url: input URL to bechecked and updated if necessary
+    :return result: result['Value'] - updated URL
+    """
     
     # If we are given a URL already 
     result = self.isURL( url )
@@ -286,6 +291,8 @@ class StorageBase:
         return self.updateURL( url )
       else:
         return S_ERROR( 'Not native protocol' )
+    
+    return S_ERROR( 'URL-type input required' )  
         
   def getTransportURL( self, pathDict, protocols ):
     """ Get a transport URL for a given catalog URL
