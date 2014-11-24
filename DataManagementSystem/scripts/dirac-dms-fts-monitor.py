@@ -40,13 +40,19 @@ if args:
   sourceSE = args.pop( 0 )
 if args:
   targetSE = args.pop( 0 )
-if args:
-  for arg in args:
-    lfns += args.split( ',' )
+for arg in args:
+  for lfn in arg.split( ',' ):
+    if not os.path.exists( lfn ):
+      lfns.append( lfn )
+    else:
+      inputFile = open( lfn, 'r' )
+      string = inputFile.read()
+      inputFile.close()
+      lfns += string.splitlines()
 
 oFTSRequest = FTSRequest()
-oFTSRequest.sourceSE = sourceSE
-oFTSRequest.targetSE = targetSE
+oFTSRequest.setSourceSE( sourceSE )
+oFTSRequest.setTargetSE( targetSE )
 for lfn in lfns:
   oFTSRequest.setLFN( lfn )
 oFTSRequest.setFTSGUID( guid )

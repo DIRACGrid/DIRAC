@@ -431,7 +431,7 @@ class FTSJob( Record ):
   def submitFTS2( self, command = 'glite-transfer-submit', pinTime = False ):
     """ submit fts job using FTS2 client """
     if self.FTSGUID:
-      return S_ERROR( "FTSJob already has been submitted" )
+      return S_ERROR( "FTSJob has already been submitted" )
     surls = self._surlPairs()
     if not surls:
       return S_ERROR( "No files to submit" )
@@ -535,13 +535,13 @@ class FTSJob( Record ):
     for info in fileInfo:
       if iExptr == 0:
         # version >= 3.2.30
-        sourceURL, _targetURL, fileStatus, reason, duration, _retries, _staging = info
+        sourceURL, targetURL, fileStatus, reason, duration, _retries, _staging = info
       elif iExptr == 1:
         # version FTS3 < 3.2.30
-        sourceURL, _targetURL, fileStatus, reason, duration, _retries = info
+        sourceURL, targetURL, fileStatus, reason, duration, _retries = info
       elif iExptr == 2:
         # version FTS2
-        sourceURL, _targetURL, fileStatus, _retries, reason, duration = info
+        sourceURL, targetURL, fileStatus, _retries, reason, duration = info
       else:
         return S_ERROR( 'Error monitoring job (implement match %d)' % iExptr )
       candidateFile = None
@@ -552,6 +552,8 @@ class FTSJob( Record ):
       if not candidateFile:
         continue
       # Can be uppercase for FTS3
+      if not candidateFile.TargetSURL:
+        candidateFile.TargetSURL = targetURL
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
       candidateFile._duration = duration
