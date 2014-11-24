@@ -134,8 +134,6 @@ class StorageElementItem( object ):
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
     
-    self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL', False )
-
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
     useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
                 in proxiedProtocols )
@@ -168,6 +166,7 @@ class StorageElementItem( object ):
         storage.setStorageElement( self )
 
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
+    self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
 
     self.readMethods = [ 'getFile',
                          'getTransportURL',
