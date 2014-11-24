@@ -17,7 +17,7 @@ class ProxyStorage( StorageBase ):
   def __init__( self, storageName, parameters ):
 
     StorageBase.__init__( self, storageName, parameters )
-    self.protocolName = 'Proxy'
+    self.pluginName = 'Proxy'
     self.isok = True
 
     self.url = PathFinder.getServiceURL( "DataManagement/StorageElementProxy" )

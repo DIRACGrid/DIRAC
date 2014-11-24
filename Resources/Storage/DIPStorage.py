@@ -28,7 +28,7 @@ class DIPStorage( StorageBase ):
     """
     """
     StorageBase.__init__( self, storageName, parameters )
-    self.protocolName = 'DIP'
+    self.pluginName = 'DIP'
 
     self.log = gLogger.getSubLogger( "DIPStorage", True )
 
@@ -54,34 +54,6 @@ class DIPStorage( StorageBase ):
     if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['0', 'no', 'false', 'off']:
       self.checkSum = "NoCheckSum"
     return S_OK()
-
-  ################################################################################
-  #
-  # The methods below are for manipulating the client
-  #
-
-  def getTransportURL( self, path, protocols = False ):
-    """ Obtain the TURLs for the supplied path and protocols
-    """
-    res = self.exists( path )
-    if res['OK']:
-      for url in res['Value']['Successful']:
-        if protocols and not self.protocol in protocols:
-          res['Value']['Successful'].pop( url )
-          res['Value']['Failed'][url] = 'Protocol not supported'
-          continue
-        if url[0] == '/':
-          nameDict = self.getParameters()['Value']
-          nameDict['FileName'] = url
-          ret = pfnunparse( nameDict )
-          if ret['OK']:
-            res['Value']['Successful'][url] = ret['Value']
-          else:
-            res['Value']['Successful'].pop( url )
-            res['Value']['Failed'][url] = ret['Message']
-        else:
-          res['Value']['Successful'][url] = url
-    return res
 
   #############################################################
   #

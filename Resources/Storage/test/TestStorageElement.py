@@ -102,16 +102,16 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = self.storageElement.getPfnForLfn( destinationFilePath )
     #destinationPfn = pfnForLfnRes['Value']['Successful'].values()[0]
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # File exists
-    existsRes = self.storageElement.exists( destinationFilePath, singleFile = True )
+    existsRes = returnSingleResult( self.storageElement.exists( destinationFilePath ) )
     # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Check removed file
-    missingExistsRes = self.storageElement.exists( destinationFilePath, singleFile = True )
+    missingExistsRes = returnSingleResult( self.storageElement.exists( destinationFilePath ) )
     # Check directories are handled properly
     destinationDir = os.path.dirname( destinationFilePath )
-    directoryExistsRes = self.storageElement.exists( destinationDir, singleFile = True )
+    directoryExistsRes = returnSingleResult( self.storageElement.exists( destinationDir ) )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )
@@ -136,16 +136,16 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Is a file
-    isFileRes = self.storageElement.isFile( destinationFilePath, singleFile = True )
+    isFileRes = returnSingleResult( self.storageElement.isFile( destinationFilePath ) )
     # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Get metadata for a removed file
-    missingIsFileRes = self.storageElement.isFile( destinationFilePath, singleFile = True )
+    missingIsFileRes = returnSingleResult( self.storageElement.isFile( destinationFilePath ) )
     # Check directories are handled properly
     destinationDir = os.path.dirname( destinationFilePath )
-    directoryIsFileRes = self.storageElement.isFile( destinationDir, singleFile = True )
+    directoryIsFileRes = returnSingleResult( self.storageElement.isFile( destinationDir ) )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )
@@ -171,9 +171,9 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )
@@ -189,11 +189,11 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Now get a local copy of the file
-    getFileRes = self.storageElement.getFile( destinationFilePath, singleFile = True )
+    getFileRes = returnSingleResult( self.storageElement.getFile( destinationFilePath ) )
     # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Clean up the local mess
     os.remove( os.path.basename( destinationFilePath ) )
 
@@ -214,16 +214,16 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Get the file metadata
-    getFileMetadataRes = self.storageElement.getFileMetadata( destinationFilePath, singleFile = True )
+    getFileMetadataRes = returnSingleResult( self.storageElement.getFileMetadata( destinationFilePath ) )
     # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Get metadata for a removed file
-    getMissingFileMetadataRes = self.storageElement.getFileMetadata( destinationFilePath, singleFile = True )
+    getMissingFileMetadataRes = returnSingleResult( self.storageElement.getFileMetadata( destinationFilePath ) )
     # Check directories are handled properly
     destinationDir = os.path.dirname( destinationFilePath )
-    directoryMetadataRes = self.storageElement.getFileMetadata( destinationDir, singleFile = True )
+    directoryMetadataRes = returnSingleResult( self.storageElement.getFileMetadata( destinationDir ) )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )
@@ -255,16 +255,16 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Get the file metadata
-    getFileSizeRes = self.storageElement.getFileSize( destinationFilePath, singleFile = True )
+    getFileSizeRes = returnSingleResult( self.storageElement.getFileSize( destinationFilePath ) )
     # Now remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Get metadata for a removed file
-    getMissingFileSizeRes = self.storageElement.getFileSize( destinationFilePath, singleFile = True )
+    getMissingFileSizeRes = returnSingleResult( self.storageElement.getFileSize( destinationFilePath ) )
     # Check directories are handled properly
     destinationDir = os.path.dirname( destinationFilePath )
-    directorySizeRes = self.storageElement.getFileSize( destinationDir, singleFile = True )
+    directorySizeRes = returnSingleResult( self.storageElement.getFileSize( destinationDir ) )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )
@@ -390,11 +390,11 @@ class FileTestCases( StorageElementTestCase ):
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
     fileDict = {destinationFilePath:self.localSourceFile}
-    putFileRes = self.storageElement.putFile( fileDict, singleFile = True )
+    putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Get a transfer url for the file
-    getTurlRes = self.storageElement.getURLForProtocol( destinationFilePath )
+    getTurlRes = self.storageElement.getURLForProtocol( destinationFilePath, protocol = 'dips' )
     # Remove the destination file
-    removeFileRes = self.storageElement.removeFile( destinationFilePath, singleFile = True )
+    removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Get missing turl res
     getMissingTurlRes = self.storageElement.getURLForProtocol( destinationFilePath, protocol = 'dips' )
 

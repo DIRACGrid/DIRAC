@@ -42,7 +42,7 @@ class XROOTStorage( StorageBase ):
     self.log = gLogger.getSubLogger( "XROOTStorage", True )
 #     self.log.setLevel( "DEBUG" )
 
-    self.protocolName = 'XROOT'
+    self.pluginName = 'XROOT'
     self.protocol = self.protocolParameters['Protocol']
     self.host = self.protocolParameters['Protocol']
 

@@ -21,7 +21,7 @@ class RFIOStorage( StorageBase ):
     
     self.isok = True
 
-    self.protocolName = 'RFIO'
+    self.pluginName = 'RFIO'
 
     self.timeout = 100
     self.long_timeout = 600
@@ -558,7 +558,11 @@ class RFIOStorage( StorageBase ):
   def __getTransportURL( self, path ):
     try:
       if self.spaceToken:
-        tURL = "%s://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % ( self.protocol, self.host, self.port, self.spaceToken, path )
+        tURL = "%s://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % ( self.protocolParameters['Protocol'], 
+                                                                     self.protocolParameters['Host'], 
+                                                                     self.protocolParameters['Port'], 
+                                                                     self.spaceToken, 
+                                                                     path )
       else:
         tURL = "castor:%s" % ( path )
       return S_OK( tURL )

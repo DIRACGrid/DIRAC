@@ -33,6 +33,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
+from DIRAC.Resources.Utilities import checkArgumentFormat
 
 PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
 
@@ -271,30 +272,48 @@ class StorageBase:
 
     return S_OK( False )
   
-  def getTransportURL( self, url, protocols ):
-    """ Get URL for a given file specification 
+  def __getSingleTransportURL( self, url ):
+    
+    # If we are given a URL already 
+    result = self.isURL( url )
+    if not result['OK']:
+      return result
+    if result['Value']:
+      result = self.isNativeURL( url )
+      if not result['OK']:
+        return result
+      if result['Value']:
+        return self.updateURL( url )
+      else:
+        return S_ERROR( 'Not native protocol' )
+        
+  def getTransportURL( self, pathDict, protocols ):
+    """ Get a transport URL for a given catalog URL
+    
+    :param dict pathDict: URL obtained from File Catalog or constructed according
+                    to convention
+    :param list protocols: a list of acceptable transport protocols in priority order                
     """
+    
+    res = checkArgumentFormat( pathDict )
+    if not res['OK']:
+      return res
+    urls = res['Value']
+    successful = {}
+    failed = {}
     
     if not self.protocolParameters['Protocol'] in protocols:
       return S_ERROR( 'No native protocol requested' )  
     
-    # If we are given a URL already 
-    result = self.isURL( lfn_url )
-    if not result['OK']:
-      return result
-    if result['Value']:
-      result = self.isNativeProtocol( lfn_url )
+    for url in urls:
+      result = self.__getSingleTransportURL( url )
       if not result['OK']:
-        return result
-      if result['Value']:
-        return self.updateURL( lfn_url )
+        failed[url] = result['Message']
       else:
-        return S_ERROR( 'Not native protocol' )
-    
-    # This is an LFN, make a URL if the protocol is
-    return self.getURL( lfn_url )
+        successful[url] = result['Value']  
       
-    return S_ERROR( 'No native protocol requested' )  
+    resDict = {'Failed':failed, 'Successful':successful}    
+    return S_OK( resDict )
   
   def getURL( self, lfn, withWSUrl = False ):
     """ Construct URL from the given LFN according to the VO convention 

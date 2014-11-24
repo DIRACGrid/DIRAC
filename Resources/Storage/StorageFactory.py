@@ -102,7 +102,7 @@ class StorageFactory:
     # Generate the protocol specific plug-ins
     self.storages = []
     for protocolDict in self.protocolDetails:
-      pluginName = protocolDict['PluginName']
+      pluginName = protocolDict.get( 'PluginName' ) 
       if pluginList and pluginName not in pluginList:
         continue
       protocol = protocolDict['Protocol']
@@ -241,7 +241,12 @@ class StorageFactory:
       configPath = cfgPath( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
-      
+        
+    # This is a temporary for backward compatibility
+    if "ProtocolName" in protocolDict and not protocolDict['PluginName']:  
+      protocolDict['PluginName'] = protocolDict['ProtocolName']
+    protocolDict.pop( 'ProtocolName' )  
+        
     # Evaluate the base path taking into account possible VO specific setting 
     if self.vo:
       result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )

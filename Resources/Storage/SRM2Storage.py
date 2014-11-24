@@ -52,7 +52,7 @@ class SRM2Storage( StorageBase ):
     self.lcg_util = None
 
     # # save c'tor params
-    self.protocolName = 'SRM2'
+    self.pluginName = 'SRM2'
 
     # # stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
@@ -1547,8 +1547,8 @@ class SRM2Storage( StorageBase ):
 
     protocolsList = []
     for section in sections['Value']:
-      path = '/Resources/StorageElements/%s/%s/ProtocolName' % ( self.name, section )
-      if gConfig.getValue( path, '' ) == self.protocolName:
+      path = '/Resources/StorageElements/%s/%s/PluginName' % ( self.name, section )
+      if gConfig.getValue( path, '' ) == self.pluginName:
         protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
         siteProtocols = gConfig.getValue( protPath, [] )
         if siteProtocols:
