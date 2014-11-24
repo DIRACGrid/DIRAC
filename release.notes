@@ -1,3 +1,8 @@
+[v6r11p23]
+
+*DMS
+CHANGE: FTSRequest is left only to support dirac-dms-fts-XXX commands
+
 [v6r11p22]
 
 *DMS
