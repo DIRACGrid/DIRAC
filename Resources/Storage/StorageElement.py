@@ -678,8 +678,6 @@ class StorageElementItem( object ):
                 failed.pop( lfn )
               lfnDict.pop( lfn )
 
-    print "AT >>> method", self.methodName, res, successful
-
     return S_OK( { 'Failed': failed, 'Successful': successful } )
   
 
