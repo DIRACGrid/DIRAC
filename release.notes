@@ -18,6 +18,10 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p4]
+
+FIX: fixes from v6r11p23 patch release
+
 [v6r12p3]
 
 *Configuration
@@ -142,6 +146,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p23]
+
+*DMS
+CHANGE: FTSRequest is left only to support dirac-dms-fts-XXX commands
 
 [v6r11p22]
 
