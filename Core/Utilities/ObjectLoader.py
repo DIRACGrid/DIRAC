@@ -110,12 +110,15 @@ class ObjectLoader( object ):
     if not result[ 'OK' ]:
       return result
     modObj = result[ 'Value' ]
+    modFile = modObj.__file__
 
     if not objName:
       objName = List.fromChar( importString, "." )[-1]
 
     try:
-      return S_OK( getattr( modObj, objName ) )
+      result = S_OK( getattr( modObj, objName ) )
+      result['ModuleFile'] = modFile
+      return result
     except AttributeError:
       return S_ERROR( "%s does not contain a %s object" % ( importString, objName ) )
 

@@ -17,11 +17,7 @@ from DIRAC                                               import S_OK, S_ERROR
 
 import os
 
-MandatoryParameters = [ ]
-
 class InProcessComputingElement( ComputingElement ):
-
-  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__( self, ceUniqueID ):
