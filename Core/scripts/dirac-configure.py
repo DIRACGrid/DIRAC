@@ -179,7 +179,7 @@ def setArchitecture( optionValue ):
 def setLocalSE( optionValue ):
   global localSE
   localSE = optionValue
-  Script.localCfg.addDefaultEntry( '/LocalSite/localSE', localSE )
+  Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'LocalSE' ), localSE )
   return DIRAC.S_OK()
 
@@ -324,10 +324,13 @@ if localSE:
 
 if not useServerCert:
   DIRAC.gLogger.verbose( '/DIRAC/Security/UseServerCertificate =', 'no' )
+  #Being sure it was not there before
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'no' )
 else:
-  # will be removed later but it is necessary to initialized the CS in script mode
   DIRAC.gLogger.verbose( '/DIRAC/Security/UseServerCertificate =', 'yes' )
+  #Being sure it was not there before
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
 
 host = DIRAC.gConfig.getValue( cfgInstallPath( "Host" ), "" )
@@ -336,6 +339,8 @@ if host:
 
 if skipCAChecks:
   DIRAC.gLogger.verbose( '/DIRAC/Security/SkipCAChecks =', 'yes' )
+  #Being sure it was not there before
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks', 'yes' )
 else:
   # Necessary to allow initial download of CA's
@@ -364,7 +369,11 @@ if not skipCADownload:
     Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if ceName or siteName:
-  # This is used in the pilot context, we should have a proxy and access to CS
+  # This is used in the pilot context, we should have a proxy, or a certificate, and access to CS
+  if useServerCert:
+    # Being sure it was not there before
+    Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+    Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
   # Get the site resource section
   gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
@@ -407,12 +416,6 @@ if ceName or siteName:
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
 
-if useServerCert:
-  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
-  # When using Server Certs CA's will be checked, the flag only disables initial download
-  # this will be replaced by the use of SkipCADownload
-  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
-
 if gatewayServer:
   DIRAC.gLogger.verbose( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
@@ -437,9 +440,12 @@ if not useServerCert:
     DIRAC.gLogger.notice( 'Create one using dirac-proxy-init and execute again with -F option' )
     sys.exit( 0 )
 else:
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+  # When using Server Certs CA's will be checked, the flag only disables initial download
+  # this will be replaced by the use of SkipCADownload
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
-  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
 
 if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
@@ -507,5 +513,11 @@ for vo in vomsDict:
 
 if error:
   sys.exit( 1 )
+
+if useServerCert:
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+  # When using Server Certs CA's will be checked, the flag only disables initial download
+  # this will be replaced by the use of SkipCADownload
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 sys.exit( 0 )

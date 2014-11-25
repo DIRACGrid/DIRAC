@@ -125,7 +125,7 @@ class SandboxStoreHandler( RequestHandler ):
     # Write to local file
     result = self.__networkToFile( fileHelper, hdPath )
     if not result[ 'OK' ]:
-      gLogger.error( "Error while receiving file: %s" % result['Message'] )
+      gLogger.error( "Error while receiving sandbox file", "%s" % result['Message'] )
       return result
     hdPath = result[ 'Value' ]
     gLogger.info( "Wrote sandbox to file %s" % hdPath )

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL: $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -51,7 +50,7 @@ import urllib
 
 EXECUTION_RESULT = {}
 
-class JobWrapper:
+class JobWrapper( object ):
 
   #############################################################################
   def __init__( self, jobID = None, jobReport = None ):
@@ -194,12 +193,16 @@ class JobWrapper:
     self.userGroup = self.jobArgs.get( 'OwnerGroup', self.userGroup )
     self.jobClass = self.jobArgs.get( 'JobSplitType', self.jobClass )
 
-    # Prepare the working directory and cd to there
+    # Prepare the working directory, cd to there, and copying eventual extra arguments in it
     if self.jobID:
       if os.path.exists( str( self.jobID ) ):
         shutil.rmtree( str( self.jobID ) )
       os.mkdir( str( self.jobID ) )
       os.chdir( str( self.jobID ) )
+      extraOpts = self.jobArgs.get( 'ExtraOptions', '' )
+      if extraOpts:
+        if os.path.exists( '%s/%s' % ( self.root, extraOpts ) ):
+          shutil.copyfile( '%s/%s' % ( self.root, extraOpts ), extraOpts )
     else:
       self.log.info( 'JobID is not defined, running in current directory' )
 

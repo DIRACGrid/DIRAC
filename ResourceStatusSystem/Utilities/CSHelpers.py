@@ -234,6 +234,10 @@ def getFTS():
   _basePath = 'Resources/FTSEndpoints'
     
   ftsEndpoints = gConfig.getOptions( _basePath )
+  ftsEndpointDefaultLocation = gConfig.getValue( '/Resources/FTSEndpoints/Default/FTSEndpoint', '' )
+  if ftsEndpoints['OK'] and ftsEndpointDefaultLocation:
+    ftsEndpoints['Value'].append( ftsEndpointDefaultLocation )
+
   return ftsEndpoints 
 
 def getSpaceTokenEndpoints():

@@ -50,6 +50,7 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
 for reason, lfns in errorReasons.items():
   gLogger.notice( "Failed to remove %d files with error: %s" % ( len( lfns ), reason ) )
-gLogger.notice( "Successfully removed %d files" % successfullyRemoved )
+if successfullyRemoved > 0:
+  gLogger.notice( "Successfully removed %d files" % successfullyRemoved )
 DIRAC.exit( 0 )
 

@@ -20,7 +20,12 @@ import json
 try:
   import pika
 except Exception, e:
-   raise RuntimeError( e )
+  from DIRAC import systemCall
+  result = systemCall( False, ["pip", "install", "pika"] )
+  if not result['OK']:
+    raise RuntimeError( result['Message'] )
+  else:
+    import pika
 
 
 class StatesMonitoringAgent( AgentModule ):
@@ -54,8 +59,7 @@ class StatesMonitoringAgent( AgentModule ):
     
     self.jobDB = JobDB()
 
-    self.reportPeriod = 850
-    self.am_setOption( "PollingTime", self.reportPeriod )
+    self.am_setOption( "PollingTime", 120 )
     self.__jobDBFields = []
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
@@ -77,12 +81,11 @@ class StatesMonitoringAgent( AgentModule ):
     result = gConfig.getOption( "/Systems/RabbitMQ/Host" )
     if not result['OK']:
       raise RuntimeError( 'Failed to get the configuration parameters: Host' )
-    host = result['Value']
+    self.host = result['Value']
     
-    credentials = pika.PlainCredentials( user, password )
+    self.credentials = pika.PlainCredentials( user, password )
 
-    self.connection = pika.BlockingConnection( pika.ConnectionParameters( 
-    host = host, credentials = credentials ) )
+    self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
     self.channel = self.connection.channel()
 
     self.channel.exchange_declare( exchange = 'mdatabase',
@@ -90,6 +93,23 @@ class StatesMonitoringAgent( AgentModule ):
 
     return S_OK()
 
+  def sendRecords( self, data ):
+    try:
+      self.channel.basic_publish( exchange = 'mdatabase',
+                        routing_key = '',
+                        body = data,
+                        properties = pika.BasicProperties( 
+                        delivery_mode = 2,  # make message persistent
+                      ) )
+    except Exception, e:
+      gLogger.error( "Connection closed:" + str( e ) )
+      self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
+      self.channel = self.connection.channel()
+      self.channel.exchange_declare( exchange = 'mdatabase',
+                         exchange_type = 'fanout' )
+      gLogger.info( "Resend records" )
+      self.sendRecords( data )
+      
   def finalize( self ):
     self.connection.close()
     
@@ -108,6 +128,7 @@ class StatesMonitoringAgent( AgentModule ):
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
+      gLogger.info( "Start sending records!" )
       for record in values:
         recordSetup = record[0]
         if recordSetup not in validSetups:
@@ -126,11 +147,8 @@ class StatesMonitoringAgent( AgentModule ):
         rD['startTime'] = int( Time.toEpoch( now ) )       
         rD['metric'] = 'WMSHistory'
         message = json.dumps( rD )
-        self.channel.basic_publish( exchange = 'mdatabase',
-                        routing_key = '',
-                        body = message,
-                        properties = pika.BasicProperties( 
-                        delivery_mode = 2,  # make message persistent
-                      ) )
+        self.sendRecords( message )
+      gLogger.info( "The records are successfully sent!" )
+        
     return S_OK()
 

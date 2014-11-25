@@ -274,8 +274,8 @@ class ReleaseConfig:
     self.__instName = instName
     self.__projectName = projectName
     self.__projectReleaseLocation = {
-        'DIRAC' : "http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/releases.cfg",
-        'LHCb' : "http://svnweb.cern.ch/guest/lbdirac/LHCbDIRAC/trunk/LHCbDIRAC/releases.cfg"
+        'DIRAC' : "http://svn.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/releases.cfg",
+        'LHCb' : "http://svn.cern.ch/guest/lbdirac/LHCbDIRAC/trunk/LHCbDIRAC/releases.cfg"
         }
     self.__projectTarLocation = {
         'DIRAC' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/installSource",

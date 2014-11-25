@@ -110,6 +110,13 @@ class CSCLI( cmd.Cmd ):
       print "Changes written to %s.cfg" % self.backupFilename
     sys.exit( 0 )
 
+  def do_EOF( self, args ):
+    """
+    Accepts ctrl^D to quit CLI
+    """
+    print ""
+    self.do_quit( args )
+
   def do_help( self, args ):
     """
     Shows help information

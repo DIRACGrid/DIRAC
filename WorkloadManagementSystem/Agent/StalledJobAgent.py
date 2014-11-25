@@ -249,7 +249,7 @@ the stalledTime limit.
     if not result['OK']:
       self.log.error( result['Message'] )
     if not result['OK'] or not result['Value']:
-      return S_ERROR( 'Could not get attributes for job %s' % job )
+      return S_ERROR( 'Could not get attributes for job', '%s' % job )
 
     self.log.verbose( result )
     latestUpdate = 0

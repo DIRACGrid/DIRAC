@@ -1,4 +1,38 @@
-[v6r12-pre21]
+[v6r11p4]
+
+FIX: fixes from v6r11p23 patch release
+
+[v6r12p3]
+
+*Configuration
+CHANGE: dirac-admin-add-resources - define VOPath/ option when adding new SE 
+
+*Resources
+NEW: StorageFactory - modify protocol Path for VO specific value
+
+*DMS
+FIX: FileCatalog - check for empty input in checkArgumentFormat utility
+FIX: DataManager - protect against FC queries with empty input
+
+[v6r12p2]
+
+*Core
+FIX: dirac-install - svn.cern.ch rather than svnweb.cern.ch is now needed for direct 
+     HTTP access to files in SVN
+
+*WMS
+FIX: dirac-wms-cpu-normalization - when re-configuring, do not try to dump in the 
+     diracConfigFilePath
+
+[v6r12p1]
+
+*Configuration
+FIX: Core.Utilities.Grid, dirac-admin-add-resources - fix to make a best effort to 
+     guess the proper VO specific path of a new SE
+*WMS
+FIX: dirac-configure, pilotCommands, pilotTools - fixes to use server certificate
+
+[v6r12]
 
 *Core
 CHANGE: ProcessPool - do not stop working processes by default
@@ -14,6 +48,7 @@ NEW: ProcessMonitor - added evaluation of the memory consumed by a process and i
 NEW: InstallTools - added flag to require MySQL installation
 FIX: InstallTools - correctly installing DBs extended (with sql to be sourced) 
 FIX: InstallTools - run MySQL commands one by one when creating a new database
+FIX: InstallTools - fixMySQLScripts() fixes the mysql start script to ognore /etc/my.cnf file
 CHANGE: Os.py - the use of "which" is replaced by distutils.spawn.find_executable
 NEW: Grid.py - ldapSA replaced by ldapSE, added getBdiiSE(CE)Info() methods
 CHANGE: CFG.py - only lines starting with ^\s*# will be treated as comments
@@ -22,7 +57,9 @@ CHANGE: Shifter - Agents will now have longer proxies cached to prevent errors
 NEW: Bdii2CSAgent - reworked to apply also for SEs and use the same utilities for the
      corresponding command line tool
 NEW: dirac-admin-add-resources - an interactive tool to add and update sites, CEs, SEs
-     to the DIRAC CS             
+     to the DIRAC CS   
+CHANGE: dirac-proxy-init - added message in case of impossibility to add VOMS extension   
+FIX: GOCDBClient - handle correctly the case of multiple elements in the same DT            
 
 
 *Accounting
@@ -89,6 +126,54 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p23]
+
+*DMS
+CHANGE: FTSRequest is left only to support dirac-dms-fts-XXX commands
+
+[v6r11p22]
+
+*DMS
+FIX: FTSJob - fixes in the glite-transfer-status command outpu parsing
+FIX: TransformationClient - allow single lfn in setFileStatusForTransformation()
+
+*WMS
+FIX: StatesMonitoringAgent - install pika on the fly as a temporary solution
+
+[v6r11p21]
+
+*DMS
+BUGFIX: dirac-dms-remove-replicas - continue in case of single replica failure
+FIX: dirac-rms-xxx scripts - use Script.getPositionalArgs() instead of sys.argv
+
+*Workflow
+FIX: Test_Modules.py - fix in mocking functions, less verbose logging
+
+[v6r11p20]
+
+*DMS
+BUGFIX: DataManager - in __SEActive() use resolved SE name to deal with aliases
+BUGFIX: FileMetadata - multiple bugs in __buildUserMetaQuery()
+
+[v6r11p19]
+
+*DMS
+FIX: FTSJob - fix FTS job monitoring a la FTS2
+
+*RMS
+CHANGE: ReqClient - added setServer() method
+FIX: File,Operation,Request - call the getters to fetch the up-to-date information 
+     from the parent
+
+[v6r11p18]
+
+*DMS
+FIX: FTSAgent(Job) - fixes for transfers requiring staging (bringOnline) and adaptation 
+     to the FTS3 interface
+
+*WMS
+FIX: StatesMonitoringAgent - resend the records in case of failure
 
 [v6r11p17]
 

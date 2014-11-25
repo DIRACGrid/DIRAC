@@ -258,7 +258,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     """ Sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
-        
+
           - newLFNsStatus is a dictionary with the form:
             {'/this/is/an/lfn1.txt': 'StatusA', '/this/is/an/lfn2.txt': 'StatusB',  ... }
             and at this point lfns is not considered
@@ -268,6 +268,8 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
 
     # create dictionary in case newLFNsStatus is a string
+    if type( lfns ) == type( '' ):
+      lfns = [lfns]
     if type( newLFNsStatus ) == type( '' ):
       newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
 
@@ -276,6 +278,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     if not tsFiles['OK']:
       return tsFiles
     tsFiles = tsFiles['Value']
+    newStatuses = {}
     if tsFiles:
       # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
       tsFilesAsDict = {}
