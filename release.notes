@@ -1,4 +1,4 @@
-[v6r13-pre4]
+[v6r13-pre5]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -13,6 +13,10 @@ CHANGE: Removed the use of current DataLogging service
 *RMS
 CHANGE: Removed files from the previous generation RMS
 CHANGE: RMS refactored based on SQLAlchemy 
+
+*Resources
+NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
+CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
 [v6r12p3]
 
