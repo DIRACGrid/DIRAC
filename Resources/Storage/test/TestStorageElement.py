@@ -384,7 +384,7 @@ class FileTestCases( StorageElementTestCase ):
 #     self.assert_( removeFileRes['OK'] )
 #     self.assert_( removeFileRes['Value'] )
 
-  def test_getURLForProtocol( self ):
+  def test_getURL( self ):
     print '\n\n#########################################################################\n\n\t\tGet access url test\n'
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     #pfnForLfnRes = returnSingleResult( self.storageElement.getPfnForLfn( destinationFilePath ) )
@@ -392,11 +392,11 @@ class FileTestCases( StorageElementTestCase ):
     fileDict = {destinationFilePath:self.localSourceFile}
     putFileRes = returnSingleResult( self.storageElement.putFile( fileDict ) )
     # Get a transfer url for the file
-    getTurlRes = self.storageElement.getURLForProtocol( destinationFilePath, protocol = 'dips' )
+    getTurlRes = self.storageElement.getURL( destinationFilePath, protocol = 'dips' )
     # Remove the destination file
     removeFileRes = returnSingleResult( self.storageElement.removeFile( destinationFilePath ) )
     # Get missing turl res
-    getMissingTurlRes = self.storageElement.getURLForProtocol( destinationFilePath, protocol = 'dips' )
+    getMissingTurlRes = self.storageElement.getURL( destinationFilePath, protocol = 'dips' )
 
     # Check that the put was done correctly
     self.assert_( putFileRes['OK'] )

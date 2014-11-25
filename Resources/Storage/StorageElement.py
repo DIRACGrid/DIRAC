@@ -9,7 +9,8 @@ __RCSID__ = "$Id$"
 # # custom duty
 import re
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, gConfig
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult 
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -478,7 +479,7 @@ class StorageElementItem( object ):
   # This is the generic wrapper for file operations
   #
 
-  def getURLForProtocol( self, lfn, protocol = False ):
+  def getURL( self, lfn, protocol = False ):
     """ execute 'getTransportURL' operation.
       :param str lfn: string, list or dictionary of lfns
       :param protocol: if no protocol is specified, we will request self.turlProtocols
@@ -536,19 +537,27 @@ class StorageElementItem( object ):
           if not result['OK']:
             failed[lfn] = result['Message']
           url = result['Value']['Successful'].get( lfn, {} ).get( self.name, '' )
-          
+        
         if not url:
-          failed[lfn] = 'Failed to get catalog replica'      
+          failed[lfn] = 'Failed to get catalog replica'
+        else:
+          # Update the URL according to the current SE description
+          result = returnSingleResult( storage.updateURL( url ) )
+          if not result['OK']:
+            failed[lfn] = result['Message']
+          else:
+            urlDict[result['Value']] = lfn          
       else:  
-        res = storage.getURL( lfn, withWSUrl = True )
-        if not res['OK']:
-          errStr = "StorageElement.__generateURLDict %s." % res['Message']
+        result = storage.constructURLFromLFN( lfn, withWSUrl = True )
+        if not result['OK']:
+          errStr = "StorageElement.__generateURLDict %s." % result['Message']
           self.log.debug( errStr, 'for %s' % ( lfn ) )
           if lfn not in failed:
             failed[lfn] = ''
           failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if failed[lfn] else errStr
         else:
-          urlDict[res['Value']] = lfn
+          urlDict[result['Value']] = lfn
+          
     res = S_OK( urlDict )
     res['Failed'] = failed    
     return res

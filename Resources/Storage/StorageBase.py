@@ -271,31 +271,11 @@ class StorageBase:
       return S_OK( True )
 
     return S_OK( False )
-  
-  def __getSingleTransportURL( self, url ):
-    """ Check and update the given URL
-    
-    :param str url: input URL to bechecked and updated if necessary
-    :return result: result['Value'] - updated URL
-    """
-    
-    # If we are given a URL already 
-    result = self.isURL( url )
-    if not result['OK']:
-      return result
-    if result['Value']:
-      result = self.isNativeURL( url )
-      if not result['OK']:
-        return result
-      if result['Value']:
-        return self.updateURL( url )
-      else:
-        return S_ERROR( 'Not native protocol' )
-    
-    return S_ERROR( 'URL-type input required' )  
         
   def getTransportURL( self, pathDict, protocols ):
-    """ Get a transport URL for a given catalog URL
+    """ Get a transport URL for a given URL. For a simple storage plugin
+    it is just returning input URL if the plugin protocol is one of the 
+    requested protocols
     
     :param dict pathDict: URL obtained from File Catalog or constructed according
                     to convention
@@ -313,17 +293,18 @@ class StorageBase:
       return S_ERROR( 'No native protocol requested' )  
     
     for url in urls:
-      result = self.__getSingleTransportURL( url )
-      if not result['OK']:
-        failed[url] = result['Message']
-      else:
-        successful[url] = result['Value']  
+      successful[url] = url
       
     resDict = {'Failed':failed, 'Successful':successful}    
     return S_OK( resDict )
   
-  def getURL( self, lfn, withWSUrl = False ):
-    """ Construct URL from the given LFN according to the VO convention 
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ Construct URL from the given LFN according to the VO convention for the
+    primary protocol of the storage plagin
+    
+    :param str lfn: file LFN
+    :param boolean withWSUrl: flag to include the web service part into the resulting URL
+    :return result: result['Value'] - resulting URL     
     """
   
     # Check the LFN convention:
