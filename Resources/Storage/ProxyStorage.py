@@ -3,57 +3,26 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities.Utils                    import checkArgumentFormat
+from DIRAC.Resources.Utilities                          import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
 from DIRAC.ConfigurationSystem.Client                   import PathFinder
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.Core.DISET.TransferClient                    import TransferClient
 from DIRAC.Core.Utilities.File                          import getSize
-from DIRAC.Core.Utilities.Pfn                           import pfnunparse
 
 import os
 
 class ProxyStorage( StorageBase ):
 
-  def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
+  def __init__( self, storageName, parameters ):
+
+    StorageBase.__init__( self, storageName, parameters )
+    self.pluginName = 'Proxy'
     self.isok = True
 
-    self.protocolName = 'Proxy'
-    self.name = storageName
-    self.protocol = protocol
-    self.path = path
-    self.host = host
-    self.port = port
-    self.wspath = wspath
-    self.spaceToken = spaceToken
-    self.cwd = self.path
-    apply( StorageBase.__init__, ( self, self.name, self.path ) )
     self.url = PathFinder.getServiceURL( "DataManagement/StorageElementProxy" )
     if not self.url:
       self.isok = False
-
-  ######################################
-  # URL manipulation functionalities
-  ######################################
-
-  def getParameters( self ):
-    """ This gets all the storage specific parameters pass when instantiating the storage
-    """
-    parameterDict = {}
-    parameterDict['StorageName'] = self.name
-    parameterDict['ProtocolName'] = self.protocolName
-    parameterDict['Protocol'] = self.protocol
-    parameterDict['Host'] = self.host
-    parameterDict['Path'] = self.path
-    parameterDict['Port'] = self.port
-    parameterDict['SpaceToken'] = self.spaceToken
-    parameterDict['WSUrl'] = self.wspath
-    return S_OK( parameterDict )
-
-  def getProtocolPfn( self, pfnDict, withPort ):
-    """ From the pfn dict construct the SURL to be used
-    """
-    return pfnunparse( pfnDict )
 
   ######################################
   # File transfer functionalities

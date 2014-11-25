@@ -14,6 +14,7 @@ import signal
 import pprint
 import re
 import os
+from urlparse import urlparse
 from DIRAC.Core.Base import Script
 
 def processScriptSwitches():
@@ -315,11 +316,7 @@ def checkUnusedSEs():
         changeSet.add( ( accessSection, 'Protocol', 'srm' ) )
         changeSet.add( ( accessSection, 'ProtocolName', 'SRM2' ) )
         endPoint = srmDict.get( 'GlueServiceEndpoint', '' )
-        result = pfnparse( endPoint )
-        if not result['OK']:
-          gLogger.error( 'Can not get the SRM service end point. Skipping ...' )
-          continue
-        host = result['Value']['Host']
+        host = urlparse( endPoint ).hostname
         port = result['Value']['Port']
         changeSet.add( ( accessSection, 'Host', host ) ) 
         changeSet.add( ( accessSection, 'Port', port ) ) 

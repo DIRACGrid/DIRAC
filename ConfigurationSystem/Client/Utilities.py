@@ -15,12 +15,12 @@ __RCSID__ = "$Id$"
 
 import re
 import types
+from urlparse import urlparse
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 def getGridVOs():
@@ -353,10 +353,7 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
     endPoint = srm.get( 'GlueServiceEndpoint', '')
     srmHost = ''
     if endPoint:
-      result = pfnparse( endPoint )
-      if not result['OK']:
-        continue
-      srmHost = result['Value']['Host']
+      srmHost = urlparse( endPoint ).hostname
     if not srmHost:
       continue  
     

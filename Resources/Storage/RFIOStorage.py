@@ -3,7 +3,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities.Utils            import checkArgumentFormat
+from DIRAC.Resources.Utilities                  import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Subprocess            import shellCall
 from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
@@ -14,101 +14,27 @@ import types, re, os, time
 
 class RFIOStorage( StorageBase ):
 
-  def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
+  def __init__( self, storageName, parameters ):
+    
+    StorageBase.__init__( self, storageName, parameters )
+    self.spacetoken = self.protocolParameters['SpaceToken']
+    
     self.isok = True
 
-    self.protocolName = 'RFIO'
-    self.name = storageName
-    self.protocol = protocol
-    self.path = path
-    self.host = host
-    self.port = port
-    self.wspath = wspath
-    self.spaceToken = spaceToken
-    self.cwd = self.path
-    apply( StorageBase.__init__, ( self, self.name, self.path ) )
+    self.pluginName = 'RFIO'
 
     self.timeout = 100
     self.long_timeout = 600
 
   #############################################################
   #
-  # These are the methods for manipulting the client
+  # These are the methods for manipulating the client
   #
-
-  def changeDirectory( self, directory ):
-    """ Change the current directory
-    """
-    if directory[0] == '/':
-      directory = directory.lstrip( '/' )
-    self.cwd = '%s/%s' % ( self.cwd, directory )
-
-  def resetWorkingDirectory( self ):
-    """ Reset the working directory to the base dir
-    """
-    self.cwd = self.path
-
-  def getCurrentDirectory( self ):
-    """ Get the current directory
-    """
-    return S_OK( self.cwd )
 
   def getName( self ):
     """ The name with which the storage was instantiated
     """
     return S_OK( self.name )
-
-  def getParameters( self ):
-    """ This gets all the storage specific parameters pass when instantiating the storage
-    """
-    parameterDict = {}
-    parameterDict['StorageName'] = self.name
-    parameterDict['ProtocolName'] = self.protocolName
-    parameterDict['Protocol'] = self.protocol
-    parameterDict['Host'] = self.host
-    parameterDict['Path'] = self.path
-    parameterDict['Port'] = self.port
-    parameterDict['SpaceToken'] = self.spaceToken
-    parameterDict['WSUrl'] = self.wspath
-    return S_OK( parameterDict )
-
-  def getProtocolPfn( self, pfnDict, withPort ):
-    """ From the pfn dict construct the pfn to be used
-    """
-    pfnDict['Protocol'] = ''
-    pfnDict['Host'] = ''
-    pfnDict['Port'] = ''
-    pfnDict['WSUrl'] = ''
-    res = pfnunparse( pfnDict )
-    return res
-
-  def getCurrentURL( self, fileName ):
-    """ Obtain the current file URL from the current working directory and the filename
-    """
-    if fileName:
-      if fileName[0] == '/':
-        fileName = fileName.lstrip( '/' )
-    try:
-      fullUrl = '%s/%s' % ( self.cwd, fileName )
-      return S_OK( fullUrl )
-    except Exception, x:
-      errStr = "RFIOStorage.getCurrentURL: Failed to create URL %s" % x
-      return S_ERROR( errStr )
-
-  def getPFNBase( self, withPort = False ):
-    """ This will get the pfn base. This is then appended with the LFN in LHCb convention.
-    """
-    return S_OK( self.path )
-
-  def isPfnForProtocol( self, pfn ):
-    res = pfnparse( pfn )
-    if not res['OK']:
-      return res
-    pfnDict = res['Value']
-    if pfnDict['Protocol'] == self.protocol:
-      return S_OK( True )
-    else:
-      return S_OK( False )
 
   #############################################################
   #
@@ -632,7 +558,11 @@ class RFIOStorage( StorageBase ):
   def __getTransportURL( self, path ):
     try:
       if self.spaceToken:
-        tURL = "%s://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % ( self.protocol, self.host, self.port, self.spaceToken, path )
+        tURL = "%s://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % ( self.protocolParameters['Protocol'], 
+                                                                     self.protocolParameters['Host'], 
+                                                                     self.protocolParameters['Port'], 
+                                                                     self.spaceToken, 
+                                                                     path )
       else:
         tURL = "castor:%s" % ( path )
       return S_OK( tURL )
@@ -654,8 +584,6 @@ class RFIOStorage( StorageBase ):
       return res
     urls = res['Value']
     gLogger.debug( "RFIOStorage.isDirectory: Determining whether %s paths are directories." % len( urls ) )
-    successful = {}
-    failed = {}
     res = self.__getPathMetadata( urls )
     if not res['OK']:
       return res
@@ -814,7 +742,6 @@ class RFIOStorage( StorageBase ):
     filesPut = 0
     sizePut = 0
 
-    remote_cwd = dest_directory
     # Check the local directory exists
     if not os.path.isdir( src_directory ):
       errStr = "RFIOStorage.__putDir: The supplied source directory does not exist."
@@ -1052,6 +979,8 @@ class RFIOStorage( StorageBase ):
     return S_OK( resDict )
 
   def __checkArgumentFormat( self, path ):
+    """  FIXME: Can be replaced by a generic checkArgumentFormat Utility 
+    """
     if type( path ) in types.StringTypes:
       urls = [path]
     elif type( path ) == types.ListType:

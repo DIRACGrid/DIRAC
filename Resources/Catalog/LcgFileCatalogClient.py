@@ -3,7 +3,7 @@
 """
 import DIRAC
 from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Resources.Utilities.Utils                          import checkArgumentFormat
+from DIRAC.Resources.Utilities                                import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import breakListIntoChunks
