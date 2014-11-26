@@ -14,137 +14,46 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                          import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities.Utils                import checkArgumentFormat
+from DIRAC.Resources.Utilities                      import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase            import StorageBase
 from DIRAC.Core.Utilities.Pfn                       import pfnparse, pfnunparse
 from DIRAC.Core.DISET.TransferClient                import TransferClient
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities.File                      import getSize
-import os, types, random
+import os, random
 
 class DIPStorage( StorageBase ):
 
-  def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
+  def __init__( self, storageName, parameters ):
     """
     """
-    if path:
-      wspath = path
-      path = ''
+    StorageBase.__init__( self, storageName, parameters )
+    self.pluginName = 'DIP'
 
-    self.protocolName = 'DIP'
-    self.name = storageName
-    self.protocol = protocol
-    self.path = path
-    self.host = host
+    self.log = gLogger.getSubLogger( "DIPStorage", True )
 
     # Several ports can be specified as comma separated list, choose
     # randomly one of those ports
-    ports = port.split( ',' )
+    ports = self.protocolParameters['Port'].split( ',' )
     random.shuffle( ports )
-    self.port = ports[0]
+    self.protocolParameters['Port'] = ports[0]
 
-    self.wspath = wspath
-    self.spaceToken = spaceToken
+    pathDict = dict( self.protocolParameters )
+    pathDict['Path'] = self.basePath
+    result = pfnunparse( pathDict )
+    if result['OK']:
+      self.url = result['Value']
 
-    self.url = protocol + "://" + host + ":" + self.port + wspath
-    self.cwd = ''
     self.checkSum = "CheckSum"
     self.isok = True
 
   def setParameters( self, parameters ):
     """ Applying extra storage parameters
     """
-    if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['no', 'false', 'off']:
+    StorageBase.setParameters( self, parameters )
+    if "CheckSum" in parameters and parameters['CheckSum'].lower() in ['0', 'no', 'false', 'off']:
       self.checkSum = "NoCheckSum"
     return S_OK()
-
-  ################################################################################
-  #
-  # The methods below are for manipulating the client
-  #
-
-  def isPfnForProtocol( self, path ):
-    """ Check that this is a path
-    """
-    if path.startswith( '/' ):
-      return S_OK( True )
-    else:
-      return S_OK( False )
-
-  def getPFNBase( self ):
-    return S_OK( '' )
-
-  def resetWorkingDirectory( self ):
-    """ Reset the working directory to the base dir
-    """
-    self.cwd = self.path
-
-  def changeDirectory( self, directory ):
-    """ Change the directory to the supplied directory
-    """
-    if directory[0] == '/':
-      directory = directory.lstrip( '/' )
-    self.cwd = '%s/%s' % ( self.cwd, directory )
-
-  def getParameters( self ):
-    """ This gets all the storage specific parameters pass when instantiating the storage
-    """
-    parameterDict = {}
-    parameterDict['StorageName'] = self.name
-    parameterDict['ProtocolName'] = self.protocolName
-    parameterDict['Protocol'] = self.protocol
-    parameterDict['Host'] = self.host
-    parameterDict['Path'] = self.path
-    parameterDict['Port'] = self.port
-    parameterDict['SpaceToken'] = self.spaceToken
-    parameterDict['WSUrl'] = self.wspath
-    return S_OK( parameterDict )
-
-  def getCurrentURL( self, fileName ):
-    """ Obtain the current file URL from the current working directory and the filename
-    """
-    if fileName:
-      if fileName[0] == '/':
-        fileName = fileName.lstrip( '/' )
-    try:
-      fullUrl = '%s/%s' % ( self.cwd, fileName )
-      return S_OK( fullUrl )
-    except Exception, x:
-      errStr = "Failed to create URL %s" % x
-      return S_ERROR( errStr )
-
-  def getProtocolPfn( self, pfnDict, withPort ):
-    """ From the pfn dict construct the pfn to be used
-    """
-    # pfnDict['Protocol'] = ''
-    # pfnDict['Host'] = ''
-    # pfnDict['Port'] = ''
-    # pfnDict['WSUrl'] = ''
-    res = pfnunparse( pfnDict )
-    return res
-
-  def getTransportURL( self, path, protocols = False ):
-    """ Obtain the TURLs for the supplied path and protocols
-    """
-    res = self.exists( path )
-    if res['OK']:
-      for url in res['Value']['Successful']:
-        if protocols and not self.protocol in protocols:
-          res['Value']['Successful'].pop( url )
-          res['Value']['Failed'][url] = 'Protocol not supported'
-          continue
-        if url[0] == '/':
-          nameDict = self.getParameters()['Value']
-          nameDict['FileName'] = url
-          ret = pfnunparse( nameDict )
-          if ret['OK']:
-            res['Value']['Successful'][url] = ret['Value']
-          else:
-            res['Value']['Successful'].pop( url )
-            res['Value']['Failed'][url] = ret['Message']
-        else:
-          res['Value']['Successful'][url] = url
-    return res
 
   #############################################################
   #
@@ -154,7 +63,7 @@ class DIPStorage( StorageBase ):
   def exists( self, path ):
     """ Check if the given path exists. The 'path' variable can be a string or a list of strings.
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -226,7 +135,7 @@ class DIPStorage( StorageBase ):
   def getFile( self, path, localPath = False ):
     """Get a local copy in the current directory of a physical file specified by its path
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -266,7 +175,7 @@ class DIPStorage( StorageBase ):
   def removeFile( self, path ):
     """Remove physically the file specified by its path
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -288,7 +197,7 @@ class DIPStorage( StorageBase ):
   def isFile( self, path ):
     """ Determine whether the path is a directory
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -317,7 +226,7 @@ class DIPStorage( StorageBase ):
   def getFileSize( self, path ):
     """ Get size of supplied files
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -340,7 +249,7 @@ class DIPStorage( StorageBase ):
   def getFileMetadata( self, path ):
     """  Get metadata associated to the file
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -377,7 +286,7 @@ class DIPStorage( StorageBase ):
   def listDirectory( self, path ):
     """ List the contents of the directory
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -406,7 +315,7 @@ class DIPStorage( StorageBase ):
   def isDirectory( self, path ):
     """ Determine whether the path is a directory
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -424,7 +333,7 @@ class DIPStorage( StorageBase ):
           else:
             successful[url] = False
         else:
-          failed[url] = 'Directory does not exist'
+          failed[url] = 'Path does not exist'
       else:
         gLogger.error( "DIPStorage.isDirectory: Failed to get metadata for url", 
                        "%s: %s" % ( url, res['Message'] ) )
@@ -435,7 +344,7 @@ class DIPStorage( StorageBase ):
   def getDirectorySize( self, path ):
     """ Get the size of the contents of the directory
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -455,7 +364,7 @@ class DIPStorage( StorageBase ):
   def getDirectoryMetadata( self, path ):
     """  Get metadata associated to the directory
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -468,6 +377,7 @@ class DIPStorage( StorageBase ):
       if res['OK']:
         if res['Value']['Exists']:
           if res['Value']['Type'] == 'Directory':
+            res['Value']['Directory'] = True
             gLogger.debug( "DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url )
             successful[url] = res['Value']
           else:
@@ -484,7 +394,7 @@ class DIPStorage( StorageBase ):
   def createDirectory( self, path ):
     """ Create the remote directory
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -528,7 +438,7 @@ class DIPStorage( StorageBase ):
   def removeDirectory( self, path, recursive = False ):
     """ Remove a directory from the storage together with all its files and subdirectories.
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -550,7 +460,7 @@ class DIPStorage( StorageBase ):
   def getDirectory( self, path, localPath = False ):
     """ Get a local copy in the current directory of a physical file specified by its path
     """
-    res = self.__checkArgumentFormat( path )
+    res = checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
@@ -576,43 +486,3 @@ class DIPStorage( StorageBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def __checkArgumentFormat( self, path ):
-    if type( path ) in types.StringTypes:
-      urls = [path]
-    elif type( path ) == types.ListType:
-      urls = path
-    elif type( path ) == types.DictType:
-      urls = path.keys()
-    else:
-      return S_ERROR( "DIPStorage.__checkArgumentFormat: Supplied path is not of the correct format." )
-    return S_OK( urls )
-
-  def __executeOperation( self, url, method ):
-    """ Executes the requested functionality with the supplied url
-    """
-    fcn = None
-    if hasattr( self, method ) and callable( getattr( self, method ) ):
-      fcn = getattr( self, method )
-    if not fcn:
-      return S_ERROR( "Unable to invoke %s, it isn't a member function of DIPStorage" % method )
-
-    res = fcn( url )
-    if not res['OK']:
-      return res
-    elif url not in res['Value']['Successful']:
-      return S_ERROR( res['Value']['Failed'][url] )
-
-    return S_OK( res['Value']['Successful'][url] )
-
-  def getCurrentStatus(self):
-    """ Ask the server the current status (disk usage). Needed for RSS
-    """
-    serviceClient = RPCClient( self.url )
-    res = serviceClient.getAdminInfo()
-    if not res['OK']:
-      return res
-    se_status = {}
-    se_status['totalsize'] = res['Value']['AvailableSpace'] + res['Value']['UsedSpace']
-    se_status['unusedsize'] = res['Value']['AvailableSpace']
-    se_status['guaranteedsize'] = res['Value']['MaxCapacity']
-    return S_OK(se_status)

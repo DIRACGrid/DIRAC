@@ -9,19 +9,15 @@
     :deprecated:
 """
 # # imports
-import os
 import sys
 import re
 import time
-import tempfile
-from types import IntType, LongType
 # # from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.Core.Utilities.Adler import compareAdler, intAdlerToHex, hexAdlerToInt
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-from DIRAC.Core.Utilities.Time import dateTime, fromString
+from DIRAC.Core.Utilities.Time import dateTime
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
@@ -29,6 +25,10 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
+from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 
 # # RCSID
 __RCSID__ = "$Id$"
@@ -64,9 +64,6 @@ class FTSRequest( object ):
     self.fileStates = ( 'Done', 'Active', 'Pending', 'Ready', 'Canceled', 'Failed',
                         'Finishing', 'Finished', 'Submitted', 'Hold', 'Waiting' )
 
-    self.newlyCompletedFiles = []
-    self.newlyFailedFiles = []
-
     self.statusSummary = {}
 
     # # request status
@@ -91,8 +88,6 @@ class FTSRequest( object ):
     self.ftsGUID = ''
     # # placeholder for FTS server URL
     self.ftsServer = ''
-    # # not used
-    self.priority = 3
 
     # # flag marking FTS job completness
     self.isTerminal = False
@@ -113,12 +108,6 @@ class FTSRequest( object ):
     # # target space token
     self.targetToken = ''
 
-    # # whatever
-    self.dumpStr = ''
-
-    # # placeholder for surl file
-    self.surlFile = None
-
     # # placeholder for target StorageElement
     self.oTargetSE = None
     # # placeholder for source StorageElement
@@ -128,6 +117,7 @@ class FTSRequest( object ):
     self.__cksmType = self.__defaultCksmType
     # # disable checksum test by default
     self.__cksmTest = False
+
     # # statuses that prevent submitting to FTS
     self.noSubmitStatus = ( 'Failed', 'Done', 'Staging' )
 
@@ -136,6 +126,12 @@ class FTSRequest( object ):
 
     # # Number of file transfers actually submitted
     self.submittedFiles = 0
+    self.transferTime = 0
+
+    self.submitCommand = Operations().getValue( 'DataManagement/FTSPlacement/FTS2/SubmitCommand', 'glite-transfer-submit' )
+    self.monitorCommand = Operations().getValue( 'DataManagement/FTSPlacement/FTS2/MonitorCommand', 'glite-transfer-status' )
+    self.ftsJob = None
+    self.ftsFiles = []
 
   ####################################################################
   #
@@ -153,33 +149,6 @@ class FTSRequest( object ):
     self.sourceSE = se
     self.oSourceSE = StorageElement( self.sourceSE )
     return self.__checkSourceSE()
-
-  def getSourceSE( self ):
-    """ source SE getter
-
-    :param self: self reference
-    """
-    if not self.sourceSE:
-      return S_ERROR( "Source SE not defined" )
-    return S_OK( self.sourceSE )
-
-  def setSourceToken( self, token ):
-    """ set source space token
-
-    :param self: self reference
-    :param str token: source space token
-    """
-    self.sourceToken = token
-    return S_OK()
-
-  def getSourceToken( self ):
-    """ source space token getter
-
-    :param self: self reference
-    """
-    if not self.sourceToken:
-      return S_ERROR( "Source token not defined" )
-    return S_OK( self.sourceToken )
 
   def __checkSourceSE( self ):
     """ check source SE availability
@@ -226,15 +195,6 @@ class FTSRequest( object ):
     self.oTargetSE = StorageElement( self.targetSE )
     return self.__checkTargetSE()
 
-  def getTargetSE( self ):
-    """ target SE getter
-
-    :param self: self reference
-    """
-    if not self.targetSE:
-      return S_ERROR( "Target SE not defined" )
-    return S_OK( self.targetSE )
-
   def setTargetToken( self, token ):
     """ target space token setter
 
@@ -243,15 +203,6 @@ class FTSRequest( object ):
     """
     self.targetToken = token
     return S_OK()
-
-  def getTargetToken( self ):
-    """ target space token getter
-
-    :param self: self reference
-    """
-    if not self.targetToken:
-      return S_ERROR( "Target token not defined" )
-    return S_OK( self.targetToken )
 
   def __checkTargetSE( self ):
     """ check target SE availability
@@ -315,14 +266,6 @@ class FTSRequest( object ):
     self.ftsGUID = guid
     return S_OK()
 
-  def getFTSGUID( self ):
-    """ FTS job GUID getter
-
-    :param self: self refenece
-    """
-    if not self.ftsGUID:
-      return S_ERROR( "FTSGUID not set" )
-    return S_OK( self.ftsGUID )
 
   def setFTSServer( self, server ):
     """ FTS server setter
@@ -333,51 +276,6 @@ class FTSRequest( object ):
     self.ftsServer = server
     return S_OK()
 
-  def getFTSServer( self ):
-    """ FTS server getter
-
-    :param self: self reference
-    """
-    if not self.ftsServer:
-      return S_ERROR( "FTSServer not set" )
-    return S_OK( self.ftsServer )
-
-  def setPriority( self, priority ):
-    """ set priority for FTS job
-
-    :param self: self reference
-    :param int priority: a new priority
-    """
-    if not type( priority ) in ( IntType, LongType ):
-      return S_ERROR( "Priority must be integer" )
-    if priority < 0:
-      priority = 0
-    elif priority > 5:
-      priority = 5
-    self.priority = priority
-    return S_OK( self.priority )
-
-  def getPriority( self ):
-    """ FTS job priority getter
-
-    :param self: self reference
-    """
-    return S_OK( self.priority )
-
-  def getPercentageComplete( self ):
-    """ get completness percentage
-
-    :param self: self reference
-    """
-    completedFiles = 0
-    totalFiles = 0
-    for state in self.statusSummary:
-      if state in self.successfulStates:
-        completedFiles += self.statusSummary[state]
-      totalFiles += self.statusSummary[state]
-    self.percentageComplete = ( float( completedFiles ) * 100.0 ) / float( totalFiles )
-    return S_OK( self.percentageComplete )
-
   def isRequestTerminal( self ):
     """ check if FTS job has terminated
 
@@ -387,35 +285,6 @@ class FTSRequest( object ):
       self.isTerminal = True
     return S_OK( self.isTerminal )
 
-  def getStatus( self ):
-    """ get FTS job status
-
-    :param self: self reference
-    """
-    return S_OK( self.requestStatus )
-
-
-  def setCksmType( self, cksm = None ):
-    """ set checksum type to use
-
-    :param self: self reference
-    :param mixed cksm: checksum type, should be one of 'Adler32', 'md5', 'sha1', None
-    """
-    if str( cksm ).upper() not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
-      return S_ERROR( "Not supported checksum type: %s" % str( cksm ) )
-    if not cksm:
-      self.__cksmType = None
-      return S_OK( False )
-    self.__cksmType = str( cksm ).upper()
-    return S_OK( True )
-
-  def getCksmType( self ):
-    """ get checksum type
-
-    :param self: self reference
-    """
-    return S_OK( self.__cksmType )
-
   def setCksmTest( self, cksmTest = False ):
     """ set cksm test
 
@@ -423,13 +292,6 @@ class FTSRequest( object ):
     :param bool cksmTest: flag to enable/disable checksum test
     """
     self.__cksmTest = bool( cksmTest )
-    return S_OK( self.__cksmTest )
-
-  def getCksmTest( self ):
-    """ get cksm test flag
-
-    :param self: self reference
-    """
     return S_OK( self.__cksmTest )
 
   ####################################################################
@@ -446,10 +308,6 @@ class FTSRequest( object ):
     self.fileDict.setdefault( lfn, {'Status':'Waiting'} )
     return S_OK()
 
-  def setStatus( self, lfn, status ):
-    """ set status of a file """
-    return( self.__setFileParameter( lfn, 'Status', status ) )
-
   def setSourceSURL( self, lfn, surl ):
     """ source SURL setter
 
@@ -460,7 +318,7 @@ class FTSRequest( object ):
     target = self.fileDict[lfn].get( 'Target' )
     if target == surl:
       return S_ERROR( "Source and target the same" )
-    return( self.__setFileParameter( lfn, 'Source', surl ) )
+    return self.__setFileParameter( lfn, 'Source', surl )
 
   def getSourceSURL( self, lfn ):
     """ get source SURL for LFN :lfn:
@@ -480,15 +338,7 @@ class FTSRequest( object ):
     source = self.fileDict[lfn].get( 'Source' )
     if source == surl:
       return S_ERROR( "Source and target the same" )
-    return( self.__setFileParameter( lfn, 'Target', surl ) )
-
-  def getTargetSURL( self, lfn ):
-    """ target SURL getter
-
-    :param self: self reference
-    :param str lfn: LFN
-    """
-    return self.__getFileParameter( lfn, 'Target' )
+    return self.__setFileParameter( lfn, 'Target', surl )
 
   def getFailReason( self, lfn ):
     """ get fail reason for file :lfn:
@@ -572,10 +422,7 @@ class FTSRequest( object ):
     :param bool monitor: flag to monitor progress of FTS job
     :param bool printOutput: flag to print output of execution to stdout
     """
-    res = self.__isSubmissionValid()
-    if not res['OK']:
-      return res
-    res = self.__createSURLPairFile()
+    res = self.__prepareForSubmission()
     if not res['OK']:
       return res
     res = self.__submitFTSTransfer()
@@ -585,10 +432,10 @@ class FTSRequest( object ):
     if monitor or printOutput:
       gLogger.always( "Submitted %s@%s" % ( self.ftsGUID, self.ftsServer ) )
       if monitor:
-        self.monitor( untilTerminal = True, printOutput = printOutput )
+        self.monitor( untilTerminal = True, printOutput = printOutput, full = False )
     return S_OK( resDict )
 
-  def __isSubmissionValid( self ):
+  def __prepareForSubmission( self ):
     """ check validity of job before submission
 
     :param self: self reference
@@ -647,16 +494,15 @@ class FTSRequest( object ):
       self.catalogReplicas[lfn] = replicas
     return S_OK()
 
-  def __updateMetadataCache( self, lfns = None, overwrite = False ):
+  def __updateMetadataCache( self, lfns = None ):
     """ update metadata cache for list of LFNs
 
     :param self: self reference
     :param list lnfs: list of LFNs
-    :param bool overwrite: flag to trigger cache clearing and updating
     """
     if not lfns:
       lfns = self.fileDict.keys()
-    toUpdate = [ lfn for lfn in lfns if ( lfn not in self.catalogMetadata ) or overwrite ]
+    toUpdate = [ lfn for lfn in lfns if lfn not in self.catalogMetadata ]
     if not toUpdate:
       return S_OK()
     res = self.__getCatalogObject()
@@ -759,7 +605,7 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Reason', "Source size mismatch" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif self.catalogMetadata[lfn]['Checksum'] and metadata['Checksum'] and \
-            not ( compareAdler( metadata['Checksum'], self.catalogMetadata[lfn]['Checksum'] ) ):
+            not compareAdler( metadata['Checksum'], self.catalogMetadata[lfn]['Checksum'] ):
         gLogger.warn( "resolveSource: skipping %s - source file checksum mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source checksum mismatch" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
@@ -874,7 +720,7 @@ class FTSRequest( object ):
         return S_OK()
     return S_ERROR()
 
-  def __createSURLPairFile( self ):
+  def __createFTSFiles( self ):
     """ create LFNs file for glite-transfer-submit command
 
     This file consists one line for each fiel to be transferred:
@@ -883,64 +729,72 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    fd, fileName = tempfile.mkstemp()
-    surlFile = os.fdopen( fd, 'w' )
+    self.__updateMetadataCache()
     for lfn in self.fileDict:
       lfnStatus = self.fileDict[lfn].get( 'Status' )
-      source = self.fileDict[lfn].get( 'Source' )
-      target = self.fileDict[lfn].get( 'Target' )
-      if lfnStatus not in self.noSubmitStatus and source and target:
+      if lfnStatus not in self.noSubmitStatus:
         cksmStr = ""
         # # add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
         if self.__cksmTest and self.__cksmType:
           checkSum = self.catalogMetadata.get( lfn, {} ).get( 'Checksum' )
           if checkSum:
             cksmStr = " %s:%s" % ( self.__cksmType, intAdlerToHex( hexAdlerToInt( checkSum ) ) )
-        surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
+        ftsFile = FTSFile()
+        ftsFile.LFN = lfn
+        ftsFile.SourceSURL = self.fileDict[lfn].get( 'Source' )
+        ftsFile.TargetSURL = self.fileDict[lfn].get( 'Target' )
+        ftsFile.SourceSE = self.sourceSE
+        ftsFile.TargetSE = self.targetSE
+        ftsFile.Status = self.fileDict[lfn].get( 'Status' )
+        ftsFile.Checksum = cksmStr
+        ftsFile.Size = self.catalogMetadata.get( lfn, {} ).get( 'Size' )
+        self.ftsFiles.append( ftsFile )
         self.submittedFiles += 1
-    surlFile.close()
-    self.surlFile = fileName
     return S_OK()
+
+  def __createFTSJob( self, guid = None ):
+    self.__createFTSFiles()
+    ftsJob = FTSJob()
+    ftsJob.RequestID = 0
+    ftsJob.OperationID = 0
+    ftsJob.SourceSE = self.sourceSE
+    ftsJob.TargetSE = self.targetSE
+    ftsJob.SourceToken = self.sourceToken
+    ftsJob.TargetToken = self.targetToken
+    ftsJob.FTSServer = self.ftsServer
+    if guid:
+      ftsJob.FTSGUID = guid
+
+    for ftsFile in self.ftsFiles:
+      ftsFile.Attempt += 1
+      ftsFile.Error = ""
+      ftsJob.addFile( ftsFile )
+    self.ftsJob = ftsJob
 
   def __submitFTSTransfer( self ):
     """ create and execute glite-transfer-submit CLI command
 
     :param self: self reference
     """
-    comm = [ 'glite-transfer-submit', '-s', self.ftsServer, '-f', self.surlFile, '-o' ]
-    if self.targetToken:
-      comm += [ '-t', self.targetToken ]
-    if self.sourceToken:
-      comm += [ '-S', self.sourceToken ]
-    if self.__cksmTest:
-      comm.append( "--compare-checksums" )
-    gLogger.verbose( 'Executing %s' % ' '.join( comm ) )
-    res = executeGridCommand( '', comm )
-    os.remove( self.surlFile )
-    if not res['OK']:
-      return res
-    returnCode, output, errStr = res['Value']
-    if not returnCode == 0:
-      return S_ERROR( errStr )
-    guid = output.replace( '\n', '' )
-    if not checkGuid( guid ):
-      return S_ERROR( 'Wrong GUID format returned' )
-    self.ftsGUID = guid
-    # if self.priority != 3:
-    #  comm = ['glite-transfer-setpriority','-s', self.ftsServer,self.ftsGUID,str(self.priority)]
-    #  executeGridCommand('',comm)
-    return res
+    log = gLogger.getSubLogger( 'Submit' )
+    self.__createFTSJob()
 
-  def __getFTSServer( self, site ):
-    try:
-      configPath = '/Resources/FTSEndpoints/%s' % site
-      endpointURL = gConfig.getValue( configPath )
-      if not endpointURL:
-        errStr = "FTSRequest.__getFTSServer: Failed to find FTS endpoint, check CS entry for '%s'." % site
-        return S_ERROR( errStr )
-      return S_OK( endpointURL )
-    except Exception, x:
-      return S_ERROR( 'FTSRequest.__getFTSServer: Failed to obtain endpoint details from CS' )
+    submit = self.ftsJob.submitFTS2( command = self.submitCommand )
+    if not submit["OK"]:
+      log.error( "unable to submit FTSJob: %s" % submit["Message"] )
+      return submit
+
+    log.info( "FTSJob '%s'@'%s' has been submitted" % ( self.ftsJob.FTSGUID, self.ftsJob.FTSServer ) )
+
+    # # update statuses for job files
+    for ftsFile in self.ftsJob:
+      ftsFile.FTSGUID = self.ftsJob.FTSGUID
+      ftsFile.Status = "Submitted"
+      ftsFile.Attempt += 1
+
+    log.info( "FTSJob '%s'@'%s' has been submitted" % ( self.ftsJob.FTSGUID, self.ftsJob.FTSServer ) )
+    self.ftsGUID = self.ftsJob.FTSGUID
+    return S_OK()
 
   def __resolveFTSServer( self ):
     """
@@ -948,45 +802,25 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    if not self.sourceSE:
-      return S_ERROR( "Source SE not set" )
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTSServersForSites
     if not self.targetSE:
       return S_ERROR( "Target SE not set" )
-    res = getSitesForSE( self.sourceSE, 'LCG' )
-    if not res['OK'] or not res['Value']:
-      return S_ERROR( "Could not determine source site" )
-    sourceSites = res['Value']
-    res = getSitesForSE( self.targetSE, 'LCG' )
+    res = getSitesForSE( self.targetSE )
     if not res['OK'] or not res['Value']:
       return S_ERROR( "Could not determine target site" )
     targetSites = res['Value']
 
-    if 'LCG.CERN.ch' in sourceSites + targetSites:
-      # CERN is a special case, handling incoming and outgoing transfers
-      res = self.__getFTSServer( 'LCG.CERN.ch' )
-      if res['OK']:
-        self.ftsServer = res['Value']
-        return S_OK( self.ftsServer )
-      else:
-        return res
-    for sourceSite in sourceSites:
-      # Target site FTS2 server should be used, but FTS3 OK for source as well
-      sourceFTS = self.__getFTSServer( sourceSite )
-      if sourceFTS['OK']:
-        ftsSource = sourceFTS['Value']
-        if 'fts3' in ftsSource:
-          self.ftsServer = ftsSource
-          return S_OK( self.ftsServer )
+    targetSite = ''
     for targetSite in targetSites:
-      targetFTS = self.__getFTSServer( targetSite )
+      targetFTS = getFTSServersForSites( [targetSite] )
       if targetFTS['OK']:
-        ftsTarget = targetFTS['Value']
+        ftsTarget = targetFTS['Value'][targetSite]
         if ftsTarget:
           self.ftsServer = ftsTarget
           return S_OK( self.ftsServer )
       else:
         return targetFTS
-    return S_ERROR( 'No FTS server found for %s nor %s' % ( sourceSite, targetSite ) )
+    return S_ERROR( 'No FTS server found for %s' % targetSite )
 
   ####################################################################
   #
@@ -1000,6 +834,9 @@ class FTSRequest( object ):
     :param bool untilTerminal: flag to monitor FTS job to its final state
     :param bool printOutput: flag to print out monitoring information to the stdout
     """
+    res = self.__isSummaryValid()
+    if not res['OK']:
+      return res
     while not self.isTerminal:
       res = self.__parseOutput( full = True )
       if not res['OK']:
@@ -1016,21 +853,24 @@ class FTSRequest( object ):
       return self.dumpSummary( printOutput = printOutput )
     return S_OK()
 
-  def monitor( self, untilTerminal = False, printOutput = False ):
+  def monitor( self, untilTerminal = False, printOutput = False, full = True ):
     """ monitor FTS job
 
     :param self: self reference
     :param bool untilTerminal: flag to monitor FTS job to its final state
     :param bool printOutput: flag to print out monitoring information to the stdout
     """
-    res = self.__isMonitorValid()
+    if not self.ftsJob:
+      self.resolveSource()
+      self.__createFTSJob( self.ftsGUID )
+    res = self.__isSummaryValid()
     if not res['OK']:
       return res
     if untilTerminal:
       res = self.summary( untilTerminal = untilTerminal, printOutput = printOutput )
       if not res['OK']:
         return res
-    res = self.__parseOutput( True )
+    res = self.__parseOutput( full = full )
     if not res['OK']:
       return res
     if untilTerminal:
@@ -1060,7 +900,6 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    self.getPercentageComplete()
     width = 100
     bits = int( ( width * self.percentageComplete ) / 100 )
     outStr = "|%s>%s| %.1f%s %s %s" % ( "="*bits, " "*( width - bits ),
@@ -1096,67 +935,34 @@ class FTSRequest( object ):
       return S_ERROR( "FTSGUID not set" )
     return S_OK()
 
-  def __isMonitorValid( self ):
-    """ check validity of FTM monitoring
-
-    :param self: self reference
-    """
-    res = self.__isSummaryValid()
-    if not res['OK']:
-      return res
-    return S_OK()
-
   def __parseOutput( self, full = False ):
     """ execute glite-transfer-status command and parse its output
 
     :param self: self reference
     :param bool full: glite-transfer-status verbosity level, when set, collect information of files as well
     """
-    if full:
-      res = self.__isMonitorValid()
-    else:
-      res = self.__isSummaryValid()
-    if not res['OK']:
-      return res
-    comm = [ 'glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID ]
-    if full:
-      comm.append( '-l' )
-    res = executeGridCommand( '', comm )
-    if not res['OK']:
-      return res
-    returnCode, output, errStr = res['Value']
-    # Returns a non zero status if error
-    if not returnCode == 0:
-      return S_ERROR( errStr )
-    toRemove = ["'", "<", ">"]
-    for char in toRemove:
-      output = output.replace( char, '' )
-    regExp = re.compile( "Status:\s+(\S+)" )
-    self.requestStatus = re.search( regExp, output ).group( 1 )
-    regExp = re.compile( "Submit time:\s+(\S+ \S+)" )
-    self.submitTime = re.search( regExp, output ).group( 1 )
-    self.statusSummary = {}
-    for state in self.fileStates:
-      regExp = re.compile( "\s+%s:\s+(\d+)" % state )
-      self.statusSummary[state] = int( re.search( regExp, output ).group( 1 ) )
-    if not full:
-      return S_OK()
-    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
-    fileInfo = re.findall( regExp, output )
-    for source, target, status, retries, reason, duration in fileInfo:
-      lfn = ''
-      for candidate in sorted( self.fileDict ):
-        if re.search( candidate, source ):
-          lfn = candidate
-      if not lfn:
-        continue
-      self.__setFileParameter( lfn, 'Source', source )
-      self.__setFileParameter( lfn, 'Target', target )
-      self.__setFileParameter( lfn, 'Status', status )
-      if reason == '(null)':
-        reason = ''
-      self.__setFileParameter( lfn, 'Reason', reason.replace( "\n", " " ) )
-      self.__setFileParameter( lfn, 'Duration', int( duration ) )
+    monitor = self.ftsJob.monitorFTS2( command = self.monitorCommand, full = full )
+    if not monitor['OK']:
+      return monitor
+    self.percentageComplete = self.ftsJob.Completeness
+    self.requestStatus = self.ftsJob.Status
+    self.submitTime = self.ftsJob.SubmitTime
+
+    statusSummary = monitor['Value']
+    if statusSummary:
+      for state in statusSummary:
+        self.statusSummary[state] = statusSummary[state]
+
+    self.transferTime = 0
+    for ftsFile in self.ftsJob:
+      lfn = ftsFile.LFN
+      self.__setFileParameter( lfn, 'Status', ftsFile.Status )
+      self.__setFileParameter( lfn, 'Reason', ftsFile.Error )
+      self.__setFileParameter( lfn, 'Duration', ftsFile._duration )
+      targetURL = self.__getFileParameter( lfn, 'Target' )
+      if not targetURL['OK']:
+        self.__setFileParameter( lfn, 'Target', ftsFile.TargetSURL )
+      self.transferTime += int( ftsFile._duration )
     return S_OK()
 
   ####################################################################
@@ -1181,8 +987,6 @@ class FTSRequest( object ):
     regTime = time.time() - regStartTime
     if self.sourceSE and self.targetSE:
       self.__sendAccounting( regSuc, regTotal, regTime, transEndTime, transDict )
-    self.__removeFailedTargets()
-    self.__determineMissingSource()
     return S_OK()
 
   def getTransferStatistics( self ):
@@ -1257,19 +1061,9 @@ class FTSRequest( object ):
     :param dict transDict: dict holding couters for files being transerred, their sizes and successfull transfers
     """
 
-    submitTime = fromString( self.submitTime )
     oAccounting = DataOperation()
-    dt = transEndTime - submitTime
-    transferTime = dt.days * 86400 + dt.seconds
-    if 'fts3' in self.ftsServer and transferTime < 0:
-      import datetime
-      while transferTime < 0:
-        # Shift by one hour until transfer time is positive (ugly fix for FTS3 bug)
-        transferTime += 3600
-        submitTime -= datetime.timedelta( 0, 3600 )
-      self.log.verbose( 'Fixed UTC submit time... Submit: %s, end: %s' % ( submitTime, transEndTime ) )
     oAccounting.setEndTime( transEndTime )
-    oAccounting.setStartTime( submitTime )
+    oAccounting.setStartTime( self.submitTime )
 
     accountingDict = {}
     accountingDict['OperationType'] = 'replicateAndRegister'
@@ -1289,51 +1083,10 @@ class FTSRequest( object ):
     accountingDict['FinalStatus'] = self.requestStatus
     accountingDict['Source'] = self.sourceSE
     accountingDict['Destination'] = self.targetSE
-    accountingDict['TransferTime'] = transferTime
+    accountingDict['TransferTime'] = self.transferTime
     oAccounting.setValuesFromDict( accountingDict )
     self.log.verbose( "Attempting to commit accounting message..." )
     oAccounting.commit()
     self.log.verbose( "...committed." )
     return S_OK()
 
-  def __removeFailedTargets( self ):
-    """ remove failed files at target SE
-
-    :param self: self reference
-    """
-    corruptTargetErrors = ['file exists',
-                           'FILE_EXISTS',
-                           'Device or resource busy',
-                           'Marking Space as Being Used failed',
-                           'Another prepareToPut/Update is ongoing for this file',
-                           'Requested file is still in SRM_SPACE_AVAILABLE state!' ]
-    corruptedTarget = []
-    for lfn in sorted( self.fileDict ):
-      if self.fileDict[lfn].get( 'Status', '' ) == 'Failed':
-        reason = self.fileDict[lfn].get( 'Reason', '' )
-        for error in corruptTargetErrors:
-          if ( type( reason ) == type( '' ) ) and re.search( error, reason ):
-            corruptedTarget.append( self.fileDict[lfn].get( 'Target' ) )
-    if corruptedTarget:
-      self.oTargetSE.removeFile( corruptedTarget )
-
-  def __determineMissingSource( self ):
-    """ check source files availability at source SE
-
-    :param self: self reference
-    """
-    missingSourceErrors = [
-      'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
-      'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
-      'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
-      'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
-      'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
-      'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist' ]
-    missingSource = []
-    for lfn in sorted( self.fileDict ):
-      if self.fileDict[lfn].get( 'Status', '' ) == 'Failed':
-        reason = self.fileDict[lfn].get( 'Reason', '' )
-        for error in missingSourceErrors:
-          if ( type( reason ) == type( '' ) ) and re.search( error, reason ):
-            missingSource.append( lfn )
-    return missingSource

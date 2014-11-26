@@ -10,14 +10,12 @@
 """
 
 from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
-from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
-from DIRAC.Core.Utilities.Pfn                            import pfnparse
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
+from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 
 import os, socket
-
-__RCSID__ = "$Id$"
+from urlparse import urlparse
 
 CE_NAME = 'SSHBatch'
 
@@ -59,11 +57,14 @@ class SSHBatchComputingElement( SSHComputingElement ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )    
       
     # Prepare all the hosts  
-    for h in self.ceParameters['SSHHost'].strip().split( ',' ):
-      host = h.strip().split('/')[0]
+    for hPar in self.ceParameters['SSHHost'].strip().split( ',' ):
+      host = hPar.strip().split('/')[0]
       result = self._prepareRemoteHost( host = host )
-      self.log.info( 'Host %s registered for usage' % host )
-      self.sshHost.append( h.strip() )
+      if result['OK']:
+        self.log.info( 'Host %s registered for usage' % host )
+        self.sshHost.append( hPar.strip() )
+      else:
+        self.log.error( 'Failed to initialize host', host  )  
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -150,11 +151,8 @@ class SSHBatchComputingElement( SSHComputingElement ):
     
     hostDict = {}
     for job in jobIDList:      
-      result = pfnparse( job )
-      if not result['OK']:
-        continue
-      host = result['Value']['Host']
-      hostDict.setdefault(host, [])
+      host = urlparse( job ).hostname
+      hostDict.setdefault(host,[])
       hostDict[host].append( job )
       
     failed = []  
@@ -196,11 +194,8 @@ class SSHBatchComputingElement( SSHComputingElement ):
     """
     hostDict = {}
     for job in jobIDList:
-      result = pfnparse( job )
-      if not result['OK']:
-        continue
-      host = result['Value']['Host']
-      hostDict.setdefault(host, [])
+      host = urlparse( job ).hostname
+      hostDict.setdefault(host,[])
       hostDict[host].append( job )
 
     resultDict = {}

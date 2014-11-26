@@ -101,8 +101,11 @@ class RemoveFile( OperationHandlerBase ):
     """
     bulkRemoval = self.dm.removeFile( toRemoveDict.keys(), force = True )
     if not bulkRemoval["OK"]:
-      self.log.error( "Bulk file removal failed", bulkRemoval["Message"] )
-      self.operation.Error = bulkRemoval["Message"]
+      error = bulkRemoval["Message"]
+      self.log.error( "Bulk file removal failed", error )
+      self.operation.Error = error
+      for opFile in self.operation:
+        opFile.Error = error
       return bulkRemoval
     bulkRemoval = bulkRemoval["Value"]
     # # filter results

@@ -11,7 +11,7 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgfile] ... LFN sourceSE targetSE' % Script.scriptName,
+                                     '  %s [option|cfgfile] ... sourceSE targetSE LFN1[,LFN2...]' % Script.scriptName,
                                      'Arguments:',
                                      '  LFN:      Logical File Name or file containing LFNs',
                                      '  sourceSE: Valid DIRAC SE',
@@ -27,17 +27,19 @@ args = Script.getPositionalArgs()
 if not len( args ) == 3:
   Script.showHelp()
 else:
-  inputFileName = args[0]
-  sourceSE = args[1]
-  targetSE = args[2]
+  sourceSE = args.pop( 0 )
+  targetSE = args.pop( 0 )
 
-if not os.path.exists( inputFileName ):
-  lfns = [inputFileName]
-else:
-  inputFile = open( inputFileName, 'r' )
-  string = inputFile.read()
-  inputFile.close()
-  lfns = string.splitlines()
+lfns = []
+for arg in args:
+  for lfn in arg.split( ',' ):
+    if not os.path.exists( lfn ):
+      lfns.append( lfn )
+    else:
+      inputFile = open( lfn, 'r' )
+      string = inputFile.read()
+      inputFile.close()
+      lfns += string.splitlines()
 
 oFTSRequest = FTSRequest()
 oFTSRequest.setSourceSE( sourceSE )

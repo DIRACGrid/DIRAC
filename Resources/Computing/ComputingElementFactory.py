@@ -7,8 +7,9 @@
 """  The Computing Element Factory has one method that instantiates a given Computing Element
      from the CEUnique ID specified in the JobAgent configuration section.
 """
-from DIRAC.Resources.Computing.ComputingElement          import getCEConfigDict
-from DIRAC                                               import S_OK, S_ERROR, gLogger
+from DIRAC.Resources.Computing.ComputingElement  import getCEConfigDict
+from DIRAC                                       import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities                        import ObjectLoader
 
 __RCSID__ = "$Id$"
 
@@ -43,28 +44,22 @@ class ComputingElementFactory( object ):
       return S_ERROR( error )
     subClassName = "%sComputingElement" % (ceTypeLocal)
 
-    # FIXME: what about extensions?
-    # Should use the objectLoader I guess...?
-    # In practice, as coded, this is just a redundant check
-    try:
-      ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName, globals(), locals(), [subClassName])
-    except Exception, x:
-      msg = 'ComputingElementFactory could not import DIRAC.Resources.Computing.%s' % ( subClassName )
-      self.log.exception()
-      self.log.warn( msg )
-      return S_ERROR( msg )
+    objectLoader = ObjectLoader.ObjectLoader()
+    result = objectLoader.loadObject( 'Resources.Computing.%s' % subClassName, subClassName )
+    if not result['OK']:
+      gLogger.error( 'Failed to load catalog object: %s' % result['Message'] )
+      return result
 
+    ceClass = result['Value']
     try:
-      ceStr = 'ceSubClass.%s( "%s" )' % ( subClassName, ceNameLocal )
-      # FIXME: eval? Really?
-      computingElement = eval( ceStr )
+      computingElement = ceClass( ceNameLocal )
       if ceParametersDict:
-        computingElement.setParameters(ceParametersDict)
+        computingElement.setParameters( ceParametersDict )
     except Exception, x:
-      msg = 'ComputingElementFactory could not instantiate %s()' % (subClassName)
+      msg = 'ComputingElementFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
       self.log.exception()
       self.log.warn( msg )
-      return S_ERROR( msg )
+      return S_ERROR( msg )    
 
     computingElement._reset()
     return S_OK( computingElement )

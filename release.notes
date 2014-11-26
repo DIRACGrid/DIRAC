@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre4]
+[v6r13-pre5]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -123,6 +123,14 @@ CHANGE: Removed the use of current DataLogging service
 *RMS
 CHANGE: Removed files from the previous generation RMS
 CHANGE: RMS refactored based on SQLAlchemy 
+
+*Resources
+NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
+CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
+
+[v6r12p4]
+
+FIX: fixes from v6r11p23 patch release
 
 [v6r12p3]
 
@@ -248,6 +256,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p23]
+
+*DMS
+CHANGE: FTSRequest is left only to support dirac-dms-fts-XXX commands
 
 [v6r11p22]
 
