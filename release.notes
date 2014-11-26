@@ -1,3 +1,8 @@
+[v6r11p24]
+
+*DMS
+BUGFIX: SEManagerDB - bug fixed in getting connection in __add/__removeSE
+
 [v6r11p23]
 
 *DMS
