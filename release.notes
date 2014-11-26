@@ -147,6 +147,11 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p24]
+
+*DMS
+BUGFIX: SEManagerDB - bug fixed in getting connection in __add/__removeSE
+
 [v6r11p23]
 
 *DMS
