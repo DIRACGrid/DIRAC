@@ -983,31 +983,31 @@ class DataManager( object ):
         failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
         lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
 
+      if lfns:
+        self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
+        res = self.fc.getReplicas( lfns, True )
+        if not res['OK']:
+          errStr = "DataManager.removeFile: Completely failed to get replicas for lfns."
+          self.log.debug( errStr, res['Message'] )
+          return res
+        lfnDict = res['Value']['Successful']
 
-      self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
-      res = self.fc.getReplicas( lfns, True )
-      if not res['OK']:
-        errStr = "DataManager.removeFile: Completely failed to get replicas for lfns."
-        self.log.debug( errStr, res['Message'] )
-        return res
-      lfnDict = res['Value']['Successful']
+        for lfn, reason in res['Value'].get( 'Failed', {} ).items():
+          # Ignore files missing in FC if force is set
+          if reason == 'No such file or directory' and force:
+            successful[lfn] = True
+          elif reason == 'File has zero replicas':
+            lfnDict[lfn] = {}
+          else:
+            failed[lfn] = reason
 
-      for lfn, reason in res['Value'].get( 'Failed', {} ).items():
-        # Ignore files missing in FC if force is set
-        if reason == 'No such file or directory' and force:
-          successful[lfn] = True
-        elif reason == 'File has zero replicas':
-          lfnDict[lfn] = {}
-        else:
-          failed[lfn] = reason
-
-      res = self.__removeFile( lfnDict )
-      if not res['OK']:
-        errStr = "removeFile: Completely failed to remove files."
-        self.log.debug( errStr, res['Message'] )
-        return res
-      failed.update( res['Value']['Failed'] )
-      successful.update( res['Value']['Successful'] )
+        res = self.__removeFile( lfnDict )
+        if not res['OK']:
+          errStr = "removeFile: Completely failed to remove files."
+          self.log.debug( errStr, res['Message'] )
+          return res
+        failed.update( res['Value']['Failed'] )
+        successful.update( res['Value']['Successful'] )
 
     resDict = {'Successful':successful, 'Failed':failed}
     gDataStoreClient.commit()
