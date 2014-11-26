@@ -12,8 +12,6 @@ from DIRAC.Core.Utilities.List                                            import
 import datetime
 
 
-DEBUG = 0
-
 import os
 from types import ListType, TupleType, StringTypes
 
@@ -207,80 +205,15 @@ class FileManagerPs( FileManagerBase ):
 
     return S_OK( resultDict )
 
-  ######################################################
-  #
-  # _addFiles related methods
-  #
-#
-#   def _insertFiles( self, lfns, uid, gid, connection = False ):
-#     """ Insert new files. lfns is a dictionary indexed on lfn, the values are
-#         mandatory: DirID, Size, Checksum, GUID
-#         optional : Owner (dict with username and group), ChecksumType (Adler32 by default), Mode (db.umask by default)
-#
-#         :param lfns : lfns and info to insert
-#         :param uid : user id, overwriten by Owner['username'] if defined
-#         :param gid : user id, overwriten by Owner['group'] if defined
-#
-#     """
-#
-#     connection = self._getConnection(connection)
-#
-#
-#     failed = {}
-#     successful = {}
-#     res = self._getStatusInt( 'AprioriGood', connection = connection )
-#
-#     if res['OK']:
-#       statusID = res['Value']
-#     else:
-#       return res
-#
-#     # Insert each file separately
-#     for lfn in lfns:
-#
-#       # Get all the info
-#       fileInfo = lfns[lfn]
-#
-#       dirID = fileInfo['DirID']
-#       fileName = os.path.basename( lfn )
-#       size = fileInfo['Size']
-#       ownerDict = fileInfo.get( 'Owner', None )
-#       checksum = fileInfo['Checksum']
-#       checksumtype = fileInfo.get( 'ChecksumType', 'Adler32' )
-#       guid = fileInfo['GUID']
-#       mode = fileInfo.get( 'Mode', self.db.umask )
-#
-#       s_uid = uid
-#       s_gid = gid
-#
-#       # overwrite the s_uid and s_gid if defined in the lfn info
-#       if ownerDict:
-#         result = self.db.ugManager.getUserAndGroupID( ownerDict )
-#         if result['OK']:
-#           s_uid, s_gid = result['Value']
-#
-#       # insert
-#       result = self.db.executeStoredProcedureWithCursor( 'ps_insert_file', ( dirID, size, s_uid, s_gid,
-#                                                                              statusID, fileName, guid,
-#                                                                              checksum, checksumtype, mode ) )
-#
-#       if not result['OK']:
-#         return result
-#
-#       fileID, errMsg = result['Value'][0]
-#
-#       if not fileID:
-#         failed[lfn] = errMsg
-#       else:
-#         successful[lfn] = lfns[lfn]
-#         successful[lfn]['FileID'] = fileID
-#
-#     return S_OK( { 'Successful' : successful, 'Failed' : failed} )
-
-
 
 
   def __insertMultipleFiles ( self, allFileValues, wantedLfns ):
+    """ Insert multiple files in one query. However, if there is a problem
+          with one file, all the query is rolled back.
+      :param allFileValues : dictionary of tuple with all the information about possibly more
+                            files than we want to insert
+      :param wantedLfns : list of lfn that we want to insert
+    """
 
     fileValuesStrings = []
     fileDescStrings = []
@@ -337,7 +270,7 @@ class FileManagerPs( FileManagerBase ):
     fileValues = {}
     fileDesc = {}
 
-    # Insert each file separately
+    # Prepare each file separately
     for lfn in lfns:
 
       # Get all the info
@@ -369,7 +302,6 @@ class FileManagerPs( FileManagerBase ):
 
 
     chunkSize = 200
-
     allChunks = list( self.__chunks( lfns.keys(), chunkSize ) )
 
     
@@ -509,77 +441,14 @@ class FileManagerPs( FileManagerBase ):
 
     return S_OK()
 
-  ######################################################
-  #
-  # _addReplicas related methods
-  #
-#
-#   def _insertReplicas( self, lfns, master = False, connection = False ):
-#     """ Insert new replicas. lfns is a dictionary with one entry for each file. The keys are lfns, and values are dict
-#         with mandatory attributes : FileID, SE (the name), PFN
-#
-#         :param lfns: lfns and info to insert
-#         :param master: true if they are master replica, otherwise they will be just 'Replica'
-#
-#         :return successful/failed convention, with successful[lfn] = true
-#     """
-#
-#     connection = self._getConnection(connection)
-#
-#     # Add the files
-#     failed = {}
-#     successful = {}
-#
-#     # Get the status id of AprioriGood
-#     res = self._getStatusInt( 'AprioriGood', connection = connection )
-#     if not res['OK']:
-#       return res
-#     statusID = res['Value']
-#
-#     # treat each file after each other
-#     for lfn in lfns.keys():
-#
-#       fileID = lfns[lfn]['FileID']
-#
-#       seName = lfns[lfn]['SE']
-#       if type(seName) in StringTypes:
-#         seList = [seName]
-#       elif type(seName) == ListType:
-#         seList = seName
-#       else:
-#         return S_ERROR('Illegal type of SE list: %s' % str( type( seName ) ) )
-#
-#
-#       replicaType = 'Master' if master else 'Replica'
-#       pfn = lfns[lfn]['PFN']
-#
-#       # treat each replica of a file after the other
-#       for seName in seList:
-#
-#         # get the SE id
-#         res = self.db.seManager.findSE(seName)
-#         if not res['OK']:
-#           failed[lfn] = res['Message']
-#           continue
-#         seID = res['Value']
-#
-#         # insert the replica and its info
-#         result = self.db.executeStoredProcedureWithCursor( 'ps_insert_replica',
-#                                                            ( fileID, seID, statusID, replicaType, pfn ) )
-#
-#         if not result['OK']:
-#           return result
-#
-#         replicaID, errMsg = result['Value'][0]
-#         if replicaID:
-#           lfns[lfn]['RepID'] = replicaID
-#           successful[lfn] = True
-#         else:
-#           failed[lfn] = errMsg
-#
-#     return S_OK({'Successful':successful,'Failed':failed})
 
   def __insertMultipleReplicas ( self, allReplicaValues, lfnsChunk ):
+    """ Insert multiple replicas in one query. However, if there is a problem
+          with one replica, all the query is rolled back.
+      :param allReplicaValues : dictionary of tuple with all the information about possibly more
+                            replica than we want to insert
+      :param lfnsChunk : list of lfn that we want to insert
+    """
 
     repValuesStrings = []
     repDescStrings = []

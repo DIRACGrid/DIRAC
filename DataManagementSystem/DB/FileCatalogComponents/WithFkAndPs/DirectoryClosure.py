@@ -5,10 +5,6 @@ from DIRAC.Core.Utilities.List import intListToString, stringListToString
 
 """ DIRAC FileCatalog component representing a directory tree with
     a closure table
-
-    SELECT distinct fileid, parent_fileid, SYS_CONNECT_BY_PATH(name, '*') Path,  LEVEL lvl
-FROM CNS_FILE_METADATA_T START WITH fileid=8
-CONNECT BY NOCYCLE PRIOR  fileid=parent_fileid order by lvl asc, parent_fileid;
 """
 
 
