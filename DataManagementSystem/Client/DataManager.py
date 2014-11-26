@@ -60,8 +60,8 @@ class DataManager( object ):
     """
     self.accountingClient = client
 
-  def __verifyOperationWritePermission( self, path ):
-    """  Check if we have write permission to the given directory
+  def __verifyWritePermission( self, path ):
+    """  Check if we have write permission to the given file (if exists) or its directory
     """
     if type( path ) in StringTypes:
       paths = [ path ]
@@ -106,7 +106,7 @@ class DataManager( object ):
     :param self: self reference
     :param str folder: directory name
     """
-    res = self.__verifyOperationWritePermission( folder )
+    res = self.__verifyWritePermission( folder )
     if folder not in res['Value']['Successful']:
       errStr = "__cleanDirectory: Write access not permitted for this credential."
       self.log.debug( errStr, folder )
@@ -377,7 +377,7 @@ class DataManager( object ):
     """
 #     ancestors = ancestors if ancestors else list(
     folder = os.path.dirname( lfn )
-    res = self.__verifyOperationWritePermission( folder )
+    res = self.__verifyWritePermission( folder )
     if folder not in res['Value']['Successful']:
       errStr = "putAndRegister: Write access not permitted for this credential."
       self.log.debug( errStr, lfn )
@@ -573,7 +573,7 @@ class DataManager( object ):
     """
     ###########################################################
     # Check that we have write permissions to this directory.
-    res = self.__verifyOperationWritePermission( lfn )
+    res = self.__verifyWritePermission( lfn )
     if lfn not in res['Value']['Successful']:
       errStr = "__replicate: Write access not permitted for this credential."
       self.log.debug( errStr, lfn )
@@ -633,7 +633,7 @@ class DataManager( object ):
 
       localFile = ''
       #FIXME: this should not be hardcoded!!!
-      if sourcePfn.find( 'srm' ) == -1 or destPfn.find( 'srm' ) == -1:
+      if not sourcePfn.startswith( 'srm:' ) or not destPfn.startswith( 'srm:' ):
         # No third party transfer is possible, we have to replicate through the local cache
         localDir = '.'
         if localCache:
@@ -974,14 +974,17 @@ class DataManager( object ):
     else:
       successful = {}
       failed = dict.fromkeys( [lfn for lfn in success if not success[lfn] ], 'No such file or directory' )
-    # Check that we have write permissions to this directory.
+    # Check that we have write permissions to this directory and to the file.
     if lfns:
-      res = self.__verifyOperationWritePermission( lfns )
+      dir4lfns = {}
+      for lfn in lfns:
+        dir4lfns.setdefault( os.path.dirname( lfn ), [] ).append( lfn )
+      res = self.__verifyWritePermission( dir4lfns.keys() )
       if res['Value']['Failed']:
         errStr = "removeFile: Write access not permitted for this credential."
         self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
-        failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
-        lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
+        failed.update( dict.fromkeys( [lfn for dirName in res['Value']['Failed'] for lfn in dir4lfns[dirName]], errStr ) )
+        lfns = list( set( [lfn for dirName in res['Value']['Successful'] for lfn in dir4lfns[dirName] ] ) )
 
       if lfns:
         self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
@@ -1061,8 +1064,8 @@ class DataManager( object ):
       return S_ERROR( errStr )
     successful = {}
     failed = {}
-    # Check that we have write permissions to this directory.
-    res = self.__verifyOperationWritePermission( lfns )
+    # Check that we have write permissions to this file.
+    res = self.__verifyWritePermission( lfns )
     if res['Value']['Failed']:
       errStr = "removeReplica: Write access not permitted for this credential."
       self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
@@ -1103,7 +1106,7 @@ class DataManager( object ):
     failed = {}
     se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
     for lfn, pfn in fileTuple:
-      res = self.__verifyOperationWritePermission( lfn )
+      res = self.__verifyWritePermission( lfn )
       if lfn not in res['Value']['Successful']:
         errStr = "__removeReplica: Write access not permitted for this credential."
         self.log.debug( errStr, lfn )
@@ -1260,7 +1263,7 @@ class DataManager( object ):
     successful = {}
     failed = {}
     # Check that we have write permissions to this directory.
-    res = self.__verifyOperationWritePermission( lfns )
+    res = self.__verifyWritePermission( lfns )
     if res['Value']['Failed']:
       errStr = "removePhysicalReplica: Write access not permitted for this credential."
       self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
