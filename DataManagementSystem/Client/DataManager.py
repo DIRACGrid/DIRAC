@@ -1105,6 +1105,8 @@ class DataManager( object ):
     lfnDict = {}
     failed = {}
     se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
+    if se and not se.isValid()['OK']:
+      return S_ERROR( "SE %s is not valid" % storageElementName )
     for lfn, pfn in fileTuple:
       res = self.__verifyWritePermission( lfn )
       if lfn not in res['Value']['Successful']:
