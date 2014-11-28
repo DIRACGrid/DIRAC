@@ -253,7 +253,7 @@ class TransformationCleaningAgent( AgentModule ):
 
     se = StorageElement( storageElement )
 
-    res = se.getPfnForLfn( [directory] )
+    res = se.getURL( [directory] )
     if not res['OK']:
       self.log.error( "Failed to get PFN for directory", res['Message'] )
       return res

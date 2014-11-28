@@ -234,7 +234,7 @@ class FailoverTransfer( object ):
       regFile.GUID = fileDict.get( "GUID", "" )
 
       se = StorageElement( targetSE )
-      pfn = se.getPfnForLfn( lfn )
+      pfn = se.getURL( lfn )
       if not pfn["OK"] or lfn not in pfn["Value"]['Successful']:
         self.log.error( "Unable to get PFN for LFN", "%s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
         return pfn

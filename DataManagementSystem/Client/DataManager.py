@@ -58,8 +58,8 @@ class DataManager( object ):
     
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
-    self.registrationProtocol = ['SRM2', 'DIP']
-    self.thirdPartyProtocols = ['SRM2', 'DIP']
+    self.registrationProtocol = ['srm', 'dips']
+    self.thirdPartyProtocols = ['srm', 'dips']
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
@@ -441,7 +441,7 @@ class DataManager( object ):
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = returnSingleResult( storageElement.getPfnForLfn( lfn ) )
+    res = returnSingleResult( storageElement.getURL( lfn ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -618,7 +618,7 @@ class DataManager( object ):
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = returnSingleResult( destStorageElement.getPfnForLfn( destPath ) )
+    res = returnSingleResult( destStorageElement.getURL( destPath ) )
     if not res['OK']:
       errStr = "__replicate: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -787,7 +787,6 @@ class DataManager( object ):
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          # pfn = returnSingleResult( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
           remoteProtocols = storageElement.getRemoteProtocols()
           if not remoteProtocols['OK']:
             self.log.debug( "%s : could not get remote protocols %s" % ( diracSE, remoteProtocols['Message'] ) )
@@ -796,7 +795,7 @@ class DataManager( object ):
           remoteProtocols = remoteProtocols['Value']
           if remoteProtocols:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
+            res = returnSingleResult( storageElement.getURL( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               # print pfn, sourcePfn
@@ -932,7 +931,7 @@ class DataManager( object ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = returnSingleResult( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getURL( pfn, protocol = self.registrationProtocol ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -1141,7 +1140,7 @@ class DataManager( object ):
     if self.useCatalogPFN:
       pfnDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
     else:
-      pfnDict = dict( [ ( se.getPfnForLfn( lfn )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
+      pfnDict = dict( [ ( se.getURL( lfn )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
     # removePhysicalReplicas is called with real PFN list
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
 
@@ -1353,7 +1352,7 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = returnSingleResult( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
+        ret = returnSingleResult( storageElement.getURL( surl, protocol = self.registrationProtocol ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
@@ -1406,7 +1405,7 @@ class DataManager( object ):
       errStr = "put: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = returnSingleResult( storageElement.getPfnForLfn( lfn ) )
+    res = returnSingleResult( storageElement.getURL( lfn ) )
     if not res['OK']:
       errStr = "put: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -1530,14 +1529,14 @@ class DataManager( object ):
         se_lfn = {}
         catalogReplicas = res['Value']['Successful']
 
-        # We group the query to getPfnForLfn by storage element to gain in speed
+        # We group the query to getURL by storage element to gain in speed
         for lfn in catalogReplicas:
           for se in catalogReplicas[lfn]:
             se_lfn.setdefault( se, [] ).append( lfn )
 
         for se in se_lfn:
           seObj = StorageElement( se, vo = self.vo )
-          succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
+          succPfn = seObj.getURL( se_lfn[se], protocol = self.registrationProtocol ).get( 'Value', {} ).get( 'Successful', {} )
           for lfn in succPfn:
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
             catalogReplicas[lfn][se] = succPfn[lfn]
@@ -1582,7 +1581,7 @@ class DataManager( object ):
           pfn = replicas[storageElementName]
         else:
           se = se if se else StorageElement( storageElementName, vo = self.vo )
-          res = se.getPfnForLfn( lfn )
+          res = se.getURL( lfn )
           pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
         pfnDict[pfn] = lfn
       else:
@@ -1628,7 +1627,7 @@ class DataManager( object ):
     """
     return self.__executeIfReplicaExists( storageElementName, lfn, "getFileSize" )
 
-  def getReplicaAccessUrl( self, lfn, storageElementName ):
+  def getReplicaAccessUrl( self, lfn, storageElementName, protocol = False ):
     """ get the access url for lfns at the supplied StorageElement
 
     :param self: self reference
@@ -1636,7 +1635,7 @@ class DataManager( object ):
     :param str storageElementName: DIRAC SE name
     :param bool singleFile: execute for the first LFN only
     """
-    return self.__executeIfReplicaExists( storageElementName, lfn, "getAccessUrl" )
+    return self.__executeIfReplicaExists( storageElementName, lfn, "getURL", protocol = protocol )
 
   def getReplicaMetadata( self, lfn, storageElementName ):
     """ get the file metadata for lfns at the supplied StorageElement

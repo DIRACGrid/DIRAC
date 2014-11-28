@@ -4,6 +4,7 @@
 """ This is the StorageElement class.
 
 """
+from types import ListType
 
 __RCSID__ = "$Id$"
 # # custom duty
@@ -486,10 +487,12 @@ class StorageElementItem( object ):
       :param replicaDict: optional results from the File Catalog replica query
     """
 
-    self.log.verbose( "StorageElement.getAccessUrl: Getting accessUrl for lfn in %s." % self.name )
-
+    self.log.verbose( "StorageElement.getURL: Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
+    
     if not protocol:
       protocols = self.turlProtocols
+    elif type( protocol ) is ListType:
+      protocols = protocol
     else:
       protocols = [protocol]
 
@@ -517,7 +520,7 @@ class StorageElementItem( object ):
 
   def __generateURLDict( self, lfns, storage, replicaDict = {} ):
     """ Generates a dictionary (url : lfn ), where the url are constructed
-        from the lfn using the getURL method of the storage plugins.
+        from the lfn using the constructURLFromLFN method of the storage plugins.
         :param: lfns : dictionary {lfn:whatever}
         :returns dictionary {constructed url : lfn}
     """
@@ -552,14 +555,12 @@ class StorageElementItem( object ):
         if not result['OK']:
           errStr = "StorageElement.__generateURLDict %s." % result['Message']
           self.log.debug( errStr, 'for %s' % ( lfn ) )
-          if lfn not in failed:
-            failed[lfn] = ''
-          failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if failed[lfn] else errStr
+          failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if lfn in failed else errStr
         else:
           urlDict[result['Value']] = lfn
           
-    res = S_OK( urlDict )
-    res['Failed'] = failed    
+    res = S_OK( {'Successful': urlDict, 'Failed' : failed} )
+#     res['Failed'] = failed
     return res
 
   def __executeMethod( self, lfn, *args, **kwargs ):
@@ -645,8 +646,8 @@ class StorageElementItem( object ):
                                                                                                   pluginName ) )
       replicaDict = kwargs.get( 'replicaDict', {} )
       res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
-      urlDict = res['Value']  # url : lfn
-      failed.update( res['Failed'] )
+      urlDict = res['Value']['Successful']  # url : lfn
+      failed.update( res['Value']['Failed'] )
       if not len( urlDict ):
         self.log.verbose( "StorageElement.__executeMethod No urls generated for protocol %s." % pluginName )
       else:
@@ -697,7 +698,7 @@ class StorageElementItem( object ):
     if self.methodName:
       return self.__executeMethod
 
-    raise AttributeError
+    raise AttributeError( "StorageElement does not have a method '%s'" % name )
 
 
 

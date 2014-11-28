@@ -214,7 +214,7 @@ class DataIntegrityClient( Client ):
 
     # RF_NOTE : this comment is completely wrong
     # First get all the PFNs as they should be registered in the catalog
-    res = StorageElement( storageElement ).getPfnForProtocol( storageMetadata.keys(), withPort = False )
+    res = StorageElement( storageElement ).getURL( storageMetadata.keys() )
     if not res['OK']:
       gLogger.error( "Failed to get registered PFNs for physical files", res['Message'] )
       return res
@@ -273,7 +273,7 @@ class DataIntegrityClient( Client ):
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
     se = StorageElement( storageElement )
-    res = se.getPfnForLfn( lfnDir )
+    res = se.getURL( lfnDir )
 
     if not res['OK']:
       gLogger.error( "Failed to get PFNs for directories", res['Message'] )
@@ -361,7 +361,7 @@ class DataIntegrityClient( Client ):
     gLogger.info( 'Determining the existance of %d files at %s' % ( len( lfnPaths ), storageElement ) )
 
     se = StorageElement( storageElement )
-    res = se.getPfnForLfn( lfnPaths )
+    res = se.getURL( lfnPaths )
     if not res['OK']:
       gLogger.error( "Failed to get PFNs for LFNs", res['Message'] )
       return res
@@ -594,7 +594,7 @@ class DataIntegrityClient( Client ):
 
   def __getRegisteredPFNLFN( self, pfn, storageElement ):
 
-    res = StorageElement( storageElement ).getPfnForProtocol( pfn, withPort = False )
+    res = StorageElement( storageElement ).getURL( pfn )
     if not res['OK']:
       gLogger.error( "Failed to get registered PFN for physical files", res['Message'] )
       return res
@@ -719,7 +719,7 @@ class DataIntegrityClient( Client ):
         seName = '%s_MC-DST' % site
 
     problematicDict['SE'] = seName
-    res = se.getPfnForProtocol( pfn, withPort = False )
+    res = se.getURL( pfn )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     for pfn, error in res['Value']['Failed'].items():

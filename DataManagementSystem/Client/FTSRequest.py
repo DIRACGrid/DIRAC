@@ -546,8 +546,8 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       # Fix first the PFN
-      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[self.sourceSE] )
-      res = returnSingleResult( self.oSourceSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True ) )
+      pfn = self.oSourceSE.getURL( lfn, protocol = 'srm' ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[self.sourceSE] )
+      res = returnSingleResult( self.oSourceSE.getURL( pfn, protocol = 'srm' ) )
       if not res['OK']:
         gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -652,14 +652,14 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     for lfn in toResolve:
-      res = self.oTargetSE.getPfnForLfn( lfn )
+      res = self.oTargetSE.getURL( lfn )
       if not res['OK'] or lfn not in res['Value']['Successful']:
         gLogger.warn( "resolveTarget: skipping %s - failed to create target pfn" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Failed to create Target" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
       pfn = res['Value']['Successful'][lfn]
-      res = self.oTargetSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True )
+      res = self.oTargetSE.getURL( pfn, protocol = 'srm' )
       if not res['OK'] or pfn not in res['Value']['Successful']:
         reason = res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, reason ) )
@@ -1025,7 +1025,7 @@ class FTSRequest( object ):
     self.failedRegistrations = {}
     toRegister = {}
     for lfn in transLFNs:
-      res = returnSingleResult( self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), protocol = 'SRM2', withPort = False ) )
+      res = returnSingleResult( self.oTargetSE.getURL( self.fileDict[lfn].get( 'Target' ), protocol = 'srm' ) )
       if not res['OK']:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )

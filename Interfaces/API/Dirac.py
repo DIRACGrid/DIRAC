@@ -1476,7 +1476,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string for PFN' )
 
-    result = StorageElement( storageElement ).getAccessUrl( [pfn] )
+    result = StorageElement( storageElement ).getURL( [pfn] )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:

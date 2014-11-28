@@ -999,7 +999,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = returnSingleResult( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+        pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = 'srm' ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]

@@ -65,7 +65,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
     repSE = seCache[repSEName] if repSEName in seCache else \
             seCache.setdefault( repSEName, StorageElement( repSEName ) )
 
-    pfn = repSE.getPfnForLfn( opFile.LFN )
+    pfn = repSE.getURL( opFile.LFN )
     if not pfn["OK"] or opFile.LFN not in pfn['Value']['Successful']:
       log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN,
                                                                 repSEName,

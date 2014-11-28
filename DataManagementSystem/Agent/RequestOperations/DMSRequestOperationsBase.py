@@ -66,7 +66,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
 
     registerFile = File()
     registerFile.LFN = opFile.LFN
-    registerFile.PFN = StorageElement( targetSE ).getPfnForLfn( opFile.LFN ).get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN )
+    registerFile.PFN = StorageElement( targetSE ).getURL( opFile.LFN ).get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN )
     registerFile.GUID = opFile.GUID
     registerFile.Checksum = opFile.Checksum
     registerFile.ChecksumType = opFile.ChecksumType
