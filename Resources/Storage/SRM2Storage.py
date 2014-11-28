@@ -154,13 +154,28 @@ class SRM2Storage( StorageBase ):
 #
 ################################################################################
 
-  def __getUrl( self, path ):
-    """ get SRM PFN for :path: with optional port info
 
-    :param self: self reference
-    :param str path: file path
+  def __transformThisShittySRMOutputIntoAFullURL( self, srmPath ):
+    """ When calling gfal operation, srm sometimes returns as a surl just the physical path on the storage
+        without the host, port and else. Sometimes it is the full surl. Sometimes it doesn't have the WSUrl.
+        So we correct all this and make sure that we return to the caller a full surl.
+        /my/base/path/the/lfn.raw -> srm://host:port/srm/v2/server?SFN=/my/base/path/the/lfn.raw
     """
-    return returnSingleResult( self.getTransportURL( path, protocols = ['srm'] ) )
+    from DIRAC.Core.Utilities.Pfn import pfnunparse, pfnparse
+#     if self.isURL( srmPath )['Value']:
+    if ':' in srmPath:
+      dic = pfnparse( srmPath )['Value']
+      dic['WSUrl'] = self.protocolParameters['WSUrl']
+      srmPath = pfnunparse( dic )['Value']
+      return S_OK( srmPath )
+    urlDict = dict( self.protocolParameters )
+    urlDict['Path'] = ''
+
+
+    unp = pfnunparse( urlDict )['Value']
+    unp = os.path.join( unp, srmPath.lstrip( '/' ) )
+    return S_OK( unp )
+
 
   #############################################################
   #
@@ -265,12 +280,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in allResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed removeFile", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           self.log.debug( "removeFile: Successfully removed file: %s" % pathSURL )
           successful[pathSURL] = True
@@ -292,6 +302,7 @@ class SRM2Storage( StorageBase ):
     :param str path: path on storage
     :param mixed protocols: protocols to use
     """
+
     res = checkArgumentFormat( path )
     if not res['OK']:
       return res
@@ -309,6 +320,18 @@ class SRM2Storage( StorageBase ):
     else:
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
+    if self.protocolParameters['Protocol'] in listProtocols:
+      successful = {}
+      failed = {}
+      for url in urls:
+        if self.isURL( url )['Value']:
+          successful[url] = url
+        else:
+          failed[url] = 'getTransportURL: Failed to obtain turls.'
+      
+      return S_OK( {'Successful' : successful, 'Failed' : failed} )
+
+
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )
     if not resDict["OK"]:
@@ -318,14 +341,10 @@ class SRM2Storage( StorageBase ):
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
+
     for urlDict in allResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed getTransportURL", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           self.log.debug( "getTransportURL: Obtained tURL for file. %s" % pathSURL )
           successful[pathSURL] = urlDict['turl']
@@ -363,12 +382,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in allResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed prestageFile", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           self.log.debug( "prestageFile: Issued stage request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
@@ -409,12 +423,8 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in allResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed prestageFileStatus", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
+
         if urlDict['status'] == 1:
           self.log.debug( "SRM2Storage.prestageFileStatus: File found to be staged %s." % pathSURL )
           successful[pathSURL] = True
@@ -438,15 +448,9 @@ class SRM2Storage( StorageBase ):
     res = checkArgumentFormat( path )
     if not res['OK']:
       return res
-    urls = {}
+    urls = res['Value']
     failed = {}
-    for url in res['Value']:
-      pathSURL = self.__getUrl( url )
-      if not pathSURL['OK']:
-        self.log.error( "Failed getFileMetadata:", "%s" % pathSURL["Message"] )
-        failed[ url ] = pathSURL["Message"]
-      else:
-        urls[pathSURL['Value'] ] = url
+
 
     self.log.debug( "getFileMetadata: Obtaining metadata for %s file(s)." % len( urls ) )
     resDict = self.__gfal_ls_wrapper( urls, 0 )
@@ -460,7 +464,8 @@ class SRM2Storage( StorageBase ):
     for urlDict in listOfResults:
       if urlDict.get( 'surl' ):
         # Get back the input value for that surl
-        path = urls[self.__getUrl( urlDict['surl'] )['Value']]
+        path = urlDict['surl']
+
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['File']:
@@ -503,12 +508,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in listOfResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed isFile:", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['File']:
@@ -554,12 +554,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in allResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed pinFile:", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           self.log.debug( "pinFile: Issued pin request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
@@ -596,12 +591,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in allResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed releaseFile:", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           self.log.debug( "Failed releaseFile:", "Issued release request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
@@ -634,12 +624,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in listOfResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict["surl"] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed exists:", "%s" % pathSURL["Message"] )
-          failed[ urlDict["surl"] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL["Value"]
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           self.log.debug( "SRM2Storage.exists: Path exists: %s" % pathSURL )
           successful[pathSURL] = True
@@ -676,12 +661,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in listOfResults:
       if urlDict.get( 'surl' ):
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.verbose( "getFileSize: %s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['File']:
@@ -1003,12 +983,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in listOfResults:
       if urlDict.get( 'surl' ):
-        dirSURL = self.__getUrl( urlDict['surl'] )
-        if not dirSURL["OK"]:
-          self.log.error( "Failed isDirectory:", "%s" % dirSURL["Message"] )
-          failed[ urlDict['surl'] ] = dirSURL["Message"]
-          continue
-        dirSURL = dirSURL['Value']
+        dirSURL = urlDict['surl']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['Directory']:
@@ -1052,12 +1027,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in listOfResults:
       if "surl" in urlDict and urlDict["surl"]:
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed getDirectoryMetadata:", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['Directory']:
@@ -1143,12 +1113,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     for urlDict in listOfResults:
       if "surl" in urlDict and urlDict["surl"]:
-        pathSURL = self.__getUrl( urlDict['surl'] )
-        if not pathSURL["OK"]:
-          self.log.error( "Failed listDirectory:", "%s" % pathSURL["Message"] )
-          failed[ urlDict['surl'] ] = pathSURL["Message"]
-          continue
-        pathSURL = pathSURL['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           successful[pathSURL] = {}
           self.log.debug( "SRM2Storage.listDirectory: Successfully listed directory %s" % pathSURL )
@@ -1158,7 +1123,7 @@ class SRM2Storage( StorageBase ):
             subPaths = urlDict['subpaths']
             # Parse the subpaths for the directory
             for subPathDict in subPaths:
-              subPathSURL = self.__getUrl( subPathDict['surl'] )['Value']
+              subPathSURL = subPathDict['surl']
               if subPathDict['status'] == 22:
                 self.log.error( "File found with status 22", subPathDict )
               elif subPathDict['status'] == 0:
@@ -1612,6 +1577,12 @@ class SRM2Storage( StorageBase ):
           allResults.extend( results )
           if len( results ) < tempStep:
             allObtained = True
+
+
+          for urlDict in allResults:
+            if 'surl' in urlDict:
+              urlDict['surl'] = self.__transformThisShittySRMOutputIntoAFullURL( urlDict['surl'] )['Value']
+
       successful.append( { 'surl' : url, 'status' : 0, 'subpaths' : allResults } )
     # gDataStoreClient.commit()
     return S_OK( { "AllResults" : successful, "Failed" : failed } )
@@ -1914,6 +1885,11 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       oDataOperation.setValueByKey( 'TransferOK', 0 )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
+    else:
+      for urlDict in res['Value']:
+        if 'surl' in urlDict:
+          urlDict['surl'] = self.__transformThisShittySRMOutputIntoAFullURL( urlDict['surl'] )['Value']
+
 
     res['AccountingOperation'] = oDataOperation
     return res
