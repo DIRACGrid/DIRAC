@@ -172,7 +172,6 @@ class StorageElementItem( object ):
 
     self.readMethods = [ 'getFile',
                          'getTransportURL',
-                         'getLFNForURL',
                          'prestageFile',
                          'prestageFileStatus',
                          'getDirectory']
@@ -480,7 +479,7 @@ class StorageElementItem( object ):
   # This is the generic wrapper for file operations
   #
 
-  def getURL( self, lfn, protocol = False ):
+  def getURL( self, lfn, protocol = False, replicaDict = None ):
     """ execute 'getTransportURL' operation.
       :param str lfn: string, list or dictionary of lfns
       :param protocol: if no protocol is specified, we will request self.turlProtocols
@@ -644,7 +643,7 @@ class StorageElementItem( object ):
 
       self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol URLs for %s." % ( len( lfnDict ),
                                                                                                   pluginName ) )
-      replicaDict = kwargs.get( 'replicaDict', {} )
+      replicaDict = kwargs.pop( 'replicaDict', {} )
       res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
       urlDict = res['Value']['Successful']  # url : lfn
       failed.update( res['Value']['Failed'] )

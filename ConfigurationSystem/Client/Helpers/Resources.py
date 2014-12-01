@@ -285,3 +285,11 @@ def getCatalogPath( catalogName ):
   """  Return the configuration path of the description for a a given catalog
   """
   return '/Resources/FileCatalogs/%s' % catalogName
+
+def getRegistrationProtocols():
+  """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
+  return gConfig.getValue( '/Resources/FileCatalogs/RegistrationProtocols', ['srm', 'dips'] )
+
+def getThirdPartyProtocols():
+  """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
+  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm', 'dips'] )

@@ -87,15 +87,15 @@ class ReTransfer( DMSRequestOperationsBase ):
 
     se = StorageElement( targetSE )
     for opFile in toRetransfer.values():
-      reTransfer = se.retransferOnlineFile( opFile.PFN )
+      reTransfer = se.retransferOnlineFile( opFile.LFN )
       if not reTransfer["OK"]:
         opFile.Error = reTransfer["Message"]
         self.log.error( "Retransfer failed", opFile.Error )
         gMonitor.addMark( "FileReTransferFail", 1 )
         continue
       reTransfer = reTransfer["Value"]
-      if opFile.PFN in reTransfer["Failed"]:
-        opFile.Error = reTransfer["Failed"][opFile.PFN]
+      if opFile.LFN in reTransfer["Failed"]:
+        opFile.Error = reTransfer["Failed"][opFile.LFN]
         self.log.error( "Retransfer failed", opFile.Error )
         gMonitor.addMark( "FileReTransferFail", 1 )
         continue

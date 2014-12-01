@@ -177,10 +177,6 @@ class ProxyStorage( StorageBase ):
     client = RPCClient( self.url )
     return client.callProxyMethod( self.name, 'removeDirectory', [path], {'recursive':recursive} )
 
-  def getPFNBase( self ):
-    client = RPCClient( self.url )
-    return client.callProxyMethod( self.name, 'getPFNBase', [], {} )
-
   def getDirectory( self, path ):
     return S_ERROR( "Not supported" )
 

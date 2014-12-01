@@ -65,43 +65,35 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
     repSE = seCache[repSEName] if repSEName in seCache else \
             seCache.setdefault( repSEName, StorageElement( repSEName ) )
 
-    pfn = repSE.getURL( opFile.LFN )
-    if not pfn["OK"] or opFile.LFN not in pfn['Value']['Successful']:
-      log.warn( "unable to create pfn for %s lfn at %s: %s" % ( opFile.LFN,
-                                                                repSEName,
-                                                                pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) ) ) )
-      ret["NoPFN"].append( repSEName )
-    else:
-      pfn = pfn["Value"]['Successful'][ opFile.LFN ]
 
-      repSEMetadata = repSE.getFileMetadata( pfn )
-      error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
-      if error:
-        log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error.replace( '\n', '' ) )
-        if 'File does not exist' in error:
-          ret['NoReplicas'].append( repSEName )
-        else:
-          ret["NoMetadata"].append( repSEName )
+    repSEMetadata = repSE.getFileMetadata( opFile.LFN )
+    error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) )
+    if error:
+      log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error.replace( '\n', '' ) )
+      if 'File does not exist' in error:
+        ret['NoReplicas'].append( repSEName )
       else:
-        repSEMetadata = repSEMetadata['Value']['Successful'][pfn]
+        ret["NoMetadata"].append( repSEName )
+    else:
+      repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
-        seChecksum = repSEMetadata.get( "Checksum" )
-        if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
-          # The checksum in the request may be wrong, check with FC
-          fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
-          fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
-          if fcChecksum and fcChecksum != opFile.Checksum and compareAdler( fcChecksum , seChecksum ):
-            opFile.Checksum = fcChecksum
-            ret['Valid'].append( repSEName )
-          else:
-            log.warn( " %s checksum mismatch, request: %s @%s: %s" % ( opFile.LFN,
-                                                                       opFile.Checksum,
-                                                                       repSEName,
-                                                                       seChecksum ) )
-            ret["Bad"].append( repSEName )
+      seChecksum = repSEMetadata.get( "Checksum" )
+      if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
+        # The checksum in the request may be wrong, check with FC
+        fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
+        fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
+        if fcChecksum and fcChecksum != opFile.Checksum and compareAdler( fcChecksum , seChecksum ):
+          opFile.Checksum = fcChecksum
+          ret['Valid'].append( repSEName )
         else:
-          # # if we're here repSE is OK
-          ret["Valid"].append( repSEName )
+          log.warn( " %s checksum mismatch, request: %s @%s: %s" % ( opFile.LFN,
+                                                                     opFile.Checksum,
+                                                                     repSEName,
+                                                                     seChecksum ) )
+          ret["Bad"].append( repSEName )
+      else:
+        # # if we're here repSE is OK
+        ret["Valid"].append( repSEName )
 
   return S_OK( ret )
 

@@ -22,6 +22,7 @@ from types import StringTypes, ListType, DictType, StringType, TupleType
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
@@ -58,8 +59,8 @@ class DataManager( object ):
     
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
-    self.registrationProtocol = ['srm', 'dips']
-    self.thirdPartyProtocols = ['srm', 'dips']
+    self.registrationProtocol = getRegistrationProtocols()
+    self.thirdPartyProtocols = getThirdPartyProtocols()
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
@@ -441,13 +442,15 @@ class DataManager( object ):
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
+
     res = returnSingleResult( storageElement.getURL( lfn ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
-    destPfn = res['Value']
-    fileDict = {destPfn:fileName}
+    destUrl = res['Value']
+
+    fileDict = {lfn:fileName}
 
     successful = {}
     failed = {}
@@ -457,7 +460,7 @@ class DataManager( object ):
     oDataOperation.setStartTime()
     oDataOperation.setValueByKey( 'TransferSize', size )
     startTime = time.time()
-    res = storageElement.putFile( fileDict, singleFile = True )
+    res = returnSingleResult( storageElement.putFile( fileDict ) )
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
@@ -476,8 +479,8 @@ class DataManager( object ):
     ###########################################################
     # Perform the registration here
     oDataOperation.setValueByKey( 'RegistrationTotal', 1 )
-    fileTuple = ( lfn, destPfn, size, destinationSE, guid, checksum )
-    registerDict = {'LFN':lfn, 'PFN':destPfn, 'Size':size, 'TargetSE':destinationSE, 'GUID':guid, 'Addler':checksum}
+    fileTuple = ( lfn, destUrl, size, destinationSE, guid, checksum )
+    registerDict = {'LFN':lfn, 'PFN':destUrl, 'Size':size, 'TargetSE':destinationSE, 'GUID':guid, 'Addler':checksum}
     startTime = time.time()
     res = self.registerFile( fileTuple )
     registerTime = time.time() - startTime
@@ -916,8 +919,8 @@ class DataManager( object ):
   def __registerReplica( self, replicaTuples, catalog ):
     """ register replica to catalogue """
     seDict = {}
-    for lfn, pfn, storageElementName in replicaTuples:
-      seDict.setdefault( storageElementName, [] ).append( ( lfn, pfn ) )
+    for lfn, url, storageElementName in replicaTuples:
+      seDict.setdefault( storageElementName, [] ).append( ( lfn, url ) )
     failed = {}
     replicaTuples = []
     for storageElementName, replicaTuple in seDict.items():
@@ -926,12 +929,12 @@ class DataManager( object ):
       if not res['OK']:
         errStr = "__registerReplica: The storage element is not currently valid."
         self.log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
-        for lfn, pfn in replicaTuple:
+        for lfn, url in replicaTuple:
           failed[lfn] = errStr
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
-        for lfn, pfn in replicaTuple:
-          res = returnSingleResult( destStorageElement.getURL( pfn, protocol = self.registrationProtocol ) )
+        for lfn, url in replicaTuple:
+          res = returnSingleResult( destStorageElement.getURL( lfn, protocol = self.registrationProtocol ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -940,8 +943,8 @@ class DataManager( object ):
     self.log.debug( "__registerReplica: Successfully resolved %s replicas for registration." % len( replicaTuples ) )
     # HACK!
     replicaDict = {}
-    for lfn, pfn, se, _master in replicaTuples:
-      replicaDict[lfn] = {'SE':se, 'PFN':pfn}
+    for lfn, url, se, _master in replicaTuples:
+      replicaDict[lfn] = {'SE':se, 'PFN':url}
 
     if catalog:
       fileCatalog = FileCatalog( catalog, vo = self.vo )
@@ -1405,13 +1408,7 @@ class DataManager( object ):
       errStr = "put: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = returnSingleResult( storageElement.getURL( lfn ) )
-    if not res['OK']:
-      errStr = "put: Failed to generate destination PFN."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
-    destPfn = res['Value']
-    fileDict = {destPfn:fileName}
+    fileDict = {lfn:fileName}
 
     successful = {}
     failed = {}
@@ -1426,7 +1423,7 @@ class DataManager( object ):
       self.log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
     else:
       self.log.debug( "put: Put file to storage in %s seconds." % putTime )
-      successful[lfn] = destPfn
+      successful[lfn] = res['Value']
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
@@ -1549,7 +1546,7 @@ class DataManager( object ):
   # first if the replica is known to the catalog
 
 
-  def __executeIfReplicaExists( self, storageElementName, lfn, method, **argsDict ):
+  def __executeIfReplicaExists( self, storageElementName, lfn, method, **kwargs ):
     """ a simple wrapper that allows replica querying then perform the StorageElement operation
 
     :param self: self reference
@@ -1557,11 +1554,11 @@ class DataManager( object ):
     :param mixed lfn: a LFN str, list of LFNs or dict with LFNs as keys
     """
     # # default value
-    argsDict = argsDict if argsDict else {}
+    kwargs = kwargs if kwargs else {}
     # # get replicas for lfn
     res = FileCatalog( vo = self.vo ).getReplicas( lfn )
     if not res["OK"]:
-      errStr = "_callReplicaSEFcn: Completely failed to get replicas for LFNs."
+      errStr = "__executeIfReplicaExists: Completely failed to get replicas for LFNs."
       self.log.debug( errStr, res["Message"] )
       return res
     # # returned dict, get failed replicase
@@ -1573,37 +1570,34 @@ class DataManager( object ):
     # # good replicas
     lfnReplicas = res["Value"]["Successful"]
     # # store PFN to LFN mapping
-    pfnDict = {}
+    lfnList = []
     se = None  # Placeholder for the StorageElement object
     for lfn, replicas in lfnReplicas.items():
       if storageElementName  in replicas:
-        if self.useCatalogPFN:
-          pfn = replicas[storageElementName]
-        else:
-          se = se if se else StorageElement( storageElementName, vo = self.vo )
-          res = se.getURL( lfn )
-          pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
-        pfnDict[pfn] = lfn
+        lfnList.append( lfn )
       else:
-        errStr = "_callReplicaSEFcn: File hasn't got replica at supplied Storage Element."
+        errStr = "__executeIfReplicaExists: File hasn't got replica at supplied Storage Element."
         self.log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
         retDict["Failed"][lfn] = errStr
+
+    if 'replicaDict' not in kwargs:
+      kwargs['replicaDict'] = lfnReplicas
 
     # # call StorageElement function at least
     se = se = se if se else StorageElement( storageElementName, vo = self.vo )
     fcn = getattr( se, method )
-    res = fcn( pfnDict.keys(), **argsDict )
+    res = fcn( lfnList, **kwargs )
     # # check result
     if not res["OK"]:
-      errStr = "_callReplicaSEFcn: Failed to execute %s StorageElement method." % method
+      errStr = "__executeIfReplicaExists: Failed to execute %s StorageElement method." % method
       self.log.error( errStr, res["Message"] )
       return res
 
     # # filter out failed and successful
-    for pfn, pfnRes in res["Value"]["Successful"].items():
-      retDict["Successful"][pfnDict[pfn]] = pfnRes
-    for pfn, errorMessage in res["Value"]["Failed"].items():
-      retDict["Failed"][pfnDict[pfn]] = errorMessage
+    for lfn, lfnRes in res["Value"]["Successful"].items():
+      retDict["Successful"][lfn] = lfnRes
+    for lfn, errorMessage in res["Value"]["Failed"].items():
+      retDict["Failed"][lfn] = errorMessage
 
     return S_OK( retDict )
 
