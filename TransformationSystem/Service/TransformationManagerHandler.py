@@ -254,19 +254,17 @@ class TransformationManagerHandler( RequestHandler ):
     if not res['OK']:
       return self._parseRes( res )
     transDict = res['Value']
-    status = transDict['Status']
     submitDict = {}
-    if status in ['Active', 'Completing', 'Flush']:
-      res = database.getTasksForSubmission( transName, numTasks = numTasks, site = site, statusList = ['Created'] )
+    res = database.getTasksForSubmission( transName, numTasks = numTasks, site = site, statusList = ['Created'] )
+    if not res['OK']:
+      return self._parseRes( res )
+    tasksDict = res['Value']
+    for taskID, taskDict in tasksDict.items():
+      res = database.reserveTask( transName, long( taskID ) )
       if not res['OK']:
         return self._parseRes( res )
-      tasksDict = res['Value']
-      for taskID, taskDict in tasksDict.items():
-        res = database.reserveTask( transName, long( taskID ) )
-        if not res['OK']:
-          return self._parseRes( res )
-        else:
-          submitDict[taskID] = taskDict
+      else:
+        submitDict[taskID] = taskDict
     transDict['JobDictionary'] = submitDict
     return S_OK( transDict )
 
