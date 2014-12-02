@@ -135,6 +135,11 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p25]
+
+*Interfaces
+FIX: Job.py - bring back different logfile names if they have not been specified by the user
+
 [v6r11p24]
 
 *DMS
