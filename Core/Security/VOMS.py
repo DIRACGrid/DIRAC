@@ -120,7 +120,7 @@ class VOMS( BaseSecurity ):
     proxyLocation = proxyDict[ 'file' ]
     if not Os.which("voms-proxy-info"):
       return S_ERROR("Missing voms-proxy-info")
-    cmd = 'voms-proxy-info -dont-verify-ac -file %s' % proxyLocation
+    cmd = 'voms-proxy-info -file %s' % proxyLocation
     if option:
       cmd += ' -%s' % option
 
