@@ -529,6 +529,7 @@ class StorageElementItem( object ):
     failed = {}  # lfn : string with errors
     for lfn in lfns:
       if self.useCatalogURL:
+        # Is this self.name alias proof?
         url = replicaDict.get( lfn, {} ).get( self.name, '' )
         if url:
           urlDict[url] = lfn

@@ -1039,19 +1039,20 @@ class DataManager( object ):
     # # sorted and reversed
     for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
       for se, pfn in repDict.items():
-        storageElementDict.setdefault( se, [] ).append( ( lfn, pfn ) )
+        storageElementDict.setdefault( se, [] ).append( lfn )
     failed = {}
     successful = {}
     for storageElementName in sorted( storageElementDict ):
-      fileTuple = storageElementDict[storageElementName]
-      res = self.__removeReplica( storageElementName, fileTuple )
+      lfns = storageElementDict[storageElementName]
+      res = self.__removeReplica( storageElementName, lfns, replicaDict = lfnDict )
       if not res['OK']:
         errStr = res['Message']
-        for lfn, pfn in fileTuple:
+        for lfn in lfns:
           failed[lfn] = failed.setdefault( lfn, '' ) + " %s" % errStr
       else:
         for lfn, errStr in res['Value']['Failed'].items():
           failed[lfn] = failed.setdefault( lfn, '' ) + " %s" % errStr
+
     completelyRemovedFiles = []
     for lfn in [lfn for lfn in lfnDict if lfn not in failed]:
       completelyRemovedFiles.append( lfn )
@@ -1064,6 +1065,7 @@ class DataManager( object ):
         failed.update( res['Value']['Failed'] )
         successful = res['Value']['Successful']
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
+
 
   def removeReplica( self, storageElementName, lfn ):
     """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
@@ -1096,7 +1098,8 @@ class DataManager( object ):
       return res
     failed = res['Value']['Failed']
     successful = {}
-    replicaTuples = []
+    replicaDict = res['Value']['Successful']
+    lfnsToRemove = []
     for lfn, repDict in res['Value']['Successful'].items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
@@ -1107,10 +1110,10 @@ class DataManager( object ):
                                                                                                storageElementName ) )
         failed[lfn] = "Failed to remove sole replica"
       else:
-        replicaTuples.append( ( lfn, repDict[storageElementName] ) )
-    if not replicaTuples:
+        lfnsToRemove.append( lfn )
+    if not lfnsToRemove:
       return S_OK( { 'Successful' : successful, 'Failed' : failed } )    
-    res = self.__removeReplica( storageElementName, replicaTuples )
+    res = self.__removeReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -1118,43 +1121,43 @@ class DataManager( object ):
     gDataStoreClient.commit()
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
-  def __removeReplica( self, storageElementName, fileTuple ):
-    """ remove replica """
-    lfnDict = {}
+
+  def __removeReplica( self, storageElementName, lfns, replicaDict = None ):
+    """ remove replica
+        Remove the replica from the storageElement, and then from the catalog
+
+        :param storageElementName : The name of the storage Element
+        :param lfns list of lfn we want to remove
+        :param replicaDict : cache of fc.getReplicas(lfns) : { lfn { se : catalog url } }
+
+    """
     failed = {}
     successful = {}
-    se = None if self.useCatalogPFN else StorageElement( storageElementName, vo = self.vo )  # Placeholder for the StorageElement object
-    if se:
-      res = se.isValid( 'removeFile' )
-      if not res['OK']:
-        return res
-    for lfn, pfn in fileTuple:
+    replicaDict = replicaDict if replicaDict else {}
+    
+    lfnsToRemove = []
+
+    for lfn in lfns:
       res = self.__verifyOperationWritePermission( lfn )
       if not res['OK'] or not res['Value']:
         errStr = "__removeReplica: Write access not permitted for this credential."
         self.log.debug( errStr, lfn )
         failed[lfn] = errStr
       else:
-        # This is the PFN as in the FC
-        lfnDict[lfn] = pfn
+        lfnsToRemove.append( lfn )
 
-    # Now we should use the constructed PFNs if needed, for the physical removal
-    # Reverse lfnDict into pfnDict with required PFN
-    if self.useCatalogPFN:
-      pfnDict = dict( zip( lfnDict.values(), lfnDict.keys() ) )
-    else:
-      pfnDict = dict( [ ( se.getURL( lfn )['Value'].get( 'Successful', {} ).get( lfn, lfnDict[lfn] ), lfn ) for lfn in lfnDict] )
-    # removePhysicalReplicas is called with real PFN list
-    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
+
+    res = self.__removePhysicalReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
 
     if not res['OK']:
       errStr = "__removeReplica: Failed to remove physical replicas."
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
 
-    failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
+    failed.update( dict( [( lfn, error ) for lfn, error in res['Value']['Failed'].items()] ) )
+
     # Here we use the FC PFN...
-    replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[pfn]], storageElementName ) for pfn in res['Value']['Successful']]
+    replicaTuples = [( lfn, replicaDict[lfn][storageElementName], storageElementName ) for lfn in res['Value']['Successful']]
 
     if not replicaTuples:
       return S_OK( { 'Successful' : successful, 'Failed' : failed } )
@@ -1233,7 +1236,9 @@ class DataManager( object ):
     return self.__removeCatalogReplica( replicaTuples )
 
   def __removeCatalogReplica( self, replicaTuple ):
-    """ remove replica form catalogue """
+    """ remove replica form catalogue
+      :param replicaTuple : list of (lfn, catalogPFN, se)
+     """
     oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuple ) )
     oDataOperation.setStartTime()
     start = time.time()
@@ -1303,28 +1308,34 @@ class DataManager( object ):
       self.log.debug( errStr, res['Message'] )
       return res
     failed = res['Value']['Failed']
+    replicaDict = res['Value']['Successful']
     successful = {}
-    pfnDict = {}
-    for lfn, repDict in res['Value']['Successful'].items():
+    lfnsToRemove = []
+    for lfn, repDict in replicaDict.items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
       else:
-        sePfn = repDict[storageElementName]
-        pfnDict[sePfn] = lfn
-    self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( pfnDict ),
+        lfnsToRemove.append( lfn )
+    self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( lfnsToRemove ),
                                                                                        storageElementName ) )
-    res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
-    for pfn, error in res['Value']['Failed'].items():
-      failed[pfnDict[pfn]] = error
-    for pfn in res['Value']['Successful']:
-      successful[pfnDict[pfn]] = True
+    res = self.__removePhysicalReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
+    for lfn, error in res['Value']['Failed'].items():
+      failed[lfn] = error
+    for lfn in res['Value']['Successful']:
+      successful[lfn] = True
     resDict = { 'Successful' : successful, 'Failed' : failed }
     return S_OK( resDict )
 
-  def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
-    """ remove replica from storage element """
-    self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
+
+  def __removePhysicalReplica( self, storageElementName, lfnsToRemove, replicaDict = None ):
+    """ remove replica from storage element
+
+        :param storageElementName : name of the storage Element
+        :param lfnsToRemove : list of lfn to removes
+        :param replicaDict : cache of fc.getReplicas, to be passed to the SE
+     """
+    self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
                                                                                          storageElementName ) )
     storageElement = StorageElement( storageElementName, vo = self.vo )
     res = storageElement.isValid()
@@ -1334,12 +1345,12 @@ class DataManager( object ):
       return S_ERROR( errStr )
     oDataOperation = self.__initialiseAccountingObject( 'removePhysicalReplica',
                                                         storageElementName,
-                                                        len( pfnsToRemove ) )
+                                                        len( lfnsToRemove ) )
     oDataOperation.setStartTime()
     start = time.time()
-    ret = storageElement.getFileSize( pfnsToRemove )
+    ret = storageElement.getFileSize( lfnsToRemove, replicaDict = replicaDict )
     deletedSizes = ret.get( 'Value', {} ).get( 'Successful', {} )
-    res = storageElement.removeFile( pfnsToRemove )
+    res = storageElement.removeFile( lfnsToRemove, replicaDict = replicaDict )
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', time.time() - start )
     if not res['OK']:
@@ -1350,18 +1361,14 @@ class DataManager( object ):
       self.log.debug( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      for surl, value in res['Value']['Failed'].items():
+      for lfn, value in res['Value']['Failed'].items():
         if 'No such file or directory' in value:
-          res['Value']['Successful'][surl] = surl
-          res['Value']['Failed'].pop( surl )
-      for surl in res['Value']['Successful']:
-        ret = returnSingleResult( storageElement.getURL( surl, protocol = self.registrationProtocol ) )
-        if not ret['OK']:
-          res['Value']['Successful'][surl] = surl
-        else:
-          res['Value']['Successful'][surl] = ret['Value']
+          res['Value']['Successful'][lfn] = lfn
+          res['Value']['Failed'].pop( lfn )
+      for lfn in res['Value']['Successful']:
+        res['Value']['Successful'][lfn] = True
 
-      deletedSize = sum( [size for pfn, size in deletedSizes.items() if pfn in res['Value']['Successful']] )
+      deletedSize = sum( [size for lfn, size in deletedSizes.items() if lfn in res['Value']['Successful']] )
       oDataOperation.setValueByKey( 'TransferSize', deletedSize )
       oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 
