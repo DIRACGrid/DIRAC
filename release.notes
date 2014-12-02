@@ -1,3 +1,11 @@
+[v6r12p5]
+
+*Core
+FIX: VOMS.py - do not use obsoleted -dont-verify-ac flag with voms-proxy-info
+
+*TS
+FIX: TransformationManager - no status checked at level service
+
 [v6r12p4]
 
 FIX: fixes from v6r11p23 patch release
