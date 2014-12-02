@@ -18,6 +18,14 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p5]
+
+*Core
+FIX: VOMS.py - do not use obsoleted -dont-verify-ac flag with voms-proxy-info
+
+*TS
+FIX: TransformationManager - no status checked at level service
+
 [v6r12p4]
 
 FIX: fixes from v6r11p23 patch release
@@ -146,6 +154,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p25]
+
+*Interfaces
+FIX: Job.py - bring back different logfile names if they have not been specified by the user
 
 [v6r11p24]
 
