@@ -1,3 +1,8 @@
+[v6r11p25]
+
+*Interfacse
+FIX: Job.py - bring back different logfile names if they have not been specified by the user
+
 [v6r11p24]
 
 *DMS
