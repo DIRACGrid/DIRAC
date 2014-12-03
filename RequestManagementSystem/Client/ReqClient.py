@@ -288,7 +288,7 @@ class ReqClient( Client ):
         res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
         if not res["OK"]:
           self.log.info( "finalizeRequest: Failed to set job %d parameter: %s" % ( jobID, res["Message"] ) )
-          return S_OK()
+          return res
       else:
         self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
                                                                                        digest["Message"] ) )
