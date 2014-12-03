@@ -575,265 +575,515 @@ class DataManager( object ):
       return res
     return S_OK( lfn )
 
-  def __replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
+#   def __replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
+#     """ Replicate a LFN to a destination SE.
+#
+#         'lfn' is the LFN to be replicated
+#         'destSE' is the Storage Element the file should be replicated to
+#         'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
+#         'destPath' is the path on the destination storage element, if to be different from LHCb convention
+#     """
+#     ###########################################################
+#     # Check that we have write permissions to this directory.
+#     res = self.__verifyOperationWritePermission( lfn )
+#     if not res['OK']:
+#       return res
+#     if not res['Value']:
+#       errStr = "__replicate: Write access not permitted for this credential."
+#       self.log.debug( errStr, lfn )
+#       return S_ERROR( errStr )
+#
+#     self.log.debug( "__replicate: Performing replication initialization." )
+#     res = self.__initializeReplication( lfn, sourceSE, destSE )
+#     if not res['OK']:
+#       self.log.debug( "__replicate: Replication initialisation failed.", lfn )
+#       return res
+#     destStorageElement = res['Value']['DestStorage']
+#     lfnReplicas = res['Value']['Replicas']
+#     destSE = res['Value']['DestSE']
+#     catalogueSize = res['Value']['CatalogueSize']
+#     ###########################################################
+#     # If the LFN already exists at the destination we have nothing to do
+#     if destSE in lfnReplicas:
+#       self.log.debug( "__replicate: LFN is already registered at %s." % destSE )
+#       return S_OK()
+#     ###########################################################
+#     # Resolve the best source storage elements for replication
+#     self.log.debug( "__replicate: Determining the best source replicas." )
+#     res = self.__resolveBestReplicas( lfn, sourceSE, lfnReplicas, catalogueSize )
+#     if not res['OK']:
+#       self.log.debug( "__replicate: Best replica resolution failed.", lfn )
+#       return res
+#     replicaPreference = res['Value']
+#     ###########################################################
+#     # Now perform the replication for the file
+#     if destPath:
+#       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
+#     else:
+#       destPath = lfn
+#     res = returnSingleResult( destStorageElement.getURL( destPath ) )
+#     if not res['OK']:
+#       errStr = "__replicate: Failed to generate destination PFN."
+#       self.log.debug( errStr, res['Message'] )
+#       return S_ERROR( errStr )
+#     destPfn = res['Value']
+#     # Find out if there is a replica already at the same site
+#     localReplicas = []
+#     otherReplicas = []
+#     for sourceSE, sourcePfn in replicaPreference:
+#       if sourcePfn == destPfn:
+#         continue
+#       res = isSameSiteSE( sourceSE, destSE )
+#       if res['OK'] and res['Value']:
+#         localReplicas.append( ( sourceSE, sourcePfn ) )
+#       else:
+#         otherReplicas.append( ( sourceSE, sourcePfn ) )
+#     replicaPreference = localReplicas + otherReplicas
+#     for sourceSE, sourcePfn in replicaPreference:
+#       self.log.debug( "__replicate: Attempting replication from %s to %s." % ( sourceSE, destSE ) )
+#       fileDict = {destPfn:sourcePfn}
+#       if sourcePfn == destPfn:
+#         continue
+#
+#       localFile = ''
+#       #FIXME: this should not be hardcoded!!!
+#       if sourcePfn.find( 'srm' ) == -1 or destPfn.find( 'srm' ) == -1:
+#         # No third party transfer is possible, we have to replicate through the local cache
+#         localDir = '.'
+#         if localCache:
+#           localDir = localCache
+#         self.getFile( lfn, destinationDir = localDir )
+#         localFile = os.path.join( localDir, os.path.basename( lfn ) )
+#         fileDict = {destPfn:localFile}
+#
+#       res = destStorageElement.replicateFile( fileDict, sourceSize = catalogueSize, singleFile = True )
+#       if localFile and os.path.exists( localFile ):
+#         os.remove( localFile )
+#
+#       if res['OK']:
+#         self.log.debug( "__replicate: Replication successful." )
+#         resDict = {'DestSE':destSE, 'DestPfn':destPfn}
+#         return S_OK( resDict )
+#       else:
+#         errStr = "__replicate: Replication failed."
+#         self.log.debug( errStr, "%s from %s to %s." % ( lfn, sourceSE, destSE ) )
+#     ##########################################################
+#     # If the replication failed for all sources give up
+#     errStr = "__replicate: Failed to replicate with all sources."
+#     self.log.debug( errStr, lfn )
+#     return S_ERROR( errStr )
+
+  def __replicate( self, lfn, destSEName, sourceSEName = None, destPath = None, localCache = None ):
     """ Replicate a LFN to a destination SE.
 
         'lfn' is the LFN to be replicated
         'destSE' is the Storage Element the file should be replicated to
         'sourceSE' is the source for the file replication (where not specified all replicas will be attempted)
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
+        'localCache' if cannot do third party transfer, we do get and put through this local directory
     """
+
+    log = self.log.getSubLogger( '__replicate', True )
+
     ###########################################################
     # Check that we have write permissions to this directory.
     res = self.__verifyOperationWritePermission( lfn )
     if not res['OK']:
       return res
+
     if not res['Value']:
       errStr = "__replicate: Write access not permitted for this credential."
-      self.log.debug( errStr, lfn )
+      log.debug( errStr, lfn )
       return S_ERROR( errStr )
 
-    self.log.debug( "__replicate: Performing replication initialization." )
-    res = self.__initializeReplication( lfn, sourceSE, destSE )
+
+    # Check that the destination storage element is sane and resolve its name
+    log.debug( "Verifying destination StorageElement validity (%s)." % ( destSEName ) )
+
+    destStorageElement = StorageElement( destSEName, vo = self.vo )
+    res = destStorageElement.isValid()
     if not res['OK']:
-      self.log.debug( "__replicate: Replication initialisation failed.", lfn )
-      return res
-    destStorageElement = res['Value']['DestStorage']
-    lfnReplicas = res['Value']['Replicas']
-    destSE = res['Value']['DestSE']
-    catalogueSize = res['Value']['CatalogueSize']
+      errStr = "The storage element is not currently valid."
+      log.debug( errStr, "%s %s" % ( destSEName, res['Message'] ) )
+      return S_ERROR( errStr )
+
+    # Get the real name of the SE
+    destSEName = destStorageElement.getStorageElementName()['Value']
+
+    ###########################################################
+    # Check whether the destination storage element is banned
+    log.verbose( "Determining whether %s ( destination ) is Write-banned." % destSEName )
+
+    if not self.__SEActive( destSEName ).get( 'Value', {} ).get( 'Write' ):
+      infoStr = "Supplied destination Storage Element is not currently allowed for Write."
+      log.debug( infoStr, destSEName )
+      return S_ERROR( infoStr )
+
+
+    # Get the LFN replicas from the file catalog
+    log.debug( "Attempting to obtain replicas for %s." % ( lfn ) )
+    res = returnSingleResult( self.getReplicas( lfn ) )
+    if not res[ 'OK' ]:
+      errStr = "%Failed to get replicas for LFN."
+      log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
+
+    log.debug( "Successfully obtained replicas for LFN." )
+    lfnReplicas = res['Value']
+
+
+    ###########################################################
+    # If the file catalog size is zero fail the transfer
+    log.debug( "Attempting to obtain size for %s." % lfn )
+    res = returnSingleResult( self.fc.getFileSize( lfn ) )
+    if not res['OK']:
+      errStr = "Failed to get size for LFN."
+      log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
+
+    catalogSize = res['Value']
+
+    if catalogSize == 0:
+      errStr = "Registered file size is 0."
+      log.debug( errStr, lfn )
+      return S_ERROR( errStr )
+
+    log.debug( "File size determined to be %s." % catalogSize )
+
+
+
     ###########################################################
     # If the LFN already exists at the destination we have nothing to do
-    if destSE in lfnReplicas:
-      self.log.debug( "__replicate: LFN is already registered at %s." % destSE )
+    if destSEName in lfnReplicas:
+      log.debug( "__replicate: LFN is already registered at %s." % destSEName )
       return S_OK()
+
     ###########################################################
-    # Resolve the best source storage elements for replication
-    self.log.debug( "__replicate: Determining the best source replicas." )
-    res = self.__resolveBestReplicas( lfn, sourceSE, lfnReplicas, catalogueSize )
-    if not res['OK']:
-      self.log.debug( "__replicate: Best replica resolution failed.", lfn )
-      return res
-    replicaPreference = res['Value']
-    ###########################################################
-    # Now perform the replication for the file
+    # If the source is specified, check that it is in the replicas
+    
+    if sourceSEName:
+      log.debug( "Determining whether source Storage Element specified is sane." )
+
+      if sourceSEName not in lfnReplicas:
+        errStr = "LFN does not exist at supplied source SE."
+        log.error( errStr, "%s %s" % ( lfn, sourceSEName ) )
+        return S_ERROR( errStr )
+
+
+
+    # If sourceSE is specified, then we consider this one only, otherwise
+    # we consider them all
+
+    possibleSourceSEs = [sourceSEName] if sourceSEName else  lfnReplicas.keys()
+    
+    # We sort the possibileSourceSEs with the SEs that are on the same site than the destination first
+    # reverse = True because True > False
+    possibleSourceSEs = sorted( possibleSourceSEs,
+                                key = lambda x : isSameSiteSE( x, destSEName ).get( 'Value', False ),
+                                reverse = True )
+
+    # In case we manage to find SEs that would work as a source, but we can't negotiate a protocol
+    # we will do a get and put using one of this sane SE
+    possibleSEsForIntermediateTransfer = []
+
+    # Take into account the destination path
     if destPath:
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = returnSingleResult( destStorageElement.getURL( destPath ) )
-    if not res['OK']:
-      errStr = "__replicate: Failed to generate destination PFN."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
-    destPfn = res['Value']
-    # Find out if there is a replica already at the same site
-    localReplicas = []
-    otherReplicas = []
-    for sourceSE, sourcePfn in replicaPreference:
-      if sourcePfn == destPfn:
+
+
+    for candidateSEName in possibleSourceSEs:
+
+      log.debug( "Consider %s as a source" % candidateSEName )
+
+      # Check that the candidate is active
+      if not self.__SEActive( candidateSEName ).get( 'Value', {} ).get( 'Read' ):
+        log.debug( "%s is currently not allowed as a source." % candidateSEName )
         continue
-      res = isSameSiteSE( sourceSE, destSE )
-      if res['OK'] and res['Value']:
-        localReplicas.append( ( sourceSE, sourcePfn ) )
       else:
-        otherReplicas.append( ( sourceSE, sourcePfn ) )
-    replicaPreference = localReplicas + otherReplicas
-    for sourceSE, sourcePfn in replicaPreference:
-      self.log.debug( "__replicate: Attempting replication from %s to %s." % ( sourceSE, destSE ) )
-      fileDict = {destPfn:sourcePfn}
-      if sourcePfn == destPfn:
+        log.debug( "%s is available for use." % candidateSEName )
+
+      
+      candidateSE = StorageElement( candidateSEName, vo = self.vo )
+
+      # Check that the SE is valid
+      res = candidateSE.isValid()
+      if not res['OK']:
+        log.debug( "The storage element is not currently valid.", "%s %s" % ( candidateSEName, res['Message'] ) )
+        continue
+      else:
+        log.debug( "The storage is currently valid", candidateSEName )
+
+      # Check that the file size corresponds to the one in the FC
+      seFileSize = returnSingleResult( candidateSE.getFileSize( lfn ) )
+      
+      if seFileSize != catalogSize:
+        log.debug( "Catalog size and physical file size mismatch.", "%s %s" % ( catalogSize, seFileSize ) )
+        continue
+      else:
+        log.debug( "Catalog size and physical size match" )
+
+
+      res = destStorageElement.negociateProtocolWithOtherSE( candidateSE )
+
+      if not res['OK']:
+        log.debug( "Error negociating replication protocol", res['Message'] )
+        continue
+      
+      replicationProtocol = res['Value']
+
+      if not replicationProtocol:
+        possibleSEsForIntermediateTransfer.append( candidateSE )
+        log.debug( "No protocol suitable for replication found" )
         continue
 
-      localFile = ''
-      #FIXME: this should not be hardcoded!!!
-      if sourcePfn.find( 'srm' ) == -1 or destPfn.find( 'srm' ) == -1:
-        # No third party transfer is possible, we have to replicate through the local cache
-        localDir = '.'
-        if localCache:
-          localDir = localCache
-        self.getFile( lfn, destinationDir = localDir )
-        localFile = os.path.join( localDir, os.path.basename( lfn ) )
-        fileDict = {destPfn:localFile}
 
-      res = destStorageElement.replicateFile( fileDict, sourceSize = catalogueSize, singleFile = True )
-      if localFile and os.path.exists( localFile ):
-        os.remove( localFile )
+      # THIS WOULD NOT WORK IF PROTO == file !!
 
-      if res['OK']:
-        self.log.debug( "__replicate: Replication successful." )
-        resDict = {'DestSE':destSE, 'DestPfn':destPfn}
-        return S_OK( resDict )
-      else:
-        errStr = "__replicate: Replication failed."
-        self.log.debug( errStr, "%s from %s to %s." % ( lfn, sourceSE, destSE ) )
-    ##########################################################
-    # If the replication failed for all sources give up
-    errStr = "__replicate: Failed to replicate with all sources."
-    self.log.debug( errStr, lfn )
+      # Compare the urls to make sure we are not overwriting
+      res = returnSingleResult( candidateSE.getURL( lfn, protocol = replicationProtocol ) )
+      if not res['OK']:
+        log.debug( "Cannot get sourceURL", res['Message'] )
+        continue
+
+      sourceURL = res['Value']
+        
+      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = replicationProtocol ) )
+      if not res['OK']:
+        log.debug( "Cannot get destURL", res['Message'] )
+        continue
+      destURL = res['Value']
+
+      if sourceURL == destURL:
+        log.debug( "Same source and destination, give up" )
+        continue
+
+      # Attempt the transfer
+      res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL}, sourceSize = catalogSize ) )
+
+      if not res['OK']:
+        log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
+        continue
+      
+      
+      log.debug( "Replication successful." )
+      
+      res = returnSingleResult( destStorageElement.getURL(destPath,  protocol = self.registrationProtocol))
+      if not res['OK']:
+        log.debug( 'Error getting the registration URL', res['Message'] )
+        # it's maybe pointless to try the other candidateSEs...
+        continue
+      
+      registrationURL = res['Value']
+      
+      return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
+
+      
+
+    # If we are here, that means that we could not make a third party transfer.
+    # Check if we have some sane SEs from which we could do a get/put
+
+    localDir = os.path.realpath( localCache if localCache else '.' )
+    localFile = os.path.join( localDir, os.path.basename( lfn ) )
+
+    log.debug( "Will try intermediate transfer from %s sources" % len( possibleSEsForIntermediateTransfer ) )
+
+    for candidateSE in possibleSEsForIntermediateTransfer:
+
+      res = returnSingleResult( candidateSE.getFile( lfn, localPath = localDir ) )
+      if not res['OK']:
+        log.debug( 'Error getting the file from %s' % candidateSE.name, res['Message'] )
+        continue
+
+      res = returnSingleResult( destStorageElement.putFile( {destPath:localFile}, sourceSize = catalogSize ) )
+      if not res['OK']:
+        log.debug( 'Error putting file coming from %s' % candidateSE.name, res['Message'] )
+        # if the put is the problem, it's maybe pointless to try the other candidateSEs...
+        continue
+
+      # get URL with default protocol to return it
+      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
+      if not res['OK']:
+        log.debug( 'Error getting the registration URL', res['Message'] )
+        # it's maybe pointless to try the other candidateSEs...
+        continue
+
+      registrationURL = res['Value']
+      return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
+
+
+    # If here, we are really doomed
+    errStr = "Failed to replicate with all sources."
+    log.debug( errStr, lfn )
     return S_ERROR( errStr )
 
-  def __initializeReplication( self, lfn, sourceSE, destSE ):
 
-    # Horrible, but kept to not break current log messages
-    logStr = "__initializeReplication:"
 
-    ###########################################################
-    # Check the sourceSE if specified
-    self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
 
-    if sourceSE:
-      if not self.__SEActive( sourceSE ).get( 'Value', {} ).get( 'Read' ):
-        infoStr = "%s Supplied source Storage Element is not currently allowed for Read." % ( logStr )
-        self.log.info( infoStr, sourceSE )
-        return S_ERROR( infoStr )
+#   def __initializeReplication( self, lfn, sourceSE, destSE ):
+#
+#     # Horrible, but kept to not break current log messages
+#     logStr = "__initializeReplication:"
+#
+#     ###########################################################
+#     # Check the sourceSE if specified
+#     self.log.verbose( "%s: Determining whether source Storage Element is sane." % logStr )
+#
+#     if sourceSE:
+#       if not self.__SEActive( sourceSE ).get( 'Value', {} ).get( 'Read' ):
+#         infoStr = "%s Supplied source Storage Element is not currently allowed for Read." % ( logStr )
+#         self.log.info( infoStr, sourceSE )
+#         return S_ERROR( infoStr )
+#
+#     ###########################################################
+#     # Check that the destination storage element is sane and resolve its name
+#     self.log.debug( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
+#     destStorageElement = StorageElement( destSE, vo = self.vo )
+#     res = destStorageElement.isValid()
+#     if not res['OK']:
+#       errStr = "%s The storage element is not currently valid." % logStr
+#       self.log.debug( errStr, "%s %s" % ( destSE, res['Message'] ) )
+#       return S_ERROR( errStr )
+#     destSE = destStorageElement.getStorageElementName()['Value']
+#     self.log.verbose( "%s Destination Storage Element verified." % logStr )
+#
+#     ###########################################################
+#     # Check whether the destination storage element is banned
+#     self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
+#
+#     if not self.__SEActive( destSE ).get( 'Value', {} ).get( 'Write' ):
+#       infoStr = "%s Supplied destination Storage Element is not currently allowed for Write." % ( logStr )
+#       self.log.debug( infoStr, destSE )
+#       return S_ERROR( infoStr )
+#
+#     ###########################################################
+#     # Get the LFN replicas from the file catalogue
+#     self.log.debug( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
+#     res = self.getReplicas( lfn )
+#     if not res[ 'OK' ]:
+#       errStr = "%s Completely failed to get replicas for LFN." % logStr
+#       self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
+#       return res
+#     if lfn not in res['Value']['Successful']:
+#       errStr = "%s Failed to get replicas for LFN." % logStr
+#       self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
+#       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
+#     self.log.debug( "%s Successfully obtained replicas for LFN." % logStr )
+#     lfnReplicas = res['Value']['Successful'][lfn]
+#
+#     ###########################################################
+#     # Check the file is at the sourceSE
+#     self.log.debug( "%s: Determining whether source Storage Element is sane." % logStr )
+#
+#     if sourceSE and sourceSE not in lfnReplicas:
+#       errStr = "%s LFN does not exist at supplied source SE." % logStr
+#       self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
+#       return S_ERROR( errStr )
+#
+#     ###########################################################
+#     # If the file catalogue size is zero fail the transfer
+#     self.log.debug( "%s Attempting to obtain size for %s." % ( logStr, lfn ) )
+#     res = self.fc.getFileSize( lfn )
+#     if not res['OK']:
+#       errStr = "%s Completely failed to get size for LFN." % logStr
+#       self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
+#       return res
+#     if lfn not in res['Value']['Successful']:
+#       errStr = "%s Failed to get size for LFN." % logStr
+#       self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
+#       return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
+#     catalogueSize = res['Value']['Successful'][lfn]
+#     if catalogueSize == 0:
+#       errStr = "%s Registered file size is 0." % logStr
+#       self.log.debug( errStr, lfn )
+#       return S_ERROR( errStr )
+#     self.log.debug( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
+#
+#     self.log.verbose( "%s Replication initialization successful." % logStr )
+#
+#     resDict = {
+#                'DestStorage'   : destStorageElement,
+#                'DestSE'        : destSE,
+#                'Replicas'      : lfnReplicas,
+#                'CatalogueSize' : catalogueSize
+#                }
+#
+#     return S_OK( resDict )
 
-    ###########################################################
-    # Check that the destination storage element is sane and resolve its name
-    self.log.debug( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
-    destStorageElement = StorageElement( destSE, vo = self.vo )
-    res = destStorageElement.isValid()
-    if not res['OK']:
-      errStr = "%s The storage element is not currently valid." % logStr
-      self.log.debug( errStr, "%s %s" % ( destSE, res['Message'] ) )
-      return S_ERROR( errStr )
-    destSE = destStorageElement.getStorageElementName()['Value']
-    self.log.verbose( "%s Destination Storage Element verified." % logStr )
+#   def __resolveBestReplicas( self, lfn, sourceSE, lfnReplicas, catalogueSize ):
+#     """ find best replicas """
+#
+#     ###########################################################
+#     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
+#     # It's not really the best, but the one authorized
+#
+#     logStr = "__resolveBestReplicas:"
+#
+#     replicaPreference = []
+#
+#     for diracSE, pfn in lfnReplicas.items():
+#
+#       if sourceSE and diracSE != sourceSE:
+#         self.log.debug( "%s %s replica not requested." % ( logStr, diracSE ) )
+#         continue
+#
+#       if not self.__SEActive( diracSE ).get( 'Value', {} ).get( 'Read' ):
+#         self.log.debug( "%s %s is currently not allowed as a source." % ( logStr, diracSE ) )
+#       else:
+#         self.log.debug( "%s %s is available for use." % ( logStr, diracSE ) )
+#         storageElement = StorageElement( diracSE, vo = self.vo )
+#         res = storageElement.isValid()
+#         if not res['OK']:
+#           errStr = "%s The storage element is not currently valid." % logStr
+#           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
+#         else:
+#           remoteProtocols = storageElement.getRemoteProtocols()
+#           if not remoteProtocols['OK']:
+#             self.log.debug( "%s : could not get remote protocols %s" % ( diracSE, remoteProtocols['Message'] ) )
+#             continue
+#
+#           remoteProtocols = remoteProtocols['Value']
+#           if remoteProtocols:
+#             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
+#             res = returnSingleResult( storageElement.getURL( pfn, protocol = self.thirdPartyProtocols ) )
+#             if res['OK']:
+#               sourcePfn = res['Value']
+#               # print pfn, sourcePfn
+#               self.log.debug( "%s Attempting to get source file size." % logStr )
+#               res = storageElement.getFileSize( sourcePfn )
+#               if res['OK']:
+#                 if sourcePfn in res['Value']['Successful']:
+#                   sourceFileSize = res['Value']['Successful'][sourcePfn]
+#                   self.log.debug( "%s Source file size determined to be %s." % ( logStr, sourceFileSize ) )
+#                   if catalogueSize == sourceFileSize:
+#                     fileTuple = ( diracSE, sourcePfn )
+#                     replicaPreference.append( fileTuple )
+#                   else:
+#                     errStr = "%s Catalogue size and physical file size mismatch." % logStr
+#                     self.log.debug( errStr, "%s %s" % ( diracSE, sourcePfn ) )
+#                 else:
+#                   errStr = "%s Failed to get physical file size." % logStr
+#                   self.log.always( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
+#               else:
+#                 errStr = "%s Completely failed to get physical file size." % logStr
+#                 self.log.debug( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Message'] ) )
+#             else:
+#               errStr = "%s Failed to get PFN for replication for StorageElement." % logStr
+#               self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
+#           else:
+#             errStr = "%s Source Storage Element has no remote protocols." % logStr
+#             self.log.debug( errStr, diracSE )
+#
+#     if not replicaPreference:
+#       errStr = "%s Failed to find any valid source Storage Elements." % logStr
+#       self.log.debug( errStr )
+#       return S_ERROR( errStr )
+#
+#     else:
+#       return S_OK( replicaPreference )
 
-    ###########################################################
-    # Check whether the destination storage element is banned
-    self.log.verbose( "%s Determining whether %s ( destination ) is Write-banned." % ( logStr, destSE ) )
 
-    if not self.__SEActive( destSE ).get( 'Value', {} ).get( 'Write' ):
-      infoStr = "%s Supplied destination Storage Element is not currently allowed for Write." % ( logStr )
-      self.log.debug( infoStr, destSE )
-      return S_ERROR( infoStr )
-
-    ###########################################################
-    # Get the LFN replicas from the file catalogue
-    self.log.debug( "%s Attempting to obtain replicas for %s." % ( logStr, lfn ) )
-    res = self.getReplicas( lfn )
-    if not res[ 'OK' ]:
-      errStr = "%s Completely failed to get replicas for LFN." % logStr
-      self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
-      return res
-    if lfn not in res['Value']['Successful']:
-      errStr = "%s Failed to get replicas for LFN." % logStr
-      self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
-      return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
-    self.log.debug( "%s Successfully obtained replicas for LFN." % logStr )
-    lfnReplicas = res['Value']['Successful'][lfn]
-
-    ###########################################################
-    # Check the file is at the sourceSE
-    self.log.debug( "%s: Determining whether source Storage Element is sane." % logStr )
-
-    if sourceSE and sourceSE not in lfnReplicas:
-      errStr = "%s LFN does not exist at supplied source SE." % logStr
-      self.log.error( errStr, "%s %s" % ( lfn, sourceSE ) )
-      return S_ERROR( errStr )
-
-    ###########################################################
-    # If the file catalogue size is zero fail the transfer
-    self.log.debug( "%s Attempting to obtain size for %s." % ( logStr, lfn ) )
-    res = self.fc.getFileSize( lfn )
-    if not res['OK']:
-      errStr = "%s Completely failed to get size for LFN." % logStr
-      self.log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
-      return res
-    if lfn not in res['Value']['Successful']:
-      errStr = "%s Failed to get size for LFN." % logStr
-      self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
-      return S_ERROR( "%s %s" % ( errStr, res['Value']['Failed'][lfn] ) )
-    catalogueSize = res['Value']['Successful'][lfn]
-    if catalogueSize == 0:
-      errStr = "%s Registered file size is 0." % logStr
-      self.log.debug( errStr, lfn )
-      return S_ERROR( errStr )
-    self.log.debug( "%s File size determined to be %s." % ( logStr, catalogueSize ) )
-
-    self.log.verbose( "%s Replication initialization successful." % logStr )
-
-    resDict = {
-               'DestStorage'   : destStorageElement,
-               'DestSE'        : destSE,
-               'Replicas'      : lfnReplicas,
-               'CatalogueSize' : catalogueSize
-               }
-
-    return S_OK( resDict )
-
-  def __resolveBestReplicas( self, lfn, sourceSE, lfnReplicas, catalogueSize ):
-    """ find best replicas """
-
-    ###########################################################
-    # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
-    # It's not really the best, but the one authorized
-
-    logStr = "__resolveBestReplicas:"
-
-    replicaPreference = []
-
-    for diracSE, pfn in lfnReplicas.items():
-
-      if sourceSE and diracSE != sourceSE:
-        self.log.debug( "%s %s replica not requested." % ( logStr, diracSE ) )
-        continue
-
-      if not self.__SEActive( diracSE ).get( 'Value', {} ).get( 'Read' ):
-        self.log.debug( "%s %s is currently not allowed as a source." % ( logStr, diracSE ) )
-      else:
-        self.log.debug( "%s %s is available for use." % ( logStr, diracSE ) )
-        storageElement = StorageElement( diracSE, vo = self.vo )
-        res = storageElement.isValid()
-        if not res['OK']:
-          errStr = "%s The storage element is not currently valid." % logStr
-          self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
-        else:
-          remoteProtocols = storageElement.getRemoteProtocols()
-          if not remoteProtocols['OK']:
-            self.log.debug( "%s : could not get remote protocols %s" % ( diracSE, remoteProtocols['Message'] ) )
-            continue
-
-          remoteProtocols = remoteProtocols['Value']
-          if remoteProtocols:
-            self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = returnSingleResult( storageElement.getURL( pfn, protocol = self.thirdPartyProtocols ) )
-            if res['OK']:
-              sourcePfn = res['Value']
-              # print pfn, sourcePfn
-              self.log.debug( "%s Attempting to get source file size." % logStr )
-              res = storageElement.getFileSize( sourcePfn )
-              if res['OK']:
-                if sourcePfn in res['Value']['Successful']:
-                  sourceFileSize = res['Value']['Successful'][sourcePfn]
-                  self.log.debug( "%s Source file size determined to be %s." % ( logStr, sourceFileSize ) )
-                  if catalogueSize == sourceFileSize:
-                    fileTuple = ( diracSE, sourcePfn )
-                    replicaPreference.append( fileTuple )
-                  else:
-                    errStr = "%s Catalogue size and physical file size mismatch." % logStr
-                    self.log.debug( errStr, "%s %s" % ( diracSE, sourcePfn ) )
-                else:
-                  errStr = "%s Failed to get physical file size." % logStr
-                  self.log.always( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Value']['Failed'][sourcePfn] ) )
-              else:
-                errStr = "%s Completely failed to get physical file size." % logStr
-                self.log.debug( errStr, "%s %s: %s" % ( sourcePfn, diracSE, res['Message'] ) )
-            else:
-              errStr = "%s Failed to get PFN for replication for StorageElement." % logStr
-              self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
-          else:
-            errStr = "%s Source Storage Element has no remote protocols." % logStr
-            self.log.debug( errStr, diracSE )
-
-    if not replicaPreference:
-      errStr = "%s Failed to find any valid source Storage Elements." % logStr
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-
-    else:
-      return S_OK( replicaPreference )
 
   ###################################################################
   #

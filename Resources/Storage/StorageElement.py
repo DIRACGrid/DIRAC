@@ -414,6 +414,9 @@ class StorageElementItem( object ):
     self.log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
     return S_ERROR( errStr )
 
+  def negociateProtocolWithOtherSE( self, otherSE ):
+    return 'srm'
+
   #################################################################################################
   #
   # These are the basic get functions for lfn manipulation
