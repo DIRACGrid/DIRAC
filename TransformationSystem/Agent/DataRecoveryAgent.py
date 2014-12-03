@@ -101,7 +101,7 @@ class DataRecoveryAgent(AgentModule):
       transformationDict.update(result['Value'])
     transformationTypesString = ', '.join(transformationTypes)
     self.log.info('Selected %s transformations of types %s' %
-                  (len(transformationDict.keys())), transformationTypesString)
+                  (len(transformationDict.keys()), transformationTypesString))
     self.log.verbose('The following transformations were selected out of %s:\n%s' %
                      (transformationTypesString, ', '.join(transformationDict.keys())))
 
@@ -404,7 +404,7 @@ class DataRecoveryAgent(AgentModule):
     if not result['OK']:
       self.log.error(result)
       return result
-    if result['Value']['Failed']:
+    if result['Value'] and 'Failed' in result['Value']:
       self.log.error(result['Value']['Failed'])
       return result
 
