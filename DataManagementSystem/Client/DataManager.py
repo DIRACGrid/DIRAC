@@ -816,7 +816,14 @@ class DataManager( object ):
         log.debug( "The storage is currently valid", candidateSEName )
 
       # Check that the file size corresponds to the one in the FC
-      seFileSize = returnSingleResult( candidateSE.getFileSize( lfn ) )
+      res = returnSingleResult( candidateSE.getFileSize( lfn ) )
+
+      if not res['OK']:
+        log.debug( "could not get fileSize on %s" % candidateSEName, res['Message'] )
+        continue
+
+      seFileSize = res['Value']
+
       
       if seFileSize != catalogSize:
         log.debug( "Catalog size and physical file size mismatch.", "%s %s" % ( catalogSize, seFileSize ) )
@@ -825,12 +832,13 @@ class DataManager( object ):
         log.debug( "Catalog size and physical size match" )
 
 
-      res = destStorageElement.negociateProtocolWithOtherSE( candidateSE )
+      res = destStorageElement.negociateProtocolWithOtherSE( candidateSE, protocols = self.thirdPartyProtocols )
 
       if not res['OK']:
-        log.debug( "Error negociating replication protocol", res['Message'] )
+        log.debug( "Error negotiating replication protocol", res['Message'] )
         continue
       
+
       replicationProtocol = res['Value']
 
       if not replicationProtocol:
@@ -838,6 +846,7 @@ class DataManager( object ):
         log.debug( "No protocol suitable for replication found" )
         continue
 
+      log.debug( 'Found common protocols', replicationProtocol )
 
       # THIS WOULD NOT WORK IF PROTO == file !!
 
@@ -867,7 +876,7 @@ class DataManager( object ):
         continue
       
       
-      log.debug( "Replication successful." )
+      log.debug( "Replication successful.", res['value'] )
       
       res = returnSingleResult( destStorageElement.getURL(destPath,  protocol = self.registrationProtocol))
       if not res['OK']:
