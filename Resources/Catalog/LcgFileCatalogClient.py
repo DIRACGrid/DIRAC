@@ -358,7 +358,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
               failed[path] = lfcPerm
               continue
-            successful[path] = lfcPerm
+          # ACLs are just an additional information, therefore here it is successful
+          successful[path] = lfcPerm
 
     if created:
       self.__closeSession()
