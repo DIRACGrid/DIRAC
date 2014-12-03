@@ -414,8 +414,32 @@ class StorageElementItem( object ):
     self.log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
     return S_ERROR( errStr )
 
-  def negociateProtocolWithOtherSE( self, otherSE ):
-    return 'srm'
+  def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
+    """ Negotiate what protocol could be used for a third party transfer
+        between the sourceSE and ourselves. If protocols is given,
+        the chosen protocol has to be among those
+        
+        :param sourceSE : storageElement instance of the sourceSE
+        :param protocols: protocol restriction list
+        
+        :return a list protocols that fits the needs, or None
+
+    """
+
+    # We should actually separate source and destination protocols
+    # For example, an SRM can get as a source an xroot or gsift url...
+    # but with the current implementation, we get only srm
+
+    destProtocols = set( [destStorage.protocolParameters['Protocol'] for destStorage in self.storages] )
+    sourceProtocols = set( [sourceStorage.protocolParameters['Protocol'] for sourceStorage in sourceSE.storages] )
+
+    commonProtocols = destProtocols & sourceProtocols
+
+    if protocols:
+      protocols = set( list( protocols ) ) if protocols else set()
+      commonProtocols = commonProtocols & protocols
+
+    return S_OK( list( commonProtocols ) )
 
   #################################################################################################
   #
@@ -669,7 +693,7 @@ class StorageElementItem( object ):
         res = fcn( urlsToUse, *args, **kwargs )
         if not res['OK']:
           errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName
-          self.log.debug( errStr, '%s for protocol %s: %s' % ( self.name, pluginName, res['Message'] ) )
+          self.log.debug( errStr, '%s with plugin %s: %s' % ( self.name, pluginName, res['Message'] ) )
           for lfn in urlDict.values():
             if lfn not in failed:
               failed[lfn] = ''
