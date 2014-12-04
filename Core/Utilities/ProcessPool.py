@@ -286,6 +286,7 @@ class WorkingProcess( multiprocessing.Process ):
       self.__processThread.start()
 
       timeout = False
+      noResults = False
       ## join processThread with or without timeout
       if self.task.getTimeOut():
         self.__processThread.join( self.task.getTimeOut()+10 )
@@ -295,17 +296,18 @@ class WorkingProcess( multiprocessing.Process ):
       ## processThread is still alive? stop it!
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
+        self.task.setResult( S_ERROR("Timed out") )  
         timeout = True
       # if the task finished with no results, something bad happened, e.g. 
       # undetected timeout  
       if not self.task.taskResults() and not self.task.taskException():
-        self.task.setResult( S_ERROR("Timed out") )  
-        timeout = True
+        self.task.setResult( S_ERROR("Task produced no results") )  
+        noResults = True
       
       ## check results and callbacks presence, put task to results queue
       if self.task.hasCallback() or self.task.hasPoolCallback():
         self.__resultsQueue.put( task )
-      if timeout:  
+      if timeout or noResults:  
         # The task execution timed out, stop the process to prevent it running 
         # in the background
         return   
