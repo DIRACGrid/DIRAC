@@ -296,11 +296,14 @@ class WorkingProcess( multiprocessing.Process ):
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
         timeout = True
+      # if the task finished with no results, something bad happened, e.g. 
+      # undetected timeout  
+      if not self.task.taskResults() and not self.task.taskException():
+        self.task.setResult( S_ERROR("Timed out") )  
+        timeout = True
       
       ## check results and callbacks presence, put task to results queue
       if self.task.hasCallback() or self.task.hasPoolCallback():
-        if not self.task.taskResults() and not self.task.taskException():
-          self.task.setResult( S_ERROR("Timed out") )
         self.__resultsQueue.put( task )
       if timeout:  
         # The task execution timed out, stop the process to prevent it running 
