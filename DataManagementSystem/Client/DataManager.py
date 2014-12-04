@@ -318,13 +318,12 @@ class DataManager( object ):
       return res
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
-      physicalFile = replicas[storageElementName]
 
       oDataOperation = self.__initialiseAccountingObject( 'getFile', storageElementName, 1 )
       oDataOperation.setStartTime()
       startTime = time.time()
 
-      res = returnSingleResult( se.getFile( physicalFile, localPath = os.path.realpath( destinationDir ) ) )
+      res = returnSingleResult( se.getFile( lfn, localPath = os.path.realpath( destinationDir ) ) )
 
       getTime = time.time() - startTime
       oDataOperation.setValueByKey( 'TransferTime', getTime )
