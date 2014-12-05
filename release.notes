@@ -1,6 +1,24 @@
+[v6r11p26]
+
+*Framework
+FIX: UserProfileDB.py - add PublishAccess field to the UserProfileDB
+
+*RSS
+FIX: Synchronizer.py - fix deletion of old resources
+
+*DMS
+FIX: DataManager - allow that permissions are OK for part of a list of LFNs ( __verifyWritePermission() )
+     (when testing write access to parent directory). Allows removal of replicas 
+     even if one cannot be removed
+FIX: DataManager - test SE validity before removing replica     
+     
+*RMS
+FIX: RequestTask - fail requests for users who are no longer in the system
+FIX: RequestExecutingAgent - fix request timeout computation
+
 [v6r11p25]
 
-*Interfacse
+*Interfaces
 FIX: Job.py - bring back different logfile names if they have not been specified by the user
 
 [v6r11p24]
