@@ -30,10 +30,6 @@ def execute ( arguments ):
   jobID = arguments['Job']['JobID']
   os.environ['JOBID'] = jobID
   jobID = int( jobID )
-  # Fix in the environment to get a reasonable performance from dCache,
-  # until we move to a new version of root
-#  os.environ['DCACHE_RAHEAD'] = str(1)
-#  os.environ['DCACHE_RA_BUFFER'] = str(50*1024)
 
   if arguments.has_key( 'WorkingDirectory' ):
     wdir = os.path.expandvars( arguments['WorkingDirectory'] )
@@ -49,7 +45,6 @@ def execute ( arguments ):
         rescheduleResult = rescheduleFailedJob( jobID, 'Could Not Create Working Directory' )
         return 1
 
-  #root = arguments['CE']['Root']
   gJobReport = JobReport( jobID, 'JobWrapper' )
 
   try:
