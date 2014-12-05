@@ -256,20 +256,6 @@ class ReqClient( Client ):
     """
     stateServer = RPCClient( "WorkloadManagement/JobStateUpdate", useCertificates = True )
 
-    # update the job pending request digest in any case since it is modified
-    self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
-    digest = self.getDigest( requestName )
-    if digest["OK"]:
-      digest = digest["Value"]
-      self.log.verbose( digest )
-      res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
-      if not res["OK"]:
-        self.log.error( "finalizeRequest: Failed to set job %d parameter: %s" % ( jobID, res["Message"] ) )
-        return res
-    else:
-      self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
-                                                                                     digest["Message"] ) )
-
     # Checking if to update the job status - we should fail here, so it will be re-tried later
     # Checking the state, first
     res = self.getRequestStatus( requestName )
@@ -292,6 +278,20 @@ class ReqClient( Client ):
       jobStatus = res["Value"]["Status"]
       jobMinorStatus = res["Value"]["MinorStatus"]
 
+      # update the job pending request digest in any case since it is modified
+      self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
+
+      digest = self.getDigest( requestName )
+      if digest["OK"]:
+        digest = digest["Value"]
+        self.log.verbose( digest )
+        res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
+        if not res["OK"]:
+          self.log.info( "finalizeRequest: Failed to set job %d parameter: %s" % ( jobID, res["Message"] ) )
+          return res
+      else:
+        self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
+                                                                                       digest["Message"] ) )
       stateUpdate = None
       if jobStatus == 'Completed':
         # What to do? Depends on what we have in the minorStatus
