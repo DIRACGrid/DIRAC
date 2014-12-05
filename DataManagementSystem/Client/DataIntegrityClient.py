@@ -116,69 +116,64 @@ class DataIntegrityClient( Client ):
   def __checkPhysicalFiles( self, replicas, catalogMetadata, ses = [] ):
     """ This obtains the physical file metadata and checks the metadata against the catalog entries
     """
-    sePfns = {}
-    pfnLfns = {}
+    seLfns = {}
     for lfn, replicaDict in replicas.items():
-      for se, pfn in replicaDict.items():
+      for se, _url in replicaDict.items():
         if ( ses ) and ( se not in ses ):
           continue
-        if not sePfns.has_key( se ):
-          sePfns[se] = []
-        sePfns[se].append( pfn )
-        pfnLfns[pfn] = lfn
+        seLfns.setdefault( se, [] ).append( lfn )
     gLogger.info( '%s %s' % ( 'Storage Element'.ljust( 20 ), 'Replicas'.rjust( 20 ) ) )
-    for site in sortList( sePfns.keys() ):
-      files = len( sePfns[site] )
-      gLogger.info( '%s %s' % ( site.ljust( 20 ), str( files ).rjust( 20 ) ) )
 
-    for se in sortList( sePfns.keys() ):
-      pfns = sePfns[se]
-      pfnDict = {}
-      for pfn in pfns:
-        pfnDict[pfn] = pfnLfns[pfn]
+
+
+    for se in sortList( seLfns ):
+      files = len( seLfns[se] )
+      gLogger.info( '%s %s' % ( se.ljust( 20 ), str( files ).rjust( 20 ) ) )
+
+      lfns = seLfns[se]
       sizeMismatch = []
-      res = self.__checkPhysicalFileMetadata( pfnDict, se )
+      res = self.__checkPhysicalFileMetadata( lfns, se )
       if not res['OK']:
         gLogger.error( 'Failed to get physical file metadata.', res['Message'] )
         return res
-      for pfn, metadata in res['Value'].items():
-        if catalogMetadata.has_key( pfnLfns[pfn] ):
-          if ( metadata['Size'] != catalogMetadata[pfnLfns[pfn]]['Size'] ) and ( metadata['Size'] != 0 ):
-            sizeMismatch.append( ( pfnLfns[pfn], pfn, se, 'CatalogPFNSizeMismatch' ) )
+      for lfn, metadata in res['Value'].items():
+        if lfn in catalogMetadata:
+          if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ) and ( metadata['Size'] != 0 ):
+            sizeMismatch.append( ( lfn, 'deprecatedUrl', se, 'CatalogPFNSizeMismatch' ) )
       if sizeMismatch:
         self.__reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
     return S_OK()
 
-  def __checkPhysicalFileMetadata( self, pfnLfns, se ):
+  def __checkPhysicalFileMetadata( self, lfns, se ):
     """ Check obtain the physical file metadata and check the files are available
     """
-    gLogger.info( 'Checking the integrity of %s physical files at %s' % ( len( pfnLfns ), se ) )
+    gLogger.info( 'Checking the integrity of %s physical files at %s' % ( len( lfns ), se ) )
 
 
-    res = StorageElement( se ).getFileMetadata( pfnLfns.keys() )
+    res = StorageElement( se ).getFileMetadata( lfns )
 
     if not res['OK']:
-      gLogger.error( 'Failed to get metadata for pfns.', res['Message'] )
+      gLogger.error( 'Failed to get metadata for lfns.', res['Message'] )
       return res
-    pfnMetadataDict = res['Value']['Successful']
+    lfnMetadataDict = res['Value']['Successful']
     # If the replicas are completely missing
     missingReplicas = []
-    for pfn, reason in res['Value']['Failed'].items():
+    for lfn, reason in res['Value']['Failed'].items():
       if re.search( 'File does not exist', reason ):
-        missingReplicas.append( ( pfnLfns[pfn], pfn, se, 'PFNMissing' ) )
+        missingReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNMissing' ) )
     if missingReplicas:
       self.__reportProblematicReplicas( missingReplicas, se, 'PFNMissing' )
     lostReplicas = []
     unavailableReplicas = []
     zeroSizeReplicas = []
     # If the files are not accessible
-    for pfn, pfnMetadata in pfnMetadataDict.items():
-      if pfnMetadata['Lost']:
-        lostReplicas.append( ( pfnLfns[pfn], pfn, se, 'PFNLost' ) )
-      if pfnMetadata['Unavailable']:
-        unavailableReplicas.append( ( pfnLfns[pfn], pfn, se, 'PFNUnavailable' ) )
-      if pfnMetadata['Size'] == 0:
-        zeroSizeReplicas.append( ( pfnLfns[pfn], pfn, se, 'PFNZeroSize' ) )
+    for lfn, lfnMetadata in lfnMetadataDict.items():
+      if lfnMetadata['Lost']:
+        lostReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNLost' ) )
+      if lfnMetadata['Unavailable']:
+        unavailableReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNUnavailable' ) )
+      if lfnMetadata['Size'] == 0:
+        zeroSizeReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNZeroSize' ) )
     if lostReplicas:
       self.__reportProblematicReplicas( lostReplicas, se, 'PFNLost' )
     if unavailableReplicas:
@@ -186,7 +181,7 @@ class DataIntegrityClient( Client ):
     if zeroSizeReplicas:
       self.__reportProblematicReplicas( zeroSizeReplicas, se, 'PFNZeroSize' )
     gLogger.info( 'Checking the integrity of physical files at %s complete' % se )
-    return S_OK( pfnMetadataDict )
+    return S_OK( lfnMetadataDict )
 
   ##########################################################################
   #
@@ -212,42 +207,31 @@ class DataIntegrityClient( Client ):
   def __checkCatalogForSEFiles( self, storageMetadata, storageElement ):
     gLogger.info( 'Checking %s storage files exist in the catalog' % len( storageMetadata ) )
 
-    # RF_NOTE : this comment is completely wrong
-    # First get all the PFNs as they should be registered in the catalog
-    res = StorageElement( storageElement ).getURL( storageMetadata.keys() )
+
+    res = self.fc.getReplicas( storageMetadata )
     if not res['OK']:
-      gLogger.error( "Failed to get registered PFNs for physical files", res['Message'] )
+      gLogger.error( "Failed to get replicas for LFN", res['Message'] )
       return res
-    for pfn, error in res['Value']['Failed'].items():
-      gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-    if res['Value']['Failed']:
-      return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
-    for original, registered in res['Value']['Successful'].items():
-      storageMetadata[registered] = storageMetadata.pop( original )
-    # Determine whether these PFNs are registered and if so obtain the LFN
-    res = self.fc.getLFNForPFN( storageMetadata.keys() )
-    if not res['OK']:
-      gLogger.error( "Failed to get registered LFNs for PFNs", res['Message'] )
-      return res
-    failedPfns = res['Value']['Failed']
-    notRegisteredPfns = []
-    for pfn, error in failedPfns.items():
-      if re.search( 'No such file or directory', error ):
-        notRegisteredPfns.append( ( storageMetadata[pfn]['LFN'], pfn, storageElement, 'PFNNotRegistered' ) )
-        failedPfns.pop( pfn )
-    if notRegisteredPfns:
-      self.__reportProblematicReplicas( notRegisteredPfns, storageElement, 'PFNNotRegistered' )
-    if failedPfns:
-      return S_ERROR( 'Failed to obtain LFNs for PFNs' )
-    pfnLfns = res['Value']['Successful']
-    for pfn in storageMetadata.keys():
-      pfnMetadata = storageMetadata.pop( pfn )
-      if pfn in pfnLfns.keys():
-        lfn = pfnLfns[pfn]
-        storageMetadata[lfn] = pfnMetadata
-        storageMetadata[lfn]['PFN'] = pfn
+    failedLfns = res['Value']['Failed']
+    successfulLfns = res['Value']['Successful']
+    notRegisteredLfns = []
+    
+    for lfn in storageMetadata:
+      if lfn in failedLfns: 
+        if 'No such file or directory' in failedLfns[lfn]:
+          notRegisteredLfns.append( ( lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered' ) )
+          failedLfns.pop( lfn )
+      elif storageElement not in successfulLfns[lfn]:
+        notRegisteredLfns.append( ( lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered' ) )
+
+    if notRegisteredLfns:
+      self.__reportProblematicReplicas( notRegisteredLfns, storageElement, 'LFNNotRegistered' )
+    if failedLfns:
+      return S_ERROR( 'Failed to obtain replicas' )
+
+
     # For the LFNs found to be registered obtain the file metadata from the catalog and verify against the storage metadata
-    res = self.__getCatalogMetadata( storageMetadata.keys() )
+    res = self.__getCatalogMetadata( storageMetadata )
     if not res['OK']:
       return res
     catalogMetadata = res['Value']
@@ -255,7 +239,7 @@ class DataIntegrityClient( Client ):
     for lfn, lfnCatalogMetadata in catalogMetadata.items():
       lfnStorageMetadata = storageMetadata[lfn]
       if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ) and ( lfnStorageMetadata['Size'] != 0 ):
-        sizeMismatch.append( ( lfn, storageMetadata[lfn]['PFN'], storageElement, 'CatalogPFNSizeMismatch' ) )
+        sizeMismatch.append( ( lfn, 'deprecatedUrl', storageElement, 'CatalogPFNSizeMismatch' ) )
     if sizeMismatch:
       self.__reportProblematicReplicas( sizeMismatch, storageElement, 'CatalogPFNSizeMismatch' )
     gLogger.info( 'Checking storage files exist in the catalog complete' )
@@ -273,17 +257,8 @@ class DataIntegrityClient( Client ):
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
     se = StorageElement( storageElement )
-    res = se.getURL( lfnDir )
 
-    if not res['OK']:
-      gLogger.error( "Failed to get PFNs for directories", res['Message'] )
-      return res
-    for directory, error in res['Value']['Failed'].items():
-      gLogger.error( 'Failed to obtain directory PFN from LFNs', '%s %s' % ( directory, error ) )
-    if res['Value']['Failed']:
-      return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
-    storageDirectories = res['Value']['Successful'].values()
-    res = se.exists( storageDirectories )
+    res = se.exists( lfnDir )
     if not res['OK']:
       gLogger.error( "Failed to obtain existance of directories", res['Message'] )
       return res
@@ -293,7 +268,7 @@ class DataIntegrityClient( Client ):
       return S_ERROR( 'Failed to determine existance of directory' )
     directoryExists = res['Value']['Successful']
     activeDirs = []
-    for directory in sortList( directoryExists.keys() ):
+    for directory in sorted( directoryExists ):
       exists = directoryExists[directory]
       if exists:
         activeDirs.append( directory )
@@ -305,55 +280,40 @@ class DataIntegrityClient( Client ):
       if not res['OK']:
         gLogger.error( 'Failed to get directory contents', res['Message'] )
         return res
-      elif res['Value']['Failed'].has_key( currentDir ):
+      elif currentDir in res['Value']['Failed']:
         gLogger.error( 'Failed to get directory contents', '%s %s' % ( currentDir, res['Value']['Failed'][currentDir] ) )
         return S_ERROR( res['Value']['Failed'][currentDir] )
       else:
         dirContents = res['Value']['Successful'][currentDir]
-        activeDirs.extend( dirContents['SubDirs'] )
-        fileMetadata = dirContents['Files']
-
-        # RF_NOTE This ugly trick is needed because se.getPfnPath does not follow the Successful/Failed convention
-#         res = { "Successful" : {}, "Failed" : {} }
-#         for pfn in fileMetadata:
-#           inRes = se.getPfnPath( pfn )
-#           if inRes["OK"]:
-#             res["Successful"][pfn] = inRes["Value"]
-#           else:
-#             res["Failed"][pfn] = inRes["Message"]
-        res = se.getLfnForPfn( fileMetadata.keys() )
+        activeDirs.extend( se.getLFNFromURL( dirContents['SubDirs'] ).get( 'Value', {} ).get( 'Successful', [] ) )
+        fileURLMetadata = dirContents['Files']
+        fileMetadata = {}
+        res = se.getLFNFromURL( fileURLMetadata )
         if not res['OK']:
           gLogger.error( 'Failed to get directory content LFNs', res['Message'] )
           return res
 
-        for pfn, error in res['Value']['Failed'].items():
-          gLogger.error( "Failed to get LFN for PFN", "%s %s" % ( pfn, error ) )
+        for url, error in res['Value']['Failed'].items():
+          gLogger.error( "Failed to get LFN for URL", "%s %s" % ( url, error ) )
         if res['Value']['Failed']:
           return S_ERROR( "Failed to get LFNs for PFNs" )
-        pfnLfns = res['Value']['Successful']
-        for pfn, lfn in pfnLfns.items():
-          fileMetadata[pfn]['LFN'] = lfn
+        urlLfns = res['Value']['Successful']
+        for urlLfn, lfn in urlLfns.items():
+          fileMetadata[lfn] = fileURLMetadata[urlLfn]
         allFiles.update( fileMetadata )
+
     zeroSizeFiles = []
-    lostFiles = []
-    unavailableFiles = []
-    for pfn in sortList( allFiles.keys() ):
-      if os.path.basename( pfn ) == 'dirac_directory':
-        allFiles.pop( pfn )
+
+    for lfn in sorted( allFiles ):
+      if os.path.basename( lfn ) == 'dirac_directory':
+        allFiles.pop( lfn )
       else:
-        metadata = allFiles[pfn]
+        metadata = allFiles[lfn]
         if metadata['Size'] == 0:
-          zeroSizeFiles.append( ( metadata['LFN'], pfn, storageElement, 'PFNZeroSize' ) )
-        # if metadata['Lost']:
-        #  lostFiles.append((metadata['LFN'],pfn,storageElement,'PFNLost'))
-        # if metadata['Unavailable']:
-        #  unavailableFiles.append((metadata['LFN'],pfn,storageElement,'PFNUnavailable'))
+          zeroSizeFiles.append( ( lfn, 'deprecatedUrl', storageElement, 'PFNZeroSize' ) )
     if zeroSizeFiles:
       self.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
-    if lostFiles:
-      self.__reportProblematicReplicas( lostFiles, storageElement, 'PFNLost' )
-    if unavailableFiles:
-      self.__reportProblematicReplicas( unavailableFiles, storageElement, 'PFNUnavailable' )
+
     gLogger.info( 'Obtained at total of %s files for directories at %s' % ( len( allFiles ), storageElement ) )
     return S_OK( allFiles )
 
@@ -361,20 +321,8 @@ class DataIntegrityClient( Client ):
     gLogger.info( 'Determining the existance of %d files at %s' % ( len( lfnPaths ), storageElement ) )
 
     se = StorageElement( storageElement )
-    res = se.getURL( lfnPaths )
-    if not res['OK']:
-      gLogger.error( "Failed to get PFNs for LFNs", res['Message'] )
-      return res
-    for lfnPath, error in res['Value']['Failed'].items():
-      gLogger.error( 'Failed to obtain PFN from LFN', '%s %s' % ( lfnPath, error ) )
-    if res['Value']['Failed']:
-      return S_ERROR( 'Failed to obtain PFNs from LFNs' )
-    lfnPfns = res['Value']['Successful']
-    pfnLfns = {}
-    for lfn, pfn in lfnPfns.items():
-      pfnLfns[pfn] = lfn
 
-    res = se.exists( pfnLfns )
+    res = se.exists( lfnPaths )
     if not res['OK']:
       gLogger.error( "Failed to obtain existance of paths", res['Message'] )
       return res
@@ -384,9 +332,9 @@ class DataIntegrityClient( Client ):
       return S_ERROR( 'Failed to determine existance of paths' )
     pathExists = res['Value']['Successful']
     resDict = {}
-    for pfn, exists in pathExists.items():
+    for lfn, exists in pathExists.items():
       if exists:
-        resDict[pfnLfns[pfn]] = pfn
+        resDict[lfn] = True
     return S_OK( resDict )
 
   ##########################################################################
@@ -527,11 +475,9 @@ class DataIntegrityClient( Client ):
   def __reportProblematicReplicas( self, replicaTuple, se, reason ):
     """ Simple wrapper function around setReplicaProblematic """
     gLogger.info( 'The following %s files had %s at %s' % ( len( replicaTuple ), reason, se ) )
-    for lfn, pfn, se, reason in sortList( replicaTuple ):
+    for lfn, _pfn, se, reason in sortList( replicaTuple ):
       if lfn:
         gLogger.info( lfn )
-      else:
-        gLogger.info( pfn )
     res = self.setReplicaProblematic( replicaTuple, sourceComponent = 'DataIntegrityClient' )
     if not res['OK']:
       gLogger.info( 'Failed to update integrity DB with replicas', res['Message'] )
@@ -592,20 +538,20 @@ class DataIntegrityClient( Client ):
     gLogger.error( 'DataIntegrityClient failure', res['Message'] )
     return res
 
-  def __getRegisteredPFNLFN( self, pfn, storageElement ):
-
-    res = StorageElement( storageElement ).getURL( pfn )
-    if not res['OK']:
-      gLogger.error( "Failed to get registered PFN for physical files", res['Message'] )
-      return res
-    for pfn, error in res['Value']['Failed'].items():
-      gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-      return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
-    registeredPFN = res['Value']['Successful'][pfn]
-    res = returnSingleResult( self.fc.getLFNForPFN( registeredPFN ) )
-    if ( not res['OK'] ) and re.search( 'No such file or directory', res['Message'] ):
-      return S_OK( False )
-    return S_OK( res['Value'] )
+#   def __getRegisteredPFNLFN( self, pfn, storageElement ):
+#
+#     res = StorageElement( storageElement ).getURL( pfn )
+#     if not res['OK']:
+#       gLogger.error( "Failed to get registered PFN for physical files", res['Message'] )
+#       return res
+#     for pfn, error in res['Value']['Failed'].items():
+#       gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
+#       return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
+#     registeredPFN = res['Value']['Successful'][pfn]
+#     res = returnSingleResult( self.fc.getLFNForPFN( registeredPFN ) )
+#     if ( not res['OK'] ) and re.search( 'No such file or directory', res['Message'] ):
+#       return S_OK( False )
+#     return S_OK( res['Value'] )
 
   def __updateReplicaToChecked( self, problematicDict ):
     lfn = problematicDict['LFN']
@@ -624,7 +570,6 @@ class DataIntegrityClient( Client ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the CatalogPFNSizeMismatch prognosis
     """
     lfn = problematicDict['LFN']
-    pfn = problematicDict['PFN']
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
 
@@ -633,7 +578,7 @@ class DataIntegrityClient( Client ):
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     catalogSize = res['Value']
-    res = returnSingleResult( StorageElement( se ).getFileSize( pfn ) )
+    res = returnSingleResult( StorageElement( se ).getFileSize( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     storageSize = res['Value']
@@ -672,7 +617,6 @@ class DataIntegrityClient( Client ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNNotRegistered prognosis
     """
     lfn = problematicDict['LFN']
-    pfn = problematicDict['PFN']
     seName = problematicDict['SE']
     fileID = problematicDict['FileID']
 
@@ -682,11 +626,11 @@ class DataIntegrityClient( Client ):
       return self.__returnProblematicError( fileID, res )
     if not res['Value']:
       # The file does not exist in the catalog
-      res = returnSingleResult( se.removeFile( pfn ) )
+      res = returnSingleResult( se.removeFile( lfn ) )
       if not res['OK']:
         return self.__returnProblematicError( fileID, res )
       return self.__updateCompletedFiles( 'PFNNotRegistered', fileID )
-    res = returnSingleResult( se.getFileMetadata( pfn ) )
+    res = returnSingleResult( se.getFileMetadata( lfn ) )
     if ( not res['OK'] ) and ( re.search( 'File does not exist', res['Message'] ) ):
       gLogger.info( "PFNNotRegistered replica (%d) found to be missing." % fileID )
       return self.__updateCompletedFiles( 'PFNNotRegistered', fileID )
@@ -719,13 +663,11 @@ class DataIntegrityClient( Client ):
         seName = '%s_MC-DST' % site
 
     problematicDict['SE'] = seName
-    res = se.getURL( pfn )
+    res = returnSingleResult( se.getURL( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
-    for pfn, error in res['Value']['Failed'].items():
-      gLogger.error( 'Failed to obtain registered PFN for physical file', '%s %s' % ( pfn, error ) )
-      return S_ERROR( 'Failed to obtain registered PFNs from physical file' )
-    problematicDict['PFN'] = res['Value']['Successful'][pfn]
+
+    problematicDict['PFN'] = res['Value']
 
     res = returnSingleResult( self.fc.addReplica( {lfn:problematicDict} ) )
     if not res['OK']:
@@ -759,7 +701,6 @@ class DataIntegrityClient( Client ):
   def resolvePFNMissing( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNMissing prognosis
     """
-    pfn = problematicDict['PFN']
     se = problematicDict['SE']
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
@@ -771,7 +712,7 @@ class DataIntegrityClient( Client ):
       gLogger.info( "PFNMissing file (%d) no longer exists in catalog" % fileID )
       return self.__updateCompletedFiles( 'PFNMissing', fileID )
 
-    res = returnSingleResult( StorageElement( se ).exists( pfn ) )
+    res = returnSingleResult( StorageElement( se ).exists( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
     if res['Value']:
@@ -809,11 +750,11 @@ class DataIntegrityClient( Client ):
   def resolvePFNUnavailable( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNUnavailable prognosis
     """
-    pfn = problematicDict['PFN']
+    lfn = problematicDict['LFN']
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
 
-    res = returnSingleResult( StorageElement( se ).getFileMetadata( pfn ) )
+    res = returnSingleResult( StorageElement( se ).getFileMetadata( lfn ) )
     if ( not res['OK'] ) and ( re.search( 'File does not exist', res['Message'] ) ):
       # The file is no longer Unavailable but has now dissapeared completely
       gLogger.info( "PFNUnavailable replica (%d) found to be missing. Updating prognosis" % fileID )
@@ -831,29 +772,30 @@ class DataIntegrityClient( Client ):
   def resolvePFNZeroSize( self, problematicDict ):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the PFNZeroSize prognosis
     """
-    pfn = problematicDict['PFN']
+    lfn = problematicDict['LFN']
     seName = problematicDict['SE']
     fileID = problematicDict['FileID']
 
     se = StorageElement( seName )
 
-    res = returnSingleResult( se.getFileSize( pfn ) )
+    res = returnSingleResult( se.getFileSize( lfn ) )
     if ( not res['OK'] ) and ( re.search( 'File does not exist', res['Message'] ) ):
       gLogger.info( "PFNZeroSize replica (%d) found to be missing. Updating prognosis" % problematicDict['FileID'] )
       return self.changeProblematicPrognosis( fileID, 'PFNMissing' )
     storageSize = res['Value']
     if storageSize == 0:
-      res = returnSingleResult( se.removeFile( pfn ) )
+      res = returnSingleResult( se.removeFile( lfn ) )
 
       if not res['OK']:
         return self.__returnProblematicError( fileID, res )
       gLogger.info( "PFNZeroSize replica (%d) removed. Updating prognosis" % problematicDict['FileID'] )
       return self.changeProblematicPrognosis( fileID, 'PFNMissing' )
-    res = self.__getRegisteredPFNLFN( pfn, seName )
+
+
+    res = returnSingleResult( self.fc.getReplicas( lfn ) )
     if not res['OK']:
       return self.__returnProblematicError( fileID, res )
-    lfn = res['Value']
-    if not lfn:
+    if seName not in res['Value']:
       gLogger.info( "PFNZeroSize replica (%d) not registered in catalog. Updating prognosis" % problematicDict['FileID'] )
       return self.changeProblematicPrognosis( fileID, 'PFNNotRegistered' )
     res = returnSingleResult( self.fc.getFileMetadata( lfn ) )
@@ -880,12 +822,11 @@ class DataIntegrityClient( Client ):
     else:
       gLogger.info( "LFNZeroReplicas file (%d) does not have replicas. Checking storage..." % fileID )
       pfnsFound = False
-      for storageElementName in sortList( gConfig.getValue( 'Resources/StorageElementGroups/Tier1_MC_M-DST', [] ) ):
+      for storageElementName in sorted( gConfig.getValue( 'Resources/StorageElementGroups/Tier1_MC_M-DST', [] ) ):
         res = self.__getStoragePathExists( [lfn], storageElementName )
-        if res['Value'].has_key( lfn ):
+        if lfn in res['Value']:
           gLogger.info( "LFNZeroReplicas file (%d) found storage file at %s" % ( fileID, storageElementName ) )
-          pfn = res['Value'][lfn]
-          self.__reportProblematicReplicas( [( lfn, pfn, storageElementName, 'PFNNotRegistered' )], storageElementName, 'PFNNotRegistered' )
+          self.__reportProblematicReplicas( [( lfn, 'deprecatedUrl', storageElementName, 'PFNNotRegistered' )], storageElementName, 'PFNNotRegistered' )
           pfnsFound = True
       if not pfnsFound:
         gLogger.info( "LFNZeroReplicas file (%d) did not have storage files. Removing..." % fileID )
