@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre5]
+[v6r13-pre6]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -119,6 +119,7 @@ NEW: Changes to make the DISET protocol IP V6 ready
 *DMS
 NEW: Native use of the FTS3 services
 CHANGE: Removed the use of current DataLogging service
+CHANGE: DataManager - changes to manage URLs inside StorageElement objects only
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
@@ -127,6 +128,10 @@ CHANGE: RMS refactored based on SQLAlchemy
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
+
+[v6r12p6]
+
+FIX: fixes from v6r11p26 patch release
 
 [v6r12p5]
 
@@ -264,6 +269,24 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p26]
+
+*Framework
+FIX: UserProfileDB.py - add PublishAccess field to the UserProfileDB
+
+*RSS
+FIX: Synchronizer.py - fix deletion of old resources
+
+*DMS
+FIX: DataManager - allow that permissions are OK for part of a list of LFNs ( __verifyWritePermission() )
+     (when testing write access to parent directory). Allows removal of replicas 
+     even if one cannot be removed
+FIX: DataManager - test SE validity before removing replica     
+     
+*RMS
+FIX: RequestTask - fail requests for users who are no longer in the system
+FIX: RequestExecutingAgent - fix request timeout computation
 
 [v6r11p25]
 

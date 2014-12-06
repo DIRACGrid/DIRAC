@@ -204,10 +204,23 @@ class Synchronizer( object ):
     :return: S_OK( { 'Site' : { 'added' : [], 'deleted' : [] }} ) | S_ERROR
     """
     
+<<<<<<< HEAD
     # Get site names from the CS
     foundSites = self.resources.getEligibleSites()
     if not foundSites[ 'OK' ]:
       return foundSites
+=======
+    cesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                   elementType = 'CE',
+                                                   meta = { 'columns' : [ 'name' ] } ) 
+    if not cesDB[ 'OK' ]:
+      return cesDB    
+    cesDB = [ ceDB[0] for ceDB in cesDB[ 'Value' ] ]
+       
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( cesDB ).difference( set( cesCS ) ) )
+    gLogger.verbose( '%s Computing elements to be deleted' % len( toBeDeleted ) )
+>>>>>>> rel-v6r13
        
     sites = {}
     
@@ -359,11 +372,66 @@ class Synchronizer( object ):
            
     return S_OK( syncRes )
   
+<<<<<<< HEAD
   def __dbDelete( self, elementFamily, elementType, toBeDeleted ):
     """
     Method that given the elementFamily and elementType, deletes all entries
     in the History and Status tables for the given elements in toBeDeleted ( all
     their status Types ).
+=======
+    for seTuple in toBeAdded:
+      
+      _name            = seTuple[ 0 ]
+      _statusType      = seTuple[ 1 ]
+      _status          = 'Unknown'
+      _reason          = 'Synchronized'
+      _elementType     = 'StorageElement'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       status = _status,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()  
+
+  def __syncQueues( self ):
+    '''
+      Sync Queues: compares CS with DB and does the necessary modifications.
+    '''
+
+    queuesCS = CSHelpers.getQueues()
+    if not queuesCS[ 'OK' ]:
+      return queuesCS
+    queuesCS = queuesCS[ 'Value' ]        
+    
+    gLogger.verbose( '%s Queues found in CS' % len( queuesCS ) )
+    
+    queuesDB = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                 elementType = 'Queue',
+                                                 meta = { 'columns' : [ 'name' ] } ) 
+    if not queuesDB[ 'OK' ]:
+      return queuesDB    
+    queuesDB = [ queueDB[0] for queueDB in queuesDB[ 'Value' ] ]
+       
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( queuesDB ).difference( set( queuesCS ) ) )
+    gLogger.verbose( '%s Queues to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for queueName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Node', queueName )
+      
+      gLogger.verbose( '... %s' % queueName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = self.rssConfig.getConfigStatusType( 'Queue' )
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+>>>>>>> rel-v6r13
 
     :Parameters:
       **elementFamily** - str

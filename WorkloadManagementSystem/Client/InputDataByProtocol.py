@@ -204,7 +204,7 @@ class InputDataByProtocol( object ):
       else:
         self.log.warn( "Errors during preliminary checks for %d files" % len( failedReps ) )
 
-      result = self.__storageElement( seName ).getAccessUrl( lfns, protocol = requestedProtocol )
+      result = self.__storageElement( seName ).getURL( lfns, protocol = requestedProtocol )
       if not result['OK']:
         self.log.error( "Error getting TURLs", result['Message'] )
         return result

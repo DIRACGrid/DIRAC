@@ -51,6 +51,7 @@ class UserProfileDB( DB ):
                                                   'VarName' : 'VARCHAR(255) NOT NULL',
                                                   'Data' : 'BLOB',
                                                   'ReadAccess' : 'VARCHAR(10) DEFAULT "USER"',
+                                                  'PublishAccess' : 'VARCHAR(10) DEFAULT "USER"',
                                                   },
                                      'PrimaryKey' : [ 'UserId', 'GroupId', 'Profile', 'VarName' ],
                                      'Indexes' : { 'ProfileKey' : [ 'UserId', 'GroupId', 'Profile' ],

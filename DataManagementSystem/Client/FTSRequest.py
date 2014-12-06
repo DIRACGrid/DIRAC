@@ -546,9 +546,8 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Reason', "No replica at SourceSE" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      # Fix first the PFN
-      pfn = self.oSourceSE.getPfnForLfn( lfn ).get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[self.sourceSE] )
-      res = returnSingleResult( self.oSourceSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True ) )
+
+      res = returnSingleResult( self.oSourceSE.getURL( lfn, protocol = 'srm' ) )
       if not res['OK']:
         gLogger.warn( "resolveSource: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
@@ -561,20 +560,19 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
 
-    toResolve = {}
+    toResolve = []
     for lfn in self.fileDict:
       if "Source" in self.fileDict[lfn]:
-        toResolve[self.fileDict[lfn]['Source']] = lfn
+        toResolve.append( lfn )
     if not toResolve:
       return S_ERROR( "No eligible Source files" )
 
     # Get metadata of the sources, to check for existance, availability and caching
-    res = self.oSourceSE.getFileMetadata( toResolve.keys() )
+    res = self.oSourceSE.getFileMetadata( toResolve )
     if not res['OK']:
       return S_ERROR( "Failed to check source file metadata" )
 
-    for pfn, error in res['Value']['Failed'].items():
-      lfn = toResolve[pfn]
+    for lfn, error in res['Value']['Failed'].items():
       if re.search( 'File does not exist', error ):
         gLogger.warn( "resolveSource: skipping %s - source file does not exists" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file does not exist" )
@@ -586,8 +584,7 @@ class FTSRequest( object ):
     toStage = []
 
     nbStagedFiles = 0
-    for pfn, metadata in res['Value']['Successful'].items():
-      lfn = toResolve[pfn]
+    for lfn, metadata in res['Value']['Successful'].items():
       lfnStatus = self.fileDict.get( lfn, {} ).get( 'Status' )
       if metadata['Unavailable']:
         gLogger.warn( "resolveSource: skipping %s - source file unavailable" % lfn )
@@ -599,7 +596,7 @@ class FTSRequest( object ):
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       elif not metadata['Cached']:
         if lfnStatus != 'Staging':
-          toStage.append( pfn )
+          toStage.append( lfn )
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
         gLogger.warn( "resolveSource: skipping %s - source file size mismatch" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source size mismatch" )
@@ -624,17 +621,15 @@ class FTSRequest( object ):
       stage = self.oSourceSE.prestageFile( toStage )
       if not stage["OK"]:
         gLogger.error( "resolveSource: error is prestaging", stage["Message"] )
-        for pfn in toStage:
-          lfn = toResolve[pfn]
+        for lfn in toStage:
           self.__setFileParameter( lfn, 'Reason', stage["Message"] )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
       else:
-        for pfn in toStage:
-          lfn = toResolve[pfn]
-          if pfn in stage['Value']['Successful']:
+        for lfn in toStage:
+          if lfn in stage['Value']['Successful']:
             self.__setFileParameter( lfn, 'Status', 'Staging' )
-          elif pfn in stage['Value']['Failed']:
-            self.__setFileParameter( lfn, 'Reason', stage['Value']['Failed'][pfn] )
+          elif lfn in stage['Value']['Failed']:
+            self.__setFileParameter( lfn, 'Reason', stage['Value']['Failed'][lfn] )
             self.__setFileParameter( lfn, 'Status', 'Failed' )
 
     self.sourceResolved = True
@@ -653,55 +648,46 @@ class FTSRequest( object ):
     if not res['OK']:
       return res
     for lfn in toResolve:
-      res = self.oTargetSE.getPfnForLfn( lfn )
-      if not res['OK'] or lfn not in res['Value']['Successful']:
-        gLogger.warn( "resolveTarget: skipping %s - failed to create target pfn" % lfn )
-        self.__setFileParameter( lfn, 'Reason', "Failed to create Target" )
-        self.__setFileParameter( lfn, 'Status', 'Failed' )
-        continue
-      pfn = res['Value']['Successful'][lfn]
-      res = self.oTargetSE.getPfnForProtocol( pfn, protocol = 'SRM2', withPort = True )
-      if not res['OK'] or pfn not in res['Value']['Successful']:
-        reason = res.get( 'Message', res.get( 'Value', {} ).get( 'Failed', {} ).get( pfn ) )
+      res = returnSingleResult( self.oTargetSE.getURL( lfn, protocol = 'srm' ) )
+      if not res['OK']:
+        reason = res.get( 'Message', res['Message'] )
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, reason ) )
         self.__setFileParameter( lfn, 'Reason', reason )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      pfn = res['Value']['Successful'][pfn]
-      res = self.setTargetSURL( lfn, pfn )
+
+      res = self.setTargetSURL( lfn, res['Value'] )
       if not res['OK']:
         gLogger.warn( "resolveTarget: skipping %s - %s" % ( lfn, res["Message"] ) )
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-    toResolve = {}
+    toResolve = []
     for lfn in self.fileDict:
       if "Target" in self.fileDict[lfn]:
-        toResolve[self.fileDict[lfn]['Target']] = lfn
+        toResolve.append( lfn )
     if not toResolve:
       return S_ERROR( "No eligible Target files" )
-    res = self.oTargetSE.exists( toResolve.keys() )
+    res = self.oTargetSE.exists( toResolve )
     if not res['OK']:
       return S_ERROR( "Failed to check target existence" )
-    for pfn, error in res['Value']['Failed'].items():
-      lfn = toResolve[pfn]
+    for lfn, error in res['Value']['Failed'].items():
       self.__setFileParameter( lfn, 'Reason', error )
       self.__setFileParameter( lfn, 'Status', 'Failed' )
     toRemove = []
-    for pfn, exists in res['Value']['Successful'].items():
+    for lfn, exists in res['Value']['Successful'].items():
       if exists:
-        lfn = toResolve[pfn]
         res = self.getSourceSURL( lfn )
         if not res['OK']:
           gLogger.warn( "resolveTarget: skipping %s - target exists" % lfn )
           self.__setFileParameter( lfn, 'Reason', "Target exists" )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
-        elif res['Value'] == pfn:
+        elif res['Value'] == self.fileDict[lfn]['Target']:
           gLogger.warn( "resolveTarget: skipping %s - source and target pfns are the same" % lfn )
           self.__setFileParameter( lfn, 'Reason', "Source and Target the same" )
           self.__setFileParameter( lfn, 'Status', 'Failed' )
         else:
-          toRemove.append( pfn )
+          toRemove.append( lfn )
     if toRemove:
       self.oTargetSE.removeFile( toRemove )
     return S_OK()
@@ -1026,7 +1012,7 @@ class FTSRequest( object ):
     self.failedRegistrations = {}
     toRegister = {}
     for lfn in transLFNs:
-      res = returnSingleResult( self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), protocol = 'SRM2', withPort = False ) )
+      res = returnSingleResult( self.oTargetSE.getURL( self.fileDict[lfn].get( 'Target' ), protocol = 'srm' ) )
       if not res['OK']:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )

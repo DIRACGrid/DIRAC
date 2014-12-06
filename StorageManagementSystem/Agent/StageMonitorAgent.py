@@ -59,21 +59,23 @@ class StageMonitorAgent( AgentModule ):
     terminalReplicaIDs = {}
     oldRequests = []
     stagedReplicas = []
-    pfnRepIDs = {}
-    pfnReqIDs = {}
+
+    # Since we are in a given SE, the LFN is a unique key
+    lfnRepIDs = {}
+    lfnReqIDs = {}
     for replicaID in seReplicaIDs:
-      pfn = replicaIDs[replicaID]['PFN']
-      pfnRepIDs[pfn] = replicaID
+      lfn = replicaIDs[replicaID]['LFN']
+      lfnRepIDs[lfn] = replicaID
       requestID = replicaIDs[replicaID].get( 'RequestID', None )
       if requestID:
-        pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
+        lfnReqIDs[lfn] = replicaIDs[replicaID]['RequestID']
 
-    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( pfnRepIDs ),
+    gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % ( len( lfnRepIDs ),
                                                                                                                 storageElement ) )
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 
-    res = StorageElement( storageElement ).getFileMetadata( pfnReqIDs )
+    res = StorageElement( storageElement ).getFileMetadata( lfnReqIDs )
     if not res['OK']:
       gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.", res['Message'] )
       return
@@ -81,19 +83,19 @@ class StageMonitorAgent( AgentModule ):
 
     accountingDict = self.__newAccountingDict( storageElement )
 
-    for pfn, reason in prestageStatus['Failed'].items():
+    for lfn, reason in prestageStatus['Failed'].items():
       accountingDict['TransferTotal'] += 1
       if re.search( 'File does not exist', reason ):
-        gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: PFN did not exist in the StorageElement", pfn )
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
-    for pfn, staged in prestageStatus['Successful'].items():
+        gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: LFN did not exist in the StorageElement", lfn )
+        terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN did not exist in the StorageElement'
+    for lfn, staged in prestageStatus['Successful'].items():
       if staged and 'Cached' in staged and staged['Cached']:
         accountingDict['TransferTotal'] += 1
         accountingDict['TransferOK'] += 1
         accountingDict['TransferSize'] += staged['Size']
-        stagedReplicas.append( pfnRepIDs[pfn] )
+        stagedReplicas.append( lfnRepIDs[lfn] )
       if staged and 'Cached' in staged and not staged['Cached']:
-        oldRequests.append( pfnRepIDs[pfn] ) #only ReplicaIDs
+        oldRequests.append( lfnRepIDs[lfn] );  # only ReplicaIDs
 
     oAccounting.setValuesFromDict( accountingDict )
     oAccounting.setEndTime()

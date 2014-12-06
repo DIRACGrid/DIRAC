@@ -76,7 +76,7 @@ def getDNFromUID( userID ):
     gLogger.error( errStr, "%s %s" % ( userID, lfc.sstrerror( lfc.cvar.serrno ) ) )
     return S_ERROR( errStr )
 
-def getRoleFromGID( groupID ):
+def getRoleFromGID( groupID, path = None ):
   buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
   res = lfc.lfc_getgrpbygid( groupID, buff )
   if res == 0:
@@ -87,7 +87,7 @@ def getRoleFromGID( groupID ):
     return S_OK( role )
   else:
     errStr = "LcgFileCatalogClient:getRoleFromGID: Failed to get role from GID"
-    gLogger.error( errStr, "%s %s" % ( groupID, lfc.sstrerror( lfc.cvar.serrno ) ) )
+    gLogger.error( errStr, "%s %s%s" % ( groupID, ( '(%s) ' % path ) if path else '', lfc.sstrerror( lfc.cvar.serrno ) ) )
     return S_ERROR()
 
 def addReplica( guid, pfn, se, master ):
@@ -400,6 +400,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
               failed[path] = lfcPerm
               continue
+          # ACLs are just an additional information, therefore here it is successful
           successful[path] = lfcPerm
 
     if created:
@@ -471,7 +472,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             successful[lfn]['OwnerDN'] = res['Value']
           else:
             successful[lfn]['OwnerDN'] = None
-          res = getRoleFromGID( fstat.gid )
+          res = getRoleFromGID( fstat.gid, path = lfn )
           if res['OK']:
             successful[lfn]['OwnerRole'] = res['Value']
           else:
@@ -687,7 +688,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           successful[lfn]['OwnerDN'] = res['Value']
         else:
           successful[lfn]['OwnerDN'] = None
-        res = getRoleFromGID( fstat.gid )
+        res = getRoleFromGID( fstat.gid, path = lfn )
         if res['OK']:
           successful[lfn]['OwnerRole'] = res['Value']
         else:
@@ -1397,7 +1398,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         permissionsDict['DN'] = res['Value']
         permissionsDict['user'] = obj.a_perm
       elif obj.a_type == lfc.CNS_ACL_GROUP_OBJ:
-        res = getRoleFromGID( obj.a_id )
+        res = getRoleFromGID( obj.a_id, path = path )
         if not res['OK']:
           return res
         role = res['Value']
@@ -1579,7 +1580,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             pathMetadata['OwnerDN'] = res['Value']
           else:
             pathMetadata['OwnerDN'] = None
-          res = getRoleFromGID( oPath.gid )
+          res = getRoleFromGID( oPath.gid, path = subPath )
           if res['OK']:
             pathMetadata['OwnerRole'] = res['Value']
           else:

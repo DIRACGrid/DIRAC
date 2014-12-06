@@ -1476,7 +1476,7 @@ class Dirac( API ):
     else:
       return self._errorReport( 'Expected single string for PFN' )
 
-    result = StorageElement( storageElement ).getAccessUrl( [pfn] )
+    result = StorageElement( storageElement ).getURL( [pfn] )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:
@@ -2129,7 +2129,7 @@ class Dirac( API ):
                   site = None, owner = None, ownerGroup = None, jobGroup = None, date = None ):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
-        
+
          - date must be specified as yyyy-mm-dd.  By default, the date is today.
          - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
          - site is the DIRAC site name, e.g. LCG.CERN.ch
@@ -2596,17 +2596,11 @@ class Dirac( API ):
     if printOutput:
       loggingTupleList = result['Value']
       # source is removed for printing to control width
-      headers = ( 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' )
-      line = ''
-      for i in headers:
-        line += i.ljust( 30 )
-      print line
+      headers = ( 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' )
+      print ''.join( [h.ljust( 30 ) for h in headers] )
 
-      for i in loggingTupleList:
-        line = ''
-        for j in xrange( len( i ) - 1 ):
-          line += i[j].ljust( 30 )
-        print line
+      for l in loggingTupleList:
+        print ''.join( [l[i].ljust( 30 ) for i in ( 4, 0, 1, 2, 3 )] )
 
     return result
 

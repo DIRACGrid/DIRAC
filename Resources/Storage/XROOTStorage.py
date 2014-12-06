@@ -44,7 +44,7 @@ class XROOTStorage( StorageBase ):
 
     self.pluginName = 'XROOT'
     self.protocol = self.protocolParameters['Protocol']
-    self.host = self.protocolParameters['Protocol']
+    self.host = self.protocolParameters['Host']
 
     # Aweful hack to cope for the moment with the inability of RSS to deal with something else than SRM
 

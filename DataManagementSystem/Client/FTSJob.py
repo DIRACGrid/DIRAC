@@ -701,7 +701,7 @@ class FTSJob( Record ):
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
-      pfn = returnSingleResult( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+      pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = 'srm' ) )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]

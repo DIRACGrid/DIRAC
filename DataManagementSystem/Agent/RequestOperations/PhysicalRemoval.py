@@ -67,16 +67,16 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
-    # # prepare pfn dict
-    toRemoveDict = dict( [ ( opFile.PFN, opFile ) for opFile in waitingFiles ] )
+    # # prepare lfn dict
+    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
 
     targetSEs = self.operation.targetSEList
     gMonitor.addMark( "PhysicalRemovalAtt", len( toRemoveDict ) * len( targetSEs ) )
 
     # # keep errors dict
     removalStatus = dict.fromkeys( toRemoveDict.keys(), None )
-    for pfn in removalStatus:
-      removalStatus[pfn] = dict.fromkeys( targetSEs, "" )
+    for lfn in removalStatus:
+      removalStatus[lfn] = dict.fromkeys( targetSEs, "" )
 
     for targetSE in targetSEs:
 
@@ -91,25 +91,25 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
 
       bulkRemoval = bulkRemoval["Value"]
 
-      for pfn, opFile in toRemoveDict.items():
-        removalStatus[pfn][targetSE] = bulkRemoval["Failed"].get( pfn, "" )
-        opFile.Error = removalStatus[pfn][targetSE]
+      for lfn, opFile in toRemoveDict.items():
+        removalStatus[lfn][targetSE] = bulkRemoval["Failed"].get( lfn, "" )
+        opFile.Error = removalStatus[lfn][targetSE]
 
       # # 2nd - single file removal
-      toRetry = dict( [ ( pfn, opFile ) for pfn, opFile in toRemoveDict.items() if pfn in bulkRemoval["Failed"] ] )
-      for pfn, opFile in toRetry.items():
+      toRetry = dict( [ ( lfn, opFile ) for lfn, opFile in toRemoveDict.items() if lfn in bulkRemoval["Failed"] ] )
+      for lfn, opFile in toRetry.items():
         self.singleRemoval( opFile, targetSE )
         if not opFile.Error:
-          removalStatus[pfn][targetSE] = ""
+          removalStatus[lfn][targetSE] = ""
         else:
           gMonitor.addMark( "PhysicalRemovalFail", 1 )
-          removalStatus[pfn][targetSE] = opFile.Error
+          removalStatus[lfn][targetSE] = opFile.Error
 
     # # update file status for waiting files
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-        errors = [ error for error in removalStatus[opFile.PFN].values() if error.strip() ]
+        errors = [ error for error in removalStatus[opFile.LFN].values() if error.strip() ]
         if errors:
           failed += 1
           opFile.Error = ",".join( errors )
@@ -127,9 +127,9 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
     return S_OK()
 
   def bulkRemoval( self, toRemoveDict, targetSE ):
-    """ bulk removal of pfns from :targetSE:
+    """ bulk removal of lfns from :targetSE:
 
-    :param dict toRemoveDict: { pfn : opFile, ... }
+    :param dict toRemoveDict: { lfn : opFile, ... }
     :param str targetSE: target SE name
     """
 
@@ -156,7 +156,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
             opFile.Error = proxyFile["Message"]
           else:
             proxyFile = proxyFile["Value"]
-            removeFile = StorageElement( targetSE ).removeFile( opFile.PFN )
+            removeFile = StorageElement( targetSE ).removeFile( opFile.LFN )
             if not removeFile["OK"]:
               opFile.Error = removeFile["Message"]
             else:
