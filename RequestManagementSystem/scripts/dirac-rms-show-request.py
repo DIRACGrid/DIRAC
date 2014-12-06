@@ -107,6 +107,7 @@ if __name__ == "__main__":
       Script.showHelp()
       DIRAC.exit( 2 )
     requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]
+    all = True
 
   elif not jobs:
     args = Script.getPositionalArgs()

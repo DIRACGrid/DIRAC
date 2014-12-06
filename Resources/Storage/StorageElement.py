@@ -310,12 +310,11 @@ class StorageElementItem( object ):
     """
     self.log.verbose( "StorageElement.isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name,
                                                                                              operation ) )
-    if ( not operation ) or ( operation in self.okMethods ):
-      return S_OK()
-
     if not self.valid:
       self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
+    if ( not operation ) or ( operation in self.okMethods ):
+      return S_OK()
     # Determine whether the StorageElement is valid for checking, reading, writing
     res = self.getStatus()
     if not res[ 'OK' ]:
