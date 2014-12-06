@@ -88,8 +88,8 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     remainingSecs = retVal[ 'Value' ]
-    #If we have a proxy longer than the one uploading it's not needed
-    #ten minute margin to compensate just in case
+    # If we have a proxy longer than the one uploading it's not needed
+    # ten minute margin to compensate just in case
     if remainingSecs >= requestedUploadTime - 600:
       gLogger.info( "Upload request not necessary by %s:%s" % ( userName, userGroup ) )
       return self.__addKnownUserProxiesInfo( S_OK() )
@@ -140,7 +140,7 @@ class ProxyManagerHandler( RequestHandler ):
       if Properties.PRIVATE_LIMITED_DELEGATION in Registry.getPropertiesForGroup( requestedUserGroup ):
         return S_ERROR( "You can't download proxies for that group" )
       return S_OK( True )
-    #Not authorized!
+    # Not authorized!
     return S_ERROR( "You can't get proxies! Bad boy!" )
 
   types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
@@ -172,7 +172,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
-    #If possible we return a proxy 1.5 longer than requested
+    # If possible we return a proxy 1.5 longer than requested
     requiredLifetime = min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor )
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
@@ -211,7 +211,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
-    #If possible we return a proxy 1.5 longer than requested
+    # If possible we return a proxy 1.5 longer than requested
     requiredLifetime = min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor )
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,

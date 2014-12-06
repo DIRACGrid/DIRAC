@@ -110,6 +110,7 @@ if __name__ == "__main__":
     # If ever this would not work anymore, we would need to use the transformationClient
     # to fetch the ExternalID
     requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]
+    all = True
 
   elif not jobs:
     args = Script.getPositionalArgs()

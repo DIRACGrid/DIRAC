@@ -202,7 +202,7 @@ class Synchronizer( object ):
     cesDB = [ ceDB[0] for ceDB in cesDB[ 'Value' ] ]
        
     # ComputingElements that are in DB but not in CS
-    toBeDeleted = list( set( cesDB ).difference( set( cesDB ) ) )
+    toBeDeleted = list( set( cesDB ).difference( set( cesCS ) ) )
     gLogger.verbose( '%s Computing elements to be deleted' % len( toBeDeleted ) )
        
     # Delete storage elements
@@ -466,7 +466,7 @@ class Synchronizer( object ):
     queuesDB = [ queueDB[0] for queueDB in queuesDB[ 'Value' ] ]
        
     # ComputingElements that are in DB but not in CS
-    toBeDeleted = list( set( queuesDB ).difference( set( queuesDB ) ) )
+    toBeDeleted = list( set( queuesDB ).difference( set( queuesCS ) ) )
     gLogger.verbose( '%s Queues to be deleted' % len( toBeDeleted ) )
        
     # Delete storage elements

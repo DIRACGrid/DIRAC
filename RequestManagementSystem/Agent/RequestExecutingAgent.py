@@ -320,7 +320,7 @@ class RequestExecutingAgent( AgentModule ):
     """ get timeout for request """
     timeout = 0
     for op in request:
-      if op.Status not in ( "Waiting", "Scheduled" ):
+      if op.Status not in ( "Waiting", "Scheduled", 'Queued' ):
         continue
       if op.Type not in self.timeOuts:
         timeout += self.__operationTimeout

@@ -319,6 +319,8 @@ class StorageElementItem( object ):
     if not self.valid:
       self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
+    if ( not operation ) or ( operation in self.okMethods ):
+      return S_OK()
     # Determine whether the StorageElement is valid for checking, reading, writing
     res = self.getStatus()
     if not res[ 'OK' ]:

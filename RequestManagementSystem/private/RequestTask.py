@@ -245,9 +245,17 @@ class RequestTask( object ):
     # # setup proxy for request owner
     setupProxy = self.setupProxy()
     if not setupProxy["OK"]:
-      self.log.error( setupProxy["Message"] )
       self.request.Error = setupProxy["Message"]
-      return S_ERROR( 'Change proxy error' )
+      if 'has no proxy registered' in setupProxy["Message"]:
+        self.log.error( 'Request set to Failed:', setupProxy["Message"] )
+        # If user is no longer registered, fail the request
+        for operation in self.request:
+          for opFile in operation:
+            opFile.Status = 'Failed'
+          operation.Status = 'Failed'
+      else:
+        self.log.error( setupProxy["Message"] )
+      return S_OK( self.request )
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
