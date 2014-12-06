@@ -9,6 +9,7 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getRegistrationProtocols 
 from DIRAC.RequestManagementSystem.Client.File                  import File
 from DIRAC.Resources.Storage.StorageElement                     import StorageElement
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
@@ -17,6 +18,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
 
   def __init__( self, operation = None, csPath = None ):
     OperationHandlerBase.__init__( self, operation, csPath )
+    self.registrationProtocols = getRegistrationProtocols()
 
 
   def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess' ):
@@ -66,7 +68,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
 
     registerFile = File()
     registerFile.LFN = opFile.LFN
-    registerFile.PFN = StorageElement( targetSE ).getPfnForLfn( opFile.LFN ).get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN )
+    registerFile.PFN = StorageElement( targetSE ).getURL( opFile.LFN, protocol = self.registrationProtocols ).get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN )
     registerFile.GUID = opFile.GUID
     registerFile.Checksum = opFile.Checksum
     registerFile.ChecksumType = opFile.ChecksumType

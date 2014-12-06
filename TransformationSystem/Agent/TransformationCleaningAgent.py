@@ -253,16 +253,7 @@ class TransformationCleaningAgent( AgentModule ):
 
     se = StorageElement( storageElement )
 
-    res = se.getPfnForLfn( [directory] )
-    if not res['OK']:
-      self.log.error( "Failed to get PFN for directory", res['Message'] )
-      return res
-    if directory in res['Value']['Failed']:
-      self.log.verbose( 'Failed to obtain directory PFN from LFN', '%s %s' % ( directory, res['Value']['Failed'][directory] ) )
-      return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
-    storageDirectory = res['Value']['Successful'][directory]
-
-    res = returnSingleResult( se.exists( storageDirectory ) )
+    res = returnSingleResult( se.exists( directory ) )
     if not res['OK']:
       self.log.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -270,7 +261,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not exists:
       self.log.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = returnSingleResult( se.removeDirectory( storageDirectory, recursive = True ) )
+    res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
     if not res['OK']:
       self.log.error( "Failed to remove storage directory", res['Message'] )
       return res

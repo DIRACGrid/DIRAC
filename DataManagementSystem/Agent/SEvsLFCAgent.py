@@ -90,7 +90,7 @@
 #                errStr = "SEvsLFCAgent.execute: Failed to instantiate destination StorageElement."
 #                gLogger.error( errStr, storageElement )
 #              else:
-#                res = storageElement.getPfnForLfn( lfn )
+#                res = storageElement.getURL( lfn )
 #                if not res['OK']:
 #                  gLogger.info( 'shit bugger do something.' )
 #                else:
@@ -108,11 +108,11 @@
 #                      subDirs = []
 #                      files = {}
 #                      for surl, surlDict in res['Value']['Successful'][currentDir]['Files'].items():
-#                        pfnRes = storageElement.getPfnForProtocol( surl, 'SRM2', withPort = False )
+#                        pfnRes = storageElement.getURL( surl, protocol = 'srm' )
 #                        surl = pfnRes['Value']
 #                        files[surl] = surlDict
 #                      for surl, surlDict in res['Value']['Successful'][currentDir]['SubDirs'].items():
-#                        pfnRes = storageElement.getPfnForProtocol( surl, 'SRM2', withPort = False )
+#                        pfnRes = storageElement.getURL( surl, 'srm')
 #                        surl = pfnRes['Value']
 #                        subDirs.append( surl )
 #

@@ -4,6 +4,7 @@
 """ This is the StorageElement class.
 
 """
+from types import ListType
 
 __RCSID__ = "$Id$"
 # # custom duty
@@ -171,7 +172,6 @@ class StorageElementItem( object ):
 
     self.readMethods = [ 'getFile',
                          'getTransportURL',
-                         'getLFNForURL',
                          'prestageFile',
                          'prestageFileStatus',
                          'getDirectory']
@@ -414,6 +414,33 @@ class StorageElementItem( object ):
     self.log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
     return S_ERROR( errStr )
 
+  def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
+    """ Negotiate what protocol could be used for a third party transfer
+        between the sourceSE and ourselves. If protocols is given,
+        the chosen protocol has to be among those
+        
+        :param sourceSE : storageElement instance of the sourceSE
+        :param protocols: protocol restriction list
+        
+        :return a list protocols that fits the needs, or None
+
+    """
+
+    # We should actually separate source and destination protocols
+    # For example, an SRM can get as a source an xroot or gsift url...
+    # but with the current implementation, we get only srm
+
+    destProtocols = set( [destStorage.protocolParameters['Protocol'] for destStorage in self.storages] )
+    sourceProtocols = set( [sourceStorage.protocolParameters['Protocol'] for sourceStorage in sourceSE.storages] )
+
+    commonProtocols = destProtocols & sourceProtocols
+
+    if protocols:
+      protocols = set( list( protocols ) ) if protocols else set()
+      commonProtocols = commonProtocols & protocols
+
+    return S_OK( list( commonProtocols ) )
+
   #################################################################################################
   #
   # These are the basic get functions for lfn manipulation
@@ -479,17 +506,19 @@ class StorageElementItem( object ):
   # This is the generic wrapper for file operations
   #
 
-  def getURL( self, lfn, protocol = False ):
+  def getURL( self, lfn, protocol = False, replicaDict = None ):
     """ execute 'getTransportURL' operation.
       :param str lfn: string, list or dictionary of lfns
       :param protocol: if no protocol is specified, we will request self.turlProtocols
       :param replicaDict: optional results from the File Catalog replica query
     """
 
-    self.log.verbose( "StorageElement.getAccessUrl: Getting accessUrl for lfn in %s." % self.name )
-
+    self.log.verbose( "StorageElement.getURL: Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
+    
     if not protocol:
       protocols = self.turlProtocols
+    elif type( protocol ) is ListType:
+      protocols = protocol
     else:
       protocols = [protocol]
 
@@ -517,7 +546,7 @@ class StorageElementItem( object ):
 
   def __generateURLDict( self, lfns, storage, replicaDict = {} ):
     """ Generates a dictionary (url : lfn ), where the url are constructed
-        from the lfn using the getURL method of the storage plugins.
+        from the lfn using the constructURLFromLFN method of the storage plugins.
         :param: lfns : dictionary {lfn:whatever}
         :returns dictionary {constructed url : lfn}
     """
@@ -527,6 +556,7 @@ class StorageElementItem( object ):
     failed = {}  # lfn : string with errors
     for lfn in lfns:
       if self.useCatalogURL:
+        # Is this self.name alias proof?
         url = replicaDict.get( lfn, {} ).get( self.name, '' )
         if url:
           urlDict[url] = lfn
@@ -552,14 +582,12 @@ class StorageElementItem( object ):
         if not result['OK']:
           errStr = "StorageElement.__generateURLDict %s." % result['Message']
           self.log.debug( errStr, 'for %s' % ( lfn ) )
-          if lfn not in failed:
-            failed[lfn] = ''
-          failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if failed[lfn] else errStr
+          failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if lfn in failed else errStr
         else:
           urlDict[result['Value']] = lfn
           
-    res = S_OK( urlDict )
-    res['Failed'] = failed    
+    res = S_OK( {'Successful': urlDict, 'Failed' : failed} )
+#     res['Failed'] = failed
     return res
 
   def __executeMethod( self, lfn, *args, **kwargs ):
@@ -643,10 +671,10 @@ class StorageElementItem( object ):
 
       self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol URLs for %s." % ( len( lfnDict ),
                                                                                                   pluginName ) )
-      replicaDict = kwargs.get( 'replicaDict', {} )
+      replicaDict = kwargs.pop( 'replicaDict', {} )
       res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
-      urlDict = res['Value']  # url : lfn
-      failed.update( res['Failed'] )
+      urlDict = res['Value']['Successful']  # url : lfn
+      failed.update( res['Value']['Failed'] )
       if not len( urlDict ):
         self.log.verbose( "StorageElement.__executeMethod No urls generated for protocol %s." % pluginName )
       else:
@@ -665,7 +693,7 @@ class StorageElementItem( object ):
         res = fcn( urlsToUse, *args, **kwargs )
         if not res['OK']:
           errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName
-          self.log.debug( errStr, '%s for protocol %s: %s' % ( self.name, pluginName, res['Message'] ) )
+          self.log.debug( errStr, '%s with plugin %s: %s' % ( self.name, pluginName, res['Message'] ) )
           for lfn in urlDict.values():
             if lfn not in failed:
               failed[lfn] = ''
@@ -697,7 +725,7 @@ class StorageElementItem( object ):
     if self.methodName:
       return self.__executeMethod
 
-    raise AttributeError
+    raise AttributeError( "StorageElement does not have a method '%s'" % name )
 
 
 

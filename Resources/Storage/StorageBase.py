@@ -35,6 +35,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Resources.Utilities import checkArgumentFormat
 
+import os
 PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
 
 class StorageBase:
@@ -319,7 +320,7 @@ class StorageBase:
     if not result['OK']:
       return result
     urlBase = result['Value']
-    url = '%s/%s' % ( urlBase, lfn )    
+    url = os.path.join( urlBase, lfn.lstrip( '/' ) )
     return S_OK( url )    
   
   def updateURL( self, url, withWSUrl = False ):

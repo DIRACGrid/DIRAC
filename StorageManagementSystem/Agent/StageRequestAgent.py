@@ -246,17 +246,18 @@ class StageRequestAgent( AgentModule ):
   def _issuePrestageRequests( self, storageElement, seReplicaIDs, allReplicaInfo ):
     """ Make the request to the SE and update the DB
     """
-    pfnRepIDs = {}
+    # Since we are in a give SE, the lfn is a unique key
+    lfnRepIDs = {}
     for replicaID in seReplicaIDs:
-      pfn = allReplicaInfo[replicaID]['PFN']
-      pfnRepIDs[pfn] = replicaID
+      lfn = allReplicaInfo[replicaID]['LFN']
+      lfnRepIDs[lfn] = replicaID
 
     # Now issue the prestage requests for the remaining replicas
     stageRequestMetadata = {}
-    updatedPfnIDs = []
-    if pfnRepIDs:
-      gLogger.info( "StageRequest._issuePrestageRequests: Submitting %s stage requests for %s." % ( len( pfnRepIDs ), storageElement ) )
-      res = StorageElement( storageElement ).prestageFile( pfnRepIDs, lifetime = self.pinLifetime )
+    updatedLfnIDs = []
+    if lfnRepIDs:
+      gLogger.info( "StageRequest._issuePrestageRequests: Submitting %s stage requests for %s." % ( len( lfnRepIDs ), storageElement ) )
+      res = StorageElement( storageElement ).prestageFile( lfnRepIDs, lifetime = self.pinLifetime )
       gLogger.debug( "StageRequest._issuePrestageRequests: StorageElement.prestageStorageFile: res=", res )
       #Daniela: fishy result from ReplicaManager!!! Should NOT return OK
       #res= {'OK': True, 'Value': {'Successful': {}, 'Failed': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/2010/RAW/EXPRESS/LHCb/COLLISION10/71476/071476_0000000241.raw': ' SRM2Storage.__gfal_exec: Failed to perform gfal_prestage.[SE][BringOnline][SRM_INVALID_REQUEST] httpg://srm-lhcb.cern.ch:8443/srm/managerv2: User not able to access specified space token\n'}}}
@@ -265,18 +266,18 @@ class StageRequestAgent( AgentModule ):
       if not res['OK']:
         gLogger.error( "StageRequest._issuePrestageRequests: Completely failed to submit stage requests for replicas.", res['Message'] )
       else:
-        for pfn, requestID in res['Value']['Successful'].items():
+        for lfn, requestID in res['Value']['Successful'].items():
           if not stageRequestMetadata.has_key( requestID ):
             stageRequestMetadata[requestID] = []
-          stageRequestMetadata[requestID].append( pfnRepIDs[pfn] )
-          updatedPfnIDs.append( pfnRepIDs[pfn] )
+          stageRequestMetadata[requestID].append( lfnRepIDs[lfn] )
+          updatedLfnIDs.append( lfnRepIDs[lfn] )
     if stageRequestMetadata:
       gLogger.info( "StageRequest._issuePrestageRequests: %s stage request metadata to be updated." % len( stageRequestMetadata ) )
       res = self.stagerClient.insertStageRequest( stageRequestMetadata, self.pinLifetime )
       if not res['OK']:
         gLogger.error( "StageRequest._issuePrestageRequests: Failed to insert stage request metadata.", res['Message'] )
         return res
-      res = self.stagerClient.updateReplicaStatus( updatedPfnIDs, 'StageSubmitted' )
+      res = self.stagerClient.updateReplicaStatus( updatedLfnIDs, 'StageSubmitted' )
       if not res['OK']:
         gLogger.error( "StageRequest._issuePrestageRequests: Failed to insert replica status.", res['Message'] )
     return
@@ -418,13 +419,14 @@ class StageRequestAgent( AgentModule ):
     if not seReplicaIDs:
       return S_OK( {'Online': [], 'Offline': []} )
 
-    pfnRepIDs = {}
+    # Since we are with a given SE, the LFN is a unique key
+    lfnRepIDs = {}
     for replicaID in seReplicaIDs:
-      pfn = allReplicaInfo[replicaID]['PFN']
-      pfnRepIDs[pfn] = replicaID
+      lfn = allReplicaInfo[replicaID]['LFN']
+      lfnRepIDs[lfn] = replicaID
 
-    gLogger.info( "StageRequest.__checkIntegrity: Checking the integrity of %s replicas at %s." % ( len( pfnRepIDs ), storageElement ) )
-    res = StorageElement( storageElement ).getFileMetadata( pfnRepIDs )
+    gLogger.info( "StageRequest.__checkIntegrity: Checking the integrity of %s replicas at %s." % ( len( lfnRepIDs ), storageElement ) )
+    res = StorageElement( storageElement ).getFileMetadata( lfnRepIDs )
     if not res['OK']:
       gLogger.error( "StageRequest.__checkIntegrity: Completely failed to obtain metadata for replicas.", res['Message'] )
       return res
@@ -432,32 +434,32 @@ class StageRequestAgent( AgentModule ):
     terminalReplicaIDs = {}
     onlineReplicaIDs = []
     offlineReplicaIDs = []
-    for pfn, metadata in res['Value']['Successful'].items():
+    for lfn, metadata in res['Value']['Successful'].items():
 
-      if metadata['Size'] != allReplicaInfo[pfnRepIDs[pfn]]['Size']:
-        gLogger.error( "StageRequest.__checkIntegrity: PFN StorageElement size does not match FileCatalog", pfn )
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN StorageElement size does not match FileCatalog'
-        pfnRepIDs.pop( pfn )
+      if metadata['Size'] != allReplicaInfo[lfnRepIDs[lfn]]['Size']:
+        gLogger.error( "StageRequest.__checkIntegrity: LFN StorageElement size does not match FileCatalog", lfn )
+        terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN StorageElement size does not match FileCatalog'
+        lfnRepIDs.pop( lfn )
       elif metadata['Lost']:
-        gLogger.error( "StageRequest.__checkIntegrity: PFN has been Lost by the StorageElement", pfn )
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN has been Lost by the StorageElement'
-        pfnRepIDs.pop( pfn )
+        gLogger.error( "StageRequest.__checkIntegrity: LFN has been Lost by the StorageElement", lfn )
+        terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN has been Lost by the StorageElement'
+        lfnRepIDs.pop( lfn )
       elif metadata['Unavailable']:
-        gLogger.error( "StageRequest.__checkIntegrity: PFN is declared Unavailable by the StorageElement", pfn )
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN is declared Unavailable by the StorageElement'
-        pfnRepIDs.pop( pfn )
+        gLogger.error( "StageRequest.__checkIntegrity: LFN is declared Unavailable by the StorageElement", lfn )
+        terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN is declared Unavailable by the StorageElement'
+        lfnRepIDs.pop( lfn )
       else:
         if metadata['Cached']:
           gLogger.verbose( "StageRequest.__checkIntegrity: Cache hit for file." )
-          onlineReplicaIDs.append( pfnRepIDs[pfn] )
+          onlineReplicaIDs.append( lfnRepIDs[lfn] )
         else:
-          offlineReplicaIDs.append( pfnRepIDs[pfn] )
+          offlineReplicaIDs.append( lfnRepIDs[lfn] )
 
-    for pfn, reason in res['Value']['Failed'].items():
+    for lfn, reason in res['Value']['Failed'].items():
       if re.search( 'File does not exist', reason ):
-        gLogger.error( "StageRequest.__checkIntegrity: PFN does not exist in the StorageElement", pfn )
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN does not exist in the StorageElement'
-      pfnRepIDs.pop( pfn )
+        gLogger.error( "StageRequest.__checkIntegrity: LFN does not exist in the StorageElement", lfn )
+        terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN does not exist in the StorageElement'
+      lfnRepIDs.pop( lfn )
 
     # Update the states of the replicas in the database #TODO Sent status to integrity DB
     if terminalReplicaIDs:

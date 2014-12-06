@@ -45,6 +45,7 @@ import re
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from CS
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 # # from Core
@@ -322,6 +323,8 @@ class FTSAgent( AgentModule ):
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
     log.info( "will use DataManager proxy" )
+
+    self.registrationProtocols = getRegistrationProtocols()
 
 
     # # gMonitor stuff here
@@ -999,7 +1002,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = returnSingleResult( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+        pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = self.registrationProtocols ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]

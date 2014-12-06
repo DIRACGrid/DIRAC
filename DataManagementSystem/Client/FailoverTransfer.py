@@ -23,6 +23,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
 from DIRAC.RequestManagementSystem.Client.Request           import Request
@@ -44,7 +45,7 @@ class FailoverTransfer( object ):
     self.log = log
     if not self.log:
       self.log = gLogger.getSubLogger( "FailoverTransfer" )
-    
+
     self.request = requestObject
     if not self.request:
       self.request = Request()
@@ -52,6 +53,7 @@ class FailoverTransfer( object ):
       self.request.SourceComponent = 'FailoverTransfer'
 
     self.defaultChecksumType = defaultChecksumType
+    self.registrationProtocols = getRegistrationProtocols()
 
   #############################################################################
   def transferAndRegisterFile( self,
@@ -234,7 +236,7 @@ class FailoverTransfer( object ):
       regFile.GUID = fileDict.get( "GUID", "" )
 
       se = StorageElement( targetSE )
-      pfn = se.getPfnForLfn( lfn )
+      pfn = se.getURL( lfn, self.registrationProtocols )
       if not pfn["OK"] or lfn not in pfn["Value"]['Successful']:
         self.log.error( "Unable to get PFN for LFN", "%s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
         return pfn
