@@ -438,7 +438,7 @@ if not useServerCert:
   if not result['OK']:
     DIRAC.gLogger.notice( 'Configuration is not completed because no user proxy is available' )
     DIRAC.gLogger.notice( 'Create one using dirac-proxy-init and execute again with -F option' )
-    sys.exit( 0 )
+    sys.exit( 1 )
 else:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   # When using Server Certs CA's will be checked, the flag only disables initial download
@@ -459,6 +459,10 @@ if update:
 # This has to be done for all VOs in the installation
 
 if skipVOMSDownload:
+  # always removing before exiting
+  if useServerCert:
+    Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+    Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
   sys.exit( 0 )
 
 result = Registry.getVOMSServerInfo()

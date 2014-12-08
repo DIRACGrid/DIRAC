@@ -42,6 +42,8 @@ from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.PrettyPrint                    import printTable
+
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -2573,12 +2575,12 @@ class Dirac( API ):
 
     if printOutput:
       loggingTupleList = result['Value']
-      # source is removed for printing to control width
-      headers = ( 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' )
-      print ''.join( [h.ljust( 30 ) for h in headers] )
-
+      
+      fields = [ 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' ]
+      records = []
       for l in loggingTupleList:
-        print ''.join( [l[i].ljust( 30 ) for i in ( 4, 0, 1, 2, 3 )] )
+        records.append( [ l[i] for i in ( 4, 0, 1, 2, 3 ) ] )
+      printTable( fields, records, numbering = False, columnSeparator = '  ' )  
 
     return result
 

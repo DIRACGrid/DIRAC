@@ -19,6 +19,15 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p7]
+
+*Core
+FIX: dirac-configure - always removing the UseServerCertificate flag before leaving
+FIX: ProcessPool - one more check for the executing task ending properly 
+
+*Interfaces 
+FIX: Dirac.py - use printTable in loggingInfo()
+
 [v6r12p6]
 
 FIX: fixes from v6r11p26 patch release
