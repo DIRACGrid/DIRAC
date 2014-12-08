@@ -283,6 +283,8 @@ class StorageBase:
     :param list protocols: a list of acceptable transport protocols in priority order                
     """
     
+    print "AT >>> getTransportURL", pathDict, protocols
+    
     res = checkArgumentFormat( pathDict )
     if not res['OK']:
       return res
@@ -290,7 +292,7 @@ class StorageBase:
     successful = {}
     failed = {}
     
-    if not self.protocolParameters['Protocol'] in protocols:
+    if protocols and not self.protocolParameters['Protocol'] in protocols:
       return S_ERROR( 'No native protocol requested' )  
     
     for url in urls:
