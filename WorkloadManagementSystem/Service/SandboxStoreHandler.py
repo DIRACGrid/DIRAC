@@ -21,7 +21,6 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Security import Properties
 # from DIRAC.Core.Utilities import List
 
