@@ -4,6 +4,7 @@
 __RCSID__ = "$Id $"
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
@@ -26,8 +27,16 @@ class SetFileStatus( OperationHandlerBase ):
   def __call__( self ):
     """ It expects to find the arguments for tc.setFileStatusForTransformation in operation.Arguments
     """
+    try:
+      setFileStatusDict = DEncode.decode( self.operation.Arguments )
+      self.log.debug( "decoded filStatusDict=%s" % str( setFileStatusDict ) )
+    except ValueError, error:
+      self.log.exception( error )
+      self.operation.Error = str( error )
+      self.operation.Status = "Failed"
+      return S_ERROR( str( error ) )
+
     tc = TransformationClient()
-    setFileStatusDict = self.operation.Arguments
     setStatus = tc.setFileStatusForTransformation( setFileStatusDict['transformation'],
                                                    setFileStatusDict['statusDict'],
                                                    setFileStatusDict['force'] )
