@@ -49,15 +49,11 @@ class FileReport( object ):
   def generateForwardDISET( self ):
     """ Commit the accumulated records and generate request eventually """
     result = self.commit()
-    forwardDISETOp = None
+    commitOp = None
     if not result['OK']:
       # Generate Request
-      if result.has_key( 'rpcStub' ):
-        forwardDISETOp = Operation()
-        forwardDISETOp.Type = "ForwardDISET"
-        forwardDISETOp.Arguments = DEncode.encode( result['rpcStub'] )
+      commitOp = Operation()
+      commitOp.Type = 'setFileStatus'
+      commitOp.Arguments = {'transformation':self.transformation, 'statusDict':self.statusDict, 'force':self.force}
 
-      else:
-        return S_ERROR( 'Could not create ForwardDISET operation' )
-
-    return S_OK( forwardDISETOp )
+    return S_OK( commitOp )
