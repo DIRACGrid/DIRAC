@@ -50,6 +50,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.replicaCache = None
     self.replicaCacheValidity = None
     self.writingCache = False
+    self.removedFromCache = 0
 
     self.noUnusedDelay = 0
     self.unusedFiles = {}
@@ -109,7 +110,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """
     if self.transInQueue:
       self._logInfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInQueue ) )
-      self._logInfo( 'Transformations: ' + ','.join( self.transInQueue ) )
+      self._logInfo( 'Transformations: ' + ','.join( [str( transID ) for transID in self.transInQueue] ) )
       self.transInQueue = []
       while self.transInThread:
         time.sleep( 2 )
@@ -551,7 +552,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           if cachedReplicaSets[timeKey].pop( lfn, None ):
             removed += 1
     if removed:
+      self.removedFromCache += removed
       self._logInfo( "Removed %d replicas from cache" % removed, method = '__removeFromCache', transID = transID )
+      if self.removedFromCache > 1000:
+        self.__writeCache()
 
   def __readCache( self ):
     """ Reads from the cache
@@ -560,6 +564,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       cacheFile = open( self.cacheFile, 'r' )
       self.replicaCache = pickle.load( cacheFile )
       cacheFile.close()
+      self.removedFromCache = 0
       self._logInfo( "Successfully loaded replica cache from file %s" % self.cacheFile )
     except Exception:
       self._logException( "Failed to load replica cache from file %s" % self.cacheFile, method = '__readCache' )
@@ -577,21 +582,23 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       time.sleep( 10 )
     try:
       startTime = time.time()
-      self.dateWriteCache = now
       if self.writingCache:
         return
       self.writingCache = True
+      self.dateWriteCache = now
       # Protect the copy of the cache
       tmpCache = self.replicaCache.copy()
+      filesInCache = sum( [len( lfns ) for crs in tmpCache.values() for lfns in crs.values()] )
       # write to a temporary file in order to avoid corrupted files
       tmpFile = self.cacheFile + '.tmp'
       f = open( tmpFile, 'w' )
       pickle.dump( tmpCache, f )
       f.close()
+      self.removedFromCache = 0
       # Now rename the file as it shold
       os.rename( tmpFile, self.cacheFile )
-      self._logInfo( "Successfully wrote replica cache file %s in %.1f seconds" \
-                        % ( self.cacheFile, time.time() - startTime ), method = method )
+      self._logInfo( "Successfully wrote replica cache file (%d files) %s in %.1f seconds" \
+                        % ( filesInCache, self.cacheFile, time.time() - startTime ), method = method )
     except Exception:
       self._logException( "Could not write replica cache file %s" % self.cacheFile, method = method )
     finally:
