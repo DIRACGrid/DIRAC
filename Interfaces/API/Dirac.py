@@ -42,6 +42,8 @@ from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.PrettyPrint                    import printTable
+
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -2129,7 +2131,7 @@ class Dirac( API ):
                   site = None, owner = None, ownerGroup = None, jobGroup = None, date = None ):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
-        
+
          - date must be specified as yyyy-mm-dd.  By default, the date is today.
          - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
          - site is the DIRAC site name, e.g. LCG.CERN.ch
@@ -2573,18 +2575,12 @@ class Dirac( API ):
 
     if printOutput:
       loggingTupleList = result['Value']
-      # source is removed for printing to control width
-      headers = ( 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' )
-      line = ''
-      for i in headers:
-        line += i.ljust( 30 )
-      print line
-
-      for i in loggingTupleList:
-        line = ''
-        for j in xrange( len( i ) - 1 ):
-          line += i[j].ljust( 30 )
-        print line
+      
+      fields = [ 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' ]
+      records = []
+      for l in loggingTupleList:
+        records.append( [ l[i] for i in ( 4, 0, 1, 2, 3 ) ] )
+      printTable( fields, records, numbering = False, columnSeparator = '  ' )  
 
     return result
 

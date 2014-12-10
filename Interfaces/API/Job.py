@@ -139,12 +139,14 @@ class Job( API ):
       self.log.warn( 'The executable code could not be found locally' )
       logName = 'CodeOutput.log'
 
+    self.stepCount += 1
+    stepName = 'RunScriptStep%s' % ( self.stepCount )
+
     if logFile:
       if type( logFile ) == type( ' ' ):
         logName = str(logFile)
-
-    self.stepCount += 1
-    stepName = 'RunScriptStep%s' % ( self.stepCount )
+    else:
+      logName = "Script%s_%s" %( self.stepCount, logName )
 
     step = getStepDefinition( 'ScriptStep%s' % ( self.stepCount ), modulesList, parametersList = parameters )
     self.addToOutputSandbox.append( logName )
