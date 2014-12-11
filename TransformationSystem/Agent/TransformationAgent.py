@@ -1,7 +1,7 @@
 """  TransformationAgent processes transformations found in the transformation database.
 """
 
-import time, re, Queue, os, datetime, pickle
+import time, Queue, os, datetime, pickle
 from DIRAC                                                          import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
@@ -487,7 +487,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Make sure that file missing from the catalog are marked in the transformation DB.
     missingLfns = []
     for lfn, reason in replicas['Failed'].items():
-      if re.search( "No such file or directory", reason ):
+      if "No such file or directory" in reason:
         self._logVerbose( "%s not found in the catalog." % lfn, method = method, transID = transID )
         missingLfns.append( lfn )
     if missingLfns:
