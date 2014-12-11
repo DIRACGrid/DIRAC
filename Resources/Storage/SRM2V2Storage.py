@@ -14,13 +14,12 @@ from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Utilities.Utils import checkArgumentFormat
+from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File import getSize
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
 
 # # RCSID
@@ -32,7 +31,7 @@ class SRM2V2Storage( StorageBase ):
   SRM v2 interface to StorageElement using gfal2
   """
 
-  def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
+  def __init__( self, storageName, parameters ):
     """ c'tor
 
     :param self: self reference
@@ -47,6 +46,7 @@ class SRM2V2Storage( StorageBase ):
 
 #     os.environ['GLOBUS_THREAD_MODEL'] = "pthread"
 #     import gfal2
+    StorageBase.__init__( self, storageName, parameters )
 
     self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
 
@@ -67,17 +67,14 @@ class SRM2V2Storage( StorageBase ):
     self.gfal2 = gfal2.creat_context()
 
     # # save c'tor params
-    self.protocolName = 'SRM2V2'
+    self.protocolName = 'srm'
+    self.pluginName = 'SRM2V2'
     self.name = storageName
-    self.protocol = protocol
-    self.path = path
-    self.host = host
-    self.port = port
-    self.wspath = wspath
-    self.spaceToken = spaceToken
-    self.cwd = self.path
+    self.protocol = parameters['Protocol']
+    self.spaceToken = parameters['SpaceToken']
+
     # # init base class
-    StorageBase.__init__( self, self.name, self.path )
+
 
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
@@ -125,17 +122,6 @@ class SRM2V2Storage( StorageBase ):
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
 
-
-# ## Unused at the moment, thus commented ########
-#
-#    def resetWorkingDirectory( self ):
-#      """ reset the working directory to the base dir
-#
-#      :param self: self reference
-#      """
-#      self.cwd = self.path
-#
-# ################################################
 
 
 
@@ -200,44 +186,7 @@ class SRM2V2Storage( StorageBase ):
 
 
 
-# ## Maybe used later for keeping book. At the moment no use though.
-  @staticmethod
-  def __initialiseAccountingObject( operation, se, files ):
-    """ create DataOperation accounting object
-
-    :param str operation: operation performed
-    :param str se: destination SE name
-    :param int files: nb of files
-    """
-    import DIRAC
-    accountingDict = {}
-    accountingDict['OperationType'] = operation
-    result = getProxyInfo()
-    if not result['OK']:
-      userName = 'system'
-    else:
-      userName = result['Value'].get( 'username', 'unknown' )
-    accountingDict['User'] = userName
-    accountingDict['Protocol'] = 'gfal2'
-    accountingDict['RegistrationTime'] = 0.0
-    accountingDict['RegistrationOK'] = 0
-    accountingDict['RegistrationTotal'] = 0
-    accountingDict['Destination'] = se
-    accountingDict['TransferTotal'] = files
-    accountingDict['TransferOK'] = files
-    accountingDict['TransferSize'] = files
-    accountingDict['TransferTime'] = 0.0
-    accountingDict['FinalStatus'] = 'Successful'
-    accountingDict['Source'] = DIRAC.siteName()
-    oDataOperation = DataOperation()
-    oDataOperation.setValuesFromDict( accountingDict )
-    return oDataOperation
-
-
-
 ### methods for manipulating files ###
-
-
 
   def isFile( self, path ):
     """ Check if the path provided is a file or not
@@ -2066,93 +2015,4 @@ class SRM2V2Storage( StorageBase ):
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
-
-
-  def getProtocolPfn( self, pfnDict, withPort ):
-      """ Construct SURL using :self.host:, :self.protocol: and optionally :self.port: and :self.wspath:
-
-      :param self: self reference
-      :param dict pfnDict: pfn dict
-      :param bool withPort: whether to include port information or not
-      """
-      pfnDict['Protocol'] = self.protocol
-      pfnDict['Host'] = self.host
-      if not pfnDict['Path'].startswith( self.path ):
-        pfnDict['Path'] = os.path.join( self.path, pfnDict['Path'].strip( '/' ) )
-      if withPort:
-        pfnDict['Port'] = self.port
-        pfnDict['WSUrl'] = self.wspath
-      else:
-        pfnDict['Port'] = ''
-        pfnDict['WSUrl'] = ''
-      return pfnunparse( pfnDict )
-
-
-
-  def getPFNBase( self, withPort = False ):
-    """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
-
-    :param self: self reference
-    :param bool withPort: flag to include port
-    :returns pfn base path
-    """
-    return S_OK( { True : 'srm://%s:%s%s' % ( self.host, self.port, self.path ),
-                   False : 'srm://%s%s' % ( self.host, self.path ) }[withPort] )
-
-
-
-  def getParameters( self ):
-    """ Gets all the storage specific parameters pass when instantiating the storage
-
-    :param self: self reference
-    :returns parameter dictionary
-    """
-    return S_OK( { "StorageName" : self.name,
-                   "ProtocolName" : self.protocolName,
-                   "Protocol" : self.protocol,
-                   "Host" : self.host,
-                   "Path" : self.path,
-                   "Port" : self.port,
-                   "SpaceToken" : self.spaceToken,
-                   "WSUrl" : self.wspath } )
-
-#   def getCurrentURL( self, fileName ):
-#     """ Obtain the current file URL from the current working directory and the filename
-#
-#     :param self: self reference
-#     :param str fileName: path on storage
-#     """
-#     # # strip leading / if fileName arg is present
-#     fileName = fileName.lstrip( "/" ) if fileName else fileName
-#     try:
-#       fullUrl = "%s://%s:%s%s%s/%s" % ( self.protocol, self.host, self.port, self.wspath, self.cwd, fileName )
-#       fullUrl = fullUrl.rstrip( "/" )
-#       return S_OK( fullUrl )
-#     except TypeError, error:
-#       return S_ERROR( "Failed to create URL %s" % error )
-
-
-# ## Unused at the moment
-#   def getUrl( self, path, withPort = True ):
-#     """ get SRM PFN for :path: with optional port info
-#
-#     :param self: self reference
-#     :param str path: file path
-#     :param bool withPort: toggle port info
-#     """
-#     pfnDict = pfnparse( path )
-#     if not pfnDict["OK"]:
-#       self.log.error( "getUrl: %s" % pfnDict["Message"] )
-#       return pfnDict
-#     pfnDict = pfnDict['Value']
-#     if not pfnDict['Path'].startswith( self.path ):
-#       pfnDict['Path'] = os.path.join( self.path, pfnDict['Path'].strip( '/' ) )
-#     pfnDict['Protocol'] = 'srm'
-#     pfnDict['Host'] = self.host
-#     pfnDict['Port'] = self.port
-#     pfnDict['WSUrl'] = self.wspath
-#     if not withPort:
-#       pfnDict['Port'] = ''
-#       pfnDict['WSUrl'] = ''
-#     return pfnunparse( pfnDict )
 
