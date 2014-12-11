@@ -12,7 +12,6 @@ import types
 import atexit
 import os
 import readline
-import rlcompleter
 
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
@@ -60,7 +59,8 @@ class CSCLI( cmd.Cmd ):
     #User friendly hack
     self.do_exit = self.do_quit
     # store history
-    historyFile = os.path.expanduser( "~/.dirac/clihistory" )
+    histfilename = os.path.basename(sys.argv[0])
+    historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
     if not os.path.exists( os.path.dirname(historyFile) ):
       os.makedirs( os.path.dirname(historyFile) )
     if os.path.isfile( historyFile ):
