@@ -91,13 +91,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
   def finalize( self ):
     """ graceful finalization
     """
+    method = 'finalize'
     if self.transInQueue:
-      self._logInfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInQueue ) )
-      self._logInfo( 'Transformations: ' + ','.join( [str( transID ) for transID in self.transInQueue] ) )
+      self._logInfo( "Wait for threads to get empty before terminating the agent (%d tasks)" % len( self.transInQueue ), method = method )
+      self._logInfo( 'Transformations: ' + ','.join( [str( transID ) for transID in self.transInQueue] ), method = method )
       self.transInQueue = []
       while self.transInThread:
         time.sleep( 2 )
-      self.log.info( "Threads are empty, terminating the agent..." )
+      self.log.info( "Threads are empty, terminating the agent..." , method = method )
     self.__writeCache( force = True )
     return S_OK()
 
