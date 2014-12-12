@@ -562,12 +562,13 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.__removeFromCache( transID, lfns, log = True )
 
   def __removeFromCache( self, transID, lfns, log = False ):
-    cachedReplicaSets = self.replicaCache.get( transID, {} )
+    if transID not in self.replicaCache:
+      return
     removed = 0
-    if cachedReplicaSets and lfns:
+    if self.replicaCache[transID] and lfns:
       for lfn in lfns:
-        for timeKey in cachedReplicaSets:
-          if cachedReplicaSets[timeKey].pop( lfn, None ):
+        for timeKey in self.replicaCache[transID]:
+          if self.replicaCache[transID][timeKey].pop( lfn, None ):
             removed += 1
     if removed:
       self.removedFromCache += removed
