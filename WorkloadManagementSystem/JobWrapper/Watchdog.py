@@ -417,8 +417,8 @@ class Watchdog:
       if cpuTime < 0:
         self.log.warn( 'Consumed CPU time negative, something wrong may have happened, ignore' )
         return S_OK()
-      if not wallClockTime:
-        self.log.warn( 'Wallclock should not be zero! Ignore' )
+      if wallClockTime <= 0:
+        self.log.warn( 'Wallclock time should not be negative or zero, Ignore' )
         return S_OK()
 
       ratio = ( cpuTime / wallClockTime ) * 100.
