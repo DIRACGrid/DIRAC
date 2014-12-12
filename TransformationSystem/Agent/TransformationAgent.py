@@ -230,6 +230,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     transFiles = transFiles['Value']
     lfns = [ f['LFN'] for f in transFiles ]
+    self.__cleanReplicas( transID, lfns )
     unusedFiles = len( lfns )
 
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
@@ -409,8 +410,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     cachedReplicaSets = self.replicaCache.get( transID, {} )
     cachedReplicas = {}
     # Merge all sets of replicas
-    for crs in cachedReplicaSets:
-      cachedReplicas.update( cachedReplicaSets[crs] )
+    for replicas in cachedReplicaSets.values():
+      cachedReplicas.update( replicas )
     self._logInfo( "Number of cached replicas: %d" % len( cachedReplicas ), method = method, transID = transID )
     setCached = set( cachedReplicas )
     setLfns = set( lfns )
@@ -515,6 +516,19 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.replicaCache.pop( transID , None )
 
   @gSynchro
+  def __cleanReplicas( self, transID, lfns ):
+    """ Remove cached replicas that are not in a list
+    """
+    cachedReplicas = {}
+    for replicas in self.replicaCache.get( transID, {} ).values():
+      cachedReplicas.update( replicas )
+    toRemove = set( cachedReplicas ) - set( lfns )
+    if toRemove:
+      self._logInfo( "Remove %d files from cache" % len( toRemove ), method = '__cleanReplicas', transID = transID )
+      for lfn in toRemove:
+        del cachedReplicas[lfn]
+
+  @gSynchro
   def __cleanCache( self, fromTrans ):
     """ Cleans the cache
     """
@@ -528,7 +542,9 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
             self._logInfo( "Clear %s replicas for transformation %s, time %s" %
                            ( '%d cached' % nCache if nCache else 'empty cache' , str( transID ), str( updateTime ) ),
                            transID = fromTrans, method = '__cleanCache' )
-            self.replicaCache[transID].pop( updateTime )
+            for reps in self.replicaCache[transID][updateTime].values():
+              del reps
+            del self.replicaCache[transID][updateTime]
             cacheChanged = True
         # Remove empty transformations
         if not self.replicaCache[transID]:
