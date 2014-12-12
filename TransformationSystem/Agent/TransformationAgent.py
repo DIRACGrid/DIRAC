@@ -274,7 +274,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self._logInfo( "No new tasks created for transformation.",
                      method = "processTransformation", transID = transID )
     self.unusedFiles[transID] = unusedFiles - len( lfnsInTasks )
-    self.__removeFromCache( transID, lfnsInTasks )
+    self.__removeFilesFromCache( transID, lfnsInTasks )
 
     # If this production is to Flush
     if transDict['Status'] == 'Flush' and allCreated:
@@ -354,7 +354,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                         method = method, transID = transID )
       else:
         self._logInfo( "Set %d files from %s to Unused" % ( ','.join( otherStatuses ). len( notUnused ) ) )
-        self.__removeFromCache( transID, notUnused )
+        self.__removeFilesFromCache( transID, notUnused )
     return S_OK( transFiles )
 
   def __applyReduction( self, lfns ):
@@ -519,15 +519,13 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     try:
       timeLimit = datetime.datetime.utcnow() - datetime.timedelta( days = self.replicaCacheValidity )
       for transID in set( self.replicaCache ):
-        for updateTime, cachedReplicas in self.replicaCache[transID].items():
-          nCache = len( cachedReplicas )
+        for updateTime in set( self.replicaCache[transID] ):
+          nCache = len( self.replicaCache[transID][updateTime] )
           if updateTime < timeLimit or not nCache:
             self._logInfo( "Clear %s replicas for transformation %s, time %s" %
                            ( '%d cached' % nCache if nCache else 'empty cache' , str( transID ), str( updateTime ) ),
                            transID = fromTrans, method = '__cleanCache' )
-            for reps in cachedReplicas.values():
-              del reps
-            del cachedReplicas
+            del self.replicaCache[transID][updateTime]
             cacheChanged = True
         # Remove empty transformations
         if not self.replicaCache[transID]:
@@ -543,7 +541,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self._logException( "While writing replica cache" )
 
   @gSynchro
-  def __removeFromCache( self, transID, lfns, log = True ):
+  def __removeFilesFromCache( self, transID, lfns ):
+    self.__removeFromCache( transID, lfns, log = True )
+
+  def __removeFromCache( self, transID, lfns, log = False ):
     cachedReplicaSets = self.replicaCache.get( transID, {} )
     removed = 0
     if cachedReplicaSets and lfns:
