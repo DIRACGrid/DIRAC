@@ -1626,7 +1626,7 @@ class XROOTStorage( StorageBase ):
     pfnDict['Protocol'] = self.protocol
     pfnDict['Host'] = self.host
 
-    if not pfnDict['Path'].startswith( self.rootdir ):
+    if not (pfnDict['Path'].startswith( self.rootdir ) or pfnDict['Path'].startswith( "/"+self.rootdir )):
       pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].strip( '/' ) )
 
     # These lines should be checked

@@ -168,6 +168,28 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p27]
+
+*Core
+BUGFIX: InstallTools - bug fix in installNewPortal()
+
+*WMS
+FIX: Watchdog - disallow cputime and wallclock to be negative
+
+*TS
+FIX: TransformationAgent - correct handling of replica caches when more than 5000 files
+
+*Workflow
+BUGFIX: ModuleBase - bug fix in execute()
+BUGFIX: Workflow - bug fix in createStepInstance()
+
+*DMS
+BUGFIX: DiractoryTreeBase - bug fix in getDirectoryPhysicalSizeFromUsage()
+
+*Resources
+FIX: XROOTStorage - back ported fixes from #2126: putFile would place file in 
+     the wrong location on eos
+
 [v6r11p26]
 
 *Framework
