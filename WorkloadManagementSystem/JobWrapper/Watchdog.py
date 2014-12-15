@@ -76,25 +76,25 @@ class Watchdog:
     self.maxcount = loops
     self.log.verbose( 'Watchdog initialization' )
     self.log.info( 'Attempting to Initialize Watchdog for: %s' % ( self.systemFlag ) )
-    #Test control flags
+    # Test control flags
     self.testWallClock = gConfig.getValue( self.section + '/CheckWallClockFlag', 1 )
     self.testDiskSpace = gConfig.getValue( self.section + '/CheckDiskSpaceFlag', 1 )
     self.testLoadAvg = gConfig.getValue( self.section + '/CheckLoadAvgFlag', 1 )
     self.testCPUConsumed = gConfig.getValue( self.section + '/CheckCPUConsumedFlag', 1 )
     self.testCPULimit = gConfig.getValue( self.section + '/CheckCPULimitFlag', 0 )
     self.testTimeLeft = gConfig.getValue( self.section + '/CheckTimeLeftFlag', 1 )
-    #Other parameters
-    self.pollingTime = gConfig.getValue( self.section + '/PollingTime', 10 ) # 10 seconds
-    self.checkingTime = gConfig.getValue( self.section + '/CheckingTime', 30 * 60 ) #30 minute period
-    self.minCheckingTime = gConfig.getValue( self.section + '/MinCheckingTime', 20 * 60 ) # 20 mins
-    self.maxWallClockTime = gConfig.getValue( self.section + '/MaxWallClockTime', 3 * 24 * 60 * 60 ) # e.g. 4 days
-    self.jobPeekFlag = gConfig.getValue( self.section + '/JobPeekFlag', 1 ) # on / off
-    self.minDiskSpace = gConfig.getValue( self.section + '/MinDiskSpace', 10 ) #MB
-    self.loadAvgLimit = gConfig.getValue( self.section + '/LoadAverageLimit', 1000 ) # > 1000 and jobs killed
-    self.sampleCPUTime = gConfig.getValue( self.section + '/CPUSampleTime', 30 * 60 ) # e.g. up to 20mins sample
-    self.jobCPUMargin = gConfig.getValue( self.section + '/JobCPULimitMargin', 20 ) # %age buffer before killing job
-    self.minCPUWallClockRatio = gConfig.getValue( self.section + '/MinCPUWallClockRatio', 5 ) #ratio %age
-    self.nullCPULimit = gConfig.getValue( self.section + '/NullCPUCountLimit', 5 ) #After 5 sample times return null CPU consumption kill job
+    # Other parameters
+    self.pollingTime = gConfig.getValue( self.section + '/PollingTime', 10 )  # 10 seconds
+    self.checkingTime = gConfig.getValue( self.section + '/CheckingTime', 30 * 60 )  # 30 minute period
+    self.minCheckingTime = gConfig.getValue( self.section + '/MinCheckingTime', 20 * 60 )  # 20 mins
+    self.maxWallClockTime = gConfig.getValue( self.section + '/MaxWallClockTime', 3 * 24 * 60 * 60 )  # e.g. 4 days
+    self.jobPeekFlag = gConfig.getValue( self.section + '/JobPeekFlag', 1 )  # on / off
+    self.minDiskSpace = gConfig.getValue( self.section + '/MinDiskSpace', 10 )  # MB
+    self.loadAvgLimit = gConfig.getValue( self.section + '/LoadAverageLimit', 1000 )  # > 1000 and jobs killed
+    self.sampleCPUTime = gConfig.getValue( self.section + '/CPUSampleTime', 30 * 60 )  # e.g. up to 20mins sample
+    self.jobCPUMargin = gConfig.getValue( self.section + '/JobCPULimitMargin', 20 )  # %age buffer before killing job
+    self.minCPUWallClockRatio = gConfig.getValue( self.section + '/MinCPUWallClockRatio', 5 )  # ratio %age
+    self.nullCPULimit = gConfig.getValue( self.section + '/NullCPUCountLimit', 5 )  # After 5 sample times return null CPU consumption kill job
     self.checkCount = 0
     self.nullCPUCount = 0
     if self.checkingTime < self.minCheckingTime:
@@ -146,7 +146,7 @@ class Watchdog:
     """ The main agent execution method of the Watchdog.
     """
     if not self.exeThread.isAlive():
-      #print self.parameters
+      # print self.parameters
       self.__getUsageSummary()
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
@@ -162,7 +162,7 @@ class Watchdog:
         self.littleTimeLeftCount -= 1
 
 
-    #Note: need to poll regularly to see if the thread is alive
+    # Note: need to poll regularly to see if the thread is alive
     #      but only perform checks with a certain frequency
     if ( time.time() - self.initialValues['StartTime'] ) > self.checkingTime * self.checkCount:
       self.checkCount += 1
@@ -172,7 +172,7 @@ class Watchdog:
         self.log.warn( result['Message'] )
       return S_OK()
     else:
-      #self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
+      # self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
       return S_OK()
 
 
@@ -281,12 +281,12 @@ class Watchdog:
     except Exception:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
       self.log.exception()
-      return S_OK( cpuTime ) #just return null CPU
+      return S_OK( cpuTime )  # just return null CPU
 
     if not cpuTime['OK']:
       self.log.warn( 'Problem while checking consumed CPU' )
       self.log.warn( cpuTime )
-      return S_OK( '00:00:00' ) #again return null CPU in this case
+      return S_OK( '00:00:00' )  # again return null CPU in this case
 
     cpuTime = cpuTime['Value']
     self.log.verbose( "Raw CPU time consumed (s) = %s" % ( cpuTime ) )
@@ -414,12 +414,18 @@ class Watchdog:
       # if cpuTime == 0:
       #   return S_OK()
       cpuTime -= self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
+      if cpuTime < 0:
+        self.log.warn( 'Consumed CPU time negative, something wrong may have happened, ignore' )
+        return S_OK()
+      if wallClockTime <= 0:
+        self.log.warn( 'Wallclock time should not be negative or zero, Ignore' )
+        return S_OK()
 
       ratio = ( cpuTime / wallClockTime ) * 100.
 
       self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
       # in case of error cpuTime might be 0, exclude this
-      if wallClockTime and ratio < self.minCPUWallClockRatio:
+      if ratio < self.minCPUWallClockRatio:
         if os.path.exists( 'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' ):
           self.log.info( 'N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload' )
           return S_OK()
@@ -451,7 +457,7 @@ class Watchdog:
       self.log.warn( str( x ) )
       return S_ERROR( 'Could not calculate CPU time' )
 
-    #Normalization to be implemented
+    # Normalization to be implemented
     normalizedCPUValue = cpuValue
 
     result = S_OK()
@@ -654,7 +660,7 @@ class Watchdog:
     """ Returns average load, memory etc. over execution of job thread
     """
     summary = {}
-    #CPUConsumed
+    # CPUConsumed
     if self.parameters.has_key( 'CPUConsumed' ):
       cpuList = self.parameters['CPUConsumed']
       if cpuList:
@@ -664,7 +670,7 @@ class Watchdog:
           summary['LastUpdateCPU(s)'] = rawCPU['Value']
       else:
         summary['LastUpdateCPU(s)'] = 'Could not be estimated'
-    #DiskSpace
+    # DiskSpace
     if self.parameters.has_key( 'DiskSpace' ):
       space = self.parameters['DiskSpace']
       if space:
@@ -674,14 +680,14 @@ class Watchdog:
         summary['DiskSpace(MB)'] = value
       else:
         summary['DiskSpace(MB)'] = 'Could not be estimated'
-    #MemoryUsed
+    # MemoryUsed
     if self.parameters.has_key( 'MemoryUsed' ):
       memory = self.parameters['MemoryUsed']
       if memory:
         summary['MemoryUsed(kb)'] = abs( float( memory[-1] ) - float( self.initialValues['MemoryUsed'] ) )
       else:
         summary['MemoryUsed(kb)'] = 'Could not be estimated'
-    #LoadAverage
+    # LoadAverage
     if self.parameters.has_key( 'LoadAverage' ):
       laList = self.parameters['LoadAverage']
       if laList:
@@ -768,7 +774,7 @@ class Watchdog:
   def __setJobParamList( self, value ):
     """Wraps around setJobParameters of state update client
     """
-    #job wrapper template sets the jobID variable
+    # job wrapper template sets the jobID variable
     if not os.environ.has_key( 'JOBID' ):
       self.log.info( 'Running without JOBID so parameters will not be reported' )
       return S_OK()
@@ -809,4 +815,4 @@ class Watchdog:
     self.log.warn( 'Watchdog: ' + methodName + ' method should be implemented in a subclass' )
     return S_ERROR( 'Watchdog: ' + methodName + ' method should be implemented in a subclass' )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
