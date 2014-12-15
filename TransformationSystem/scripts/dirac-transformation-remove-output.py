@@ -21,13 +21,4 @@ agent.initialize()
 
 client = TransformationClient()
 for transID in transIDs:
-  res = client.getTransformationParameters( transID, ['Status'] )
-  if not res['OK']:
-    gLogger.error( "Failed to determine transformation status" )
-    gLogger.error( res['Message'] )
-    continue
-  status = res['Value']
-  if not status in ['RemovingFiles', 'RemovingOutput', 'ValidatingInput', 'Active']:
-    gLogger.error( "The transformation is in %s status and the outputs can not be removed" % status )
-    continue
   agent.removeTransformationOutput( transID )
