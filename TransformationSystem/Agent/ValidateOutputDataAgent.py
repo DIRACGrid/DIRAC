@@ -43,11 +43,6 @@ class ValidateOutputDataAgent( AgentModule ):
   def initialize( self ):
     """ Sets defaults
     """
-    # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/DataManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'DataManager' )
-
     gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
     gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     gLogger.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )

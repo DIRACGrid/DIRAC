@@ -420,7 +420,7 @@ if gatewayServer:
   DIRAC.gLogger.verbose( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
 
-# Create the local dirac.cfg if it is not yet there
+# Create the local cfg if it is not yet there
 if not outputFile:
   outputFile = DIRAC.gConfig.diracConfigFilePath
 outputFile = os.path.abspath( outputFile )  
@@ -443,7 +443,7 @@ else:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   # When using Server Certs CA's will be checked, the flag only disables initial download
   # this will be replaced by the use of SkipCADownload
-  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
 
@@ -451,19 +451,24 @@ if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
   DIRAC.gLogger.verbose( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
 
+if useServerCert:
+  # always removing before dumping
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipVOMSDownload' )
+
 if update:
   DIRAC.gConfig.dumpLocalCFGToFile( outputFile )
 
 
-#Do the vomsdir/vomses magic
+# ## LAST PART: do the vomsdir/vomses magic
+
 # This has to be done for all VOs in the installation
 
 if skipVOMSDownload:
-  # always removing before exiting
-  if useServerCert:
-    Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
-    Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
+  # We stop here
   sys.exit( 0 )
+
 
 result = Registry.getVOMSServerInfo()
 if not result['OK']:
@@ -515,13 +520,13 @@ for vo in vomsDict:
     DIRAC.gLogger.exception( "Could not generate vomses file" )
     error = "Could not generate vomses file for VO %s" % voName
 
-if error:
-  sys.exit( 1 )
-
 if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   # When using Server Certs CA's will be checked, the flag only disables initial download
   # this will be replaced by the use of SkipCADownload
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
+
+if error:
+  sys.exit( 1 )
 
 sys.exit( 0 )

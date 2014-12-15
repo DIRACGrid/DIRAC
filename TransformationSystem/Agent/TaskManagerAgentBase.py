@@ -67,8 +67,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
 
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
-
     # Default clients
     self.transClient = TransformationClient()
 

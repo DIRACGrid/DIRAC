@@ -22,13 +22,4 @@ agent.initialize()
 
 client = TransformationClient()
 for transID in transIDs:
-  res = client.getTransformationParameters( transID, ['Status'] )
-  if not res['OK']:
-    gLogger.error( "Failed to determine transformation status" )
-    gLogger.error( res['Message'] )
-    continue
-  status = res['Value']
-  if not status in ['Deleted', 'Cleaning', 'Archived', 'Completed']:
-    gLogger.error( "The transformation is in %s status and can not be cleaned" % status )
-    continue
   agent.cleanTransformation( transID )

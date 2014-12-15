@@ -1,11 +1,11 @@
 -- $HeaderURL: $
 -- ------------------------------------------------------------------------------
-DROP DATABASE IF EXISTS FileCatalogDB;
+-- DROP DATABASE IF EXISTS FileCatalogDB;
 -- ------------------------------------------------------------------------------
-CREATE DATABASE FileCatalogDB;
+-- CREATE DATABASE FileCatalogDB;
 
-use mysql;
-delete from user where user='Dirac';
+-- use mysql;
+-- delete from user where user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --

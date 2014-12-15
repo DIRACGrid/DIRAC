@@ -32,8 +32,6 @@ class MCExtensionAgent( AgentModule ):
     '''Sets defaults
     '''
 
-    self.am_setOption( 'shifterProxy', 'DataManager' )
-
     gLogger.info( "Will consider the following transformation types: %s" % str( self.transformationTypes ) )
     gLogger.info( "Will create a maximum of %s tasks per iteration" % self.maxIterationTasks )
     gLogger.info( "Will not submit tasks for transformations with failure rate greater than %s%%" % ( self.maxFailRate ) )
