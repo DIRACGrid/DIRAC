@@ -50,9 +50,6 @@ class ForwardDISET( OperationHandlerBase ):
     # # decode arguments
     try:
       decode, length = DEncode.decode( self.operation.Arguments )
-      # FIXME: to be removed when the problem is fixed in the LHCb HLT farm
-      if 'CPUFactor_to_be_replace' in self.operation.Arguments and len( decode ) == 3 and type( decode[2] ) == type( tuple() ):
-        decode = ( decode[0], decode[1], tuple( [x.replace( 'CPUFactor_to_be_replace', '0' ) for x in decode[2]] ) )
       self.log.debug( "decoded len=%s val=%s" % ( length, decode ) )
     except ValueError, error:
       self.log.exception( error )

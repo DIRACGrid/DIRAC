@@ -33,8 +33,6 @@ class InputDataAgent( OptimizerModule ):
     #this will ignore failover SE files
     self.checkFileMetadata = self.am_getOption( 'CheckFileMetadata', True )
 
-    self.am_setOption( 'shifterProxy', 'DataManager' )
-
     self.dataManager = DataManager()
     self.resourceStatus = ResourceStatus()
     self.resourcesHelper = Resources()
