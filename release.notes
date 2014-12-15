@@ -2,6 +2,11 @@
 
 *Core
 FIX: dirac-configure - correctly deleting useServerCertificate flag
+BUGFIX: InstallTools - in fixMySQLScript()
+
+*DMS
+BUGFIX: DatasetManager - bug fixes
+CHANGE: StorageElementProxy - internal SE object created with the VO of the requester
 
 *TS
 FIX: dirac-transformation-xxx commands - do not check the transformation status
