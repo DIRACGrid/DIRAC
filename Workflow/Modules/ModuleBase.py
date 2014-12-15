@@ -89,11 +89,11 @@ class ModuleBase( object ):
 
     if not self.production_id:
       # self.PRODUCTION_ID is always set by the workflow
-      self.production_id = int( self.PRODUCTION_ID )
+      self.production_id = int( self.workflow_commons['PRODUCTION_ID'] )
 
     if not self.prod_job_id:
       # self.JOB_ID is set by the workflow, but this is not the WMS job id, but the transformation (production) task id
-      self.prod_job_id = int( self.JOB_ID )
+      self.prod_job_id = int( self.workflow_commons['JOB_ID'] )
 
     if not self.jobID:
       # this is the real wms job ID
