@@ -1406,7 +1406,7 @@ class XROOTStorage( StorageBase ):
     self.log.debug( "XROOTStorage.__listSingleDirectory: Attempting to list directory %s." % path )
 
     pfnDict = res['Value']
-    xFilePath = '/'.join( [pfnDict['Path'], pfnDict['FileName']] )
+    xFilePath = os.path.join( pfnDict['Path'], pfnDict['FileName'].strip( "/" ) )
 
     status, listing = self.xrootClient.dirlist( xFilePath, DirListFlags.STAT )
 
@@ -1419,7 +1419,7 @@ class XROOTStorage( StorageBase ):
     subDirs = {}
 
     for entry in listing:
-      fullPath = "root://%s%s%s" % ( self.host, xFilePath, entry.name )
+      fullPath = "root://%s/%s/%s" % ( self.host, xFilePath, entry.name )
       metadataDict = self.__parseStatInfoFromApiOutput( entry.statinfo )
       if metadataDict['Directory']:
         subDirs[fullPath] = True
@@ -1626,8 +1626,8 @@ class XROOTStorage( StorageBase ):
     pfnDict['Protocol'] = self.protocol
     pfnDict['Host'] = self.host
 
-    if not pfnDict['Path'].startswith( self.rootdir ):
-      pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].rstrip( '/' ) )
+    if not (pfnDict['Path'].startswith( self.rootdir ) or pfnDict['Path'].startswith( "/"+self.rootdir )):
+      pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].strip( '/' ) )
 
     # These lines should be checked
     if withPort:
@@ -1637,7 +1637,7 @@ class XROOTStorage( StorageBase ):
 
     # pfnunparse does not take into account the double // so I have to trick it
     # The problem is that I cannot take into account the port, which is always empty (it seems..)
-    return S_OK( 'root://%s%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
+    return S_OK( 'root://%s/%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
 
 
   def getCurrentURL( self, fileName ):

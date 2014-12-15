@@ -32,7 +32,7 @@ from DIRAC.DataManagementSystem.Client.FTSJob             import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile            import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView    import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSValidator      import FTSValidator
-from DIRAC.DataManagementSystem.Client.DataManager     import DataManager
+from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
 
