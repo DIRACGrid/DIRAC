@@ -80,9 +80,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # clients
     self.transfClient = TransformationClient()
 
-    # shifter
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
-
     # for caching using a pickle file
     self.__readCache()
     self.workDirectory = self.am_getWorkDirectory()

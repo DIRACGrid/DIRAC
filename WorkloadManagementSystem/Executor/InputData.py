@@ -34,11 +34,6 @@ class InputData( OptimizerExecutor ):
     #this will ignore failover SE files
     cls.checkFileMetadata = cls.ex_getOption( 'CheckFileMetadata', True )
 
-    #Define the shifter proxy needed
-    # This sets the Default Proxy to used as that defined under
-    # the shifterProxy option in the Configuration can be used to change this default.
-    cls.ex_setProperty( 'shifterProxy', 'DataManager' )
-
     cls.__dataManDict = {}
     cls.__fcDict = {}
     cls.__SEToSiteMap = {}
