@@ -738,8 +738,8 @@ class LaunchAgent( CommandBase ):
     extraCFG = []
     for i in os.listdir( self.pp.rootPath ):
       cfg = os.path.join( self.pp.rootPath, i )
-      if os.path.isfile( cfg ) and re.search( '.cfg&', cfg ):
-        extraCFG.append( cfg )
+      if os.path.isfile( cfg ) and re.search( '\.extra\.cfg$', cfg ):
+        extraCFG.append( open(cfg, 'r').read().replace('\n', ' ') )
 
     if self.pp.executeCmd:
       # Execute user command
@@ -750,9 +750,9 @@ class LaunchAgent( CommandBase ):
     os.environ['PYTHONUNBUFFERED'] = 'yes'
 
     jobAgent = '%s WorkloadManagement/JobAgent %s %s %s' % ( diracAgentScript,
+                                                             " ".join( extraCFG ) ),
                                                              " ".join( self.jobAgentOpts ),
-                                                             " ".join( self.inProcessOpts ),
-                                                             " ".join( extraCFG ) )
+                                                             " ".join( self.inProcessOpts ))
 
 
     retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
