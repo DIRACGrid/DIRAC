@@ -254,7 +254,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( ( parentProd, movedFiles ) )
 
   def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
-                                          rpc = '', url = '', timeout = 120 ):
+                                      rpc = '', url = '', timeout = 120 ):
     """ Sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
