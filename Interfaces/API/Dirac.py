@@ -1072,6 +1072,18 @@ class Dirac( API ):
       return repsResult
 
     if printOutput:
+      fields = [ 'LFN', 'StorageElement', 'URL' ]
+      records = []
+      for lfn in repsResult['Value']['Successful']:
+        lfnPrint = lfn
+        for se, url in repsResult['Value']['Successful'][lfn].items():
+          records.append( ( lfnPrint, se, url ) )
+          lfnPrint = ''
+      for lfn in repsResult['Value']['Failed']:
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )    
+      
+      printTable( fields, records, numbering = False )
+      
       print self.pPrint.pformat( repsResult['Value'] )
 
     return repsResult
