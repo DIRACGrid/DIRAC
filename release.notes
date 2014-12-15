@@ -1,3 +1,18 @@
+[v6r12p8]
+
+*Core
+FIX: dirac-configure - correctly deleting useServerCertificate flag
+
+*TS
+FIX: dirac-transformation-xxx commands - do not check the transformation status
+CHANGE: Agents - do not use shifter proxy 
+FIX: TransformationAgent - correct handling of replica cache for transformations 
+     when there were more files in the transformation than accepted to be executed
+FIX: TransformationAgent - do not get replicas for the Removal transformations     
+
+*RMS
+NEW: new SetFileStatus Operation
+
 [v6r12p7]
 
 *Core
