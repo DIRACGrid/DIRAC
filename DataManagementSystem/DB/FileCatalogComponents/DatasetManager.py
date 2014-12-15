@@ -652,7 +652,7 @@ class DatasetManager:
     req = "DELETE FROM FC_MetaDatasetFiles WHERE DatasetID=%d" % datasetID
     result = self.db._update( req )
 
-    result = self.__getDynamicDatasetFiles( datasetName, credDict )
+    result = self.__getDynamicDatasetFiles( datasetID, credDict )
 
     if not result['OK']:
       return result
