@@ -31,6 +31,7 @@ from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.DictCache import DictCache    
 from DIRAC.DataManagementSystem.private.HttpStorageAccessHandler import HttpStorageAccessHandler
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 ## globals
 BASE_PATH = ""
@@ -123,7 +124,12 @@ class StorageElementProxyHandler(RequestHandler):
     res = self.__prepareSecurityDetails()
     if not res['OK']:
       return res
-    storageElement = StorageElement( se )
+    credDict = self.getRemoteCredentials()
+    group = credDict['group']
+    vo = Registry.getVOForGroup( group )
+    if not vo:
+      return S_ERROR( 'Can not determine VO of the operation requester' )
+    storageElement = StorageElement( se, vo = vo )
     method = getattr( storageElement, name ) if hasattr( storageElement, name ) else None
     if not method:
       return S_ERROR( "Method '%s' isn't implemented!" % name )
