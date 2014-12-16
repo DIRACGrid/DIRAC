@@ -88,6 +88,8 @@ def getCESiteMapping( gridName = '' ):
 #############################################################################
 def getSiteForCE( computingElement ):
   """ Given a Grid CE name this method returns the DIRAC site name.
+
+      WARNING: if two or more sites happen to have the same ceName/queueName, then only the first found is returned
   """
   finalSite = ''
   gridTypes = gConfig.getSections( '/Resources/Sites/', [] )
@@ -134,10 +136,11 @@ def getQueueInfo( ceUniqueID, diracSiteName = '' ):
     return S_ERROR( 'Wrong full queue Name' )
 
   if not diracSiteName:
+    gLogger.debug( "SiteName not given, looking in /LocaSite/Site" )
     diracSiteName = gConfig.getValue( '/LocalSite/Site', '' )
 
     if not diracSiteName:
-      gLogger.debug( "Can't find localSite name, looking in CS" )
+      gLogger.debug( "Can't find LocalSite name, looking in CS" )
       result = getSiteForCE( subClusterUniqueID )
       if not result['OK']:
         return result
