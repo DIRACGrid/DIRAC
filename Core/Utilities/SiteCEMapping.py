@@ -123,7 +123,7 @@ def getCEsForSite( siteName ):
   return S_OK( ces )
 
 #############################################################################
-def getQueueInfo( ceUniqueID ):
+def getQueueInfo( ceUniqueID, diracSiteName = '' ):
   """
     Extract information from full CE Name including associate DIRAC Site
   """
@@ -133,13 +133,19 @@ def getQueueInfo( ceUniqueID ):
   except:
     return S_ERROR( 'Wrong full queue Name' )
 
-  result = getSiteForCE( subClusterUniqueID )
-  if not result['OK']:
-    return result
-  diracSiteName = result['Value']
-
   if not diracSiteName:
-    return S_ERROR( 'Can not find corresponding Site in CS' )
+    diracSiteName = gConfig.getValue( '/LocalSite/Site', '' )
+
+    if not diracSiteName:
+      gLogger.debug( "Can't find localSite name, looking in CS" )
+      result = getSiteForCE( subClusterUniqueID )
+      if not result['OK']:
+        return result
+      diracSiteName = result['Value']
+
+      if not diracSiteName:
+        gLogger.error( 'Can not find corresponding Site in CS' )
+        return S_ERROR( 'Can not find corresponding Site in CS' )
 
   gridType = diracSiteName.split( '.' )[0]
 
