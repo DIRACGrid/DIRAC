@@ -289,12 +289,13 @@ class FileManagerBase( object ):
             masterLfns.pop( lfn )
           continue
         for fileName in fileNames:
+          if not fileName:
+            failed[directory] = "Is no a valid file"
+            masterLfns.pop( directory )
+            continue
+
           lfn = "%s/%s" % ( directory, fileName )
           lfn = lfn.replace( '//', '/' )
-          if not fileName:
-            failed[lfn] = "Is no a valid file"
-            masterLfns.pop( lfn )
-            continue
 
           # This condition should never be true, we would not be here otherwise...
           if not res['OK']:

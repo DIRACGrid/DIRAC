@@ -758,7 +758,6 @@ class DirectoryTreeBase:
     connection.close()
     resultDict['QueryTime'] = time.time() - start
 
-    print "RESULT DICT %s" % resultDict
     return S_OK( resultDict )
 
   def _getDirectoryLogicalSizeFromUsage( self, lfns, connection ):
