@@ -64,6 +64,8 @@ def getCESiteMapping():
 #############################################################################
 def getSiteForCE( computingElement ):
   """ Given a Grid CE name this method returns the DIRAC site name.
+
+      WARNING: if two or more sites happen to have the same ceName/queueName, then only the first found is returned
   """
   result = getSiteForResource( computingElement )
   if not result['OK']:
@@ -89,7 +91,7 @@ def getCEsForSite( siteName ):
   return S_OK( ceList )  
 
 #############################################################################
-def getQueueInfo( ceUniqueID ):
+def getQueueInfo( ceUniqueID, diracSiteName = '' ):
   """
     Extract information from full CE Name including associate DIRAC Site
   """
@@ -98,11 +100,6 @@ def getQueueInfo( ceUniqueID ):
     queueID = ceUniqueID.split( '/' )[1]
   except:
     return S_ERROR( 'Wrong full queue Name' )
-
-  result = getSiteForCE( subClusterUniqueID )
-  if not result['OK']:
-    return result
-  diracSiteName = result['Value']
 
   if not diracSiteName:
     return S_ERROR( 'Can not find corresponding Site in CS' )

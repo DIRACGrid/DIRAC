@@ -25,7 +25,6 @@ import sys
 import os
 import stat
 import socket
-import re
 import json
 
 from pilotTools import CommandBase, retrieveUrlTimeout
@@ -738,7 +737,7 @@ class LaunchAgent( CommandBase ):
     extraCFG = []
     for i in os.listdir( self.pp.rootPath ):
       cfg = os.path.join( self.pp.rootPath, i )
-      if os.path.isfile( cfg ) and re.search( '.cfg&', cfg ):
+      if os.path.isfile( cfg ) and cfg.endswith( '.cfg' ):
         extraCFG.append( cfg )
 
     if self.pp.executeCmd:
