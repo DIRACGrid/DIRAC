@@ -1,7 +1,7 @@
 """  TransformationAgent processes transformations found in the transformation database.
 """
 
-import time, Queue, os, datetime, pickle, gc
+import time, Queue, os, datetime, pickle
 from DIRAC                                                          import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
@@ -550,7 +550,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Write the cache file
     try:
       if cacheChanged:
-        gc.collect()
         self.__writeCache()
     except Exception:
       self._logException( "While writing replica cache" )
@@ -569,7 +568,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           if self.replicaCache[transID][timeKey].pop( lfn, None ):
             removed += 1
     if removed:
-      gc.collect()
       self.removedFromCache += removed
       if log:
         self._logInfo( "Removed %d replicas from cache" % removed, method = '__removeFromCache', transID = transID )
