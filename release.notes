@@ -19,6 +19,19 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p9]
+
+*Core
+CHANGE: SiteCEMapping - getSiteForCE can take site argument to avoid confusion
+
+*Interfaces
+FIX: Job - provide optional site name in setDestinationCE()
+
+*WMS
+FIX: pilotCommands - check properly the presence of extra cfg files
+     when starting job agent
+FIX: JobAgent - can pick up local cfg file if extraOptions are specified     
+
 [v6r12p8]
 
 *Core
@@ -188,6 +201,17 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p28]
+
+*Core
+FIX: InstallTools - check properly the module availability before installation
+
+*WMS
+FIX: JobScheduling - protection against missing dict field RescheduleCounter
+
+*TMS
+FIX: TransformationCleaningAgent - execute DM operations with the shifter proxy
 
 [v6r11p27]
 

@@ -1543,17 +1543,17 @@ def installComponent( componentType, system, component, extensions, componentMod
   # Any "Load" or "Module" option in the configuration defining what modules the given "component"
   # needs to load will be taken care of by checkComponentModule.
   if checkModule:
-    result = checkComponentModule( componentType, system, component )
+    cModule = componentModule
+    if not cModule:
+      cModule = component
+    result = checkComponentModule( componentType, system, cModule )
     if not result['OK']:
-    # cModule = componentModule
-    # if not cModule:
-    #   cModule = component
-    # if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
-      error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
-      if exitOnError:
-        gLogger.error( error )
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
+      if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
+        error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
+        if exitOnError:
+          gLogger.error( error )
+          DIRAC.exit( -1 )
+        return S_ERROR( error )
 
   gLogger.notice( 'Installing %s %s/%s' % ( componentType, system, component ) )
 
