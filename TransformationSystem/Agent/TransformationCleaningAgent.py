@@ -20,6 +20,7 @@ from DIRAC.DataManagementSystem.Client.DataManager            import DataManager
 from DIRAC.Resources.Storage.StorageElement                   import StorageElement
 from DIRAC.Core.Utilities.ReturnValues                        import returnSingleResult
 from DIRAC.Resources.Catalog.FileCatalog                      import FileCatalog
+from DIRAC.ConfigurationSystem.Client.ConfigurationData       import gConfigurationData
 
 # FIXME: double client: only ReqClient will survive in the end
 from DIRAC.RequestManagementSystem.Client.RequestClient       import RequestClient
@@ -109,7 +110,7 @@ class TransformationCleaningAgent( AgentModule ):
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
 
     # # data manager
-    self.dm = DataManager()
+#     self.dm = DataManager()
     # # transformation client
     self.transClient = TransformationClient()
     # # wms client
@@ -296,7 +297,12 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.info( "No files are registered in the catalog directory %s" % directory )
       return S_OK()
     self.log.info( "Attempting to remove %d possible remnants from the catalog and storage" % len( filesFound ) )
-    res = self.dm.removeFile( filesFound, force = True )
+
+    # Executing with shifter proxy
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+    res = DataManager().removeFile( filesFound, force = True )
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+
     if not res['OK']:
       return res
     realFailure = False
@@ -464,7 +470,12 @@ class TransformationCleaningAgent( AgentModule ):
     if not fileToRemove:
       self.log.info( 'No files found for transID %s' % transID )
       return S_OK()
-    res = self.dm.removeFile( fileToRemove, force = True )
+
+    # Executing with shifter proxy
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+    res = DataManager().removeFile( fileToRemove, force = True )
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():

@@ -181,6 +181,17 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p28]
+
+*Core
+FIX: InstallTools - check properly the module availability before installation
+
+*WMS
+FIX: JobScheduling - protection against missing dict field RescheduleCounter
+
+*TMS
+FIX: TransformationCleaningAgent - execute DM operations with the shifter proxy
+
 [v6r11p27]
 
 *Core
