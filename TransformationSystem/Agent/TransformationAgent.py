@@ -98,7 +98,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self.transInQueue = []
       while self.transInThread:
         time.sleep( 2 )
-      self.log.info( "Threads are empty, terminating the agent..." , method = method )
+      self._logInfo( "Threads are empty, terminating the agent..." , method = method )
     self.__writeCache( force = True )
     return S_OK()
 
@@ -190,11 +190,11 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       finally:
         if not transID:
           transID = 'None'
-        self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ), transID = transID )
-        self._logVerbose( "%d transformations still in queue" % ( len( self.transInQueue ) - 1 ) )
         self.transInThread.pop( transID, None )
         if transID in self.transInQueue:
+          self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ), transID = transID )
           self.transInQueue.remove( transID )
+        self._logVerbose( "%d transformations still in queue" % len( self.transInQueue ) )
     return S_OK()
 
   def processTransformation( self, transDict, clients, active = True ):
