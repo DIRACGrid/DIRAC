@@ -21,7 +21,6 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Resources.Utilities import Utils
 from DIRAC.Core.Security import Properties
 # from DIRAC.Core.Utilities import List
 
@@ -367,13 +366,15 @@ class SandboxStoreHandler( RequestHandler ):
         token is used for access rights confirmation.
     """
     credDict = self.getRemoteCredentials()
-    result = sandboxDB.getSandboxId( self.__localSEName, fileID, credDict[ 'username' ], credDict[ 'group' ] )
+    serviceURL = self.serviceInfoDict['URL']
+    filePath = fileID.replace( serviceURL, '' )
+    result = sandboxDB.getSandboxId( self.__localSEName, filePath, credDict[ 'username' ], credDict[ 'group' ] )
     if not result[ 'OK' ]:
       return result
     sbId = result[ 'Value' ]
     sandboxDB.accessedSandboxById( sbId )
     # If it's a local file
-    hdPath = self.__sbToHDPath( fileID )
+    hdPath = self.__sbToHDPath( filePath )
     if not os.path.isfile( hdPath ):
       return S_ERROR( "Sandbox does not exist" )
     result = fileHelper.getFileDescriptor( hdPath, 'rb' )

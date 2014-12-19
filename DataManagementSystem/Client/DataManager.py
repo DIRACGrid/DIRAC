@@ -803,7 +803,7 @@ class DataManager( object ):
         log.debug( 'Error getting the file from %s' % candidateSE.name, res['Message'] )
         continue
 
-      res = returnSingleResult( destStorageElement.putFile( {destPath:localFile}, sourceSize = catalogSize ) )
+      res = returnSingleResult( destStorageElement.putFile( {destPath:localFile} ) )
       if not res['OK']:
         log.debug( 'Error putting file coming from %s' % candidateSE.name, res['Message'] )
         # if the put is the problem, it's maybe pointless to try the other candidateSEs...

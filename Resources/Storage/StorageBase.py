@@ -291,7 +291,6 @@ class StorageBase:
                     to convention
     :param list protocols: a list of acceptable transport protocols in priority order                
     """
-    
     res = checkArgumentFormat( pathDict )
     if not res['OK']:
       return res
@@ -299,7 +298,7 @@ class StorageBase:
     successful = {}
     failed = {}
     
-    if not self.protocolParameters['Protocol'] in protocols:
+    if protocols and not self.protocolParameters['Protocol'] in protocols:
       return S_ERROR( 'No native protocol requested' )  
     
     for url in urls:
@@ -322,7 +321,8 @@ class StorageBase:
     # 2. VO name must not appear as any subdirectory or file name
     lfnSplitList = lfn.split( '/' )
     voLFN = lfnSplitList[1]
-    if voLFN != self.se.vo or self.se.vo in lfnSplitList[2:]:
+    if ( voLFN != self.se.vo and voLFN != "Sandbox" ) or self.se.vo in lfnSplitList[2:]:
+      
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
     
     result = self.getURLBase( withWSUrl = withWSUrl )
