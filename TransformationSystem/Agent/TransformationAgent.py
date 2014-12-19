@@ -209,7 +209,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self.transInQueue.remove( transID )
         self.transInThread.pop( transID, None )
         self._logVerbose( "%d transformations still in queue" % len( self.transInQueue ) )
-ns still in queue" % len( self.transInQueue ) )
     return S_OK()
 
   def processTransformation( self, transDict, clients, active = True ):
