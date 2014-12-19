@@ -505,11 +505,11 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Add replicas to the cache
     """
     self.replicaCache.setdefault( transID, {} )[datetime.datetime.utcnow()] = newReplicas
+    if len( newReplicas ) > 1000:
+      self.__writeCache()
 
   @gSynchro
-  def __clearCacheForTrans( self, t    if len( newReplicas ) > 1000:
-      self.__writeCache()
-ransID ):
+  def __clearCacheForTrans( self, transID ):
     """ Remove all replicas for a transformation
     """
     self.replicaCache.pop( transID , None )
