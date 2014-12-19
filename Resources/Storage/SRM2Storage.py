@@ -935,6 +935,7 @@ class SRM2Storage( StorageBase ):
       if errCode > 0:
         errStr = "%s %s" % ( errStr, os.strerror( errCode ) )
       self.log.error( errorMessage, errStr )
+      errorMessage = errStr
     res = self.__executeOperation( dest_url, 'removeFile' )
     if res['OK']:
       self.log.debug( "__putFile: Removed remote file remnant %s." % dest_url )
