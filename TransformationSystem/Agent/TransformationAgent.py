@@ -190,10 +190,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       finally:
         if not transID:
           transID = 'None'
-        self.transInThread.pop( transID, None )
         if transID in self.transInQueue:
           self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ), transID = transID )
           self.transInQueue.remove( transID )
+        self.transInThread.pop( transID, None )
         self._logVerbose( "%d transformations still in queue" % len( self.transInQueue ) )
     return S_OK()
 
@@ -491,6 +491,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Add replicas to the cache
     """
     self.replicaCache.setdefault( transID, {} )[datetime.datetime.utcnow()] = newReplicas
+    if len( newReplicas ) > 1000:
+      self.__writeCache()
 
   @gSynchro
   def __clearCacheForTrans( self, transID ):
