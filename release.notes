@@ -19,6 +19,19 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p10]
+
+*DMS
+FIX: StorageElementProxy - BASE_PATH should be a full path
+
+*Resources
+FIX: SRM2Storage - return specific error in putFile
+
+*TS
+FIX: TransformationAgent - fix to avoid an exception in finalize and double printing 
+     when terminating the agent
+BUGFIX: TransformationDB - fix return value in setTransformationParameter()
+
 [v6r12p9]
 
 *Core
