@@ -63,6 +63,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
     self.unusedFiles = {}
     self.unusedTimeStamp = {}
+    self.pluginTimeout = {}
 
     self.debug = False
     self.transInThread = {}
@@ -253,10 +254,11 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                        method = "processTransformation", transID = transID )
       return res
     tasks = res['Value']
+    self.pluginTimeout[transID] = res.get( 'Timeout', False )
     # Create the tasks
     allCreated = True
     created = 0
-    lfnsInTasks = 0
+    lfnsInTasks = []
     for se, lfns in tasks:
       res = clients['TransformationClient'].addTaskForTransformation( transID, lfns, se )
       if not res['OK']:
@@ -304,7 +306,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Check if files should be sorted and limited in number
     operations = Operations()
     sortedBy = operations.getValue( 'TransformationPlugins/%s/SortedBy' % plugin, None )
-    maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFiles' % plugin, None )
+    maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFiles' % plugin, 0 )
+    # If there is a specific delay set in the CS, use it, but if the previous execution of hte plugin timedout, don't wait
+    noUnusedDelay = 0 if self.pluginTimeout.get( transID, False ) else \
+                    operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, self.noUnusedDelay )
     method = '_getTransformationFiles'
     lastOffset = self.lastFileOffset.setdefault( transID, 0 )
 
@@ -351,8 +356,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Check if something new happened
     now = datetime.datetime.utcnow()
-    if not kickTrans and not replicateOrRemove:
-      nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = self.noUnusedDelay )
+    if not kickTrans and not replicateOrRemove and noUnusedDelay:
+      nextStamp = self.unusedTimeStamp.setdefault( transID, now ) + datetime.timedelta( hours = noUnusedDelay )
       skip = now < nextStamp
       if len( transFiles ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush' and skip:
         self._logInfo( "No new '%s' files found for transformation." % ','.join( statusList ),
