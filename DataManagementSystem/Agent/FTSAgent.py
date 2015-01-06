@@ -640,7 +640,7 @@ class FTSAgent( AgentModule ):
       putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not putRequest["OK"]:
         log.error( "unable to put back request:", putRequest["Message"] )
-     # #  put back jobs in all cases
+      # #  put back jobs in all cases
       if ftsJobs:
         for ftsJob in list( ftsJobs ):
           if not len( ftsJob ):
