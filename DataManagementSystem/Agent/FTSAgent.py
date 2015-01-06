@@ -887,7 +887,7 @@ class FTSAgent( AgentModule ):
     if ftsJob.Status in FTSJob.FINALSTATES:
       finalizeFTSJob = self.__finalizeFTSJob( request, ftsJob )
       if not finalizeFTSJob["OK"]:
-        if 'Unknown transfer state' in monitor['Message']:
+        if 'Unknown transfer state' in finalizeFTSJob['Message']:
           for ftsFile in ftsJob:
             ftsFile.Status = "Waiting"
             ftsFilesDict["toSubmit"].append( ftsFile )
