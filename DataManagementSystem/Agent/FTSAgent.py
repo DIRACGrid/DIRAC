@@ -699,7 +699,7 @@ class FTSAgent( AgentModule ):
     toSchedule = []
 
     # # filter files
-    for opFile in operation.getWaitingFilesList():
+    for opFile in [ opFile for opFile in operation if opFile.Status == "Waiting" ]:
 
       replicas = self.__filterReplicas( opFile )
       if not replicas["OK"]:
