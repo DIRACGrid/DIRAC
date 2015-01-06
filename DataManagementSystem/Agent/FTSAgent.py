@@ -1089,7 +1089,7 @@ class FTSAgent( AgentModule ):
     for successfulLFN in replicas["Successful"]:
       reps = set( replicas['Successful'][successfulLFN] )
       if targetSESet.issubset( reps ):
-        log.info( "%s has been replicated to all targets" % successfulLFN )
+        log.verbose( "%s has been replicated to all targets" % successfulLFN )
         fullyReplicated += 1
         scheduledFiles[successfulLFN].Status = "Done"
       else:
