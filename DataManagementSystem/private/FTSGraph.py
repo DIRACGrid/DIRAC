@@ -75,9 +75,9 @@ class Route( Edge ):
     """ get time to start for this channel """
     if not self.isActive:
       return float( "inf" )
-    transferSpeed = { "File": self.FilePut,
+    transferSpeed = { "Files": self.FilePut,
                       "Throughput": self.ThroughPut }[self.SchedulingType]
-    waitingTransfers = { "File" : self.WaitingFiles,
+    waitingTransfers = { "Files" : self.WaitingFiles,
                          "Throughput": self.WaitingSize }[self.SchedulingType]
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
