@@ -255,7 +255,7 @@ class FTSAgent( AgentModule ):
 
     try:
       self.updateLock().acquire()
-      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory )
+      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory, maxActiveJobs = self.MAX_ACTIVE_JOBS )
     finally:
       self.updateLock().release()
 

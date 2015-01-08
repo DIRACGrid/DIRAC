@@ -97,9 +97,10 @@ class FTSGraph( Graph ):
   def __init__( self,
                 name,
                 ftsHistoryViews = None,
-                accFailureRate = 0.75,
-                accFailedFiles = 5,
-                schedulingType = "Files" ):
+                accFailureRate = None,
+                accFailedFiles = None,
+                schedulingType = None,
+                maxActiveJobs = None ):
     """ c'tor
 
     :param str name: graph name
@@ -110,10 +111,11 @@ class FTSGraph( Graph ):
     """
     Graph.__init__( self, name )
     self.log = gLogger.getSubLogger( name, True )
-    self.accFailureRate = accFailureRate
-    self.accFailedFiles = accFailedFiles
-    self.schedulingType = schedulingType
+    self.accFailureRate = accFailureRate if accFailureRate else 0.75
+    self.accFailedFiles = accFailedFiles if accFailedFiles else 5
+    self.schedulingType = schedulingType if schedulingType else "Files"
     self.initialize( ftsHistoryViews )
+    self.maxActiveJobs = maxActiveJobs if MaxActiveJobs else 50
 
   def initialize( self, ftsHistoryViews = None ):
     """ initialize FTSGraph  given FTSSites and FTSHistoryViews
@@ -277,7 +279,7 @@ class FTSGraph( Graph ):
       ftsSite.Name = site
       ftsSite.FTSServer = ftsServerURL
       # # should be read from CS as well
-      ftsSite.MaxActiveJobs = 50
+      ftsSite.MaxActiveJobs = self.maxActiveJobs
       ftsSites.append( ftsSite )
     return S_OK( ftsSites )
 
