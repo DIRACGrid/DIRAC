@@ -114,8 +114,8 @@ class FTSGraph( Graph ):
     self.accFailureRate = accFailureRate if accFailureRate else 0.75
     self.accFailedFiles = accFailedFiles if accFailedFiles else 5
     self.schedulingType = schedulingType if schedulingType else "Files"
+    self.maxActiveJobs = maxActiveJobs if maxActiveJobs else 50
     self.initialize( ftsHistoryViews )
-    self.maxActiveJobs = maxActiveJobs if MaxActiveJobs else 50
 
   def initialize( self, ftsHistoryViews = None ):
     """ initialize FTSGraph  given FTSSites and FTSHistoryViews
