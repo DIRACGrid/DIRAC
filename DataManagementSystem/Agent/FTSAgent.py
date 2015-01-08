@@ -426,7 +426,7 @@ class FTSAgent( AgentModule ):
     for requestName in requestNames:
       request = self.getRequest( requestName )
       if not request["OK"]:
-        log.error( request["Message"] )
+        log.error( "Error getting request %s" % requestName, request["Message"] )
         continue
       request = request["Value"]
       sTJId = request.RequestName
