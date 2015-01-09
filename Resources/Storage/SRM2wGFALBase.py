@@ -1,7 +1,12 @@
+from types import StringType, ListType
+import errno
+import gfal2
+# from DIRAC
 from DIRAC.Resources.Storage.GFAL2StorageBase import GFAL2StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.Resources.Utilities import checkArgumentFormat
 
 
 
@@ -14,54 +19,155 @@ class SRM2wGFALBase( GFAL2StorageBase ):
   
   def __init__( self, storageName, parameters ):
     """ """
+    self.log = gLogger.getSubLogger( "SRM2wGFALBase", True )
+    self.log.debug( "SRM2wGFALBase.__init__: Initializing object" )
     GFAL2StorageBase.__init__( self, storageName, parameters )
 
     self.pluginName = 'SRM2V2'
 
 
-    # #stage limit - 12h
-    self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
-    # # 1 file timeout
-    self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
-    # # nb of surls per gfal2 call
-    self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
-    # # gfal2 timeout
-    self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
-    # # gfal2 long timeout
-    self.gfal2LongTimeOut = gConfig.getValue( "/Resources/StorageElements/GFAL_LongTimeout", 1200 )
-    # # gfal2 retry on errno.ECONN
-    self.gfal2Retry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
 
 
-    # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
-    # enum gfal_cksm_type, all in lcg_util
-    #   GFAL_CKSM_NONE = 0,
-    #   GFAL_CKSM_CRC32,
-    #   GFAL_CKSM_ADLER32,
-    #   GFAL_CKSM_MD5,
-    #   GFAL_CKSM_SHA1
-    # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
-                           "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
-    if self.checksumType:
-      if str( self.checksumType ).upper() in self.checksumTypes:
-        gLogger.debug( "SRM2V2Storage: will use %s checksum check" % self.checksumType )
-        self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
-      else:
-        gLogger.warn( "SRM2V2Storage: unknown checksum type %s, checksum check disabled" )
-        # # GFAL_CKSM_NONE
-        self.checksumType = 0
+  def getTransportURL( self, path, protocols = False ):
+    """ obtain the tURLs for the supplied path and protocols
+
+    :param self: self reference
+    :param str path: path on storage
+    :param mixed protocols: protocols to use
+    :returns Failed dict {path : error message}
+             Successful dict {path : transport url}
+             S_ERROR in case of argument problems
+    """
+    res = checkArgumentFormat( path )
+    if not res['OK']:
+      return res
+    urls = res['Value']
+
+    self.log.debug( 'SRM2wGFALBase.getTransportURL: Attempting to retrieve tURL for %s paths' % len( urls ) )
+
+    failed = {}
+    successful = {}
+
+    if not protocols:
+      protocols = self.__getProtocols()
+      if not protocols['OK']:
+        return protocols
+      listProtocols = protocols['Value']
+    elif type( protocols ) == StringType:
+      listProtocols = [protocols]
+    elif type( protocols ) == ListType:
+      listProtocols = protocols
     else:
-      # # invert and get name
-      self.log.debug( "SRM2V2Storage: will use %s checksum" % dict( zip( self.checksumTypes.values(),
-                                                                     self.checksumTypes.keys() ) )[self.checksumType] )
-    self.voName = None
-    ret = getProxyInfo( disableVOMS = True )
-    if ret['OK'] and 'group' in ret['Value']:
-      self.voName = getVOForGroup( ret['Value']['group'] )
-    self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+      return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
-    self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
-    self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
+    for url in urls:
+      res = self.__getSingleTransportURL( url, listProtocols )
+      self.log.debug( 'res = %s' % res )
+
+      if not res['OK']:
+        failed[url] = res['Message']
+      else:
+        successful[url] = res['Value']
+
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
+
+
+
+  def __getSingleTransportURL( self, path, protocols = False ):
+    """ Get the tURL from path with getxattr from gfal2
+
+    :param self: self reference
+    :param str path: path on the storage
+    :returns S_OK( Transport_URL ) in case of success
+             S_ERROR( errStr ) in case of a failure
+    """
+    self.log.debug( 'SRM2wGFALBase.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
+    if protocols:
+      res = self.__getExtendedAttributes( path, protocols )
+    else:
+      res = self.__getExtendedAttributes( path )
+    if res['OK']:
+      attributeDict = res['Value']
+      # 'user.replicas' is the extended attribute we are interested in
+      if 'user.replicas' in attributeDict.keys():
+        turl = attributeDict['user.replicas']
+        return S_OK( turl )
+      else:
+        errStr = 'SRM2wGFALBase.__getSingleTransportURL: Extended attribute tURL is not set.'
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
+    else:
+      errStr = 'SRM2wGFALBase.__getSingleTransportURL: %s' % res['Message']
+      return S_ERROR( errStr )
+
+
+
+  def __getProtocols( self ):
+    """ returns list of protocols to use at a given site
+
+    :warn: priority is given to a protocols list defined in the CS
+
+    :param self: self reference
+    """
+    sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( self.name ) )
+    self.log.debug( "SRM2wGFALBase.__getProtocols: Trying to get protocols for storage %s." % self.name )
+    if not sections['OK']:
+      return sections
+
+    protocolsList = []
+    for section in sections['Value']:
+      path = '/Resources/StorageElements/%s/%s/ProtocolName' % ( self.name, section )
+      if gConfig.getValue( path, '' ) == self.protocol:
+        protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
+        siteProtocols = gConfig.getValue( protPath, [] )
+        if siteProtocols:
+          self.log.debug( 'SRM2wGFALBase.__getProtocols: Found SE protocols list to override defaults:', ', '.join( siteProtocols, ) )
+          protocolsList = siteProtocols
+
+    if not protocolsList:
+      self.log.debug( "SRM2wGFALBase.__getProtocols: No protocols provided, using the default protocols." )
+      protocolsList = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+
+    # if there is even no default protocol
+    if not protocolsList:
+      return S_ERROR( "SRM2wGFALBase.__getProtocols: No local protocols defined and no defaults found." )
+
+    return S_OK( protocolsList )
+
+  def __getExtendedAttributes( self, path, protocols = False ):
+    """ Get all the available extended attributes of path
+
+    :param self: self reference
+    :param str path: path of which we wan't extended attributes
+    :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
+    """
+    attributeDict = {}
+
+    # get all the extended attributes from path
+    try:
+      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
+      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+      if protocols:
+        self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+      else:
+        self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+      attributes = self.gfal2.listxattr( path )
+
+      # get all the respective values of the extended attributes of path
+      for attribute in attributes:
+        attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
+
+      return S_OK( attributeDict )
+    # simple error messages, the method that is calling them adds the source of error.
+    except gfal2.GError, e:
+      if e.code == errno.ENOENT:
+        errStr = 'Path does not exist.'
+        self.log.error( errStr, e.message )
+        return S_ERROR( errStr )
+      else:
+        errStr = 'Something went wrong while checking for extended attributes. Please see error log for more information.'
+        self.log.error( errStr, e.message )
+        return S_ERROR( errStr )
+
 
