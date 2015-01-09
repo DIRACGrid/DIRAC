@@ -4,7 +4,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.GFAL2StorageBase import GFAL2StorageBase
 
-class XROOTwGFALBase( GFAL2StorageBase ):
+class GFAL2_XROOTStorage( GFAL2StorageBase ):
 
   """ .. class:: XROOTStorage
 
@@ -23,13 +23,14 @@ class XROOTwGFALBase( GFAL2StorageBase ):
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
     """
-
+    self.log = gLogger.getSubLogger( "XROOTwGFALBase", True )
+    self.log.debug( "GFAL2_XROOTPlugin: __init__" )
     # # init base class
     GFAL2StorageBase.__init__( self, storageName, parameters )
-    self.log = gLogger.getSubLogger( "XROOTwGFALBase", True )
+
 #     self.log.setLevel( "DEBUG" )
 
-    self.pluginName = 'XROOT'
+    self.pluginName = 'GFAL2_XROOT'
     self.protocol = self.protocolParameters['Protocol']
     self.host = self.protocolParameters['Host']
 
