@@ -36,19 +36,20 @@ class SRM2V2Storage( StorageBase ):
 
     :param self: self reference
     :param str storageName: SE name
-    :param str protocol: protocol to use
-    :param str path: base path for vo files
-    :param str host: SE host
-    :param int port: port to use to communicate with :host:
-    :param str spaceToken: space token
-    :param str wspath: location of SRM on :host:
+    :param dict parameters of the storage element
     """
 
+    self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
 #     os.environ['GLOBUS_THREAD_MODEL'] = "pthread"
-#     import gfal2
+
     StorageBase.__init__( self, storageName, parameters )
 
-    self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
+    # # save c'tor params
+    self.protocol = self.protocolParameters['Protocol']
+    self.pluginName = 'SRM2V2'
+    self.name = storageName
+    self.protocol = parameters['Protocol']
+    self.spaceToken = parameters['SpaceToken']
 
     # Different levels or verbosity:
     # gfal2.verbose_level.normal,
@@ -65,15 +66,6 @@ class SRM2V2Storage( StorageBase ):
 
     # # gfal2 API
     self.gfal2 = gfal2.creat_context()
-
-    # # save c'tor params
-    self.protocolName = 'srm'
-    self.pluginName = 'SRM2V2'
-    self.name = storageName
-    self.protocol = parameters['Protocol']
-    self.spaceToken = parameters['SpaceToken']
-
-    # # init base class
 
 
     # #stage limit - 12h
@@ -1825,18 +1817,18 @@ class SRM2V2Storage( StorageBase ):
 
 
 
-  def isPfnForProtocol( self, pfn ):
-    """ check if PFN :pfn: is valid for :self.protocol:
-
-    :param self: self reference
-    :param str pfn: PFN
-    """
-    res = pfnparse( pfn )
-    if not res['OK']:
-      return res
-    pfnDict = res['Value']
-
-    return S_OK( pfnDict['Protocol'] == self.protocol )
+#   def isPfnForProtocol( self, pfn ):
+#     """ check if PFN :pfn: is valid for :self.protocol:
+#
+#     :param self: self reference
+#     :param str pfn: PFN
+#     """
+#     res = pfnparse( pfn )
+#     if not res['OK']:
+#       return res
+#     pfnDict = res['Value']
+#
+#     return S_OK( pfnDict['Protocol'] == self.protocol )
 
 
 ##################################################################
@@ -1960,7 +1952,7 @@ class SRM2V2Storage( StorageBase ):
     protocolsList = []
     for section in sections['Value']:
       path = '/Resources/StorageElements/%s/%s/ProtocolName' % ( self.name, section )
-      if gConfig.getValue( path, '' ) == self.protocolName:
+      if gConfig.getValue( path, '' ) == self.protocol:
         protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
         siteProtocols = gConfig.getValue( protPath, [] )
         if siteProtocols:
