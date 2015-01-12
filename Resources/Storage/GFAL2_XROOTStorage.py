@@ -1,6 +1,6 @@
 from types import StringType, ListType
 # from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.GFAL2StorageBase import GFAL2StorageBase
 
@@ -23,8 +23,7 @@ class GFAL2_XROOTStorage( GFAL2StorageBase ):
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
     """
-    self.log = gLogger.getSubLogger( "XROOTwGFALBase", True )
-    self.log.debug( "GFAL2_XROOTPlugin: __init__" )
+    self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
     # # init base class
     GFAL2StorageBase.__init__( self, storageName, parameters )
 
@@ -58,14 +57,13 @@ class GFAL2_XROOTStorage( GFAL2StorageBase ):
     if not res['OK']:
       return res
     urls = res['Value']
-
     if protocols:
       if type( protocols ) is StringType:
         if protocols != self.protocol:
-          return S_ERROR( "XROOTwGFALBase.getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
+          return S_ERROR( "GFAL2_XROOTStorage.getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
       elif type( protocols ) is ListType:
         if self.protocol not in protocols:
-          return S_ERROR( "XROOTwGFALBase.getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
+          return S_ERROR( "GFAL2_XROOTStorage.getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
 
     # For the time being, I assume I should not check whether the file exists or not
     # So I just return the list of urls keys

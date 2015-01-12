@@ -9,7 +9,7 @@ import os
 import datetime
 import errno
 import gfal2
-from types import StringType, ListType
+from types import StringType
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
@@ -18,7 +18,6 @@ from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File import getSize
 
 
@@ -53,8 +52,6 @@ class GFAL2StorageBase( StorageBase ):
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
       gfal2.set_verbose( gfal2.verbose_level.trace )
-
-    gfal2.set_verbose( gfal2.verbose_level.trace )
     self.isok = True
 
     # # gfal2 API
@@ -68,17 +65,8 @@ class GFAL2StorageBase( StorageBase ):
 
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
-    # # 1 file timeout
-    self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
-    # # nb of surls per gfal2 call
-    self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
     # # gfal2 timeout
     self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
-    # # gfal2 long timeout
-    self.gfal2LongTimeOut = gConfig.getValue( "/Resources/StorageElements/GFAL_LongTimeout", 1200 )
-    # # gfal2 retry on errno.ECONN
-    self.gfal2Retry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
-
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
@@ -169,6 +157,10 @@ class GFAL2StorageBase( StorageBase ):
         errStr = "GFAL2StorageBase.__singleExists: Path does not exist"
         self.log.debug( errStr )
         return  S_OK( False )
+      if e.code == errno.EPROTONOSUPPORT:
+        errStr = "GFAL2StorageBase.__singleExists: Protocol not supported"
+        self.log.debug( errStr )
+        return S_ERROR( errStr )
       else:
         errStr = "GFAL2StorageBase.__singleExists: Failed to determine existence of path"
         self.log.debug( errStr, e.message )
