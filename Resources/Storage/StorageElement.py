@@ -679,8 +679,10 @@ class StorageElementItem( object ):
 
     if not protocol:
       protocols = self.turlProtocols
-    else:
+    elif type( protocol ) == type( '' ):
       protocols = [protocol]
+    elif type( protocol ) == type( [] ):
+      protocols = protocol
 
 
     argDict = {"protocols" : protocols}

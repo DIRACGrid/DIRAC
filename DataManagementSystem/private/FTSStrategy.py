@@ -258,7 +258,7 @@ class FTSStrategy( object ):
     while targetSEs:
       minTimeToStart = float( "inf" )
       channels = []
-      self.log.info( "minimiseTotalWait: searching routes between %s and %s" % ( ",".join( sourceSEs ),
+      self.log.verbose( "minimiseTotalWait: searching routes between %s and %s" % ( ",".join( sourceSEs ),
                                                                                  ",".join( targetSEs ) ) )
       for targetSE in targetSEs:
         for sourceSE in sourceSEs:
@@ -274,10 +274,10 @@ class FTSStrategy( object ):
         self.log.error( msg )
         return S_ERROR( msg )
 
-      self.log.info( "minimiseTotalWait: found %s candidate routes, checking RSS status" % len( channels ) )
+      self.log.verbose( "minimiseTotalWait: found %s candidate routes, checking RSS status" % len( channels ) )
 
       for ch, s, t in channels:
-        self.log.info( "%s %s %s" % ( ch.routeName, ch.fromNode.SEs[s]["read"], ch.toNode.SEs[t]["write"] ) )
+        self.log.verbose( "%s %s %s" % ( ch.routeName, ch.fromNode.SEs[s]["read"], ch.toNode.SEs[t]["write"] ) )
 
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]
@@ -360,7 +360,7 @@ class FTSStrategy( object ):
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]
                   and channel.timeToStart < float( "inf" ) ]
       if not channels:
-        self.log.info( "dynamicThroughput: active candidate routes not found" )
+        self.log.warn( "dynamicThroughput: active candidate routes not found" )
         return S_ERROR( "dynamicThroughput: no active candidate FTS routes found" )
 
       candidates = []
@@ -431,7 +431,7 @@ class FTSStrategy( object ):
     if strategy not in self.activeStrategies:
       return S_ERROR( "replicationTree: inactive or unsupported strategy '%s'" % strategy )
 
-    self.log.info( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" % \
+    self.log.verbose( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" % \
                      ( strategy, sourceSEs, targetSEs, size ) )
     # # fire action from dispatcher
     tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
@@ -439,7 +439,7 @@ class FTSStrategy( object ):
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
     # # update graph edges
-    self.log.always( "replicationTree: %s" % tree["Value"] )
+    self.log.verbose( "replicationTree: %s" % tree["Value"] )
     update = self.addTreeToGraph( replicationTree = tree["Value"], size = size )
     if not update["OK"]:
       self.log.error( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
