@@ -265,6 +265,7 @@ class FTSAgent( AgentModule ):
         self.__ftsPlacement = FTSPlacement( csPath = None, ftsHistoryViews = ftsHistory )
       else:
         self.__ftsPlacement.refresh( ftsHistoryViews = ftsHistory )
+      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory, maxActiveJobs = self.MAX_ACTIVE_JOBS )
     finally:
       self.updateLock().release()
 
@@ -413,7 +414,7 @@ class FTSAgent( AgentModule ):
     for requestID in requestIDs:
       request = self.getRequest( requestID )
       if not request["OK"]:
-        log.error( request["Message"] )
+        log.error( "Error getting request %s" % requestName, request["Message"] )
         continue
       request = request["Value"]
       sTJId = request.RequestID
@@ -686,7 +687,7 @@ class FTSAgent( AgentModule ):
     toSchedule = []
 
     # # filter files
-    for opFile in operation.getWaitingFilesList():
+    for opFile in [ opFile for opFile in operation if opFile.Status == "Waiting" ]:
 
       replicas = self.__filterReplicas( opFile )
       if not replicas["OK"]:
@@ -868,7 +869,7 @@ class FTSAgent( AgentModule ):
     if ftsJob.Status in FTSJob.FINALSTATES:
       finalizeFTSJob = self.__finalizeFTSJob( request, ftsJob )
       if not finalizeFTSJob["OK"]:
-        if 'Unknown transfer state' in monitor['Message']:
+        if 'Unknown transfer state' in finalizeFTSJob['Message']:
           for ftsFile in ftsJob:
             ftsFile.Status = "Waiting"
             ftsFilesDict["toSubmit"].append( ftsFile )
@@ -1073,7 +1074,7 @@ class FTSAgent( AgentModule ):
     for successfulLFN in replicas["Successful"]:
       reps = set( replicas['Successful'][successfulLFN] )
       if targetSESet.issubset( reps ):
-        log.info( "%s has been replicated to all targets" % successfulLFN )
+        log.verbose( "%s has been replicated to all targets" % successfulLFN )
         fullyReplicated += 1
         scheduledFiles[successfulLFN].Status = "Done"
       else:

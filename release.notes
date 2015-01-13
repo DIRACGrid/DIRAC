@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre8]
+[v6r13-pre9]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -128,6 +128,13 @@ CHANGE: RMS refactored based on SQLAlchemy
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
+
+[v6r12p11]
+
+*WMS
+FIX: CPUNormalization - dealing with the case when the maxCPUTime is not set in the queue
+     definition
+FIX: pilotTools - added option pilotCFGFile
 
 [v6r12p10]
 
@@ -325,6 +332,14 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p29]
+
+*DMS
+FIX: FTS(Agent,Startegy,Gragh) - make use of MaxActiveJobs parameter, bug fixes
+
+*TMS
+FIX: Transformation(Agent,Client) - Operations CS parameters can be defined for each plugin: MaxFiles, SortedBy, NoUnusedDelay. Fixes to facilitate work with large numbers of files.
+
 [v6r11p28]
 
 *Core
@@ -347,7 +362,7 @@ FIX: Watchdog - disallow cputime and wallclock to be negative
 *TS
 FIX: TransformationAgent - correct handling of replica caches when more than 5000 files
 
-*Workflow
+
 BUGFIX: ModuleBase - bug fix in execute()
 BUGFIX: Workflow - bug fix in createStepInstance()
 
