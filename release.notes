@@ -201,6 +201,14 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p29]
+
+*DMS
+FIX: FTS(Agent,Startegy,Gragh) - make use of MaxActiveJobs parameter, bug fixes
+
+*TMS
+FIX: Transformation(Agent,Client) - Operations CS parameters can be defined for each plugin: MaxFiles, SortedBy, NoUnusedDelay. Fixes to facilitate work with large numbers of files.
+
 [v6r11p28]
 
 *Core
@@ -223,7 +231,7 @@ FIX: Watchdog - disallow cputime and wallclock to be negative
 *TS
 FIX: TransformationAgent - correct handling of replica caches when more than 5000 files
 
-*Workflow
+
 BUGFIX: ModuleBase - bug fix in execute()
 BUGFIX: Workflow - bug fix in createStepInstance()
 
