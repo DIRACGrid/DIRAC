@@ -1,3 +1,10 @@
+[v6r12p11]
+
+*WMS
+FIX: CPUNormalization - dealing with the case when the maxCPUTime is not set in the queue
+     definition
+FIX: pilotTools - added option pilotCFGFile
+
 [v6r12p10]
 
 *DMS
