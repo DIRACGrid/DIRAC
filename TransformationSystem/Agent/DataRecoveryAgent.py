@@ -27,7 +27,7 @@ __VERSION__ = "$Revision: $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.Time import dateTime
 from DIRAC.Core.Workflow.Workflow import fromXMLString
@@ -62,7 +62,7 @@ class DataRecoveryAgent(AgentModule):
     """Sets defaults
     """
     self.prodDB = TransformationClient()
-    self.requestClient = RequestClient()
+    self.requestClient = ReqClient()
     self.taskIDName = 'TaskID'
     self.externalStatus = 'ExternalStatus'
     self.externalID = 'ExternalID'
@@ -317,7 +317,7 @@ class DataRecoveryAgent(AgentModule):
         for the set of WMS jobIDs.
     """
     jobs = jobFileDict.keys()
-    result = self.requestClient.getRequestForJobs(jobs)
+    result = self.requestClient.readRequestsForJobs(jobs)
     if not result['OK']:
       return result
 
@@ -325,8 +325,9 @@ class DataRecoveryAgent(AgentModule):
       self.log.info('None of the jobs have pending requests')
       return S_OK(jobFileDict)
 
-    for jobID in result['Value'].keys():
-      del jobFileDict[str(jobID)]
+    for jobID, reqVal in result['Value']['Successful'].iteritems():
+      if not reqVal:  # if reqVal is empty there is no request
+        del jobFileDict[str(jobID)]
       self.log.info('Removing jobID %s from consideration until requests are completed' % (jobID))
 
     return S_OK(jobFileDict)
