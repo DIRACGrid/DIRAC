@@ -521,7 +521,7 @@ class StorageElementItem( object ):
       protocols = self.turlProtocols
     elif type( protocol ) is ListType:
       protocols = protocol
-    else:
+    elif type( protocol ) == type( '' ):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"

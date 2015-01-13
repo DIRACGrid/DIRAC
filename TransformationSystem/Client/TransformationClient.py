@@ -120,23 +120,37 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.getTransformation( transName, extraParams )
 
   def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
-                              orderAttribute = None, limit = 10000, rpc = '', url = '', timeout = 1800 ):
+                              orderAttribute = None, limit = None, rpc = '', url = '', timeout = 1800,
+                              offset = 0, maxfiles = None ):
     """ gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
     transformationFiles = []
     # getting transformationFiles - incrementally
-    offsetToApply = 0
+    offsetToApply = offset
+    retries = 5
+    limit = limit if limit else 10000
+    transID = condDict.get( 'TransformationID', 'Unknown' )
     while True:
       res = rpcClient.getTransformationFiles( condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply )
       if not res['OK']:
+        gLogger.error( "Error getting files for transformation %s (offset %d), %s" %
+                       ( str( transID ), offsetToApply,
+                        ( 'retry %d times' % retries ) if retries else 'give up' ), res['Message'] )
+        retries -= 1
+        if retries:
+          continue
         return res
       else:
-        gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
+        retries = 5
+        gLogger.verbose( "For conditions %s: result for limit %d, offset %d: %d files" %
+                         ( str( condDict ), limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
-          transformationFiles = transformationFiles + res['Value']
+          transformationFiles += res['Value']
           offsetToApply += limit
+          if maxfiles and offsetToApply >= offset + maxfiles:
+            break
         if len( res['Value'] ) < limit:
           break
     return S_OK( transformationFiles )
