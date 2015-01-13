@@ -28,6 +28,41 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     TransformationAgentsUtilities.__init__( self )
 
     # few parameters
+    self.pluginLocation = ''
+    self.transformationStatus = []
+    self.maxFiles = 0
+    self.transformationTypes = []
+
+    # clients (out of the threads)
+    self.transfClient = None
+
+    # parameters for the threading
+    self.transQueue = Queue.Queue()
+    self.transInQueue = []
+
+    # parameters for caching
+    self.workDirectory = ''
+    self.cacheFile = ''
+    self.controlDirectory = ''
+
+    self.lastFileOffset = None
+    # Validity of the cache
+    self.replicaCache = None
+    self.replicaCacheValidity = None
+    self.writingCache = False
+    self.removedFromCache = 0
+
+    self.noUnusedDelay = 0
+    self.unusedFiles = {}
+    self.unusedTimeStamp = {}
+
+    self.debug = False
+    self.transInThread = {}
+
+  def initialize( self ):
+    """ standard initialize
+    """
+    # few parameters
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
@@ -44,10 +79,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # clients
     self.transfClient = TransformationClient()
 
-    # for the threading
-    self.transQueue = Queue.Queue()
-    self.transInQueue = []
-
     # for caching using a pickle file
     self.workDirectory = self.am_getWorkDirectory()
     self.cacheFile = os.path.join( self.workDirectory, 'ReplicaCache.pkl' )
@@ -61,18 +92,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.replicaCacheValidity = self.am_getOption( 'ReplicaCacheValidity', 2 )
 
     self.noUnusedDelay = self.am_getOption( 'NoUnusedDelay', 6 )
-    self.unusedFiles = {}
-    self.unusedTimeStamp = {}
-    self.pluginTimeout = {}
-
-    self.debug = False
-    self.transInThread = {}
-
-  def initialize( self ):
-    """ standard initialize
-    """
-
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     # Get it threaded
     maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
