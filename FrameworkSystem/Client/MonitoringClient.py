@@ -398,9 +398,9 @@ class MonitoringClient(object):
     compDict, fields = result[ 'Value' ]
     tabledData = []
     for setup in compDict:
-      for type in compDict[ setup ]:
-        for name in compDict[ setup ][ type ]:
-          for component in compDict[ setup ][ type ][ name ]:
+      for cType in compDict[ setup ]:
+        for name in compDict[ setup ][ cType ]:
+          for component in compDict[ setup ][ cType ][ name ]:
             #How here we are. Now we need to filter the components
             if not self.__filterComponent( component, condDict ):
               continue
@@ -427,7 +427,7 @@ class MonitoringClient(object):
           break
       for row in tabledData:
         sortingData.append( ( row[ fieldIndex ], row ) )
-      sortingData.sort()
+      sortingData.sort( key = lambda x: x[0] )
       if sortDirection == "DESC":
         sortingData.reverse()
       tabledData = [ row[1] for row in sortingData ]

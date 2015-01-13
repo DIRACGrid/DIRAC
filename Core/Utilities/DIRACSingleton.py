@@ -7,10 +7,11 @@
 
 """ 
 :mod: DIRACSingleton 
-=======================
  
 .. module: DIRACSingleton
+
 :synopsis: metaclass singleton implementation
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 metaclass singleton implementation
@@ -36,7 +37,6 @@ class DIRACSingleton( type ):
     class CheesShop( object ):
       __metaclass__ = DIRACSingleton
       ...
-
   """
   def __init__( cls, name, bases, dic ):
     """ c'tor

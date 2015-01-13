@@ -49,7 +49,7 @@ from DIRAC.RequestManagementSystem.Client.Request           import Request
 from DIRAC.RequestManagementSystem.Client.Operation         import Operation
 from DIRAC.RequestManagementSystem.Client.File              import File
 from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 reqClient = ReqClient()
@@ -91,7 +91,7 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   oRequest.addOperation( oOperation )
 
-  isValid = gRequestValidator.validate( oRequest )
+  isValid = RequestValidator().validate( oRequest )
   if not isValid['OK']:
     print "Request is not valid: ", isValid['Message']
     DIRAC.exit( 1 )

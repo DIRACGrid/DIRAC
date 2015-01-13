@@ -38,6 +38,7 @@ def discoverInterfaces():
       ifaces[ name ] = { 'ip' : socket.inet_ntoa( ip ), 'mac' : getMACFromInterface( name ) }
   return ifaces
 
+#FIXME: UNUSED ( DIRAC, LHCbDIRAC, VMDIRAC )!
 def getAllInterfaces():
   max_possible = 128  # arbitrary. raise if needed.
   maxBytes = max_possible * 32
@@ -56,6 +57,7 @@ def getAllInterfaces():
   namestr = names.tostring()
   return [namestr[i:i + 32].split( '\0', 1 )[0] for i in range( 0, outbytes, 32 )]
 
+#FIXME: UNUSED ( DIRAC, LHCbDIRAC, VMDIRAC )!
 def getAddressFromInterface( ifName ):
   try:
     mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )

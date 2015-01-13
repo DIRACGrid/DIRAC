@@ -5,7 +5,6 @@
 
 """ 
 :mod: TransferDBMonitoringHandler
-=================================
 
 .. module: TransferDBMonitoringHandler
   :synopsis: Implementation of the TransferDB monitoring service in the DISET framework.

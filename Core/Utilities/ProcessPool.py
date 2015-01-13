@@ -3,10 +3,10 @@
 #################################################################
 """
 .. module:: Pfn
-  :synopsis: ProcessPool and related classes
+  
+:synopsis: ProcessPool and related classes
 
 ProcessPool
-===========
 
 ProcessPool creates a pool of worker subprocesses to handle a queue of tasks
 much like the producers/consumers paradigm. Users just need to fill the queue
@@ -26,7 +26,7 @@ In case another request is added to the full queue, the execution will
 lock until another request is taken out. The ProcessPool will automatically increase and
 decrease the pool of workers as needed, of course not exceeding above limits.
 
-To add a task to the queue one should execute::
+To add a task to the queue one should execute:::
 
   pool.createAndQueueTask( funcDef,
                            args = ( arg1, arg2, ... ),
@@ -34,13 +34,14 @@ To add a task to the queue one should execute::
                            callback = callbackDef,
                            exceptionCallback = exceptionCallBackDef )
 
-or alternatively by using ProcessTask instance::
+or alternatively by using ProcessTask instance:::
 
-  task = ProcessTask( funcDef ,
+  task = ProcessTask( funcDef,
                       args = ( arg1, arg2, ... )
                       kwargs = { "kwarg1" : value1, .. },
                       callback = callbackDef,
                       exceptionCallback = exceptionCallbackDef )
+                      
   pool.queueTask( task )
 
 where parameters are:
@@ -72,7 +73,6 @@ has to call::
   pool.daemonize()
 
 Callback functions
-------------------
 
 There are two types of callbacks that can be executed for each tasks: exception callback function and
 results callback function. The first one is executed when unhandled exception has been raised during
@@ -148,12 +148,16 @@ class WorkingProcess( multiprocessing.Process ):
   
   """
 
-  def __init__( self, pendingQueue, resultsQueue, stopEvent ):
-    """
+  def __init__( self, pendingQueue, resultsQueue, stopEvent, keepRunning ):
+    """ c'tor
+
     :param self: self reference
-    :param multiprocessing.Queue pendingQueue: queue storing ProcessTask before execution
-    :param multiprocessing.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
-    :param multiprocessing.Event stopEvent: event to stop processing
+    :param : pendingQueue: queue storing ProcessTask before exection
+    :type multiprocessing.Queue pendingQueue
+    :param resultsQueue: queue storing callbacks and exceptionCallbacks
+    :type multiprocessing.Queue 
+    :param  stopEvent: event to stop processing
+    :type multiprocessing.Event
     """
     multiprocessing.Process.__init__( self )
     ## daemonize
@@ -168,6 +172,8 @@ class WorkingProcess( multiprocessing.Process ):
     self.__resultsQueue = resultsQueue
     ## stop event
     self.__stopEvent = stopEvent
+    ## keep process running until stop event
+    self.__keepRunning = keepRunning
     ## placeholder for watchdog thread
     self.__watchdogThread = None
     ## placeholder for process thread
@@ -264,7 +270,7 @@ class WorkingProcess( multiprocessing.Process ):
         ## idle loop?
         idleLoopCount += 1
         ## 10th idle loop - exit, nothing to do 
-        if idleLoopCount == 10:
+        if idleLoopCount == 10 and not self.__keepRunning:
           return 
         continue
 
@@ -279,6 +285,8 @@ class WorkingProcess( multiprocessing.Process ):
       self.__processThread = threading.Thread( target = self.__processTask )
       self.__processThread.start()
 
+      timeout = False
+      noResults = False
       ## join processThread with or without timeout
       if self.task.getTimeOut():
         self.__processThread.join( self.task.getTimeOut()+10 )
@@ -288,12 +296,21 @@ class WorkingProcess( multiprocessing.Process ):
       ## processThread is still alive? stop it!
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
+        self.task.setResult( S_ERROR("Timed out") )  
+        timeout = True
+      # if the task finished with no results, something bad happened, e.g. 
+      # undetected timeout  
+      if not self.task.taskResults() and not self.task.taskException():
+        self.task.setResult( S_ERROR("Task produced no results") )  
+        noResults = True
       
       ## check results and callbacks presence, put task to results queue
       if self.task.hasCallback() or self.task.hasPoolCallback():
-        if not self.task.taskResults() and not self.task.taskException():
-          self.task.setResult( S_ERROR("Timed out") )
         self.__resultsQueue.put( task )
+      if timeout or noResults:  
+        # The task execution timed out, stop the process to prevent it running 
+        # in the background
+        return   
       ## increase task counter
       taskCounter += 1
       self.__taskCounter = taskCounter 
@@ -521,13 +538,11 @@ class ProcessPool( object ):
   .. class:: ProcessPool
   
   ProcessPool
-  ===========
   
   This class is managing multiprocessing execution of tasks (:ProcessTask: instances) in a separate 
   sub-processes (:WorkingProcess:).
   
   Pool depth
-  ----------
 
   The :ProcessPool: is keeping required number of active workers all the time: slave workers are only created 
   when pendingQueue is being filled with tasks, not exceeding defined min and max limits. When pendingQueue is 
@@ -535,7 +550,6 @@ class ProcessPool( object ):
   self-destroy mechanism after 10 idle loops. 
 
   Processing and communication
-  ----------------------------
 
   The communication between :ProcessPool: instance and slaves is performed using two :multiprocessing.Queues: 
 
@@ -553,10 +567,9 @@ class ProcessPool( object ):
   or alternatively ask for daemon mode processing, when this function is called again and again in 
   separate background thread.
 
-  Finalization
-  ------------
+  Finalisation
 
-  Finsalization fo task processing is done in several steps:
+  Finalization for task processing is done in several steps:
   
     * if pool is working in daemon mode, background result processing thread is joined and stopped
     * :pendingQueue: is emptied by :ProcessPool.processAllResults: function, all enqueued tasks are executed
@@ -566,12 +579,14 @@ class ProcessPool( object ):
       by SIGKILL
 
   :warn: Be carefull and choose wisely :timeout: argument to :ProcessPool.finalize:. Too short time period can
-  cause that all workers will be killed.  
+         cause that all workers will be killed.  
   
   """
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
-                strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
-    """
+                strictLimits = True, poolCallback=None, poolExceptionCallback=None,
+                keepProcessesRunning=True ):
+    """ c'tor
+
     :param self: self reference
     :param int minSize: minimal number of simultaniously executed tasks
     :param int maxSize: maximal number of simultaniously executed tasks
@@ -600,6 +615,8 @@ class ProcessPool( object ):
     self.__resultsQueue = multiprocessing.Queue( 0 )
     ## stop event
     self.__stopEvent = multiprocessing.Event()
+    ## keep processes running flag
+    self.__keepRunning = keepProcessesRunning
     ## lock 
     self.__prListLock = threading.Lock()
     
@@ -697,8 +714,7 @@ class ProcessPool( object ):
     return counter
 
   def getFreeSlots( self ):
-    """ 
-    Get number of free slots available for workers
+    """ get number of free slots available for workers
 
     :param self: self reference
     """
@@ -712,7 +728,7 @@ class ProcessPool( object ):
     """
     self.__prListLock.acquire()
     try:
-      worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent )
+      worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent, self.__keepRunning )
       while worker.pid == None:
         time.sleep(0.1)
       self.__workersDict[ worker.pid ] = worker
@@ -818,8 +834,8 @@ class ProcessPool( object ):
 
     :param self: self reference
 
-    :warning: results may be misleading if elements put into the 
-    queue are big
+    :warning: results may be misleading if elements put into the queue are big
+    
     """
     return not self.__pendingQueue.empty()
 
@@ -829,8 +845,8 @@ class ProcessPool( object ):
 
     :param self: self reference
 
-    :warning: results may be misleading if elements put into the queue 
-    are big
+    :warning: results may be misleading if elements put into the queue are big
+    
     """
     return self.__pendingQueue.full()
 

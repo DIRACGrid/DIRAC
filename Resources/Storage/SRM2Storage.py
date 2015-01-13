@@ -112,7 +112,12 @@ class SRM2Storage( StorageBase ):
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
       self.voName = getVOForGroup( ret['Value']['group'] )
-    self.verbose = 0
+    # enable lcg-utils debugging for debug level DEBUG   
+    lcgdebuglevel = 0
+    dlevel = self.log.getLevel()
+    if dlevel == 'DEBUG':
+      lcgdebuglevel = 999
+    self.verbose = lcgdebuglevel
     self.conf_file = 'ignored'
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
@@ -930,6 +935,7 @@ class SRM2Storage( StorageBase ):
       if errCode > 0:
         errStr = "%s %s" % ( errStr, os.strerror( errCode ) )
       self.log.error( errorMessage, errStr )
+      errorMessage = errStr
     res = self.__executeOperation( dest_url, 'removeFile' )
     if res['OK']:
       self.log.debug( "__putFile: Removed remote file remnant %s." % dest_url )

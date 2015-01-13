@@ -249,7 +249,7 @@ the stalledTime limit.
     if not result['OK']:
       self.log.error( result['Message'] )
     if not result['OK'] or not result['Value']:
-      return S_ERROR( 'Could not get attributes for job %s' % job )
+      return S_ERROR( 'Could not get attributes for job', '%s' % job )
 
     self.log.verbose( result )
     latestUpdate = 0
@@ -494,9 +494,9 @@ used to fail jobs due to the optimizer chain.
 
   def __failCompletedJobs( self ):
     """ Failed Jobs stuck in Completed Status for a long time.
-They are due to pilots being killed during the
-finalization of the job execution.
-"""
+      They are due to pilots being killed during the
+      finalization of the job execution.
+    """
 
     # Get old Completed Jobs
     checkTime = str( dateTime() - self.completedTime * second )

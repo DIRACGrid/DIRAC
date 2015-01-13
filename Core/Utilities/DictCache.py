@@ -34,10 +34,10 @@ class DictCache( object ):
 
   def exists( self, cKey, validSeconds = 0 ):
     """
-    Returns True/False if the key exists for the given number of seconds
+      Returns True/False if the key exists for the given number of seconds
       Arguments:
-        - cKey : identification key of the record
-        - validSeconds : The amount of seconds the key has to be valid for
+      :param cKey: identification key of the record
+      :param validSeconds: The amount of seconds the key has to be valid for
     """
     self.lock.acquire()
     try:
@@ -57,8 +57,8 @@ class DictCache( object ):
   def delete( self, cKey ):
     """
     Delete a key from the cache
-      Arguments:
-        - cKey : identification key of the record
+      
+    :param cKey: identification key of the record
     """
     self.lock.acquire()
     try:
@@ -73,10 +73,10 @@ class DictCache( object ):
   def add( self, cKey, validSeconds, value = None ):
     """
     Add a record to the cache
-      Arguments:
-        - cKey : identification key of the record
-        - validSeconds : valid seconds of this record
-        - value : value of the record
+      
+    :param cKey: identification key of the record
+    :param validSeconds: valid seconds of this record
+    :param value: value of the record
     """
     if max( 0, validSeconds ) == 0:
       return
@@ -91,9 +91,9 @@ class DictCache( object ):
   def get( self, cKey, validSeconds = 0 ):
     """
     Get a record from the cache
-      Arguments:
-        - cKey : identification key of the record
-        - validSeconds : The amount of seconds the key has to be valid for
+
+    :param cKey: identification key of the record
+    :param validSeconds: The amount of seconds the key has to be valid for
     """
     self.lock.acquire()
     try:

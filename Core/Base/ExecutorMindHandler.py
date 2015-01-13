@@ -157,7 +157,7 @@ class ExecutorMindHandler( RequestHandler ):
     taskObj = result[ 'Value' ]
     result = self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
     if not result[ 'OK' ]:
-      gLogger.error( "There was a problem freezing task %s: %s" % ( taskId, result[ 'Message' ] ) )
+      gLogger.error( "There was a problem processing task %s: %s" % ( taskId, result[ 'Message' ] ) )
     return S_OK()
 
   auth_msg_TaskFreeze = [ 'all' ]

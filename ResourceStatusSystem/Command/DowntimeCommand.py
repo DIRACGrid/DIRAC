@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSit
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions
 
 __RCSID__ = '$Id:  $'
 
@@ -39,30 +40,31 @@ class DowntimeCommand( Command ):
     '''
 
     for dt in result:
-      
-      resQuery = self.rmClient.addOrModifyDowntimeCache( dt[ 'DowntimeID' ], 
-                                                         dt[ 'Element' ], 
-                                                         dt[ 'Name' ], 
-                                                         dt[ 'StartDate' ], 
-                                                         dt[ 'EndDate' ], 
-                                                         dt[ 'Severity' ], 
-                                                         dt[ 'Description' ], 
-                                                         dt[ 'Link' ] )  
+      resQuery = self.rmClient.addOrModifyDowntimeCache( 
+                               downtimeID = dt[ 'DowntimeID' ],
+                               element = dt[ 'Element' ],
+                               name = dt[ 'Name' ],
+                               startDate = dt[ 'StartDate' ],
+                               endDate = dt[ 'EndDate' ],
+                               severity = dt[ 'Severity' ],
+                               description = dt[ 'Description' ],
+                               link = dt[ 'Link' ],
+                               gocdbServiceType = dt[ 'GOCDBServiceType' ] )
       if not resQuery[ 'OK' ]:
         return resQuery
     return S_OK()
-  
+
   def _prepareCommand( self ):
     '''
-      DowntimeCommand requires three arguments:
+      DowntimeCommand requires four arguments:
       - name : <str>
       - element : Site / Resource
-      - elementType: <str>  
-      
+      - elementType: <str>
+
       If the elements are Site(s), we need to get their GOCDB names. They may
       not have, so we ignore them if they do not have.
     '''
-    
+
     if 'name' not in self.args:
       return S_ERROR( '"name" not found in self.args' )
     elementName = self.args[ 'name' ]
@@ -70,18 +72,20 @@ class DowntimeCommand( Command ):
     if 'element' not in self.args:
       return S_ERROR( '"element" not found in self.args' )
     element = self.args[ 'element' ]
-    
+
     if 'elementType' not in self.args:
       return S_ERROR( '"elementType" not found in self.args' )
     elementType = self.args[ 'elementType' ]
-    
+
     if not element in [ 'Site', 'Resource' ]:
       return S_ERROR( 'element is not Site nor Resource' )
 
     hours = None
     if 'hours' in self.args:
       hours = self.args[ 'hours' ]
-    
+
+    gocdbServiceType = None
+
     # Transform DIRAC site names into GOCDB topics
     if element == 'Site':
 
@@ -92,39 +96,45 @@ class DowntimeCommand( Command ):
 
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
-      
+      # We need to distinguish if it's tape or disk
+      if getStorageElementOptions( elementName )['Value']['TapeSE']:
+        gocdbServiceType = "srm"
+      elif getStorageElementOptions( elementName )['Value']['DiskSE']:
+        gocdbServiceType = "srm.nearline"
+
       seHost = CSHelpers.getSEHost( elementName )
       if not seHost:
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
 
-    return S_OK( ( element, elementName, hours ) )
+    return S_OK( ( element, elementName, hours, gocdbServiceType ) )
 
   def doNew( self, masterParams = None ):
     '''
       Gets the parameters to run, either from the master method or from its
       own arguments.
-      
-      For every elementName, unless it is given a list, in which case it contacts 
+
+      For every elementName, unless it is given a list, in which case it contacts
       the gocdb client. The server is not very stable, so in case of failure tries
       a second time.
-      
+
       If there are downtimes, are recorded and then returned.
     '''
-    
+
     if masterParams is not None:
       element, elementNames = masterParams
       hours = None
       elementName = None
+      gocdbServiceType = None
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
         return params
-      element, elementName, hours = params[ 'Value' ]
+      element, elementName, hours, gocdbServiceType = params[ 'Value' ]
       elementNames = [ elementName ]
 
     startDate = datetime.utcnow() - timedelta( days = 14 )
-          
+
     try:
       results = self.gClient.getStatus( element, elementName, startDate, 120 )
     except urllib2.URLError:
@@ -133,7 +143,7 @@ class DowntimeCommand( Command ):
         results = self.gClient.getStatus( element, elementName, startDate, 120 )
       except urllib2.URLError, e:
         return S_ERROR( e )
-                  
+
     if not results[ 'OK' ]:
       return results
     results = results[ 'Value' ]
@@ -142,96 +152,117 @@ class DowntimeCommand( Command ):
       return S_OK( None )
 
     uniformResult = []
-      
+
     # Humanize the results into a dictionary, not the most optimal, but readable
     for downtime, downDic in results.items():
 
-      dt                  = {}
+      dt = {}
+      if gocdbServiceType and downDic[ 'SERVICE_TYPE' ]:
+        if  gocdbServiceType.lower() != downDic[ 'SERVICE_TYPE' ].lower():
+          continue
       if element == 'Resource':
-        dt[ 'Name' ]        = downDic[ 'HOSTNAME' ]
+        dt[ 'Name' ] = downDic[ 'HOSTNAME' ]
       else:
         dt[ 'Name' ] = downDic[ 'SITENAME' ]
-      
+
       if not dt[ 'Name' ] in elementNames:
         continue
-      
-      dt[ 'DowntimeID' ]  = downtime
-      dt[ 'Element' ]     = element
-      dt[ 'StartDate' ]   = downDic[ 'FORMATED_START_DATE' ]
-      dt[ 'EndDate' ]     = downDic[ 'FORMATED_END_DATE' ]
-      dt[ 'Severity' ]    = downDic[ 'SEVERITY' ]
+
+      dt[ 'DowntimeID' ] = downtime
+      dt[ 'Element' ] = element
+      dt[ 'StartDate' ] = downDic[ 'FORMATED_START_DATE' ]
+      dt[ 'EndDate' ] = downDic[ 'FORMATED_END_DATE' ]
+      dt[ 'Severity' ] = downDic[ 'SEVERITY' ]
       dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
-      dt[ 'Link' ]        = downDic[ 'GOCDB_PORTAL_URL' ]
-     
-      uniformResult.append( dt )  
-      
+      dt[ 'Link' ] = downDic[ 'GOCDB_PORTAL_URL' ]
+      try:
+        dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      except KeyError:
+        # SERVICE_TYPE is not always defined
+        pass
+
+      uniformResult.append( dt )
+
     storeRes = self._storeCommand( uniformResult )
     if not storeRes[ 'OK' ]:
       return storeRes
-    
-    # We return only one downtime, if its ongoind at dtDate
+
+    # We return only one downtime, if its ongoing at dtDate
     startDate = datetime.utcnow()
-    endDate   = startDate     
     if hours:
       startDate = startDate + timedelta( hours = hours )
+    endDate = startDate
 
     result = None
+    dtOutages = []
+    dtWarnings = []
+
     for dt in uniformResult:
-      
       if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
-        result = dt
-        #We want to take the latest one ( they are sorted by insertion time )
-        #break
+        if dt[ 'Severity' ] == 'Outage':
+          dtOutages.append( dt )
+        else:
+          dtWarnings.append( dt )
+
+    #In case many overlapping downtimes have been declared, the first one in
+    #severity and then time order will be selected. We want to get the latest one
+    #( they are sorted by insertion time )
+    if len( dtOutages ) > 0:
+      result = dtOutages[-1]
+    elif len( dtWarnings ) > 0:
+      result = dtWarnings[-1]
 
     return S_OK( result )
 
+
+
   def doCache( self ):
     '''
-      Method that reads the cache table and tries to read from it. It will 
+      Method that reads the cache table and tries to read from it. It will
       return a list with one dictionary describing the DT if there are results.
     '''
-    
+
     params = self._prepareCommand()
     if not params[ 'OK' ]:
       return params
-    element, elementName, hours = params[ 'Value' ]
-    
-    result = self.rmClient.selectDowntimeCache( element = element, name = elementName )  
+    element, elementName, hours, gocdbServiceType = params[ 'Value' ]
+
+    result = self.rmClient.selectDowntimeCache( element = element, name = elementName,
+                                                gocdbServiceType = gocdbServiceType )
+
     if not result[ 'OK' ]:
       return result
-    
+
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
 
     # We return only one downtime, if its ongoing at dtDate
     dtDate = datetime.utcnow()
     result = None
-       
     dtOutages = []
     dtWarnings = []
 
     if not hours:
-      # If not hours defined, we want the downtimes running now, which means,
-      # the ones that already started and will finish later.
-  
+      # If hours not defined, we want the ongoing downtimes
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
           if dt[ 'Severity' ] == 'Outage':
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
-
     else:
-      # If hours are defined, we want also the downtimes starting in the next <hours>
+      # If hours defined, we want ongoing downtimes and downtimes starting 
+      # in the next <hours>
       dtDateFuture = dtDate + timedelta( hours = hours )
       for dt in uniformResult:
-        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
+        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( 
+           dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
           if dt[ 'Severity' ] == 'Outage':
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
 
-    #In case many overlapping downtimes have been declared, the first one in severity and 
-    # then time order will be selected.
+    #In case many overlapping downtimes have been declared, the first one in
+    #severity and then time order will be selected.
     if len( dtOutages ) > 0:
       result = dtOutages[0]
     elif len( dtWarnings ) > 0:
@@ -239,29 +270,27 @@ class DowntimeCommand( Command ):
 
     return S_OK( result )
 
+
   def doMaster( self ):
+    ''' Master method, which looks little bit spaghetti code, sorry !
+        - It gets all sites and transforms them into gocSites.
+        - It gets all the storage elements and transforms them into their hosts
+        - It gets the the CEs (FTS and file catalogs will come).
     '''
-      Master method, which looks little bit spaguetti code, sorry !
-      - It gets all sites and transforms them into gocSites.
-      - It gets all the storage elements and transforms them into their hosts
-      - It gets the fts, the ces and file catalogs.
-    '''
-        
+
     gocSites = CSHelpers.getGOCSites()
     if not gocSites[ 'OK' ]:
       return gocSites
     gocSites = gocSites[ 'Value' ]
-  
+
     sesHosts = CSHelpers.getStorageElementsHosts()
     if not sesHosts[ 'OK' ]:
-      return sesHosts      
-    sesHosts = sesHosts[ 'Value' ]  
-    
-    resources = sesHosts      
-              
-    #
-    #
-    #FIXME: file catalogs need also to use their hosts
+      return sesHosts
+    sesHosts = sesHosts[ 'Value' ]
+
+    resources = sesHosts
+
+    # TODO: file catalogs need also to use their hosts
     # something similar applies to FTS Channels
     #
     #fts = CSHelpers.getFTS()
@@ -270,23 +299,23 @@ class DowntimeCommand( Command ):
     #fc = CSHelpers.getFileCatalogs()
     #if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
-    
-    ce = CSHelpers.getComputingElements() 
+
+    ce = CSHelpers.getComputingElements()
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
-    
+
     gLogger.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
-    
+
     siteRes = self.doNew( ( 'Site', gocSites ) )
     if not siteRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
     gLogger.verbose( 'Processing Resources: %s' % ', '.join( resources ) )
 
-    resourceRes = self.doNew( ( 'Resource', resources ) ) 
+    resourceRes = self.doNew( ( 'Resource', resources ) )
     if not resourceRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( resourceRes[ 'Message' ] )
-    
+
     return S_OK( self.metrics )
 
 ################################################################################

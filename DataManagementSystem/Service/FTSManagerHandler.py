@@ -5,7 +5,6 @@
 ########################################################################
 """
 :mod: FTSManagerHandler
-=======================
 
 .. module: FTSManagerHandler
   :synopsis: handler for FTSDB using DISET
@@ -14,6 +13,8 @@
 
 Service handler for FTSDB using DISET
 """
+
+__RCSID__ = "$Id$"
 
 # #
 # @file FTSManagerHandler.py

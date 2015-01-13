@@ -20,6 +20,17 @@ Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     '  %s [option|cfgfile] ...' % Script.scriptName,
                                     'Arguments:',] ) )
 
+old = False
+def setOld( opVal ):
+  global old
+  old = True
+  return S_OK()
+
+Script.registerSwitch( "O", "--old", "install old Pylons based portal", setOld )
+
 Script.parseCommandLine()
 
-InstallTools.installPortal()
+if old:
+  result = InstallTools.setupPortal()
+else:
+  result = InstallTools.setupNewPortal()  

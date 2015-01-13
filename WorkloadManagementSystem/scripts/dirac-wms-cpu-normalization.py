@@ -42,8 +42,10 @@ if __name__ == "__main__":
 
   DIRAC.gLogger.notice( 'Normalization for current CPU is %.1f %s' % ( norm, result['Value']['UNIT'] ) )
 
-  if update:
+  if update and not configFile:
+    DIRAC.gConfig.setOptionValue( '/LocalSite/CPUScalingFactor', norm )
     DIRAC.gConfig.setOptionValue( '/LocalSite/CPUNormalizationFactor', norm )
+
     DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
   if configFile:
     from DIRAC.Core.Utilities.CFG import CFG
@@ -56,6 +58,7 @@ if __name__ == "__main__":
     # Create the section if it does not exist
     if not cfg.existsKey( 'LocalSite' ):
       cfg.createNewSection( 'LocalSite' )
+    cfg.setOption( '/LocalSite/CPUScalingFactor', norm )
     cfg.setOption( '/LocalSite/CPUNormalizationFactor', norm )
 
     cfg.writeToFile( configFile )

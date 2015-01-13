@@ -6,10 +6,11 @@
 ########################################################################
 """ 
 :mod: Graph
-=======================
 
 .. module: Graph
+
 :synopsis: graph
+
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 graph

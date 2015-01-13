@@ -91,7 +91,7 @@ class LocalConfiguration:
                          self.__setSectionByCmd )
     self.registerCmdOpt( "c:", "cert=", "Use server certificate to connect to Core Services",
                          self.__setUseCertByCmd )
-    self.registerCmdOpt( "d", "debug", "Set debug mode (-dd is extra debug)",
+    self.registerCmdOpt( "d", "debug", "Set debug mode (-ddd is extra debug)",
                          self.__setDebugMode )
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.showHelp )
@@ -191,8 +191,8 @@ class LocalConfiguration:
     This is the magic method that reads the command line and processes it
     It is used by the Script Base class and the dirac-service and dirac-agent scripts
     Before being called:
-      - any additional switches to be processed
-      - mandatory and default configuration configuration options must be defined.
+    - any additional switches to be processed
+    - mandatory and default configuration configuration options must be defined.
 
     """
     if self.initialized:
@@ -335,8 +335,7 @@ class LocalConfiguration:
     """
     Force the connection the Configuration Server
     """
-    gRefresher.enable()
-    return S_OK()
+    return gRefresher.enable()
 
   def isCSEnabled( self ):
     """

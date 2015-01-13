@@ -6,6 +6,7 @@
 :mod: StorageElementProxyHandler
  
 .. module: StorageElementProxyHandler
+
   :synopsis: This is a service which represents a DISET proxy to the Storage Element component.
 
 This is used to get and put files from a remote storage.
@@ -29,6 +30,8 @@ from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.DictCache import DictCache    
 from DIRAC.DataManagementSystem.private.HttpStorageAccessHandler import HttpStorageAccessHandler
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 ## globals
 BASE_PATH = ""
@@ -53,6 +56,7 @@ def initializeStorageElementProxyHandler( serviceInfo ):
     gLogger.error( 'Failed to get the base path' )
     return S_ERROR( 'Failed to get the base path' )
   
+  BASE_PATH = os.path.abspath( BASE_PATH )
   gLogger.info('The base path obtained is %s. Checking its existence...' % BASE_PATH)
   if not os.path.exists(BASE_PATH):
     gLogger.info('%s did not exist. Creating....' % BASE_PATH)
@@ -67,7 +71,7 @@ def initializeStorageElementProxyHandler( serviceInfo ):
       os.makedirs( HTTP_PATH )
     HTTP_PORT = gConfig.getValue( "%s/HttpPort" % cfgPath, 9180 )
     gLogger.info('Creating HTTP server thread, port:%d, path:%s' % ( HTTP_PORT, HTTP_PATH ) )
-    httpThread = HttpThread( HTTP_PORT, HTTP_PATH )
+    _httpThread = HttpThread( HTTP_PORT, HTTP_PATH )
 
   return S_OK()
 
@@ -91,8 +95,7 @@ class HttpThread( threading.Thread ):
   
   def run( self ):
     """ thread run """
-    global gRegister, BASE_PATH
-    os.chdir( self.path )
+    global gRegister
     handler = HttpStorageAccessHandler
     handler.register = gRegister
     handler.basePath = self.path
@@ -121,7 +124,12 @@ class StorageElementProxyHandler(RequestHandler):
     res = self.__prepareSecurityDetails()
     if not res['OK']:
       return res
-    storageElement = StorageElement( se )
+    credDict = self.getRemoteCredentials()
+    group = credDict['group']
+    vo = Registry.getVOForGroup( group )
+    if not vo:
+      return S_ERROR( 'Can not determine VO of the operation requester' )
+    storageElement = StorageElement( se, vo = vo )
     method = getattr( storageElement, name ) if hasattr( storageElement, name ) else None
     if not method:
       return S_ERROR( "Method '%s' isn't implemented!" % name )
@@ -153,7 +161,7 @@ class StorageElementProxyHandler(RequestHandler):
       return S_ERROR(errStr)
     putFileDir = "%s/putFile" % BASE_PATH
     localFileName = "%s/%s" % ( putFileDir, os.path.basename(pfn) )
-    res = storageElement.putFile( { pfn : localFileName }, True )
+    res = returnSingleResult( storageElement.putFile( { pfn : localFileName } ) )
     if not res['OK']:
       gLogger.error("prepareFile: Failed to put local file to storage.", res['Message'] )
     # Clear the local cache
@@ -196,7 +204,7 @@ class StorageElementProxyHandler(RequestHandler):
       errStr = "prepareFile: Exception while instantiating the Storage Element."
       gLogger.exception( errStr, se, str(x) )
       return S_ERROR(errStr)
-    res = storageElement.getFile( pfn, localPath = "%s/getFile" % BASE_PATH, singleFile = True )
+    res = returnSingleResult( storageElement.getFile( pfn, localPath = "%s/getFile" % BASE_PATH ) )
     if not res['OK']:
       gLogger.error( "prepareFile: Failed to get local copy of file.", res['Message'] )
       return res
@@ -226,7 +234,7 @@ class StorageElementProxyHandler(RequestHandler):
     return result
     
   def __prepareFileForHTTP( self, lfn, key ):
-    """ proxied preapre file for HTTP """
+    """ Prepare proxied file for HTTP """
     global HTTP_PATH
     
     res = self.__prepareSecurityDetails()

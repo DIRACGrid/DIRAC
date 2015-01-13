@@ -21,13 +21,4 @@ agent.initialize()
 
 client = TransformationClient()
 for transID in transIDs:
-  res = client.getTransformationParameters( transID, ['Status'] )
-  if not res['OK']:
-    gLogger.error( "Failed to determine transformation status" )
-    gLogger.error( res['Message'] )
-    continue
-  status = res['Value']
-  if not status in ['ValidatingOutput', 'WaitingIntegrity', 'Active', 'Completed']:
-    gLogger.error( "The transformation is in %s status and can not be validated" % status )
-    continue
   agent.checkTransformationIntegrity( transID )

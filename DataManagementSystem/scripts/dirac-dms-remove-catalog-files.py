@@ -17,9 +17,10 @@ Usage:
 Script.parseCommandLine()
 
 from DIRAC.Core.Utilities.List import sortList
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-dm = DataManager()
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+fc = FileCatalog()
 import os
+
 args = Script.getPositionalArgs()
 
 if len( args) < 1:
@@ -36,7 +37,7 @@ if os.path.exists( inputFileName ):
 else:
   lfns = [inputFileName]
 
-res = dm.removeCatalogFile( lfns )
+res = fc.removeFile( lfns )
 if not res['OK']:
   print "Error:", res['Message']
   dexit(1)

@@ -8,8 +8,7 @@ import random
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
-from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
-from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
+from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 gSynchro = ThreadSafe.Synchronizer()
@@ -104,7 +103,7 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't get a list of setups: %s" % retVal[ 'Message' ] )
     setupsList = retVal[ 'Value' ]
-    objectsLoaded = loadObjects( "AccountingSystem/Client/Types", parentClass = BaseAccountingType )
+    objectsLoaded = TypeLoader().getTypes()
 
     #Load the files
     for pythonClassName in sorted( objectsLoaded ):
@@ -276,6 +275,11 @@ class AccountingDB( DB ):
     """
     Register a new type
     """
+    gMonitor.registerActivity( "registerwaiting:%s" % name,
+                               "Records waiting for insertion for %s" % " ".join( name.split( "_" ) ),
+                               "Accounting",
+                               "records",
+                               gMonitor.OP_MEAN )
     gMonitor.registerActivity( "registeradded:%s" % name,
                                "Register added for %s" % " ".join( name.split( "_" ) ),
                                "Accounting",
@@ -760,7 +764,7 @@ class AccountingDB( DB ):
       bucketStartTime = bucketInfo[0]
       bucketProportion = bucketInfo[1]
       bucketLength = bucketInfo[2]
-      for i in range( max( 1, self.__deadLockRetries ) ):
+      for _i in range( max( 1, self.__deadLockRetries ) ):
         retVal = self.__extractFromBucket( typeName,
                                            bucketStartTime,
                                            bucketLength,
@@ -841,7 +845,7 @@ class AccountingDB( DB ):
   def __writeBuckets( self, typeName, buckets, keyValues, valuesList, connObj = False ):
     """ Insert or update a bucket
     """
-    tableName = _getTableName( "bucket", typeName )
+#     tableName = _getTableName( "bucket", typeName )
     #INSERT PART OF THE QUERY
     sqlFields = [ '`startTime`', '`bucketLength`', '`entriesInBucket`' ]
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
@@ -860,7 +864,7 @@ class AccountingDB( DB ):
       for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
         sqlValues.append( keyValues[ keyPos ] )
       for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
-        value = valuesList[ valPos ]
+#         value = valuesList[ valPos ]
         sqlValues.append( "(%s*%s)" % ( valuesList[ valPos ], bProportion ) )
       valuesGroups.append( "( %s )" % ",".join( str( val ) for val in sqlValues ) )
 
@@ -868,7 +872,7 @@ class AccountingDB( DB ):
     cmd += "VALUES %s " % ", ".join( valuesGroups)
     cmd += "ON DUPLICATE KEY UPDATE %s" % ", ".join( sqlUpData )
 
-    for i in range( max( 1, self.__deadLockRetries ) ):
+    for _i in range( max( 1, self.__deadLockRetries ) ):
       result = self._update( cmd, conn = connObj )
       if not result[ 'OK' ]:
         #If failed because of dead lock try restarting
@@ -1007,10 +1011,16 @@ class AccountingDB( DB ):
     #Calculate time conditions
     sqlTimeCond = []
     if startTime:
+      if tableType == 'bucket':
+        #HACK because MySQL and UNIX do not start epoch at the same time
+        startTime = startTime + 3600
+        startTime = self.calculateBuckets( typeName, startTime, startTime )[0][0]
       sqlTimeCond.append( "`%s`.`startTime` >= %s" % ( tableName, startTime ) )
     if endTime:
       if tableType == "bucket":
         endTimeSQLVar = "startTime"
+        endTime = endTime + 3600
+        endTime = self.calculateBuckets( typeName, endTime, endTime )[0][0]
       else:
         endTimeSQLVar = "endTime"
       sqlTimeCond.append( "`%s`.`%s` <= %s" % ( tableName, endTimeSQLVar, endTime ) )
@@ -1291,9 +1301,9 @@ class AccountingDB( DB ):
     if dataTimespan < 86400 * 30:
       return
     for table, field in ( ( _getTableName( "type", typeName ), 'endTime' ),
-                          ( _getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
+                          ( _getTableName( "bucket", typeName ), 'startTime + %s' % self.dbBucketsLength[ typeName ][-1][1] ) ):
       self.log.info( "[COMPACT] Deleting old records for table %s" % table )
-      deleteLimit = 10000
+      deleteLimit = 100000
       deleted = deleteLimit
       while deleted >= deleteLimit:
         sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )

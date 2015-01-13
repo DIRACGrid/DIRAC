@@ -307,9 +307,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     operations = Operations()
     sortedBy = operations.getValue( 'TransformationPlugins/%s/SortedBy' % plugin, None )
     maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFiles' % plugin, 0 )
-    # If there is a specific delay set in the CS, use it, but if the previous execution of hte plugin timedout, don't wait
-    noUnusedDelay = 0 if self.pluginTimeout.get( transID, False ) else \
-                    operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, self.noUnusedDelay )
+    noUnusedDelay = 0 if self.pluginTimeout else operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, self.noUnusedDelay )
     method = '_getTransformationFiles'
     lastOffset = self.lastFileOffset.setdefault( transID, 0 )
 

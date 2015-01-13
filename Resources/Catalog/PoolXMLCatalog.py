@@ -3,11 +3,12 @@
     POOL project schema. It presents a DIRAC generic File Catalog interface
     although not complete and with several extensions
 """
+__RCSID__ = "$Id$"
 
 import os, xml.dom.minidom, types
 from DIRAC import S_OK, S_ERROR
 
-class PoolFile:
+class PoolFile( object ):
   """
       A Pool XML File Catalog entry
 
@@ -28,13 +29,10 @@ class PoolFile:
         for pfn in pfns:
           ftype = pfn.getAttribute( 'filetype' )
           name = pfn.getAttribute( 'name' )
-
           # Get the SE name if any
-          se = "Uknown"
-          for metadata in meta:
-            mname = metadata.getAttribute( 'att_name' )
-            if mname == name:
-              se = metadata.getAttribute( 'att_value' )
+          se = pfn.getAttribute( 'se' )
+          se = se if se else "Unknown"
+
 
           self.pfns.append( ( name, ftype, se ) )
       logics = dom.getElementsByTagName( 'logical' )
@@ -87,7 +85,8 @@ class PoolFile:
     """ Adds one PFN
     """
     sename = "Unknown"
-    if se: sename = se
+    if se: 
+      sename = se
 
     if pfntype:
       self.pfns.append( ( pfn, pfntype, sename ) )
@@ -98,35 +97,46 @@ class PoolFile:
     """ Output the contents as an XML string
     """
 
-    res = '\n  <File ID="' + self.guid + '">\n'
-    if len( self.pfns ) > 0:
-      res = res + '     <physical>\n'
+    doc = xml.dom.minidom.Document()
+
+    fileElt = doc.createElement( "File" )
+    fileElt.setAttribute( "ID", self.guid )
+    if self.pfns:
+      physicalElt = doc.createElement( "physical" )
+      fileElt.appendChild( physicalElt )
       for p in self.pfns:
-        #To properly escape <>& in POOL XML slice.
+        pfnElt = doc.createElement( "pfn" )
+        physicalElt.appendChild( pfnElt )
+
+        # To properly escape <>& in POOL XML slice.
         fixedp = p[0].replace( "&", "&amp;" )
         fixedp = fixedp.replace( "&&amp;amp;", "&amp;" )
         fixedp = fixedp.replace( "<", "&lt" )
         fixedp = fixedp.replace( ">", "&gt" )
-        res = res + '       <pfn filetype="' + p[1] + '" name="' + fixedp + '"/>\n'
+
+        pfnElt.setAttribute( "filetype", p[1] )
+        pfnElt.setAttribute( "name", fixedp )
+        pfnElt.setAttribute( "se", p[2] )
+
       if metadata:
         for p in self.pfns:
-          res = res + '       <metadata att_name="' + p[0] + '" att_value="' + p[2] + '"/>\n'
-      res = res + '     </physical>\n'
-    else:
-      res = res + '     </physical>\n'
+          metadataElt = doc.createElement( "metadata" )
+          physicalElt.appendChild( metadataElt )
 
-    if len( self.lfns ) > 0:
-      res = res + '     <logical>\n'
+          metadataElt.setAttribute( 'att_name', p[0] )
+          metadataElt.setAttribute( 'att_value', p[2] )
+
+    if self.lfns:
+      logicalElt = doc.createElement( "logical" )
+      fileElt.appendChild( logicalElt )
       for l in self.lfns:
-        res = res + '       <lfn name="' + l + '"/>\n'
-      res = res + '     </logical>\n'
-    else:
-      res = res + '     </logical>\n'
+        lfnElt = doc.createElement( 'lfn' )
+        logicalElt.appendChild( lfnElt )
 
-    res = res + '   </File>\n'
-    return res
+        lfnElt.setAttribute( 'name', l )
+    return fileElt.toprettyxml( indent = "   " )
 
-class PoolXMLCatalog:
+class PoolXMLCatalog( object ):
   """ A Pool XML File Catalog
   """
 

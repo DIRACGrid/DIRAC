@@ -18,8 +18,7 @@ Usage:
 
 Script.parseCommandLine( ignoreErrors = True )
 
-import DIRAC
-from DIRAC import gLogger
+from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
 diracAdmin = DiracAdmin()
@@ -28,8 +27,8 @@ gLogger.setLevel('ALWAYS')
 
 result = diracAdmin.getSiteMask(printOutput=True)
 if result['OK']:
-  DIRAC.exit( 0 )
+  DIRACExit( 0 )
 else:
   print result['Message']
-  DIRAC.exit( 2 )
+  DIRACExit( 2 )
 

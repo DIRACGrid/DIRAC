@@ -1,11 +1,13 @@
 """ 
 :mod: ReplicaManager
-=======================
 
 .. module: ReplicaManager
+
 :synopsis: ReplicaManager links the functionalities of StorageElement and FileCatalog.
 
 This module consists ReplicaManager and related classes.
+
+OBSOLETED !!! DO NOT USE THIS ANYMORE!!!! USE THE DataManager CLASS
 
 """
 
@@ -28,7 +30,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getS
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -624,7 +626,7 @@ class StorageBase( object ):
       return res
     retDict = { "Successful" : {}, "Failed" : {}}
     for pfn in pfns:
-      res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort ) )
+      res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort ) )
       if res["OK"]:
         retDict["Successful"][pfn] = res["Value"]
       else:
@@ -1424,7 +1426,7 @@ class ReplicaManager( CatalogToStorage ):
       self.log.info( "putAndRegister: Checksum calculated to be %s." % checksum )
     res = self.fileCatalogue.exists( {lfn:guid} )
     if not res['OK']:
-      errStr = "putAndRegister: Completey failed to determine existence of destination LFN."
+      errStr = "putAndRegister: Completely failed to determine existence of destination LFN."
       self.log.error( errStr, lfn )
       return res
     if lfn not in res['Value']['Successful']:
@@ -1803,7 +1805,7 @@ class ReplicaManager( CatalogToStorage ):
           #  pfn = storageElement.getPfnForLfn( lfn ).get( 'Value', pfn )
           if storageElement.getRemoteProtocols()['Value']:
             self.log.verbose( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols ) )
+            res = returnSingleResult( storageElement.getPfnForProtocol( pfn, self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               self.log.verbose( "%s Attempting to get source file size." % logStr )
@@ -1888,7 +1890,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             pfn = physicalFile
           else:
@@ -1950,7 +1952,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -2343,7 +2345,7 @@ class ReplicaManager( CatalogToStorage ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False ) )
+        ret = returnSingleResult( storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
@@ -2364,12 +2366,9 @@ class ReplicaManager( CatalogToStorage ):
 
     :param self: self reference
     :param str lfn: LFN
-    :param :
-
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    :param str fileName: the full path to the local file
+    :param str diracSE: the Storage Element to which to put the file
+    :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
     if not os.path.exists( fileName ):

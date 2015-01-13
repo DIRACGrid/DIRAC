@@ -22,7 +22,7 @@ from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElemen
 from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 from DIRAC.Core.Security import CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 ERROR_CE         = 'No CE available'
@@ -82,7 +82,7 @@ class DIRACPilotDirector(PilotDirector):
       return
 
     # FIXME: this is to start testing
-    ceName, computingElementDict = self.computingElementDict.items()[0]
+    _ceName, computingElementDict = self.computingElementDict.items()[0]
 
     self.computingElement = computingElementDict['CE']
 
@@ -132,7 +132,7 @@ class DIRACPilotDirector(PilotDirector):
     """
 
     taskQueueID = taskQueueDict['TaskQueueID']
-    ownerDN = taskQueueDict['OwnerDN']
+#     ownerDN = taskQueueDict['OwnerDN']
 
     submittedPilots = 0
 
@@ -187,11 +187,11 @@ class DIRACPilotDirector(PilotDirector):
       if 'SharedArea' in ceConfigDict:
         pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
 
-      if 'CPUScalingFactor' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
-
-      if 'CPUNormalizationFactor' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
+#       if 'CPUScalingFactor' in ceConfigDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
+#
+#       if 'CPUNormalizationFactor' in ceConfigDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
 
         self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
@@ -199,7 +199,6 @@ class DIRACPilotDirector(PilotDirector):
       if 'HttpProxy' in ceConfigDict:
         httpProxy = ceConfigDict['HttpProxy']
 
-      pilotDir = ''
       if 'JobExecDir' in ceConfigDict:
         pilotExecDir = ceConfigDict['JobExecDir']
 
@@ -226,7 +225,7 @@ class DIRACPilotDirector(PilotDirector):
         if not maxPilotsToSubmit:
           break
         # submit the pilots and then check again
-        for i in range( min(maxPilotsToSubmit,pilotsToSubmit-submittedPilots) ):
+        for _i in range( min( maxPilotsToSubmit, pilotsToSubmit - submittedPilots ) ):
           submission = computingElement.submitJob(pilotScript, '', '')
           if not submission['OK']:
             self.log.error('Pilot submission failed: ', submission['Message'])
@@ -257,7 +256,6 @@ class DIRACPilotDirector(PilotDirector):
      matching the requirements of the pilots.
      Currently only CPU time is considered
     """
-    availableQueues = []
     result = self.computingElement.available( pilotRequirements )
     if not result['OK']:
       self.log.error( 'Can not determine available queues', result['Message'] )

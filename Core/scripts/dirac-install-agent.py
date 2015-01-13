@@ -13,6 +13,7 @@ from DIRAC.Core.Utilities import InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 #
 from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import exit as DIRACexit
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
@@ -53,7 +54,7 @@ if len( args ) == 1:
 
 if len( args ) != 2:
   Script.showHelp()
-  exit( -1 )
+  DIRACexit( -1 )
 #
 system = args[0]
 agent = args[1]
@@ -78,5 +79,13 @@ else:
   result = InstallTools.installComponent( 'agent', system, agent, getCSExtensions(), module )
   if not result['OK']:
     print "ERROR:", result['Message']
+    DIRACexit( 1 )
   else:
-    print "Successfully installed agent %s in %s system" % ( agent, system )
+    print "Successfully installed agent %s in %s system, now setting it up" % ( agent, system )
+    result = InstallTools.setupComponent( 'agent', system, agent, getCSExtensions(), module )
+    if not result['OK']:
+      print "ERROR:", result['Message']
+      DIRACexit( 1 )
+    else:
+      print "Successfully completed the installation of agent %s in %s system" % ( agent, system )
+      DIRACexit()

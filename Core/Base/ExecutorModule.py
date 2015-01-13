@@ -35,6 +35,8 @@ class ExecutorModule( object ):
                                                                '.shifterCred' )
     cls.__mindName = False
     cls.__mindExtraArgs = False
+    cls.__freezeTime = 0
+    cls.__fastTrackEnabled = True
     cls.log = gLogger.getSubLogger( exeName, child = False )
 
     try:
@@ -121,6 +123,7 @@ class ExecutorModule( object ):
 
   def _ex_processTask( self, taskId, taskStub ):
     self.__freezeTime = 0
+    self.__fastTrackEnabled = True
     self.log.verbose( "Task %s: Received" % str( taskId ) )
     result = self.__deserialize( taskId, taskStub )
     if not result[ 'OK' ]:
@@ -148,7 +151,7 @@ class ExecutorModule( object ):
     taskStub = result[ 'Value' ]
     #Try fast track
     fastTrackType = False
-    if not self.__freezeTime:
+    if not self.__freezeTime and self.__fastTrackEnabled:
       result = self.fastTrackDispatch( taskId, taskObj )
       if not result[ 'OK' ]:
         self.log.error( "FastTrackDispatch failed for job", "%s: %s" % ( taskId, result[ 'Message' ] ) )
@@ -168,6 +171,8 @@ class ExecutorModule( object ):
   def isTaskFrozen( self ):
     return self.__freezeTime
 
+  def disableFastTrackForTask( self ):
+    self.__fastTrackEnabled = True
 
   ###
   #  Fast-track tasks

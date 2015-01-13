@@ -1,6 +1,5 @@
 """
 :mod:  ReqClient
-================
 
 .. module:  ReqClient
   :synopsis: implementation of client for RequestDB using DISET framework
@@ -14,6 +13,8 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+import datetime
+import os
 
 class ReqClient( Client ):
   """
@@ -29,14 +30,13 @@ class ReqClient( Client ):
   __requestProxiesDict = {}
   __requestValidator = None
 
-  def __init__( self, useCertificates = False ):
+  def __init__( self ):
     """c'tor
 
     :param self: self reference
-    :param bool useCertificates: flag to enable/disable certificates
     """
     Client.__init__( self )
-    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient" )
+    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient/pid_%s" % ( os.getpid() ) )
     self.setServer( "RequestManagement/ReqManager" )
 
   def setServer( self, url ):
@@ -80,7 +80,7 @@ class ReqClient( Client ):
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
     if not valid["OK"]:
-      self.log.error( "putRequest: request not valid: %s" % valid["Message"] )
+      self.log.error( "putRequest: request not valid", "%s" % valid["Message"] )
       return valid
     # # dump to json
     requestJSON = request.toJSON()
@@ -110,7 +110,7 @@ class ReqClient( Client ):
                                                                                          setRequestProxy["Message"] ) )
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
     # # if we're here neither requestManager nor requestProxy were successful
-    self.log.error( "putRequest: unable to set request '%s'" % request.RequestName )
+    self.log.error( "putRequest: unable to set request", "'%s'" % request.RequestName )
     errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'" % request.RequestName
     return errorsDict
 
@@ -125,18 +125,42 @@ class ReqClient( Client ):
     self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestName )
     if not getRequest["OK"]:
-      self.log.error( "getRequest: unable to get '%s' request: %s" % ( requestName, getRequest["Message"] ) )
+      self.log.error( "getRequest: unable to get request", "request: '%s' %s" % ( requestName, getRequest["Message"] ) )
       return getRequest
     if not getRequest["Value"]:
       return getRequest
     return S_OK( Request( getRequest["Value"] ) )
+
+  def getBulkRequests( self, numberOfRequest = 10 ):
+    """ get bulk requests from RequestDB
+
+    :param self: self reference
+    :param str numberOfRequest: size of the bulk (default 10)
+
+    :return: S_OK( Successful : { requestID, RequestInstance }, Failed : message  ) or S_ERROR
+    """
+    self.log.debug( "getRequests: attempting to get request." )
+    getRequests = self.requestManager().getBulkRequests( numberOfRequest )
+    if not getRequests["OK"]:
+      self.log.error( "getRequests: unable to get '%s' requests: %s" % ( numberOfRequest, getRequests["Message"] ) )
+      return getRequests
+    # No Request returned
+    if not getRequests["Value"]:
+      return getRequests
+    # No successful Request
+    if not getRequests["Value"]["Successful"]:
+      return getRequests
+
+    jsonReq = getRequests["Value"]["Successful"]
+    reqInstances = dict( ( rId, Request( jsonReq[rId] ) ) for rId in jsonReq )
+    return S_OK( {"Successful" : reqInstances, "Failed" : getRequests["Value"]["Failed"] } )
 
   def peekRequest( self, requestName ):
     """ peek request """
     self.log.debug( "peekRequest: attempting to get request." )
     peekRequest = self.requestManager().peekRequest( requestName )
     if not peekRequest["OK"]:
-      self.log.error( "peekRequest: unable to peek '%s' request: %s" % ( requestName, peekRequest["Message"] ) )
+      self.log.error( "peekRequest: unable to peek request", "request: '%s' %s" % ( requestName, peekRequest["Message"] ) )
       return peekRequest
     if not peekRequest["Value"]:
       return peekRequest
@@ -161,22 +185,25 @@ class ReqClient( Client ):
     self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
     deleteRequest = self.requestManager().deleteRequest( requestName )
     if not deleteRequest["OK"]:
-      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName,
-                                                                             deleteRequest["Message"] ) )
+      self.log.error( "deleteRequest: unable to delete request", 
+                      "'%s' request: %s" % ( requestName, deleteRequest["Message"] ) )
     return deleteRequest
 
-  def getRequestNamesList( self, statusList = None, limit = None ):
+  def getRequestNamesList( self, statusList = None, limit = None, since = None, until = None ):
     """ get at most :limit: request names with statuses in :statusList: """
     statusList = statusList if statusList else list( Request.FINAL_STATES )
     limit = limit if limit else 100
-    return self.requestManager().getRequestNamesList( statusList, limit )
+    since = since.strftime( '%Y-%m-%d' ) if since else ""
+    until = until.strftime( '%Y-%m-%d' ) if until else ""
+
+    return self.requestManager().getRequestNamesList( statusList, limit, since, until )
 
   def getScheduledRequest( self, operationID ):
     """ get scheduled request given its scheduled OperationID """
     self.log.debug( "getScheduledRequest: attempt to get scheduled request..." )
     scheduled = self.requestManager().getScheduledRequest( operationID )
     if not scheduled["OK"]:
-      self.log.error( "getScheduledRequest: %s" % scheduled["Message"] )
+      self.log.error( "getScheduledRequest failed", scheduled["Message"] )
       return scheduled
     if scheduled["Value"]:
       return S_OK( Request( scheduled["Value"] ) )
@@ -187,7 +214,7 @@ class ReqClient( Client ):
     self.log.debug( "getDBSummary: attempting to get RequestDB summary." )
     dbSummary = self.requestManager().getDBSummary()
     if not dbSummary["OK"]:
-      self.log.error( "getDBSummary: unable to get RequestDB summary: %s" % dbSummary["Message"] )
+      self.log.error( "getDBSummary: unable to get RequestDB summary", dbSummary["Message"] )
     return dbSummary
 
   def getDigest( self, requestName ):
@@ -199,7 +226,8 @@ class ReqClient( Client ):
     self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
     digest = self.requestManager().getDigest( requestName )
     if not digest["OK"]:
-      self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
+      self.log.error( "getDigest: unable to get digest for request", 
+                      "request: '%s' %s" % ( requestName, digest["Message"] ) )
     return digest
 
   def getRequestStatus( self, requestName ):
@@ -211,8 +239,8 @@ class ReqClient( Client ):
     self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
     requestStatus = self.requestManager().getRequestStatus( requestName )
     if not requestStatus["OK"]:
-      self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName,
-                                                                                        requestStatus["Message"] ) )
+      self.log.error( "getRequestStatus: unable to get status for request",
+                      "request: '%s' %s" % ( requestName, requestStatus["Message"] ) )
     return requestStatus
 
   def getRequestName( self, requestID ):
@@ -228,8 +256,8 @@ class ReqClient( Client ):
     self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
     requestInfo = self.requestManager().getRequestInfo( requestName )
     if not requestInfo["OK"]:
-      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName,
-                                                                                      requestInfo["Message"] ) )
+      self.log.error( "getRequestInfo: unable to get status for request",
+                      "request: '%s' %s" % ( requestName, requestInfo["Message"] ) )
     return requestInfo
 
   def getRequestFileStatus( self, requestName, lfns ):
@@ -242,8 +270,8 @@ class ReqClient( Client ):
     self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
     fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
     if not fileStatus["OK"]:
-      self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" % \
-                        ( requestName, fileStatus["Message"] ) )
+      self.log.error( "getRequestFileStatus: unable to get file status for request",
+                      "request: '%s' %s" % ( requestName, fileStatus["Message"] ) )
     return fileStatus
 
   def finalizeRequest( self, requestName, jobID ):
@@ -260,7 +288,8 @@ class ReqClient( Client ):
     # Checking the state, first
     res = self.getRequestStatus( requestName )
     if not res['OK']:
-      self.log.error( "finalizeRequest: failed to get request %s status: %s" % ( requestName, res["Message"] ) )
+      self.log.error( "finalizeRequest: failed to get request",
+                      "request: %s status: %s" % ( requestName, res["Message"] ) )
       return res
     if res["Value"] != "Done":
       return S_ERROR( "The request %s isn't 'Done' but '%s', this should never happen, why are we here?" % ( requestName, res['Value'] ) )
@@ -269,7 +298,7 @@ class ReqClient( Client ):
     monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
     res = monitorServer.getJobPrimarySummary( int( jobID ) )
     if not res["OK"]:
-      self.log.error( "finalizeRequest: Failed to get job %d status" % jobID )
+      self.log.error( "finalizeRequest: Failed to get job status", "JobID: %d" % jobID )
       return S_ERROR( "finalizeRequest: Failed to get job %d status" % jobID )
     elif not res['Value']:
       self.log.info( "finalizeRequest: job %d does not exist (anymore): finalizing" % jobID )
@@ -308,7 +337,8 @@ class ReqClient( Client ):
         stateUpdate = stateServer.setJobStatus( jobID, jobStatus, "Requests done", "" )
 
       if not stateUpdate["OK"]:
-        self.log.error( "finalizeRequest: Failed to set job %d status: %s" % ( jobID, stateUpdate['Message'] ) )
+        self.log.error( "finalizeRequest: Failed to set job status", 
+                        "JobID: %d status: %s" % ( jobID, stateUpdate['Message'] ) )
         return stateUpdate
 
     return S_OK()
@@ -324,8 +354,8 @@ class ReqClient( Client ):
     self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
     requests = self.requestManager().getRequestNamesForJobs( jobIDs )
     if not requests["OK"]:
-      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs %s: %s" % ( jobIDs,
-                                                                                             requests["Message"] ) )
+      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs", 
+                      "%s: %s" % ( jobIDs, requests["Message"] ) )
     return requests
 
   def readRequestsForJobs( self, jobIDs ):
@@ -409,9 +439,16 @@ def prettyPrint( mainItem, key = '', offset = 0 ):
                  .replace( '(\n%s[' % blanks, '[' ).replace( ']\n%s)' % blanks, ']' )
 
 def printRequest( request, status = None, full = False, verbose = True, terse = False ):
-  from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
   global output
-  ftsClient = FTSClient()
+
+  ftsClient = None
+  try:
+    from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+    ftsClient = FTSClient()
+  except Exception, e:
+    gLogger.debug( "Could not instantiate FtsClient", e )
+
+
   if full:
     output = ''
     prettyPrint( request.toJSON()['Value'] )
@@ -431,13 +468,15 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
       op = indexOperation[1]
       if not terse or op.Status == 'Failed':
         printOperation( indexOperation, verbose, onlyFailed = terse )
-  # Check if FTS job exists
-  res = ftsClient.getFTSJobsForRequest( request.RequestID )
-  if res['OK']:
-    ftsJobs = res['Value']
-    if ftsJobs:
-      gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
-                                                               for job in ftsJobs] ) )
+
+  if ftsClient:
+    # Check if FTS job exists
+    res = ftsClient.getFTSJobsForRequest( request.RequestID )
+    if res['OK']:
+      ftsJobs = res['Value']
+      if ftsJobs:
+        gLogger.always( '         FTS jobs associated: %s' % ','.join( ['%s (%s)' % ( job.FTSGUID, job.Status ) \
+                                                                 for job in ftsJobs] ) )
 
 def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   global output

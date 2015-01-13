@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, S_OK
@@ -6,7 +5,6 @@ from DIRAC import gLogger, gConfig, S_OK
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
 from DIRAC.Core.Utilities.List                                    import sortList
-from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
 
@@ -18,7 +16,6 @@ class StageRequestAgent( AgentModule ):
 
   def initialize( self ):
     self.stagerClient = StorageManagerClient()
-    self.dataIntegrityClient = DataIntegrityClient()
     #self.storageDB = StorageManagementDB()
     # pin lifetime = 1 day
     self.pinLifetime = self.am_getOption( 'PinLifetime', THROTTLING_TIME )
@@ -474,15 +471,3 @@ class StageRequestAgent( AgentModule ):
       gLogger.info( "StageRequest.__checkIntegrity: %s replicas found Offline." % len( offlineReplicaIDs ) )
       res = self.stagerClient.updateReplicaStatus( offlineReplicaIDs, 'Offline' )
     return S_OK( {'Online': onlineReplicaIDs, 'Offline': offlineReplicaIDs} )
-
-  def __reportProblematicFiles( self, lfns, reason ):
-    return S_OK()
-    res = self.dataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'StageRequestAgent' )
-    if not res['OK']:
-      gLogger.error( "RequestPreparation.__reportProblematicFiles: Failed to report missing files.", res['Message'] )
-      return res
-    if res['Value']['Successful']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Successfully reported %s missing files." % len( res['Value']['Successful'] ) )
-    if res['Value']['Failed']:
-      gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
-    return res

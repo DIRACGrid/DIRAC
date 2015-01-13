@@ -7,27 +7,33 @@
 -- -
 -- ------------------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS JobDB;
-
-CREATE DATABASE JobDB;
-
+-- When installing via dirac tools, the following is not needed (still here for reference)
+-- 
+-- DROP DATABASE IF EXISTS JobDB;
+-- CREATE DATABASE JobDB;
 -- ------------------------------------------------------------------------------
 -- Database owner definition
-
-USE mysql;
-DELETE FROM user WHERE user='Dirac';
-
+-- USE mysql;
+-- DELETE FROM user WHERE user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
-
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
-
-FLUSH PRIVILEGES;
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
 USE JobDB;
+
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobJDLs`;
+CREATE TABLE `JobJDLs` (
+  `JobID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `JDL` BLOB NOT NULL,
+  `JobRequirements` BLOB NOT NULL,
+  `OriginalJDL` BLOB NOT NULL,
+  PRIMARY KEY (`JobID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `Jobs`;
@@ -52,7 +58,7 @@ CREATE TABLE `Jobs` (
   `Status` VARCHAR(32) NOT NULL DEFAULT 'Received',
   `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
-  `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 'Unknown',
+  `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 0,
   `CPUTime` FLOAT NOT NULL DEFAULT 0.0,
   `UserPriority` INT(11) NOT NULL DEFAULT 0,
   `SystemPriority` INT(11) NOT NULL DEFAULT 0,
@@ -79,17 +85,7 @@ CREATE TABLE `Jobs` (
   KEY `MinorStatus` (`MinorStatus`),
   KEY `ApplicationStatus` (`ApplicationStatus`),
   KEY `StatusSite` (`Status`,`Site`),
-  KEY `LastUpdateTime` (`LastUpdateTime`),
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `JobJDLs`;
-CREATE TABLE `JobJDLs` (
-  `JobID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `JDL` BLOB NOT NULL,
-  `JobRequirements` BLOB NOT NULL,
-  `OriginalJDL` BLOB NOT NULL,
-  PRIMARY KEY (`JobID`)
+  KEY `LastUpdateTime` (`LastUpdateTime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 # $HeadURL:  $
 ''' 
 :mod: RssConfiguration
-======================
   
 Module that collects utility functions.
 
@@ -23,7 +22,6 @@ _rssConfigPath = 'ResourceStatus'
 
 class RssConfiguration:
   '''
-  
   RssConfiguration::
   
     { 

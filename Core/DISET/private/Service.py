@@ -70,9 +70,9 @@ class Service:
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
     self._initMonitoring()
-    self._threadPool = ThreadPool( 1,
-                                    max( 0, self._cfg.getMaxThreads() ),
-                                    self._cfg.getMaxWaitingPetitions() )
+    self._threadPool = ThreadPool( max( 1, self._cfg.getMinThreads() ),
+                                   max( 0, self._cfg.getMaxThreads() ),
+                                   self._cfg.getMaxWaitingPetitions() )
     self._threadPool.daemonize()
     self._msgBroker = MessageBroker( "%sMSB" % self._name, threadPool = self._threadPool )
     #Create static dict
@@ -138,7 +138,7 @@ class Service:
       gLogger.debug( "%s is not a valid file" % filePath )
     return False
 
-  def __searchInitFunctions( self, handlerClass, currentClass = False ):
+  def __searchInitFunctions( self, handlerClass, currentClass = None ):
     if not currentClass:
       currentClass = handlerClass
     initFuncs = []
@@ -326,7 +326,7 @@ class Service:
         self.__endReportToMonitoring( *monReport )
 
 
-  def _createIdentityString( self, credDict, clientTransport = False ):
+  def _createIdentityString( self, credDict, clientTransport = None ):
     if 'username' in credDict:
       if 'group' in credDict:
         identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ] )
@@ -418,7 +418,7 @@ class Service:
                                       self._name, "/".join( actionTuple ) )
     return result
 
-  def _instantiateHandler( self, trid, proposalTuple = False ):
+  def _instantiateHandler( self, trid, proposalTuple = None ):
     """
     Generate an instance of the handler for a given service
     """
@@ -479,7 +479,7 @@ class Service:
     result[ 'closeTransport' ] = not messageConnection or not result[ 'OK' ]
     return result
 
-  def _mbConnect( self, trid, handlerObj = False ):
+  def _mbConnect( self, trid, handlerObj = None ):
     if not handlerObj:
       result = self._instantiateHandler( trid )
       if not result[ 'OK' ]:

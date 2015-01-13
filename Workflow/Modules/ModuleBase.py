@@ -17,9 +17,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.TransformationSystem.Client.FileReport           import FileReport
 from DIRAC.RequestManagementSystem.Client.Request           import Request
-from DIRAC.RequestManagementSystem.private.RequestValidator import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
-
 
 class ModuleBase( object ):
   """ Base class for Modules - works only within DIRAC workflows
@@ -544,7 +543,7 @@ class ModuleBase( object ):
         return result
 
     if len( self.request ):
-      isValid = gRequestValidator.validate( self.request )
+      isValid = RequestValidator().validate( self.request )
       if not isValid['OK']:
         raise RuntimeError, "Failover request is not valid: %s" % isValid['Message']
       else:

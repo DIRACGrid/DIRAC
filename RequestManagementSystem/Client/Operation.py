@@ -7,7 +7,6 @@
 
 """
 :mod: Operation
-===============
 
 .. module: Operation
   :synopsis: Operation implementation
@@ -135,6 +134,12 @@ class Operation( Record ):
     else:
       self.__data__['Error'] = ''
       newStatus = 'Done'
+
+    # If the status moved to Failed or Done, update the lastUpdate time
+    if newStatus in ('Failed', 'Done'):
+      if self.__data__["Status"] != newStatus:
+        self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
 
     self.__data__["Status"] = newStatus
     if self._parent:
@@ -333,6 +338,11 @@ class Operation( Record ):
     if self.__files__:
       self._notify()
     else:
+      # If the status moved to Failed or Done, update the lastUpdate time
+      if value in ( 'Failed', 'Done' ):
+        if self.__data__["Status"] != value:
+          self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
       self.__data__["Status"] = value
       if self._parent:
         self._parent._notify()

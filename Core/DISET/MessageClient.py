@@ -23,7 +23,7 @@ class MessageClient( BaseClient ):
 
   def _initialize( self ):
     self.__trid = False
-    self.__transport = False
+    self.__transport = None
     self.__uniqueName = self.__generateUniqueClientName()
     self.__msgBroker = getGlobalMessageBroker()
     self.__callbacks = {}

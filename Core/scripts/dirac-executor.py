@@ -31,6 +31,7 @@ localCfg.setConfigurationForExecutor( mainName )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 localCfg.addDefaultEntry( "LogLevel", "INFO" )
+localCfg.addDefaultEntry( "LogColor", True )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.fatal( "There were errors when loading configuration", resultDict[ 'Message' ] )

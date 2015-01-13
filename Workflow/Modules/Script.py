@@ -2,14 +2,11 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
-# FIXME: Remove me after v6r10
-# just a copy of Wokflow.Modules.Script, for backward compatibility with jobs already in the system.
-
 import os, sys, re
+import distutils.spawn
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall
 from DIRAC                              import gLogger
-from DIRAC.Core.Utilities.Os            import which
 
 from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase
 
@@ -64,7 +61,7 @@ class Script( ModuleBase ):
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
-    elif which( self.executable ):
+    elif distutils.spawn.find_executable( self.executable ):
       self.command = self.executable
 
     if self.arguments:

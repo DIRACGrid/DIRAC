@@ -36,6 +36,9 @@ def checkArgumentFormat( path ):
       return S_ERROR( "checkArgumentDict: Supplied path is not of the correct format" )
     return S_OK( urls )
     
+  if not path:
+    return S_ERROR( 'Empty input: %s' % str( path ) )  
+    
   result = checkArgumentDict( path )
   if not result['OK']:
     return result

@@ -137,7 +137,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                 },
                 'FixedTextMessages': {
                                       'Fields': { 'FixedTextID': 'INT NOT NULL AUTO_INCREMENT',
-                                                  'FixedTextString': "VARCHAR( 255 ) NOT NULL DEFAULT 'Unknown'",
+                                                  'FixedTextString': "VARCHAR( 767 ) NOT NULL DEFAULT 'Unknown'",
                                                   'ReviewedMessage': 'TINYINT( 1 ) NOT NULL DEFAULT FALSE',
                                                   'SubSystemID': 'INT NOT NULL', },
                                       'PrimaryKey': 'FixedTextID',

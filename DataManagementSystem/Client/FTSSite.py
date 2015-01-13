@@ -5,7 +5,6 @@
 ########################################################################
 """
 :mod: FTSSite
-=============
 
 .. module: FTSSite
   :synopsis: class representing FTS site

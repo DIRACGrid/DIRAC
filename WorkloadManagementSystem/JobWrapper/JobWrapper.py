@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL: $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -16,7 +15,7 @@ from DIRAC.Resources.Catalog.PoolXMLFile                            import getGU
 from DIRAC.RequestManagementSystem.Client.Request                   import Request
 from DIRAC.RequestManagementSystem.Client.Operation                 import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient                 import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator         import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator         import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient       import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
@@ -51,7 +50,7 @@ import urllib
 
 EXECUTION_RESULT = {}
 
-class JobWrapper:
+class JobWrapper( object ):
 
   #############################################################################
   def __init__( self, jobID = None, jobReport = None ):
@@ -194,12 +193,16 @@ class JobWrapper:
     self.userGroup = self.jobArgs.get( 'OwnerGroup', self.userGroup )
     self.jobClass = self.jobArgs.get( 'JobSplitType', self.jobClass )
 
-    # Prepare the working directory and cd to there
+    # Prepare the working directory, cd to there, and copying eventual extra arguments in it
     if self.jobID:
       if os.path.exists( str( self.jobID ) ):
         shutil.rmtree( str( self.jobID ) )
       os.mkdir( str( self.jobID ) )
       os.chdir( str( self.jobID ) )
+      extraOpts = self.jobArgs.get( 'ExtraOptions', '' )
+      if extraOpts:
+        if os.path.exists( '%s/%s' % ( self.root, extraOpts ) ):
+          shutil.copyfile( '%s/%s' % ( self.root, extraOpts ), extraOpts )
     else:
       self.log.info( 'JobID is not defined, running in current directory' )
 
@@ -276,7 +279,12 @@ class JobWrapper:
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
-
+      
+    jobMemory = 0.  
+    if "Memory" in self.jobArgs:
+      # Job specifies memory in GB, internally use KB
+      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024. 
+      
     if 'Executable' in self.jobArgs:
       executable = self.jobArgs['Executable'].strip()
     else:
@@ -335,7 +343,7 @@ class JobWrapper:
     self.__setJobParam( 'PayloadPID', payloadPID )
 
     watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime )
+    watchdogInstance = watchdogFactory.getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
     if not watchdogInstance['OK']:
       self.log.warn( watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )
@@ -1220,7 +1228,7 @@ class JobWrapper:
 
     if len( request ):
       # The request is ready, send it now
-      isValid = gRequestValidator.validate( request )
+      isValid = RequestValidator().validate( request )
       if not isValid["OK"]:
         self.log.error( "Failover request is not valid", isValid["Message"] )
       else:

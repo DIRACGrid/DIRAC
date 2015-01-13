@@ -116,7 +116,7 @@ class CleanReqDBAgent( AgentModule ):
           kicked += 1
 
     # # delete
-    statusList = [ "Done", "Failed" ] if self.DEL_FAILED else [ "Done" ]
+    statusList = [ "Done", "Failed", "Canceled" ] if self.DEL_FAILED else [ "Done" ]
     requestNamesList = self.requestClient().getRequestNamesList( statusList, self.DEL_LIMIT )
     if not requestNamesList["OK"]:
       self.log.error( "execute: %s" % requestNamesList["Message"] )

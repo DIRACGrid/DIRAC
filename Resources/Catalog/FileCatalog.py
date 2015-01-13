@@ -10,7 +10,7 @@ from DIRAC.Core.Security.ProxyInfo                          import getVOfromProx
 from DIRAC.Resources.Utilities.Utils                        import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 
-class FileCatalog:
+class FileCatalog( object ):
 
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
@@ -51,6 +51,13 @@ class FileCatalog:
 
   def getWriteCatalogs( self ):
     return self.writeCatalogs
+  
+  def getMasterCatalogNames( self ):
+    """ Returns the list of names of the Master catalogs """
+
+    masterNames = [catalogName for catalogName, oCatalog, master in self.writeCatalogs if master]
+    return S_OK( masterNames )
+    
 
   def __getattr__( self, name ):
     self.call = name

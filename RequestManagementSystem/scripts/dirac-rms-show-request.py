@@ -128,7 +128,8 @@ if __name__ == "__main__":
 
   if status and not requests:
     all = all or status != 'Failed'
-    res = reqClient.getRequestNamesList( [status], limit = 999999999 )
+    res = reqClient.getRequestNamesList( [status], limit = 999999999, since = since, until = until )
+
     if not res['OK']:
       gLogger.error( "Error getting requests:", res['Message'] )
       DIRAC.exit( 2 )

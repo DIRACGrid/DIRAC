@@ -365,7 +365,7 @@ class CFG( object ):
     pathList = [ dirName.strip() for dirName in path.split( "/" ) if not dirName.strip() == "" ]
     levelsAbove = abs( levelsAbove )
     if len( pathList ) - levelsAbove < 0:
-      return False
+      return None
     if len( pathList ) - levelsAbove == 0:
       lBel = ""
       if levelsAbove > 0:
@@ -377,7 +377,7 @@ class CFG( object ):
       pathList = pathList[:-levelsAbove]
     retDict = self.__recurse( pathList )
     if not retDict:
-      return False
+      return None
     retDict[ 'levelsBelow' ] = levelsBelow
     return retDict
 
@@ -440,7 +440,7 @@ class CFG( object ):
 
   def getAsDict( self, path = "" ):
     """
-    Get the contents below a give path as a dict
+    Get the contents below a given path as a dict
 
     @type path: string
     @param path: Path to retrieve as dict

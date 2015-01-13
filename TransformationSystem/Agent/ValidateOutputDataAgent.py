@@ -5,7 +5,6 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                     import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.AgentModule                               import AgentModule
-from DIRAC.Core.Utilities.List                                 import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
 from DIRAC.Resources.Catalog.FileCatalog                       import FileCatalog
@@ -33,9 +32,9 @@ class ValidateOutputDataAgent( AgentModule ):
     else:
       self.transformationTypes = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
 
-    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB',
+    self.directoryLocations = sorted( self.am_getOption( 'DirectoryLocations', ['TransformationDB',
                                                                                   'MetadataCatalog'] ) )
-    self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
+    self.activeStorages = sorted( self.am_getOption( 'ActiveSEs', [] ) )
     self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
     self.enableFlag = True
 
@@ -44,11 +43,6 @@ class ValidateOutputDataAgent( AgentModule ):
   def initialize( self ):
     """ Sets defaults
     """
-    # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/DataManager
-    # the shifterProxy option in the Configuration can be used to change this default.
-    self.am_setOption( 'shifterProxy', 'DataManager' )
-
     gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
     gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
     gLogger.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
@@ -143,7 +137,7 @@ class ValidateOutputDataAgent( AgentModule ):
       directories = self._addDirs( transID, transDirectories, directories )
     if not directories:
       gLogger.info( "No output directories found" )
-    directories = sortList( directories )
+    directories = sorted( directories )
     return S_OK( directories )
 
   @staticmethod
@@ -183,7 +177,7 @@ class ValidateOutputDataAgent( AgentModule ):
     if res['Value']['Failed']:
       return S_ERROR( "Failed to determine the existance of directories" )
     directoryExists = res['Value']['Successful']
-    for directory in sortList( directoryExists.keys() ):
+    for directory in sorted( directoryExists.keys() ):
       if not directoryExists[directory]:
         continue
       iRes = self.integrityClient.catalogDirectoryToSE( directory )
@@ -195,7 +189,7 @@ class ValidateOutputDataAgent( AgentModule ):
     #
     # This check performs SE->Catalog for possible output directories
     #
-    for storageElementName in sortList( self.activeStorages ):
+    for storageElementName in sorted( self.activeStorages ):
       res = self.integrityClient.storageDirectoryToCatalog( directories, storageElementName )
       if not res['OK']:
         gLogger.error( res['Message'] )

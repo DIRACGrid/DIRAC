@@ -436,7 +436,7 @@ class Job( API ):
        :type lfns: Single string or list of strings ['','']
        :param outputSE: Optional parameter to specify the Storage Element
        :param outputPath: Optional parameter to specify part of the path in the storage (see above)
-       Element to store data or files, e.g. CERN-tape
+                          Element to store data or files, e.g. CERN-tape
        :type outputSE: string or list
        :type outputPath: string
   
@@ -591,19 +591,21 @@ class Job( API ):
     return S_OK( '%s is valid' % site )
 
   #############################################################################
-  def setDestinationCE( self, ceName ):
+  def setDestinationCE( self, ceName, diracSite = '' ):
     """ Developer function.
 
         Allows to direct a job to a particular Grid CE.
     """
     kwargs = {'ceName':ceName}
-    diracSite = getSiteForCE( ceName )
-    if not diracSite['OK']:
-      return self._reportError( diracSite['Message'], **kwargs )
-    if not diracSite['Value']:
-      return self._reportError( 'No DIRAC site name found for CE %s' % ( ceName ), **kwargs )
 
-    diracSite = diracSite['Value']
+    if not diracSite:
+      diracSite = getSiteForCE( ceName )
+      if not diracSite['OK']:
+        return self._reportError( diracSite['Message'], **kwargs )
+      if not diracSite['Value']:
+        return self._reportError( 'No DIRAC site name found for CE %s' % ( ceName ), **kwargs )
+      diracSite = diracSite['Value']
+
     self.setDestination( diracSite )
     # Keep GridRequiredCEs for backward compatibility
     self._addJDLParameter( 'GridRequiredCEs', ceName )

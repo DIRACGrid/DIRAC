@@ -60,7 +60,7 @@ class RequestTask( object ):
     # # handlers class def
     self.handlers = {}
     # # own sublogger
-    self.log = gLogger.getSubLogger( self.request.RequestName )
+    self.log = gLogger.getSubLogger( "pid_%s/%s" % ( os.getpid(), self.request.RequestName ) )
     # # get shifters info
     self.__managersDict = {}
     shifterProxies = self.__setupManagerProxies()

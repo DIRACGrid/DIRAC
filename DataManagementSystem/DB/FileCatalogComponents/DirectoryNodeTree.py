@@ -185,7 +185,7 @@ class DirectoryNodeTree( DirectoryTreeBase ):
     else:
       dirID = path
 
-    req = "SELECD DirID FROM FC_DirectoryTreeM WHERE Parent=%d" % dirID
+    req = "SELECT DirID FROM FC_DirectoryTreeM WHERE Parent=%d" % dirID
     result = self.db._query( req )
     if not result['OK']:
       return result

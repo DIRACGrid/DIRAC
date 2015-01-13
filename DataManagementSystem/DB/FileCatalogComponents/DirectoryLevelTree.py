@@ -163,17 +163,24 @@ class DirectoryLevelTree(DirectoryTreeBase):
     
     # Update the path number
     if parentDirID:
+#       lPath = "LPATH%d" % (level)
+#       req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID)
+#       resultLock = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
+#       result = self.db._query(req,conn)
+#       req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)
+#       result = self.db._update(req,conn)
+#       result = self.db._query("UNLOCK TABLES;",conn)
       lPath = "LPATH%d" % (level)
-      req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID) 
-      resultLock = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
+      req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d FOR UPDATE; " % ( lPath, parentDirID )
+      resultLock = self.db._query( "START TRANSACTION; ", conn )
       result = self.db._query(req,conn)
       req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)   
       result = self.db._update(req,conn)
-      result = self.db._query("UNLOCK TABLES;",conn)      
+      result = self.db._query( "COMMIT;", conn )
       if not result['OK']:
         return result
     else:
-      result = self.db._query("UNLOCK TABLES;",conn)     
+      result = self.db._query( "ROLLBACK;", conn )
       
     result = S_OK(dirID)
     result['NewDirectory'] = True
@@ -544,4 +551,4 @@ class DirectoryLevelTree(DirectoryTreeBase):
       result = self.__rebuildLevelIndexes( dirID, connection )
       
     return S_OK() 
-  
+

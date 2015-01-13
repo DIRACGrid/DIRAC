@@ -1,7 +1,7 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" 
+"""
 Handling the download of the shifter Proxy
 """
 __RCSID__ = "$Id$"
@@ -16,8 +16,8 @@ from DIRAC.Core.Security                                 import CS
 def getShifterProxy( shifterType, fileName = False ):
   """
   This method returns a shifter's proxy
-  
-    - shifterType : ProductionManager / DataManager...
+
+  :param shifterType: ProductionManager / DataManager...
 
   """
   if fileName:
@@ -44,14 +44,14 @@ def getShifterProxy( shifterType, fileName = False ):
                                                                        userGroup, userDN ) )
     result = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
                                                     filePath = fileName,
-                                                    requiredTimeLeft = 1200,
-                                                    cacheTime = 4 * 43200 )
+                                                    requiredTimeLeft = 86400,
+                                                    cacheTime =  86400 )
   else:
     gLogger.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
     result = gProxyManager.downloadProxyToFile( userDN, userGroup,
                                                 filePath = fileName,
-                                                requiredTimeLeft = 1200,
-                                                cacheTime = 4 * 43200 )
+                                                requiredTimeLeft = 86400,
+                                                cacheTime =  86400 )
   if not result[ 'OK' ]:
     return result
   chain = result[ 'chain' ]
@@ -65,10 +65,10 @@ def getShifterProxy( shifterType, fileName = False ):
 def setupShifterProxyInEnv( shifterType, fileName = False ):
   """
   Return the shifter's proxy and set it up as the default
-  proxy via changing the environment. 
+  proxy via changing the environment.
   This method returns a shifter's proxy
 
-    - shifterType : ProductionManager / DataManager...
+  :param shifterType: ProductionManager / DataManager...
 
   """
   result = getShifterProxy( shifterType, fileName )

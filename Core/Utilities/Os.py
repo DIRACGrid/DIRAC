@@ -13,6 +13,7 @@ import multiprocessing
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
+import distutils.spawn
 
 DEBUG = 0
 
@@ -145,6 +146,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
 
   return result
 
+#FIXME: this is not used !
 def unifyLdLibraryPath( path, newpath ):
   """ for Linux and MacOS link all the files in the path in a single directory 
       newpath. For that we go along the path in a reverse order and link all files
@@ -188,25 +190,6 @@ def unifyLdLibraryPath( path, newpath ):
     # Windows does nothing for the moment
     return path
 
-def which( program ):
-  """ Utility that mimics the 'which' command from the shell
-  """
-  def is_exe( fpath ):
-    return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
-
-  fpath, _fname = os.path.split( program )
-  if fpath:
-    if is_exe( program ):
-      return program
-  else:
-    for path in os.environ["PATH"].split( os.pathsep ):
-      path = path.strip( '"' )
-      exe_file = os.path.join( path, program )
-      if is_exe( exe_file ):
-        return exe_file
-
-  return None
-
 def getNumberOfCores():
   """ Get the number of processor cores
   """
@@ -218,6 +201,8 @@ def getNumberOfCores():
       
   return cores    
   
+def which( executable ):
   
+  return distutils.spawn.find_executable( executable )  
   
   

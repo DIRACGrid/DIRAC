@@ -1,8 +1,8 @@
 """
 :mod: DataManager
-=======================
 
 .. module: DataManager
+
 :synopsis: DataManager links the functionalities of StorageElement and FileCatalog.
 
 This module consists of DataManager and related classes.
@@ -33,7 +33,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Resources.Utilities import Utils
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 class DataManager( object ):
   """
@@ -41,19 +41,28 @@ class DataManager( object ):
 
   A DataManager is taking all the actions that impact or require the FileCatalog and the StorageElement together
   """
-  def __init__( self, catalogs = [] ):
+  def __init__( self, catalogs = [], masterCatalogOnly = False, vo = False ):
     """ c'tor
 
     :param self: self reference
+    :param catalogs: the list of catalog in which to perform the operations. This
+                    list will be ignored if masterCatalogOnly is set to True
+    :param masterCatalogOnly: if set to True, the operations will be performed only on the master catalog.
+                              The catalogs parameter will be ignored.
+    :param vo: the VO for which the DataManager is created, get VO from the current proxy if not specified
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
-    self.fc = FileCatalog( catalogs )
+    self.vo = vo
+    
+    catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
+    
+    self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
-    self.ignoreMissingInFC = Operations().getValue( 'DataManagement/IgnoreMissingInFC', False )
-    self.useCatalogPFN = Operations().getValue( 'DataManagement/UseCatalogPFN', True )
+    self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
+    self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -128,7 +137,7 @@ class DataManager( object ):
         failed = True
     if failed:
       return S_ERROR( "Failed to clean storage directory at all SEs" )
-    res = Utils.executeSingleFileOrDirWrapper( self.fc.removeDirectory( folder, recursive = True ) )
+    res = returnSingleResult( self.fc.removeDirectory( folder, recursive = True ) )
     if not res['OK']:
       return res
     return S_OK()
@@ -141,8 +150,8 @@ class DataManager( object ):
     :param str storageElement: DIRAC SE name
     """
 
-    se = StorageElement( storageElement )
-    res = Utils.executeSingleFileOrDirWrapper( se.exists( directory ) )
+    se = StorageElement( storageElement, vo = self.vo )
+    res = returnSingleResult( se.exists( directory ) )
 
     if not res['OK']:
       self.log.debug( "Failed to obtain existance of directory", res['Message'] )
@@ -153,7 +162,7 @@ class DataManager( object ):
       self.log.debug( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
 
-    res = Utils.executeSingleFileOrDirWrapper( se.removeDirectory( directory, recursive = True ) )
+    res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
     if not res['OK']:
       self.log.debug( "Failed to remove storage directory", res['Message'] )
       return res
@@ -174,7 +183,7 @@ class DataManager( object ):
     allFiles = {}
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = Utils.executeSingleFileOrDirWrapper( self.fc.listDirectory( currentDir ) )
+      res = returnSingleResult( self.fc.listDirectory( currentDir ) )
       activeDirs.remove( currentDir )
 
       if not res['OK']:
@@ -226,7 +235,7 @@ class DataManager( object ):
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
       # We only need the metadata (verbose) if a limit date is given
-      res = Utils.executeSingleFileOrDirWrapper( self.fc.listDirectory( currentDir, verbose = ( days != 0 ) ) )
+      res = returnSingleResult( self.fc.listDirectory( currentDir, verbose = ( days != 0 ) ) )
       activeDirs.remove( currentDir )
       if not res['OK']:
         self.log.debug( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
@@ -308,14 +317,14 @@ class DataManager( object ):
     if not res['OK']:
       return res
     for storageElementName in res['Value']:
-      se = StorageElement( storageElementName )
+      se = StorageElement( storageElementName, vo = self.vo )
       physicalFile = replicas[storageElementName]
 
       oDataOperation = self.__initialiseAccountingObject( 'getFile', storageElementName, 1 )
       oDataOperation.setStartTime()
       startTime = time.time()
 
-      res = Utils.executeSingleFileOrDirWrapper( se.getFile( physicalFile, localPath = os.path.realpath( destinationDir ) ) )
+      res = returnSingleResult( se.getFile( physicalFile, localPath = os.path.realpath( destinationDir ) ) )
 
       getTime = time.time() - startTime
       oDataOperation.setValueByKey( 'TransferTime', getTime )
@@ -425,14 +434,14 @@ class DataManager( object ):
 
     ##########################################################
     #  Instantiate the destination storage element here.
-    storageElement = StorageElement( diracSE )
+    storageElement = StorageElement( diracSE, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "putAndRegister: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
+    res = returnSingleResult( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -607,7 +616,7 @@ class DataManager( object ):
       destPath = '%s/%s' % ( destPath, os.path.basename( lfn ) )
     else:
       destPath = lfn
-    res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForLfn( destPath ) )
+    res = returnSingleResult( destStorageElement.getPfnForLfn( destPath ) )
     if not res['OK']:
       errStr = "__replicate: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -677,7 +686,7 @@ class DataManager( object ):
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
     self.log.debug( "%s Verifying dest StorageElement validity (%s)." % ( logStr, destSE ) )
-    destStorageElement = StorageElement( destSE )
+    destStorageElement = StorageElement( destSE, vo = self.vo )
     res = destStorageElement.isValid()
     if not res['OK']:
       errStr = "%s The storage element is not currently valid." % logStr
@@ -770,16 +779,22 @@ class DataManager( object ):
         self.log.debug( "%s %s is currently not allowed as a source." % ( logStr, diracSE ) )
       else:
         self.log.debug( "%s %s is available for use." % ( logStr, diracSE ) )
-        storageElement = StorageElement( diracSE )
+        storageElement = StorageElement( diracSE, vo = self.vo )
         res = storageElement.isValid()
         if not res['OK']:
           errStr = "%s The storage element is not currently valid." % logStr
           self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
         else:
-          # pfn = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
-          if storageElement.getRemoteProtocols()['Value']:
+          # pfn = returnSingleResult( storageElement.getPfnForLfn( lfn ) ).get( 'Value', pfn )
+          remoteProtocols = storageElement.getRemoteProtocols()
+          if not remoteProtocols['OK']:
+            self.log.debug( "%s : could not get remote protocols %s" % ( diracSE, remoteProtocols['Message'] ) )
+            continue
+
+          remoteProtocols = remoteProtocols['Value']
+          if remoteProtocols:
             self.log.debug( "%s Attempting to get source pfns for remote protocols." % logStr )
-            res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
+            res = returnSingleResult( storageElement.getPfnForProtocol( pfn, protocol = self.thirdPartyProtocols ) )
             if res['OK']:
               sourcePfn = res['Value']
               # print pfn, sourcePfn
@@ -858,7 +873,7 @@ class DataManager( object ):
       fileDict[lfn] = {'PFN':physicalFile, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
 
     if catalog:
-      fileCatalog = FileCatalog( catalog )
+      fileCatalog = FileCatalog( catalog, vo = self.vo )
       if not fileCatalog.isOK():
         return S_ERROR( "Can't get FileCatalog %s" % catalog )
     else:
@@ -905,7 +920,7 @@ class DataManager( object ):
     failed = {}
     replicaTuples = []
     for storageElementName, replicaTuple in seDict.items():
-      destStorageElement = StorageElement( storageElementName )
+      destStorageElement = StorageElement( storageElementName, vo = self.vo )
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "__registerReplica: The storage element is not currently valid."
@@ -915,7 +930,7 @@ class DataManager( object ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = Utils.executeSingleFileOrDirWrapper( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
+          res = returnSingleResult( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -928,7 +943,7 @@ class DataManager( object ):
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
 
     if catalog:
-      fileCatalog = FileCatalog( catalog )
+      fileCatalog = FileCatalog( catalog, vo = self.vo )
       res = fileCatalog.addReplica( replicaDict )
     else:
       res = self.fc.addReplica( replicaDict )
@@ -1092,6 +1107,8 @@ class DataManager( object ):
         failed[lfn] = "Failed to remove sole replica"
       else:
         replicaTuples.append( ( lfn, repDict[storageElementName] ) )
+    if not replicaTuples:
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )    
     res = self.__removeReplica( storageElementName, replicaTuples )
     if not res['OK']:
       return res
@@ -1104,9 +1121,12 @@ class DataManager( object ):
     """ remove replica """
     lfnDict = {}
     failed = {}
-    se = None if self.useCatalogPFN else StorageElement( storageElementName )  # Placeholder for the StorageElement object
-    if se and not se.isValid()['OK']:
-      return S_ERROR( "SE %s is not valid" % storageElementName )
+    successful = {}
+    se = None if self.useCatalogPFN else StorageElement( storageElementName, vo = self.vo )  # Placeholder for the StorageElement object
+    if se:
+      res = se.isValid( 'removeFile' )
+      if not res['OK']:
+        return res
     for lfn, pfn in fileTuple:
       res = self.__verifyWritePermission( lfn )
       if lfn not in res['Value']['Successful']:
@@ -1134,6 +1154,9 @@ class DataManager( object ):
     failed.update( dict( [( pfnDict[pfn], error ) for pfn, error in res['Value']['Failed'].items()] ) )
     # Here we use the FC PFN...
     replicaTuples = [( pfnDict[pfn], lfnDict[pfnDict[pfn]], storageElementName ) for pfn in res['Value']['Successful']]
+
+    if not replicaTuples:
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
@@ -1302,7 +1325,7 @@ class DataManager( object ):
     """ remove replica from storage element """
     self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ),
                                                                                          storageElementName ) )
-    storageElement = StorageElement( storageElementName )
+    storageElement = StorageElement( storageElementName, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
@@ -1331,7 +1354,7 @@ class DataManager( object ):
           res['Value']['Successful'][surl] = surl
           res['Value']['Failed'].pop( surl )
       for surl in res['Value']['Successful']:
-        ret = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
+        ret = returnSingleResult( storageElement.getPfnForProtocol( surl, protocol = self.registrationProtocol, withPort = False ) )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
         else:
@@ -1356,12 +1379,10 @@ class DataManager( object ):
 
     :param self: self reference
     :param str lfn: LFN
-    :param :
+    :param str fileName: the full path to the local file
+    :param str diracSE: the Storage Element to which to put the file
+    :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
 
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
     if not os.path.exists( fileName ):
@@ -1380,13 +1401,13 @@ class DataManager( object ):
 
     ##########################################################
     #  Instantiate the destination storage element here.
-    storageElement = StorageElement( diracSE )
+    storageElement = StorageElement( diracSE, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "put: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    res = Utils.executeSingleFileOrDirWrapper( storageElement.getPfnForLfn( lfn ) )
+    res = returnSingleResult( storageElement.getPfnForLfn( lfn ) )
     if not res['OK']:
       errStr = "put: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
@@ -1399,7 +1420,7 @@ class DataManager( object ):
     ##########################################################
     #  Perform the put here.
     startTime = time.time()
-    res = storageElement.putFile( fileDict, singleFile = True )
+    res = returnSingleResult( storageElement.putFile( fileDict ) )
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "put: Failed to put file to Storage Element."
@@ -1515,7 +1536,7 @@ class DataManager( object ):
             se_lfn.setdefault( se, [] ).append( lfn )
 
         for se in se_lfn:
-          seObj = StorageElement( se )
+          seObj = StorageElement( se, vo = self.vo )
           succPfn = seObj.getPfnForLfn( se_lfn[se] ).get( 'Value', {} ).get( 'Successful', {} )
           for lfn in succPfn:
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
@@ -1539,7 +1560,7 @@ class DataManager( object ):
     # # default value
     argsDict = argsDict if argsDict else {}
     # # get replicas for lfn
-    res = FileCatalog().getReplicas( lfn )
+    res = FileCatalog( vo = self.vo ).getReplicas( lfn )
     if not res["OK"]:
       errStr = "_callReplicaSEFcn: Completely failed to get replicas for LFNs."
       self.log.debug( errStr, res["Message"] )
@@ -1560,7 +1581,7 @@ class DataManager( object ):
         if self.useCatalogPFN:
           pfn = replicas[storageElementName]
         else:
-          se = se if se else StorageElement( storageElementName )
+          se = se if se else StorageElement( storageElementName, vo = self.vo )
           res = se.getPfnForLfn( lfn )
           pfn = res.get( 'Value', {} ).get( 'Successful', {} ).get( lfn, replicas[storageElementName] )
         pfnDict[pfn] = lfn
@@ -1570,7 +1591,7 @@ class DataManager( object ):
         retDict["Failed"][lfn] = errStr
 
     # # call StorageElement function at least
-    se = se = se if se else StorageElement( storageElementName )
+    se = se = se if se else StorageElement( storageElementName, vo = self.vo )
     fcn = getattr( se, method )
     res = fcn( pfnDict.keys(), **argsDict )
     # # check result
@@ -1674,19 +1695,3 @@ class DataManager( object ):
     return self.__executeIfReplicaExists( storageElementName, lfn,
                                                   "getFile", localPath = localPath )
 
-
-
-  # we should so something to get rid of this one
-  def removeCatalogFile( self, lfn ):
-    """ remove a file from the FileCatalog
-
-    :param self: self reference
-    :param mixed lfn: LFN as string or list of LFN strings or dict with LFNs as keys
-    :param bool singleFile: execute for the first LFN only
-    :param list catalogs: catalogs' names
-    """
-
-    # # make sure lfns are sorted from the longest to the shortest
-    if type( lfn ) == ListType:
-      lfn = sorted( lfn, reverse = True )
-    return FileCatalog().removeFile( lfn )

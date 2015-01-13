@@ -5,7 +5,6 @@
 
 """ 
 :mod: FileCatalogProxyHandler 
-================================
 
 .. module: FileCatalogProxyHandler
   :synopsis: This is a service which represents a DISET proxy to the File 

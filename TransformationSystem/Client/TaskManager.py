@@ -15,7 +15,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request               import Request
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
 from DIRAC.RequestManagementSystem.Client.File                  import File
-from DIRAC.RequestManagementSystem.private.RequestValidator     import gRequestValidator
+from DIRAC.RequestManagementSystem.private.RequestValidator     import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
@@ -29,6 +29,8 @@ def _requestName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
 class TaskBase( object ):
+  ''' The other classes inside here inherits from this one.
+  '''
 
   def __init__( self, transClient = None, logger = None ):
 
@@ -151,7 +153,7 @@ class RequestTasks( TaskBase ):
         oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
-      isValid = gRequestValidator.validate( oRequest )
+      isValid = RequestValidator().validate( oRequest )
       if not isValid['OK']:
         return isValid
 
@@ -587,6 +589,7 @@ class WorkflowTasks( TaskBase ):
     else:
       self.log.error( "No valid job description found" )
       return S_ERROR( "No valid job description found" )
+    # the WMSClient expects to find the jobDescription.xml file in the local directory to be added to the InputSandbox
     workflowFile = open( "jobDescription.xml", 'w' )
     workflowFile.write( oJob._toXML() )
     workflowFile.close()
@@ -603,7 +606,7 @@ class WorkflowTasks( TaskBase ):
       requestName = _requestName( transID, taskID )
       requestNames.append( requestName )
     res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
-    if not ['OK']:
+    if not res['OK']:
       self.log.info( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
       return res
     requestNameIDs = {}

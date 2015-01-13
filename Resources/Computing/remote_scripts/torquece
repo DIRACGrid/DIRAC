@@ -55,8 +55,25 @@ def getJobStatus( jobList, user ):
   
 def getCEStatus( user ):
 
-  print -1
-  return -1       
+  """ Get the overall CE status
+  """
+
+  cmd = 'qselect -u %(user)s -s WQ | wc -l; qselect -u %(user)s -s R | wc -l' %{ 'user': user}
+  status,output = commands.getstatusoutput( cmd )
+
+  if status != 0:
+    print status
+    print output
+    return status
+
+  waitingJobs, runningJobs = output.split()[:2]
+
+  # Final output
+  status = 0
+  print status
+  print ":::".join( ["Waiting",str(waitingJobs)] )
+  print ":::".join( ["Running",str(runningJobs)] )
+  return status
 
 #####################################################################################
 

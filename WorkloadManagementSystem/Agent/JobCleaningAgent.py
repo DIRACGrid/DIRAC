@@ -3,8 +3,10 @@
 # File :    JobCleaningAgent.py
 # Author :  A.T.
 ########################################################################
-"""
-The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
+""" The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
+
+    This agent will take care of removing user jobs,
+    while production jobs should be removed by the TransformationCleaningAgent.
 """
 
 __RCSID__ = "$Id$"
@@ -23,15 +25,9 @@ from DIRAC.RequestManagementSystem.Client.ReqClient            import ReqClient
 
 import DIRAC.Core.Utilities.Time as Time
 
-import string
 import time
 import os
 
-
-
-REMOVE_STATUS_DELAY = { 'Done':7,
-                        'Killed':1,
-                        'Failed':7 }
 
 class JobCleaningAgent( AgentModule ):
   """
@@ -44,12 +40,31 @@ class JobCleaningAgent( AgentModule ):
                  for the agent restart
   """
 
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
+    """
+    AgentModule.__init__( self, *args, **kwargs )
+
+    #clients
+    # FIXME: shouldn't we avoid using the DBs directly, and instead go through the service?
+    self.jobDB = None
+    self.taskQueueDB = None
+    self.jobLoggingDB = None
+
+    self.maxJobsAtOnce = 100
+    self.jobByJob = False
+    self.throttlingPeriod = 0.
+
+    self.removeStatusDelay = {'Done':7,
+                              'Killed':1,
+                              'Failed':7 }
+
   #############################################################################
   def initialize( self ):
-    """Sets defaults
+    """ Sets defaults
     """
 
-    self.am_setOption( "PollingTime", 60 )
+    self.am_setOption( "PollingTime", 120 )
     self.jobDB = JobDB()
     self.taskQueueDB = TaskQueueDB()
     self.jobLoggingDB = JobLoggingDB()
@@ -59,14 +74,20 @@ class JobCleaningAgent( AgentModule ):
       self.prod_types = agentTSTypes
     else:
       self.prod_types = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
-    gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
-    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',100)
-    self.jobByJob = self.am_getOption('JobByJob',True)
-    self.throttlingPeriod = self.am_getOption('ThrottlingPeriod',0.)
+    gLogger.info( "Will exclude the following Production types from cleaning %s" % ( ', '.join( self.prod_types ) ) )
+    self.maxJobsAtOnce = self.am_getOption( 'MaxJobsAtOnce', 500 )
+    self.jobByJob = self.am_getOption( 'JobByJob', False )
+    self.throttlingPeriod = self.am_getOption('ThrottlingPeriod', 0.)
+    
+    self.removeStatusDelay['Done'] = self.am_getOption( 'RemoveStatusDelay/Done', 7 )
+    self.removeStatusDelay['Killed'] = self.am_getOption( 'RemoveStatusDelay/Killed', 7 )
+    self.removeStatusDelay['Failed'] = self.am_getOption( 'RemoveStatusDelay/Failed', 7 )
+
     return S_OK()
 
   def __getAllowedJobTypes( self ):
-    #Get valid jobTypes
+    """ Get valid jobTypes
+    """
     result = self.jobDB.getDistinctJobAttributes( 'JobType' )
     if not result[ 'OK' ]:
       return result
@@ -79,7 +100,7 @@ class JobCleaningAgent( AgentModule ):
 
   #############################################################################
   def execute( self ):
-    """The PilotAgent execution method.
+    """ Remove jobs in various status
     """
     #Delete jobs in "Deleted" state
     result = self.removeJobsByStatus( { 'Status' : 'Deleted' } )
@@ -96,8 +117,8 @@ class JobCleaningAgent( AgentModule ):
     
     baseCond = { 'JobType' : result[ 'Value' ] }
     # Remove jobs with final status
-    for status in REMOVE_STATUS_DELAY:
-      delay = REMOVE_STATUS_DELAY[ status ]
+    for status in self.removeStatusDelay:
+      delay = self.removeStatusDelay[ status ]
       condDict = dict( baseCond )
       condDict[ 'Status' ] = status
       delTime = str( Time.dateTime() - delay * Time.day )
@@ -142,6 +163,9 @@ class JobCleaningAgent( AgentModule ):
     failedJobs = result['Value']['Failed']
     for job in failedJobs:
       jobList.pop( jobList.index( job ) ) 
+
+    # TODO: we should not remove a job if it still has requests in the RequestManager.
+    # But this logic should go in the client or in the service, and right now no service expose jobDB.removeJobFromDB
 
     if self.jobByJob:
       for jobID in jobList:
@@ -206,7 +230,7 @@ class JobCleaningAgent( AgentModule ):
         else:
           successful[jobID] = 'No oversized sandbox found'
       else:
-        gLogger.warn( 'Error interrogting JobDB: %s' % result['Message'] )
+        gLogger.warn( 'Error interrogating JobDB: %s' % result['Message'] )
     if not lfnDict:
       return S_OK( {'Successful':successful, 'Failed':failed} )   
 

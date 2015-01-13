@@ -39,8 +39,8 @@ class BOINCComputingElement( ComputingElement ):
 ###############################################################################
   def createClient( self ):
     """
-    This method only can be called after the initialtion of this class. In this 
-    method, it will initial some variables and create a soap client for commnication 
+    This method only can be called after the initialisation of this class. In this 
+    method, it will initial some variables and create a soap client for communication 
     with BOINC server.
     """
 
@@ -167,8 +167,8 @@ EOF
     try:
       result = self.BOINCClient.service.getDynamicInfo( )
     except:
-      self.log.error( 'Could not get the BONIC CE %s dynamic jobs information, commnication failed!' % self.wsdl )
-      return S_ERROR( 'Could not get the BONIC CE %s dynamic jobs information, commnication failed!' % self.wsdl )
+      self.log.error( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
+      return S_ERROR( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
 
     if not result['ok']:
       self.log.warn( 'Did not get the BONIC CE %s dynamic jobs information, the value returned is false!' % self.wsdl  )

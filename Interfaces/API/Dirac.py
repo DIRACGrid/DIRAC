@@ -42,6 +42,8 @@ from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.PrettyPrint                    import printTable
+
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -1070,6 +1072,18 @@ class Dirac( API ):
       return repsResult
 
     if printOutput:
+      fields = [ 'LFN', 'StorageElement', 'URL' ]
+      records = []
+      for lfn in repsResult['Value']['Successful']:
+        lfnPrint = lfn
+        for se, url in repsResult['Value']['Successful'][lfn].items():
+          records.append( ( lfnPrint, se, url ) )
+          lfnPrint = ''
+      for lfn in repsResult['Value']['Failed']:
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )    
+      
+      printTable( fields, records, numbering = False )
+      
       print self.pPrint.pformat( repsResult['Value'] )
 
     return repsResult
@@ -1193,7 +1207,7 @@ class Dirac( API ):
 
        >>> print dirac.getMetadata('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
        {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
-       {'Status': '-', 'Size': 619475828L, 'GUID': 'E871FBA6-71EA-DC11-8F0C-000E0C4DEB4B', 'CheckSumType': 'AD',
+       {'Status': '-', 'Size': 619475828L, 'GUID': 'E871FBA6-71EA-DC11-8F0C-000E0C4DEB4B', 'ChecksumType': 'AD',
        'CheckSumValue': ''}}, 'Failed': {}}}
 
        :param lfns: Logical File Name(s) to query
@@ -2573,12 +2587,12 @@ class Dirac( API ):
 
     if printOutput:
       loggingTupleList = result['Value']
-      # source is removed for printing to control width
-      headers = ( 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' )
-      print ''.join( [h.ljust( 30 ) for h in headers] )
-
+      
+      fields = [ 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' ]
+      records = []
       for l in loggingTupleList:
-        print ''.join( [l[i].ljust( 30 ) for i in ( 4, 0, 1, 2, 3 )] )
+        records.append( [ l[i] for i in ( 4, 0, 1, 2, 3 ) ] )
+      printTable( fields, records, numbering = False, columnSeparator = '  ' )  
 
     return result
 

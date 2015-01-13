@@ -7,6 +7,8 @@
 
 __RCSID__ = '$Id$'
 
+import StringIO
+
 def int_with_commas(i):
   s = str(i)
   news = ''
@@ -15,20 +17,26 @@ def int_with_commas(i):
     s = s[:-3] 
   return news[:-1]
 
-def printTable( fields, records, sortField='', numbering=True ):
+def printTable( fields, records, sortField='', numbering=True, 
+                printOut = True, columnSeparator = ' ' ):
     """ Utility to pretty print tabular data
     """
 
+    stringBuffer = StringIO.StringIO()
+
     if not records:
-      print "No output"
-      return
+      if printOut:       
+        print "No output"
+      return "No output"
     
     records = list( records )
 
-    nFields = len(fields)
+    nFields = len(fields)      
     if nFields != len(records[0]):
-      print "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len(records[0]) )
-      return
+      out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len(records[0]) )
+      if printOut:      
+        print out
+      return out
 
     if sortField:
       records.sort( None, lambda x: x[fields.index( sortField )] )
@@ -40,30 +48,41 @@ def printTable( fields, records, sortField='', numbering=True ):
         if len(r[i]) > lengths[i]:
           lengths[i] = len(r[i])
 
+    
+    numberWidth = len( str( len( records ) ) ) + 1      
+    separatorWidth = len( columnSeparator )
     totalLength = 0
     for i in lengths:
       totalLength += i
-      totalLength += 2
-    totalLength += 2  
+      totalLength += separatorWidth 
+    
+    if numbering:        
+      totalLength += (numberWidth + separatorWidth)
           
     if numbering:      
-      print ' '*3,      
+      stringBuffer.write( ' '*(numberWidth+separatorWidth) )      
     for i in range(nFields):
-      print fields[i].ljust(lengths[i]+1),
-    print
-    print '='*totalLength
+      stringBuffer.write( fields[i].ljust(lengths[i]+separatorWidth) )
+    stringBuffer.write( '\n' )
+    stringBuffer.write( '='*totalLength + '\n' )
     count = 1
     for r in records:
       if numbering:
         if count == len(records) and records[-1][0] == "Total":
-          print " "*3,  
+          stringBuffer.write( " "*(numberWidth+separatorWidth) )  
         else:  
-          print str(count).rjust(3),
+          stringBuffer.write( str(count).rjust(numberWidth)+columnSeparator )
       
       for i in range(nFields):
-        print r[i].ljust(lengths[i]+1),
+        stringBuffer.write( r[i].ljust(lengths[i])+columnSeparator )
       
-      print    
+      stringBuffer.write( '\n' )    
       if count == len(records)-1 and records[-1][0] == "Total":
-        print '-'*totalLength
+        stringBuffer.write( '-'*totalLength + '\n' )
       count += 1
+      
+    output = stringBuffer.getvalue()  
+    if printOut:
+      print output
+      
+    return output    

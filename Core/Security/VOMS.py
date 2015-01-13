@@ -9,6 +9,7 @@ from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import Os
 
 
 class VOMS( BaseSecurity ):
@@ -117,8 +118,9 @@ class VOMS( BaseSecurity ):
     proxyDict = retVal[ 'Value' ]
     # chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
-
-    cmd = 'voms-proxy-info -dont-verify-ac -file %s' % proxyLocation
+    if not Os.which("voms-proxy-info"):
+      return S_ERROR("Missing voms-proxy-info")
+    cmd = 'voms-proxy-info -file %s' % proxyLocation
     if option:
       cmd += ' -%s' % option
 
@@ -239,6 +241,9 @@ class VOMS( BaseSecurity ):
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
 
+    if not Os.which('voms-proxy-init'):
+      return S_ERROR("Missing voms-proxy-init")
+
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
     if tmpDir:
@@ -268,6 +273,8 @@ class VOMS( BaseSecurity ):
     """
     Is voms info available?
     """
+    if not Os.which("voms-proxy-info"):
+      return S_ERROR("Missing voms-proxy-info")
     cmd = 'voms-proxy-info -h'
     result = shellCall( self._secCmdTimeout, cmd )
     if not result['OK']:

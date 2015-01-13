@@ -85,6 +85,9 @@ class DirectoryTreeBase:
        is the dictionary containing all the parameters of the newly created
        directory
     """
+    if not path or path[0] != '/':
+      return S_ERROR( 'Not an absolute path' )
+
     result = self.existsDir( path )
     if not result['OK']:
       return result

@@ -7,7 +7,6 @@
 
 """
 :mod: RequestProxyHandler
-=========================
 
 .. module: ReqtProxyHandler
   :synopsis: ReqProxy service

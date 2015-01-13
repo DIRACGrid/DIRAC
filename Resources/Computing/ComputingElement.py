@@ -30,7 +30,7 @@ WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
 
-class ComputingElement:
+class ComputingElement(object):
 
   #############################################################################
   def __init__( self, ceName ):
