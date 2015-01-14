@@ -66,7 +66,7 @@ class GFAL2StorageBase( StorageBase ):
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
     # # gfal2 timeout
-    self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 134 )
+    self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
