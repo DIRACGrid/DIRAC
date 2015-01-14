@@ -32,10 +32,18 @@ class SRM2V2Storage( GFAL2StorageBase ):
     self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
 
 
+  def __setSRMOptionsToDefault( self ):
+    self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+    self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+
+
   def _getExtendedAttributes( self, path, protocols = False ):
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    return GFAL2StorageBase._getExtendedAttributes( self, path, protocols = protocols )
+    res = GFAL2StorageBase._getExtendedAttributes( self, path, protocols = protocols )
+    self.__setSRMOptionsToDefault()
+    return res
 
 
 
@@ -94,9 +102,9 @@ class SRM2V2Storage( GFAL2StorageBase ):
     """
     self.log.debug( 'SRM2V2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
     if protocols:
-      res = self.__getExtendedAttributes( path, protocols )
+      res = self._getExtendedAttributes( path, protocols )
     else:
-      res = self.__getExtendedAttributes( path )
+      res = self._getExtendedAttributes( path )
     if res['OK']:
       attributeDict = res['Value']
       # 'user.replicas' is the extended attribute we are interested in
@@ -145,40 +153,40 @@ class SRM2V2Storage( GFAL2StorageBase ):
 
     return S_OK( protocolsList )
 
-  def __getExtendedAttributes( self, path, protocols = False ):
-    """ Get all the available extended attributes of path
-
-    :param self: self reference
-    :param str path: path of which we wan't extended attributes
-    :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
-    """
-    attributeDict = {}
-
-    # get all the extended attributes from path
-    try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      if protocols:
-        self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-      else:
-        self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-      attributes = self.gfal2.listxattr( path )
-
-      # get all the respective values of the extended attributes of path
-      for attribute in attributes:
-        attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
-
-      return S_OK( attributeDict )
-    # simple error messages, the method that is calling them adds the source of error.
-    except gfal2.GError, e:
-      if e.code == errno.ENOENT:
-        errStr = 'Path does not exist.'
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
-      else:
-        errStr = 'Something went wrong while checking for extended attributes. Please see error log for more information.'
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+#   def __getExtendedAttributes( self, path, protocols = False ):
+#     """ Get all the available extended attributes of path
+#
+#     :param self: self reference
+#     :param str path: path of which we wan't extended attributes
+#     :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
+#     """
+#     attributeDict = {}
+#
+#     # get all the extended attributes from path
+#     try:
+#       self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
+#       self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+#       self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+#       if protocols:
+#         self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+#       else:
+#         self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+#       attributes = self.gfal2.listxattr( path )
+#
+#       # get all the respective values of the extended attributes of path
+#       for attribute in attributes:
+#         attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
+#
+#       return S_OK( attributeDict )
+#     # simple error messages, the method that is calling them adds the source of error.
+#     except gfal2.GError, e:
+#       if e.code == errno.ENOENT:
+#         errStr = 'Path does not exist.'
+#         self.log.error( errStr, e.message )
+#         return S_ERROR( errStr )
+#       else:
+#         errStr = 'Something went wrong while checking for extended attributes. Please see error log for more information.'
+#         self.log.error( errStr, e.message )
+#         return S_ERROR( errStr )
 
 
