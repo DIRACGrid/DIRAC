@@ -31,17 +31,6 @@ class SRM2V2Storage( GFAL2StorageBase ):
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
     self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
 
-  def prestageFileStatus( self, path ):
-    self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
-    return GFAL2StorageBase.prestageFileStatus( self, path )
-
-  def pinFile( self, path, lifetime = 86400 ):
-    self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
-    return GFAL2StorageBase.pinFile( self, path, lifetime = lifetime )
-
-  def releaseFile( self, path ):
-    self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
-    return GFAL2StorageBase.releaseFile( self, path )
 
   def _getExtendedAttributes( self, path, protocols = False ):
     if protocols:
