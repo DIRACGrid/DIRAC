@@ -19,6 +19,14 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p13]
+
+*TS
+BUGFIX: TransformationAgent - data member not defined
+
+*WMS
+FIX: InputData(Resolution,ByProtocol) - possibility to define RemoteProtocol
+
 [v6r12p12]
 
 *WMS
