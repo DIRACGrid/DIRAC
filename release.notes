@@ -19,6 +19,11 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
 
+[v6r12p12]
+
+*WMS
+BUGFIX: pilotTools - missing comma
+
 [v6r12p11]
 
 *WMS
