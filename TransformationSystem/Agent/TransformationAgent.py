@@ -56,6 +56,10 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.unusedFiles = {}
     self.unusedTimeStamp = {}
 
+    self.debug = False
+    self.transInThread = {}
+    self.pluginTimeout = {}
+
   def initialize( self ):
     """ standard initialize
     """
@@ -323,7 +327,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     operations = Operations()
     sortedBy = operations.getValue( 'TransformationPlugins/%s/SortedBy' % plugin, None )
     maxFiles = operations.getValue( 'TransformationPlugins/%s/MaxFiles' % plugin, 0 )
-    noUnusedDelay = 0 if self.pluginTimeout else operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, self.noUnusedDelay )
+    noUnusedDelay = 0 if self.pluginTimeout.get( transID, False ) else operations.getValue( 'TransformationPlugins/%s/NoUnusedDelay' % plugin, self.noUnusedDelay )
     method = '_getTransformationFiles'
     lastOffset = self.lastFileOffset.setdefault( transID, 0 )
 
@@ -458,6 +462,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                       method = method, transID = transID )
       dataReplicas.update( newReplicas )
       noReplicas = newLFNs - set( dataReplicas )
+      self.__writeCache( transID )
       if noReplicas:
         self._logWarn( "Found %d files without replicas (or only in Failover)" % len( noReplicas ),
                        method = method, transID = transID )
@@ -524,8 +529,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     """ Add replicas to the cache
     """
     self.replicaCache.setdefault( transID, {} )[datetime.datetime.utcnow()] = newReplicas
-    if len( newReplicas ) > 5000:
-      self.__writeCache( transID )
+#    if len( newReplicas ) > 5000:
+#      self.__writeCache( transID )
 
   def __clearCacheForTrans( self, transID ):
     """ Remove all replicas for a transformation
@@ -589,6 +594,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     if transID in self.replicaCache:
       return
     try:
+      method = '__readCache'
       fileName = self.__cacheFile( transID )
       if not os.path.exists( fileName ):
         # This is as a transitory measure for migrating from single to multiple cache files
@@ -604,16 +610,17 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       cacheFile.close()
       self._logInfo( "Successfully loaded replica cache from file %s (%d files)" %
                      ( fileName, self.__filesInCache( transID ) ),
-                     method = '__readCache', transID = transID )
+                     method = method, transID = transID )
     except Exception:
       self._logException( "Failed to load replica cache from file %s" % fileName,
-                          method = '__readCache', transID = transID )
+                          method = method, transID = transID )
       self.replicaCache[transID] = {}
 
   def __filesInCache( self, transID ):
     cache = self.replicaCache.get( transID, {} )
     return sum( [len( lfns ) for lfns in cache.values()] )
 
+  @gSynchro
   def __writeCache( self, transID = None ):
     """ Writes the cache
     """
@@ -673,4 +680,3 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
           self.__writeCache( transID )
       except:
         pass
-
