@@ -686,6 +686,8 @@ class GFAL2StorageBase( StorageBase ):
       # add extended attributes to the dict if available
       if res['OK']:
         attributeDict = res['Value']
+      else:
+        return res
       # 'user.status' is the extended attribute we are interested in
       if metadataDict['File']:
         res = self.__getChecksum( path )
@@ -1291,13 +1293,14 @@ class GFAL2StorageBase( StorageBase ):
         fullPath = '/'.join( [ path, entry ] )
         self.log.debug( 'GFAL2StorageBase.__listSingleDirectory: path: %s' % fullPath )
         res = self.__getSingleMetadata( fullPath )
-        metadataDict = res['Value']
-        if metadataDict['Directory']:
-          subDirs[fullPath] = metadataDict
-        elif metadataDict['File']:
-          files[fullPath] = metadataDict
-        else:
-          self.log.debug( "GFAL2StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
+        if res['OK']:
+          metadataDict = res['Value']
+          if metadataDict['Directory']:
+            subDirs[fullPath] = metadataDict
+          elif metadataDict['File']:
+            files[fullPath] = metadataDict
+          else:
+            self.log.debug( "GFAL2StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
 
       return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
 
@@ -1862,7 +1865,6 @@ class GFAL2StorageBase( StorageBase ):
       else:
         self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
       attributes = self.gfal2.listxattr( path )
-
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
         attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
