@@ -32,7 +32,8 @@ class InputDataResolution( object ):
     self.log = gLogger.getSubLogger( self.name )
     op = Operations()
     self.arguments.setdefault( 'Configuration', {} )['AllReplicas'] = op.getValue( 'InputDataPolicy/AllReplicas', False )
-    self.arguments['Configuration']['Protocol'] = op.getValue( 'InputDataPolicy/ProtocolToUse', '' )
+    self.arguments['Configuration'].setdefault( 'Protocol', op.getValue( 'InputDataPolicy/Protocols/Local', '' ) )
+    self.arguments['Configuration'].setdefault( 'RemoteProtocol', op.getValue( 'InputDataPolicy/Protocols/Remote', '' ) )
 
     # By default put input data into the current directory
     self.arguments.setdefault( 'InputDataDirectory', 'CWD' )

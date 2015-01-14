@@ -63,7 +63,8 @@ class InputDataByProtocol( object ):
     self.log.debug( 'File Catalogue result is:\n%s' % str( replicas ) )
 
     # First get the preferred replica:
-    result = self.__resolveReplicas( localSEList, replicas )
+    requestedProtocol = self.configuration.get( 'Protocol', '' )
+    result = self.__resolveReplicas( localSEList, replicas, requestedProtocol = requestedProtocol )
     if not result['OK']:
       return result
     success = result['Successful']
@@ -88,7 +89,8 @@ class InputDataByProtocol( object ):
     seList -= self.metaKeys
 
     if seList:
-      result = self.__resolveReplicas( seList, replicas, ignoreTape = True )
+      requestedProtocol = self.configuration.get( 'RemoteProtocol', '' )
+      result = self.__resolveReplicas( seList, replicas, ignoreTape = True, requestedProtocol = requestedProtocol )
       if not result['OK']:
         return result
       for lfn in result['Successful']:
@@ -97,7 +99,7 @@ class InputDataByProtocol( object ):
     failed = [lfn for lfn in result['Failed'] if lfn not in success]
     return S_OK( {'Successful': success, 'Failed':failed} )
 
-  def __resolveReplicas( self, seList, replicas, ignoreTape = False ):
+  def __resolveReplicas( self, seList, replicas, ignoreTape = False, requestedProtocol = '' ):
     diskSEs = set()
     tapeSEs = set()
     if not seList:
@@ -112,7 +114,7 @@ class InputDataByProtocol( object ):
       elif seStatus['Read'] and seStatus['TapeSE']:
         tapeSEs.add( localSE )
 
-    # For the unlikely case that a file is found on two SEs at the same site
+    # For the case that a file is found on two SEs at the same site
     # disk-based replicas are favoured.
     # Problematic files will be returned and can be handled by another module
     failedReplicas = set()
@@ -123,10 +125,11 @@ class InputDataByProtocol( object ):
         if not [se for se in reps if se in diskSEs.union( tapeSEs )]:
           failedReplicas.add( lfn )
         else:
-          for seName in diskSEs & set( reps ):
+          sreps = set( reps )
+          for seName in diskSEs & sreps:
             newReplicasDict.setdefault( lfn, [] ).append( seName )
           if not newReplicasDict.get( lfn ) and not ignoreTape:
-            for seName in tapeSEs & set( reps ):
+            for seName in tapeSEs & sreps:
               newReplicasDict.setdefault( lfn, [] ).append( seName )
 
     # Check that all LFNs have at least one replica and GUID
@@ -160,7 +163,6 @@ class InputDataByProtocol( object ):
 
     # Can now start to obtain TURLs for files grouped by localSE
     # for requested input data
-    requestedProtocol = self.configuration.get( 'Protocol', '' )
     for seName, lfns in seFilesDict.items():
       if not lfns:
         continue
