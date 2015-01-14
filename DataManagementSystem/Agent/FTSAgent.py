@@ -925,7 +925,10 @@ class FTSAgent( AgentModule ):
     if not processFiles["OK"]:
       log.error( processFiles["Message"] )
       return processFiles
-    ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles["Value"] )
+    processFiles = processFiles['Value']
+    if processFiles['toRegister']:
+      log.error( "%f files could not be registered in FC" % len( processFiles['toRegister'] ) )
+    ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles )
 
     # # send accounting record for this job
     self.__sendAccounting( ftsJob, request.OwnerDN )
