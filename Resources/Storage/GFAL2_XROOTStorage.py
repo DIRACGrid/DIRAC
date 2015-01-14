@@ -42,32 +42,3 @@ class GFAL2_XROOTStorage( GFAL2StorageBase ):
     self.protocolParameters['Port'] = 0
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
-
-
-  def getTransportURL( self, path, protocols = False ):
-    """ obtain the tURLs for the supplied path and protocols
-
-    :param self: self reference
-    :param str path: path on storage (pfn : root://...)
-    :param mixed protocols: protocols to use (must be or include 'root')
-    :returns Successful dict {path : path}
-             Failed dict {path : error message }
-    """
-    res = checkArgumentFormat( path )
-    if not res['OK']:
-      return res
-    urls = res['Value']
-    if protocols:
-      if type( protocols ) is StringType:
-        if protocols != self.protocol:
-          return S_ERROR( "GFAL2_XROOTStorage.getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
-      elif type( protocols ) is ListType:
-        if self.protocol not in protocols:
-          return S_ERROR( "GFAL2_XROOTStorage.getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
-
-    # For the time being, I assume I should not check whether the file exists or not
-    # So I just return the list of urls keys
-    successful = dict( [rootUrl, rootUrl] for rootUrl in urls )
-    failed = {}
-
-    return S_OK( { 'Failed' : failed, 'Successful' : successful } )

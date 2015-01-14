@@ -4,8 +4,6 @@ import gfal2
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2StorageBase import GFAL2StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Resources.Utilities import checkArgumentFormat
 
 
@@ -22,9 +20,33 @@ class SRM2V2Storage( GFAL2StorageBase ):
     self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
     self.log.debug( "SRM2V2Storage.__init__: Initializing object" )
     GFAL2StorageBase.__init__( self, storageName, parameters )
-
     self.pluginName = 'SRM2V2'
 
+    # ##
+    #    Setting the default SRM parameters here. For methods where this
+    #    is not the default there is a method defined in this class, setting
+    #    the proper values and then calling the base class method.
+    # ##
+    self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+    self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+
+  def prestageFileStatus( self, path ):
+    self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
+    return GFAL2StorageBase.prestageFileStatus( self, path )
+
+  def pinFile( self, path, lifetime = 86400 ):
+    self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
+    return GFAL2StorageBase.pinFile( self, path, lifetime = lifetime )
+
+  def releaseFile( self, path ):
+    self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
+    return GFAL2StorageBase.releaseFile( self, path )
+
+  def _getExtendedAttributes( self, path, protocols = False ):
+    if protocols:
+      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+    return GFAL2StorageBase._getExtendedAttributes( self, path, protocols = protocols )
 
 
 

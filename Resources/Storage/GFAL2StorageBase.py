@@ -56,7 +56,7 @@ class GFAL2StorageBase( StorageBase ):
 
     # # gfal2 API
     self.gfal2 = gfal2.creat_context()
-
+    self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
     # # save c'tor params
     self.name = storageName
     self.protocol = parameters['Protocol']
@@ -66,7 +66,7 @@ class GFAL2StorageBase( StorageBase ):
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
     # # gfal2 timeout
-    self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
+    self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 134 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
@@ -147,8 +147,6 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( "GFAL2StorageBase._singleExists: Determining whether %s exists or not" % path )
 
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       self.gfal2.stat( path )  # If path doesn't exist this will raise an error - otherwise path exists
       self.log.debug( "GFAL2StorageBase.__singleExists: path exists" )
       return S_OK( True )
@@ -215,8 +213,6 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( "GFAL2StorageBase.__isSingleFile: Determining whether %s is a file or not." % path )
 
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       statInfo = self.gfal2.stat( path )
       if ( S_ISREG( statInfo.st_mode ) ):  # alternatively drop if/else and just return S_OK ( S_ISREG( statInfo.st_mode ) ) but that's not really readable and we can't write the log.
         return S_OK( True )
@@ -334,8 +330,6 @@ class GFAL2StorageBase( StorageBase ):
 
     # Params set, copying file now
     try:
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
       self.gfal2.filecopy( params, src_url, dest_url )
       if self.checksumType:
         # checksum check is done by gfal2
@@ -451,8 +445,6 @@ class GFAL2StorageBase( StorageBase ):
     try:
       # gfal2 needs a protocol to copy local which is 'file:'
       dest = 'file://' + dest_file
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
       self.gfal2.filecopy( params, src_url, dest )
       if self.checksumType:
         # gfal2 did a checksum check, so we should be good
@@ -517,8 +509,6 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( "GFAL2StorageBase.__removeSingleFile: Attemping to remove single file %s" % path )
 
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       status = self.gfal2.unlink( path )
       if status == 0:
         self.log.debug( "GFAL2StorageBase.__removeSingleFile: File successfully removed" )
@@ -595,8 +585,6 @@ class GFAL2StorageBase( StorageBase ):
       return S_ERROR( errStr )
     else:  # if this is true, path is a file
       try:
-        self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-        self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
         statInfo = self.gfal2.stat( path )  # keeps info like size, mode.
         self.log.debug( "GFAL2StorageBase.__singleExists: File size successfully determined" )
         return S_OK( long ( statInfo.st_size ) )
@@ -677,11 +665,10 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( 'GFAL2StorageBase.__getSingleMetadata: reading metadata for %s' % path )
 
     try:
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       statInfo = self.gfal2.stat( path )
       metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
 
-      res = self.__getExtendedAttributes( path )
+      res = self._getExtendedAttributes( path )
 
       # add extended attributes to the dict if available
       if res['OK']:
@@ -770,11 +757,6 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( "GFAL2StorageBase.__prestageSingleFile: Attempting to issue stage request for single file: %s" % path )
 
     try:
-      self.log.debug( "GFAL2StorageBase.__prestageSingleFile: spaceToken: %s" % self.spaceToken )
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       ( status, token ) = self.gfal2.bring_online( path, lifetime, self.stageTimeout, True )
       self.log.debug( "GFAL2StorageBase.__prestageSingleFile: Staging issued - Status: %s" % status )
       if status >= 0:
@@ -836,9 +818,6 @@ class GFAL2StorageBase( StorageBase ):
     if not type( token ) == StringType:
         token = str( token )
     try:
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
       status = self.gfal2.bring_online_poll( path, token )
       if status == 0:
@@ -909,11 +888,7 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( "GFAL2StorageBase.__pinSingleFile: Attempting to issue pinning request for single file: %s" % path )
 
     try:
-      self.log.debug( "GFAL2StorageBase.__pinSingleFile: spaceToken: %s" % self.spaceToken )
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
       self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       ( status, token ) = self.gfal2.bring_online( path, lifetime, self.stageTimeout, True )
       self.log.debug( "GFAL2StorageBase.__pinSingleFile: pinning issued - Status: %s" % status )
       if status >= 0:
@@ -974,11 +949,7 @@ class GFAL2StorageBase( StorageBase ):
     if not type( token ) == StringType:
       token = str( token )
     try:
-      self.log.debug( "GFAL2StorageBase.__releaseSingleFile: spaceToken: %s" % self.spaceToken )
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
       self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       status = self.gfal2.release( path, token )
       if status >= 0:
         return S_OK( token )
@@ -1010,8 +981,6 @@ class GFAL2StorageBase( StorageBase ):
       return S_ERROR( errStr )
     else:
       try:
-        self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-        self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
         fileChecksum = self.gfal2.checksum( path, checksumType )
         return S_OK( fileChecksum )
 
@@ -1139,8 +1108,6 @@ class GFAL2StorageBase( StorageBase ):
 
     # creating directory with default rights
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       status = self.gfal2.mkdir( path, 755 )
       self.log.debug( 'GFAL2StorageBase.__createSingleDirectory: Status return of mkdir: %s' % status )
       if status >= 0:
@@ -1204,8 +1171,6 @@ class GFAL2StorageBase( StorageBase ):
 
     self.log.debug( "GFAL2StorageBase.__isSingleDirectory: Determining whether %s is a directory or not." % path )
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       statInfo = self.gfal2.stat( path )
       if ( S_ISDIR( statInfo.st_mode ) ):  # alternatively drop if/else and just return S_OK ( S_OK ( S_ISDIR( statInfo.st_mode ) ) but that's not really readable and we can't write the log.
         return S_OK ( True )
@@ -1282,8 +1247,6 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( "GFAL2StorageBase.__listSingleDirectory: Attempting to list content of single directory" )
 
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
       listing = self.gfal2.listdir( path )
 
       files = {}
@@ -1665,9 +1628,6 @@ class GFAL2StorageBase( StorageBase ):
 
     if ( recursive and allRemoved ) or ( not recursive and removedAllFiles and ( len( subDirsDict ) == 0 ) ):
       try:
-        self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-        self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-        self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
         status = self.gfal2.rmdir( path )
         if status < 0:
           errStr = "GFAL2StorageBase.__removeSingleDirectory: Error occured while removing directory. Status: %s" % status
@@ -1846,7 +1806,7 @@ class GFAL2StorageBase( StorageBase ):
 ##################################################################
 
 
-  def __getExtendedAttributes( self, path, protocols = False ):
+  def _getExtendedAttributes( self, path, protocols = False ):
     """ Get all the available extended attributes of path
 
     :param self: self reference
@@ -1857,13 +1817,6 @@ class GFAL2StorageBase( StorageBase ):
 
     # get all the extended attributes from path
     try:
-      self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-      self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-      self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-      if protocols:
-        self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-      else:
-        self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
       attributes = self.gfal2.listxattr( path )
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
