@@ -1,3 +1,11 @@
+[v6r12p13]
+
+*TS
+BUGFIX: TransformationAgent - data member not defined
+
+*WMS
+FIX: InputData(Resolution,ByProtocol) - possibility to define RemoteProtocol
+
 [v6r12p12]
 
 *WMS
