@@ -781,12 +781,12 @@ class FTSAgent( AgentModule ):
 
         sourceRead = route.fromNode.SEs[source]["read"]
         if not sourceRead:
-          log.error( "SourceSE %s is banned for reading right now" % source )
+          log.warn( "SourceSE %s is banned for reading right now" % source )
           continue
 
         targetWrite = route.toNode.SEs[target]["write"]
         if not targetWrite:
-          log.error( "TargetSE %s is banned for writing right now" % target )
+          log.warn( "TargetSE %s is banned for writing right now" % target )
           continue
 
         if route.ActiveJobs > route.toNode.MaxActiveJobs:
