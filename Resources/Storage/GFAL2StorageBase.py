@@ -70,8 +70,7 @@ class GFAL2StorageBase( StorageBase ):
     self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
-    print self.checksumType
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '0' )
     # enum gfal_cksm_type, all in lcg_util
     #   GFAL_CKSM_NONE = 0,
     #   GFAL_CKSM_CRC32,
@@ -81,18 +80,21 @@ class GFAL2StorageBase( StorageBase ):
     # GFAL_CKSM_NULL = 0
     self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
                            "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
-    if self.checksumType:
-      if str( self.checksumType ).upper() in self.checksumTypes:
-        gLogger.debug( "GFAL2StorageBase: will use %s checksum check" % self.checksumType )
-        self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
-      else:
-        gLogger.warn( "GFAL2StorageBase: unknown checksum type %s, checksum check disabled" )
-        # # GFAL_CKSM_NONE
-        self.checksumType = 0
-    else:
-      # # invert and get name
-      self.log.debug( "GFAL2StorageBase: will use %s checksum" % dict( zip( self.checksumTypes.values(),
-                                                                     self.checksumTypes.keys() ) )[self.checksumType] )
+
+    if self.checksumType == '0':
+      self.checksumType = None
+#     if self.checksumType:
+#       if str( self.checksumType ).upper() in self.checksumTypes:
+#         gLogger.debug( "GFAL2StorageBase: will use %s checksum check" % self.checksumType )
+#         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
+#       else:
+#         gLogger.warn( "GFAL2StorageBase: unknown checksum type %s, checksum check disabled" )
+#         # # GFAL_CKSM_NONE
+#         self.checksumType = 0
+#     else:
+#       # # invert and get name
+#       self.log.debug( "GFAL2StorageBase: will use %s checksum" % dict( zip( self.checksumTypes.values(),
+#                                                                      self.checksumTypes.keys() ) )[self.checksumType] )
     self.voName = None
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
@@ -1130,7 +1132,7 @@ class GFAL2StorageBase( StorageBase ):
       # any other error: failed to create directory
       else:
         errStr = "GFAL2StorageBase.__createSingleDirectory: failed to create directory."
-        self.log.error( errStr, {e.message : e.code} )
+        self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
 
