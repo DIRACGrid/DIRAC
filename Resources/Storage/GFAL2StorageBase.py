@@ -52,6 +52,7 @@ class GFAL2StorageBase( StorageBase ):
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
       gfal2.set_verbose( gfal2.verbose_level.trace )
+    # gfal2.set_verbose( gfal2.verbose_level.trace )
     self.isok = True
 
     # # gfal2 API
@@ -70,6 +71,7 @@ class GFAL2StorageBase( StorageBase ):
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
+    print self.checksumType
     # enum gfal_cksm_type, all in lcg_util
     #   GFAL_CKSM_NONE = 0,
     #   GFAL_CKSM_CRC32,
@@ -674,10 +676,14 @@ class GFAL2StorageBase( StorageBase ):
       if res['OK']:
         attributeDict = res['Value']
       else:
-        return res
+        # no extendted attributes could be retrieved. Ignore it
+        attributeDict = {}
       # 'user.status' is the extended attribute we are interested in
       if metadataDict['File']:
-        res = self.__getChecksum( path )
+        if not self.checksumType:
+          res = self.__getChecksum( path )
+        else:
+          res = self.__getChecksum( path, self.checksumType )
         if res['OK']:
           metadataDict['Checksum'] = res['Value']
         if 'user.status' in attributeDict.keys():
@@ -971,7 +977,6 @@ class GFAL2StorageBase( StorageBase ):
     :returns S_OK( checksum ) if checksum could be calculated
              S_ERROR( errMsg ) if something failed
     """
-
     self.log.debug( 'GFAL2StorageBase.__getChecksum: Trying to calculate checksum of file %s' % path )
     res = self.__isSingleFile( path )
 
@@ -981,6 +986,7 @@ class GFAL2StorageBase( StorageBase ):
       return S_ERROR( errStr )
     else:
       try:
+        self.log.debug( "GFAL2StorageBase.__getChecksum: using %s checksum" % checksumType )
         fileChecksum = self.gfal2.checksum( path, checksumType )
         return S_OK( fileChecksum )
 
@@ -1108,6 +1114,7 @@ class GFAL2StorageBase( StorageBase ):
 
     # creating directory with default rights
     try:
+      self.log.debug( "GFAL2StorageBase.__createSingleDirectory: %s" % path )
       status = self.gfal2.mkdir( path, 755 )
       self.log.debug( 'GFAL2StorageBase.__createSingleDirectory: Status return of mkdir: %s' % status )
       if status >= 0:
@@ -1117,13 +1124,13 @@ class GFAL2StorageBase( StorageBase ):
         return S_ERROR( errStr )
     except gfal2.GError, e:
       # error: directory already exists
-      if e.code == errno.EEXIST:
+      if e.code == errno.EEXIST:  # or e.code == errno.EACCES:
         self.log.debug( "GFAL2StorageBase.__createSingleDirectory: Directory already exists" )
         return S_OK()
       # any other error: failed to create directory
       else:
         errStr = "GFAL2StorageBase.__createSingleDirectory: failed to create directory."
-        self.log.error( errStr, e.message )
+        self.log.error( errStr, {e.message : e.code} )
         return S_ERROR( errStr )
 
 
