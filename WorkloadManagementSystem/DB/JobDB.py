@@ -69,8 +69,7 @@ JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecT
                            'ISandboxReadyFlag', 'OSandboxReadyFlag', 'RetrievedFlag', 'AccountedFlag' ]
 
 JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
-                           'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime'
-                          ]
+                           'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime']
 
 #############################################################################
 class JobDB( DB ):
@@ -96,22 +95,6 @@ class JobDB( DB ):
 
     self.log.info( "MaxReschedule:  %s" % self.maxRescheduling )
     self.log.info( "==================================================" )
-
-    if DEBUG:
-      result = self.dumpParameters()
-
-  def dumpParameters( self ):
-    """  Dump the JobDB connection parameters to the stdout
-    """
-
-    print "=================================================="
-    print "User:     ", self.dbUser
-    print "Host:     ", self.dbHost
-    print "Password  ", self.dbPass
-    print "DBName    ", self.dbName
-    print "=================================================="
-
-    return S_OK()
 
   def __getAttributeNames( self ):
     """ get Name of Job Attributes defined in DB
