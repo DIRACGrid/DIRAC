@@ -1,3 +1,8 @@
+[v6r11p30]
+
+*DMS
+CHANGE: FileCatalogCLI - add new -D flag for find to print only directories
+
 [v6r11p29]
 
 *DMS
