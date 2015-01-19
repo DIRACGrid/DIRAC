@@ -378,7 +378,7 @@ class PilotAgentsDB( DB ):
     if not result['OK']:
       return S_ERROR( 'Failed to escape error string' )
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput VALUES (%d,%s,%s)" % ( pilotID, e_output, e_error )
+    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % ( pilotID, e_output, e_error )
     result = self._update( req )
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
     result = self._update( req )
@@ -445,7 +445,7 @@ class PilotAgentsDB( DB ):
                                      gridSite = site )
         if not result['OK']:
           return result
-      req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % ( pilotID, jobID )
+      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % ( pilotID, jobID )
       result = self._update( req )
       return result
     else:
@@ -592,6 +592,7 @@ class PilotAgentsDB( DB ):
         return S_ERROR( 'PilotJobReference ' + str( pilotRef ) + ' not found' )
 
 ##########################################################################################
+  #FIXME: investigate it getPilotSummaryShort can replace this method
   def getPilotSummary( self, startdate = '', enddate = '' ):
     """ Get summary of the pilot jobs status by site
     """
@@ -644,6 +645,48 @@ class PilotAgentsDB( DB ):
 
     return S_OK( summary_dict )
 
+  def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
+    """
+    Spin off the method getPilotSummary. It is doing things in such a way that
+    do not make much sense. This method returns the pilots that were updated in the
+    time window [ startTimeWindow, endTimeWindow ), if they are present.
+    """
+    
+    sqlSelect = 'SELECT DestinationSite,Status,count(Status) FROM PilotAgents'
+    
+    whereSelect = []
+    
+    if startTimeWindow is not None:
+      whereSelect.append( ' LastUpdateTime >= "%s"' % startTimeWindow ) 
+    if endTimeWindow is not None:
+      whereSelect.append( ' LastUpdateTime < "%s"' % endTimeWindow )
+    if ce:
+      whereSelect.append( ' DestinationSite = "%s"' % ce )  
+    
+    if whereSelect:
+      sqlSelect += ' WHERE'
+      sqlSelect += ' AND'.join( whereSelect )
+        
+    sqlSelect += ' GROUP BY DestinationSite,Status'
+    
+    resSelect = self._query( sqlSelect )
+    if not resSelect[ 'OK' ]:
+      return resSelect
+
+    result = { 'Total' : collections.defaultdict( int ) }          
+
+    for row in resSelect[ 'Value' ]:
+      
+      ceName, statusName, statusCount = row
+            
+      if not ceName in result:
+        result[ ceName ] = {}
+      result[ ceName ][ statusName ] = int( statusCount )
+      
+      result[ 'Total' ][ statusName ] += int( statusCount )  
+            
+    return S_OK( result )    
+ 
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the pilot jobs status by CE/site in a standard structure

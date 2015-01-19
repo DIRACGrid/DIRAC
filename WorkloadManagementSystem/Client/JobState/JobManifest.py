@@ -158,14 +158,8 @@ class JobManifest( object ):
     for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
-    # Check CPUTime
-    
-    # Hack, sorry Adri, for v6r7 branch only
-    result = self.__checkNumericalVar( "MaxCPUTime", 86400, 0, 1500000 )
-    if not result[ 'OK' ]:
-      return result
-    cpuTime = result['Value']
-    result = self.__checkNumericalVar( "CPUTime", cpuTime, 0, 500000 )
+    #Check CPUTime
+    result = self.__checkNumericalVar( "CPUTime", 86400, 100, 500000 )
     if not result[ 'OK' ]:
       return result
     result = self.__checkNumericalVar( "Priority", 1, 0, 10 )

@@ -1,4 +1,5 @@
 ########################################################################
+# $HeadURL$
 # File :    TaskQueueAgent.py
 # Author :  Stuart Paterson
 ########################################################################
@@ -14,7 +15,8 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 
 
 class TaskQueueAgent( OptimizerModule ):
-  """ The specific Optimizer must provide the following methods:
+  """
+      The specific Optimizer must provide the following methods:
       - initializeOptimizer() before each execution cycle
       - checkJob() - the main method called for each job
   """
