@@ -307,6 +307,10 @@ class StorageElementItem( object ):
     self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for VO %s" % ( self.name,
                                                                                                             self.vo ) )
 
+    if not self.valid:
+      self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
+      return S_ERROR( self.errorReason )
+    
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
       self.log.debug( "StorageElementisValid: StorageElement is not allowed for VO %s" % self.vo )
@@ -315,10 +319,7 @@ class StorageElementItem( object ):
                                                                                                          operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
-
-    if not self.valid:
-      self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
-      return S_ERROR( self.errorReason )
+    
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
     # Determine whether the StorageElement is valid for checking, reading, writing
