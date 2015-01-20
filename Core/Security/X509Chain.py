@@ -27,6 +27,7 @@ class X509Chain:
     self.__isProxy = False
     self.__firstProxyStep = 0
     self.__isLimitedProxy = True
+    self.__isRFC = False
     self.__hash = False
     if certList:
       self.__loadedChain = True
@@ -341,6 +342,7 @@ class X509Chain:
     self.__hash = False
     self.__firstProxyStep = len( self.__certList ) - 2 # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
+    self.__isRFC = None
     self.__isLimitedProxy = False
     prevDNMatch = 2
     #If less than 2 steps in the chain is no proxy
@@ -385,14 +387,29 @@ class X509Chain:
     proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries = proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
-    if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limited proxy' ):
+    limited = False
+    if lastEntry[0] != 'CN':
       return 0
+    if lastEntry[1] not in ( 'proxy', 'limited proxy' ):
+      extList = self.__certList[ certStep ].get_extensions()
+      for ext in extList:
+        if ext.get_sn() == "proxyCertInfo":
+          contraint = [ line.split(":")[1].strip() for line in ext.get_value().split("\n") if line.split(":")[0] == "Path Length Constraint" ]
+          if len( contraint ) == 0:
+            return 0
+          if self.__isRFC == None:
+            self.__isRFC = True
+          if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
+            limited = True
+    else:
+      if self.__isRFC == None:
+         self.__isRFC = False
+      if lastEntry[1] == "limited proxy":
+        limited = True
     proxySubject.remove_entry( psEntries - 1 )
     if not issuerSubject.one_line() == proxySubject.one_line():
       return 0
-    if lastEntry[1] == "limited proxy":
-      return 2
-    return 1
+    return 1 if not limited else 2
 
   def __checkIssuer( self, certStep, issuerStep ):
     """
@@ -556,6 +573,9 @@ class X509Chain:
       return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str( e ) ) )
     return S_OK( filename )
 
+  def isRFC( self ):
+    return self.__isRFC
+
   def dumpChainToString( self ):
     """
     Dump only cert chain to string
@@ -601,6 +621,7 @@ class X509Chain:
                  'validGroup' : False }
     if self.__isProxy:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
+      credDict[ 'rfc' ] = self.__isRFC
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
       if not retVal[ 'OK' ]:
         return S_OK( credDict )
