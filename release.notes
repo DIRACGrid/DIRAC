@@ -224,6 +224,11 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p30]
+
+*DMS
+CHANGE: FileCatalogCLI - add new -D flag for find to print only directories
+
 [v6r11p29]
 
 *DMS
