@@ -15,7 +15,7 @@ from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import singleValueDefFields, multiValueDefFields
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import singleValueDefFields, multiValueMatchFields
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -159,7 +159,7 @@ class Matcher( object ):
           else:
             resourceDict[name] = classAdAgent.getAttributeString( name )
 
-      for name in multiValueDefFields:
+      for name in multiValueMatchFields:
         if classAdAgent.lookupAttribute( name ):
           if name == 'SubmitPool':
             resourceDict[name] = classAdAgent.getListFromExpression( name )
@@ -179,7 +179,7 @@ class Matcher( object ):
         if resourceDescription.has_key( name ):
           resourceDict[name] = resourceDescription[name]
 
-      for name in multiValueDefFields:
+      for name in multiValueMatchFields:
         if resourceDescription.has_key( name ):
           resourceDict[name] = resourceDescription[name]
 
