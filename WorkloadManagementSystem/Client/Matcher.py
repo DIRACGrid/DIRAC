@@ -69,8 +69,7 @@ def processResourceDescription( resourceDescription ):
     if resourceDescription.has_key( 'JobID' ):
       resourceDict['JobID'] = resourceDescription['JobID']
 
-    for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
-               'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark' ):
+    for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization', 'PilotReference', 'PilotBenchmark' ):
       if k in resourceDescription:
         resourceDict[ k ] = resourceDescription[ k ]
 
@@ -107,21 +106,6 @@ class Matcher( object ):
     except RuntimeError, rte:
       self.log.error( "Issue checking pilot version", rte )
       return S_ERROR( "Issue checking pilot version" )
-
-    # Update pilot information
-    pilotInfoReported = resourceDict.get( 'PilotInfoReportedFlag', False )
-    pilotReference = resourceDict.get( 'PilotReference', '' )
-    if pilotReference and not pilotInfoReported:
-      gridCE = resourceDict.get( 'GridCE', 'Unknown' )
-      site = resourceDict.get( 'Site', 'Unknown' )
-      benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-      gLogger.verbose( 'Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % ( pilotReference, gridCE, site, benchmark ) )
-      result = self.pilotAgentsDB.setPilotStatus( pilotReference, status = 'Running', gridSite = site,
-                                                  destination = gridCE, benchmark = benchmark )
-      if result['OK']:
-        pilotInfoReported = True
-      else:
-        self.log.error( "Problem calling setPilotStatus", "pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
 
     # Check the site mask
     if not 'Site' in resourceDict:
@@ -207,16 +191,37 @@ class Matcher( object ):
     if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
       self.limiter.updateDelayCounters( siteName, jobID )
 
-    # Report pilot-job association
-    if pilotReference:
-      result = self.pilotAgentsDB.setCurrentJobID( pilotReference, jobID )
-      result = self.pilotAgentsDB.setJobForPilot( jobID, pilotReference, updateStatus = False )
+    self._updatePilotInfo( resourceDict, jobID )
 
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
-    resultDict['PilotInfoReportedFlag'] = pilotInfoReported
+
     return S_OK( resultDict )
 
+
+  def _updatePilotInfo( self, resourceDict, jobID ):
+    """ Update pilot information - do not fail if we don't manage to do it
+    """
+    pilotReference = resourceDict.get( 'PilotReference', '' )
+    if pilotReference:
+      gridCE = resourceDict.get( 'GridCE', 'Unknown' )
+      site = resourceDict.get( 'Site', 'Unknown' )
+      benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
+      gLogger.verbose( 'Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % ( pilotReference, gridCE, site, benchmark ) )
+
+      result = self.pilotAgentsDB.setPilotStatus( pilotReference, status = 'Running', gridSite = site,
+                                                  destination = gridCE, benchmark = benchmark )
+      if not result['OK']:
+        self.log.error( "Problem updating pilot information",
+                        "setPilotStatus pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
+      result = self.pilotAgentsDB.setCurrentJobID( pilotReference, jobID )
+      if not result['OK']:
+        self.log.error( "Problem updating pilot information",
+                        "setCurrentJobID pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
+      result = self.pilotAgentsDB.setJobForPilot( jobID, pilotReference, updateStatus = False )
+      if not result['OK']:
+        self.log.error( "Problem updating pilot information",
+                        "setJobForPilot pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
 
   def _checkCredentials( self, resourceDict ):
     credDict = self.getRemoteCredentials()
