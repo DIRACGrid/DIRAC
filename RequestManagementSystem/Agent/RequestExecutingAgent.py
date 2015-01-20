@@ -283,11 +283,12 @@ class RequestExecutingAgent( AgentModule ):
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )
-        
+
         looping = 0
         while True:
           if not self.processPool().getFreeSlots():
-            self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
+            if not looping:
+              self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
             time.sleep( self.__poolSleep )
             looping += 1
           else:
