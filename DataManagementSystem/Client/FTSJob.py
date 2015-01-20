@@ -3,7 +3,7 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 13:41:20
 ########################################################################
-""" 
+"""
 :mod: FTSJob
 
 .. module: FTSJob
@@ -595,19 +595,15 @@ class FTSJob( Record ):
       register = self._fc.addReplica( toRegisterDict )
       self._regTime += time.time() - startTime
       if not register["OK"]:
-        # FIXME: shouldn't be a print!
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
-          print ftsFile.Error
         return register
       register = register["Value"]
       self._regSuccess += len( register.get( 'Successful', {} ) )
       failedFiles = register.get( "Failed", {} )
-      # FIXME
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
-          print ftsFile.Error
 
     return S_OK()
 
