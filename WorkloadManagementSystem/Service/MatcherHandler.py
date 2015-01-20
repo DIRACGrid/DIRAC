@@ -79,7 +79,7 @@ class MatcherHandler( RequestHandler ):
       return S_ERROR( "Error requesting job" )
     gMonitor.addMark( "matchesDone" )
     gMonitor.addMark( "matchesOK" )
-    return result
+    return S_OK( result )
 
 ##############################################################################
   types_getActiveTaskQueues = []

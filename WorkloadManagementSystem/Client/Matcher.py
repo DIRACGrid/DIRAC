@@ -112,7 +112,7 @@ class Matcher( object ):
     if not resAtt['Value']:
       raise RuntimeError( 'No attributes returned for job' )
 
-    if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
+    if self.opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
       self.limiter.updateDelayCounters( resourceDict['Site'], jobID )
 
     self._updatePilotInfo( resourceDict, jobID )
@@ -255,15 +255,15 @@ class Matcher( object ):
                                                   destination = gridCE, benchmark = benchmark )
       if not result['OK']:
         self.log.error( "Problem updating pilot information",
-                        "setPilotStatus pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
+                        "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
       result = self.pilotAgentsDB.setCurrentJobID( pilotReference, jobID )
       if not result['OK']:
         self.log.error( "Problem updating pilot information",
-                        "setCurrentJobID pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
+                        ";setCurrentJobID. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
       result = self.pilotAgentsDB.setJobForPilot( jobID, pilotReference, updateStatus = False )
       if not result['OK']:
         self.log.error( "Problem updating pilot information",
-                        "setJobForPilot pilotReference %s: %s" % ( pilotReference, result['Message'] ) )
+                        "; setJobForPilot. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
 
   def _checkCredentials( self, resourceDict, credDict ):
     """ Check if we can get a job given the passed credentials
