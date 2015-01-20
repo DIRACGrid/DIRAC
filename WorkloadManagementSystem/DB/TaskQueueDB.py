@@ -21,7 +21,7 @@ singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
 multiValueDefFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
                         'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags' )
 multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'Platform',
-                                 'PilotType', 'SubmitPool', 'JobType', 'Tag' )
+                          'PilotType', 'SubmitPool', 'JobType', 'Tag' )
 tagMatchFields = ( 'Tag', )
 bannedJobMatchFields = ( 'Site', )
 strictRequireMatchFields = ( 'SubmitPool', 'Platform', 'PilotType', 'Tag' )
@@ -515,7 +515,10 @@ class TaskQueueDB( DB ):
     for _ in range( self.__maxMatchRetry ):
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
-        retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
+        retVal = self.matchAndGetTaskQueue( tqMatchDict,
+                                            numQueuesToGet = 0,
+                                            skipMatchDictDef = True,
+                                            connObj = connObj )
         preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] )
       else:
         retVal = self.matchAndGetTaskQueue( tqMatchDict,
@@ -561,9 +564,8 @@ class TaskQueueDB( DB ):
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
   def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False,
-                                  negativeCond = {}, connObj = False ):
-    """
-    Get a queue that matches the requirements
+                            negativeCond = {}, connObj = False ):
+    """ Get a queue that matches the requirements
     """
     #Make a copy to avoid modification of original if escaping needs to be done
     tqMatchDict = dict( tqMatchDict )
