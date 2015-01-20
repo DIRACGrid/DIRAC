@@ -72,7 +72,6 @@ class JobAgent( AgentModule ):
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
-    self.pilotInfoReportedFlag = False
     return S_OK()
 
   #############################################################################
@@ -128,7 +127,6 @@ class JobAgent( AgentModule ):
     if not 'PilotReference' in ceDict:
       ceDict['PilotReference'] = str( self.pilotReference )
     ceDict['PilotBenchmark'] = self.cpuFactor
-    ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
 
     # Add possible job requirements
     result = gConfig.getOptionsDict( '/AgentJobRequirements' )
@@ -173,9 +171,6 @@ class JobAgent( AgentModule ):
 
     matcherInfo = jobRequest['Value']
     jobID = matcherInfo['JobID']
-    if not self.pilotInfoReportedFlag:
-      # Check the flag after the first access to the Matcher
-      self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if not matcherInfo.has_key( param ):
