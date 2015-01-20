@@ -21,6 +21,38 @@ class DirectoryTreeBase:
     self.lock = threading.Lock()
     self.treeTable = ''
 
+############################################################################
+#
+# THE FOLLOWING METHODS NEED TO ME IMPLEMENTED IN THE DERIVED CLASS
+#
+############################################################################
+
+  def findDir( self, path, connection = False ):
+    """  Find directory ID for the given path
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def makeDir( self, path ):
+
+    return S_ERROR( "To be implemented on derived class" )
+
+  def removeDir( self, path ):
+
+    return S_ERROR( "To be implemented on derived class" )
+
+  def getChildren( self, path, connection = False ):
+    return S_ERROR( "To be implemented on derived class" )
+
+  def getDirectoryPath( self, dirID ):
+    """ Get directory name by directory ID
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def countSubdirectories( self, dirId, includeParent = True ):
+    return S_ERROR( "To be implemented on derived class" )
+##########################################################################
+
+
   def _getConnection( self, connection ):
     if connection:
       return connection
@@ -85,6 +117,7 @@ class DirectoryTreeBase:
        is the dictionary containing all the parameters of the newly created
        directory
     """
+
     if not path or path[0] != '/':
       return S_ERROR( 'Not an absolute path' )
 
@@ -266,7 +299,6 @@ class DirectoryTreeBase:
 
     if not resQuery['Value']:
       return S_ERROR( 'Directory not found' )
-
     dirDict = {}
     dirDict['DirID'] = int( resQuery['Value'][0][0] )
     uid = int( resQuery['Value'][0][1] )
@@ -291,7 +323,7 @@ class DirectoryTreeBase:
     return S_OK( dirDict )
 
 #####################################################################
-  def __setDirectoryParameter( self, path, pname, pvalue ):
+  def _setDirectoryParameter( self, path, pname, pvalue ):
     """ Set a numerical directory parameter
     """
     result = self.__getDirID( path )
@@ -306,13 +338,13 @@ class DirectoryTreeBase:
   def _setDirectoryUid( self, path, uid ):
     """ Set the directory owner
     """
-    return self.__setDirectoryParameter( path, 'UID', uid )
+    return self._setDirectoryParameter( path, 'UID', uid )
 
 #####################################################################
   def _setDirectoryGid( self, path, gid ):
     """ Set the directory group
     """
-    return self.__setDirectoryParameter( path, 'GID', gid )
+    return self._setDirectoryParameter( path, 'GID', gid )
 
 #####################################################################
   def setDirectoryOwner( self, path, owner ):
@@ -404,7 +436,7 @@ class DirectoryTreeBase:
   def setDirectoryMode( self, path, mode ):
     """ set the directory mask
     """
-    return self.__setDirectoryParameter( path, 'Mode', mode )
+    return self._setDirectoryParameter( path, 'Mode', mode )
 
 #####################################################################
   def changeDirectoryMode( self, paths, s_uid = 0, s_gid = 0 ):
@@ -439,7 +471,7 @@ class DirectoryTreeBase:
   def setDirectoryStatus( self, path, status ):
     """ set the directory mask
     """
-    return self.__setDirectoryParameter( path, 'Status', status )
+    return self._setDirectoryParameter( path, 'Status', status )
 
   def getPathPermissions( self, lfns, credDict ):
     """ Get permissions for the given user/group to manipulate the given lfns 
@@ -493,9 +525,18 @@ class DirectoryTreeBase:
     if self.db.globalReadAccess:
       resultDict['Read'] = True
     else:
-      resultDict['Read'] = ( owner and mode & stat.S_IRUSR > 0 ) or ( group and mode & stat.S_IRGRP > 0 ) or mode & stat.S_IROTH > 0
-    resultDict['Write'] = ( owner and mode & stat.S_IWUSR > 0 ) or ( group and mode & stat.S_IWGRP > 0 ) or mode & stat.S_IWOTH > 0
-    resultDict['Execute'] = ( owner and mode & stat.S_IXUSR > 0 ) or ( group and mode & stat.S_IXGRP > 0 ) or mode & stat.S_IXOTH > 0
+      resultDict['Read'] = ( owner and mode & stat.S_IRUSR > 0 )\
+                           or ( group and mode & stat.S_IRGRP > 0 )\
+                           or mode & stat.S_IROTH > 0
+                           
+    resultDict['Write'] = ( owner and mode & stat.S_IWUSR > 0 )\
+                          or ( group and mode & stat.S_IWGRP > 0 )\
+                          or mode & stat.S_IWOTH > 0
+
+    resultDict['Execute'] = ( owner and mode & stat.S_IXUSR > 0 )\
+                            or ( group and mode & stat.S_IXGRP > 0 )\
+                            or mode & stat.S_IXOTH > 0
+
     return S_OK( resultDict )
 
   def getFileIDsInDirectory( self, dirID, credDict, startItem = 1, maxItems = 25 ):
@@ -587,7 +628,7 @@ class DirectoryTreeBase:
     result['LFNIDList'] = lfnIDList
     return result
 
-  def __getDirectoryContents( self, path, details = False ):
+  def _getDirectoryContents( self, path, details = False ):
     """ Get contents of a given directory
     """
     result = self.findDir( path )
@@ -635,7 +676,7 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path in paths:
-      result = self.__getDirectoryContents( path, details = verbose )
+      result = self._getDirectoryContents( path, details = verbose )
       if not result['OK']:
         failed[path] = result['Message']
       else:
@@ -690,6 +731,7 @@ class DirectoryTreeBase:
       resultLogical = self._getDirectoryLogicalSize( lfns, connection )
     else:
       resultLogical = self._getDirectoryLogicalSizeFromUsage( lfns, connection )
+
     if not resultLogical['OK']:
       connection.close()
       return resultLogical
@@ -715,6 +757,7 @@ class DirectoryTreeBase:
         resultDict['Successful'][lfn]['PhysicalSize'] = resultPhysical['Value']['Successful'][lfn]
     connection.close()
     resultDict['QueryTime'] = time.time() - start
+
     return S_OK( resultDict )
 
   def _getDirectoryLogicalSizeFromUsage( self, lfns, connection ):
@@ -732,14 +775,7 @@ class DirectoryTreeBase:
         failed[path] = "Directory not found"
         continue
       dirID = result['Value']
-      result = self.getSubdirectoriesByID( dirID, requestString = True, includeParent = True )
-      if not result['OK']:
-        failed[path] = result['Message']
-        continue
-      else:
-        dirString = result['Value']
-        req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%d" % dirID
-        reqDir = dirString.replace( 'SELECT DirID FROM', 'SELECT count(*) FROM' )
+      req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%d" % dirID
 
       result = self.db._query( req, connection )
       if not result['OK']:
@@ -749,9 +785,9 @@ class DirectoryTreeBase:
       elif result['Value'][0][0]:
         successful[path] = {"LogicalSize":int( result['Value'][0][0] ),
                             "LogicalFiles":int( result['Value'][0][1] )}
-        result = self.db._query( reqDir, connection )
-        if result['OK'] and result['Value']:
-          successful[path]['LogicalDirectories'] = result['Value'][0][0] - 1
+        result = self.countSubdirectories( dirID, includeParent = False )
+        if result['OK']:
+          successful[path]['LogicalDirectories'] = result['Value']
         else:
           successful[path]['LogicalDirectories'] = -1
 
