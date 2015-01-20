@@ -1,3 +1,13 @@
+[v6r12p14]
+
+*TS
+FIX: TaskManagerAgentBase: avoid race conditions when submitting to WMS
+
+*DMS
+NEW: FileCatalog - added new components ( directory tree, file manager ) 
+     making use of foreign keys and stored procedures
+FIX: DataManager returns properly the FileCatalog errors     
+
 [v6r12p13]
 
 *TS
