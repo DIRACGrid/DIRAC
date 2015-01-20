@@ -80,8 +80,8 @@ ALL_MANAGERS_NO_CS = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
 DEFAULT_MANAGER = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
                     "SEManager" : ["SEManagerDB"],
                     "SecurityManager" : ["NoSecurityManager"],
-                    "DirectoryManager" : ["DirectoryLevelTree"],
-                    "FileManager" : ["FileManager"],
+                    "DirectoryManager" : ["DirectoryClosure"],
+                    "FileManager" : ["FileManagerPs"],
                     }
 
 MANAGER_TO_TEST = DEFAULT_MANAGER
@@ -173,7 +173,6 @@ class FileCase( FileCatalogDBTestCase ):
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
 
 
-
     # Re-adding the same file
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
@@ -182,7 +181,6 @@ class FileCase( FileCatalogDBTestCase ):
                                          'Checksum':'0' } }, credDict )
     self.assert_( result["OK"], "addFile failed when adding existing file %s" % result )
     self.assert_( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn %s" % result )
-
 
     ##################################################################################
     # Setting existing status of existing file
@@ -391,6 +389,14 @@ class DirectoryCase( FileCatalogDBTestCase ):
     self.assert_( testDir in result["Value"]["Successful"], "getDirectorySize : %s should be in Successful %s" % ( testDir, result ) )
     self.assertEqual( result["Value"]["Successful"][testDir], {'LogicalFiles': 1, 'LogicalDirectories': 0, 'LogicalSize': 123}, "getDirectorySize got incorrect directory size %s" % result )
     self.assert_( nonExistingDir in result["Value"]["Failed"], "getDirectorySize : %s should be in Failed %s" % ( nonExistingDir, result ) )
+
+
+    result = self.db.getDirectorySize( [testDir, nonExistingDir], False, True, credDict )
+    self.assert_( result["OK"], "getDirectorySize (calc) failed: %s" % result )
+    self.assert_( testDir in result["Value"]["Successful"], "getDirectorySize (calc): %s should be in Successful %s" % ( testDir, result ) )
+    self.assertEqual( result["Value"]["Successful"][testDir], {'LogicalFiles': 1, 'LogicalDirectories': 0, 'LogicalSize': 123}, "getDirectorySize got incorrect directory size %s" % result )
+    self.assert_( nonExistingDir in result["Value"]["Failed"], "getDirectorySize (calc) : %s should be in Failed %s" % ( nonExistingDir, result ) )
+
 
 
     result = self.db.listDirectory( [parentDir, testDir, nonExistingDir], credDict )

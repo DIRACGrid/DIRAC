@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 import os, stat
 from types import ListType, StringTypes
 
-class FileManagerBase:
+class FileManagerBase( object ):
 
   def __init__( self, database = None ):
     self.db = database
@@ -61,14 +61,16 @@ class FileManagerBase:
     req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_FileInfo)"
     res = self.db._query( req, connection )
     if not res['OK']:
-      return res
-    resultDict['Files w/o FileInfo'] = res['Value'][0][0]
+      resultDict['Files w/o FileInfo'] = 0
+    else:
+      resultDict['Files w/o FileInfo'] = res['Value'][0][0]
 
     req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN ( SELECT FileID FROM FC_Files)"
     res = self.db._query( req, connection )
     if not res['OK']:
-      return res
-    resultDict['FileInfo w/o Files'] = res['Value'][0][0]
+      resultDict['FileInfo w/o Files'] = 0
+    else:
+      resultDict['FileInfo w/o Files'] = res['Value'][0][0]
 
     return S_OK( resultDict )
 
@@ -105,7 +107,7 @@ class FileManagerBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
-  def _getFileReplicas( self, fileIDs, fields = ['PFN'], allStatus = False, connection = False ):
+  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], allStatus = False, connection = False ):
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
@@ -137,6 +139,30 @@ class FileManagerBase:
 
   def _getDirectoryFiles( self, dirID, fileNames, metadata, allStatus = False, connection = False ):
     """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  
+  def _findFileIDs( self, lfns, connection=False ):
+    """ To be implemented on derived class
+    Should return following the successful/failed convention
+    Successful is a dictionary with keys the lfn, and values the FileID"""
+    
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _getDirectoryReplicas( self, dirID, allStatus = False, connection = False ):
+    """ To be implemented on derived class
+    Should return with only one value, being a list of all the replicas (FileName,FileID,SEID,PFN)
+     """
+
+    return S_ERROR( "To be implemented on derived class" )
+
+  def countFilesInDir( self, dirId ):
+    """ Count how many files there is in a given Directory
+
+        :param dirID : directory id
+
+        :returns S_OK(value) or S_ERROR
     """
     return S_ERROR( "To be implemented on derived class" )
 
@@ -190,7 +216,12 @@ class FileManagerBase:
                                     
 
   def addFile( self, lfns, credDict, connection = False ):
-    """ Add files to the catalog """
+    """ Add files to the catalog
+        :param lfns : dict { lfn : info}. 'info' is a dict containing PFN, SE, Size and Checksum
+                      the SE parameter can be a list if we have several replicas to register
+
+
+     """
     connection = self._getConnection( connection )
     successful = {}
     failed = {}
@@ -257,10 +288,16 @@ class FileManagerBase:
             failed[lfn] = res['Message']
             masterLfns.pop( lfn )
           continue
-
         for fileName in fileNames:
+          if not fileName:
+            failed[directory] = "Is no a valid file"
+            masterLfns.pop( directory )
+            continue
+
           lfn = "%s/%s" % ( directory, fileName )
           lfn = lfn.replace( '//', '/' )
+
+          # This condition should never be true, we would not be here otherwise...
           if not res['OK']:
             failed[lfn] = "Failed to create directory for file"
             masterLfns.pop( lfn )
@@ -606,6 +643,8 @@ class FileManagerBase:
     successful = {}
     failed = {}
     res = self._findFiles( lfns, ['DirID', 'FileID', 'Size'], connection = connection )
+    if not res['OK']:
+      return res
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = True
@@ -616,14 +655,36 @@ class FileManagerBase:
     for lfn, lfnDict in lfns.items():
       fileIDLfns[lfnDict['FileID']] = lfn
 
+    res = self._computeStorageUsageOnRemoveFile( lfns, connection = connection )
+    if not res['OK']:
+      return res
+    directorySESizeDict = res['Value']
+
+    # Now do removal
+    res = self._deleteFiles( fileIDLfns.keys(), connection = connection )
+    if not res['OK']:
+      for lfn in fileIDLfns.values():
+        failed[lfn] = res['Message']
+    else:
+      # Update the directory usage
+      self._updateDirectoryUsage( directorySESizeDict, '-', connection = connection )
+      for lfn in fileIDLfns.values():
+        successful[lfn] = True
+    return S_OK( {"Successful":successful, "Failed":failed} )
+
+
+  def _computeStorageUsageOnRemoveFile( self, lfns, connection = False ):
     # Resolve the replicas to calculate reduction in storage usage
+    fileIDLfns = {}
+    for lfn, lfnDict in lfns.items():
+      fileIDLfns[lfnDict['FileID']] = lfn
     res = self._getFileReplicas( fileIDLfns.keys(), connection = connection )
     if not res['OK']:
       return res
     directorySESizeDict = {}
     for fileID, seDict in res['Value'].items():
       dirID = lfns[fileIDLfns[fileID]]['DirID']
-      size = lfns[lfn]['Size']
+      size = lfns[fileIDLfns[fileID]]['Size']
       directorySESizeDict.setdefault( dirID, {} )
       directorySESizeDict[dirID].setdefault( 0, {'Files':0,'Size':0} )
       directorySESizeDict[dirID][0]['Size'] += size
@@ -638,17 +699,7 @@ class FileManagerBase:
         directorySESizeDict[dirID][seID]['Size'] += size
         directorySESizeDict[dirID][seID]['Files'] += 1
 
-    # Now do removal  
-    res = self._deleteFiles( fileIDLfns.keys(), connection = connection )
-    if not res['OK']:
-      for lfn in fileIDLfns.values():
-        failed[lfn] = res['Message']
-    else:
-      # Update the directory usage
-      self._updateDirectoryUsage( directorySESizeDict, '-', connection = connection )
-      for lfn in fileIDLfns.values():
-        successful[lfn] = True
-    return S_OK( {"Successful":successful, "Failed":failed} )
+    return S_OK( directorySESizeDict )
 
   def _setFileOwner( self, fileID, owner, connection = False ):
     """ Set the file owner """
@@ -1076,7 +1127,7 @@ class FileManagerBase:
       files[fileName] = {}
       files[fileName]['MetaData'] = fileDict
       fileIDNames[fileDict['FileID']] = fileName
-      
+
     if verbose:
       result = self._getFileReplicas( fileIDNames.keys(), connection = connection )
       if not result['OK']:
@@ -1088,7 +1139,12 @@ class FileManagerBase:
     return S_OK( files )
 
   def getDirectoryReplicas( self, dirID, path, allStatus = False, connection = False ):
-    
+    """ Get the replicas for all the Files in the given Directory
+        :param DirID : ID of the directory
+        :param path : useless
+        :param allStatus : whether all replicas and file status are considered
+                          If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
+    """
     connection = self._getConnection( connection )
     result = self._getDirectoryReplicas( dirID, allStatus, connection)
     if not result['OK']:
@@ -1110,6 +1166,10 @@ class FileManagerBase:
     return S_OK( resultDict )
 
   def _getFileDirectories( self, lfns ):
+    """ For a list of lfn, returns a dictionary with key the directory, and value
+        the files in that directory. It does not make any query, just splits the names
+        :param lfns list of lfns
+    """
     dirDict = {}
     for lfn in lfns:
       lfnDir = os.path.dirname( lfn )
@@ -1181,7 +1241,11 @@ class FileManagerBase:
     return S_OK( storageElement )
 
   def setFileGroup( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the group for the supplied files """
+    """ Get set the group for the supplied files
+        :param lfns : dictionary < lfn : group >
+        :param uid : useless
+        :param gid : useless
+     """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'GID'], connection = connection )
     if not res['OK']:
@@ -1208,7 +1272,11 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setFileOwner( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the group for the supplied files """
+    """ Get set the group for the supplied files
+        :param lfns : dictionary < lfn : group >
+        :param uid : useless
+        :param gid : useless
+     """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
     if not res['OK']:

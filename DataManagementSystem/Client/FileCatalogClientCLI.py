@@ -2035,7 +2035,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find [-q] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
+        usage: find [-q] [-D] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
    
     argss = args.split()
@@ -2046,6 +2046,11 @@ File Catalog Client $Revision: 1.17 $Date:
     verbose = True
     if argss[0] == "-q":
       verbose  = False
+      del argss[0]
+
+    dirsOnly = False
+    if argss[0] == "-D":
+      dirsOnly = True
       del argss[0]
 
     path = argss[0]
@@ -2065,9 +2070,18 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
+
     if result['Value']:
-      for dir_ in result['Value']:
+
+      listToPrint = None
+      if dirsOnly:
+        listToPrint = set( "/".join(fullpath.split("/")[:-1]) for fullpath in result['Value'] )
+      else:
+        listToPrint = result['Value']
+
+      for dir_ in listToPrint:
         print dir_
+
     else:
       if verbose:
         print "No matching data found"      

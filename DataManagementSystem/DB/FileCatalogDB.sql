@@ -1,4 +1,4 @@
--- $HeaderURL: $
+-- $HeaderURL $
 -- ------------------------------------------------------------------------------
 -- DROP DATABASE IF EXISTS FileCatalogDB;
 -- ------------------------------------------------------------------------------
@@ -15,7 +15,7 @@ FLUSH PRIVILEGES;
 
 USE FileCatalogDB;
 
-drop table if exists FC_Files;
+
 CREATE TABLE FC_Files(
     FileID INT AUTO_INCREMENT PRIMARY KEY,
     DirID INT NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE FC_Files(
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileInfo;
+
 CREATE TABLE FC_FileInfo (
     FileID INTEGER NOT NULL PRIMARY KEY,
     INDEX(FileID),
@@ -57,7 +57,7 @@ CREATE TABLE FC_FileInfo (
 -- ALTER TABLE FC_Files ADD COLUMN Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775 AFTER ModificationDate;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS FC_Statuses;
+
 CREATE TABLE FC_Statuses (
     StatusID INT AUTO_INCREMENT PRIMARY KEY,
     Status VARCHAR(32),
@@ -66,7 +66,7 @@ CREATE TABLE FC_Statuses (
 ) ENGINE = INNODB;
 
 -- -----------------------------------------------------------------------------
-drop table if exists FC_Replicas;
+
 CREATE TABLE FC_Replicas (
     RepID INT AUTO_INCREMENT PRIMARY KEY,
     FileID INT NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE FC_Replicas (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_ReplicaInfo;
+
 CREATE TABLE FC_ReplicaInfo (
     RepID INTEGER NOT NULL AUTO_INCREMENT,
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
@@ -97,7 +97,7 @@ CREATE TABLE FC_ReplicaInfo (
 
 -- ------------------------------------------------------------------------------
 
-drop table if exists FC_Groups;
+
 CREATE TABLE FC_Groups (
     GID INTEGER NOT NULL AUTO_INCREMENT,
     GroupName VARCHAR(127) NOT NULL,
@@ -106,7 +106,7 @@ CREATE TABLE FC_Groups (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_Users;
+
 CREATE TABLE FC_Users (
     UID INTEGER NOT NULL AUTO_INCREMENT,
     UserName VARCHAR(127) NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE FC_Users (
 
 -- ------------------------------------------------------------------------------
 
-drop table if exists FC_StorageElements;
+
 CREATE TABLE FC_StorageElements (
     SEID INTEGER AUTO_INCREMENT PRIMARY KEY,
     SEName VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE FC_StorageElements (
 
 -- -----------------------------------------------------------------------------
 
-drop table if exists FC_DirectoryInfo;
+
 CREATE TABLE FC_DirectoryInfo (
     DirID INTEGER NOT NULL,
     UID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -139,7 +139,7 @@ CREATE TABLE FC_DirectoryInfo (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
--- DROP TABLE IF EXISTS DirectoryInfo;
+-- 
 -- CREATE TABLE DirectoryInfo(
 --   DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
 --   Parent INTEGER NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE FC_DirectoryInfo (
 -- );
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_DirMeta;
+
 CREATE TABLE FC_DirMeta (
     DirID INTEGER NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
@@ -165,7 +165,7 @@ CREATE TABLE FC_DirMeta (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileMeta;
+
 CREATE TABLE FC_FileMeta (
     FileID INTEGER NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
@@ -174,7 +174,7 @@ CREATE TABLE FC_FileMeta (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_DirectoryTree;
+
 CREATE TABLE FC_DirectoryTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
  DirName VARCHAR(1024) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -184,7 +184,7 @@ CREATE TABLE FC_DirectoryTree (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_DirectoryTreeM;
+
 CREATE TABLE FC_DirectoryTreeM (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
  DirName VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE FC_DirectoryTreeM (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_DirectoryLevelTree;
+
 CREATE TABLE FC_DirectoryLevelTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
  DirName VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -224,7 +224,7 @@ CREATE TABLE FC_DirectoryLevelTree (
 
 -- ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS FC_DirectoryUsage;
+
 CREATE TABLE FC_DirectoryUsage(
    DirID INTEGER NOT NULL,
    INDEX(DirID),
@@ -237,7 +237,7 @@ CREATE TABLE FC_DirectoryUsage(
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaFields;
+
 CREATE TABLE FC_MetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -245,7 +245,7 @@ CREATE TABLE FC_MetaFields (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileMetaFields;
+
 CREATE TABLE FC_FileMetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
@@ -253,7 +253,7 @@ CREATE TABLE FC_FileMetaFields (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_MetaSetNames;
+
 CREATE TABLE FC_MetaSetNames (
   MetaSetID INT AUTO_INCREMENT PRIMARY KEY,
   MetaSetName VARCHAR(64)  NOT NULL,
@@ -261,7 +261,7 @@ CREATE TABLE FC_MetaSetNames (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_FileAncestors;
+
 CREATE TABLE FC_FileAncestors (
   FileID INT NOT NULL DEFAULT 0,
   AncestorID INT NOT NULL DEFAULT 0,
