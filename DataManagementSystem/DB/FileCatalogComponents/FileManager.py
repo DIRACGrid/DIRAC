@@ -15,7 +15,7 @@ DEBUG = 0
 import os
 from types import StringTypes, ListType, TupleType
 
-class FileManager(FileManagerBase):
+class FileManager( FileManagerBase ):
 
   _tables = {}
   _tables['FC_Files'] = { "Fields": { 

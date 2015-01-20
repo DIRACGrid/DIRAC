@@ -419,6 +419,20 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     return S_OK(resDict)
   
+  
+  def countSubdirectories(self, dirId, includeParent = True):
+    result = self.getSubdirectoriesByID( dirId, requestString = True, includeParent = includeParent )
+    if not result['OK']:
+      return result
+    reqDir = result['Value'].replace( 'SELECT DirID FROM', 'SELECT count(*) FROM' )
+
+    result = self.db._query( reqDir )
+    if not result['OK']:
+      return result
+    return S_OK( result['Value'][0][0] )
+
+  
+  
   def getAllSubdirectoriesByID(self,dirList):
     """ Get IDs of all the subdirectories of directories in a given list
     """

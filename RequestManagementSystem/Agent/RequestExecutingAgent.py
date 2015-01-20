@@ -190,7 +190,7 @@ class RequestExecutingAgent( AgentModule ):
     while request.RequestID in self.__requestCache:
       count -= 1
       if not count:
-        self.requestClient().putRequest( request )
+        self.requestClient().putRequest( request, useFailoverProxy = False, retryMainServer = 2 )
         return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
       time.sleep( 1 )
     self.__requestCache[ request.RequestID ] = request
@@ -206,7 +206,7 @@ class RequestExecutingAgent( AgentModule ):
       if taskResult and taskResult['OK']:
         request = taskResult['Value']
 
-      reset = self.requestClient().putRequest( request )
+      reset = self.requestClient().putRequest( request, useFailoverProxy = False, retryMainServer = 2 )
       if not reset["OK"]:
         return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestID, reset["Message"] ) )
     else:
@@ -279,11 +279,12 @@ class RequestExecutingAgent( AgentModule ):
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )
-        
+
         looping = 0
         while True:
           if not self.processPool().getFreeSlots():
-            self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
+            if not looping:
+              self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
             time.sleep( self.__poolSleep )
             looping += 1
           else:

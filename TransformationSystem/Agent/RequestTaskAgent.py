@@ -29,6 +29,8 @@ class RequestTaskAgent( TaskManagerAgentBase ):
     if not res['OK']:
       return res
 
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     # clients
     self.taskManager = RequestTasks( transClient = self.transClient )
 

@@ -13,7 +13,7 @@ from DIRAC.ResourceStatusSystem.Utilities.ElementStatus    import ElementStatus
 from DIRAC.ResourceStatusSystem.Utilities.RSSCache         import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
 class ResourceStatus( ElementStatus ):
   """
@@ -304,7 +304,6 @@ class ResourceStatus( ElementStatus ):
     Method used to update the ComputingElementCache.
     """
     return self.__updateCache( 'Computing' )
-
   
   def _updateSECache( self ):
     """
@@ -315,7 +314,6 @@ class ResourceStatus( ElementStatus ):
           
   #.............................................................................
   # Private methods
-  
 
   def __updateCache( self, elementType ):
 

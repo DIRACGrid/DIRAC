@@ -54,9 +54,9 @@ class DataManager( object ):
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
     self.vo = vo
-    
+
     catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
-    
+
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
     self.registrationProtocol = getRegistrationProtocols()
@@ -857,8 +857,6 @@ class DataManager( object ):
     # Remove Failed LFNs if they are in success
     success = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn in success:
-      failed.pop( lfn, None )
     return res
 
   def __registerFile( self, fileTuples, catalog ):
@@ -905,8 +903,6 @@ class DataManager( object ):
     # Remove Failed LFNs if they are in success
     success = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn in success:
-      failed.pop( lfn, None )
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):

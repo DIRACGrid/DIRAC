@@ -1519,6 +1519,60 @@ class MySQL:
     return self._update( 'INSERT INTO %s %s VALUES %s' %
                          ( table, inFieldString, inValueString ), conn, debug = True )
 
+
+  def executeStoredProcedure( self, packageName, parameters, outputIds, output = True, array = None, conn = False ):
+    conDict = self._getConnection()
+    if not conDict['OK']:
+      return conDict
+
+    connection = conDict['Value']
+    cursor = connection.cursor()
+    try:
+      cursor.callproc( packageName, parameters )
+      row = []
+      for oId in outputIds:
+        resName = "@_%s_%s" % ( packageName, oId )
+        cursor.execute( "SELECT %s" % resName )
+        row.append( cursor.fetchone()[0] )
+      retDict = S_OK( row )
+    except  Exception , x:
+      retDict = self._except( '_query', x, 'Execution failed.' )
+      connection.rollback()
+
+    try:
+      cursor.close()
+    except Exception:
+      pass
+
+
+    return retDict
+
+
+  # For the procedures that execute a select without storing the result
+  def executeStoredProcedureWithCursor( self, packageName, parameters, output = True, array = None, conn = False ):
+    conDict = self._getConnection()
+    if not conDict['OK']:
+      return conDict
+
+    connection = conDict['Value']
+    cursor = connection.cursor()
+    try:
+#       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
+      execStr = "call %s(%s);" % ( packageName, ",".join( ["\"%s\"" % param if type( param ) is ( str ) else str( param ) for param in parameters] ) )
+      cursor.execute( execStr )
+      rows = cursor.fetchall()
+      retDict = S_OK( rows )
+    except  Exception , x:
+      retDict = self._except( '_query', x, 'Execution failed.' )
+      connection.rollback()
+    try:
+      cursor.close()
+    except Exception:
+      pass
+
+
+    return retDict
+
 #####################################################################################
 #
 #   This is a test code for this class, it requires access to a MySQL DB

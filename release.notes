@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre9]
+[v6r13-pre10]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -124,10 +124,23 @@ CHANGE: DataManager - changes to manage URLs inside StorageElement objects only
 *RMS
 CHANGE: Removed files from the previous generation RMS
 CHANGE: RMS refactored based on SQLAlchemy 
+NEW: ReqClient - added options to putRequest(): useFailoverProxy and retryMainServer
+CHANGE: DMSRequestOperationsBase - delay execution or cancel request based on SE statuses 
+        from RSS/CS
 
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
+
+[v6r12p14]
+
+*TS
+FIX: TaskManagerAgentBase: avoid race conditions when submitting to WMS
+
+*DMS
+NEW: FileCatalog - added new components ( directory tree, file manager ) 
+     making use of foreign keys and stored procedures
+FIX: DataManager returns properly the FileCatalog errors     
 
 [v6r12p13]
 
@@ -344,6 +357,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p30]
+
+*DMS
+CHANGE: FileCatalogCLI - add new -D flag for find to print only directories
 
 [v6r11p29]
 

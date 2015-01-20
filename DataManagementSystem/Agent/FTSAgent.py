@@ -255,7 +255,7 @@ class FTSAgent( AgentModule ):
 
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
-      self.log.error( "unable to get FTS history: %s" % ftsHistory["Message"] )
+      self.log.error( "unable to get FTS history:", ftsHistory["Message"] )
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
@@ -272,6 +272,26 @@ class FTSAgent( AgentModule ):
     # # save time stamp
     self.__ftsPlacementValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
+    log.debug( "FTSSites:", len( self.__ftsGraph.nodes() ) )
+    for i, site in enumerate( self.__ftsGraph.nodes() ):
+      log.debug( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
+    log.debug( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
+    for i, route in enumerate( self.__ftsGraph.edges() ):
+      log.debug( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
+                                                                             route.routeName,
+                                                                             route.ActiveJobs,
+                                                                             route.toNode.MaxActiveJobs ) )
+    # # save graph stamp
+    self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
+
+    # # refresh SE R/W access
+    try:
+      self.updateLock().acquire()
+      self.__ftsGraph.updateRWAccess()
+    finally:
+      self.updateLock().release()
+    # # save rw access stamp
+    self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
 
     return S_OK()
 
@@ -293,23 +313,23 @@ class FTSAgent( AgentModule ):
     self.MONITOR_COMMAND = self.am_getOption( "MonitorCommand", self.MONITOR_COMMAND )
     log.info( "FTS commands: submit = %s monitor %s" % ( self.SUBMIT_COMMAND, self.MONITOR_COMMAND ) )
     self.PIN_TIME = self.am_getOption( "PinTime", self.PIN_TIME )
-    log.info( "Stage files before submission  = %s" % {True: "yes", False: "no"}[bool( self.PIN_TIME )] )
+    log.info( "Stage files before submission  = ", {True: "yes", False: "no"}[bool( self.PIN_TIME )] )
 
     self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerRoute", self.MAX_ACTIVE_JOBS )
-    log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
+    log.info( "Max active FTSJobs/route       = ", str( self.MAX_ACTIVE_JOBS ) )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
-    log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
+    log.info( "Max FTSFiles/FTSJob            = ", str( self.MAX_FILES_PER_JOB ) )
 
     self.MAX_ATTEMPT = self.am_getOption( "MaxTransferAttempts", self.MAX_ATTEMPT )
-    log.info( "Max transfer attempts          = %s" % self.MAX_ATTEMPT )
+    log.info( "Max transfer attempts          = ", str( self.MAX_ATTEMPT ) )
 
     # # thread pool
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
     self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
     minmax = ( abs( self.MIN_THREADS ), abs( self.MAX_THREADS ) )
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
-    log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
-    log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
+    log.info( "ThreadPool min threads         = ", str( self.MIN_THREADS ) )
+    log.info( "ThreadPool max threads         = ", str( self.MAX_THREADS ) )
 
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
@@ -414,7 +434,7 @@ class FTSAgent( AgentModule ):
     for requestID in requestIDs:
       request = self.getRequest( requestID )
       if not request["OK"]:
-        log.error( "Error getting request %s" % requestName, request["Message"] )
+        log.error( "Error getting request", "%s: %s" % ( requestName, request["Message"] ) )
         continue
       request = request["Value"]
       sTJId = request.RequestID
@@ -423,7 +443,7 @@ class FTSAgent( AgentModule ):
                                                          args = ( request, ),
                                                          sTJId = sTJId )
         if queue["OK"]:
-          log.info( "request '%s' enqueued for execution" % sTJId )
+          log.info( "Request enqueued for execution", sTJId )
           gMonitor.addMark( "RequestsAtt", 1 )
           break
         time.sleep( 1 )
@@ -441,17 +461,17 @@ class FTSAgent( AgentModule ):
 
     operation = request.getWaiting()
     if not operation["OK"]:
-      log.error( "unable to find 'Scheduled' ReplicateAndRegister operation in request" )
+      log.error( "Unable to find 'Scheduled' ReplicateAndRegister operation in request" )
       return self.putRequest( request )
     operation = operation["Value"]
     if not isinstance( operation, Operation ):
-      log.error( "waiting returned operation is not an operation: %s" % type( operation ) )
+      log.error( "Waiting returned operation is not an operation:", type( operation ) )
       return self.putRequest( request )
     if operation.Type != "ReplicateAndRegister":
-      log.error( "operation to be executed is not a ReplicateAndRegister but %s" % operation.Type )
+      log.error( "operation to be executed is not a ReplicateAndRegister but", operation.Type )
       return self.putRequest( request )
     if operation.Status != "Scheduled":
-      log.error( "operation in a wrong state, expecting 'Scheduled', got %s" % operation.Status )
+      log.error( "operation in a wrong state, expecting 'Scheduled', got", operation.Status )
       return self.putRequest( request )
 
     log.info( 'start processRequest' )
@@ -571,14 +591,14 @@ class FTSAgent( AgentModule ):
         for targetSE, fileIDList in byTarget.items():
           update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, targetSE, fileIDList )
           if not update["OK"]:
-            log.error( "update FTSFiles failed: %s" % update["Message"] )
+            log.error( "update FTSFiles failed:", update["Message"] )
 
       # # PHASE FOUR - add 'RegisterReplica' Operations
       if toRegister:
         log.info( "==> found %d Files waiting for registration, adding 'RegisterReplica' operations" % len( toRegister ) )
         registerFiles = self.__insertRegisterOperation( request, operation, toRegister )
         if not registerFiles["OK"]:
-          log.error( "unable to create 'RegisterReplica' operations: %s" % registerFiles["Message"] )
+          log.error( "unable to create 'RegisterReplica' operations:", registerFiles["Message"] )
         # if request.Status == "Waiting":
         #  log.info( "request is in 'Waiting' state, will put it back to RMS" )
         #  return self.putRequest( request )
@@ -641,7 +661,7 @@ class FTSAgent( AgentModule ):
       putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not putRequest["OK"]:
         log.error( "unable to put back request:", putRequest["Message"] )
-     # #  put back jobs in all cases
+      # #  put back jobs in all cases
       if ftsJobs:
         for ftsJob in list( ftsJobs ):
           if not len( ftsJob ):
@@ -650,7 +670,7 @@ class FTSAgent( AgentModule ):
             ftsJobs.remove( ftsJob )
         putJobs = self.putFTSJobs( ftsJobs )
         if not putJobs["OK"]:
-          log.error( "unable to put back FTSJobs: %s" % putJobs["Message"] )
+          log.error( "unable to put back FTSJobs:", putJobs["Message"] )
           putRequest = putJobs
     # This is where one returns from after execution of the finally: block
     return putRequest
@@ -804,7 +824,7 @@ class FTSAgent( AgentModule ):
 
           submit = ftsJob.submitFTS( self.__ftsVersion, command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
           if not submit["OK"]:
-            log.error( "unable to submit FTSJob: %s" % submit["Message"] )
+            log.error( "unable to submit FTSJob:", submit["Message"] )
             continue
 
           log.info( "FTSJob '%s'@'%s' has been submitted" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
@@ -910,7 +930,10 @@ class FTSAgent( AgentModule ):
     if not processFiles["OK"]:
       log.error( processFiles["Message"] )
       return processFiles
-    ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles["Value"] )
+    processFiles = processFiles['Value']
+    if processFiles['toRegister']:
+      log.error( "Some files could not be registered in FC:", len( processFiles['toRegister'] ) )
+    ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, processFiles )
 
     # # send accounting record for this job
     self.__sendAccounting( ftsJob, request.OwnerDN )

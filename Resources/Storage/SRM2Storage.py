@@ -99,7 +99,7 @@ class SRM2Storage( StorageBase ):
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
       self.voName = getVOForGroup( ret['Value']['group'] )
-    # enable lcg-utils debugging for debug level DEBUG   
+    # enable lcg-utils debugging for debug level DEBUG
     lcgdebuglevel = 0
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
@@ -2073,18 +2073,16 @@ class SRM2Storage( StorageBase ):
     timeout = timeout_sendreceive if timeout_sendreceive else self.gfalTimeout
     # # errCode, errMessage, errNo
     errCode, errMessage, errNo = 0, "", 0
-    while retry:
-      retry -= 1
+    for _i in range( retry ):
       self.gfal.gfal_set_timeout_sendreceive( timeout )
       errCode, gfalObject, errMessage = fcn( gfalObject )
-      if errCode == -1:
-        errNo = self.gfal.gfal_get_errno()
+      if not errCode:
+        break
+      errNo = self.gfal.gfal_get_errno()
       if errCode == -1 and errNo == errno.ECOMM:
         timeout *= 2
         self.log.debug( "SRM2Storage.__gfal_exec(%s): got ECOMM, extending timeout to %s s" % ( method, timeout ) )
-        continue
-      else:
-        break
+
     if errCode:
       errStr = "SRM2Storage.__gfal_exec(%s): Execution failed." % method
       if not errMessage:
