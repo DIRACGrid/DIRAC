@@ -83,6 +83,13 @@ class SSHTorqueComputingElement( SSHComputingElement ):
       result = ssh.sshCall( 10, cmd )
       if not result['OK']:
         return result
+      
+      status = result['Value'][0]
+      if status == -1:
+        return S_ERROR( 'Timeout while SSH call' )
+      elif status != 0:
+        return S_ERROR( 'Error while SSH call' )
+        
       output = result['Value'][1].replace( '\r', '' )
       lines = output.split( '\n' )
       for job in jobDict:
