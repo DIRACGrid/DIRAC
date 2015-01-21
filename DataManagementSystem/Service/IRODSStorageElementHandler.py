@@ -176,32 +176,35 @@ class IRODSStorageElementHandler( RequestHandler ):
       fileID = fileID[1:]
     return os.path.join( BASE_PATH, fileID )
 
-  @staticmethod
-  def __getFileStat( path ):
+  def __getFileStat( self, path ):
     """ Get the file stat information
 """
+
+    conn , error = self.__irodsClient( )
+    if not conn:
+      return S_ERROR( error )
+    
+    file_path = self.__resolveFileID( path )
+    file_path = IRODS_HOME + file_path
+    gLogger.debug( "file_path to read: %s" % file_path )
+
+    irodsFile = irodsOpen( conn , file_path , "r" )
+    if not irodsFile:
+      rcDisconnect( conn )
+      gLogger.error( "Failed to get file object" )
+      return S_ERROR( "Failed to get file object" )
+
     resultDict = {}
-    try:
-      statTuple = os.stat( path )
-    except OSError, x:
-      if str( x ).find( 'No such file' ) >= 0:
-        resultDict['Exists'] = False
-        return S_OK( resultDict )
-      else:
-        return S_ERROR( 'Failed to get metadata for %s' % path )
 
     resultDict['Exists'] = True
-    mode = statTuple[ST_MODE]
     resultDict['Type'] = "File"
-    if S_ISDIR( mode ):
-      resultDict['Type'] = "Directory"
-    resultDict['Size'] = statTuple[ST_SIZE]
-    resultDict['TimeStamps'] = ( statTuple[ST_ATIME], statTuple[ST_MTIME], statTuple[ST_CTIME] )
+    resultDict['Size'] = irodsFile.getSize()
+    resultDict['TimeStamps'] = ( irodsFile.getCreateTs(), irodsFile.getModifyTs(), irodsFile.getCreateTs() )
     resultDict['Cached'] = 1
     resultDict['Migrated'] = 0
     resultDict['Lost'] = 0
     resultDict['Unavailable'] = 0
-    resultDict['Mode'] = S_IMODE( mode )
+    resultDict['Mode'] = 0755
     return S_OK( resultDict )
 
   types_exists = [StringTypes]
@@ -221,24 +224,7 @@ class IRODSStorageElementHandler( RequestHandler ):
   def export_createDirectory( self, dir_path ):
     """ Creates the directory on the storage
 """
-    path = self.__resolveFileID( dir_path )
-    gLogger.info( "StorageElementHandler.createDirectory: Attempting to create %s." % path )
-    if os.path.exists( path ):
-      if os.path.isfile( path ):
-        errStr = "Supplied path exists and is a file"
-        gLogger.error( "StorageElementHandler.createDirectory: %s." % errStr, path )
-        return S_ERROR( errStr )
-      else:
-        gLogger.info( "StorageElementHandler.createDirectory: %s already exists." % path )
-        return S_OK()
-    # Need to think about permissions.
-    try:
-      os.makedirs( path )
-      return S_OK()
-    except Exception, x:
-      errStr = "Exception creating directory."
-      gLogger.error( "StorageElementHandler.createDirectory: %s" % errStr, str( x ) )
-      return S_ERROR( errStr )
+    pass
 
   types_listDirectory = [StringType, StringType]
   def export_listDirectory( self, dir_path, mode ):
@@ -310,7 +296,7 @@ fileSize can be Xbytes or -1 if unknown.
 token is used for access rights confirmation.
 """
 
-    conn , error = self.__irodsClient( "w" )
+    conn , error = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
     coll = irodsCollection( conn, IRODS_HOME )
@@ -354,7 +340,7 @@ fileID is the local file name in the SE.
 token is used for access rights confirmation.
 """
 
-    conn , error = self.__irodsClient( "r" )
+    conn , error = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
 
@@ -424,20 +410,42 @@ token is used for access rights confirmation.
     """ Remove fileID from the storage. token is used for access rights confirmation. """
     return self.__removeFile( self.__resolveFileID( fileID ), token )
 
+  def __confirmToken( self, token, path, mode ):
+    """ Confirm the access rights for the path in a given mode
+    """
+    # Not yet implemented
+    return True
+
   def __removeFile( self, fileID, token ):
     """ Remove one file with fileID name from the storage
 """
-    filename = self.__resolveFileID( fileID )
+    conn , error = self.__irodsClient( )
+    if not conn:
+      return S_ERROR( error )
+
+    file_path = self.__resolveFileID( fileID )
+    file_path = IRODS_HOME + file_path
+    gLogger.debug( "file_path to read: %s" % file_path )
+
+    irodsFile = irodsOpen( conn , file_path , "r" )
+    if not irodsFile:
+      rcDisconnect( conn )
+      gLogger.error( "Failed to get file object" )
+      return S_ERROR( "Failed to get file object" )
+    
     if self.__confirmToken( token, fileID, 'x' ):
       try:
-        os.remove( filename )
-        return S_OK()
+        status = irodsFile.delete()
+        if status == 0:
+          return S_OK()
+        else:
+          return S_ERROR( 'Failed to delete file with status code %d' % status )
       except OSError, error:
         if str( error ).find( 'No such file' ) >= 0:
           # File does not exist anyway
           return S_OK()
         else:
-          return S_ERROR( 'Failed to remove file %s' % fileID )
+          return S_ERROR( 'Failed to remove file %s with exception %s' % ( fileID, error ) )
     else:
       return S_ERROR( 'File removal %s not authorized' % fileID )
 
@@ -505,7 +513,7 @@ token is used for access rights confirmation.
     """ Send the storage element resource information
 """
 
-    conn , error = self.__irodsClient( "r" )
+    conn , error = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
 
@@ -531,31 +539,31 @@ token is used for access rights confirmation.
 
 
   def __irodsClient( self , user = None ):
-
+    """ Get the iRods client
+    """
     global IRODS_USER
     password = None
 
     cfgPath = self.serviceInfoDict[ 'serviceSectionPath' ]
     gLogger.debug( "cfgPath: %s" % cfgPath )
 
+    diracUser = user
     if not user:
       credentials = self.getRemoteCredentials()
       if credentials and ( "username" in credentials ):
-        IRODS_USER = credentials[ "username" ]
-        ## TODO: should get user password somehow
-    elif user == "r":
-      IRODS_USER = gConfig.getValue( "%s/read" % cfgPath , IRODS_USER )
-    elif user == "w":
-      IRODS_USER = gConfig.getValue( "%s/write" % cfgPath , IRODS_USER )
+        diracUser = credentials[ "username" ]
+
+    IRODS_USER = gConfig.getValue( "%s/UserCredentials/%s/iRodsUser" % ( cfgPath , diracUser ) , diracUser )
 
     if not IRODS_USER:
       return False , "Failed to get iRods user"
     gLogger.debug( "iRods user: %s" % IRODS_USER )
 
-    password = gConfig.getValue( "%s/%s" % ( cfgPath , IRODS_USER ) , password )
+    password = gConfig.getValue( "%s/UserCredentials/%s/iRodsPassword" % ( cfgPath , diracUser ) , password )
+    if not password:
+      return False , "Failed to get iRods user"
 
     conn , errMsg = rcConnect( IRODS_HOST , IRODS_PORT , IRODS_USER , IRODS_ZONE )
-
     status = clientLoginWithPassword( conn , password )
 
     if not status == 0:
