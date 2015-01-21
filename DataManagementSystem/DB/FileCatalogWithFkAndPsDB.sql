@@ -671,7 +671,7 @@ BEGIN
   DECLARE done INT;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
-  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON f.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
+  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON d.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
   IF file_id IS NULL THEN
     SET file_id = 0;
   END IF;
