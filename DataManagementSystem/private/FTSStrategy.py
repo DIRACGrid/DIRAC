@@ -58,7 +58,7 @@ class FTSStrategy( object ):
   # # acceptable failed files
   acceptableFailedFiles = 5
   # # scheduling type
-  schedulingType = "File"
+  schedulingType = "Files"
 
   def __init__( self, csPath = None, ftsSites = None, ftsHistoryViews = None ):
     """c'tor
@@ -88,7 +88,7 @@ class FTSStrategy( object ):
     self.log.info( "Number of active strategies = %s" % self.numberOfStrategies )
     self.sigma = gConfig.getValue( "%s/%s" % ( self.csPath, "HopSigma" ), 5 )
     self.log.info( "HopSigma = %s" % self.sigma )
-    self.schedulingType = gConfig.getValue( "%s/%s" % ( self.csPath, "SchedulingType" ), "File" )
+    self.schedulingType = gConfig.getValue( "%s/%s" % ( self.csPath, "SchedulingType" ), "Files" )
     self.log.info( "SchedulingType = %s" % self.schedulingType )
     self.acceptableFailureRate = gConfig.getValue( "%s/%s" % ( self.csPath, "AcceptableFailureRate" ), 75 )
     self.log.info( "AcceptableFailureRate = %s" % self.acceptableFailureRate )
