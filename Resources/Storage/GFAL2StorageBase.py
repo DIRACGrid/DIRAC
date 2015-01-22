@@ -63,14 +63,6 @@ class GFAL2StorageBase( StorageBase ):
     self.protocol = parameters['Protocol']
     self.spaceToken = parameters['SpaceToken']
 
-    # building the complete basepath and calculate it's length. This is used in __listDirectory to shorten the whole URL down to the LFN.
-    # The basePath itself is used during removeDirectory to convert LFN file paths to full paths so the file can be deleted
-    if parameters['Port']:
-      self.basePath = '%s://%s:%s%s%s' % ( parameters['Protocol'], parameters['Host'], parameters['Port'], parameters['WSUrl'], parameters['Path'] )
-    else:
-      self.basePath = '%s://%s%s%s' % ( parameters['Protocol'], parameters['Host'], parameters['WSUrl'], parameters['Path'] )
-    self.basePathLength = len( self.basePath )
-
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
     # # gfal2 timeout
@@ -1274,17 +1266,12 @@ class GFAL2StorageBase( StorageBase ):
         fullPath = '/'.join( [ path, entry ] )
         self.log.debug( 'GFAL2StorageBase.__listSingleDirectory: path: %s' % fullPath )
         res = self.__getSingleMetadata( fullPath )
-#         print 'fullPath: %s' % fullPath
-#         print 'basePath: %s' % self.basePath
-        LFNPath = fullPath[self.basePathLength:]
-        LFNPath = fullPath
-#         print LFNPath
         if res['OK']:
           metadataDict = res['Value']
           if metadataDict['Directory']:
-            subDirs[LFNPath] = metadataDict
+            subDirs[fullPath] = metadataDict
           elif metadataDict['File']:
-            files[LFNPath] = metadataDict
+            files[fullPath] = metadataDict
           else:
             self.log.debug( "GFAL2StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
 
