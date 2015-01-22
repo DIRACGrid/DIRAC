@@ -41,7 +41,7 @@ class SRM2V2Storage( GFAL2StorageBase ):
   def _getExtendedAttributes( self, path, protocols = False ):
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    res = GFAL2StorageBase._getExtendedAttributes( self, path, protocols = protocols )
+    res = GFAL2StorageBase._getExtendedAttributes( self, path )
     self.__setSRMOptionsToDefault()
     return res
 
@@ -146,6 +146,7 @@ class SRM2V2Storage( GFAL2StorageBase ):
     if not protocolsList:
       self.log.debug( "SRM2V2Storage.__getProtocols: No protocols provided, using the default protocols." )
       protocolsList = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+      self.log.debug( 'SRM2V2Storage.__getProtocols: protocolList = %s' % protocolsList )
 
     # if there is even no default protocol
     if not protocolsList:
