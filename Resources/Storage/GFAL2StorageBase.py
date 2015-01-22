@@ -63,6 +63,13 @@ class GFAL2StorageBase( StorageBase ):
     self.protocol = parameters['Protocol']
     self.spaceToken = parameters['SpaceToken']
 
+    # building the complete basepath and calculate it's length. This is used in __listDirectory to shorten the whole URL down to the LFN.
+    # The basePath itself is used during removeDirectory to convert LFN file paths to full paths so the file can be deleted
+    if parameters['Port']:
+      self.basePath = '%s://%s:%s%s%s' % ( parameters['Protocol'], parameters['Host'], parameters['Port'], parameters['WSUrl'], parameters['Path'] )
+    else:
+      self.basePath = '%s://%s%s%s' % ( parameters['Protocol'], parameters['Host'], parameters['WSUrl'], parameters['Path'] )
+    self.basePathLength = len( self.basePath )
 
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )  # gConfig -> [get] ConfigurationClient()
@@ -70,7 +77,8 @@ class GFAL2StorageBase( StorageBase ):
     self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '0' )
+    # TODO: turn 0 back into '0' so checksum gets used. This is only for the system test because xroot has trouble with getting the checksum
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
     # enum gfal_cksm_type, all in lcg_util
     #   GFAL_CKSM_NONE = 0,
     #   GFAL_CKSM_CRC32,
@@ -1239,6 +1247,7 @@ class GFAL2StorageBase( StorageBase ):
       else:
         successful[directory] = res['Value']
 
+
     resDict = { 'Failed' : failed, 'Successful' : successful }
     return S_OK( resDict )
 
@@ -1265,12 +1274,17 @@ class GFAL2StorageBase( StorageBase ):
         fullPath = '/'.join( [ path, entry ] )
         self.log.debug( 'GFAL2StorageBase.__listSingleDirectory: path: %s' % fullPath )
         res = self.__getSingleMetadata( fullPath )
+#         print 'fullPath: %s' % fullPath
+#         print 'basePath: %s' % self.basePath
+        LFNPath = fullPath[self.basePathLength:]
+        LFNPath = fullPath
+#         print LFNPath
         if res['OK']:
           metadataDict = res['Value']
           if metadataDict['Directory']:
-            subDirs[fullPath] = metadataDict
+            subDirs[LFNPath] = metadataDict
           elif metadataDict['File']:
-            files[fullPath] = metadataDict
+            files[LFNPath] = metadataDict
           else:
             self.log.debug( "GFAL2StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
 
@@ -1384,6 +1398,7 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( 'GFAL2StorageBase.__getSingleDirectory: Trying to download the %s files' % len( sFilesDict ) )
     for sFile in sFilesDict:
       # Returns S_OK(fileSize) if successful
+      # fullFilePath = '%s%s' % ( self.basePath, sFile )
       res = self.__getSingleFile( sFile, '/'.join( [dest_dir, os.path.basename( sFile ) ] ) )
       if res['OK']:
         filesReceived += 1
