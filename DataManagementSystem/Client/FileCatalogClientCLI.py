@@ -1404,10 +1404,10 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    pathDict[lfn] = {'Owner':owner}
+    pathDict[lfn] = owner
     
     try:
-      result = self.fc.changePathOwner(pathDict,recursive)        
+      result = self.fc.changePathOwner( pathDict, recursive )        
       if not result['OK']:
         print "Error:",result['Message']
         return
@@ -1459,10 +1459,10 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    pathDict[lfn] = {"Group":group}
+    pathDict[lfn] = group
     
     try:
-      result = self.fc.changePathGroup(pathDict,recursive)         
+      result = self.fc.changePathGroup( pathDict, recursive )         
       if not result['OK']:
         print "Error:",result['Message']
         return
@@ -1514,7 +1514,7 @@ File Catalog Client $Revision: 1.17 $Date:
     pathDict[lfn] = eval('0'+mode)
     
     try:
-      result = self.fc.changePathMode(pathDict,recursive)             
+      result = self.fc.changePathMode( pathDict, recursive )             
       if not result['OK']:
         print "Error:",result['Message']
         return
