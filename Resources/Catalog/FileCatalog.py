@@ -19,7 +19,8 @@ class FileCatalog( object ):
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
-                   'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
+                   'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
+                   'changePathOwner', 'changePathGroup']
 
   def __init__( self, catalogs = [], vo = None ):
     """ Default constructor
@@ -80,9 +81,10 @@ class FileCatalog( object ):
       return res
     fileInfo = res['Value']
     allLfns = fileInfo.keys()
+    parms = parms[1:]
     for catalogName, oCatalog, master in self.writeCatalogs:
       method = getattr( oCatalog, self.call )
-      res = method( fileInfo, **kws )
+      res = method( fileInfo, *parms, **kws )
       if not res['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs
