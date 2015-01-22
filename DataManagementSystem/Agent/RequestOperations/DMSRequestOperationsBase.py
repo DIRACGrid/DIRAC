@@ -35,6 +35,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     else:
       seType = 'targetSE'
     bannedSEs = []
+
     for checkSE in checkSEs:
       seStatus = self.rssSEStatus( checkSE, access, retries = 5 )
       if not seStatus["OK"]:
@@ -49,6 +50,34 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
         self.log.info( "%s %s is banned for %s right now" % ( seType.capitalize(), checkSE, access ) )
         bannedSEs.append( checkSE )
         self.operation.Error = "banned %s: %s;" % ( seType, checkSE )
+
+
+    if bannedSEs:
+      alwaysBannedSEs = []
+      for seName in bannedSEs:
+        res = self.rssClient().isStorageElementAlwaysBanned(seName)
+        if not res['OK']:
+          continue
+
+        # The SE will always be banned
+        if res['Value']:
+          alwaysBannedSEs.append( seName )
+
+
+      # If Some SE are always banned, we fail the request
+      if alwaysBannedSEs:
+        self.log.info( "Some storages are always banned, failing the request", alwaysBannedSEs )
+        for opFile in self.operation:
+          opFile.Error = "%s always banned" % alwaysBannedSEs
+          opFile.Status = "Failed"
+        self.operation.Error = "%s always banned" % alwaysBannedSEs
+
+      # If it is temporary, we wait an hour
+      else:
+        self.log.info( "Banning is temporary, next attempt in an hour" )
+        self.operation.Error( "%s currently banned" % bannedSEs )
+        self.request.delayNextExecution( 60 )
+
 
     return S_OK( bannedSEs )
 

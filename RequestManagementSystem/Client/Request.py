@@ -329,6 +329,18 @@ class Request( object ):
     self._NotBefore = value
 
 
+  def delayNextExecution( self, deltaTime ):
+    """This helper sets the NotBefore attribute in deltaTime minutes
+       in the future
+       :param deltaTime : time in minutes before next execution
+    """
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
+    extraDelay = datetime.timedelta( minutes = deltaTime )
+    self._NotBefore = now + extraDelay
+
+    return S_OK()
+
+
   @hybrid_property
   def LastUpdate( self ):
     """ last update getter """

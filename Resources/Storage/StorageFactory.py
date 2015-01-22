@@ -116,7 +116,7 @@ class StorageFactory:
           requestedRemotePlugins.append( pluginName )
         requestedProtocolDetails.append( protocolDict )
       else:
-        gLogger.info( res['Message'] )
+        gLogger.info( result['Message'] )
 
     if len( self.storages ) > 0:
       resDict = {}
@@ -299,7 +299,4 @@ class StorageFactory:
       gLogger.exception( errStr )
       return S_ERROR( errStr )
 
-    # If use proxy, keep the original protocol name
-    if self.proxy:
-      storage.pluginName = pluginName
     return S_OK( storage )

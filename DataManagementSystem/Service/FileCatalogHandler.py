@@ -17,7 +17,7 @@ import os
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 from DIRAC.Core.Utilities.List import sortList
 
@@ -66,6 +66,41 @@ def initializeFileCatalogHandler( serviceInfo ):
     gLogger.info( "%-20s : %-20s" % ( str( configKey ), str( configValue ) ) )
     databaseConfig[configKey] = configValue
   res = gFileCatalogDB.setConfig( databaseConfig )
+
+  gMonitor.registerActivity( "AddFile", "Amount of addFile calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "AddFileSuccessful", "Files successfully added",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "AddFileFailed", "Files failed to add",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+
+
+  gMonitor.registerActivity( "RemoveFile", "Amount of removeFile calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "RemoveFileSuccessful", "Files successfully removed",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "RemoveFileFailed", "Files failed to remove",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+
+  gMonitor.registerActivity( "AddReplica", "Amount of addReplica calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "AddReplicaSuccessful", "Replicas successfully added",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "AddReplicaFailed", "Replicas failed to add",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+
+
+  gMonitor.registerActivity( "RemoveReplica", "Amount of removeReplica calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "RemoveReplicaSuccessful", "Replicas successfully removed",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+  gMonitor.registerActivity( "RemoveReplicaFailed", "Replicas failed to remove",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+
+  gMonitor.registerActivity( "ListDirectory", "Amount of listDirectory calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+
+
   return res
 
 class FileCatalogHandler( RequestHandler ):
@@ -78,19 +113,19 @@ class FileCatalogHandler( RequestHandler ):
   ########################################################################
   # Path operations (not updated)
   #  
-  types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
+  types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathOwner( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
     """
     return gFileCatalogDB.changePathOwner( lfns, self.getRemoteCredentials(), recursive )
 
-  types_changePathGroup = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
+  types_changePathGroup = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathGroup( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
     """
     return gFileCatalogDB.changePathGroup( lfns, self.getRemoteCredentials(), recursive )
 
-  types_changePathMode = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
+  types_changePathMode = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_changePathMode( self, lfns, recursive = False ):
     """ Get replica info for the given list of LFNs
     """
@@ -177,12 +212,24 @@ class FileCatalogHandler( RequestHandler ):
   types_addFile = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addFile( self, lfns ):
     """ Register supplied files """
-    return gFileCatalogDB.addFile( lfns, self.getRemoteCredentials() )
+    gMonitor.addMark( "AddFile", 1 )
+    res = gFileCatalogDB.addFile( lfns, self.getRemoteCredentials() )
+    if res['OK']:
+      gMonitor.addMark( "AddFileSuccessful", len( res.get( 'Value', {} ).get( 'Successful', [] ) ) )
+      gMonitor.addMark( "AddFileFailed", len( res.get( 'Value', {} ).get( 'Failed', [] ) ) )
+
+    return res
 
   types_removeFile = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_removeFile( self, lfns ):
     """ Remove the supplied lfns """
-    return gFileCatalogDB.removeFile( lfns, self.getRemoteCredentials() )
+    gMonitor.addMark( "RemoveFile", 1 )
+    res = gFileCatalogDB.removeFile( lfns, self.getRemoteCredentials() )
+    if res['OK']:
+      gMonitor.addMark( "RemoveFileSuccessful", len( res.get( 'Value', {} ).get( 'Successful', [] ) ) )
+      gMonitor.addMark( "RemoveFileFailed", len( res.get( 'Value', {} ).get( 'Failed', [] ) ) )
+
+    return res
   
   types_setFileStatus = [ DictType ]
   def export_setFileStatus( self, lfns ):
@@ -192,12 +239,25 @@ class FileCatalogHandler( RequestHandler ):
   types_addReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_addReplica( self, lfns ):
     """ Register supplied replicas """
-    return gFileCatalogDB.addReplica( lfns, self.getRemoteCredentials() )
+    gMonitor.addMark( "AddReplica", 1 )
+    res = gFileCatalogDB.addReplica( lfns, self.getRemoteCredentials() )
+    if res['OK']:
+      gMonitor.addMark( "AddReplicaSuccessful", len( res.get( 'Value', {} ).get( 'Successful', [] ) ) )
+      gMonitor.addMark( "AddReplicaFailed", len( res.get( 'Value', {} ).get( 'Failed', [] ) ) )
+
+    return res
 
   types_removeReplica = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_removeReplica( self, lfns ):
     """ Remove the supplied replicas """
-    return gFileCatalogDB.removeReplica( lfns, self.getRemoteCredentials() )
+    gMonitor.addMark( "RemoveReplica", 1 )
+    res = gFileCatalogDB.removeReplica( lfns, self.getRemoteCredentials() )
+    if res['OK']:
+      gMonitor.addMark( "RemoveReplicaSuccessful", len( res.get( 'Value', {} ).get( 'Successful', [] ) ) )
+      gMonitor.addMark( "RemoveReplicaFailed", len( res.get( 'Value', {} ).get( 'Failed', [] ) ) )
+
+    return res
+
 
   types_setReplicaStatus = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_setReplicaStatus( self, lfns ):
@@ -285,6 +345,7 @@ class FileCatalogHandler( RequestHandler ):
   types_listDirectory = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
   def export_listDirectory( self, lfns, verbose ):
     """ List the contents of supplied directories """
+    gMonitor.addMark( 'ListDirectory', 1 )
     return gFileCatalogDB.listDirectory( lfns, self.getRemoteCredentials(), verbose = verbose )
 
   types_isDirectory = [ [ ListType, DictType ] + list( StringTypes ) ]
@@ -292,7 +353,7 @@ class FileCatalogHandler( RequestHandler ):
     """ Determine whether supplied path is a directory """
     return gFileCatalogDB.isDirectory( lfns, self.getRemoteCredentials() )
 
-  types_getDirectorySize = [ [ ListType, DictType ] + list( StringTypes ), BooleanType, BooleanType ]
+  types_getDirectorySize = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getDirectorySize( self, lfns, longOut = False, fromFiles = False ):
     """ Get the size of the supplied directory """
     return gFileCatalogDB.getDirectorySize( lfns, longOut, fromFiles, self.getRemoteCredentials() )

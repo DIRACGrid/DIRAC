@@ -69,7 +69,7 @@ class SEManagerDB( SEManagerBase ):
     self.lock.release()
     return S_OK()
 
-  def __addSE( self, seName ):
+  def __addSE( self, seName, connection = False ):
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()
@@ -100,7 +100,7 @@ class SEManagerDB( SEManagerBase ):
     self.lock.release()
     return S_OK( seid )
 
-  def __removeSE( self, seName ):
+  def __removeSE( self, seName, connection = False ):
     connection = self.db._getConnection()
     startTime = time.time()
     self.lock.acquire()

@@ -10,8 +10,6 @@
 
 __RCSID__ = "$Id$"
 
-AGENT_NAME = 'Transformation/TaskManagerAgentBase'
-
 import time
 import datetime
 from Queue import Queue
@@ -20,12 +18,16 @@ from DIRAC import S_OK, gMonitor
 
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
+from DIRAC.Core.Utilities.ThreadSafe                                import Synchronizer
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
 from DIRAC.Core.Security.ProxyInfo                                  import getProxyInfo
 
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+
+AGENT_NAME = 'Transformation/TaskManagerAgentBase'
+gSynchro = Synchronizer()
 
 class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
   """ To be extended. Please look at WorkflowTaskAgent and RequestTaskAgent.
@@ -66,8 +68,6 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
-
-    self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     # Default clients
     self.transClient = TransformationClient()
@@ -451,12 +451,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self._logError( "Failed to prepare tasks: %s" % preparedTransformationTasks['Message'],
                       transID = transID, method = 'submitTasks' )
       return preparedTransformationTasks
-    res = clients['TaskManager'].submitTransformationTasks( preparedTransformationTasks['Value'] )
-    self._logDebug( "submitTransformationTasks return value: %s" % res, method = 'submitTasks', transID = transID )
-    if not res['OK']:
-      self._logError( "Failed to submit prepared tasks: %s" % res['Message'],
-                      transID = transID, method = 'submitTasks' )
-      return res
+
+    res = self.__actualSubmit( preparedTransformationTasks, clients, transID )
+
     res = clients['TaskManager'].updateDBAfterTaskSubmission( res['Value'] )
     self._logDebug( "updateDBAfterTaskSubmission return value: %s" % res, method = 'submitTasks', transID = transID )
     if not res['OK']:
@@ -465,3 +462,16 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       return res
 
     return S_OK()
+
+  # This gSynchro is necessary in order to avoid race conditions when submitting to the WMS,
+  # because WMSClient wants jobDescription.xml to be present in the local directory prior to submission
+  @gSynchro
+  def __actualSubmit( self, preparedTransformationTasks, clients, transID ):
+    """ This function contacts either RMS or WMS depending on the type of transformation.
+    """
+    res = clients['TaskManager'].submitTransformationTasks( preparedTransformationTasks['Value'] )
+    self._logDebug( "submitTransformationTasks return value: %s" % res, method = 'submitTasks', transID = transID )
+    if not res['OK']:
+      self._logError( "Failed to submit prepared tasks: %s" % res['Message'],
+                      transID = transID, method = 'submitTasks' )
+    return res

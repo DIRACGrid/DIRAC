@@ -55,7 +55,7 @@ class JobScheduling( OptimizerExecutor ):
     attDict = result[ 'Value' ]
     try:
       reschedules = int( attDict[ 'RescheduleCounter' ] )
-    except ValueError:
+    except (ValueError, KeyError):
       return S_ERROR( "RescheduleCounter has to be an integer" )
     if reschedules != 0:
       delays = self.ex_getOption( 'RescheduleDelays', [60, 180, 300, 600] )

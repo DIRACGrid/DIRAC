@@ -1,4 +1,4 @@
-[v6r13-pre6]
+[v6r13-pre10]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -14,10 +14,89 @@ CHANGE: DataManager - changes to manage URLs inside StorageElement objects only
 *RMS
 CHANGE: Removed files from the previous generation RMS
 CHANGE: RMS refactored based on SQLAlchemy 
+NEW: ReqClient - added options to putRequest(): useFailoverProxy and retryMainServer
+CHANGE: DMSRequestOperationsBase - delay execution or cancel request based on SE statuses 
+        from RSS/CS
 
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
+
+[v6r12p14]
+
+*TS
+FIX: TaskManagerAgentBase: avoid race conditions when submitting to WMS
+
+*DMS
+NEW: FileCatalog - added new components ( directory tree, file manager ) 
+     making use of foreign keys and stored procedures
+FIX: DataManager returns properly the FileCatalog errors     
+
+[v6r12p13]
+
+*TS
+BUGFIX: TransformationAgent - data member not defined
+
+*WMS
+FIX: InputData(Resolution,ByProtocol) - possibility to define RemoteProtocol
+
+[v6r12p12]
+
+*WMS
+BUGFIX: pilotTools - missing comma
+
+[v6r12p11]
+
+*WMS
+FIX: CPUNormalization - dealing with the case when the maxCPUTime is not set in the queue
+     definition
+FIX: pilotTools - added option pilotCFGFile
+
+[v6r12p10]
+
+*DMS
+FIX: StorageElementProxy - BASE_PATH should be a full path
+
+*Resources
+FIX: SRM2Storage - return specific error in putFile
+
+*TS
+FIX: TransformationAgent - fix to avoid an exception in finalize and double printing 
+     when terminating the agent
+BUGFIX: TransformationDB - fix return value in setTransformationParameter()
+
+[v6r12p9]
+
+*Core
+CHANGE: SiteCEMapping - getSiteForCE can take site argument to avoid confusion
+
+*Interfaces
+FIX: Job - provide optional site name in setDestinationCE()
+
+*WMS
+FIX: pilotCommands - check properly the presence of extra cfg files
+     when starting job agent
+FIX: JobAgent - can pick up local cfg file if extraOptions are specified     
+
+[v6r12p8]
+
+*Core
+FIX: dirac-configure - correctly deleting useServerCertificate flag
+BUGFIX: InstallTools - in fixMySQLScript()
+
+*DMS
+BUGFIX: DatasetManager - bug fixes
+CHANGE: StorageElementProxy - internal SE object created with the VO of the requester
+
+*TS
+FIX: dirac-transformation-xxx commands - do not check the transformation status
+CHANGE: Agents - do not use shifter proxy 
+FIX: TransformationAgent - correct handling of replica cache for transformations 
+     when there were more files in the transformation than accepted to be executed
+FIX: TransformationAgent - do not get replicas for the Removal transformations     
+
+*RMS
+NEW: new SetFileStatus Operation
 
 [v6r12p7]
 
@@ -168,6 +247,52 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p30]
+
+*DMS
+CHANGE: FileCatalogCLI - add new -D flag for find to print only directories
+
+[v6r11p29]
+
+*DMS
+FIX: FTS(Agent,Startegy,Gragh) - make use of MaxActiveJobs parameter, bug fixes
+
+*TMS
+FIX: Transformation(Agent,Client) - Operations CS parameters can be defined for each plugin: MaxFiles, SortedBy, NoUnusedDelay. Fixes to facilitate work with large numbers of files.
+
+[v6r11p28]
+
+*Core
+FIX: InstallTools - check properly the module availability before installation
+
+*WMS
+FIX: JobScheduling - protection against missing dict field RescheduleCounter
+
+*TMS
+FIX: TransformationCleaningAgent - execute DM operations with the shifter proxy
+
+[v6r11p27]
+
+*Core
+BUGFIX: InstallTools - bug fix in installNewPortal()
+
+*WMS
+FIX: Watchdog - disallow cputime and wallclock to be negative
+
+*TS
+FIX: TransformationAgent - correct handling of replica caches when more than 5000 files
+
+
+BUGFIX: ModuleBase - bug fix in execute()
+BUGFIX: Workflow - bug fix in createStepInstance()
+
+*DMS
+BUGFIX: DiractoryTreeBase - bug fix in getDirectoryPhysicalSizeFromUsage()
+
+*Resources
+FIX: XROOTStorage - back ported fixes from #2126: putFile would place file in 
+     the wrong location on eos
 
 [v6r11p26]
 

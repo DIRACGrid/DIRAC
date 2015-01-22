@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter 
 
 class ResourceStatus( object ):
   """
@@ -32,6 +33,7 @@ class ResourceStatus( object ):
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
     self.rssClient = None
+    self.infoGetter = InfoGetter()
 
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int( self.rssConfig.getConfigCache() )
@@ -238,6 +240,24 @@ class ResourceStatus( object ):
 
     self.rssClient = None
     return False
+  
+  def isStorageElementAlwaysBanned( self, seName ):
+    """ Checks if the AlwaysBanned policy is applied to the SE
+        given as parameter
+
+        :param seName : string, name of the SE
+
+        :returns S_OK(True/False)
+    """
+
+    res = self.infoGetter.getPoliciesThatApply( {'name' : seName} )
+    if not res['OK']:
+      self.log.error( "isStorageElementAlwaysBanned: unable to get the information", res['Message'] )
+      return res
+
+    isAlwaysBanned = 'AlwaysBanned' in [policy['type'] for policy in res['Value']]
+
+    return S_OK( isAlwaysBanned )
 
 ################################################################################
 

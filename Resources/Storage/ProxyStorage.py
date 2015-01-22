@@ -125,10 +125,6 @@ class ProxyStorage( StorageBase ):
     client = RPCClient( self.url )
     return client.callProxyMethod( self.name, 'getFileMetadata', [path], {} )
 
-  def getTransportURL( self, path, protocols = False ):
-    client = RPCClient( self.url )
-    return client.callProxyMethod( self.name, 'getTransportURL', [path], {'protocols':protocols} )
-
   def removeFile( self, path ):
     client = RPCClient( self.url )
     return client.callProxyMethod( self.name, 'removeFile', [path], {} )

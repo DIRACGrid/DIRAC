@@ -160,13 +160,17 @@ def getCPUTime( CPUNormalizationFactor ):
       CPUTime = int( cpuTimeInMinutes ) * 60
     else:
       queueInfo = getQueueInfo( '%s/%s' % ( gridCE, CEQueue ) )
+      CPUTime = 10000
       if not queueInfo['OK'] or not queueInfo['Value']:
-        gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to 10000" )
-        CPUTime = 10000
+        gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to %d" % CPUTime )
       else:
         queueCSSection = queueInfo['Value']['QueueCSSection']
         # These are (real, wall clock) minutes - damn BDII!
         cpuTimeInMinutes = gConfig.getValue( '%s/maxCPUTime' % queueCSSection )
-        CPUTime = int( cpuTimeInMinutes ) * 60
+        if cpuTimeInMinutes:
+          CPUTime = int( cpuTimeInMinutes ) * 60
+          gLogger.info( "CPUTime for %s: %d" % ( queueCSSection, CPUTime ) )
+        else:
+          gLogger.warn( "Can't find maxCPUTime for %s, defaulting CPUTime to %d" % ( queueCSSection, CPUTime ) )
 
   return CPUTime

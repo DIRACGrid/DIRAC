@@ -15,6 +15,8 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 import datetime
 import os
+import time
+import random
 
 class ReqClient( Client ):
   """
@@ -73,11 +75,14 @@ class ReqClient( Client ):
       self.__requestValidator = RequestValidator()
     return self.__requestValidator
 
-  def putRequest( self, request ):
+  def putRequest( self, request, useFailoverProxy = True, retryMainService = 0 ):
     """ put request to RequestManager
 
     :param self: self reference
     :param Request request: Request instance
+    :param useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
+    :param retryMainService : Amount of time we retry on the main ReqHandler in case of failures.
+
     """
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
@@ -89,12 +94,20 @@ class ReqClient( Client ):
     if not requestJSON["OK"]:
       return requestJSON
     requestJSON = requestJSON["Value"]
-    setRequestMgr = self.requestManager().putRequest( requestJSON )
-    if setRequestMgr["OK"]:
-      return setRequestMgr
-    errorsDict["RequestManager"] = setRequestMgr["Message"]
+
+    retryMainService += 1
+
+    while retryMainService:
+      retryMainService -= 1
+      setRequestMgr = self.requestManager().putRequest( requestJSON )
+      if setRequestMgr["OK"]:
+        return setRequestMgr
+      errorsDict["RequestManager"] = setRequestMgr["Message"]
+      # sleep a bit
+      time.sleep( random.randint( 1, 5 ) )
+
     self.log.warn( "putRequest: unable to set request '%s' at RequestManager" % request.RequestName, setRequestMgr["Message"] )
-    proxies = self.requestProxies()
+    proxies = self.requestProxies() if useFailoverProxy else {}
     for proxyURL in randomize( proxies.keys() ):
       proxyClient = proxies[proxyURL]
       self.log.debug( "putRequest: trying RequestProxy at %s" % proxyURL )

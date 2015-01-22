@@ -401,10 +401,10 @@ class TransformationDB( DB ):
     if paramName in self.TRANSPARAMS:
       res = self.__updateTransformationParameter( transID, paramName, paramValue, connection = connection )
       if res['OK']:
-        self._escapeString( paramValue )
-        if not res['OK']:
+        pv = self._escapeString( paramValue )
+        if not pv['OK']:
           return S_ERROR( "Failed to parse parameter value" )
-        paramValue = res['Value']
+        paramValue = pv['Value']
         message = '%s updated to %s' % ( paramName, paramValue )
     else:
       res = self.__addAdditionalTransformationParameter( transID, paramName, paramValue, connection = connection )

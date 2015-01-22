@@ -54,9 +54,9 @@ class DataManager( object ):
     """
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
     self.vo = vo
-    
+
     catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
-    
+
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
     self.registrationProtocol = getRegistrationProtocols()
@@ -803,7 +803,7 @@ class DataManager( object ):
         log.debug( 'Error getting the file from %s' % candidateSE.name, res['Message'] )
         continue
 
-      res = returnSingleResult( destStorageElement.putFile( {destPath:localFile}, sourceSize = catalogSize ) )
+      res = returnSingleResult( destStorageElement.putFile( {destPath:localFile} ) )
       if not res['OK']:
         log.debug( 'Error putting file coming from %s' % candidateSE.name, res['Message'] )
         # if the put is the problem, it's maybe pointless to try the other candidateSEs...
@@ -857,8 +857,6 @@ class DataManager( object ):
     # Remove Failed LFNs if they are in success
     success = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn in success:
-      failed.pop( lfn, None )
     return res
 
   def __registerFile( self, fileTuples, catalog ):
@@ -905,8 +903,6 @@ class DataManager( object ):
     # Remove Failed LFNs if they are in success
     success = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn in success:
-      failed.pop( lfn, None )
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):

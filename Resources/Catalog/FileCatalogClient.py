@@ -67,7 +67,7 @@ class FileCatalogClient(Client):
         entryDict = result['Value']['Successful'][path][entryType]
         for fname in entryDict.keys():
           detailsDict = entryDict.pop( fname )
-          lfn = '%s/%s' % ( path, os.path.basename( fname ) )
+          lfn = os.path.join( path, os.path.basename( fname ) )
           entryDict[lfn] = detailsDict
     return result      
 

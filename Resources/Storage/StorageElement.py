@@ -521,7 +521,7 @@ class StorageElementItem( object ):
       protocols = self.turlProtocols
     elif type( protocol ) is ListType:
       protocols = protocol
-    else:
+    elif type( protocol ) == type( '' ):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"
@@ -666,7 +666,7 @@ class StorageElementItem( object ):
       if not lfnDict:
         self.log.debug( "StorageElement.__executeMethod: No lfns to be attempted for %s protocol." % pluginName )
         continue
-      if not ( pluginName in self.remotePlugins ) and not localSE:
+      if not ( pluginName in self.remotePlugins ) and not localSE and not storage.pluginName == "Proxy":
         # If the SE is not local then we can't use local protocols
         self.log.debug( "StorageElement.__executeMethod: Local protocol not appropriate for remote use: %s." % pluginName )
         continue
@@ -674,9 +674,12 @@ class StorageElementItem( object ):
       self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol URLs for %s." % ( len( lfnDict ),
                                                                                                   pluginName ) )
       replicaDict = kwargs.pop( 'replicaDict', {} )
-      res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
-      urlDict = res['Value']['Successful']  # url : lfn
-      failed.update( res['Value']['Failed'] )
+      if storage.pluginName != "Proxy":
+        res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
+        urlDict = res['Value']['Successful']  # url : lfn
+        failed.update( res['Value']['Failed'] )
+      else:
+        urlDict = dict( [ ( lfn, lfn ) for lfn in lfnDict ] )
       if not len( urlDict ):
         self.log.verbose( "StorageElement.__executeMethod No urls generated for protocol %s." % pluginName )
       else:

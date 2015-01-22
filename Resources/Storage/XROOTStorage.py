@@ -1561,3 +1561,4 @@ class XROOTStorage( StorageBase ):
         successful[url] = res['Value']
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
+

@@ -75,9 +75,9 @@ class Route( Edge ):
     """ get time to start for this channel """
     if not self.isActive:
       return float( "inf" )
-    transferSpeed = { "File": self.FilePut,
+    transferSpeed = { "Files": self.FilePut,
                       "Throughput": self.ThroughPut }[self.SchedulingType]
-    waitingTransfers = { "File" : self.WaitingFiles,
+    waitingTransfers = { "Files" : self.WaitingFiles,
                          "Throughput": self.WaitingSize }[self.SchedulingType]
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
@@ -97,9 +97,10 @@ class FTS2Graph( Graph ):
   def __init__( self,
                 name,
                 ftsHistoryViews = None,
-                accFailureRate = 0.75,
-                accFailedFiles = 5,
-                schedulingType = "Files" ):
+                accFailureRate = None,
+                accFailedFiles = None,
+                schedulingType = None,
+                maxActiveJobs = None ):
     """ c'tor
 
     :param str name: graph name
@@ -110,9 +111,10 @@ class FTS2Graph( Graph ):
     """
     Graph.__init__( self, name )
     self.log = gLogger.getSubLogger( name, True )
-    self.accFailureRate = accFailureRate
-    self.accFailedFiles = accFailedFiles
-    self.schedulingType = schedulingType
+    self.accFailureRate = accFailureRate if accFailureRate else 0.75
+    self.accFailedFiles = accFailedFiles if accFailedFiles else 5
+    self.schedulingType = schedulingType if schedulingType else "Files"
+    self.maxActiveJobs = maxActiveJobs if maxActiveJobs else 50
     self.initialize( ftsHistoryViews )
 
   def initialize( self, ftsHistoryViews = None ):
@@ -278,7 +280,7 @@ class FTS2Graph( Graph ):
       ftsSite.Name = site
       ftsSite.FTSServer = ftsServerURL
       # # should be read from CS as well
-      ftsSite.MaxActiveJobs = 50
+      ftsSite.MaxActiveJobs = self.maxActiveJobs
       ftsSites.append( ftsSite )
     return S_OK( ftsSites )
 
