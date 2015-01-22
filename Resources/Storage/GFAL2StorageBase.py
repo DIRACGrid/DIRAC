@@ -1819,7 +1819,7 @@ class GFAL2StorageBase( StorageBase ):
 ##################################################################
 
 
-  def _getExtendedAttributes( self, path, protocols = False ):
+  def _getExtendedAttributes( self, path ):
     """ Get all the available extended attributes of path
 
     :param self: self reference
