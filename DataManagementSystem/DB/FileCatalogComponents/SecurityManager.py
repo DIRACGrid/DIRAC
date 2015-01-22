@@ -56,6 +56,9 @@ class SecurityManagerBase:
         successful[path] = True
       else:
         successful[path] = False
+
+    failed.update( result['Value']['Failed'] )
+
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 

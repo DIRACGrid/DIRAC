@@ -498,7 +498,7 @@ class DirectoryTreeBase:
 
     result = self.getDirectoryParameters( path )
     if not result['OK']:
-      if "not found" in result['Message']:
+      if "not found" in result['Message'] or "not exist" in result['Message']:
         # If the directory does not exist, check the nearest parent for the permissions
         if path == '/':
           # Nothing yet exists, starting from the scratch
