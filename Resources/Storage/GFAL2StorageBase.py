@@ -69,8 +69,8 @@ class GFAL2StorageBase( StorageBase ):
     self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    # TODO: turn 0 back into '0' so checksum gets used. This is only for the system test because xroot has trouble with getting the checksum
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
+
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '0' )
     # enum gfal_cksm_type, all in lcg_util
     #   GFAL_CKSM_NONE = 0,
     #   GFAL_CKSM_CRC32,
@@ -83,6 +83,9 @@ class GFAL2StorageBase( StorageBase ):
 
     if self.checksumType == '0':
       self.checksumType = None
+
+    # TODO: delete this line once xroot checksums work
+    self.checksumType = None
 #     if self.checksumType:
 #       if str( self.checksumType ).upper() in self.checksumTypes:
 #         gLogger.debug( "GFAL2StorageBase: will use %s checksum check" % self.checksumType )
@@ -1385,7 +1388,6 @@ class GFAL2StorageBase( StorageBase ):
     self.log.debug( 'GFAL2StorageBase.__getSingleDirectory: Trying to download the %s files' % len( sFilesDict ) )
     for sFile in sFilesDict:
       # Returns S_OK(fileSize) if successful
-      # fullFilePath = '%s%s' % ( self.basePath, sFile )
       res = self.__getSingleFile( sFile, '/'.join( [dest_dir, os.path.basename( sFile ) ] ) )
       if res['OK']:
         filesReceived += 1
