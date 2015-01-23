@@ -41,6 +41,7 @@ class SRM2V2Storage( GFAL2StorageBase ):
   def _getExtendedAttributes( self, path, protocols = False ):
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
+      self.log.debug( 'SRM2V2Storage._getExtendedAttributes: protocols: %s' % protocols )
     res = GFAL2StorageBase._getExtendedAttributes( self, path )
     self.__setSRMOptionsToDefault()
     return res
@@ -66,7 +67,8 @@ class SRM2V2Storage( GFAL2StorageBase ):
 
     failed = {}
     successful = {}
-
+    self.log.debug( 'SRM2V2Storage.getTransportURL: self.protocolParameters[protocol] = %s' % self.protocolParameters['Protocol'] )
+    self.log.debug( 'SRM2V2Storage.getTransportURL: protocols= %s' % protocols )
     if not protocols:
       protocols = self.__getProtocols()
       if not protocols['OK']:
@@ -78,6 +80,17 @@ class SRM2V2Storage( GFAL2StorageBase ):
       listProtocols = protocols
     else:
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
+
+    if self.protocolParameters['Protocol'] in listProtocols:
+      successful = {}
+      failed = {}
+      for url in urls:
+        if self.isURL( url )['Value']:
+          successful[url] = url
+        else:
+          failed[url] = 'getTransportURL: Failed to obtain turls.'
+
+      return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
     for url in urls:
       res = self.__getSingleTransportURL( url, listProtocols )
