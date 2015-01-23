@@ -8,15 +8,15 @@ use mysql;
 -- options to set in the db
 -- transaction-isolation = READ-COMMITTED
 
--- delete from user where user='Dirac';
---
--- Must set passwords for database user by replacing "must_be_set".
---
 
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'%';
+GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'%';
+GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'%';
 
--- GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'%' IDENTIFIED BY  'to_be_changed';
--- GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'%' IDENTIFIED BY 'to_be_changed';
--- GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'%' IDENTIFIED BY 'to_be_changed';
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'localhost';
+GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'localhost';
+GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'localhost';
+
 
 FLUSH PRIVILEGES;
 
