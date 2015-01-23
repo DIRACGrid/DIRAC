@@ -2,7 +2,7 @@ from types import StringType, ListType
 import errno
 import gfal2
 # from DIRAC
-from DIRAC.Resources.Storage.GFAL2StorageBase import GFAL2StorageBase
+from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Utilities import checkArgumentFormat
 
@@ -11,7 +11,7 @@ from DIRAC.Resources.Utilities import checkArgumentFormat
 
 __RCSID__ = "$Id$"
 
-class GFAL2_SRM2Storage( GFAL2StorageBase ):
+class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
   """
   
@@ -19,7 +19,7 @@ class GFAL2_SRM2Storage( GFAL2StorageBase ):
     """ """
     self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
     self.log.debug( "SRM2V2Storage.__init__: Initializing object" )
-    GFAL2StorageBase.__init__( self, storageName, parameters )
+    GFAL2_StorageBase.__init__( self, storageName, parameters )
     self.pluginName = 'GFAL2_SRM2'
 
     # ##
@@ -41,7 +41,7 @@ class GFAL2_SRM2Storage( GFAL2StorageBase ):
   def _getExtendedAttributes( self, path, protocols = False ):
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    res = GFAL2StorageBase._getExtendedAttributes( self, path )
+    res = GFAL2_StorageBase._getExtendedAttributes( self, path )
     self.__setSRMOptionsToDefault()
     return res
 

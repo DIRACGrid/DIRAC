@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.File import getSize
 # # RCSID
 __RCSID__ = "$Id$"
 
-class GFAL2StorageBase( StorageBase ):
+class GFAL2_StorageBase( StorageBase ):
   """ .. class:: GFAL2StorageBase
 
   SRM v2 interface to StorageElement using gfal2

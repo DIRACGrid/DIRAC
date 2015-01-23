@@ -2,9 +2,9 @@ from types import StringType, ListType
 # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Utilities import checkArgumentFormat
-from DIRAC.Resources.Storage.GFAL2StorageBase import GFAL2StorageBase
+from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 
-class GFAL2_XROOTStorage( GFAL2StorageBase ):
+class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
   """ .. class:: XROOTStorage
 
@@ -25,7 +25,7 @@ class GFAL2_XROOTStorage( GFAL2StorageBase ):
     """
     self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
     # # init base class
-    GFAL2StorageBase.__init__( self, storageName, parameters )
+    GFAL2_StorageBase.__init__( self, storageName, parameters )
 
     # XROOT has problems with checksums at the moment.
     self.checksumType = None
