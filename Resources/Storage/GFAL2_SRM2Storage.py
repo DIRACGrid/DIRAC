@@ -17,8 +17,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   
   def __init__( self, storageName, parameters ):
     """ """
-    self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
-    self.log.debug( "SRM2V2Storage.__init__: Initializing object" )
+    self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
+    self.log.debug( "GFAL2_SRM2Storage.__init__: Initializing object" )
     GFAL2_StorageBase.__init__( self, storageName, parameters )
     self.pluginName = 'GFAL2_SRM2'
 
@@ -62,7 +62,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( 'SRM2V2Storage.getTransportURL: Attempting to retrieve tURL for %s paths' % len( urls ) )
+    self.log.debug( 'GFAL2_SRM2Storage.getTransportURL: Attempting to retrieve tURL for %s paths' % len( urls ) )
 
     failed = {}
     successful = {}
@@ -110,7 +110,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     :returns S_OK( Transport_URL ) in case of success
              S_ERROR( errStr ) in case of a failure
     """
-    self.log.debug( 'SRM2V2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
+    self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
     if protocols:
       res = self._getExtendedAttributes( path, protocols )
     else:
@@ -122,11 +122,11 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
         turl = attributeDict['user.replicas']
         return S_OK( turl )
       else:
-        errStr = 'SRM2V2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
+        errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set.'
         self.log.debug( errStr )
         return S_ERROR( errStr )
     else:
-      errStr = 'SRM2V2Storage.__getSingleTransportURL: %s' % res['Message']
+      errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: %s' % res['Message']
       return S_ERROR( errStr )
 
 
@@ -139,7 +139,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     :param self: self reference
     """
     sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( self.name ) )
-    self.log.debug( "SRM2V2Storage.__getProtocols: Trying to get protocols for storage %s." % self.name )
+    self.log.debug( "GFAL2_SRM2Storage.__getProtocols: Trying to get protocols for storage %s." % self.name )
     if not sections['OK']:
       return sections
 
@@ -150,17 +150,17 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
         protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
         siteProtocols = gConfig.getValue( protPath, [] )
         if siteProtocols:
-          self.log.debug( 'SRM2V2Storage.__getProtocols: Found SE protocols list to override defaults:', ', '.join( siteProtocols, ) )
+          self.log.debug( 'GFAL2_SRM2Storage.__getProtocols: Found SE protocols list to override defaults:', ', '.join( siteProtocols, ) )
           protocolsList = siteProtocols
 
     if not protocolsList:
-      self.log.debug( "SRM2V2Storage.__getProtocols: No protocols provided, using the default protocols." )
+      self.log.debug( "GFAL2_SRM2Storage.__getProtocols: No protocols provided, using the default protocols." )
       protocolsList = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
-      self.log.debug( 'SRM2V2Storage.__getProtocols: protocolList = %s' % protocolsList )
+      self.log.debug( 'GFAL2_SRM2Storage.__getProtocols: protocolList = %s' % protocolsList )
 
     # if there is even no default protocol
     if not protocolsList:
-      return S_ERROR( "SRM2V2Storage.__getProtocols: No local protocols defined and no defaults found." )
+      return S_ERROR( "GFAL2_SRM2Storage.__getProtocols: No local protocols defined and no defaults found." )
 
     return S_OK( protocolsList )
 
