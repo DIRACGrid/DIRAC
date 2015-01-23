@@ -11,11 +11,13 @@ Encoding and decoding for dirac, Ids:
  l -> list
  t -> tuple
  d -> dictionary
+ k -> DError
 """
 __RCSID__ = "$Id$"
 
 import types
 import datetime
+from DIRACError import DError
 
 _dateTimeObject = datetime.datetime.utcnow()
 _dateTimeType = type( _dateTimeObject )
@@ -219,6 +221,28 @@ def decodeDict( data, i ):
 
 g_dEncodeFunctions[ types.DictType ] = encodeDict
 g_dDecodeFunctions[ "d" ] = decodeDict
+
+# Encoding and decoding DError
+def encodeDError( dErrorValue, eList ):
+  eList.append( 'k' )
+  g_dEncodeFunctions[type( dErrorValue.errno )]( dErrorValue.errno, eList )
+  g_dEncodeFunctions[type( dErrorValue.errmsg )]( dErrorValue.errmsg, eList )
+  g_dEncodeFunctions[type( dErrorValue._callStack )]( dErrorValue._callStack, eList )
+  eList.append( 'e' )
+
+def decodeDError( data, i ):
+  i += 1
+
+  errno, i = g_dDecodeFunctions[ data[i] ]( data, i )
+  errmsg, i = g_dDecodeFunctions[ data[i] ]( data, i )
+  callStack, i = g_dDecodeFunctions[ data[i] ]( data, i )
+  de = DError( errno, errmsg )
+  de._callStack = callStack
+  return ( de, i + 1 )
+
+de = DError(0)
+g_dEncodeFunctions[ type(de) ] = encodeDError
+g_dDecodeFunctions[ "k" ] = decodeDError
 
 
 #Encode function
