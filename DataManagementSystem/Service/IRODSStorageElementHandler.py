@@ -36,6 +36,7 @@ from types import StringType, StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 from irods import rcConnect , rcDisconnect , clientLoginWithPassword, \
                   irodsCollection, irodsOpen, \
@@ -149,9 +150,9 @@ class IRODSStorageElementHandler( RequestHandler ):
 ## return ( min( dsize, maxStorageSizeBytes ) > size )
     return True
 
-  def __resolveFileID( self, fileID ):
+  def __resolveFileID( self, fileID, userDict ):
     """ get path to file for a given :fileID: """
-    
+
     port = self.getCSOption('Port','')
     if not port:
       return ''
@@ -160,32 +161,38 @@ class IRODSStorageElementHandler( RequestHandler ):
       loc = fileID.find( ":%s" % port )
       if loc >= 0:
         fileID = fileID[loc + len( ":%s" % port ):]
-      
+
     serviceName = self.serviceInfoDict['serviceName']
     loc = fileID.find( serviceName )
     if loc >= 0:
       fileID = fileID[loc + len( serviceName ):]
-      
+
     loc = fileID.find( '?=' )
     if loc >= 0:
       fileID = fileID[loc + 2:]
-      
-    if fileID.find( BASE_PATH ) == 0:
-      return fileID
+
+    # Leave only one / in front
     while fileID and fileID[0] == '/':
       fileID = fileID[1:]
-    return os.path.join( BASE_PATH, fileID )
+    fileID = '/' + fileID
+
+    # For user data strip off the HOME part as iRods has its own user home
+    if fileID.startswith( userDict['DIRACHome'] ):
+      fileID = fileID.replace( userDict['DIRACHome'], '' )
+
+    return fileID
 
   def __getFileStat( self, path ):
     """ Get the file stat information
 """
 
-    conn , error = self.__irodsClient( )
+    conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
     
-    file_path = self.__resolveFileID( path )
-    file_path = IRODS_HOME + file_path
+    file_path = self.__resolveFileID( path, userDict )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
     irodsFile = irodsOpen( conn , file_path , "r" )
@@ -210,7 +217,7 @@ class IRODSStorageElementHandler( RequestHandler ):
   types_exists = [StringTypes]
   def export_exists( self, fileID ):
     """ Check existance of the fileID """
-    if os.path.exists( self.__resolveFileID( fileID ) ):
+    if os.path.exists( self.__resolveFileID( fileID, {} ) ):
       return S_OK( True )
     return S_OK( False )
 
@@ -218,7 +225,7 @@ class IRODSStorageElementHandler( RequestHandler ):
   def export_getMetadata( self, fileID ):
     """ Get metadata for the file or directory specified by fileID
 """
-    return self.__getFileStat( self.__resolveFileID( fileID ) )
+    return self.__getFileStat( fileID )
 
   types_createDirectory = [StringType]
   def export_createDirectory( self, dir_path ):
@@ -230,8 +237,11 @@ class IRODSStorageElementHandler( RequestHandler ):
   def export_listDirectory( self, dir_path, mode ):
     """ Return the dir_path directory listing
 """
+
+    # TODO: must be updated
+
     is_file = False
-    path = self.__resolveFileID( dir_path )
+    path = self.__resolveFileID( dir_path, {} )
     if not os.path.exists( path ):
       return S_ERROR( 'Directory %s does not exist' % dir_path )
     elif os.path.isfile( path ):
@@ -296,7 +306,7 @@ fileSize can be Xbytes or -1 if unknown.
 token is used for access rights confirmation.
 """
 
-    conn , error = self.__irodsClient( )
+    conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
     coll = irodsCollection( conn, IRODS_HOME )
@@ -305,7 +315,7 @@ token is used for access rights confirmation.
       rcDisconnect( conn )
       return S_ERROR( 'Not enough disk space' )
 
-    file_path = self.__resolveFileID( fileID )
+    file_path = self.__resolveFileID( fileID, userDict )
 
     path = file_path.split( "/" )
     file_ = path.pop()
@@ -313,7 +323,8 @@ token is used for access rights confirmation.
     if len( path ) > 0:
       coll = self.__changeCollection( coll , path )
 
-    file_path = IRODS_HOME + file_path
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    file_path = irodsHome + file_path
  
     try:
       if IRODS_RESOURCE:
@@ -340,12 +351,13 @@ fileID is the local file name in the SE.
 token is used for access rights confirmation.
 """
 
-    conn , error = self.__irodsClient( )
+    conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
 
-    file_path = self.__resolveFileID( fileID )
-    file_path = IRODS_HOME + file_path
+    file_path = self.__resolveFileID( fileID, userDict )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
     irodsFile = irodsOpen( conn , file_path , "r" )
@@ -371,7 +383,7 @@ token is used for access rights confirmation.
     if not self.__checkForDiskSpace( BASE_PATH, 10 * 1024 * 1024 ):
       return S_ERROR( 'Less than 10MB remaining' )
     dirName = fileID.replace( '.bz2', '' ).replace( '.tar', '' )
-    dir_path = self.__resolveFileID( dirName )
+    dir_path = self.__resolveFileID( dirName, {} )
     res = fileHelper.networkToBulk( dir_path )
     if not res['OK']:
       gLogger.error( 'Failed to receive network to bulk.', res['Message'] )
@@ -399,7 +411,7 @@ token is used for access rights confirmation.
         fileID = fileID.replace( '.bz2', '' )
         compress = True
       fileID = fileID.replace( '.tar', '' )
-      strippedFiles.append( self.__resolveFileID( fileID ) )
+      strippedFiles.append( self.__resolveFileID( fileID, {} ) )
     res = fileHelper.bulkToNetwork( strippedFiles, compress=compress )
     if not res['OK']:
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
@@ -408,7 +420,7 @@ token is used for access rights confirmation.
   types_remove = [StringType, StringType]
   def export_remove( self, fileID, token ):
     """ Remove fileID from the storage. token is used for access rights confirmation. """
-    return self.__removeFile( self.__resolveFileID( fileID ), token )
+    return self.__removeFile( fileID, token )
 
   def __confirmToken( self, token, path, mode ):
     """ Confirm the access rights for the path in a given mode
@@ -419,12 +431,13 @@ token is used for access rights confirmation.
   def __removeFile( self, fileID, token ):
     """ Remove one file with fileID name from the storage
 """
-    conn , error = self.__irodsClient( )
+    conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
 
-    file_path = self.__resolveFileID( fileID )
-    file_path = IRODS_HOME + file_path
+    file_path = self.__resolveFileID( fileID, userDict )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
     irodsFile = irodsOpen( conn , file_path , "r" )
@@ -453,7 +466,7 @@ token is used for access rights confirmation.
   def export_getDirectorySize( self, fileID ):
     """ Get the size occupied by the given directory
 """
-    dir_path = self.__resolveFileID( fileID )
+    dir_path = self.__resolveFileID( fileID, {} )
     if os.path.exists( dir_path ):
       try:
         space = self.__getDirectorySize( dir_path )
@@ -469,7 +482,7 @@ token is used for access rights confirmation.
     """ Remove the given directory from the storage
 """
 
-    dir_path = self.__resolveFileID( fileID )
+    dir_path = self.__resolveFileID( fileID, {} )
     if not self.__confirmToken( token, fileID, 'x' ):
       return S_ERROR( 'Directory removal %s not authorized' % fileID )
     else:
@@ -513,7 +526,7 @@ token is used for access rights confirmation.
     """ Send the storage element resource information
 """
 
-    conn , error = self.__irodsClient( )
+    conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
 
@@ -537,36 +550,65 @@ token is used for access rights confirmation.
 
     return S_OK( storageDict )
 
+  def __getUserDetails( self ):
+    """ Get details on user account
+    """
+    credentials = self.getRemoteCredentials()
+    if credentials: 
+      diracUser = credentials.get( "username" )
+      diracGroup = credentials.get( "group" )
+    if not ( diracUser and diracGroup ):
+      return S_ERROR( 'Failed to get DIRAC user name and/or group' )
+    vo = getVOForGroup( diracGroup )
+    
+    diracHome = ''
+    if vo:
+      diracHome = '/%s/user/%s/%s' % ( vo, diracUser[0], diracUser )
+    
+    cfgPath = self.serviceInfoDict[ 'serviceSectionPath' ]
+    gLogger.debug( "cfgPath: %s" % cfgPath )
+    irodsUser = gConfig.getValue( "%s/UserCredentials/%s/iRodsUser" % ( cfgPath , diracUser ) , diracUser )  
+    irodsHome = gConfig.getValue( "%s/UserCredentials/%s/iRodsHome" % ( cfgPath , diracUser ) , '' ) 
+    irodsGroup = gConfig.getValue( "%s/UserCredentials/%s/iRodsGroup" % ( cfgPath , diracUser ) , '' ) 
+    irodsPassword = gConfig.getValue( "%s/UserCredentials/%s/iRodsPassword" % ( cfgPath , diracUser ) , '' ) 
+
+    resultDict = {}
+    resultDict['DIRACUser'] = diracUser
+    resultDict['DIRACGroup'] = diracGroup
+    resultDict['DIRACHome'] = diracHome
+    resultDict['iRodsUser'] = irodsUser
+    resultDict['iRodsGroup'] = irodsGroup
+    resultDict['iRodsHome'] = irodsHome
+    resultDict['iRodsPassword'] = irodsPassword
+    
+    return S_OK( resultDict )
 
   def __irodsClient( self , user = None ):
     """ Get the iRods client
     """
     global IRODS_USER
-    password = None
+    
+    userDict = {}
+    result = self.__getUserDetails()
+    if not result['OK']:
+      return False , "Failed to get iRods user info", userDict
+    
+    userDict = result['Value']
 
-    cfgPath = self.serviceInfoDict[ 'serviceSectionPath' ]
-    gLogger.debug( "cfgPath: %s" % cfgPath )
-
-    diracUser = user
-    if not user:
-      credentials = self.getRemoteCredentials()
-      if credentials and ( "username" in credentials ):
-        diracUser = credentials[ "username" ]
-
-    IRODS_USER = gConfig.getValue( "%s/UserCredentials/%s/iRodsUser" % ( cfgPath , diracUser ) , diracUser )
+    IRODS_USER = userDict['iRodsUser']
 
     if not IRODS_USER:
-      return False , "Failed to get iRods user"
+      return False , "Failed to get iRods user", userDict
     gLogger.debug( "iRods user: %s" % IRODS_USER )
 
-    password = gConfig.getValue( "%s/UserCredentials/%s/iRodsPassword" % ( cfgPath , diracUser ) , password )
+    password = userDict['iRodsPassword']
     if not password:
-      return False , "Failed to get iRods user"
+      return False , "Failed to get iRods user/password", userDict
 
     conn , errMsg = rcConnect( IRODS_HOST , IRODS_PORT , IRODS_USER , IRODS_ZONE )
     status = clientLoginWithPassword( conn , password )
 
     if not status == 0:
-      return False , "Failed to authenticate user '%s'" % IRODS_USER
+      return False , "Failed to authenticate user '%s'" % IRODS_USER, userDict
 
-    return conn , errMsg
+    return conn , errMsg, userDict
