@@ -440,14 +440,7 @@ class DataManager( object ):
       errStr = "putAndRegister: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
       return S_ERROR( errStr )
-    destinationSE = storageElement.getStorageElementName()['Value']
 
-    res = returnSingleResult( storageElement.getURL( lfn ) )
-    if not res['OK']:
-      errStr = "putAndRegister: Failed to generate destination PFN."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
-    destUrl = res['Value']
 
     fileDict = {lfn:fileName}
 
@@ -477,7 +470,15 @@ class DataManager( object ):
 
     ###########################################################
     # Perform the registration here
+    destinationSE = storageElement.getStorageElementName()['Value']
+    res = returnSingleResult( storageElement.getURL( lfn ) )
+    if not res['OK']:
+      errStr = "putAndRegister: Failed to generate destination PFN."
+      self.log.debug( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    destUrl = res['Value']
     oDataOperation.setValueByKey( 'RegistrationTotal', 1 )
+
     fileTuple = ( lfn, destUrl, size, destinationSE, guid, checksum )
     registerDict = {'LFN':lfn, 'PFN':destUrl, 'Size':size, 'TargetSE':destinationSE, 'GUID':guid, 'Addler':checksum}
     startTime = time.time()
@@ -760,6 +761,7 @@ class DataManager( object ):
       if not res['OK']:
         log.debug( "Cannot get destURL", res['Message'] )
         continue
+      log.debug( "DESTINATION URL", res['Value'] )
       destURL = res['Value']
 
       if sourceURL == destURL:
@@ -774,7 +776,7 @@ class DataManager( object ):
         continue
       
       
-      log.debug( "Replication successful.", res['value'] )
+      log.debug( "Replication successful.", res['Value'] )
       
       res = returnSingleResult( destStorageElement.getURL(destPath,  protocol = self.registrationProtocol))
       if not res['OK']:
