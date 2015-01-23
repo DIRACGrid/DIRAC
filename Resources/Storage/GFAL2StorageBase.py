@@ -38,7 +38,6 @@ class GFAL2StorageBase( StorageBase ):
     :param dict parameters: storage parameters
     """
 
-#     os.environ['GLOBUS_THREAD_MODEL'] = "pthread"
     StorageBase.__init__( self, storageName, parameters )
 
     self.log = gLogger.getSubLogger( "GFAL2StorageBase", True )
@@ -52,7 +51,7 @@ class GFAL2StorageBase( StorageBase ):
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
       gfal2.set_verbose( gfal2.verbose_level.trace )
-    # gfal2.set_verbose( gfal2.verbose_level.trace )
+
     self.isok = True
 
     # # gfal2 API
@@ -71,33 +70,12 @@ class GFAL2StorageBase( StorageBase ):
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
 
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '0' )
-    # enum gfal_cksm_type, all in lcg_util
-    #   GFAL_CKSM_NONE = 0,
-    #   GFAL_CKSM_CRC32,
-    #   GFAL_CKSM_ADLER32,
-    #   GFAL_CKSM_MD5,
-    #   GFAL_CKSM_SHA1
-    # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
-                           "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
 
     if self.checksumType == '0':
       self.checksumType = None
 
-    # TODO: delete this line once xroot checksums work
-    self.checksumType = None
-#     if self.checksumType:
-#       if str( self.checksumType ).upper() in self.checksumTypes:
-#         gLogger.debug( "GFAL2StorageBase: will use %s checksum check" % self.checksumType )
-#         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
-#       else:
-#         gLogger.warn( "GFAL2StorageBase: unknown checksum type %s, checksum check disabled" )
-#         # # GFAL_CKSM_NONE
-#         self.checksumType = 0
-#     else:
-#       # # invert and get name
-#       self.log.debug( "GFAL2StorageBase: will use %s checksum" % dict( zip( self.checksumTypes.values(),
-#                                                                      self.checksumTypes.keys() ) )[self.checksumType] )
+    self.log.debug( 'GFAL2StorageBase: using %s checksum' % self.checksumType )
+
     self.voName = None
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
@@ -445,7 +423,6 @@ class GFAL2StorageBase( StorageBase ):
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
     params.src_spacetoken = self.spaceToken
 
-
     params.checksum_check = True if self.checksumType else False
 
     # Params set, copying file now
@@ -469,7 +446,6 @@ class GFAL2StorageBase( StorageBase ):
           return S_ERROR( errStr )
     except gfal2.GError, e:
       errStr = 'GFAL2StorageBase.__getSingleFile: Could not copy %s to %s, [%d] %s' % ( src_url, dest, e.code, e.message )
-      # errStr = "GFAL2StorageBase.__getSingleFile: Failed to copy file %s to destination url %s " % ( src_url, dest_file )
       self.log.error( errStr )
       return S_ERROR( errStr )
 
@@ -691,6 +667,8 @@ class GFAL2StorageBase( StorageBase ):
           res = self.__getChecksum( path, self.checksumType )
         if res['OK']:
           metadataDict['Checksum'] = res['Value']
+        else:
+          metadataDict['Checksum'] = 'Failed to get checksum'
         if 'user.status' in attributeDict.keys():
           if attributeDict['user.status'] == 'ONLINE':
             metadataDict['Cached'] = 1
@@ -975,7 +953,7 @@ class GFAL2StorageBase( StorageBase ):
 
 
   def __getChecksum( self, path, checksumType = 'ADLER32' ):
-    """ Calculate the 'ADLER32' checksum of a file on the storage
+    """ Calculate the checksum (ADLER32 by default) of a file on the storage
 
     :param self: self reference
     :param str path: path to single file on storage (srm://...)
@@ -1039,19 +1017,7 @@ class GFAL2StorageBase( StorageBase ):
       metaDict['Readable'] = bool( statInfo.st_mode & S_IRUSR )
       metaDict['Writeable'] = bool( statInfo.st_mode & S_IWUSR )
     elif metaDict['Directory']:
-      # metaDict['FileSerialNumber'] = statInfo.st_ino
       metaDict['Mode'] = statInfo.st_mode & ( S_IRWXU | S_IRWXG | S_IRWXO )
-      # metaDict['Links'] = statInfo.st_nlink
-      # metaDict['UserID'] = statInfo.st_uid
-      # metaDict['GroupID'] = statInfo.st_gid
-      # metaDict['Size'] = long( statInfo.st_size )
-      # metaDict['LastAccess'] = self.__convertTime( statInfo.st_atime ) if statInfo.st_atime else 'Never'
-      # metaDict['ModTime'] = self.__convertTime( statInfo.st_mtime ) if statInfo.st_mtime else 'Never'
-      # metaDict['StatusChange'] = self.__convertTime( statInfo.st_ctime ) if statInfo.st_ctime else 'Never'
-      # metaDict['Executable'] = bool( statInfo.st_mode & S_IXUSR )
-      # metaDict['Readable'] = bool( statInfo.st_mode & S_IRUSR )
-      # metaDict['Writeable'] = bool( statInfo.st_mode & S_IWUSR )
-
 
     return metaDict
 
@@ -1110,14 +1076,7 @@ class GFAL2StorageBase( StorageBase ):
              S_ERROR() in case of an error during creation
     """
 
-#     # path is a dict {path : False}, and it's only 1 key, value pair in the dict
-#     # so the loop just extracts the path string from the dict
-#     if path is DictType:
-#       for key in path.keys():
-#         path = key
-#       self.log.debug( "GFAL2StorageBase.__createSingleDirectory: Attempting to create directory %s." % path )
 
-    # creating directory with default rights
     try:
       self.log.debug( "GFAL2StorageBase.__createSingleDirectory: %s" % path )
       status = self.gfal2.mkdir( path, 755 )

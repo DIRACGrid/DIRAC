@@ -27,6 +27,9 @@ class GFAL2_XROOTStorage( GFAL2StorageBase ):
     # # init base class
     GFAL2StorageBase.__init__( self, storageName, parameters )
 
+    # XROOT has problems with checksums at the moment.
+    self.checksumType = None
+
 #     self.log.setLevel( "DEBUG" )
 
     self.pluginName = 'GFAL2_XROOT'
