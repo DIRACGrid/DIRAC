@@ -20,7 +20,7 @@ class GFAL2_SRM2Storage( GFAL2StorageBase ):
     self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
     self.log.debug( "SRM2V2Storage.__init__: Initializing object" )
     GFAL2StorageBase.__init__( self, storageName, parameters )
-    self.pluginName = 'GFAl2_SRM2'
+    self.pluginName = 'GFAL2_SRM2'
 
     # ##
     #    Setting the default SRM parameters here. For methods where this
