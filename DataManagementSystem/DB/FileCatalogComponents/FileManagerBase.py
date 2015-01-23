@@ -813,7 +813,9 @@ class FileManagerBase:
     """ Determine whether a file exists in the catalog """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, connection = connection )
-    successful = dict.fromkeys( res['Value']['Successful'], True )
+    successful = res['Value']['Successful']
+    for lfn in successful:
+      successful[lfn] = lfn
     failed = {}
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
