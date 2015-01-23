@@ -906,7 +906,8 @@ class CFG( object ):
       if len( line ) < 1:
         continue
       if commentRE.match( line ):
-          continue
+        currentComment += "%s\n" % line.replace( "#", "" )
+        continue
       for index in range( len( line ) ):
         if line[ index ] == "{":
           currentlyParsedString = currentlyParsedString.strip()
