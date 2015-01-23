@@ -11,7 +11,7 @@ from DIRAC.Resources.Utilities import checkArgumentFormat
 
 __RCSID__ = "$Id$"
 
-class SRM2V2Storage( GFAL2StorageBase ):
+class GFAL2_SRM2Storage( GFAL2StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
   """
   
@@ -20,7 +20,7 @@ class SRM2V2Storage( GFAL2StorageBase ):
     self.log = gLogger.getSubLogger( "SRM2V2Storage", True )
     self.log.debug( "SRM2V2Storage.__init__: Initializing object" )
     GFAL2StorageBase.__init__( self, storageName, parameters )
-    self.pluginName = 'SRM2V2'
+    self.pluginName = 'GFAl2_SRM2'
 
     # ##
     #    Setting the default SRM parameters here. For methods where this
@@ -164,40 +164,5 @@ class SRM2V2Storage( GFAL2StorageBase ):
 
     return S_OK( protocolsList )
 
-#   def __getExtendedAttributes( self, path, protocols = False ):
-#     """ Get all the available extended attributes of path
-#
-#     :param self: self reference
-#     :param str path: path of which we wan't extended attributes
-#     :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
-#     """
-#     attributeDict = {}
-#
-#     # get all the extended attributes from path
-#     try:
-#       self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-#       self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-#       self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-#       if protocols:
-#         self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-#       else:
-#         self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-#       attributes = self.gfal2.listxattr( path )
-#
-#       # get all the respective values of the extended attributes of path
-#       for attribute in attributes:
-#         attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
-#
-#       return S_OK( attributeDict )
-#     # simple error messages, the method that is calling them adds the source of error.
-#     except gfal2.GError, e:
-#       if e.code == errno.ENOENT:
-#         errStr = 'Path does not exist.'
-#         self.log.error( errStr, e.message )
-#         return S_ERROR( errStr )
-#       else:
-#         errStr = 'Something went wrong while checking for extended attributes. Please see error log for more information.'
-#         self.log.error( errStr, e.message )
-#         return S_ERROR( errStr )
 
 
