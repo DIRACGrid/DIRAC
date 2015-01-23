@@ -761,7 +761,6 @@ class DataManager( object ):
       if not res['OK']:
         log.debug( "Cannot get destURL", res['Message'] )
         continue
-      log.debug( "DESTINATION URL", res['Value'] )
       destURL = res['Value']
 
       if sourceURL == destURL:
