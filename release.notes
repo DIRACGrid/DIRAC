@@ -1,3 +1,15 @@
+[v6r11p31]
+
+*Core
+FIX: CFG - bug fixed in loadFromBuffer() resulting in a loss of comments
+
+*Resources
+FIX: SSHTorqueComputingElement - check the status of ssh call for qstat
+
+*DMS
+FIX: FileCatalog - return LFN name instead of True from exists() call if LFN
+     already in the catalog
+
 [v6r11p30]
 
 *DMS
