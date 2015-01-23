@@ -15,7 +15,8 @@ class FileCatalog( object ):
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getFileUserMetadata']
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getFileUserMetadata',
+                'getMetadataFields', 'findFilesByMetadata']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
