@@ -1827,7 +1827,6 @@ class GFAL2StorageBase( StorageBase ):
     :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
     """
     attributeDict = {}
-
     # get all the extended attributes from path
     try:
       attributes = self.gfal2.listxattr( path )
