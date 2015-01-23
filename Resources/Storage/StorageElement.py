@@ -5,9 +5,10 @@ from types import ListType
 __RCSID__ = "$Id$"
 # # custom duty
 import re
+import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
+from DIRAC import gLogger, gConfig, DError, DIRACError
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult 
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -311,7 +312,7 @@ class StorageElementItem( object ):
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
       self.log.debug( "StorageElementisValid: StorageElement is not allowed for VO %s" % self.vo )
-      return S_ERROR( "StorageElement.isValid: StorageElement is not allowed for VO" )
+      return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO" ) )
     self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for %s" % ( self.name,
                                                                                                          operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
@@ -332,7 +333,7 @@ class StorageElementItem( object ):
     # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
       self.log.debug( "StorageElement.isValid: Read, write and check access not permitted." )
-      return S_ERROR( "StorageElement.isValid: Read, write and check access not permitted." )
+      return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: Read, write and check access not permitted." ) )
 
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
     if ( operation in self.readMethods ) or ( operation.lower() in ( 'read', 'readaccess' ) ):
@@ -345,26 +346,26 @@ class StorageElementItem( object ):
       operation = 'CheckAccess'
     else:
       self.log.debug( "StorageElement.isValid: The supplied operation is not known.", operation )
-      return S_ERROR( "StorageElement.isValid: The supplied operation is not known." )
+      return S_ERROR( DError( DIRACError.ENOMETH , "StorageElement.isValid: The supplied operation is not known." ) )
     self.log.debug( "in isValid check the operation: %s " % operation )
     # Check if the operation is valid
     if operation == 'CheckAccess':
       if not reading:
         if not checking:
           self.log.debug( "StorageElement.isValid: Check access not currently permitted." )
-          return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
+          return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: Check access not currently permitted." ) )
     if operation == 'ReadAccess':
       if not reading:
         self.log.debug( "StorageElement.isValid: Read access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Read access not currently permitted." )
+        return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: Read access not currently permitted." ) )
     if operation == 'WriteAccess':
       if not writing:
         self.log.debug( "StorageElementisValid: Write access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Write access not currently permitted." )
+        return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: Write access not currently permitted." ) )
     if operation == 'RemoveAccess':
       if not removing:
         self.log.debug( "StorageElement.isValid: Remove access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Remove access not currently permitted." )
+        return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: Remove access not currently permitted." ) )
     return S_OK()
 
   def getPlugins( self ):
@@ -601,6 +602,7 @@ class StorageElementItem( object ):
                 The Successful dict contains the value returned by the successful storages.
     """
 
+
     removedArgs = {}
     self.log.verbose( "StorageElement.__executeMethod : preparing the execution of %s" % ( self.methodName ) )
 
@@ -635,8 +637,8 @@ class StorageElementItem( object ):
     res = checkArgumentFormat( lfn )
     if not res['OK']:
       errStr = "StorageElement.__executeMethod: Supplied lfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+      self.log.debug( errStr, res['Message'] )
+      return res
     lfnDict = res['Value']
 
     self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' operation with %s lfns." % ( self.methodName,
@@ -687,7 +689,7 @@ class StorageElementItem( object ):
         if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
           fcn = getattr( storage, self.methodName )
         if not fcn:
-          return S_ERROR( "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
+          return S_ERROR( DError( DIRACError.ENOMETH, "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" ) )
 
         urlsToUse = {}  # url : the value of the lfn dictionary for the lfn of this url
         for url in urlDict:
@@ -707,6 +709,7 @@ class StorageElementItem( object ):
               if lfn not in failed:
                 failed[lfn] = ''
               if url in res['Value']['Failed']:
+                self.log.debug( res['Value']['Failed'][url] )
                 failed[lfn] = "%s %s" % ( failed[lfn], res['Value']['Failed'][url] ) if failed[lfn] else res['Value']['Failed'][url]
               else:
                 errStr = 'No error returned from plug-in'
