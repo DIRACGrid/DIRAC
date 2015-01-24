@@ -132,7 +132,7 @@ class WorkingProcess( multiprocessing.Process ):
   """
   .. class:: WorkingProcess
 
-  WorkingProcess is a class that represents activity that is run in a separate process.
+  WorkingProcess is a class that represents activity that runs in a separate process.
 
   It is running main thread (process) in daemon mode, reading tasks from :pendingQueue:, executing 
   them and pushing back tasks with results to the :resultsQueue:. If task has got a timeout value 
@@ -308,8 +308,10 @@ class WorkingProcess( multiprocessing.Process ):
       if self.task.hasCallback() or self.task.hasPoolCallback():
         self.__resultsQueue.put( task )
       if timeout or noResults:  
-        # The task execution timed out, stop the process to prevent it running 
+        # The task execution timed out, stop the process to prevent it from running 
         # in the background
+        time.sleep( 1 )
+        os.kill( self.pid, signal.SIGKILL )
         return   
       ## increase task counter
       taskCounter += 1
