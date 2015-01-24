@@ -193,7 +193,7 @@ class DirectoryListing:
         self.entries.sort(key=lambda x: x[6]) 
         
     # Determine the field widths
-    wList = [ 0 for _x in range(7) ]
+    wList = [0] * 7
     for d in self.entries:
       for i in range(7):
         if len(str(d[i])) > wList[i]:
@@ -1404,10 +1404,10 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    pathDict[lfn] = {'Owner':owner}
+    pathDict[lfn] = owner
     
     try:
-      result = self.fc.changePathOwner(pathDict,recursive)        
+      result = self.fc.changePathOwner( pathDict, recursive )        
       if not result['OK']:
         print "Error:",result['Message']
         return
@@ -1459,10 +1459,10 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    pathDict[lfn] = {"Group":group}
+    pathDict[lfn] = group
     
     try:
-      result = self.fc.changePathGroup(pathDict,recursive)         
+      result = self.fc.changePathGroup( pathDict, recursive )         
       if not result['OK']:
         print "Error:",result['Message']
         return
@@ -1511,10 +1511,10 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     pathDict = {}
     # treat mode as octal 
-    pathDict[lfn] = {"Mode":eval('0'+mode)}
+    pathDict[lfn] = eval('0'+mode)
     
     try:
-      result = self.fc.changePathMode(pathDict,recursive)             
+      result = self.fc.changePathMode( pathDict, recursive )             
       if not result['OK']:
         print "Error:",result['Message']
         return
