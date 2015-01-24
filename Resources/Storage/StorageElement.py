@@ -439,7 +439,7 @@ class StorageElementItem( object ):
     """
 
     # We should actually separate source and destination protocols
-    # For example, an SRM can get as a source an xroot or gsift url...
+    # For example, an SRM can get as a source an xroot or gsiftp url...
     # but with the current implementation, we get only srm
 
     destProtocols = set( [destStorage.protocolParameters['Protocol'] for destStorage in self.storages] )

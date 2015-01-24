@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre10]
+[v6r13-pre11]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -130,7 +130,26 @@ CHANGE: DMSRequestOperationsBase - delay execution or cancel request based on SE
 
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
-CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs  
+CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs 
+NEW: GFAL2_StorageBase.py, GFAL2_SRM2Storage.py, GFAL2_XROOTStorage.py 
+
+[v6r12p15]
+
+*Core
+FIX: ProcessPool - kill the working process in case of the task timeout
+FIX: FileHelper - count transfered bytes in DataSourceToNetwork()
+
+*DMS
+BUGFIX: FileCatalogCLI - changed interface in changePathXXX() methods
+NEW: IRODSStorageElementHandler class
+CHANGE: FileCatalog - separate metadata and file catalog methods, 
+        apply metadata methods only to Metadata Catalogs 
+
+*Resources
+FIX: SSHTorqueComputingElement - check the status of the ssh call for qstat 
+
+*WMS
+FIX: WatchdogLinux - fixed typo
 
 [v6r12p14]
 
@@ -357,6 +376,18 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p31]
+
+*Core
+FIX: CFG - bug fixed in loadFromBuffer() resulting in a loss of comments
+
+*Resources
+FIX: SSHTorqueComputingElement - check the status of ssh call for qstat
+
+*DMS
+FIX: FileCatalog - return LFN name instead of True from exists() call if LFN
+     already in the catalog
 
 [v6r11p30]
 

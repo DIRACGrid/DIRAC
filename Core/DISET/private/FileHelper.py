@@ -245,6 +245,8 @@ class FileHelper:
       return S_ERROR( "%s data source object does not have a read method" % str( dataSource ) )
     self.__oMD5 = md5.md5()
     iPacketSize = self.packetSize
+    self.__fileBytes = 0
+    sentBytes = 0
     try:
       sBuffer = dataSource.read( iPacketSize )
       while len( sBuffer ) > 0:
@@ -254,11 +256,13 @@ class FileHelper:
         if 'AbortTransfer' in dRetVal and dRetVal[ 'AbortTransfer' ]:
           self.__log.verbose( "Transfer aborted" )
           return S_OK()
+        sentBytes += len( sBuffer )
         sBuffer = dataSource.read( iPacketSize )
       self.sendEOF()
     except Exception, e:
       gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
+    self.__fileBytes = sentBytes
     return S_OK()
 
   def getFileDescriptor( self, uFile, sFileMode ):

@@ -217,7 +217,7 @@ class DirectoryTreeBase:
       if not res['Value']:
         successful[lfn] = False
       else:
-        successful[lfn] = True
+        successful[lfn] = lfn
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def existsDir( self, path ):
