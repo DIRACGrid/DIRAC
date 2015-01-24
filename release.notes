@@ -1,3 +1,21 @@
+[v6r12p15]
+
+*Core
+FIX: ProcessPool - kill the working process in case of the task timeout
+FIX: FileHelper - count transfered bytes in DataSourceToNetwork()
+
+*DMS
+BUGFIX: FileCatalogCLI - changed interface in changePathXXX() methods
+NEW: IRODSStorageElementHandler class
+CHANGE: FileCatalog - separate metadata and file catalog methods, 
+        apply metadata methods only to Metadata Catalogs 
+
+*Resources
+FIX: SSHTorqueComputingElement - check the status of the ssh call for qstat 
+
+*WMS
+FIX: WatchdogLinux - fixed typo
+
 [v6r12p14]
 
 *TS
