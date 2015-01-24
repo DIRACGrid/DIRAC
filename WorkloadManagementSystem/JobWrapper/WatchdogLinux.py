@@ -38,16 +38,16 @@ class WatchdogLinux(Watchdog):
     """
     result = S_OK()
     try:
-      _file = open ("/proc/cpuinfo","r")
-      info =  file.readlines()
-      _file.close()
+      cpuInfo = open ( "/proc/cpuinfo", "r" )
+      info = cpuInfo.readlines()
+      cpuInfo.close()
       result["HostName"] = socket.gethostname()
       result["CPU(MHz)"]   = string.replace(string.replace(string.split(info[6],":")[1]," ",""),"\n","")
       result["ModelName"] = string.replace(string.replace(string.split(info[4],":")[1]," ",""),"\n","")
       result["CacheSize(kB)"] = string.replace(string.replace(string.split(info[7],":")[1]," ",""),"\n","")
-      _file = open ("/proc/meminfo","r")
-      info =  file.readlines()
-      _file.close()
+      memInfo = open ( "/proc/meminfo", "r" )
+      info = memInfo.readlines()
+      memInfo.close()
       result["Memory(kB)"] =  string.replace(string.replace(string.split(info[3],":")[1]," ",""),"\n","")
       account = 'Unknown'
       localID = shellCall(10,'whoami')
