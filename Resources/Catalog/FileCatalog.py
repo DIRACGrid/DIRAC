@@ -15,13 +15,24 @@ class FileCatalog( object ):
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getFileUserMetadata',
-                'getMetadataFields', 'findFilesByMetadata']
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups'] 
+  
+  ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata', 'getDirectoryMetadata',
+                     'getFileUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
+                     'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
+                     'getMetadataSet']
+  
+  ro_methods += ro_meta_methods
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
                    'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
                    'changePathOwner', 'changePathGroup']
+  
+  write_meta_methods = ['addMetadataField', 'deleteMetadataField', 'setMetadata', 'setMetadataBulk',
+                        'removeMetadata', 'addMetadataSet']
+  
+  write_methods += write_meta_methods
 
   def __init__( self, catalogs = [], vo = None ):
     """ Default constructor
@@ -30,6 +41,7 @@ class FileCatalog( object ):
     self.timeout = 180
     self.readCatalogs = []
     self.writeCatalogs = []
+    self.metaCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
 
@@ -84,6 +96,11 @@ class FileCatalog( object ):
     allLfns = fileInfo.keys()
     parms = parms[1:]
     for catalogName, oCatalog, master in self.writeCatalogs:
+      
+      # Skip if metadata related method on pure File Catalog
+      if self.call in FileCatalog.write_meta_methods and not catalogName in self.metaCatalogs:
+        continue
+      
       method = getattr( oCatalog, self.call )
       res = method( fileInfo, *parms, **kws )
       if not res['OK']:
@@ -116,7 +133,12 @@ class FileCatalog( object ):
     """
     successful = {}
     failed = {}
-    for _catalogName, oCatalog, _master in self.readCatalogs:
+    for catalogName, oCatalog, _master in self.readCatalogs:
+      
+      # Skip if metadata related method on pure File Catalog
+      if self.call in FileCatalog.ro_meta_methods and not catalogName in self.metaCatalogs:
+        continue
+      
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
@@ -181,12 +203,18 @@ class FileCatalog( object ):
 
   def _getSelectedCatalogs( self, desiredCatalogs ):
     for catalogName in desiredCatalogs:
+      res = self._getCatalogConfigDetails( catalogName )
+      if not res['OK']:
+        return res
+      catalogConfig = res['Value']
       res = self._generateCatalogObject( catalogName )
       if not res['OK']:
         return res
       oCatalog = res['Value']
       self.readCatalogs.append( ( catalogName, oCatalog, True ) )
       self.writeCatalogs.append( ( catalogName, oCatalog, True ) )
+      if catalogConfig.get( 'MetaCatalog' ) == 'True':
+        self.metaCatalogs.append( catalogName )  
     return S_OK()
 
   def _getCatalogs( self ):
@@ -236,6 +264,8 @@ class FileCatalog( object ):
             self.writeCatalogs.insert( 0, ( catalogName, oCatalog, master ) )
           else:
             self.writeCatalogs.append( ( catalogName, oCatalog, master ) )
+      if catalogConfig.get( 'MetaCatalog' ) == 'True':
+        self.metaCatalogs.append( catalogName )      
     return S_OK()
 
   def _getCatalogConfigDetails( self, catalogName ):
