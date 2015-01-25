@@ -1271,7 +1271,7 @@ class Dirac( API ):
       return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
 
     if not os.path.exists( fullPath ):
-      return self._errorReport( 'File path %s must exist' % ( fullPath ) )
+      return self._errorReport( 'Local file %s does not exist' % ( fullPath ) )
 
     if not os.path.isfile( fullPath ):
       return self._errorReport( 'Expected path to file not %s' % ( fullPath ) )
