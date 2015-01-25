@@ -221,19 +221,25 @@ class FileCatalog( object ):
 
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
-    result = self.opHelper.getSections( '/Services/Catalogs' )
-    fileCatalogs = []
     operationsFlag = False
-    if result['OK']:
-      fileCatalogs = result['Value']
+    fileCatalogs = self.opHelper.getValue( '/Services/Catalogs/CatalogList', [] )
+    if fileCatalogs:
       operationsFlag = True
     else:
-      res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
-      if not res['OK']:
-        errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
-        gLogger.error( errStr, res['Message'] )
-        return S_ERROR( errStr )
-      fileCatalogs = res['Value']
+      fileCatalogs = self.opHelper.getSections( '/Services/Catalogs' )
+      result = self.opHelper.getSections( '/Services/Catalogs' )
+      fileCatalogs = []
+      operationsFlag = False
+      if result['OK']:
+        fileCatalogs = result['Value']
+        operationsFlag = True
+      else:
+        res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
+        if not res['OK']:
+          errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
+          gLogger.error( errStr, res['Message'] )
+          return S_ERROR( errStr )
+        fileCatalogs = res['Value']
 
     # Get the catalogs now
     for catalogName in fileCatalogs:
