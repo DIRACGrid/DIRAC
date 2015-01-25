@@ -313,7 +313,7 @@ class RequestTasks( TaskBase ):
 
       if not statusDict:
         log = self.log.verbose if 'not exists' in statusDict['Message'] else self.log.warn
-        log( "getSubmittedFileStatus: Failed to get files status for request" )
+        log( "getSubmittedFileStatus: Failed to get files status for request", statusDict['Message'] )
         continue
 
       for lfn, newStatus in statusDict.items():
