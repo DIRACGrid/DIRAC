@@ -169,7 +169,7 @@ class Operation( Record ):
 
   def addFile( self, opFile ):
     """ add :opFile: to operation """
-    if len( self ) > Operation.MAX_FILES:
+    if len( self ) >= Operation.MAX_FILES:
       raise RuntimeError( "too many Files in a single Operation" )
     if opFile not in self:
       self.__files__.append( opFile )
