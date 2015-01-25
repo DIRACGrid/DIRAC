@@ -48,7 +48,7 @@ class Operation( Record ):
   :param Request parent: parent Request instance
   """
   # # max files in a single operation
-  MAX_FILES = 100
+  MAX_FILES = 150
 
   # # all states
   ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
@@ -136,7 +136,7 @@ class Operation( Record ):
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
-    if newStatus in ('Failed', 'Done'):
+    if newStatus in ( 'Failed', 'Done' ):
       if self.__data__["Status"] != newStatus:
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
