@@ -2,11 +2,12 @@
 # $HeadURL$
 # File: IRODSStorageElementHandler.py
 ########################################################################
-""" :mod: IRODSStorageElementHandler
-===========================
+""" 
+:mod: IRODSStorageElementHandler
+
 .. module: IRODSStorageElementHandler
-:synopsis: IRODSStorageElementHandler is the implementation of a simple StorageElement  
-service with the iRods SE as a backend
+  :synopsis: IRODSStorageElementHandler is the implementation of a simple StorageElement  
+  service with the iRods SE as a backend
 
 The following methods are available in the Service interface
 
@@ -195,31 +196,56 @@ class IRODSStorageElementHandler( RequestHandler ):
     file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
+    resultDict = {} 
+
     irodsFile = irodsOpen( conn , file_path , "r" )
-    if not irodsFile:
-      rcDisconnect( conn )
-      gLogger.error( "Failed to get file object" )
-      return S_ERROR( "Failed to get file object" )
-
-    resultDict = {}
-
-    resultDict['Exists'] = True
-    resultDict['Type'] = "File"
-    resultDict['Size'] = irodsFile.getSize()
-    resultDict['TimeStamps'] = ( irodsFile.getCreateTs(), irodsFile.getModifyTs(), irodsFile.getCreateTs() )
-    resultDict['Cached'] = 1
-    resultDict['Migrated'] = 0
-    resultDict['Lost'] = 0
-    resultDict['Unavailable'] = 0
-    resultDict['Mode'] = 0755
-    return S_OK( resultDict )
+    if irodsFile:
+      resultDict['Exists'] = True
+      resultDict['Type'] = "File"
+      resultDict['Size'] = irodsFile.getSize()
+      resultDict['TimeStamps'] = ( irodsFile.getCreateTs(), irodsFile.getModifyTs(), irodsFile.getCreateTs() )
+      resultDict['Cached'] = 1
+      resultDict['Migrated'] = 0
+      resultDict['Lost'] = 0
+      resultDict['Unavailable'] = 0
+      resultDict['Mode'] = 0755
+      return S_OK( resultDict )
+    else:
+      coll = irodsCollection( conn, file_path )
+      if coll:
+        resultDict['Exists'] = True
+        resultDict['Type'] = "Directory"
+        resultDict['Size'] = 0
+        resultDict['TimeStamps'] = ( 0,0,0 )
+        resultDict['Cached'] = 1
+        resultDict['Migrated'] = 0
+        resultDict['Lost'] = 0
+        resultDict['Unavailable'] = 0
+        resultDict['Mode'] = 0755
+        return S_OK( resultDict )
+      else:
+        return S_ERROR( 'Path does not exist' )
 
   types_exists = [StringTypes]
   def export_exists( self, fileID ):
-    """ Check existance of the fileID """
-    if os.path.exists( self.__resolveFileID( fileID, {} ) ):
+    """ Check existence of the fileID """
+    conn , error, userDict = self.__irodsClient( )
+    if not conn:
+      return S_ERROR( error )
+    
+    file_path = self.__resolveFileID( fileID, userDict )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    file_path = irodsHome + file_path
+    gLogger.debug( "file_path to read: %s" % file_path )
+
+    irodsFile = irodsOpen( conn , file_path , "r" )
+    if irodsFile:
       return S_OK( True )
-    return S_OK( False )
+    else:
+      coll = irodsCollection( conn, file_path )
+      if coll:
+        return S_OK( True )
+    return S_OK( False )  
 
   types_getMetadata = [StringType]
   def export_getMetadata( self, fileID ):
@@ -231,39 +257,62 @@ class IRODSStorageElementHandler( RequestHandler ):
   def export_createDirectory( self, dir_path ):
     """ Creates the directory on the storage
 """
-    pass
+    conn , error, userDict = self.__irodsClient( )
+    if not conn:
+      return S_ERROR( error )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
+    coll = irodsCollection( conn, irodsHome )
+
+    dir_path = self.__resolveFileID( dir_path, userDict )
+
+    path = dir_path.split( "/" )
+
+    if len( path ) > 0:
+      coll = self.__changeCollection( coll , path )
+      if not coll:
+        return S_ERROR( 'Failed to create directory' )
+    return S_OK()
 
   types_listDirectory = [StringType, StringType]
   def export_listDirectory( self, dir_path, mode ):
     """ Return the dir_path directory listing
 """
+    conn , error, userDict = self.__irodsClient( )
+    if not conn:
+      return S_ERROR( error )
 
-    # TODO: must be updated
+    file_path = self.__resolveFileID( dir_path, userDict )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsPath = irodsHome + file_path
+    gLogger.debug( "file_path to read: %s" % irodsPath )
 
     is_file = False
-    path = self.__resolveFileID( dir_path, {} )
-    if not os.path.exists( path ):
-      return S_ERROR( 'Directory %s does not exist' % dir_path )
-    elif os.path.isfile( path ):
-      fname = os.path.basename( path )
+    irodsFile = irodsOpen( conn , irodsPath , "r" )
+    if not irodsFile:
       is_file = True
     else:
-      dirList = os.listdir( path )
+      irodsDir = os.path.dirname( irodsPath )
+      coll = irodsCollection( conn, irodsDir )
+      if not coll:
+        return S_ERROR( 'Directory not found' )
+      objects = coll.getObjects()
+      fileList = [ x[0] for x in objects ]
+      dirList = coll.getSubCollections()  
 
     resultDict = {}
     if mode == 'l':
       if is_file:
-        result = self.__getFileStat( fname )
+        result = self.__getFileStat( dir_path )
         if result['OK']:
-          resultDict[fname] = result['Value']
+          resultDict[dir_path] = result['Value']
           return S_OK( resultDict )
         else:
           return S_ERROR( 'Failed to get the file stat info' )
       else:
         failed_list = []
         one_OK = False
-        for fname in dirList:
-          result = self.__getFileStat( path + '/' + fname )
+        for fname in dirList+fileList:
+          result = self.__getFileStat( dir_path + '/' + fname )
           if result['OK']:
             resultDict[fname] = result['Value']
             one_OK = True
@@ -309,7 +358,8 @@ token is used for access rights confirmation.
     conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
-    coll = irodsCollection( conn, IRODS_HOME )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
+    coll = irodsCollection( conn, irodsHome )
 
     if not self.__checkForDiskSpace( IRODS_HOME, fileSize ):
       rcDisconnect( conn )
@@ -323,7 +373,6 @@ token is used for access rights confirmation.
     if len( path ) > 0:
       coll = self.__changeCollection( coll , path )
 
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
     file_path = irodsHome + file_path
  
     try:
@@ -482,20 +531,24 @@ token is used for access rights confirmation.
     """ Remove the given directory from the storage
 """
 
-    dir_path = self.__resolveFileID( fileID, {} )
-    if not self.__confirmToken( token, fileID, 'x' ):
-      return S_ERROR( 'Directory removal %s not authorized' % fileID )
-    else:
-      if not os.path.exists( dir_path ):
-        return S_OK()
-      else:
-        try:
-          shutil.rmtree( dir_path )
-          return S_OK()
-        except Exception, error:
-          gLogger.error( "Failed to remove directory", dir_path )
-          gLogger.error( str( error ) )
-          return S_ERROR( "Failed to remove directory %s" % dir_path )
+    conn , error, userDict = self.__irodsClient( )
+    if not conn:
+      return S_ERROR( error )
+    
+    file_path = self.__resolveFileID( fileID, userDict )
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    file_path = irodsHome + file_path
+    gLogger.debug( "file_path to read: %s" % file_path )
+    
+    coll = irodsCollection( conn, file_path )
+    if not coll:
+      return S_ERROR( 'Directory not found' )
+    objects = coll.getObjects()
+    if objects:
+      return S_ERROR( 'Directory is not empty' )
+    coll.delete()
+    
+    return S_ERROR()
 
   types_removeFileList = [ ListType, StringType ]
   def export_removeFileList( self, fileList, token ):
