@@ -185,7 +185,7 @@ class ReqClient( Client ):
     self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
     deleteRequest = self.requestManager().deleteRequest( requestName )
     if not deleteRequest["OK"]:
-      self.log.error( "deleteRequest: unable to delete request", 
+      self.log.error( "deleteRequest: unable to delete request",
                       "'%s' request: %s" % ( requestName, deleteRequest["Message"] ) )
     return deleteRequest
 
@@ -226,7 +226,7 @@ class ReqClient( Client ):
     self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
     digest = self.requestManager().getDigest( requestName )
     if not digest["OK"]:
-      self.log.error( "getDigest: unable to get digest for request", 
+      self.log.error( "getDigest: unable to get digest for request",
                       "request: '%s' %s" % ( requestName, digest["Message"] ) )
     return digest
 
@@ -239,7 +239,7 @@ class ReqClient( Client ):
     self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
     requestStatus = self.requestManager().getRequestStatus( requestName )
     if not requestStatus["OK"]:
-      self.log.error( "getRequestStatus: unable to get status for request",
+      self.log.verbose( "getRequestStatus: unable to get status for request",
                       "request: '%s' %s" % ( requestName, requestStatus["Message"] ) )
     return requestStatus
 
@@ -337,7 +337,7 @@ class ReqClient( Client ):
         stateUpdate = stateServer.setJobStatus( jobID, jobStatus, "Requests done", "" )
 
       if not stateUpdate["OK"]:
-        self.log.error( "finalizeRequest: Failed to set job status", 
+        self.log.error( "finalizeRequest: Failed to set job status",
                         "JobID: %d status: %s" % ( jobID, stateUpdate['Message'] ) )
         return stateUpdate
 
@@ -354,7 +354,7 @@ class ReqClient( Client ):
     self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
     requests = self.requestManager().getRequestNamesForJobs( jobIDs )
     if not requests["OK"]:
-      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs", 
+      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs",
                       "%s: %s" % ( jobIDs, requests["Message"] ) )
     return requests
 
