@@ -234,6 +234,7 @@ class ReqClient( Client ):
     if not digest["OK"]:
       self.log.error( "getDigest: unable to get digest for request",
                       "request: '%s' %s" % ( requestID, digest["Message"] ) )
+
     return digest
 
   def getRequestStatus( self, requestID ):
@@ -343,7 +344,7 @@ class ReqClient( Client ):
         stateUpdate = stateServer.setJobStatus( jobID, jobStatus, "Requests done", "" )
 
       if not stateUpdate["OK"]:
-        self.log.error( "finalizeRequest: Failed to set job status", 
+        self.log.error( "finalizeRequest: Failed to set job status",
                         "JobID: %d status: %s" % ( jobID, stateUpdate['Message'] ) )
         return stateUpdate
 

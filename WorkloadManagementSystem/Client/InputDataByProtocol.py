@@ -103,9 +103,7 @@ class InputDataByProtocol( object ):
     diskSEs = set()
     tapeSEs = set()
     if not seList:
-      ret = S_OK()
-      ret.update( {'Successful': [], 'Failed': []} )
-      return ret
+      return S_OK( {'Successful': {}, 'Failed': []} )
 
     for localSE in seList:
       seStatus = self.__storageElement( localSE ).getStatus()['Value']
@@ -253,9 +251,7 @@ class InputDataByProtocol( object ):
     self.log.debug( 'All resolved data', sorted( trackLFNs ) )
     self.log.debug( 'All failed data', sorted( failedReplicas ) )
 
-    ret = S_OK()
-    ret.update( {'Successful': trackLFNs, 'Failed': sorted( failedReplicas )} )
-    return ret
+    return S_OK( {'Successful': trackLFNs, 'Failed': sorted( failedReplicas )} )
 
   #############################################################################
   def __setJobParam( self, name, value ):

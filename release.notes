@@ -23,6 +23,26 @@ NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs 
 NEW: GFAL2_StorageBase.py, GFAL2_SRM2Storage.py, GFAL2_XROOTStorage.py 
 
+[v6r12p17]
+
+*DMS
+FIX: FTSStrategy - config option name
+FIX: DataManager - removing dirac_directory flag file only of it is there
+     in __cleanDirectory()
+
+*RMS
+FIX: Operation - MAX_FILES limit set to 10000
+FIX: ReqClient - enhanced log messages
+
+*TMS
+FIX: TaskManager - enhanced log messages
+
+*RSS
+FIX: DowntimeCommand - fixed mix of SRM.NEARLINE and SRM
+
+*WMS
+FIX: InputDataByProtocol - fixed return structure
+
 [v6r12p16]
 
 *DMS

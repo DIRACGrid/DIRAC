@@ -98,9 +98,9 @@ class DowntimeCommand( Command ):
     elif elementType == 'StorageElement':
       # We need to distinguish if it's tape or disk
       if getStorageElementOptions( elementName )['Value']['TapeSE']:
-        gocdbServiceType = "srm"
-      elif getStorageElementOptions( elementName )['Value']['DiskSE']:
         gocdbServiceType = "srm.nearline"
+      elif getStorageElementOptions( elementName )['Value']['DiskSE']:
+        gocdbServiceType = "srm"
 
       seHost = CSHelpers.getSEHost( elementName )
       if not seHost:
