@@ -48,7 +48,7 @@ class Operation( Record ):
   :param Request parent: parent Request instance
   """
   # # max files in a single operation
-  MAX_FILES = 150
+  MAX_FILES = 10000
 
   # # all states
   ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
