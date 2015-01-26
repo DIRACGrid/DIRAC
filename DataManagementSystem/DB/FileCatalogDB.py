@@ -961,8 +961,22 @@ class FileCatalogDB(DB):
         
     return S_OK( { 'Successful': successful, 'Failed': failed } )      
     
-  def removeMetadata(self, path, metadata, credDict):
-    """ Add metadata to the given path
+  def removeMetadata(self, pathMetadataDict, credDict):  
+    """ Remove metadata for the given paths
+    """
+    successful = {}
+    failed = {}
+    for path, metadataDict in pathMetadataDict.items():
+      result = self.__removeMetadata( path, metadataDict, credDict )
+      if result['OK']:
+        successful[path] = True
+      else:
+        failed[path] = result['Message']
+        
+    return S_OK( { 'Successful': successful, 'Failed': failed } )      
+    
+  def __removeMetadata(self, path, metadata, credDict):
+    """ Remove metadata from the given path
     """
     res = self._checkPathPermissions('Write', path, credDict)   
     if not res['OK']:

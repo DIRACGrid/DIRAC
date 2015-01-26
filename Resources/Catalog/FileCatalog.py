@@ -229,24 +229,29 @@ class FileCatalog( object ):
 
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources 
-    result = self.opHelper.getSections( '/Services/Catalogs' )
-    fileCatalogs = []
     operationsFlag = False
-    optCatalogDict = {}
-    if result['OK']:
-      fcs = result['Value']
-      for fc in fcs:
-        fName = self.opHelper.getValue( '/Services/Catalogs/%s/CatalogName' % fc, fc )
-        fileCatalogs.append( fName )
-        optCatalogDict[fName] = fc
+    fileCatalogs = self.opHelper.getValue( '/Services/Catalogs/CatalogList', [] )
+    if fileCatalogs:
       operationsFlag = True
-    else:   
-      res = self.reHelper.getEligibleResources( 'Catalog' )
-      if not res['OK']:
-        errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
-        gLogger.error( errStr, res['Message'] )
-        return S_ERROR( errStr )
-      fileCatalogs = res['Value']
+    else:  
+      result = self.opHelper.getSections( '/Services/Catalogs' )
+      fileCatalogs = []
+      operationsFlag = False
+      optCatalogDict = {}
+      if result['OK']:
+        fcs = result['Value']
+        for fc in fcs:
+          fName = self.opHelper.getValue( '/Services/Catalogs/%s/CatalogName' % fc, fc )
+          fileCatalogs.append( fName )
+          optCatalogDict[fName] = fc
+        operationsFlag = True
+      else:   
+        res = self.reHelper.getEligibleResources( 'Catalog' )
+        if not res['OK']:
+          errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
+          gLogger.error( errStr, res['Message'] )
+          return S_ERROR( errStr )
+        fileCatalogs = res['Value']
 
     # Get the catalogs now
     for catalogName in fileCatalogs:
