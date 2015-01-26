@@ -53,7 +53,7 @@ class Operation( object ):
 
   """
   # # max files in a single operation
-  MAX_FILES = 100
+  MAX_FILES = 10000
 
   # # all states
   ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
@@ -132,7 +132,6 @@ class Operation( object ):
       if self._Status != newStatus:
         self._LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
-
     self._Status = newStatus
     if self._parent:
       self._parent._notify()
@@ -161,7 +160,7 @@ class Operation( object ):
 
   def addFile( self, opFile ):
     """ add :opFile: to operation """
-    if len( self ) > Operation.MAX_FILES:
+    if len( self ) >= Operation.MAX_FILES:
       raise RuntimeError( "too many Files in a single Operation" )
     if opFile not in self:
       self.__files__.append( opFile )
