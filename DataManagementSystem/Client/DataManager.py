@@ -124,11 +124,15 @@ class DataManager( object ):
     res = self.__getCatalogDirectoryContents( [ folder ] )
     if not res['OK']:
       return res
-    res = self.removeFile( res['Value'].keys() + [ '%s/dirac_directory' % folder ] )
+    res = self.removeFile( res['Value'].keys() )
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():
       gLogger.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
+    res = returnSingleResult( self.removeFile( [ '%s/dirac_directory' % folder ] ) )
+    if not res['OK']:
+      if not "No such file" in res['Message']:
+        gLogger.warn( 'Failed to delete dirac_directory placeholder file' )
 
     storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
     failed = False
