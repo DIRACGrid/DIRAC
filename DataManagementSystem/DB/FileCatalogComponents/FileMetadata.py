@@ -507,11 +507,11 @@ class FileMetadata:
       elif type( value ) == types.DictType:
         for operation, operand in value.items():
           if type( operand ) == types.ListType:
-            escapeValues = self.db._escapeValues( value )
+            escapeValues = self.db._escapeValues( operand )
             if not escapeValues['OK']:
               return escapeValues
             escapedOperand = ', '.join( escapeValues['Value'] )
-          if type( operand ) in [types.IntType, types.LongType]:
+          elif type( operand ) in [types.IntType, types.LongType]:
             escapedOperand = '%d' % operand
           elif type( operand ) == types.FloatType:
             escapedOperand = '%f' % operand
