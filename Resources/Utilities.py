@@ -1,6 +1,8 @@
 """ Just an utilities collector
 """
 
+__RCSID__ = "$Id$"
+
 import types
 from  DIRAC import S_OK, S_ERROR
 
@@ -13,7 +15,8 @@ def checkArgumentFormat( path ):
   elif type( path ) == types.ListType:
     return S_OK( dict( [( url, False ) for url in path if type( url ) in types.StringTypes] ) )
   elif type( path ) == types.DictType:
-    return S_OK( path )
+    returnDict = path.copy()
+    return S_OK( returnDict )
   else:
     return S_ERROR( "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
       
