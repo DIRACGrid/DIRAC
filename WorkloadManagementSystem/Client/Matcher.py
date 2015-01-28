@@ -115,10 +115,13 @@ class Matcher( object ):
     if self.opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
       self.limiter.updateDelayCounters( resourceDict['Site'], jobID )
 
-    self._updatePilotInfo( resourceDict, jobID )
+    pilotInfoReportedFlag = resourceDict.get( 'PilotInfoReportedFlag', False )
+    if not pilotInfoReportedFlag:
+      self._updatePilotInfo( resourceDict, jobID )
 
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
+    resultDict['PilotInfoReportedFlag'] = True
 
     return resultDict
 
@@ -186,7 +189,8 @@ class Matcher( object ):
       if resourceDescription.has_key( 'JobID' ):
         resourceDict['JobID'] = resourceDescription['JobID']
 
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization', 'PilotReference', 'PilotBenchmark' ):
+      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
+                 'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag' ):
         if k in resourceDescription:
           resourceDict[ k ] = resourceDescription[ k ]
 
