@@ -67,7 +67,7 @@ class InputDataByProtocol( object ):
     result = self.__resolveReplicas( localSEList, replicas, requestedProtocol = requestedProtocol )
     if not result['OK']:
       return result
-    success = result['Successful']
+    success = result['Value']['Successful']
     if not allReplicas:
       bestReplica = {}
       for lfn in success:
@@ -93,7 +93,7 @@ class InputDataByProtocol( object ):
       result = self.__resolveReplicas( seList, replicas, ignoreTape = True, requestedProtocol = requestedProtocol )
       if not result['OK']:
         return result
-      for lfn in result['Successful']:
+      for lfn in result['Value']['Successful']:
         success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
     # Only consider failed the files that are not successful as well
     failed = [lfn for lfn in result['Failed'] if lfn not in success]
