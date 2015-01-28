@@ -3,6 +3,9 @@
 
 __RCSID__ = "$Id$"
 
+import re
+import ast
+
 from DIRAC                                                     import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
@@ -10,7 +13,6 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegr
 from DIRAC.Resources.Catalog.FileCatalog                       import FileCatalog
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
-import re
 
 AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 
@@ -125,7 +127,10 @@ class ValidateOutputDataAgent( AgentModule ):
       if not res['OK']:
         gLogger.error( "Failed to obtain transformation directories", res['Message'] )
         return res
-      transDirectories = res['Value'].splitlines()
+      if type( res['Value'] ) != type( [] ):
+        transDirectories = ast.literal_eval( res['Value'] )
+      else:
+        transDirectories = res['Value']
       directories = self._addDirs( transID, transDirectories, directories )
 
     if 'MetadataCatalog' in self.directoryLocations:
