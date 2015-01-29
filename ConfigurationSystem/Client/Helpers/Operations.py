@@ -1,3 +1,32 @@
+""" This helper looks in the /Operations section of the CS, considering its specific nature:
+    the /Operations section is designed in a way that each configuration can be specific to a Setup, while maintaining a default.
+
+    So, for example, given the following /Operations section:
+    Operations/
+        Default/
+            someSection/
+                someOption = someValue
+                aSecondOption = aSecondValue
+        Production/
+            someSection/
+                someOption = someValueInProduction
+                aSecondOption = aSecondValueInProduction
+        Certification/
+            someSection/
+                someOption = someValueInCertification
+
+    The following calls would give different results based on the setup:
+
+    Operations().getValue('someSection/someOption')
+      -> someValueInProduction if we are in 'Production' setup
+      -> someValueInCertification if we are in 'Certification' setup
+
+    Operations().getValue('someSection/aSecondOption')
+      -> aSecondValueInProduction if we are in 'Production' setup
+      -> aSecondValue if we are in 'Certification' setup     <- looking in Default since there's no Certification/someSection/aSecondOption
+
+"""
+
 import thread
 import types
 import os
@@ -8,12 +37,20 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 class Operations( object ):
+  """ Operations class
+
+      The /Operations CFG section is maintained in a cache by an Operations object
+  """
 
   __cache = {}
   __cacheVersion = 0
   __cacheLock = LockRing.LockRing().getLock()
 
   def __init__( self, vo = False, group = False, setup = False ):
+    """ c'tor
+
+        Setting some defaults
+    """
     self.__uVO = vo
     self.__uGroup = group
     self.__uSetup = setup

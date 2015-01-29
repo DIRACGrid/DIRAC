@@ -1,8 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :   SiteSEMapping.py
-########################################################################
-
 """  The SiteSEMapping module performs the necessary CS gymnastics to
      resolve site and SE combinations.  These manipulations are necessary
      in several components.
