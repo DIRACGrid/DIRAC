@@ -18,7 +18,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.FileManagerPs           import FileManagerPs
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager, DirectorySecurityManager, FullSecurityManager, DirectorySecurityManagerWithDelete
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager        import DatasetManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentFormat
@@ -344,7 +344,7 @@ class FileCatalogDB(DB):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions('Write', lfns, credDict)
+    res = self._checkPathPermissions( 'Delete', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -386,7 +386,7 @@ class FileCatalogDB(DB):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions('Write', lfns, credDict)
+    res = self._checkPathPermissions( 'Delete', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -696,7 +696,7 @@ class FileCatalogDB(DB):
 
         :return Successful/Failed dict.
     """
-    res = self._checkPathPermissions('Write', lfns, credDict)
+    res = self._checkPathPermissions( 'Delete', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -713,7 +713,7 @@ class FileCatalogDB(DB):
       return S_OK( {'Successful':successful,'Failed':failed} )
     
     # Remove the directory metadata now
-    dirIdList = [ successful[p]['DirID'] for p in successful ]
+    dirIdList = [ successful[p]['DirID'] for p in successful if 'DirID' in successful[p] ]
     result = self.dmeta.removeMetadataForDirectory( dirIdList,credDict )
     if not result['OK']:
       return result
@@ -931,7 +931,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     lfns = res['Value']
-    res = self.securityManager.hasAccess(operation,lfns.keys(),credDict)   
+    res = self.securityManager.hasAccess( operation, lfns.keys(), credDict )
     if not res['OK']:
       return res
     # Do not consider those paths for which we failed to determine access

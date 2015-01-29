@@ -248,7 +248,7 @@ class DirectoryTreeBase:
     dirDict = result['Value']
     for d in dirs:
       if not d in dirDict:
-        failed[d] = "Directory does not exist" 
+        successful[d] = "Directory does not exist"
     dirList = dirDict.keys()
 
     for dir in dirList:
