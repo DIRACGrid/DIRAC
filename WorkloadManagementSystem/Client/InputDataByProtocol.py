@@ -72,9 +72,7 @@ class InputDataByProtocol( object ):
       bestReplica = {}
       for lfn in success:
         bestReplica[lfn] = success[lfn][0]
-      ret = S_OK()
-      ret.update( {'Successful': bestReplica, 'Failed':result['Failed']} )
-      return ret
+      return S_OK( {'Successful': bestReplica, 'Failed':result['Value']['Failed']} )
 
     # If all replicas are requested, get results for other SEs
     seList = set()
