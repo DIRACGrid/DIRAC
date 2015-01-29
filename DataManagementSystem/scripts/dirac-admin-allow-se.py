@@ -165,7 +165,7 @@ for se, seOptions in res[ 'Value' ].items():
       checkAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if check and seOptions.has_key( 'RemoveAccess' ):
+  if remove and seOptions.has_key( 'RemoveAccess' ):
 
     if not seOptions[ 'RemoveAccess' ] in [ "InActive", "Banned", "Probing", "Degraded" ]:
       gLogger.notice( 'Remove option for %s is %s, instead of %s' %
