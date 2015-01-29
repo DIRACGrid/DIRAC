@@ -196,6 +196,30 @@ class Operations( object ):
     
   def getActivityMapping( self, activityType = '' ):
     """ Looks in ActivityMapping section
+
+        The section may looks like this:
+
+        ActivityMapping
+        {
+          User
+          {
+            Exclude = PAK
+            Exclude += Ferrara
+            Exclude += Bologna
+            Exclude += Paris
+            Exclude += CERN
+            Exclude += IN2P3
+            Allow = Paris <- IN2P3
+            Allow += CERN <- CERN
+            Allow += IN2P3 <- IN2P3
+          }
+          Merge
+          {
+            Exclude = ALL
+            Allow = CERN <- CERN
+            Allow += IN2P3 <- IN2P3
+          }
+        }
     """
     if not activityType:
       return S_ERROR( "No activityType specified" )
