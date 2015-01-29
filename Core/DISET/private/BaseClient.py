@@ -201,7 +201,7 @@ class BaseClient:
       # we run only one service! In that case we increase the retry delay.
       self.__retryDelay = 5
     else:
-      self.__retryDelay = 1 / len ( urls )
+      self.__retryDelay = 5 / len ( urls )
       
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
