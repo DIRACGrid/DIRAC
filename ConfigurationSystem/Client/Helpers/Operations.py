@@ -194,44 +194,14 @@ class Operations( object ):
         return optionPath
     return ''  
     
-      
-  def getSiteMapping( self, resourceType, mapping='' ):
-    """ Get site mapping to resources of a given type 
+  def getActivityMapping( self, activityType = '' ):
+    """ Looks in ActivityMapping section
     """
-    resultDict = {}
-    
-    if mapping:
-      result = self.getOptions( "SiteTo%sMapping/%s" % ( resourceType, mapping ) )
-      if not result['OK']:
-        return result
-      for site in result['Value']:
-        if site != "UseLocalResources":
-          resultDict[site] = self.getValue( "SiteTo%sMapping/%s/%s" % ( resourceType, mapping, site ), [] )
-      
-    useLocalResources = self.getValue( "SiteTo%sMapping/%s/UseLocalResources" % ( resourceType, mapping), False )
-    if useLocalResources:  
-      reHelper = Resources.Resources( vo = self.__vo )
-      result = reHelper.getEligibleResources( resourceType )
-      if result['OK']:
-        for site in result['Value']:
-          resultDict.setdefault( site, [] )
-          resultDict[site].extend( result['Value'][site] )
-          resultDict[site] = List.uniqueElements( resultDict[site] )
-    
-    return S_OK( resultDict )      
-  
-  def getResourceMapping( self, resourceType, mapping = '' ):
-    """ Get mapping of resources of a given type to sites 
-    """ 
-    result = self.getSiteMapping( resourceType, mapping )
-    if not result['OK']:
-      return result
-    
-    resultDict = {}
-    for site in result['Value']:
-      for resource in result['Value'][site]:
-        resultDict.setdefault( resource, [] )
-        if not site in resultDict[resource]:
-          resultDict[resource].append( site ) 
-    
-    return S_OK( resultDict )        
+    if not activityType:
+      return S_ERROR( "No activityType specified" )
+    res = self.getOptionsDict( 'ActivityMapping/%s/' % activityType )
+    if not res['OK']:
+      return res
+    activityMapping = res['Value']
+    # FIXME: here we should add the obvious relation in allow
+    return S_OK( activityMapping )
