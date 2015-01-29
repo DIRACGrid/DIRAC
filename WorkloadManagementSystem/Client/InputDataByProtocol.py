@@ -94,9 +94,9 @@ class InputDataByProtocol( object ):
       if not result['OK']:
         return result
       for lfn in result['Value']['Successful']:
-        success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
+        success.setdefault( lfn, [] ).extend( result['Value']['Successful'][lfn] )
     # Only consider failed the files that are not successful as well
-    failed = [lfn for lfn in result['Failed'] if lfn not in success]
+    failed = [lfn for lfn in result['Value']['Failed'] if lfn not in success]
     return S_OK( {'Successful': success, 'Failed':failed} )
 
   def __resolveReplicas( self, seList, replicas, ignoreTape = False, requestedProtocol = '' ):
