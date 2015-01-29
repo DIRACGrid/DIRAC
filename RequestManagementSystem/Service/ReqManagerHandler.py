@@ -2,7 +2,7 @@
 # $HeadURL $
 # File: ReqManagerHandler.py
 ########################################################################
-""" 
+"""
 :mod: ReqManagerHandler
 
 .. module: ReqManagerHandler
@@ -87,11 +87,19 @@ class ReqManagerHandler( RequestHandler ):
     """
     requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
     request = Request( requestJSON )
+    requestID = request.RequestID
     optimized = request.optimize()
-    if optimized.get("Value", False):
-      gLogger.debug( "putRequest: request was optimized" )
+    if optimized.get( "Value", False ):
+      if request.RequestID == 0 and requestID != 0:
+        # A new request has been created, delete the old one
+        delete = cls.__requestDB.deleteRequest( request.RequestName )
+        if not delete['OK']:
+          return delete
+        gLogger.debug( "putRequest: request was optimized and removed for a new insertion" )
+      else:
+        gLogger.debug( "putRequest: request was optimized" )
     else:
-      gLogger.debug( "putRequest: request unchanged", optimized.get( "Message", "Nothing could be optimize" ) )
+      gLogger.debug( "putRequest: request unchanged", optimized.get( "Message", "Nothing could be optimized" ) )
 
     valid = cls.validate( request )
     if not valid["OK"]:
@@ -199,10 +207,10 @@ class ReqManagerHandler( RequestHandler ):
     onames = ['Type', 'Status']
     rnames = ['OwnerDN', 'OwnerGroup']
     if attribute in onames:
-      return cls.__requestDB.getDistinctAttributeValues('Operation', attribute)
+      return cls.__requestDB.getDistinctAttributeValues( 'Operation', attribute )
     elif attribute in rnames:
-      return cls.__requestDB.getDistinctAttributeValues('Request', attribute)
-    return S_ERROR('Invalid attribute %s' % attribute)
+      return cls.__requestDB.getDistinctAttributeValues( 'Request', attribute )
+    return S_ERROR( 'Invalid attribute %s' % attribute )
 
   types_deleteRequest = [ StringTypes ]
   @classmethod

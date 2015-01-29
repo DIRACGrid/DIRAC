@@ -125,10 +125,10 @@ class Operation( Record ):
     if fStatus == set( ['Failed'] ):
       # All files Failed -> Failed
       newStatus = 'Failed'
-    elif "Waiting" in fStatus:
-      newStatus = 'Queued'
     elif 'Scheduled' in fStatus:
       newStatus = 'Scheduled'
+    elif "Waiting" in fStatus:
+      newStatus = 'Queued'
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
