@@ -18,7 +18,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 #############################################################################
-def getSiteSEMapping( gridName = '' ):
+def getSiteSEMapping( gridName = '', withSiteLocalSEMapping = False ):
   """ Returns a dictionary of all sites and their localSEs as a list, e.g.
       {'LCG.CERN.ch':['CERN-RAW','CERN-RDST',...]}
       If gridName is specified, result is restricted to that Grid type.
@@ -45,24 +45,25 @@ def getSiteSEMapping( gridName = '' ):
       if candidateSEs:
         siteSEMapping[candidate] = candidateSEs
 
-  # Add Sites from the SiteLocalSEMapping in the CS
-  cfgLocalSEPath = cfgPath( 'SiteLocalSEMapping' )
-  opsHelper = Operations()
-  result = opsHelper.getOptionsDict( cfgLocalSEPath )
-  if result['OK']:
-    mapping = result['Value']
-    for site in mapping:
-      ses = opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-      if not ses:
-        continue
-      if gridName:
-        if gridName != site.split( '.' )[0]:
+  if withSiteLocalSEMapping:
+    # Add Sites from the SiteLocalSEMapping in the CS
+    cfgLocalSEPath = cfgPath( 'SiteLocalSEMapping' )
+    opsHelper = Operations()
+    result = opsHelper.getOptionsDict( cfgLocalSEPath )
+    if result['OK']:
+      mapping = result['Value']
+      for site in mapping:
+        ses = opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
+        if not ses:
           continue
-      if site not in siteSEMapping:
-        siteSEMapping[site] = []
-      for se in ses:
-        if se not in siteSEMapping[site]:
-          siteSEMapping[site].append( se )
+        if gridName:
+          if gridName != site.split( '.' )[0]:
+            continue
+        if site not in siteSEMapping:
+          siteSEMapping[site] = []
+        for se in ses:
+          if se not in siteSEMapping[site]:
+            siteSEMapping[site].append( se )
 
   return S_OK( siteSEMapping )
 
@@ -103,12 +104,12 @@ def getSESiteMapping( gridName = '' ):
   return S_OK( seSiteMapping )
 
 #############################################################################
-def getSitesForSE( storageElement, gridName = '' ):
+def getSitesForSE( storageElement, gridName = '', withSiteLocalSEMapping = False ):
   """ Given a DIRAC SE name this method returns a list of corresponding sites.
       Optionally restrict to Grid specified by name.
   """
 
-  result = getSiteSEMapping( gridName )
+  result = getSiteSEMapping( gridName, withSiteLocalSEMapping )
   if not result['OK']:
     return result
 
@@ -123,10 +124,10 @@ def getSitesForSE( storageElement, gridName = '' ):
 
 
 #############################################################################
-def getSEsForSite( siteName ):
+def getSEsForSite( siteName, withSiteLocalSEMapping = False ):
   """ Given a DIRAC site name this method returns a list of corresponding SEs.
   """
-  result = getSiteSEMapping()
+  result = getSiteSEMapping( withSiteLocalSEMapping )
   if not result['OK']:
     return result
 
@@ -308,7 +309,6 @@ def getTier1WithTier2( siteName = '' ):
   """
   It returns the T1 sites with the attached T2 using the SiteLocalSEMapping
   """
-  tier1andTier2Maps = {}
   retVal = Operations().getOptionsDict( 'SiteLocalSEMapping' )
   if not retVal['OK']:
     return retVal
