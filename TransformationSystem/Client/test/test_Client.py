@@ -1,6 +1,6 @@
 import unittest, types
 
-from mock import Mock
+from mock import Mock, MagicMock
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
@@ -45,8 +45,8 @@ class ClientsTestCase( unittest.TestCase ):
                                   outputDataModule = "mock",
                                   jobClass = self.jobMock )
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
-                                      requestClient = self.mockReqClient
-                                      )
+                                      requestClient = self.mockReqClient,
+                                      requestValidator = MagicMock() )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
