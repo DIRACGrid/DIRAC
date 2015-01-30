@@ -81,7 +81,7 @@ from DIRAC.Workflow.Modules.Script import Script
 <descr_short></descr_short>
 <Parameter name="executable" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Executable Script"><value><![CDATA[someExe]]></value></Parameter>
 <Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
-<Parameter name="applicationLog" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Log file name"><value><![CDATA[CodeOutput.log]]></value></Parameter>
+<Parameter name="applicationLog" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Log file name"><value><![CDATA[Script1_CodeOutput.log]]></value></Parameter>
 </StepInstance>
 </Workflow>
 '''
