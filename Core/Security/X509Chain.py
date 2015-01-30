@@ -225,6 +225,9 @@ class X509Chain:
     if not self.__loadedPKey:
       return S_ERROR( "No pkey loaded" )
 
+    if rfc == False and self.isRFC().get( 'Value', False ):
+      rfc = True
+
     issuerCert = self.__certList[0]
 
     proxyKey = crypto.PKey()
@@ -232,7 +235,6 @@ class X509Chain:
 
     proxyCert = crypto.X509()
 
-    proxyCert.set_issuer( issuerCert.get_subject() )
 
     if rfc:
       proxyCert.set_serial_number( str( int( random.random()*10**10 ) ) )
@@ -250,11 +252,12 @@ class X509Chain:
       proxyCert.set_subject( cloneSubject )
       proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
 
+    proxyCert.set_issuer( issuerCert.get_subject() )
     proxyCert.set_version( issuerCert.get_version() )
     proxyCert.set_pubkey( proxyKey )
     proxyCert.gmtime_adj_notBefore( -900 )
     proxyCert.gmtime_adj_notAfter( lifeTime )
-    proxyCert.sign( self.__keyObj, 'sha1' )
+    proxyCert.sign( self.__keyObj, 'sha256' )
 
     proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
                                crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
@@ -488,34 +491,37 @@ class X509Chain:
 
     issuerCert = self.__certList[0]
 
-    reqSubj = req.get_subject()
-    newSubj = issuerCert.get_subject().clone()
-
-    isLimited = False
-    lastEntry = newSubj.get_entry( newSubj.num_entries() - 1 )
-    if lastEntry[0] == "CN" and lastEntry[1] == "limited proxy":
-      isLimited = True
-    for entryTuple in reqSubj.get_components():
-      if isLimited  and entryTuple[0] == "CN" and entryTuple[1] == "proxy":
-        return S_ERROR( "Request is for a full proxy and chain is a limited one" )
-      if entryTuple[0] == "CN" and entryTuple[1] == "limited proxy":
-        isLimited = True
-      newSubj.insert_entry( entryTuple[0], entryTuple[1] )
-
-    if requireLimited and not isLimited:
-      return S_ERROR( "Only limited proxies are allowed to be delegated but request was for a full one" )
-
-
     childCert = crypto.X509()
-    childCert.set_subject( newSubj )
-    childCert.set_issuer( issuerCert.get_subject() )
     childCert.set_serial_number( issuerCert.get_serial_number() )
+    childCert.set_subject( newSubj )
+    childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
+
+    reqSubj = req.get_subject()
+
+    limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
+
+    if self.isRFC().get( 'Value', False ):
+      childCert.set_serial_number( str( int( random.random()*10**10 ) ) )
+      cloneSubject = issuerCert.get_subject().clone()
+      cloneSubject.insert_entry( "CN", str( int( random.random()*10**10 ) ) )
+      childCert.set_subject( cloneSubject )
+      childCert.add_extensions( self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ) )
+    else:
+      childCert.set_serial_number( issuerCert.get_serial_number() )
+      newSubj = issuerCert.get_subject().clone()
+      if limited:
+        newSubj.insert_entry( "CN", "limited proxy" )
+      else:
+        newSubj.insert_entry( "CN", "proxy" )
+      childCert.set_subject( cloneSubject )
+      childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
+
+    childCert.set_issuer( issuerCert.get_subject() )
     childCert.set_version( issuerCert.get_version() )
     childCert.set_pubkey( req.get_pubkey() )
-    childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     childCert.gmtime_adj_notBefore( -900 )
     childCert.gmtime_adj_notAfter( int( lifetime ) )
-    childCert.sign( self.__keyObj, 'sha1' )
+    childCert.sign( self.__keyObj, 'sha256' )
 
     childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )
     for i in range( len( self.__certList ) ):
@@ -574,7 +580,9 @@ class X509Chain:
     return S_OK( filename )
 
   def isRFC( self ):
-    return self.__isRFC
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    return S_OK( self.__isRFC )
 
   def dumpChainToString( self ):
     """
