@@ -453,7 +453,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       return preparedTransformationTasks
 
     res = self.__actualSubmit( preparedTransformationTasks, clients, transID )
-
+    if not res['OK']:
+      return res
     res = clients['TaskManager'].updateDBAfterTaskSubmission( res['Value'] )
     self._logDebug( "updateDBAfterTaskSubmission return value: %s" % res, method = 'submitTasks', transID = transID )
     if not res['OK']:
