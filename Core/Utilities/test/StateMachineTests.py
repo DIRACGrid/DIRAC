@@ -71,15 +71,15 @@ class StateMachineTests(unittest.TestCase):
   def test01Ctor( self ):
     """ ctor tests """
     try:
-      sm = StateMachine()
+      StateMachine()
     except Exception, error:
       self.assertEqual( type(error), TypeError, "wrong exception" )
     
 
-    sm = StateMachine( False )
-      
-      
+    self.assertRaises( TypeError, StateMachine, False )
+
     sm = StateMachine( self.waiting, {} )
+    self.assert_( sm )
 
 
 
