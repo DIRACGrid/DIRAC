@@ -6,7 +6,6 @@
 
     Helper class to perform FTS job submission and monitoring.
 
-    :deprecated:
 """
 # # imports
 import sys
