@@ -21,6 +21,13 @@ importedLFC = None
 # These are some functions used by all methods in the class
 #
 
+def setLfnReplicas( lfn, replicas, successful, failed ):
+  if replicas:
+    successful[lfn] = replicas
+    replicas = {}
+  elif lfn not in failed:
+    failed[lfn] = 'No active replica'
+
 def getClientCertInfo():
   res = getProxyInfo( False, False )
   if not res['OK']:
@@ -503,35 +510,27 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       for oReplica in replicaList:
         if oReplica.errcode != 0:
           if ( oReplica.guid == '' ) or ( oReplica.guid != guid ):
-            if replicas:
-              successful[lfn] = replicas
-              replicas = {}
+            setLfnReplicas( lfn, replicas, successful, failed )
             lfn = it.next()
             failed[lfn] = lfc.sstrerror( oReplica.errcode )
             guid = oReplica.guid
         elif oReplica.sfn == '':
-          if replicas:
-            successful[lfn] = replicas
-            replicas = {}
+          setLfnReplicas( lfn, replicas, successful, failed )
           lfn = it.next()
           failed[lfn] = 'File has zero replicas'
           guid = oReplica.guid
         else:
           # This is where we change lfn for good!
-          if ( oReplica.guid != guid ):
-            if replicas:
-              successful[lfn] = replicas
-              replicas = {}
+          if oReplica.guid != guid:
+            setLfnReplicas( lfn, replicas, successful, failed )
             lfn = it.next()
             guid = oReplica.guid
           if ( oReplica.status != 'P' ) or allStatus:
             se = oReplica.host
             pfn = oReplica.sfn  # .strip()
             replicas[se] = pfn
-      if replicas:
-        successful[lfn] = replicas
-      elif lfn not in failed:
-        failed[lfn] = 'No active replica'
+      # This is for the last file in the list
+      setLfnReplicas( lfn, replicas, successful, failed )
     if created:
       self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
