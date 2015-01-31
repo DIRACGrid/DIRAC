@@ -32,6 +32,11 @@ class DirectoryTreeBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
+  def findDirs( self, paths, connection = False ):
+    """ Find DirIDs for the given path list
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
   def makeDir( self, path ):
 
     return S_ERROR( "To be implemented on derived class" )
@@ -50,6 +55,12 @@ class DirectoryTreeBase:
 
   def countSubdirectories( self, dirId, includeParent = True ):
     return S_ERROR( "To be implemented on derived class" )
+
+  def getSubdirectoriesByID( self, dirID, requestString = False, includeParent = False ):
+    """ Get all the subdirectories of the given directory at a given level
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
 ##########################################################################
 
 
