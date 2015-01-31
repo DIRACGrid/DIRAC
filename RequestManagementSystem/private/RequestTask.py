@@ -231,7 +231,7 @@ class RequestTask( object ):
 
   def updateRequest( self ):
     """ put back request to the RequestDB """
-    updateRequest = self.requestClient.putRequest( self.request, useFailoverProxy = False, retryMainServer = 2 )
+    updateRequest = self.requestClient.putRequest( self.request, useFailoverProxy = False, retryMainService = 2 )
     if not updateRequest["OK"]:
       self.log.error( updateRequest["Message"] )
     return updateRequest
