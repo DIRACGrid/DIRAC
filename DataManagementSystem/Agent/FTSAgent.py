@@ -412,7 +412,7 @@ class FTSAgent( AgentModule ):
     for requestID in requestIDs:
       request = self.getRequest( requestID )
       if not request["OK"]:
-        log.error( "Error getting request", "%s: %s" % ( requestName, request["Message"] ) )
+        log.error( "Error getting request", "%s: %s" % ( requestID, request["Message"] ) )
         continue
       request = request["Value"]
       sTJId = request.RequestID
