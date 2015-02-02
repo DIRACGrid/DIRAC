@@ -122,7 +122,7 @@ def getSitesForSE( storageElement, gridName = '', withSiteLocalSEMapping = False
 def getSEsForSite( siteName, withSiteLocalSEMapping = False ):
   """ Given a DIRAC site name this method returns a list of corresponding SEs.
   """
-  result = getSiteSEMapping( withSiteLocalSEMapping )
+  result = getSiteSEMapping( withSiteLocalSEMapping = withSiteLocalSEMapping )
   if not result['OK']:
     return result
 
