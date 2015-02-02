@@ -1,8 +1,10 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
-"""
-"""
-from dirac import DIRAC
+
+# FIXME: should be rewritten as a real unitttest
+
+import DIRAC
+from DIRAC import gLogger
+gLogger.setLevel( 'DEBUG' )
 
 DIRAC.gLogger.initialize('test_gLogger','/testSectionDebug')
 
@@ -13,15 +15,12 @@ try:
 except:
   pass
 
-# for i in range(100):
-#   DIRAC.gLogger.info( "test %s" % i )
-
 testList = [{ 'method'    : DIRAC.gLogger.always,
               'arguments' : ( ( "This is a always message" ), ),
               'output'    : True
             },
             { 'method'    : DIRAC.gLogger.info,
-              'arguments' : ( ( "This is a vital message" ), ),
+              'arguments' : ( ( "This is a info message" ), ),
               'output'    : True
             },
             { 'method'    : DIRAC.gLogger.verbose,
@@ -54,7 +53,3 @@ testdict = { 'DIRAC.gLogger'               : testList,}
   
 DIRAC.Tests.run( testdict, 'DIRAC.Information.Logger' )
 
-import time
-time.sleep( 10 )
-
-DIRAC.exit()

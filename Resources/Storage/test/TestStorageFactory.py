@@ -1,5 +1,7 @@
 __RCSID__ = "$Id$"
 
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 

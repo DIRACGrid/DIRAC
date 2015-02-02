@@ -8,7 +8,7 @@ def run( testDict, name = None ):
   import DIRAC
 
   if name:
-    DIRAC.gLogger.info( "Running tests", "for %s ..." % name )
+    DIRAC.gLogger.always( "Running tests", "for %s ..." % name )
   for module in testDict:
     testFailed = False
     for test in testDict[module]:

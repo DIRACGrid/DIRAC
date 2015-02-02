@@ -45,7 +45,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self.cacheFile = ''
     self.controlDirectory = ''
 
-    self.lastFileOffset = None
+    self.lastFileOffset = {}
     # Validity of the cache
     self.replicaCache = None
     self.replicaCacheValidity = None
