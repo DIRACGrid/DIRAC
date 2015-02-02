@@ -67,14 +67,12 @@ class InputDataByProtocol( object ):
     result = self.__resolveReplicas( localSEList, replicas, requestedProtocol = requestedProtocol )
     if not result['OK']:
       return result
-    success = result['Successful']
+    success = result['Value']['Successful']
     if not allReplicas:
       bestReplica = {}
       for lfn in success:
         bestReplica[lfn] = success[lfn][0]
-      ret = S_OK()
-      ret.update( {'Successful': bestReplica, 'Failed':result['Failed']} )
-      return ret
+      return S_OK( {'Successful': bestReplica, 'Failed':result['Value']['Failed']} )
 
     # If all replicas are requested, get results for other SEs
     seList = set()
@@ -93,10 +91,10 @@ class InputDataByProtocol( object ):
       result = self.__resolveReplicas( seList, replicas, ignoreTape = True, requestedProtocol = requestedProtocol )
       if not result['OK']:
         return result
-      for lfn in result['Successful']:
-        success.setdefault( lfn, [] ).extend( result['Successful'][lfn] )
+      for lfn in result['Value']['Successful']:
+        success.setdefault( lfn, [] ).extend( result['Value']['Successful'][lfn] )
     # Only consider failed the files that are not successful as well
-    failed = [lfn for lfn in result['Failed'] if lfn not in success]
+    failed = [lfn for lfn in result['Value']['Failed'] if lfn not in success]
     return S_OK( {'Successful': success, 'Failed':failed} )
 
   def __resolveReplicas( self, seList, replicas, ignoreTape = False, requestedProtocol = '' ):
