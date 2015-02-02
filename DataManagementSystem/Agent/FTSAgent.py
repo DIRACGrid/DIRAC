@@ -265,33 +265,11 @@ class FTSAgent( AgentModule ):
         self.__ftsPlacement = FTSPlacement( csPath = None, ftsHistoryViews = ftsHistory )
       else:
         self.__ftsPlacement.refresh( ftsHistoryViews = ftsHistory )
-      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory, maxActiveJobs = self.MAX_ACTIVE_JOBS )
     finally:
       self.updateLock().release()
 
     # # save time stamp
     self.__ftsPlacementValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
-
-    log.debug( "FTSSites:", len( self.__ftsGraph.nodes() ) )
-    for i, site in enumerate( self.__ftsGraph.nodes() ):
-      log.debug( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
-    log.debug( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
-    for i, route in enumerate( self.__ftsGraph.edges() ):
-      log.debug( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
-                                                                             route.routeName,
-                                                                             route.ActiveJobs,
-                                                                             route.toNode.MaxActiveJobs ) )
-    # # save graph stamp
-    self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
-
-    # # refresh SE R/W access
-    try:
-      self.updateLock().acquire()
-      self.__ftsGraph.updateRWAccess()
-    finally:
-      self.updateLock().release()
-    # # save rw access stamp
-    self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
 
     return S_OK()
 
@@ -434,7 +412,7 @@ class FTSAgent( AgentModule ):
     for requestID in requestIDs:
       request = self.getRequest( requestID )
       if not request["OK"]:
-        log.error( "Error getting request", "%s: %s" % ( requestName, request["Message"] ) )
+        log.error( "Error getting request", "%s: %s" % ( requestID, request["Message"] ) )
         continue
       request = request["Value"]
       sTJId = request.RequestID
@@ -837,7 +815,7 @@ class FTSAgent( AgentModule ):
 
 
 
-          # # update graph route
+          # # update placement route
           try:
             self.updateLock().acquire()
             self.__ftsPlacement.startTransferOnRoute( route )
@@ -938,7 +916,7 @@ class FTSAgent( AgentModule ):
     # # send accounting record for this job
     self.__sendAccounting( ftsJob, request.OwnerDN )
 
-    # # update graph - remove this job from graph
+    # # update placement - remove this job from placement
     route = self.__ftsPlacement.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
     if route["OK"]:
       try:

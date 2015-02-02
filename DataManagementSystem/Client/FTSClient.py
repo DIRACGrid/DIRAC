@@ -368,7 +368,7 @@ class FTSClient( Client ):
     :param str targetSE: target SE
     :param str lfn: LFN
     """
-    res = self.storageFactory.getStorages( targetSE, protocolList = ["SRM2"] )
+    res = self.storageFactory.getStorages( targetSE, pluginList = ["SRM2"] )
     if not res['OK']:
       errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res['Message'] )
       self.log.error( "_getSurlForLFN: Failed to create SRM2 storage", 

@@ -35,7 +35,6 @@ from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 # # from RMS
-from DIRAC.RequestManagementSystem.private.Record import Record
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
@@ -44,7 +43,7 @@ import fts3.rest.client.easy as fts3
 import json
 
 ########################################################################
-class FTSJob( Record ):
+class FTSJob( object ):
   """
   .. class:: FTSJob
 
@@ -77,7 +76,8 @@ class FTSJob( Record ):
     :param self: self reference
     :param dict fromDict: data dict
     """
-    Record.__init__( self )
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now
