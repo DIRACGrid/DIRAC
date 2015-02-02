@@ -1,6 +1,11 @@
+""" :mod: GFAL2_SRM2Storage
+    =================
+
+    .. module: python
+    :synopsis: SRM2 module based on the GFAL2_StorageBase class.
+"""
+
 from types import StringType, ListType
-import errno
-import gfal2
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -33,12 +38,24 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
 
   def __setSRMOptionsToDefault( self ):
+    ''' Resetting the SRM options back to default
+
+    '''
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
     self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
 
 
   def _getExtendedAttributes( self, path, protocols = False ):
+    ''' Changing the TURL_PROTOCOLS option for SRM in case we ask for a specific
+        protocol
+
+        :param self: self reference
+        :param str path: path on the storage
+        :param str protocols: a list of protocols
+        :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes
+                                      and values the respective values
+    '''
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
     res = GFAL2_StorageBase._getExtendedAttributes( self, path )
