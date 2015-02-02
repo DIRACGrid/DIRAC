@@ -200,7 +200,7 @@ class GFAL2_StorageBase( StorageBase ):
     try:
       statInfo = self.gfal2.stat( path )
       # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
-      if ( S_ISREG( statInfo.st_mode ) ):
+      if S_ISREG( statInfo.st_mode ):
         return S_OK( True )
       else:
         self.log.debug( "GFAL2_StorageBase.__isSingleFile: Path is not a file" )
@@ -400,7 +400,7 @@ class GFAL2_StorageBase( StorageBase ):
     self.log.info( "GFAL2_StorageBase.__getSingleFile: Trying to download %s to %s" % ( src_url, dest_file ) )
 
     if not os.path.exists( os.path.dirname( dest_file ) ):
-      self.log.debug( "GFAL2_StorageBase.__getSingleFile: Local directory does not yet exist. Creating...", os.path.dirname( dest_file ) )
+      self.log.debug( "GFAL2_StorageBase.__getSingleFile: Local directory does not yet exist. Creating it", os.path.dirname( dest_file ) )
       try:
         os.makedirs( os.path.dirname( dest_file ) )
       except OSError, error:
@@ -1151,7 +1151,7 @@ class GFAL2_StorageBase( StorageBase ):
     try:
       statInfo = self.gfal2.stat( path )
       # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
-      if ( S_ISDIR( statInfo.st_mode ) ):
+      if S_ISDIR( statInfo.st_mode ):
         return S_OK ( True )
       else:
         self.log.debug( "GFAL2_StorageBase.__isSingleDirectory: Path is not a directory" )
