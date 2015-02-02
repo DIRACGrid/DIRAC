@@ -43,6 +43,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     self.transClient = None
     self.transType = []
+    self.pluginLocation = ''
 
     self.tasksPerLoop = 50
 
@@ -68,6 +69,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
+
+    self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Client.TaskManagerPlugin' )
 
     # Default clients
     self.transClient = TransformationClient()

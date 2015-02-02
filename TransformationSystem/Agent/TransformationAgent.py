@@ -268,7 +268,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     oPlugin.setParameters( transDict )
     oPlugin.setInputData( dataReplicas )
     oPlugin.setTransformationFiles( transFiles )
-    res = oPlugin.generateTasks()
+    res = oPlugin.run()
     if not res['OK']:
       self._logError( "Failed to generate tasks for transformation:", res['Message'],
                        method = "processTransformation", transID = transID )
