@@ -104,6 +104,8 @@ class CFG( object ):
       raise ValueError( "Creating a section with empty name! You shouldn't do that!" )
     if sectionName.find( "/" ) > -1:
       recDict = self.getRecursive( sectionName, -1 )
+      if not recDict:
+        return S_ERROR( "Parent section does not exist %s" % sectionName )
       parentSection = recDict[ 'value' ]
       if type( parentSection ) in ( types.StringType, types.UnicodeType ):
         raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
@@ -147,6 +149,8 @@ class CFG( object ):
       raise ValueError( "Creating an option with empty name! You shouldn't do that!" )
     if optionName.find( "/" ) > -1:
       recDict = self.getRecursive( optionName, -1 )
+      if not recDict:
+        return S_ERROR( "Parent section does not exist %s" % optionName )
       parentSection = recDict[ 'value' ]
       if type( parentSection ) in ( types.StringType, types.UnicodeType ):
         raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )

@@ -27,6 +27,18 @@ NEW: GFAL2_StorageBase.py, GFAL2_SRM2Storage.py, GFAL2_XROOTStorage.py
 NEW: dirac-admin-allow(ban)-se - added RemoveAccess status
 CHANGE: TokenAgent - added more info to the mail
 
+[v6r12p19]
+
+*Core
+FIX: Core.py - check return value of getRecursive() call
+
+*DMS
+FIX: FileCatalog - directory removal is successful if does not exist
+     special treatment of Delete operation
+
+*WMS
+FIX: InputDataByProtocol - fix interpretation of return values
+
 [v6r12p18]
 
 *DMS

@@ -12,6 +12,12 @@ from types import IntType, LongType, StringTypes
 
 class SEManagerBase:
 
+  def _refreshSEs( self, connection = False ):
+    """Refrech the SE cache"""
+
+    return S_ERROR( "To be implemented on derived class" )
+
+
   def __init__( self, database = None ):
     self.db = database
     if self.db:
