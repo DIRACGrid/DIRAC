@@ -1,14 +1,19 @@
-from types import StringType, ListType
+""" :mod: GFAL2_XROOTStorage
+    =================
+
+    .. module: python
+    :synopsis: XROOT module based on the GFAL2_StorageBase class.
+"""
+
 # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC import gLogger
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 
 class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
-  """ .. class:: XROOTStorage
+  """ .. class:: GFAL2_XROOTStorage
 
-  Xroot interface to StorageElement using pyxrootd
+  Xroot interface to StorageElement using gfal2
   """
 
   def __init__( self, storageName, parameters ):

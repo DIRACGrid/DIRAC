@@ -10,7 +10,7 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 
-class SecurityManagerBase:
+class SecurityManagerBase( object ):
 
   def __init__( self, database=None ):
     self.db = database
@@ -25,6 +25,11 @@ class SecurityManagerBase:
 
   def hasAccess(self,opType,paths,credDict):
     
+    # Since only one SecurityManager can handle it, the others
+    # can consider it as write
+    if opType.lower() == 'delete':
+      opType = 'Write'
+
     # Check if admin access is granted first
     result = self.hasAdminAccess( credDict )
     if not result['OK']:
@@ -56,6 +61,9 @@ class SecurityManagerBase:
         successful[path] = True
       else:
         successful[path] = False
+
+    failed.update( result['Value']['Failed'] )
+
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -175,3 +183,75 @@ class FullSecurityManager(SecurityManagerBase):
         permissions[path]['Read'] = True
 
     return S_OK( {'Successful':permissions,'Failed':failed} )
+
+
+class DirectorySecurityManagerWithDelete( DirectorySecurityManager ):
+  """ This security manager implements a Delete operation.
+       For Read, Write, Execute, it's behavior is the one of DirectorySecurityManager.
+       For Delete, if the directory does not exist, we return True.
+       If the directory exists, then we test the Write permission
+
+  """
+
+  def hasAccess( self, opType, paths, credDict ):
+    # The other SecurityManager do not support the Delete operation,
+    # and it is transformed in Write
+    # so we keep the original one
+    self.opType = opType.lower()
+
+    res = super( DirectorySecurityManagerWithDelete, self ).hasAccess( opType, paths, credDict )
+
+    # We reinitialize self.opType in case someone would call getPathPermissions directly
+    self.opType = ''
+
+    return res
+
+  def getPathPermissions( self, paths, credDict ):
+    """ Get path permissions according to the policy
+    """
+
+    # If we are testing in anything else than a Delete, just return the parent methods
+    if hasattr( self, 'opType' ) and self.opType != 'delete':
+      return super( DirectorySecurityManagerWithDelete, self ).getPathPermissions( paths, credDict )
+
+    # If the object (file or dir) does not exist, we grant the permission
+    res = self.db.dtree.exists( paths )
+    if not res['OK']:
+      return res
+    
+
+    nonExistingDirectories = set( path for path in res['Value']['Successful'] if not res['Value']['Successful'][path] )
+
+    res = self.db.fileManager.exists( paths )
+    if not res['OK']:
+      return res
+
+    nonExistingFiles = set( path for path in res['Value']['Successful'] if not res['Value']['Successful'][path] )
+
+    nonExistingObjects = nonExistingDirectories & nonExistingFiles
+
+    permissions = {}
+    failed = {}
+
+
+
+    for path in nonExistingObjects:
+      permissions[path] = {'Read':True, 'Write':True, 'Execute':True}
+        # The try catch is just to protect in case there are duplicate in the paths
+      try:
+        paths.remove( path )
+      except Exception, _e:
+        pass
+
+    # For all the paths that exist, check the write permission
+    if paths:
+
+      res = super( DirectorySecurityManagerWithDelete, self ).getPathPermissions( paths, credDict )
+      if not res['OK']:
+        return res
+
+      failed = res['Value']['Failed']
+      permissions.update( res['Value']['Successful'] )
+
+
+    return S_OK( {'Successful':permissions, 'Failed':failed} )

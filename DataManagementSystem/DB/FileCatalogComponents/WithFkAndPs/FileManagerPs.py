@@ -240,7 +240,7 @@ class FileManagerPs( FileManagerBase ):
     """ Yield successive n-sized chunks from l.
     """
     for i in xrange( 0, len( l ), n ):
-        yield l[i:i + n]
+      yield l[i:i + n]
 
   def _insertFiles( self, lfns, uid, gid, connection = False ):
     """ Insert new files. lfns is a dictionary indexed on lfn, the values are
@@ -903,7 +903,7 @@ class FileManagerPs( FileManagerBase ):
 
 
     resultDict = {}
-    for fileName, fileID, seName, pfn in result['Value']:
+    for fileName, _fileID, seName, pfn in result['Value']:
       resultDict.setdefault( fileName, {} ).setdefault( seName, [] ).append( pfn )
 
     return S_OK( resultDict )

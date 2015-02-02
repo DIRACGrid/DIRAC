@@ -78,7 +78,8 @@ class TaskBase( object ):
 
 class RequestTasks( TaskBase ):
 
-  def __init__( self, transClient = None, logger = None, requestClient = None, requestClass = None, ):
+  def __init__( self, transClient = None, logger = None, requestClient = None,
+                requestClass = None, requestValidator = None ):
     """ c'tor
 
         the requestClass is by default Request.
@@ -100,6 +101,12 @@ class RequestTasks( TaskBase ):
       self.requestClass = Request
     else:
       self.requestClass = requestClass
+
+    if not requestValidator:
+      self.requestValidator = RequestValidator()
+    else:
+      self.requestValidator = requestValidator
+
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
@@ -150,7 +157,7 @@ class RequestTasks( TaskBase ):
         oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
-      isValid = RequestValidator().validate( oRequest )
+      isValid = self.requestValidator.validate( oRequest )
       if not isValid['OK']:
         return isValid
 

@@ -1,5 +1,8 @@
 __RCSID__ = "$Id$"
 
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+
+
 import unittest, types, time, os, shutil
 from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Core.Utilities.File                  import getSize

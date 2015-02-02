@@ -11,6 +11,7 @@ from DIRAC.Core.Base                                   import Script
 read = True
 write = True
 check = True
+remove = True
 site = ''
 mute = False
 
@@ -24,6 +25,7 @@ Usage:
 Script.registerSwitch( "r" , "BanRead" , "     Ban only reading from the storage element" )
 Script.registerSwitch( "w" , "BanWrite", "     Ban writing to the storage element" )
 Script.registerSwitch( "k" , "BanCheck", "     Ban check access to the storage element" )
+Script.registerSwitch( "v" , "BanRemove", "    Ban remove access to the storage element" )
 Script.registerSwitch( "m" , "Mute"    , "     Do not send email" )
 Script.registerSwitch( "S:", "Site="   , "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)" )
 Script.parseCommandLine( ignoreErrors = True )
@@ -33,12 +35,19 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "r" or switch[0].lower() == "banread":
     write = False
     check = False
+    remove = False
   if switch[0].lower() == "w" or switch[0].lower() == "banwrite":
     read = False
     check = False
+    remove = False
   if switch[0].lower() == "k" or switch[0].lower() == "bancheck":
     read = False
     write = False
+    remove = False
+  if switch[0].lower() == "v" or switch[0].lower() == "banremove":
+    read = False
+    write = False
+    check = False
   if switch[0].lower() == "m" or switch[0].lower() == "mute":
     mute = True
   if switch[0] == "S" or switch[0].lower() == "site":
@@ -86,6 +95,7 @@ if not ses:
 readBanned = []
 writeBanned = []
 checkBanned = []
+removeBanned = []
 
 resourceStatus = ResourceStatus()
 
@@ -148,10 +158,26 @@ for se, seOptions in res[ 'Value' ].items():
         gLogger.notice( "Successfully updated %s check access to Banned" % se )
         checkBanned.append( se )
 
+  # Eventually, we will get rid of the notion of InActive, as we always write Banned.
+  if remove and seOptions.has_key( 'RemoveAccess' ):
+
+    if not seOptions[ 'RemoveAccess' ] in [ 'Active', 'Degraded', 'Probing' ]:
+      gLogger.notice( 'Remove option for %s is %s, instead of %s' % ( se, seOptions[ 'RemoveAccess' ], [ 'Active', 'Degraded', 'Probing' ] ) )
+      gLogger.notice( 'Try specifying the command switches' )
+    else:
+
+      resC = resourceStatus.setStorageElementStatus( se, 'RemoveAccess', 'Banned', reason, userName )
+      # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
+      if not resC['OK']:
+        gLogger.error( "Failed to update %s remove access to Banned" % se )
+      else:
+        gLogger.notice( "Successfully updated %s remove access to Banned" % se )
+        removeBanned.append( se )
+
   if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 )
 
-if not ( writeBanned or readBanned or checkBanned ):
+if not ( writeBanned or readBanned or checkBanned or removeBanned ):
   gLogger.notice( "No storage elements were banned" )
   DIRAC.exit( -1 )
 
@@ -159,7 +185,7 @@ if mute:
   gLogger.notice( 'Email is muted by script switch' )
   DIRAC.exit( 0 )
 
-subject = '%s storage elements banned for use' % len( writeBanned + readBanned + checkBanned )
+subject = '%s storage elements banned for use' % len( writeBanned + readBanned + checkBanned + removeBanned )
 addressPath = 'EMail/Production'
 address = Operations().getValue( addressPath, '' )
 
@@ -175,6 +201,10 @@ if write:
 if check:
   body = "%s\n\nThe following storage elements were banned for check access:" % body
   for se in checkBanned:
+    body = "%s\n%s" % ( body, se )
+if remove:
+  body = "%s\n\nThe following storage elements were banned for remove access:" % body
+  for se in removeBanned:
     body = "%s\n%s" % ( body, se )
 
 if not address:

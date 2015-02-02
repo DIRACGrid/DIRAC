@@ -214,6 +214,10 @@ class TokenAgent( AgentModule ):
       mail += ' '.join( [ str(x) for x in tokenList ] )
       mail += '\n'
 
+    mail += "\n\n You can extend for another 24 hours using the web interface (Set token -> Acquire)\n"
+    mail += " Or you can use the dirac-rss-set-token script\n\n"
+    mail += "Through the same interfaces you can release the token any time\n"
+
     # FIXME: you can re-take control of them using this or that...
 
     resEmail = self.diracAdmin.sendMail( tokenOwner, subject, mail )

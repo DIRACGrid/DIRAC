@@ -28,10 +28,9 @@ import re
 import datetime
 # # from DIRAC
 from DIRAC import S_OK
-from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################
-class FTSFile( Record ):
+class FTSFile( object ):
   """
   .. class:: FTSFile
 
@@ -52,8 +51,9 @@ class FTSFile( Record ):
     :param self: self reference
     :param dict fromDict: data dict
     """
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+
     _parent = None
-    Record.__init__( self )
     self._parent = None
     self.__data__["Status"] = 'Waiting'
     self.__data__["Attempt"] = 0

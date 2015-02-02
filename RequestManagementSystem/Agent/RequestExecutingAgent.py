@@ -190,7 +190,7 @@ class RequestExecutingAgent( AgentModule ):
     while request.RequestID in self.__requestCache:
       count -= 1
       if not count:
-        self.requestClient().putRequest( request, useFailoverProxy = False, retryMainServer = 2 )
+        self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
         return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
       time.sleep( 1 )
     self.__requestCache[ request.RequestID ] = request
@@ -206,7 +206,7 @@ class RequestExecutingAgent( AgentModule ):
       if taskResult and taskResult['OK']:
         request = taskResult['Value']
 
-      reset = self.requestClient().putRequest( request, useFailoverProxy = False, retryMainServer = 2 )
+      reset = self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
       if not reset["OK"]:
         return S_ERROR( "putRequest: unable to reset request %s: %s" % ( requestID, reset["Message"] ) )
     else:

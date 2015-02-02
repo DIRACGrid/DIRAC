@@ -61,6 +61,11 @@ class DirectoryTreeBase:
     """
     return S_ERROR( "To be implemented on derived class" )
 
+  def findDirs( self, paths, connection = False ):
+    """ Find DirIDs for the given path list
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
   def makeDir( self, path ):
 
     return S_ERROR( "To be implemented on derived class" )
@@ -79,6 +84,12 @@ class DirectoryTreeBase:
 
   def countSubdirectories( self, dirId, includeParent = True ):
     return S_ERROR( "To be implemented on derived class" )
+
+  def getSubdirectoriesByID( self, dirID, requestString = False, includeParent = False ):
+    """ Get all the subdirectories of the given directory at a given level
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
 ##########################################################################
 
 
@@ -307,7 +318,7 @@ class DirectoryTreeBase:
     dirDict = result['Value']
     for d in dirs:
       if not d in dirDict:
-        failed[d] = "Directory does not exist" 
+        successful[d] = "Directory does not exist"
     dirList = dirDict.keys()
 
     for dir_ in dirList:
@@ -557,7 +568,7 @@ class DirectoryTreeBase:
 
     result = self.getDirectoryParameters( path )
     if not result['OK']:
-      if "not found" in result['Message']:
+      if "not found" in result['Message'] or "not exist" in result['Message']:
         # If the directory does not exist, check the nearest parent for the permissions
         if path == '/':
           # Nothing yet exists, starting from the scratch

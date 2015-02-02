@@ -126,7 +126,7 @@ class RequestHandler( object ):
       gLogger.error( "ConnectionError", str( excp ) )
       return S_ERROR( excp )
     if  not isReturnStructure( retVal ):
-      message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
+      message = "Method %s for action %s does not return a S_OK/S_ERROR!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
     self.__logRemoteQueryResponse( retVal, time.time() - startTime )

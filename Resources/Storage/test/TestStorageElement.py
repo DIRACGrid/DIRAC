@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Script                         import parseCommandLine, getPositionalArgs

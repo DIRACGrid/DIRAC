@@ -25,6 +25,10 @@ class SEManagerBase:
                                      "UniqueIndexes": {"SEName":["SEName"]}  
                                    }
 
+  def _refreshSEs( self, connection = False ):
+    """Refrech the SE cache"""
+
+    return S_ERROR( "To be implemented on derived class" )
 
   def __init__( self, database = None ):
     self.lock = threading.Lock()

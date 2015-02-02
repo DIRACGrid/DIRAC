@@ -8,15 +8,15 @@ use mysql;
 -- options to set in the db
 -- transaction-isolation = READ-COMMITTED
 
--- delete from user where user='Dirac';
---
--- Must set passwords for database user by replacing "must_be_set".
---
 
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'%';
+GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'%';
+GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'%';
 
-GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'%' IDENTIFIED BY  'to_be_changed';
-GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'%' IDENTIFIED BY 'to_be_changed';
-GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'%' IDENTIFIED BY 'to_be_changed';
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'localhost';
+GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'localhost';
+GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'localhost';
+
 
 FLUSH PRIVILEGES;
 
@@ -671,7 +671,7 @@ BEGIN
   DECLARE done INT;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
-  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON f.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
+  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON d.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
   IF file_id IS NULL THEN
     SET file_id = 0;
   END IF;
