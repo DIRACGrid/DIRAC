@@ -1,4 +1,4 @@
-[v6r13-pre11]
+[v6r13-pre12]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -22,6 +22,10 @@ CHANGE: DMSRequestOperationsBase - delay execution or cancel request based on SE
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
 CHANGE: Storage - reworked Storage Element/Plugins to encapsulate physical URLs 
 NEW: GFAL2_StorageBase.py, GFAL2_SRM2Storage.py, GFAL2_XROOTStorage.py 
+
+*RSS:
+NEW: dirac-admin-allow(ban)-se - added RemoveAccess status
+CHANGE: TokenAgent - added more info to the mail
 
 [v6r12p18]
 
