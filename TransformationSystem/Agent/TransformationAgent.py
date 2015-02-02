@@ -601,8 +601,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         fileName = self.cacheFile
         cacheFile = open( fileName, 'r' )
         cache = pickle.load( cacheFile )
-        for id in [id for id in cache if id not in self.replicaCache]:
-          self.replicaCache[id] = cache[id]
+        for t_id in [t_id for t_id in cache if t_id not in self.replicaCache]:
+          self.replicaCache[t_id] = cache[t_id]
         self.replicaCache[transID] = cache.get( transID, {} )
       else:
         cacheFile = open( fileName, 'r' )
@@ -630,14 +630,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       transList = [transID] if transID else set( self.replicaCache )
       filesInCache = 0
       nCache = 0
-      for id in transList:
+      for t_id in transList:
         # Protect the copy of the cache
-        filesInCache += self.__filesInCache( id )
+        filesInCache += self.__filesInCache( t_id )
         # write to a temporary file in order to avoid corrupted files
-        cacheFile = self.__cacheFile( id )
+        cacheFile = self.__cacheFile( t_id )
         tmpFile = cacheFile + '.tmp'
         f = open( tmpFile, 'w' )
-        pickle.dump( self.replicaCache.get( id, {} ), f )
+        pickle.dump( self.replicaCache.get( t_id, {} ), f )
         f.close()
         # Now rename the file as it shold
         os.rename( tmpFile, cacheFile )
@@ -647,7 +647,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
                      method = method, transID = transID if transID else None )
     except Exception:
       self._logException( "Could not write replica cache file %s" % cacheFile,
-                          method = method, transID = id )
+                          method = method, transID = t_id )
 
   def __generatePluginObject( self, plugin, clients ):
     """ This simply instantiates the TransformationPlugin class with the relevant plugin name
