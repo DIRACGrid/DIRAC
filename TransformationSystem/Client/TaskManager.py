@@ -41,6 +41,8 @@ class TaskBase( object ):
     else:
       self.log = logger
 
+    self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
+
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     return S_ERROR( "Not implemented" )
 
@@ -437,7 +439,7 @@ class WorkflowTasks( TaskBase ):
     destSites = self.destinationPlugin_o.run()
     if not destSites:
       return sites
-
+    print "AAAAAAAAAAAA", destSites
     # Now we need to make the AND with the sites, if defined
     if sites != ['ANY']:
       # Need to get the AND
@@ -474,25 +476,20 @@ class WorkflowTasks( TaskBase ):
       oJob._addJDLParameter( 'GridCE', hospitalCEs )
 
 
-  def __generatePluginObject( self, plugin, clients ):
+  def __generatePluginObject( self, plugin ):
     """ This simply instantiates the TaskManagerPlugin class with the relevant plugin name
     """
     try:
       plugModule = __import__( self.pluginLocation, globals(), locals(), ['TaskManagerPlugin'] )
     except ImportError, e:
-      self._logException( "Failed to import 'TaskManagerPlugin' %s: %s" % ( plugin, e ),
-                           method = "__generatePluginObject" )
+      self.log.exception( "Failed to import 'TaskManagerPlugin' %s: %s" % ( plugin, e ) )
       return S_ERROR()
     try:
-      plugin_o = getattr( plugModule, 'TransformationPlugin' )( '%s' % plugin,
-                                                                transClient = clients['TransformationClient'],
-                                                                dataManager = clients['DataManager'] )
+      plugin_o = getattr( plugModule, 'TaskManagerPlugin' )( '%s' % plugin, operationsHelper = self.opsH )
       return S_OK( plugin_o )
     except AttributeError, e:
-      self._logException( "Failed to create %s(): %s." % ( plugin, e ), method = "__generatePluginObject" )
+      self.log.exception( "Failed to create %s(): %s." % ( plugin, e ) )
       return S_ERROR()
-    plugin_o.setDirectory( self.workDirectory )
-    plugin_o.setCallback( self.pluginCallback )
 
 
   #############################################################################

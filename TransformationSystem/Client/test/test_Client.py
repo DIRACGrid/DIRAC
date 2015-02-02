@@ -1,10 +1,12 @@
 import unittest, types
 
-from mock import Mock, MagicMock
+from mock import MagicMock
+
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
+from DIRAC.TransformationSystem.Client.TaskManagerPlugin      import TaskManagerPlugin
 
 def getSitesForSE( ses ):
   if ses == 'pippo':
@@ -19,17 +21,17 @@ class ClientsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
 
-    self.mockTransClient = Mock()
+    self.mockTransClient = MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK':True}
 
-    self.WMSClientMock = Mock()
-    self.jobMonitoringClient = Mock()
-    self.mockReqClient = Mock()
+    self.WMSClientMock = MagicMock()
+    self.jobMonitoringClient = MagicMock()
+    self.mockReqClient = MagicMock()
 
-    self.jobMock = Mock()
-    self.jobMock2 = Mock()
-    mockWF = Mock()
-    mockPar = Mock()
+    self.jobMock = MagicMock()
+    self.jobMock2 = MagicMock()
+    mockWF = MagicMock()
+    mockPar = MagicMock()
     mockWF.findParameter.return_value = mockPar
     mockPar.getValue.return_value = 'MySite'
 
@@ -45,8 +47,12 @@ class ClientsTestCase( unittest.TestCase ):
                                   outputDataModule = "mock",
                                   jobClass = self.jobMock )
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
+<<<<<<< HEAD
                                       requestClient = self.mockReqClient,
                                       requestValidator = MagicMock() )
+=======
+                                      requestClient = self.mockReqClient )
+>>>>>>> ede5c20... Several bug fixes by running the unittest
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -87,27 +93,34 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                             }
                     )
 
-  def test__handleDestination( self ):
-    res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
-    self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':''} )
-    self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
-    self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
-    self.assertEqual( res, ['Site1', 'Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
-    self.assertEqual( res, [] )
+#############################################################################
+
+class TaskManagerPluginSuccess(ClientsTestCase):
+
+  def test__BySE( self ):
+    res = TaskManagerPlugin( 'BySE', operationsHelper = MagicMock() )
+
+
+#     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
+#     self.assertEqual( res, ['ANY'] )
+#     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':''} )
+#     self.assertEqual( res, ['ANY'] )
+#     res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
+#     self.assertEqual( res, ['ANY'] )
+#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
+#     self.assertEqual( res, ['Site1', 'Site2'] )
+#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'}, getSitesForSE )
+#     self.assertEqual( res, ['Site2'] )
+#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+#     self.assertEqual( res, ['Site2'] )
+#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+#     self.assertEqual( res, ['Site2', 'Site3'] )
+#     res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+#     self.assertEqual( res, ['Site2'] )
+#     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
+#     self.assertEqual( res, ['Site2', 'Site3'] )
+#     res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
+#     self.assertEqual( res, [] )
 
 #############################################################################
 

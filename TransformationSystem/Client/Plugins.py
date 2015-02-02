@@ -2,7 +2,6 @@
 """
 
 import re
-import ast
 
 from DIRAC import S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -31,7 +30,7 @@ class Plugins( object ):
     """
     try:
       evalString = "self._%s()" % self.plugin
-      return ast.literal_eval( evalString )
+      return eval( evalString )
     except AttributeError, x:
       if re.search( self.plugin, str( x ) ):
         return S_ERROR( "Plugin not found" )

@@ -43,13 +43,14 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     self.transClient = None
     self.transType = []
-    self.pluginLocation = ''
 
     self.tasksPerLoop = 50
 
     self.owner = ''
     self.ownerGroup = ''
     self.ownerDN = ''
+
+    self.pluginLocation = ''
 
     # for the threading
     self.transQueue = Queue()
@@ -234,6 +235,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     """
     threadTransformationClient = TransformationClient()
     threadTaskManager = WorkflowTasks()  # this is for wms tasks, replace it with something else if needed
+    threadTaskManager.pluginLocation = self.pluginLocation
 
     return {'TransformationClient': threadTransformationClient, 
             'TaskManager': threadTaskManager}
