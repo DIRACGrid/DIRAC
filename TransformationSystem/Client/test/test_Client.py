@@ -1,4 +1,4 @@
-import unittest, types
+import unittest, types, importlib
 
 from mock import MagicMock
 
@@ -77,50 +77,105 @@ class WorkflowTasksSuccess( ClientsTestCase ):
   def test_prepareTranformationTasks( self ):
     taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
                 2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
-                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'},
-                }
+                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}}
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
 
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
-                                          'b1': 'bb1', 'Site': 'MySite'},
+                                          'b1': 'bb1', 'Site': 'MySite', 'JobType': 'MySite'},
                                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite'},
+                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite', 'JobType': 'MySite'},
                                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3', 'Site': 'MySite'}
-                                     }
-                            }
-                    )
+                                         'b3': 'bb3', 'Site': 'MySite', 'JobType': 'MySite'}}} )
+
+  def test__handleDestination(self):
+    destPluginMock = MagicMock()
+
+    # nothing out of the plugin
+    destPluginMock.run.return_value = set( [] )
+    self.wfTasks.destinationPlugin_o = destPluginMock
+
+    paramsDict = {'Site':'', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['ANY'] )
+
+    paramsDict = {'Site':'ANY', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['ANY'] )
+
+    paramsDict = {'Site':'PIPPO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO'] )
+
+    paramsDict = {'Site':'PIPPO;PLUTO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO', 'PLUTO'] )
+
+    # something out of the plugin
+    destPluginMock.run.return_value = set( ['Site1', 'PIPPO'] )
+    self.wfTasks.destinationPlugin_o = destPluginMock
+
+    paramsDict = {'Site':'', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'PIPPO'] ) )
+
+    paramsDict = {'Site':'ANY', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'PIPPO'] ) )
+
+    paramsDict = {'Site':'PIPPO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO'] )
+
+    paramsDict = {'Site':'PIPPO;PLUTO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO'] )
+
+
 
 #############################################################################
 
 class TaskManagerPluginSuccess(ClientsTestCase):
 
   def test__BySE( self ):
-    res = TaskManagerPlugin( 'BySE', operationsHelper = MagicMock() )
 
+    ourPG = importlib.import_module( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin' )
+    ourPG.getSitesForSE = getSitesForSE
+    p_o = TaskManagerPlugin( 'BySE', operationsHelper = MagicMock() )
 
-#     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
-#     self.assertEqual( res, ['ANY'] )
-#     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':''} )
-#     self.assertEqual( res, ['ANY'] )
-#     res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
-#     self.assertEqual( res, ['ANY'] )
-#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
-#     self.assertEqual( res, ['Site1', 'Site2'] )
-#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'}, getSitesForSE )
-#     self.assertEqual( res, ['Site2'] )
-#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-#     self.assertEqual( res, ['Site2'] )
-#     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-#     self.assertEqual( res, ['Site2', 'Site3'] )
-#     res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-#     self.assertEqual( res, ['Site2'] )
-#     res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-#     self.assertEqual( res, ['Site2', 'Site3'] )
-#     res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
-#     self.assertEqual( res, [] )
+    p_o.params = {'Site':'', 'TargetSE':''}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'Site':'ANY', 'TargetSE':''}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'TargetSE':'Unknown'}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'Site':'Site1;Site2', 'TargetSE':''}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'TargetSE':'pippo'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Site2', 'Site3'] ) )
+
+    p_o.params = {'TargetSE':'pluto'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Site3'] ) )
+
+    p_o.params = {'TargetSE':'pippo,pluto'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Site2', 'Site3'] ) )
+
+    p_o.params = {'TargetSE':['pippo', 'pluto']}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Site2', 'Site3'] ) )
+
 
 #############################################################################
 

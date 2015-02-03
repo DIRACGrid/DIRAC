@@ -26,14 +26,17 @@ class TaskManagerPlugin( Plugins ):
     try:
       seList = ['Unknown']
       if self.params['TargetSE']:
-        seList = fromChar( self.params['TargetSE'] )
+        if type( self.params['TargetSE'] ) == type( '' ):
+          seList = fromChar( self.params['TargetSE'] )
+        elif type( self.params['TargetSE'] ) == type( [] ):
+          seList = self.params['TargetSE']
     except KeyError:
       pass
 
     if not seList or seList == ['Unknown']:
       return destSites
     
-    for se in self.params['TargetSEs']:
+    for se in seList:
       res = getSitesForSE( se )
       if not res['OK']:
         self.log.warn( "Could not get Sites associated to SE", res['Message'] )

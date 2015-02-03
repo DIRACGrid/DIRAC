@@ -340,6 +340,8 @@ class WorkflowTasks( TaskBase ):
     else:
       self.destinationPlugin = destinationPlugin
 
+    self.destinationPlugin_o = None
+
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
@@ -417,7 +419,7 @@ class WorkflowTasks( TaskBase ):
 
   #############################################################################
 
-  def _handleDestination( self, paramsDict, getSitesForSE = None, activityType = '' ):
+  def _handleDestination( self, paramsDict ):
     """ Handle Sites and TargetSE in the parameters
     """
 
@@ -429,17 +431,18 @@ class WorkflowTasks( TaskBase ):
     except KeyError:
       pass
 
-    res = self.__generatePluginObject( self.destinationPlugin )
-    if not res['OK']:
-      self.log.fatal( 'Could not generate a destination plugin object' )
-
-    self.destinationPlugin_o = res['Value']
-    self.destinationPlugin_o.setParameters( paramsDict )
+    if not self.destinationPlugin_o:
+      res = self.__generatePluginObject( self.destinationPlugin )
+      if not res['OK']:
+        self.log.fatal( "Could not generate a destination plugin object" )
+        return res
+      self.destinationPlugin_o = res['Value']
+      self.destinationPlugin_o.setParameters( paramsDict )
 
     destSites = self.destinationPlugin_o.run()
     if not destSites:
       return sites
-    print "AAAAAAAAAAAA", destSites
+
     # Now we need to make the AND with the sites, if defined
     if sites != ['ANY']:
       # Need to get the AND
