@@ -22,6 +22,8 @@ importedLFC = None
 #
 
 def setLfnReplicas( lfn, replicas, successful, failed ):
+  if not lfn:
+    return
   if replicas:
     successful[lfn] = replicas.copy()
     replicas.clear()
@@ -506,7 +508,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       it = iter( lfnList )
       replicas = {}
       # This is useless but makes pylinit happy as lfn is defined in the loop when the guid changes
-      lfn = lfnList[0]
+      lfn = None
       for oReplica in replicaList:
         if oReplica.errcode != 0:
           if ( oReplica.guid == '' ) or ( oReplica.guid != guid ):
@@ -522,8 +524,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         else:
           # This is where we change lfn for good!
           if oReplica.guid != guid:
-            if guid:
-              setLfnReplicas( lfn, replicas, successful, failed )
+            setLfnReplicas( lfn, replicas, successful, failed )
             lfn = it.next()
             guid = oReplica.guid
           if ( oReplica.status != 'P' ) or allStatus:
