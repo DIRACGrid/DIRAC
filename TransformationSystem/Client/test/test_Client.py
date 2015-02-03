@@ -108,12 +108,8 @@ class ClientsTestCase( unittest.TestCase ):
                                   outputDataModule = "mock",
                                   jobClass = self.jobMock )
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
-<<<<<<< HEAD
                                       requestClient = self.mockReqClient,
                                       requestValidator = MagicMock() )
-=======
-                                      requestClient = self.mockReqClient )
->>>>>>> ede5c20... Several bug fixes by running the unittest
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
