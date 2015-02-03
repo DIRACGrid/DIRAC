@@ -225,17 +225,18 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Check if there are extensions
     extensionList = getCSExtensions()
-    webFlag = gConfig.getValue( '/LocalInstallation/WebPortal', False )
+    webFlag = gConfig.getValue( '/LocalInstallation/WebPortal', False ) #this is the old web portal
+    #TODO: It can be removed when we do not use anymore the old portal...
     if webFlag:
       extensionList.append( 'Web' )
     if extensionList:
       cmdList += ['-e', ','.join( extensionList )]
     
-    webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False )
+    webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False )  # this is the new portal
     if webPortal:  # we have a to compile the new web portal...
       extensionList.append( 'Web' )
       # compile:
-      webappCompileScript = os.path.join( rootPath, "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
+      webappCompileScript = os.path.join( InstallTools.instancePath, 'pro', "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
       if os.path.isfile( webappCompileScript ):
         os.chmod( webappCompileScript , "stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH" )
         gLogger.notice( "Executing %s..." % webappCompileScript )
