@@ -23,8 +23,8 @@ importedLFC = None
 
 def setLfnReplicas( lfn, replicas, successful, failed ):
   if replicas:
-    successful[lfn] = replicas
-    replicas = {}
+    successful[lfn] = replicas.copy()
+    replicas.clear()
   elif lfn not in failed:
     failed[lfn] = 'No active replica'
 
@@ -481,7 +481,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not res['OK']:
       return res
     lfns = res['Value']
-    lfnChunks = breakListIntoChunks( lfns.keys(), 1000 )
+    lfnChunks = breakListIntoChunks( lfns, 1000 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
     if len( lfnChunks ) > 2:
@@ -522,7 +522,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         else:
           # This is where we change lfn for good!
           if oReplica.guid != guid:
-            setLfnReplicas( lfn, replicas, successful, failed )
+            if guid:
+              setLfnReplicas( lfn, replicas, successful, failed )
             lfn = it.next()
             guid = oReplica.guid
           if ( oReplica.status != 'P' ) or allStatus:
@@ -852,7 +853,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       if not res['OK']:
         continue
     lfc.lfc_umask( 0000 )
-    for lfnList in breakListIntoChunks( sorted( lfns ), 1000 ):
+    for lfnList in breakListIntoChunks( lfns, 1000 ):
       fileChunk = []
       for lfn in list( lfnList ):
         lfnInfo = lfns[lfn]
@@ -1852,36 +1853,3 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return self.prefix + lfn
 
   # THIS IS NOT YET WORKING
-  def getReplicasNew( self, lfn, allStatus = False ):
-    """ Returns replicas for an LFN or list of LFNs
-    """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
-    lfnChunks = breakListIntoChunks( sorted( lfns ), 1000 )
-    # If we have less than three groups to query a session doesn't make sense
-    created = False
-    if len( lfnChunks ) > 2:
-      created = self.__openSession()
-      if created < 0:
-        return S_ERROR( "Error opening LFC session" )
-    failed = {}
-    successful = {}
-    for lfnList in lfnChunks:
-      value, replicaList = lfc.lfc_getreplicasl( lfnList, '' )
-      if value != 0:
-        for lfn in lfnList:
-          failed[lfn] = lfc.sstrerror( lfc.cvar.serrno )
-        continue
-      for oReplica in replicaList:
-        # TODO WORK OUT WHICH LFN THIS CORRESPONDS
-        status = oReplica.status
-        if ( status != 'P' ) or allStatus:
-          se = oReplica.host
-          pfn = oReplica.sfn  # .strip()
-          # replicas[se] = pfn
-    if created:
-      self.__closeSession()
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
