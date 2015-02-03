@@ -312,6 +312,7 @@ class SocketInfo:
           return S_ERROR( "Handshake timeout exceeded" )
       try:
         self.sslSocket.do_handshake()
+        break
       except GSI.SSL.WantReadError:
         time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
