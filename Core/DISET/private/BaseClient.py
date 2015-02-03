@@ -47,7 +47,7 @@ class BaseClient:
     self.__extraCredentials = ""
     self.__enableThreadCheck = False
     self.__retry = 0
-    self.__retryDelay = 2
+    self.__retryDelay = 0
     self.__bannedUrls = []
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
@@ -196,16 +196,11 @@ class BaseClient:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
     
     urls = List.fromChar( urls, "," )
-    
-    if len( urls ) == 1:
-      # we run only one service! In that case we increase the retry delay.
-      self.__retryDelay = 5
-    else:
-      self.__retryDelay = 5 / len ( urls )
       
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
-      gLogger.debug( "Retrying all URLs" )      
+      self.__retryDelay = 5 / len ( urls )  # we run only one service! In that case we increase the retry delay.
+      gLogger.debug( "Retrying again all URLs" )      
       
     if len( self.__bannedUrls ) > 0 and len( urls ) > 1 :
       # we have host which is not accessible. We remove that host from the list.
