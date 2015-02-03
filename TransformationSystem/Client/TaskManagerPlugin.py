@@ -1,7 +1,7 @@
 """ Container for TaskManager plug-ins, to handle the destination of the tasks
 """
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
@@ -108,7 +108,7 @@ class TaskManagerPlugin( Plugins ):
     # 2. get JobTypeMapping "Exclude" value (and add autoAddedSites)
     jobType = self.params['JobType']
     if not jobType:
-      return S_ERROR( "No jobType specified" )
+      raise RuntimeError( "No jobType specified" )
     excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, '' )
     excludedSites = excludedSites + ',' + ','.join( fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) ) )
 
