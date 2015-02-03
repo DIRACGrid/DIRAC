@@ -230,7 +230,24 @@ class SystemAdministratorHandler( RequestHandler ):
       extensionList.append( 'Web' )
     if extensionList:
       cmdList += ['-e', ','.join( extensionList )]
-
+    
+    webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False )
+    if webPortal:  # we have a to compile the new web portal...
+      extensionList.append( 'Web' )
+      # compile:
+      webappCompileScript = os.path.join( rootPath, "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
+      if os.path.isfile( webappCompileScript ):
+        os.chmod( webappCompileScript , "stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH" )
+        gLogger.notice( "Executing %s..." % webappCompileScript )
+        if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( webappCompileScript,
+                                                           webappCompileScript,
+                                                           webappCompileScript ) ):
+          gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
+                                                                       webappCompileScript ) )
+          
+    if extensionList:
+      cmdList += ['-e', ','.join( extensionList )]
+       
     # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
