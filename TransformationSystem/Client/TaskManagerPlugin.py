@@ -1,10 +1,11 @@
 """ Container for TaskManager plug-ins, to handle the destination of the tasks
 """
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.TransformationSystem.Client.Plugins import Plugins
 
 
@@ -39,55 +40,112 @@ class TaskManagerPlugin( Plugins ):
     for se in seList:
       res = getSitesForSE( se )
       if not res['OK']:
-        self.log.warn( "Could not get Sites associated to SE", res['Message'] )
+        gLogger.warn( "Could not get Sites associated to SE", res['Message'] )
       else:
         thisSESites = res['Value']
         if thisSESites:
           # We make an OR of the possible sites
           destSites.update( thisSESites )
-          
+    
+    gLogger.debug( "Destinations: %s" % ','.join ( destSites ) )
     return destSites
     
 
   def _ByJobType( self ):
-    """ Looks in ActivityMapping section
+    """ By default, all sites are allowed to do every job. The actual rules are freely specified in the Operation JobTypeMapping section.
+        The content of the section may look like this:
 
-        The section may look like this:
-
-        ActivityMapping
+        User
         {
-          User
+          Exclude = PAK
+          Exclude += Ferrara
+          Exclude += Bologna
+          Exclude += Paris
+          Exclude += CERN
+          Exclude += IN2P3
+          Allow
           {
-            Exclude = PAK
-            Exclude += Ferrara
-            Exclude += Bologna
-            Exclude += Paris
-            Exclude += CERN
-            Exclude += IN2P3
-            Allow = Paris <- IN2P3
-            Allow += CERN <- CERN
-            Allow += IN2P3 <- IN2P3
+            Paris = IN2P3
+            CERN = CERN
+            IN2P3 = IN2P3
           }
-          Merge
+        }
+        DataReconstruction
+        {
+          Exclude = PAK
+          Exclude += Ferrara
+          Exclude += CERN
+          Exclude += IN2P3
+          Allow
           {
-            Exclude = ALL
-            Allow = CERN <- CERN
-            Allow += IN2P3 <- IN2P3
+            Ferrara = CERN
+            CERN = CERN
+            IN2P3 = IN2P3
+            IN2P3 += CERN
+          }
+        }
+        Merge
+        {
+          Exclude = ALL
+          Allow
+          {
+            CERN = CERN
+            IN2P3 = IN2P3
           }
         }
         
-        Then it will look into...
-        
+        The sites in the exclusion list will be removed.
+        The allow section says where each site may help another site
         
     """
+    # 1. get sites list
+    res = getSites()
+    if not res['OK']:
+      gLogger.error( "Could not get the list of sites", res['Message'] )
+      return res
+    destSites = set( res['Value'] )
+
+    # 2. get JobTypeMapping "Exclude" value (and add autoAddedSites)
     jobType = self.params['JobType']
     if not jobType:
       return S_ERROR( "No jobType specified" )
-    res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/' % jobType )
-    if not res['OK']:
-      self.log.error( "Could not get mapping by job type", res['Message'] )
-      return res
-    jobTypeMapping = res['Value']
-    # FIXME: here we should add the obvious relation in allow
-    return S_OK( jobTypeMapping )
+    excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, '' )
+    excludedSites = excludedSites + ',' + ','.join( fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) ) )
 
+    # 3. removing sites in Exclude
+    if not excludedSites:
+      pass
+    elif excludedSites == 'ALL' or 'ALL' in excludedSites:
+      destSites = set()
+    else:
+      destSites = destSites.difference( set( fromChar( excludedSites ) ) )
+
+    # 4. get JobTypeMapping "Allow" section
+    res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/Allow' % jobType )
+    if not res['OK']:
+      gLogger.warn( "Could not get the list of sites", res['Message'] )
+      allowed = {}
+    else:
+      allowed = res['Value']
+      for site in allowed:
+        allowed[site] = fromChar( allowed[site] )
+
+    # 5. add autoAddedSites, if requested
+    autoAddedSites = fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) )
+    if autoAddedSites:
+      for autoAddedSite in autoAddedSites:
+        if autoAddedSite not in allowed:
+          allowed[autoAddedSite] = [autoAddedSite]
+
+    # 6. Allowing sites that should be allowed
+    taskSiteDestination = self._BySE()
+  
+    for destSite, fromSites in allowed.iteritems():
+      for fromSite in fromSites:
+        if taskSiteDestination:
+          if fromSite in taskSiteDestination:
+            destSites.add( destSite )
+        else:
+          destSites.add( destSite )
+
+    return destSites
