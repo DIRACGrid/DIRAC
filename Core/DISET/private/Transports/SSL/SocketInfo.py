@@ -312,21 +312,28 @@ class SocketInfo:
           return S_ERROR( "Handshake timeout exceeded" )
       try:
         self.sslSocket.do_handshake()
-        break
       except GSI.SSL.WantReadError:
         time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
         time.sleep( 0.001 )
       except GSI.SSL.Error, v:
         if self.__retry < 3:
-          self.__sslHandshake()
+          self.__retry += 1
+          return self.__sslHandshake()
         else:
-          #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
           gLogger.warn( "Error while handshaking", v )
           return S_ERROR( "Error while handshaking" )
       except Exception, v:
         gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
+        
     credentialsDict = self.gatherPeerCredentials()
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]
