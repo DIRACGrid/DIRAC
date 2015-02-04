@@ -14,7 +14,6 @@
     storePilotOutput()
     getPilotOutput()
     setJobForPilot()
-    getPilotsForJob()
     getPilotOwner()
     getPilotsSummary()
 
@@ -480,26 +479,6 @@ class PilotAgentsDB( DB ):
         resDict[ row[0] ] = []
       resDict[ row[0] ].append( row[1] )
     return S_OK( resDict )
-
-##########################################################################################
-  def getPilotsForJob( self, jobID, gridType = None ):
-    """ Get IDs of Pilot Agents that were submitted for the given job, specify optionally the grid type
-    """
-
-    if gridType:
-      req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s AND GridType='%s' " % ( jobID, gridType )
-    else:
-      req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s " % jobID
-
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    else:
-      if result['Value']:
-        pilotList = [ x[0] for x in result['Value'] ]
-        return S_OK( pilotList )
-      else:
-        return S_ERROR( 'PilotJobReferences for job %s not found' % jobID )
 
 ##########################################################################################
   def getPilotsForTaskQueue( self, taskQueueID, gridType = None, limit = None ):
