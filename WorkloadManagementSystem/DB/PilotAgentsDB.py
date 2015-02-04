@@ -461,21 +461,6 @@ class PilotAgentsDB( DB ):
     return result
 
 ##########################################################################################
-  def getExePilotsForJob( self, jobID ):
-    """ Get IDs of Pilot Agents that attempted to execute the given job
-    """
-    req = "SELECT PilotID FROM JobToPilotMapping WHERE JobID=%d ORDER BY StartTime" % jobID
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    else:
-      if result['Value']:
-        pilotList = [ x[0] for x in result['Value'] ]
-        return S_OK( pilotList )
-      else:
-        return S_ERROR( 'PilotID ' + jobID + ' not found' )
-
-##########################################################################################
   def getJobsForPilot( self, pilotID ):
     """ Get IDs of Jobs that were executed by a pilot
     """
