@@ -609,47 +609,47 @@ class PilotAgentsDB( DB ):
 
     return S_OK( summary_dict )
 
-  def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
-    """
-    Spin off the method getPilotSummary. It is doing things in such a way that
-    do not make much sense. This method returns the pilots that were updated in the
-    time window [ startTimeWindow, endTimeWindow ), if they are present.
-    """
-    
-    sqlSelect = 'SELECT DestinationSite,Status,count(Status) FROM PilotAgents'
-    
-    whereSelect = []
-    
-    if startTimeWindow is not None:
-      whereSelect.append( ' LastUpdateTime >= "%s"' % startTimeWindow ) 
-    if endTimeWindow is not None:
-      whereSelect.append( ' LastUpdateTime < "%s"' % endTimeWindow )
-    if ce:
-      whereSelect.append( ' DestinationSite = "%s"' % ce )  
-    
-    if whereSelect:
-      sqlSelect += ' WHERE'
-      sqlSelect += ' AND'.join( whereSelect )
-        
-    sqlSelect += ' GROUP BY DestinationSite,Status'
-    
-    resSelect = self._query( sqlSelect )
-    if not resSelect[ 'OK' ]:
-      return resSelect
-
-    result = { 'Total' : collections.defaultdict( int ) }          
-
-    for row in resSelect[ 'Value' ]:
-      
-      ceName, statusName, statusCount = row
-            
-      if not ceName in result:
-        result[ ceName ] = {}
-      result[ ceName ][ statusName ] = int( statusCount )
-      
-      result[ 'Total' ][ statusName ] += int( statusCount )  
-            
-    return S_OK( result )    
+#   def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
+#     """
+#     Spin off the method getPilotSummary. It is doing things in such a way that
+#     do not make much sense. This method returns the pilots that were updated in the
+#     time window [ startTimeWindow, endTimeWindow ), if they are present.
+#     """
+#
+#     sqlSelect = 'SELECT DestinationSite,Status,count(Status) FROM PilotAgents'
+#
+#     whereSelect = []
+#
+#     if startTimeWindow is not None:
+#       whereSelect.append( ' LastUpdateTime >= "%s"' % startTimeWindow )
+#     if endTimeWindow is not None:
+#       whereSelect.append( ' LastUpdateTime < "%s"' % endTimeWindow )
+#     if ce:
+#       whereSelect.append( ' DestinationSite = "%s"' % ce )
+#
+#     if whereSelect:
+#       sqlSelect += ' WHERE'
+#       sqlSelect += ' AND'.join( whereSelect )
+#
+#     sqlSelect += ' GROUP BY DestinationSite,Status'
+#
+#     resSelect = self._query( sqlSelect )
+#     if not resSelect[ 'OK' ]:
+#       return resSelect
+#
+#     result = { 'Total' : collections.defaultdict( int ) }
+#
+#     for row in resSelect[ 'Value' ]:
+#
+#       ceName, statusName, statusCount = row
+#
+#       if not ceName in result:
+#         result[ ceName ] = {}
+#       result[ ceName ][ statusName ] = int( statusCount )
+#
+#       result[ 'Total' ][ statusName ] += int( statusCount )
+#
+#     return S_OK( result )
  
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
