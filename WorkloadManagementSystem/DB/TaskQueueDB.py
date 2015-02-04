@@ -65,9 +65,6 @@ class TaskQueueDB( DB ):
   def __getCSOption( self, optionName, defValue ):
     return self.__opsHelper.getValue( "JobScheduling/%s" % optionName, defValue )
 
-  def getPrivatePilots( self ):
-    return self.__getCSOption( "PrivatePilotTypes", [ 'private' ] )
-
   def getValidPilotTypes( self ):
     return self.__getCSOption( "AllPilotTypes", [ 'private' ] )
 
@@ -1163,42 +1160,3 @@ class TaskQueueDB( DB ):
     for group in groups:
       shares[ group ] = gConfig.getValue( "/Registry/Groups/%s/JobShare" % group, DEFAULT_GROUP_SHARE )
     return shares
-
-  def propagateTQSharesIfChanged( self ):
-    """
-    If the shares have changed in the CS, recalculate priorities
-    """
-    shares = self.getGroupShares()
-    if shares == self.__groupShares:
-      return S_OK()
-    self.__groupShares = shares
-    return self.recalculateTQSharesForAll()
-
-  def modifyJobsPriorities( self, jobPrioDict ):
-    """
-    Modify the priority for some jobs
-    """
-    for jId in jobPrioDict:
-      jobPrioDict[jId] = int( jobPrioDict[jId] )
-    maxJobsInQuery = 1000
-    jobsList = sorted( jobPrioDict )
-    prioDict = {}
-    for jId in jobsList:
-      prio = jobPrioDict[ jId ]
-      if not prio in prioDict:
-        prioDict[ prio ] = []
-      prioDict[ prio ].append( str( jId ) )
-    updated = 0
-    for prio in prioDict:
-      jobsList = prioDict[ prio ]
-      for i in range( maxJobsInQuery, 0, len( jobsList ) ):
-        jobs = ",".join( jobsList[ i : i + maxJobsInQuery ] )
-        updateSQL = "UPDATE `tq_Jobs` SET `Priority`=%s, `RealPriority`=%f WHERE `JobId` in ( %s )" % ( prio, self.__hackJobPriority( prio ), jobs )
-        result = self._update( updateSQL )
-        if not result[ 'OK' ]:
-          return result
-        updated += result[ 'Value' ]
-    if not updated:
-      return S_OK()
-    return self.recalculateTQSharesForAll()
-
