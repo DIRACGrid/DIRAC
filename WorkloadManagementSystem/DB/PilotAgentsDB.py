@@ -9,12 +9,10 @@
     setPilotStatus()
     deletePilot()
     clearPilots()
-    getPilotOwner()
     setPilotDestinationSite()
     storePilotOutput()
     getPilotOutput()
     setJobForPilot()
-    getPilotOwner()
     getPilotsSummary()
 
 """
@@ -538,22 +536,6 @@ class PilotAgentsDB( DB ):
         return S_OK( jobID )
       else:
         return S_ERROR( 'Current job ID for pilot %s is not known' % pilotRef )
-
-##########################################################################################
-  def getPilotOwner( self, pilotRef ):
-    """ Get the pilot owner DN and group for the given pilot job reference
-    """
-
-    req = "SELECT OwnerDN, OwnerGroup FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    else:
-      if result['Value']:
-        ownerTuple = ( result['Value'][0][0], result['Value'][0][1] )
-        return S_OK( ownerTuple )
-      else:
-        return S_ERROR( 'PilotJobReference ' + str( pilotRef ) + ' not found' )
 
 ##########################################################################################
   #FIXME: investigate it getPilotSummaryShort can replace this method
