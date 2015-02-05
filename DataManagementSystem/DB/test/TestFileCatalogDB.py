@@ -5,6 +5,8 @@ import unittest
 import itertools
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
+from DIRAC.Core.Security.Properties import FC_MANAGEMENT
+
 seName = "mySE"
 testUser  = 'atsareg'
 testGroup = 'dirac_user'
@@ -20,7 +22,7 @@ credDict = {'DN': '/DC=ch/DC=cern/OU=computers/CN=volhcb12.cern.ch',
             'x509Chain': "<X509Chain 3 certs [/DC=ch/DC=cern/OU=computers/CN=volhcb12.cern.ch][/DC=ch/DC=cern/CN=CERN Trusted Certification Authority][/DC=ch/DC=cern/CN=CERN Root CA]>",
             'username': 'anonymous',
             'isLimitedProxy': False,
-            'properties': [],
+            'properties': [FC_MANAGEMENT],
             'isProxy': False}
 
 
@@ -79,7 +81,7 @@ ALL_MANAGERS_NO_CS = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
 
 DEFAULT_MANAGER = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
                     "SEManager" : ["SEManagerDB"],
-                    "SecurityManager" : ["NoSecurityManager"],
+                    "SecurityManager" : ["DirectorySecurityManagerWithDelete"],
                     "DirectoryManager" : ["DirectoryClosure"],
                     "FileManager" : ["FileManagerPs"],
                     }
