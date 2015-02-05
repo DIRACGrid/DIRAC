@@ -328,13 +328,11 @@ class FileManagerPs( FileManagerBase ):
                                                                              checksum, checksumtype, mode ) )
 
       if not result['OK']:
-        return result
-
-      fileID, errMsg = result['Value'][0]
-
-      if not fileID:
-        failed[lfn] = errMsg
+        failed[lfn] = result['Message']
       else:
+
+        fileID = result['Value'][0][0]
+
         successful[lfn] = lfns[lfn]
         successful[lfn]['FileID'] = fileID
 
@@ -544,8 +542,8 @@ class FileManagerPs( FileManagerBase ):
         allIds = result['Value']
         for fileId, seId, repId in allIds:
           lfn = repDesc[ ( fileId, seId ) ]
-          successful[lfn] = lfns[lfn]
-          successful[lfn]['RepID'] = repId
+          successful[lfn] = True
+          lfns[lfn]['RepID'] = repId
       else:
         lfnsToRetry.extend( lfnChunk )
 
@@ -558,14 +556,12 @@ class FileManagerPs( FileManagerBase ):
                                                          ( fileID, seID, statusID, replicaType, pfn ) )
 
       if not result['OK']:
-        return result
-
-      replicaID, errMsg = result['Value'][0]
-      if replicaID:
+        failed[lfn] = result['Message']
+      else:
+        replicaID = result['Value'][0][0]
         lfns[lfn]['RepID'] = replicaID
         successful[lfn] = True
-      else:
-        failed[lfn] = errMsg
+
 
     return S_OK({'Successful':successful,'Failed':failed})
 
@@ -683,10 +679,7 @@ class FileManagerPs( FileManagerBase ):
     if not result['OK']:
       return result
 
-    errno, affected, errMsg = result['Value'][0]  # Affected is the number of raws updated
-
-    if errno:
-      return S_ERROR( errMsg )
+    affected = result['Value'][0][0]  # Affected is the number of raws updated
 
     if not affected:
       return S_ERROR( "Replica does not exist" )
@@ -723,9 +716,9 @@ class FileManagerPs( FileManagerBase ):
     if not result['OK']:
       return result
 
-    errno, errMsg = result['Value'][0]
-    if errno:
-      return S_ERROR( errMsg )
+    affected = result['Value'][0][0]
+    if not affected:
+      return S_ERROR( "Replica does not exist" )
     else:
       return S_OK()
 
@@ -763,9 +756,8 @@ class FileManagerPs( FileManagerBase ):
       if not result['OK']:
         return result
 
-      errno, errMsg = result['Value'][0]
-      if errno:
-        return S_ERROR( errMsg )
+      _affected = result['Value'][0][0]
+      # If affected = 0, the file does not exist, but who cares...
 
 
     # In case this is a 'new' parameter, we have a failback solution, but we should add a specific ps for it
@@ -868,11 +860,12 @@ class FileManagerPs( FileManagerBase ):
     directorySESizeDict = {}
     return S_OK( directorySESizeDict )
 
-  def _checkUniqueGUID( self, lfns, connection = False ):
-    """ The GUID unicity is ensured at the DB level, so we will have similar message if the insertion fails"""
-
-    failed = {}
-    return failed
+#   "REMARQUE : THIS IS STILL TRUE, BUT YOU MIGHT WANT TO CHECK FOR A GIVEN GUID ANYWAY
+#   def _checkUniqueGUID( self, lfns, connection = False ):
+#     """ The GUID unicity is ensured at the DB level, so we will have similar message if the insertion fails"""
+#
+#     failed = {}
+#     return failed
 
 
 
