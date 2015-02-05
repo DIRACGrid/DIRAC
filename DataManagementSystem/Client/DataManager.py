@@ -316,12 +316,14 @@ class DataManager( object ):
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
     if not replicas:
-      self.log.debug( "No accessible replicas found" )
-      return S_ERROR( "No accessible replicas found" )
+      errStr = "No accessible replicas found"
+      self.log.debug( errStr )
+      return S_ERROR( errStr )
     # Determine the best replicas
     res = self._getSEProximity( replicas.keys() )
     if not res['OK']:
       return res
+    errTuple = ( "No SE", "found" )
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
       physicalFile = replicas[storageElementName]
@@ -336,7 +338,7 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'TransferTime', getTime )
 
       if not res['OK']:
-        self.log.debug( "Failed to get %s from %s" % ( lfn, storageElementName ), res['Message'] )
+        errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
         oDataOperation.setValueByKey( 'TransferOK', 0 )
         oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
         oDataOperation.setEndTime()
@@ -350,23 +352,23 @@ class DataManager( object ):
 
         if ( metadata['Size'] != res['Value'] ):
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
-          self.log.debug( "Size of downloaded file (%d) does not match catalog (%d)" % ( res['Value'],
-                                                                                        metadata['Size'] ) )
+          errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
-          self.log.debug( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler,
-                                                                                            metadata['Checksum'] ) )
+          errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
 
         else:
           oDataOperation.setEndTime()
           gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
+      # If we are here, there was an error, log it debug level
+      self.log.debug( errTuple[0], errTuple[1] )
 
     gDataStoreClient.addRegister( oDataOperation )
-    self.log.debug( "getFile: Failed to get local copy from any replicas.", lfn )
+    self.log.verbose( "getFile: Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
-    return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas." )
+    return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas\n%s %s" % errTuple )
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """
