@@ -837,6 +837,24 @@ BEGIN
 END //
 DELIMITER ;
 
+-- ps_get_lfns_from_guids : return list of file lfns for given guids
+-- guids : list of guids
+-- output : GUID, LFN
+
+DELIMITER //
+CREATE PROCEDURE ps_get_lfns_from_guids
+(IN  guids TEXT)
+BEGIN
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, LFN FROM FC_Files f WHERE GUID IN (', guids, ')');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+ 
+END //
+DELIMITER ;
+
 
 -- ps_delete_replicas_from_file_ids : delete all the replicas for given file ids and update the DirectoryUsage table
 -- file_ids : list of file ids

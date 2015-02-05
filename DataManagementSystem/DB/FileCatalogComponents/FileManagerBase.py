@@ -9,7 +9,7 @@ from DIRAC.Core.Utilities.List              import intListToString
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
 import os, stat
-from types import ListType, StringTypes
+from types import ListType, StringTypes, DictType
 
 class FileManagerBase( object ):
 
@@ -114,6 +114,11 @@ class FileManagerBase( object ):
 
   def _getFileIDFromGUID( self, guid, connection = False ):
     """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def getLFNForGUID( self, guids, connection = False ):
+    """Returns the LFN matching a given GUID
     """
     return S_ERROR( "To be implemented on derived class" )
 
@@ -271,7 +276,9 @@ class FileManagerBase( object ):
 
     # If GUIDs are supposed to be unique check their pre-existance 
     if self.db.uniqueGUID:
+      print "unique ? "
       fail = self._checkUniqueGUID( masterLfns, connection = connection )
+      print fail
       failed.update( fail )
       for lfn in fail:
         masterLfns.pop( lfn )
@@ -625,12 +632,14 @@ class FileManagerBase( object ):
     return successful, failed
 
   def _checkUniqueGUID( self, lfns, connection = False ):
+    print "lfns %s" % lfns
     connection = self._getConnection( connection )
     guidLFNs = {}
     failed = {}
     for lfn, fileDict in lfns.items():
       guidLFNs[fileDict['GUID']] = lfn
     res = self._getFileIDFromGUID( guidLFNs.keys(), connection = connection )
+    print "res %s" % res
     if not res['OK']:
       return dict.fromkeys( lfns, res['Message'] )
     for guid, fileID in res['Value'].items():
@@ -883,7 +892,43 @@ class FileManagerBase( object ):
     for lfn in successful:
       successful[lfn] = lfn
     failed = {}
+
+    if self.db.uniqueGUID:
+      guidList = []
+      val = None
+      #Try to identify if the GUID is given
+      # We consider only 2 options :
+      # either {lfn : guid}
+      # or P lfn : {PFN : .., GUID : ..} }
+      if type( lfns ) == DictType:
+        val = lfns.values()
+
+      # We have values, take the first to identify the type
+      if val:
+        val = val[0]
+
+      if type( val ) == DictType and 'GUID' in val:
+        # We are in the case {lfn : {PFN:.., GUID:..}}
+        guidList = [lfns[lfn]['GUID'] for lfn in lfns]
+        pass
+      elif type( val ) == StringTypes:
+        # We hope that it is the GUID which is given
+        guidList = lfns.values()
+
+
+      if guidList:
+        # A dict { guid: lfn to which it is supposed to be associated }
+        guidToGivenLfn = dict( zip( guidList, lfns ) )
+        guidLfns = self.getLFNForGUID( guidList, connection )
+        for guid, realLfn in guidLfns.items():
+          successful[guidToGivenLfn[guid]] = realLfn
+
+        
+    
     for lfn, error in res['Value']['Failed'].items():
+      # It could be in successful because the guid exists with another lfn
+      if lfn in successful:
+        continue
       if error == 'No such file or directory':
         successful[lfn] = False
       else:

@@ -365,6 +365,24 @@ class FileManagerPs( FileManagerBase ):
 
     return S_OK(guidDict)
 
+  def getLFNForGUID( self, guids, connection = False ):
+    connection = self._getConnection( connection )
+    if not guids:
+      return S_OK( {} )
+
+    if type( guids ) not in [ListType, TupleType]:
+      guids = [guids]
+
+    formatedGuids = stringListToString( guids )
+    result = self.db.executeStoredProcedureWithCursor( 'ps_get_lfns_from_guids', ( formatedGuids, ) )
+
+    if not result['OK']:
+      return result
+
+    guidDict = dict( ( guid, lfn ) for guid, lfn in result['Value'] )
+
+    return S_OK( guidDict )
+
   ######################################################
   #
   # _deleteFiles related methods

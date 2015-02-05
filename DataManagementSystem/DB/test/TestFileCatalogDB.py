@@ -55,7 +55,7 @@ DATABASE_CONFIG = {  'UserGroupManager'  : 'UserAndGroupManagerDB',  # UserAndGr
                        'DirectoryMetadata' : 'DirectoryMetadata',
                        'FileMetadata'      : 'FileMetadata',
                        'DatasetManager'    : 'DatasetManager',
-                       'UniqueGUID'          : False,
+                       'UniqueGUID'          : True,
                        'GlobalReadAccess'    : True,
                        'LFNPFNConvention'    : 'Strong',
                        'ResolvePFN'          : True,
