@@ -71,9 +71,7 @@ class WatchdogLinux( Watchdog ):
     if loadAvgDict['OK']:
       return S_OK( float( string.split( loadAvgDict['Value'][1] )[0] ) )
     else:
-      result = S_ERROR( 'Could not obtain load average' )
       self.log.warn( 'Could not obtain load average' )
-      result['Value'] = 0
       return S_ERROR( 'Could not obtain load average' )
 
   #############################################################################

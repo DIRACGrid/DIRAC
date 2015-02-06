@@ -73,16 +73,13 @@ class WatchdogMac( Watchdog ):
   def getLoadAverage( self ):
     """Obtains the load average.
     """
-    result = S_OK()
     comm = 'sysctl vm.loadavg'
     loadAvgDict = shellCall( 5, comm )
     if loadAvgDict['OK']:
       la = float( string.split( loadAvgDict['Value'][1] )[3] )
-      result['Value'] = la
+      return S_OK( la )
     else:
-      result = S_ERROR( 'Could not obtain load average' )
-
-    return result
+      return S_ERROR( 'Could not obtain load average' )
 
   #############################################################################
   def getMemoryUsed(self):

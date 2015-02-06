@@ -185,19 +185,28 @@ class Watchdog( object ):
     self.log.verbose( '------------------------------------' )
     self.log.verbose( 'Checking loop starts for Watchdog' )
     heartBeatDict = {}
+
     msg = ''
-    result = self.getLoadAverage()
-    msg += 'LoadAvg: %s ' % ( result['Value'] )
-    heartBeatDict['LoadAverage'] = result['Value']
+
+    loadAvg = self.getLoadAverage()
+    if not loadAvg['OK']:
+      self.log.warn( "Setting load average to 0" )
+      loadAvg = 0
+    else:
+      loadAvg = loadAvg['Value']
+    msg += 'LoadAvg: %d ' % loadAvg
+    heartBeatDict['LoadAverage'] = loadAvg
     if not self.parameters.has_key( 'LoadAverage' ):
       self.parameters['LoadAverage'] = []
-    self.parameters['LoadAverage'].append( result['Value'] )
-    result = self.getMemoryUsed()
+    self.parameters['LoadAverage'].append( loadAvg )
+
+    memoryUsed = self.getMemoryUsed()
     msg += 'MemUsed: %.1f kb ' % ( result['Value'] )
     heartBeatDict['MemoryUsed'] = result['Value']
     if not self.parameters.has_key( 'MemoryUsed' ):
       self.parameters['MemoryUsed'] = []
     self.parameters['MemoryUsed'].append( result['Value'] )
+
     result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
     if result['OK']:
       vsize = result['Value']['Vsize']/1024.
