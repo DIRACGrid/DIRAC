@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -23,7 +22,7 @@ import socket
 
 class WatchdogLinux(Watchdog):
 
-  def __init__(self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag='linux'):
+  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
     """
     Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
@@ -31,7 +30,7 @@ class WatchdogLinux(Watchdog):
     self.pid = pid
 
   ############################################################################
-  def getNodeInformation(self):
+  def getNodeInformation( self ):
     """Try to obtain system HostName, CPU, Model, cache and memory.  This information
        is not essential to the running of the jobs but will be reported if
        available.
@@ -42,13 +41,13 @@ class WatchdogLinux(Watchdog):
       info = cpuInfo.readlines()
       cpuInfo.close()
       result["HostName"] = socket.gethostname()
-      result["CPU(MHz)"]   = string.replace(string.replace(string.split(info[6],":")[1]," ",""),"\n","")
-      result["ModelName"] = string.replace(string.replace(string.split(info[4],":")[1]," ",""),"\n","")
-      result["CacheSize(kB)"] = string.replace(string.replace(string.split(info[7],":")[1]," ",""),"\n","")
+      result["CPU(MHz)"] = string.replace( string.replace( string.split( info[6], ":" )[1], " ", "" ), "\n", "" )
+      result["ModelName"] = string.replace( string.replace( string.split( info[4], ":" )[1], " ", "" ), "\n", "" )
+      result["CacheSize(kB)"] = string.replace( string.replace( string.split( info[7], ":" )[1], " ", "" ), "\n", "" )
       memInfo = open ( "/proc/meminfo", "r" )
       info = memInfo.readlines()
       memInfo.close()
-      result["Memory(kB)"] =  string.replace(string.replace(string.split(info[3],":")[1]," ",""),"\n","")
+      result["Memory(kB)"] = string.replace( string.replace( string.split( info[3], ":" )[1], " ", "" ), "\n", "" )
       account = 'Unknown'
       localID = shellCall(10,'whoami')
       if localID['OK']:
@@ -69,13 +68,13 @@ class WatchdogLinux(Watchdog):
     """
     result = S_OK()
     comm = '/bin/cat /proc/loadavg'
-    loadAvgDict = shellCall(5,comm)
+    loadAvgDict = shellCall( 5, comm )
     if loadAvgDict['OK']:
-      la = float(string.split(loadAvgDict['Value'][1])[0])
+      la = float( string.split( loadAvgDict['Value'][1] )[0] )
       result['Value'] = la
     else:
-      result = S_ERROR('Could not obtain load average')
-      self.log.warn('Could not obtain load average')
+      result = S_ERROR( 'Could not obtain load average' )
+      self.log.warn( 'Could not obtain load average' )
       result['Value'] = 0
 
     return result
@@ -91,8 +90,8 @@ class WatchdogLinux(Watchdog):
       mem = string.split(memDict['Value'][1]) [8]
       result['Value'] = float(mem)
     else:
-      result = S_ERROR('Could not obtain memory used')
-      self.log.warn('Could not obtain memory used')
+      result = S_ERROR( 'Could not obtain memory used' )
+      self.log.warn( 'Could not obtain memory used' )
       result['Value'] = 0
     return result
 
@@ -104,11 +103,11 @@ class WatchdogLinux(Watchdog):
     diskSpace = getDiskSpace()
 
     if diskSpace == -1:
-      result = S_ERROR('Could not obtain disk usage')
-      self.log.warn('Could not obtain disk usage')
+      result = S_ERROR( 'Could not obtain disk usage' )
+      self.log.warn( ' Could not obtain disk usage' )
       result['Value'] = -1
 
-    result['Value'] = float(diskSpace)
+    result['Value'] = float( diskSpace )
     return result
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

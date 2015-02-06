@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -30,7 +29,7 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
 import os, time
 
-class Watchdog:
+class Watchdog( object ):
 
   #############################################################################
   def __init__( self, pid, exeThread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux2.4' ):
@@ -594,7 +593,6 @@ class Watchdog:
     self.__getWallClockTime()
     self.parameters['WallClockTime'] = []
 
-    initialCPU = 0.0
     result = self.__getCPU()
     self.log.verbose( 'CPU consumed %s' % ( result ) )
     if not result['OK']:

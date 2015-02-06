@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   WatchdogFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,9 +11,9 @@ from DIRAC                                               import S_OK, S_ERROR, g
 
 __RCSID__ = "$Id$"
 
-import re,sys,types,platform
+import re, platform
 
-class WatchdogFactory:
+class WatchdogFactory( object ):
 
   #############################################################################
   def __init__(self):
@@ -30,32 +29,32 @@ class WatchdogFactory:
     """
     localOS = None
 
-    if re.search('Darwin',self.version[0]):
+    if re.search( 'Darwin', self.version[0] ):
       localOS = 'Mac'
-      self.log.info('WatchdogFactory will create Watchdog%s instance' %(localOS))
-    elif re.search('Windows',self.version[0]):
+      self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
+    elif re.search( 'Windows', self.version[0] ):
       localOS = 'Windows'
-      self.log.info('WatchdogFactory will create Watchdog%s instance' %(localOS))
+      self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
     else:
       localOS = 'Linux'
-      self.log.info('WatchdogFactory will create Watchdog%s instance' %(localOS))
+      self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
 
     try:
       subClassName = "Watchdog%s" % (localOS)
-      ceSubClass = __import__('DIRAC.WorkloadManagementSystem.JobWrapper.%s' % subClassName,globals(),locals(),[subClassName])
+      __import__( 'DIRAC.WorkloadManagementSystem.JobWrapper.%s' % subClassName, globals(), locals(), [subClassName] )
     except Exception, x:
-      msg = 'WatchdogFactory could not import DIRAC.WorkloadManagementSystem.JobWrapper.%s' %(subClassName)
+      msg = 'WatchdogFactory could not import DIRAC.WorkloadManagementSystem.JobWrapper.%s' % ( subClassName )
       self.log.error(msg,x)
       return S_ERROR(msg)
 
     try:
-      ceStr = 'ceSubClass.%s(pid, thread, spObject, jobcputime, memoryLimit)' %(subClassName)
+      ceStr = 'ceSubClass.%s(pid, thread, spObject, jobcputime, memoryLimit)' % ( subClassName )
       watchdogInstance = eval(ceStr)
     except Exception, x:
       msg = 'WatchdogFactory could not instantiate %s()' %(subClassName)
-      self.log.error(msg,x)
-      return S_ERROR(msg)
+      self.log.error( msg, x )
+      return S_ERROR( msg )
 
-    return S_OK(watchdogInstance)
+    return S_OK( watchdogInstance )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
