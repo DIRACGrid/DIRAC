@@ -20,7 +20,7 @@ from DIRAC.Core.Utilities.Os import getDiskSpace
 import string
 import socket
 
-class WatchdogLinux(Watchdog):
+class WatchdogLinux( Watchdog ):
 
   def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux' ):
     """ Constructor, takes system flag as argument.
