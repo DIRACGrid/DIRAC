@@ -34,7 +34,18 @@ class WatchdogSuccess( JobWrapperTestCase ):
     res = WatchdogFactory().getWatchdog( self.currentPID, exeThread, spObject, 100000, 10485760 )
     wdl = res['Value']
 
-    wdl.getLoadAverage()
+    res = wdl.getLoadAverage()
+    self.assert_( res['OK'] )
+
+    res = wdl.getMemoryUsed()
+    self.assert_( res['OK'] )
+
+    res = wdl.calibrate()
+    self.assert_( res['OK'] )
+
+    res = wdl._performChecks()
+    self.assert_( res['OK'] )
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperTestCase )

@@ -54,6 +54,34 @@ class Watchdog( object ):
     self.initialized = False
     self.count = 0
 
+    #defaults
+    self.testWallClock = 1
+    self.testDiskSpace = 1
+    self.testLoadAvg = 1
+    self.maxWallClockTime = 3 * 24 * 60 * 60
+    self.testCPUConsumed = 1
+    self.testCPULimit = 0
+    self.testMemoryLimit = 0
+    self.testTimeLeft = 1
+    self.pollingTime = 10  # 10 seconds
+    self.checkingTime = 30 * 60  # 30 minute period
+    self.minCheckingTime = 20 * 60  # 20 mins
+    self.maxWallClockTime = 3 * 24 * 60 * 60  # e.g. 4 days
+    self.jobPeekFlag = 1  # on / off
+    self.minDiskSpace = 10  # MB
+    self.loadAvgLimit = 1000  # > 1000 and jobs killed
+    self.sampleCPUTime = 30 * 60  # e.g. up to 20mins sample
+    self.jobCPUMargin = 20  # %age buffer before killing job
+    self.minCPUWallClockRatio = 5  # ratio %age
+    self.nullCPULimit = 5  # After 5 sample times return null CPU consumption kill job
+    self.checkCount = 0
+    self.nullCPUCount = 0
+
+    self.grossTimeLeftLimit = 10 * self.checkingTime
+    self.timeLeftUtil = TimeLeft()
+    self.timeLeft = 0
+    self.littleTimeLeft = False
+
 
   #############################################################################
   def initialize( self, loops = 0 ):
@@ -96,8 +124,6 @@ class Watchdog( object ):
     self.jobCPUMargin = gConfig.getValue( self.section + '/JobCPULimitMargin', 20 )  # %age buffer before killing job
     self.minCPUWallClockRatio = gConfig.getValue( self.section + '/MinCPUWallClockRatio', 5 )  # ratio %age
     self.nullCPULimit = gConfig.getValue( self.section + '/NullCPUCountLimit', 5 )  # After 5 sample times return null CPU consumption kill job
-    self.checkCount = 0
-    self.nullCPUCount = 0
     if self.checkingTime < self.minCheckingTime:
       self.log.info( 'Requested CheckingTime of %s setting to %s seconds (minimum)' % ( self.checkingTime, self.minCheckingTime ) )
       self.checkingTime = self.minCheckingTime
@@ -105,12 +131,8 @@ class Watchdog( object ):
     # The time left is returned in seconds @ 250 SI00 = 1 HS06,
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
-    self.grossTimeLeftLimit = 10 * self.checkingTime
     self.fineTimeLeftLimit = gConfig.getValue( self.section + '/TimeLeftLimit', 150 * self.pollingTime )
 
-    self.timeLeftUtil = TimeLeft()
-    self.timeLeft = 0
-    self.littleTimeLeft = False
     return S_OK()
 
   def run( self ):
@@ -245,7 +267,7 @@ class Watchdog( object ):
     heartBeatDict['WallClockTime'] = result['Value']
     self.log.info( msg )
 
-    result = self.__checkProgress()
+    result = self._checkProgress()
     if not result['OK']:
       self.checkError = result['Message']
       self.log.warn( self.checkError )
@@ -348,7 +370,7 @@ class Watchdog( object ):
     return S_OK()
 
   #############################################################################
-  def __checkProgress( self ):
+  def _checkProgress( self ):
     """This method calls specific tests to determine whether the job execution
        is proceeding normally.  CS flags can easily be added to add or remove
        tests via central configuration.
