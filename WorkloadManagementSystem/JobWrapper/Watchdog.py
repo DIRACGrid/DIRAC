@@ -377,45 +377,46 @@ class Watchdog( object ):
 
     if self.testWallClock:
       result = self.__checkWallClockTime()
-      report += 'WallClock: OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'WallClock: OK, '
     else:
       report += 'WallClock: NA,'
 
     if self.testDiskSpace:
       result = self.__checkDiskSpace()
-      report += 'DiskSpace: OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'DiskSpace: OK, '
     else:
       report += 'DiskSpace: NA,'
 
     if self.testLoadAvg:
       result = self.__checkLoadAverage()
-      report += 'LoadAverage: OK, '
       if not result['OK']:
-        self.log.warn( result['Message'] )
-        return result
+        self.log.warn( "Check of load average failed, but won't fail because of that: %s" % result['Message'] )
+        report += 'LoadAverage: ERROR, '
+        return S_OK()
+      report += 'LoadAverage: OK, '
     else:
       report += 'LoadAverage: NA,'
 
     if self.testCPUConsumed:
       result = self.__checkCPUConsumed()
-      report += 'CPUConsumed: OK, '
       if not result['OK']:
         return result
+      report += 'CPUConsumed: OK, '
     else:
       report += 'CPUConsumed: NA, '
 
     if self.testCPULimit:
       result = self.__checkCPULimit()
-      report += 'CPULimit OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'CPULimit OK, '
     else:
       report += 'CPULimit: NA, '
         
@@ -428,10 +429,10 @@ class Watchdog( object ):
 
     if self.testMemoryLimit:
       result = self.__checkMemoryLimit()
-      report += 'MemoryLimit OK, '
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      report += 'MemoryLimit OK, '
     else:
       report += 'MemoryLimit: NA, '
 
