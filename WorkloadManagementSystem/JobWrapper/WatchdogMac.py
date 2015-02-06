@@ -85,7 +85,6 @@ class WatchdogMac( Watchdog ):
   def getMemoryUsed(self):
     """Obtains the memory used.
     """
-    result = S_OK()
     comm = 'sysctl vm.swapusage'
     memDict = shellCall( 5, comm )
     if memDict['OK']:
@@ -94,11 +93,9 @@ class WatchdogMac( Watchdog ):
         mem = float(mem.replace('M',''))
         mem = 2**20*mem
 
-      result['Value'] = float( mem )
+      return S_OK( float( mem ) )
     else:
-      result = S_ERROR('Could not obtain memory used')
-
-    return result
+      return S_ERROR( 'Could not obtain memory used' )
 
   #############################################################################
   def getDiskSpace( self ):

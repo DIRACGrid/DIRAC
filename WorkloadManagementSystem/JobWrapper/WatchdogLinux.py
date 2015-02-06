@@ -78,17 +78,14 @@ class WatchdogLinux( Watchdog ):
   def getMemoryUsed(self):
     """Obtains the memory used.
     """
-    result = S_OK()
     comm = '/usr/bin/free'
-    memDict = shellCall(5,comm)
+    memDict = shellCall( 5, comm )
     if memDict['OK']:
       mem = string.split(memDict['Value'][1]) [8]
-      result['Value'] = float(mem)
+      return S_OK( float( mem ) )
     else:
-      result = S_ERROR( 'Could not obtain memory used' )
       self.log.warn( 'Could not obtain memory used' )
-      result['Value'] = 0
-    return result
+      return S_ERROR( 'Could not obtain memory used' )
 
   #############################################################################
   def getDiskSpace(self):

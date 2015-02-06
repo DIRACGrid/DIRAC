@@ -167,7 +167,7 @@ class Watchdog( object ):
     #      but only perform checks with a certain frequency
     if ( time.time() - self.initialValues['StartTime'] ) > self.checkingTime * self.checkCount:
       self.checkCount += 1
-      result = self.__performChecks()
+      result = self._performChecks()
       if not result['OK']:
         self.log.warn( 'Problem during recent checks' )
         self.log.warn( result['Message'] )
@@ -178,7 +178,7 @@ class Watchdog( object ):
 
 
   #############################################################################
-  def __performChecks( self ):
+  def _performChecks( self ):
     """The Watchdog checks are performed at a different period to the checking of the
        application thread and correspond to the checkingTime.
     """
@@ -201,11 +201,16 @@ class Watchdog( object ):
     self.parameters['LoadAverage'].append( loadAvg )
 
     memoryUsed = self.getMemoryUsed()
-    msg += 'MemUsed: %.1f kb ' % ( result['Value'] )
-    heartBeatDict['MemoryUsed'] = result['Value']
+    if not memoryUsed['OK']:
+      self.log.warn( "Setting memory used to 0" )
+      memoryUsed = 0.0
+    else:
+      memoryUsed = memoryUsed['Value']
+    msg += 'MemUsed: %.1f kb ' % ( memoryUsed )
+    heartBeatDict['MemoryUsed'] = memoryUsed
     if not self.parameters.has_key( 'MemoryUsed' ):
       self.parameters['MemoryUsed'] = []
-    self.parameters['MemoryUsed'].append( result['Value'] )
+    self.parameters['MemoryUsed'].append( memoryUsed )
 
     result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
     if result['OK']:
@@ -312,8 +317,8 @@ class Watchdog( object ):
 
     cpuTime = cpuTime['Value']
     self.log.verbose( "Raw CPU time consumed (s) = %s" % ( cpuTime ) )
-    result = self.__getCPUHMS( cpuTime )
-    return result
+    return self.__getCPUHMS( cpuTime )
+
 
   #############################################################################
   def __getCPUHMS( self, cpuTime ):
@@ -602,39 +607,34 @@ class Watchdog( object ):
     self.__getWallClockTime()
     self.parameters['WallClockTime'] = []
 
-    result = self.__getCPU()
-    self.log.verbose( 'CPU consumed %s' % ( result ) )
-    if not result['OK']:
-      msg = 'Could not establish CPU consumed'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+    cpuConsumed = self.__getCPU()
+    if not cpuConsumed['OK']:
+      self.log.warn( "Could not establish CPU consumed, setting to 0.0" )
+      cpuConsumed = 0.0
+    else:
+      cpuConsumed = cpuConsumed['Value']
 
-    initialCPU = result['Value']
-
-    self.initialValues['CPUConsumed'] = initialCPU
+    self.initialValues['CPUConsumed'] = cpuConsumed
     self.parameters['CPUConsumed'] = []
 
-    result = self.getLoadAverage()
-    self.log.verbose( 'LoadAverage: %s' % ( result ) )
-    if not result['OK']:
-      msg = 'Could not establish LoadAverage'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+    loadAvg = self.getLoadAverage()
+    if not loadAvg['OK']:
+      self.log.warn( "Could not establish LoadAverage, setting to 0" )
+      loadAvg = 0
+    else:
+      loadAvg = loadAvg['Value']
 
-    self.initialValues['LoadAverage'] = result['Value']
+    self.initialValues['LoadAverage'] = loadAvg
     self.parameters['LoadAverage'] = []
 
-    result = self.getMemoryUsed()
-    self.log.verbose( 'MemUsed: %s' % ( result ) )
-    if not result['OK']:
-      msg = 'Could not establish MemoryUsed'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+    memUsed = self.getMemoryUsed()
+    if not memUsed['OK']:
+      self.log.warn( "Could not establish MemoryUsed, setting to 0" )
+      memUsed = 0
+    else:
+      memUsed = memUsed['Value']
 
-    self.initialValues['MemoryUsed'] = result['Value']
+    self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
     
     result = self.processMonitor.getMemoryConsumed( self.wrapperPID )
