@@ -212,11 +212,10 @@ class Watchdog( object ):
 
     loadAvg = self.getLoadAverage()
     if not loadAvg['OK']:
-      self.log.warn( "Setting load average to 0" )
-      loadAvg = 0
+      msg += 'LoadAvg: ERROR'
     else:
       loadAvg = loadAvg['Value']
-    msg += 'LoadAvg: %d ' % loadAvg
+      msg += 'LoadAvg: %d ' % loadAvg
     heartBeatDict['LoadAverage'] = loadAvg
     if not self.parameters.has_key( 'LoadAverage' ):
       self.parameters['LoadAverage'] = []
@@ -224,11 +223,10 @@ class Watchdog( object ):
 
     memoryUsed = self.getMemoryUsed()
     if not memoryUsed['OK']:
-      self.log.warn( "Setting memory used to 0" )
-      memoryUsed = 0.0
+      msg += 'MemUsed: ERROR '
     else:
       memoryUsed = memoryUsed['Value']
-    msg += 'MemUsed: %.1f kb ' % ( memoryUsed )
+      msg += 'MemUsed: %.1f kb ' % ( memoryUsed )
     heartBeatDict['MemoryUsed'] = memoryUsed
     if not self.parameters.has_key( 'MemoryUsed' ):
       self.parameters['MemoryUsed'] = []
