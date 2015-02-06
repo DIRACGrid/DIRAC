@@ -291,9 +291,9 @@ class Watchdog( object ):
     cpuTime = '00:00:00'
     try:
       cpuTime = self.processMonitor.getCPUConsumed( self.wrapperPID )
-    except Exception:
+    except Exception, e:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
-      self.log.exception()
+      self.log.exception( e )
       return S_OK( cpuTime )  # just return null CPU
 
     if not cpuTime['OK']:
@@ -418,7 +418,7 @@ class Watchdog( object ):
 
     wallClockTime = self.parameters['WallClockTime'][-1]
     if wallClockTime < self.sampleCPUTime:
-      self.log.info( "Stopping check, wallclock time (%s) is still smalled than sample time (%s)" % ( wallClockTime,
+      self.log.info( "Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % ( wallClockTime,
                                                                                             self.sampleCPUTime ) )
       return S_OK()
 

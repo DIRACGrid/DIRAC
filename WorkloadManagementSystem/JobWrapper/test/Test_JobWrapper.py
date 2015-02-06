@@ -28,6 +28,13 @@ class WatchdogSuccess( JobWrapperTestCase ):
     self.assert_( res['OK'] )
     self.assert_( isinstance( res['Value'], types.ObjectType ) )
 
+  def test_WatchdogSuccess( self ):
+    spObject = Subprocess( timeout = False, bufferLimit = 10485760 )
+    exeThread = ExecutionThread( spObject, 'ls', 20, 'std.out', 'std.err', dict( os.environ ) )
+    res = WatchdogFactory().getWatchdog( self.currentPID, exeThread, spObject, 100000, 10485760 )
+    wdl = res['Value']
+
+    wdl.getLoadAverage()
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperTestCase )
