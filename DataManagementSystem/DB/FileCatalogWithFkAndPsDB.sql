@@ -845,7 +845,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_lfns_from_guids
 (IN  guids TEXT)
 BEGIN
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, LFN FROM FC_Files f WHERE GUID IN (', guids, ')');
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, CONCAT(d.Name, "/", f.FileName) FROM FC_Files f JOIN FC_DirectoryList d on f.DirID = d.DirID WHERE GUID IN (', guids, ')');
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;

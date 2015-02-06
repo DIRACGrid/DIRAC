@@ -276,9 +276,7 @@ class FileManagerBase( object ):
 
     # If GUIDs are supposed to be unique check their pre-existance 
     if self.db.uniqueGUID:
-      print "unique ? "
       fail = self._checkUniqueGUID( masterLfns, connection = connection )
-      print fail
       failed.update( fail )
       for lfn in fail:
         masterLfns.pop( lfn )
@@ -632,14 +630,12 @@ class FileManagerBase( object ):
     return successful, failed
 
   def _checkUniqueGUID( self, lfns, connection = False ):
-    print "lfns %s" % lfns
     connection = self._getConnection( connection )
     guidLFNs = {}
     failed = {}
     for lfn, fileDict in lfns.items():
       guidLFNs[fileDict['GUID']] = lfn
     res = self._getFileIDFromGUID( guidLFNs.keys(), connection = connection )
-    print "res %s" % res
     if not res['OK']:
       return dict.fromkeys( lfns, res['Message'] )
     for guid, fileID in res['Value'].items():
@@ -889,6 +885,7 @@ class FileManagerBase( object ):
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, allStatus = True, connection = connection )
     successful = res['Value']['Successful']
+    origFailed = res['Value']['Failed']
     for lfn in successful:
       successful[lfn] = lfn
     failed = {}
@@ -911,21 +908,23 @@ class FileManagerBase( object ):
         # We are in the case {lfn : {PFN:.., GUID:..}}
         guidList = [lfns[lfn]['GUID'] for lfn in lfns]
         pass
-      elif type( val ) == StringTypes:
+      elif type( val ) in StringTypes:
         # We hope that it is the GUID which is given
         guidList = lfns.values()
-
 
       if guidList:
         # A dict { guid: lfn to which it is supposed to be associated }
         guidToGivenLfn = dict( zip( guidList, lfns ) )
-        guidLfns = self.getLFNForGUID( guidList, connection )
+        res = self.getLFNForGUID( guidList, connection )
+        if not res['OK']:
+          return res
+        guidLfns = res['Value']['Successful']
         for guid, realLfn in guidLfns.items():
           successful[guidToGivenLfn[guid]] = realLfn
 
         
     
-    for lfn, error in res['Value']['Failed'].items():
+    for lfn, error in origFailed.items():
       # It could be in successful because the guid exists with another lfn
       if lfn in successful:
         continue

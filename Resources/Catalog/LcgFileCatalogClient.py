@@ -1310,6 +1310,24 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     """
     error = lfc.lfc_access( self.__fullLfn( lfn ), 0 )
     return returnCode( error and lfc.cvar.serrno != 2, error == 0 )
+  
+  def getLFNForGUID(self, guids):
+    res = checkArgumentFormat( guids )
+    if not res['OK']:
+      return res
+    guids = res['Value']
+    guidLFN = {}
+    failed = {}
+
+    for guid in guids:
+      # I somehow have the feeling that lfnlist[0] of __getLfnForGUID
+      # could throw an exception if the guid does not exist in the DB
+      # but... not touching this black magic
+      try:
+        guidLFN[guid] = self.__getLfnForGUID( guid )['Value']
+      except Exception, _e:
+        failed[guid] = "GUID does not exist"
+    return S_OK( {"Successful" : guidLFN, "Failed" : failed} )
 
   def __getLfnForGUID( self, guid ):
     """ Resolve the LFN for a supplied GUID

@@ -366,6 +366,7 @@ class FileManagerPs( FileManagerBase ):
     return S_OK(guidDict)
 
   def getLFNForGUID( self, guids, connection = False ):
+    """ Returns the lfns matching given guids"""
     connection = self._getConnection( connection )
     if not guids:
       return S_OK( {} )
@@ -380,8 +381,9 @@ class FileManagerPs( FileManagerBase ):
       return result
 
     guidDict = dict( ( guid, lfn ) for guid, lfn in result['Value'] )
-
-    return S_OK( guidDict )
+    failedGuid = set( guids ) - set( guidDict )
+    failed = dict.fromkeys( failedGuid, "GUID does not exist" ) if failedGuid else {}
+    return S_OK( {"Successful" : guidDict, "Failed" : failed} )
 
   ######################################################
   #

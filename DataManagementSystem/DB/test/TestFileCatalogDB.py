@@ -86,6 +86,13 @@ DEFAULT_MANAGER = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
                     "FileManager" : ["FileManagerPs"],
                     }
 
+DEFAULT_MANAGER_2 = { "UserGroupManager"  : ["UserAndGroupManagerDB"],
+                    "SEManager" : ["SEManagerDB"],
+                    "SecurityManager" : ["NoSecurityManager"],
+                    "DirectoryManager" : ["DirectoryLevelTree"],
+                    "FileManager" : ["FileManager"],
+                    }
+
 MANAGER_TO_TEST = DEFAULT_MANAGER
 
 
@@ -170,19 +177,63 @@ class FileCase( FileCatalogDBTestCase ):
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
 
+    result = self.db.exists( testFile , credDict )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile) should be the same lfn %s" % result )
+
+
+    result = self.db.exists( {testFile:'1000'} , credDict )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
+    
+    result = self.db.exists( {testFile:{'GUID' : '1000', 'PFN' : 'blabla'}} , credDict )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
+
+    # In fact, we don't check if the GUID is correct...
+    result = self.db.exists( {testFile:'1001'}, credDict )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
+                       testFile, "exists( testFile : 1001) should be the same lfn %s" % result )
+
+    result = self.db.exists( {testFile + '2' : '1000'}, credDict )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile + '2' ),
+                       testFile, "exists( testFile2 : 1000) should return testFile %s" % result )
 
     # Re-adding the same file
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
+                                         'Checksum':'0' } }, credDict )
+    self.assert_( result["OK"], "addFile failed when adding existing file with same param %s" % result )
+    self.assert_( testFile in result["Value"]["Successful"], "addFile failed: it should be possible to add an existing lfn with same param %s" % result )
+
+    # Adding same file with different param
+    result = self.db.addFile( { testFile: { 'PFN': 'testfile',
+                                         'SE': 'testSE' ,
+                                         'Size':123,
+                                         'GUID':'1000',
+                                         'Checksum':'1' } }, credDict )
+    self.assert_( result["OK"], "addFile failed when adding existing file with different parem %s" % result )
+    self.assert_( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn with different param %s" % result )
+
+
+    result = self.db.addFile( { testFile + '2':  { 'PFN': 'testfile',
+                                         'SE': 'testSE' ,
+                                         'Size':123,
+                                         'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
     self.assert_( result["OK"], "addFile failed when adding existing file %s" % result )
-    self.assert_( testFile in result["Value"]["Failed"], "addFile failed: it should not be possible to add an existing lfn %s" % result )
+    self.assert_( testFile + '2' in result["Value"]["Failed"], "addFile failed: it should not be possible to add a new lfn with existing GUID %s" % result )
 
     ##################################################################################
     # Setting existing status of existing file
@@ -264,7 +315,7 @@ class ReplicaCase( FileCatalogDBTestCase ):
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
 
@@ -367,7 +418,7 @@ class DirectoryCase( FileCatalogDBTestCase ):
     result = self.db.addFile( { testFile: { 'PFN': 'testfile',
                                          'SE': 'testSE' ,
                                          'Size':123,
-                                         'GUID':1000,
+                                         'GUID':'1000',
                                          'Checksum':'0' } }, credDict )
     self.assert_( result['OK'], "addFile failed when adding new file %s" % result )
 
