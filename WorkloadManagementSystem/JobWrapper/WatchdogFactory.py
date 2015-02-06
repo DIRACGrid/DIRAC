@@ -32,9 +32,9 @@ class WatchdogFactory( object ):
     if re.search( 'Darwin', self.version[0] ):
       localOS = 'Mac'
       self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
-    elif re.search( 'Windows', self.version[0] ):
-      localOS = 'Windows'
-      self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
+#     elif re.search( 'Windows', self.version[0] ):
+#       localOS = 'Windows'
+#       self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
     else:
       localOS = 'Linux'
       self.log.info( 'WatchdogFactory will create Watchdog%s instance' % ( localOS ) )
