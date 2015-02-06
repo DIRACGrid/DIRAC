@@ -250,15 +250,21 @@ class Watchdog( object ):
       self.parameters['DiskSpace'] = []
     self.parameters['DiskSpace'].append( result['Value'] )
     heartBeatDict['AvailableDiskSpace'] = result['Value']
-    result = self.__getCPU()
-    msg += 'CPU: %s (h:m:s) ' % ( result['Value'] )
-    if not self.parameters.has_key( 'CPUConsumed' ):
-      self.parameters['CPUConsumed'] = []
-    self.parameters['CPUConsumed'].append( result['Value'] )
-    hmsCPU = result['Value']
-    rawCPU = self.__convertCPUTime( hmsCPU )
-    if rawCPU['OK']:
-      heartBeatDict['CPUConsumed'] = rawCPU['Value']
+    
+    cpu = self.__getCPU()
+    if not cpu['OK']:
+      msg += 'CPU: ERROR '
+    else:
+      cpu = cpu['Value']
+      msg += 'CPU: %s (h:m:s) ' % ( cpu )
+      if not self.parameters.has_key( 'CPUConsumed' ):
+        self.parameters['CPUConsumed'] = []
+      self.parameters['CPUConsumed'].append( cpu )
+      hmsCPU = cpu
+      rawCPU = self.__convertCPUTime( hmsCPU )
+      if rawCPU['OK']:
+        heartBeatDict['CPUConsumed'] = rawCPU['Value']
+    
     result = self.__getWallClockTime()
     msg += 'WallClock: %.2f s ' % ( result['Value'] )
     self.parameters['WallClockTime'].append( result['Value'] )
@@ -322,22 +328,24 @@ class Watchdog( object ):
   def __getCPU( self ):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
-    cpuTime = '00:00:00'
     try:
       cpuTime = self.processMonitor.getCPUConsumed( self.wrapperPID )
+      if not cpuTime['OK']:
+        self.log.warn( 'Problem while checking consumed CPU' )
+        return cpuTime
+      cpuTime = cpuTime['Value']
+      if cpuTime:
+        self.log.verbose( "Raw CPU time consumed (s) = %s" % ( cpuTime ) )
+        return self.__getCPUHMS( cpuTime )
+      else:
+        self.log.error( "CPU time consumed found to be 0" )
+        return S_ERROR()
+
     except Exception, e:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
       self.log.exception( e )
-      return S_OK( cpuTime )  # just return null CPU
+      return S_ERROR( "Could not determine CPU time consumed with exception" )
 
-    if not cpuTime['OK']:
-      self.log.warn( 'Problem while checking consumed CPU' )
-      self.log.warn( cpuTime )
-      return S_OK( '00:00:00' )  # again return null CPU in this case
-
-    cpuTime = cpuTime['Value']
-    self.log.verbose( "Raw CPU time consumed (s) = %s" % ( cpuTime ) )
-    return self.__getCPUHMS( cpuTime )
 
 
   #############################################################################
