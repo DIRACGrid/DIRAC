@@ -792,6 +792,7 @@ class MySQL:
           index is the list of fields to be indexed. This indexes will declared
           unique.
         "Engine": use the given DB engine, InnoDB is the default if not present.
+        "Charset": use the given character set. Default is latin1
       force:
         if True, requested tables are DROP if they exist.
         if False, returned with S_ERROR if table exist.
@@ -904,8 +905,13 @@ class MySQL:
         else:
           engine = 'InnoDB'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
-               table, ',\n'.join( cmdList ), engine )
+        if thisTable.has_key( 'Charset' ):
+          charset = thisTable['Charset']
+        else:
+          charset = 'latin1'
+
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( 
+               table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict
