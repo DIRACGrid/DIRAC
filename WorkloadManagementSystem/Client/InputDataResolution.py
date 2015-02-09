@@ -33,7 +33,7 @@ class InputDataResolution( object ):
     op = Operations()
     self.arguments.setdefault( 'Configuration', {} )['AllReplicas'] = op.getValue( 'InputDataPolicy/AllReplicas', False )
     self.arguments['Configuration'].setdefault( 'Protocol', op.getValue( 'InputDataPolicy/Protocols/Local', '' ) )
-    self.arguments['Configuration'].setdefault( 'RemoteProtocol', op.getValue( 'InputDataPolicy/Protocols/Remote', '' ) )
+    self.arguments['Configuration'].setdefault( 'RemoteProtocol', op.getValue( 'InputDataPolicy/Protocols/Remote', '' ).split( ',' ) )
 
     # By default put input data into the current directory
     self.arguments.setdefault( 'InputDataDirectory', 'CWD' )
