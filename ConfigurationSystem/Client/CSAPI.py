@@ -418,21 +418,23 @@ class CSAPI( object ):
       vo = CSGlobals.getVO( )
       setup = CSGlobals.getSetup( )
 
-      res = gConfig.getSections( '/Operations/%s/%s/Shifter' % (vo, setup) )
-      if res['OK']:
-        return '/Operations/%s/%s/Shifter' % (vo, setup)
+      if vo:
+        res = gConfig.getSections( '/Operations/%s/%s/Shifter' % (vo, setup) )
+        if res['OK']:
+          return '/Operations/%s/%s/Shifter' % (vo, setup)
 
-      res = gConfig.getSections( '/Operations/%s/Shifter' % setup )
-      if res['OK']:
-        return '/Operations/%s/Shifter' % setup
+        res = gConfig.getSections( '/Operations/%s/Defaults/Shifter' % vo )
+        if res['OK']:
+          return '/Operations/%s/Defaults/Shifter' % vo
 
-      res = gConfig.getSections( '/Operations/%s/Defaults/Shifter' % vo )
-      if res['OK']:
-        return '/Operations/%s/Defaults/Shifter' % vo
+      else:
+        res = gConfig.getSections( '/Operations/%s/Shifter' % setup )
+        if res['OK']:
+          return '/Operations/%s/Shifter' % setup
 
-      res = gConfig.getSections( '/Operations/Defaults/Shifter' % vo )
-      if res['OK']:
-        return '/Operations/Defaults/Shifter'
+        res = gConfig.getSections( '/Operations/Defaults/Shifter' )
+        if res['OK']:
+          return '/Operations/Defaults/Shifter'
 
       raise RuntimeError( "no shifter section???" )
 
@@ -474,13 +476,9 @@ class CSAPI( object ):
       self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'User', shifters[shifter]['User'] )
       self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'Group', shifters[shifter]['Group'] )
 
+    self.__csModified = True
+    return S_OK( True )
 
-  def modifyShifter( self ):
-    """
-    updates a shifter, if this
-    :return:S_OK/S_ERROR
-    """
-    pass
 
   def modifyHost( self, hostname, properties, createIfNonExistant = False ):
     """
