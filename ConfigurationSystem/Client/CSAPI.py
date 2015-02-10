@@ -1,14 +1,16 @@
-########################################################################
-# $HeadURL$
-########################################################################
+""" CSAPI exposes
+"""
+
 __RCSID__ = "$Id$"
 import types
+
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+
 
 class CSAPI:
 
@@ -112,12 +114,14 @@ class CSAPI:
       return self.__initialized
     return S_OK( self.__csMod.getSections( "%s/Hosts" % self.__baseSecurity ) )
 
-  def describeUsers( self, users = False ):
+  def describeUsers( self, users = None ):
+    if users is None: users = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__describeEntity( users ) )
 
-  def describeHosts( self, hosts = False ):
+  def describeHosts( self, hosts = None ):
+    if hosts is None: hosts = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__describeEntity( hosts, True ) )
@@ -153,10 +157,11 @@ class CSAPI:
       return self.__initialized
     return S_OK( self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ) )
 
-  def describeGroups( self, mask = False ):
+  def describeGroups( self, mask = None ):
     """
     List all groups that are in the mask (or all if no mask) with their properties
     """
+    if mask is None: mask = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     groups = [ group for group in self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ) if not mask or ( mask and group in mask ) ]
@@ -564,6 +569,33 @@ class CSAPI:
       return self.__initialized
     if not self.__csMod.removeSection( sectionPath ):
       return S_ERROR( "Could not delete section %s " % sectionPath )
+    self.__csModified = True
+    return S_OK( )
+
+  def copySection( self, originalPath, targetPath ):
+    """ Copy a whole section to a new location
+    """
+    if not self.__initialized['OK']:
+      return self.__initialized
+    cfg = self.__csMod.getCFG( )
+    sectionCfg = cfg[originalPath]
+    result = self.createSection( targetPath )
+    if not result['OK']:
+      return result
+    if not self.__csMod.mergeSectionFromCFG( targetPath, sectionCfg ):
+      return S_ERROR( "Could not merge cfg into section %s" % targetPath )
+    self.__csModified = True
+    return S_OK( )
+
+  def moveSection( self, originalPath, targetPath ):
+    """  Move a whole section to a new location
+    """
+    result = self.copySection( originalPath, targetPath )
+    if not result['OK']:
+      return result
+    result = self.delSection( originalPath )
+    if not result['OK']:
+      return result
     self.__csModified = True
     return S_OK()
 
