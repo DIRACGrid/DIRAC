@@ -1,7 +1,10 @@
-""" CSAPI exposes
+""" CSAPI exposes update functionalities to the Configuration.
+
+    Most of these functions can only be done by administrators
 """
 
 __RCSID__ = "$Id$"
+
 import types
 
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
@@ -12,7 +15,9 @@ from DIRAC.Core.Security import Locations
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 
-class CSAPI:
+class CSAPI( object ):
+  """ CSAPI objects need an initialization phase
+  """
 
   def __init__( self ):
     """
@@ -201,7 +206,7 @@ class CSAPI:
     Remove user from a group
     """
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-    if usersInGroup != None:
+    if usersInGroup is not None:
       userList = List.fromChar( usersInGroup, "," )
       userPos = userList.index( username )
       userList.pop( userPos )
@@ -212,7 +217,7 @@ class CSAPI:
     Add user to a group
     """
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-    if usersInGroup != None:
+    if usersInGroup is not None:
       userList = List.fromChar( usersInGroup )
       if username not in userList:
         userList.append( username )
@@ -549,7 +554,7 @@ class CSAPI:
     if not self.__csMod.removeOption( optionPath ):
       return S_ERROR( "Couldn't delete option %s" % optionPath )
     self.__csModified = True
-    return S_OK( 'Deleted option %s' % ( optionPath ) )
+    return S_OK( 'Deleted option %s' % optionPath )
 
   def createSection( self, sectionPath, comment = "" ):
     """ Create a new section
