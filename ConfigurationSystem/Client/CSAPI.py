@@ -7,12 +7,14 @@ __RCSID__ = "$Id$"
 
 import types
 
-from DIRAC.ConfigurationSystem.private.Modificator import Modificator
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.private.Modificator import Modificator
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 class CSAPI( object ):
@@ -398,6 +400,87 @@ class CSAPI( object ):
     gLogger.info( "Registered host %s" % hostname )
     self.__csModified = True
     return S_OK( True )
+
+  def addShifter( self, shifters = None ):
+    """
+    Adds or modify one or more shifters. Also, adds the shifter section in case this is not present.
+    Shifter identities are used in several places, mostly for running agents
+
+    shifters should be in the form {'ShifterRole':{'User':'aUserName', 'Group':'aDIRACGroup'}}
+
+    :return: S_OK/S_ERROR
+    """
+
+    def getOpsSection( ):
+      """
+      Where is the shifters section?
+      """
+      vo = CSGlobals.getVO( )
+      setup = CSGlobals.getSetup( )
+
+      res = gConfig.getSections( '/Operations/%s/%s/Shifter' % (vo, setup) )
+      if res['OK']:
+        return '/Operations/%s/%s/Shifter' % (vo, setup)
+
+      res = gConfig.getSections( '/Operations/%s/Shifter' % setup )
+      if res['OK']:
+        return '/Operations/%s/Shifter' % setup
+
+      res = gConfig.getSections( '/Operations/%s/Defaults/Shifter' % vo )
+      if res['OK']:
+        return '/Operations/%s/Defaults/Shifter' % vo
+
+      res = gConfig.getSections( '/Operations/Defaults/Shifter' % vo )
+      if res['OK']:
+        return '/Operations/Defaults/Shifter'
+
+      raise RuntimeError( "no shifter section???" )
+
+    if shifters is None: shifters = {}
+    if not self.__initialized['OK']:
+      return self.__initialized
+
+    # get current shifters
+    opsH = Operations( )
+    currentShifterRoles = opsH.getSections( 'Shifter' )
+    if not currentShifterRoles['OK']:
+      # we assume the shifter section is not present
+      currentShifterRoles = []
+    else:
+      currentShifterRoles = currentShifterRoles['Value']
+    currentShiftersDict = {}
+    for currentShifterRole in currentShifterRoles:
+      currentShifter = opsH.getOptionsDict( 'Shifter/%s' % currentShifterRole )
+      if not currentShifter['OK']:
+        return currentShifter
+      currentShifter = currentShifter['Value']
+      currentShiftersDict[currentShifterRole] = currentShifter
+
+    # Removing from shifters what does not need to be changed
+    for sRole in shifters:
+      if sRole in currentShiftersDict:
+        if currentShiftersDict[sRole] == shifters[sRole]:
+          shifters.pop( sRole )
+
+    #shifters section to modify
+    section = getOpsSection( )
+
+    #add or modify shifters
+    for shifter in shifters:
+      self.__csMod.removeSection( section + '/' + shifter )
+      self.__csMod.createSection( section + '/' + shifter )
+      self.__csMod.createSection( section + '/' + shifter + '/' + 'User' )
+      self.__csMod.createSection( section + '/' + shifter + '/' + 'Group' )
+      self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'User', shifters[shifter]['User'] )
+      self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'Group', shifters[shifter]['Group'] )
+
+
+  def modifyShifter( self ):
+    """
+    updates a shifter, if this
+    :return:S_OK/S_ERROR
+    """
+    pass
 
   def modifyHost( self, hostname, properties, createIfNonExistant = False ):
     """
