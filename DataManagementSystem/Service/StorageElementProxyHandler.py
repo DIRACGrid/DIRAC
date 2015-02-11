@@ -83,7 +83,7 @@ class HttpThread( threading.Thread ):
   """ 
   .. class:: HttpThread
 
-  Single daemon thread runing HttpStorageAccessHandler.
+  Single daemon thread running HttpStorageAccessHandler.
   """
   def __init__( self, port, path ):
     """ c'tor """
