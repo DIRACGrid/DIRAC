@@ -233,7 +233,7 @@ class SystemAdministratorHandler( RequestHandler ):
       cmdList += ['-e', ','.join( extensionList )]
     
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False )  # this is the new portal
-    if webPortal:  # we have a to compile the new web portal...
+    if webPortal: 
       extensionList.append( 'WebApp' )
           
     if extensionList:
@@ -292,7 +292,7 @@ class SystemAdministratorHandler( RequestHandler ):
         return S_ERROR( '\n'.join( error ) )
       
     if webPortal:
-        # compile:
+      #we have a to compile the new web portal...
       webappCompileScript = os.path.join( InstallTools.instancePath, 'pro', "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
       if os.path.isfile( webappCompileScript ):
         os.chmod( webappCompileScript , "stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH" )
