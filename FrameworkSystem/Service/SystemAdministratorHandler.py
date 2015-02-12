@@ -292,16 +292,19 @@ class SystemAdministratorHandler( RequestHandler ):
         return S_ERROR( '\n'.join( error ) )
       
     if webPortal:
-      #we have a to compile the new web portal...
+      # we have a to compile the new web portal...
       webappCompileScript = os.path.join( InstallTools.instancePath, 'pro', "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
-      if os.path.isfile( webappCompileScript ):
-        os.chmod( webappCompileScript , "stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH" )
-        gLogger.notice( "Executing %s..." % webappCompileScript )
-        if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( webappCompileScript,
-                                                           webappCompileScript,
-                                                           webappCompileScript ) ):
-          gLogger.error( "Compile script %s failed. Check %s.err" % ( webappCompileScript,
-                                                                         webappCompileScript ) )
+      outfile = "%s.out" % webappCompileScript
+      err = "%s.err" % webappCompileScript   
+      result = systemCall( False, ['dirac-webapp-compile', ' > ', outfile, ' 2> ', err] )
+      if not result['OK']:
+        return result 
+      if result['Value'][0] != 0:
+        error = result['Value'][1].split( '\n' )
+        error.extend( result['Value'][2].split( '\n' ) )
+        error.append( 'Failed to compile the java script!' )
+        return S_ERROR( '\n'.join( error ) )
+      
     return S_OK()
   
   types_revertSoftware = [ ]
