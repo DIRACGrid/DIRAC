@@ -321,6 +321,11 @@ class FileCatalogHandler( RequestHandler ):
       dList = [depths]
     lfnDict = dict.fromkeys( lfns, True )
     return gFileCatalogDB.getFileDescendents( lfnDict, dList, self.getRemoteCredentials() )
+  
+  types_getLFNForGUID = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_getLFNForGUID( self, guids ):
+    """Get the matching lfns for given guids"""
+    return gFileCatalogDB.getLFNForGUID( guids, self.getRemoteCredentials() )
 
   ########################################################################
   #

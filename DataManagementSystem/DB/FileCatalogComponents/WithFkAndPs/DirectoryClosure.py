@@ -387,10 +387,7 @@ class DirectoryClosure( DirectoryTreeBase ):
       if not result['OK']:
         return result
 
-      dirId, errmsg = result['Value'][0]
-
-      if not dirId:
-        return S_ERROR( "Failed to create directory %s (%s)" % ( path, errmsg ) )
+      dirId = result['Value'][0][0]
 
       result = S_OK( dirId )
       result['NewDirectory'] = True
