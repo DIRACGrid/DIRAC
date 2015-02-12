@@ -548,7 +548,7 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
       self.assertEqual( t[0], tExp[0] )
       self.assertEqual( sorted( t[1] ), tExp[1] )
 
-
+  # FIXME: Need to test BySize and stuff
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
