@@ -455,13 +455,60 @@ class Request( object ):
     # Set to True if the request could be optimized
     optimized = False
 
+    # Recognise Failover request series
+    repAndRegList = []
+    removeRepList = []
+    i = 0
+    while i < len( self.__operations__ ) - 1:
+      op1 = self.__operations__[i]
+      op2 = self.__operations__[i + 1]
+      # print i, getattr( op1, 'Type' ), getattr( op2, 'Type' )
+      if getattr( op1, 'Type' ) == 'ReplicateAndRegister' and \
+         getattr( op2, 'Type' ) == 'RemoveReplica':
+        fileSetA = set( list( f.LFN for f in op1 ) )
+        fileSetB = set( list( f.LFN for f in op2 ) )
+        if fileSetA == fileSetB:
+          # Source is useless if failover
+          if 'FAILOVER' in op1.SourceSE:
+            op1.SourceSE = ''
+          repAndRegList.append( ( op1.TargetSE, op1 ) )
+          removeRepList.append( ( op2.TargetSE, op2 ) )
+          del self.__operations__[i]
+          del self.__operations__[i]
+          continue
+        else:
+          i += 1
+          continue
+      i += 1
+    # If some were found, put them, sorted by SE, at the beginning of the request
+    # Replication first, removeReplica next
+    if not self.isEmpty():
+      insertBefore = self.__operations__[0]
+    else:
+      insertBefore = None
+    for op in \
+      [op for _targetSE, op in sorted( repAndRegList )] + \
+      [op for _targetSE, op in sorted( removeRepList )]:
+      _res = self.insertBefore( op, insertBefore ) if insertBefore != None else self.addOperation( op )
+      optimized = True
+
     # List of attributes that must be equal for operations to be merged
     attrList = ["Type", "Arguments", "SourceSE", "TargetSE", "Catalog" ]
-    i = 0
 
     # If the RequestID is not the default one (0), it probably means
     # the Request is already in the DB, so we don't touch anything
     if hasattr( self, 'RequestID' ) and not self.RequestID:
+      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
+    # unless it was optimized, in which case we reset the IDs to default
+    if optimized:
+      self.RequestID = 0
+      for op in self.__operations__:
+        op.OperationID = 0
+        op.RequestID = 0
+        for f in op:
+          f.FileID = 0
+          f.OperationID = 0
+    else:
       return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
 
     # We could do it with a single loop (the 2nd one), but by doing this,
@@ -473,6 +520,7 @@ class Request( object ):
     #   break
     #
     # which is nicer in my opinion
+    i = 0
     while i < len( self.__operations__ ):
       while  ( i + 1 ) < len( self.__operations__ ):
         # Some attributes need to be the same
@@ -501,6 +549,5 @@ class Request( object ):
         except RuntimeError:
           i += 1
       i += 1
-
 
     return S_OK( optimized )

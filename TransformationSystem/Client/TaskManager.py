@@ -222,11 +222,13 @@ class RequestTasks( TaskBase ):
       oldStatus = taskDict['ExternalStatus']
 
       newStatus = self.__getRequestStatus( taskDict['ExternalID'] )
-
-      if not newStatus:
-        self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
-      elif newStatus != oldStatus:
-        updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
+      if not newStatus['OK']:
+        log = self.log.verbose if 'not exist' in newStatus['Message'] else self.log.warn
+        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s: %s' % ( requestName, newStatus['Message'] ) )
+      else:
+        newStatus = newStatus['Value']
+        if newStatus != oldStatus:
+          updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
   def __getRequestStatus( self, requestID ):
@@ -265,14 +267,13 @@ class RequestTasks( TaskBase ):
     updateDict = {}
     for requestID in sorted( taskFiles ):
       lfnDict = taskFiles[requestID]
-
       statusDict = self.__getRequestFileStatus( requestID, lfnDict.keys() )
-
-      if not statusDict:
-        log = self.log.verbose if 'not exists' in statusDict['Message'] else self.log.warn
-        log( "getSubmittedFileStatus: Failed to get files status for request", statusDict['Message'] )
+      if not statusDict['OK']:
+        log = self.log.verbose if 'not exist' in statusDict['Message'] else self.log.warn
+        log( "getSubmittedFileStatus: Failed to get files status for request", '%s: %s' % ( requestName, statusDict['Message'] ) )
         continue
 
+      statusDict = statusDict['Value']
       for lfn, newStatus in statusDict.items():
         if newStatus == lfnDict[lfn]:
           pass

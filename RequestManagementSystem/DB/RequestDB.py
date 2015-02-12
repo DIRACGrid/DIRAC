@@ -458,7 +458,6 @@ class RequestDB( object ):
     requestDict = {}
 
     try:
-
       # If we are here, the request MUST exist, so no try catch
       # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
       try:

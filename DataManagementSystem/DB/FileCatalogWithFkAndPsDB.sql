@@ -403,21 +403,7 @@ CREATE PROCEDURE ps_insert_dir
 BEGIN
   DECLARE dir_id INT DEFAULT 0;
   
-  DECLARE EXIT HANDLER FOR 1062 BEGIN
-    ROLLBACK;
-    SELECT 0 as dir_id, 'Error, duplicate key occurred' as msg;
-  END;
 
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 0 as dir_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
-  
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
-      ROLLBACK;
-      SELECT 0 as dir_id, 'Unknown error occured' as msg;
-  END;
-    
   
   START TRANSACTION;
    
@@ -434,7 +420,7 @@ BEGIN
     END IF;
     
     
-    SELECT dir_id, 'OK';
+    SELECT dir_id;
     
    COMMIT;
 END //
@@ -777,22 +763,7 @@ CREATE PROCEDURE ps_insert_file
 BEGIN
   DECLARE file_id INT DEFAULT 0;
   
-  DECLARE EXIT HANDLER FOR 1062 BEGIN
-    ROLLBACK;
-    SELECT 0 as file_id, 'Error, duplicate key occurred' as msg;
-  END;
-
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 0 as file_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
-  
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
-      ROLLBACK;
-      SELECT 0 as file_id, 'Unknown error occured' as msg;
-  END;
-    
-  
+ 
   START TRANSACTION;
   INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName,GUID, Checksum, ChecksumType, CreationDate, ModificationDate, Mode )
   VALUES (dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
@@ -802,7 +773,7 @@ BEGIN
 
   COMMIT;
 
-  SELECT file_id, 'OK' as msg;
+  SELECT file_id;
  
 END //
 DELIMITER ;
@@ -857,6 +828,24 @@ CREATE PROCEDURE ps_get_file_ids_from_guids
 (IN  guids TEXT)
 BEGIN
   SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, FileID FROM FC_Files f WHERE GUID IN (', guids, ')');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+ 
+END //
+DELIMITER ;
+
+-- ps_get_lfns_from_guids : return list of file lfns for given guids
+-- guids : list of guids
+-- output : GUID, LFN
+
+DELIMITER //
+CREATE PROCEDURE ps_get_lfns_from_guids
+(IN  guids TEXT)
+BEGIN
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, CONCAT(d.Name, "/", f.FileName) FROM FC_Files f JOIN FC_DirectoryList d on f.DirID = d.DirID WHERE GUID IN (', guids, ')');
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
@@ -948,21 +937,12 @@ CREATE PROCEDURE ps_insert_replica
 BEGIN
   DECLARE replica_id INT DEFAULT 0;
   
+  -- The replica already exists
   DECLARE EXIT HANDLER FOR 1062 BEGIN
     ROLLBACK;
-    SELECT RepID as replica_id, 'Replica already exists' as msg from FC_Replicas where FileID = file_id and SEID = se_id;
+    SELECT RepID as replica_id from FC_Replicas where FileID = file_id and SEID = se_id;
   END;
 
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 0 as replica_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
-  
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
-      ROLLBACK;
-      SELECT 0 as replica_id, 'Unknown error occured' as msg;
-  END;
-    
     
   START TRANSACTION;
   INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)
@@ -972,7 +952,7 @@ BEGIN
 
   COMMIT;
   
-  SELECT replica_id, 'OK' as msg;
+  SELECT replica_id;
  
 END //
 DELIMITER ;
@@ -1080,7 +1060,7 @@ BEGIN
 
   UPDATE FC_Replicas SET Status = status_id WHERE FileID = file_id AND SEID = se_id;
   
-  SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as msg;
+  SELECT ROW_COUNT() as affected;
 
 END //
 DELIMITER ;
@@ -1102,10 +1082,7 @@ CREATE PROCEDURE ps_set_replica_host
 BEGIN
   DECLARE file_size INT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
+
   
 
   SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
@@ -1116,7 +1093,7 @@ BEGIN
     UPDATE FC_Replicas SET SEID = new_se_id WHERE FileID = file_id AND SEID = old_se_id;
   COMMIT;
 
-  SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as msg;
+  SELECT ROW_COUNT() as affected;
 
 END //
 DELIMITER ;
@@ -1133,14 +1110,10 @@ DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
 (IN  file_id INT, IN in_uid INT) 
 BEGIN
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
 
   UPDATE FC_Files SET UID = in_uid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
  
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1157,14 +1130,11 @@ DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
 (IN  file_id INT, IN in_gid INT) 
 BEGIN
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
+
   
   UPDATE FC_Files SET GID = in_gid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
   
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1181,14 +1151,11 @@ DELIMITER //
 CREATE PROCEDURE ps_set_file_status
 (IN  file_id INT, IN status_id INT) 
 BEGIN
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
+
 
   UPDATE FC_Files SET Status = status_id, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
 
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1208,7 +1175,7 @@ BEGIN
 
   UPDATE FC_Files SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
 
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;

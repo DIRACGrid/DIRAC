@@ -277,7 +277,7 @@ class ReqClient( Client ):
     self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestID )
     fileStatus = self.requestManager().getRequestFileStatus( int( requestID ), lfns )
     if not fileStatus["OK"]:
-      self.log.error( "getRequestFileStatus: unable to get file status for request",
+      self.log.verbose( "getRequestFileStatus: unable to get file status for request",
                       "request: '%s' %s" % ( requestID, fileStatus["Message"] ) )
     return fileStatus
 

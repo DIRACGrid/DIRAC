@@ -303,6 +303,45 @@ class FileManager( FileManagerBase ):
       guidDict[guid] = fileID
     return S_OK(guidDict)
 
+
+
+
+  def getLFNForGUID( self, guids, connection = False ):
+    """ Returns the lfns matching given guids"""
+
+    connection = self._getConnection( connection )
+    if not guids:
+      return S_OK( {} )
+    if type( guids ) not in [ListType, TupleType]:
+      guids = [guids]
+    req = "SELECT f.FileID, f.FileName, fi.GUID, f.DirID FROM FC_FileInfo fi JOIN FC_Files f on fi.FileID = f.FileID WHERE GUID IN (%s)" % stringListToString( guids )
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    
+
+    fileIDguid = {}
+    dirIDFileIDs = {}
+    fileIDName = {}
+    for fileID, fileName, guid, dirID in res['Value']:
+      fileIDguid[fileID] = guid
+      dirIDFileIDs.setdefault( dirID, [] ).append( fileID )
+      fileIDName[fileID] = fileName
+
+    res = self.db.dtree.getDirectoryPaths( dirIDFileIDs.keys() )
+    if not res['OK']:
+      return res
+    
+    dirIDName = res['Value']
+    
+    guidLFN = dict( [ ( fileIDguid[fId], os.path.join( dirIDName[dId], fileIDName[fId] ) )
+                        for dId in dirIDName
+                        for fId in dirIDFileIDs[dId]] )
+    failedGuid = set( guids ) - set( guidLFN )
+    failed = dict.fromkeys( failedGuid, "GUID does not exist" ) if failedGuid else {}
+
+    return S_OK( {"Successful" : guidLFN, "Failed" : failed} )
+
   ######################################################
   #
   # _deleteFiles related methods
