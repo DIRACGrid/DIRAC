@@ -23,6 +23,20 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 
+# Function to be used as a decorator for timing other functions
+def timeThis( method ):
+
+  def timed( *args, **kw ):
+    ts = time.time()
+    result = method( *args, **kw )
+    te = time.time()
+
+    gLogger.verbose( "Exec time === ", " %2.2f sec - function %r arguments len: %d" % ( te - ts, method.__name__, len( kw ) ) )
+    return result
+
+  return timed
+
+
 class PluginUtilities( object ):
   """
   Utility class used by plugins
@@ -54,6 +68,7 @@ class PluginUtilities( object ):
     self.params = {}
     self.groupSize = 0
     self.maxFiles = 0
+    self.cachedLFNSize = {}
     if transInThread is None:
       self.transInThread = {}
     else:
@@ -93,6 +108,7 @@ class PluginUtilities( object ):
 
 
 
+  @timeThis
   def groupByReplicas( self, files, status ):
     """
     Generates tasks based on the location of the input data
@@ -151,6 +167,71 @@ class PluginUtilities( object ):
 
     return S_OK( tasks )
 
+  @timeThis
+  def groupBySize( self, files, status ):
+    """
+    Generate a task for a given amount of data
+    """
+    if not self.groupSize:
+      self.groupSize = float( self.getPluginParam( 'GroupSize', 1 ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
+    requestedSize = self.groupSize
+    flush = ( status == 'Flush' )
+    self.logVerbose( "groupBySize: %d files, groupSize %d, flush %s" % ( len( files ), self.groupSize, flush ) )
+    if not self.maxFiles:
+      self.maxFiles = self.getPluginParam( 'MaxFiles', 100 )
+    maxFiles = self.maxFiles
+    # Get the file sizes
+    res = self.getFileSize( files.keys() )
+    if not res['OK']:
+      return res
+    fileSizes = res['Value']
+    tasks = []
+    nTasks = 0
+    # Group files by SE
+    files = files.copy()
+    for groupSE in ( True, False ):
+      if not files:
+        break
+      seFiles = getFileGroups( files, groupSE = groupSE )
+      for replicaSE in sorted( seFiles ) if groupSE else sortSEs( seFiles ):
+        lfns = seFiles[replicaSE]
+        lfnsInTasks = []
+        taskLfns = []
+        taskSize = 0
+        lfns = sorted( lfns, key = fileSizes.get )
+        for lfn in lfns:
+          size = fileSizes.get( lfn, 0 )
+          if size:
+            if size > requestedSize:
+              tasks.append( ( replicaSE, [lfn] ) )
+              lfnsInTasks.append( lfn )
+            else:
+              taskSize += size
+              taskLfns.append( lfn )
+              if ( taskSize > requestedSize ) or ( len( taskLfns ) >= maxFiles ):
+                tasks.append( ( replicaSE, taskLfns ) )
+                lfnsInTasks += taskLfns
+                taskLfns = []
+                taskSize = 0
+        if flush and taskLfns:
+          tasks.append( ( replicaSE, taskLfns ) )
+          lfnsInTasks += taskLfns
+        # Remove files from global list
+        for lfn in lfnsInTasks:
+          files.pop( lfn )
+        if not groupSE:
+          # Remove files from other SEs
+          for se in [se for se in seFiles if se != replicaSE]:
+            seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
+        # Remove the selected files from the size cache
+        self.clearCachedFileSize( lfnsInTasks )
+      self.logVerbose( "groupBySize: %d tasks created with groupSE %s" % ( len( tasks ) - nTasks, str( groupSE ) ) )
+      self.logVerbose( "groupBySize: %d files have not been included in tasks" % len( files ) )
+      nTasks = len( tasks )
+
+    self.logVerbose( "Grouped %d files by size" % len( files ) )
+    return S_OK( tasks )
+
 
   def getExistingCounters( self, normalise = False, requestedSites = [] ):
     res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'],
@@ -176,29 +257,43 @@ class PluginUtilities( object ):
       usageDict = self._normaliseShares( usageDict )
     return S_OK( usageDict )
 
+  @timeThis
   def getFileSize( self, lfns ):
     """ Get file size from a cache, if not from the catalog
+    #FIXME: have to fill the cachedLFNSize!
     """
     fileSizes = {}
-    startTime1 = time.time()
     for lfn in [lfn for lfn in lfns if lfn in self.cachedLFNSize]:
       fileSizes[lfn] = self.cachedLFNSize[lfn]
     if fileSizes:
       self.logVerbose( "Cache hit for File size for %d files" % len( fileSizes ) )
     lfns = [lfn for lfn in lfns if lfn not in self.cachedLFNSize]
     if lfns:
-      startTime = time.time()
-      res = self.fc.getFileSize( lfns )
-      if not res['OK']:
-        return S_ERROR( "Failed to get sizes for all files: " % res['Message'] )
-      if res['Value']['Failed']:
-        errorReason = sorted( set( res['Value']['Failed'].values() ) )
-        self.logWarn( "Failed to get sizes for %d files:" % len( res['Value']['Failed'] ), errorReason )
-      fileSizes.update( res['Value']['Successful'] )
-      self.cachedLFNSize.update( ( res['Value']['Successful'] ) )
-      self.logVerbose( "Timing for getting size of %d files from catalog: %.3f seconds" % ( len( lfns ), ( time.time() - startTime ) ) )
-    self.logVerbose( "Timing for getting size of files: %.3f seconds" % ( time.time() - startTime1 ) )
+      fileSizes = self._getFileSizeFromCatalog( lfns, fileSizes )
     return S_OK( fileSizes )
+
+  @timeThis
+  def _getFileSizeFromCatalog( self, lfns, fileSizes ):
+    """ 
+    Get file size from the catalog 
+    """
+    res = self.fc.getFileSize( lfns )
+    if not res['OK']:
+      return S_ERROR( "Failed to get sizes for all files: " % res['Message'] )
+    if res['Value']['Failed']:
+      errorReason = sorted( set( res['Value']['Failed'].values() ) )
+      self.logWarn( "Failed to get sizes for %d files:" % len( res['Value']['Failed'] ), errorReason )
+    fileSizes.update( res['Value']['Successful'] )
+    self.cachedLFNSize.update( ( res['Value']['Successful'] ) )
+    self.logVerbose( "Got size of %d files from catalog" % len( lfns ) )
+    return fileSizes
+
+  def clearCachedFileSize( self, lfns ):
+    """ Utility function
+    """
+    for lfn in [lfn for lfn in lfns if lfn in self.cachedLFNSize]:
+      self.cachedLFNSize.pop( lfn )
+
 
   def getPluginParam( self, name, default = None ):
     """ Get plugin parameters using specific settings or settings defined in the CS
@@ -278,3 +373,4 @@ def sortSEs( ses ):
   diskSEs = [se for se in ses if seSvcClass[se]]
   tapeSEs = [se for se in ses if se not in diskSEs]
   return sorted( diskSEs ) + sorted( tapeSEs )
+

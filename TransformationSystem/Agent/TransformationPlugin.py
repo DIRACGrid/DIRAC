@@ -78,6 +78,17 @@ class TransformationPlugin( PluginBase ):
     """
     return self._groupBySize()
 
+  def _groupBySize( self, files = None ):
+    """
+    Generate a task for a given amount of data at a (set of) SE
+    """
+    if not files:
+      files = self.data
+    else:
+      files = dict( zip( files, [self.data[lfn] for lfn in files] ) )
+    return self.util.groupBySize( files, self.params['Status'] )
+
+
   def _Broadcast( self ):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs.
     """
@@ -243,43 +254,12 @@ class TransformationPlugin( PluginBase ):
         chosenSite = site
     return S_OK( chosenSite )
 
-  def _groupBySize( self ):
-    """ Generate a task for a given amount of data """
-    if not self.params:
-      return S_ERROR( "TransformationPlugin._BySize: The 'BySize' plug-in requires parameters." )
-    status = self.params['Status']
-    requestedSize = float( self.params['GroupSize'] ) * 1000 * 1000 * 1000 # input size in GB converted to bytes
-    maxFiles = self.params.get( 'MaxFiles', 100 )
-    # Group files by SE
-    fileGroups = getFileGroups( self.data )
-    # Get the file sizes
-    res = self.util.getFileSize( self.data )
-    if not res['OK']:
-      return S_ERROR( "Failed to get sizes for files" )
-    if res['Value']['Failed']:
-      return S_ERROR( "Failed to get sizes for all files" )
-    fileSizes = res['Value']['Successful']
-    tasks = []
-    for replicaSE, lfns in fileGroups.items():
-      taskLfns = []
-      taskSize = 0
-      for lfn in lfns:
-        taskSize += fileSizes[lfn]
-        taskLfns.append( lfn )
-        if ( taskSize > requestedSize ) or ( len( taskLfns ) >= maxFiles ):
-          tasks.append( ( replicaSE, taskLfns ) )
-          taskLfns = []
-          taskSize = 0
-      if ( status == 'Flush' ) and taskLfns:
-        tasks.append( ( replicaSE, taskLfns ) )
-    return S_OK( tasks )
-
 
   @classmethod
   def _getSiteForSE( cls, se ):
     """ Get site name for the given SE
     """
-    result = getSitesForSE( se, gridName = 'LCG' )
+    result = getSitesForSE( se )
     if not result['OK']:
       return result
     if result['Value']:
@@ -292,7 +272,7 @@ class TransformationPlugin( PluginBase ):
     """
     sites = []
     for se in seList:
-      result = getSitesForSE( se, gridName = 'LCG' )
+      result = getSitesForSE( se )
       if result['OK']:
         sites += result['Value']
     return sites
