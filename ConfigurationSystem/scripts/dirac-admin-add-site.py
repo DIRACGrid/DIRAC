@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-admin-add-site
 # Author : Andrew C. Smith
 ########################################################################
@@ -13,11 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base                                      import Script
 from DIRAC.ConfigurationSystem.Client.CSAPI               import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient      import NotificationClient
-from DIRAC.Core.Security.ProxyInfo                        import getProxyInfo
 from DIRAC                                                import exit as DIRACExit, gConfig, gLogger
-from DIRAC.Core.Utilities.List                            import intListToString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry    import getPropertiesForGroup
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping          import getDIRACSiteName
 
 if __name__ == "__main__":
@@ -43,7 +38,7 @@ if __name__ == "__main__":
   ces = args[2:]
   try:
     diracGridType, place, country = diracSiteName.split( '.' )
-  except:
+  except ValueError:
     gLogger.error( "The DIRACSiteName should be of the form GRID.LOCATION.COUNTRY for example LCG.CERN.ch" )
     DIRACExit( -1 )
   
@@ -53,15 +48,15 @@ if __name__ == "__main__":
     if result['Value']: 
       if len( result['Value'] ) > 1:
         gLogger.notice( '%s GOC site name is associated with several DIRAC sites:' % gridSiteName )
-        for i,dsite in enumerate( result['Value'] ):
-          gLogger.notice( '%d: %s' % ( i, dsite ) )
+        for i, dSite in enumerate( result['Value'] ):
+          gLogger.notice( '%d: %s' % ( i, dSite ) )
         inp = raw_input( 'Enter your choice number: ' )  
         try:
           inp = int( inp )
-        except:
+        except ValueError:
           gLogger.error( 'You should enter an integer number' )
           DIRACExit( -1 )
-        if inp >= 0 and inp < len( result['Value'] ):
+        if 0 <= inp < len( result['Value'] ):
           diracCSSite = result['Value'][inp]
         else:
           gLogger.error( 'Number out of range: %d' % inp ) 
