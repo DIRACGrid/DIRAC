@@ -1,10 +1,18 @@
-[v6r13-pre12]
+[v6r13-pre13]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
 
+*Configuration
+NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
+     shifter in the CS
+
 *Core
 NEW: Changes to make the DISET protocol IP V6 ready
+CHANGE: BaseClient - retry service call on another instance in case of failure
+CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport layer
+CHANGE: SocketInfo - retry 3 times in case of handshaking error
+CHANGE: MySQL - possibility to specify charset in the table definition
 
 *DMS
 NEW: Native use of the FTS3 services
