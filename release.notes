@@ -1,3 +1,28 @@
+[v6r12p20]
+
+*DMS
+FIX: DataManager - more informative log messages, checking return structure
+FIX: FileCatalog - make exists() behave like LFC file catalog client by checking
+     the unicity of supplied GUID if any
+FIX: StorageElementProxyHandler - do not remove the cache directory
+
+*Framework
+FIX: SystemAdministratorClient - increase the timeout to 300 for the software update     
+
+*RMS
+FIX: Operation.py - set Operation Scheduled if one file is Scheduled
+CHANGE: Request - group ReplicateAndRegister operations together for failover 
+        requests: it allows to launch all FTS jobs at once
+
+*Resources
+FIX: LcgFileCatalogClient - fix longstanding problem in LFC when several files 
+     were not available (only one was returned) 
+
+*TS
+BUGFIX: TransformationCleaning,ValidateOutputDataAgent - interpret correctly
+        the result of getTransformationParameters() call
+FIX: TaskManager - fix exception in RequestTaskAgent        
+
 [v6r12p19]
 
 *Core
