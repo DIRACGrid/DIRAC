@@ -247,13 +247,16 @@ class RequestTasks( TaskBase ):
       # FIXME: trying to see if it is in the old system
       newStatus = self.__getRequestStatusOLDSystem( requestName )
       # FIXME: and in the new, if it is not in the previous one
-      if not newStatus:
+      if not newStatus['OK']:
         newStatus = self.__getRequestStatus( requestName )
 
-      if not newStatus:
-        self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request" )
-      elif newStatus != oldStatus:
-        updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
+      if not newStatus['OK']:
+        log = self.log.verbose if 'not exist' in newStatus['Message'] else self.log.warn
+        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s: %s' % ( requestName, newStatus['Message'] ) )
+      else:
+        newStatus = newStatus['Value']
+        if newStatus != oldStatus:
+          updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
   def __getRequestStatusOLDSystem( self, requestName ):
@@ -261,23 +264,15 @@ class RequestTasks( TaskBase ):
     """
     # FIXME: this should disappear
     try:
-      res = RequestClient().getRequestStatus( requestName )
-      if res['OK']:
-        return res['Value']['RequestStatus']
-      else:
-        return ''
+      return RequestClient().getRequestStatus( requestName )
     except RuntimeError:
-      return ''
+      return S_ERROR( 'RuntimeError' )
 
   def __getRequestStatus( self, requestName ):
     """ Getting the Request status from the new RMS
     """
     # FIXME: this should stay
-    res = self.requestClient.getRequestStatus( requestName )
-    if res['OK']:
-      return res['Value']
-    else:
-      return ''
+    return self.requestClient.getRequestStatus( requestName )
 
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
@@ -308,14 +303,15 @@ class RequestTasks( TaskBase ):
       # FIXME: trying to see if it is in the old system
       statusDict = self.__getRequestFileStatusOLDSystem( requestName, lfnDict.keys() )
       # FIXME: and in the new, if it is not in the previous one
-      if not statusDict:
+      if not statusDict['OK']:
         statusDict = self.__getRequestFileStatus( requestName, lfnDict.keys() )
 
-      if not statusDict:
-        log = self.log.verbose if 'not exists' in statusDict['Message'] else self.log.warn
-        log( "getSubmittedFileStatus: Failed to get files status for request", statusDict['Message'] )
+      if not statusDict['OK']:
+        log = self.log.verbose if 'not exist' in statusDict['Message'] else self.log.warn
+        log( "getSubmittedFileStatus: Failed to get files status for request", '%s: %s' % ( requestName, statusDict['Message'] ) )
         continue
 
+      statusDict = statusDict['Value']
       for lfn, newStatus in statusDict.items():
         if newStatus == lfnDict[lfn]:
           pass
@@ -330,23 +326,15 @@ class RequestTasks( TaskBase ):
     """
     # FIXME: this should disappear
     try:
-      res = RequestClient().getRequestFileStatus( requestName, lfns )
-      if res['OK']:
-        return res['Value']
-      else:
-        return {}
+      return RequestClient().getRequestFileStatus( requestName, lfns )
     except RuntimeError:
-      return {}
+      return S_ERROR( 'RuntimeError' )
 
   def __getRequestFileStatus( self, requestName, lfns ):
     """ Getting the Request status from the new RMS
     """
     # FIXME: this should stay
-    res = self.requestClient.getRequestFileStatus( requestName, lfns )
-    if res['OK']:
-      return res['Value']
-    else:
-      return {}
+    return self.requestClient.getRequestFileStatus( requestName, lfns )
 
 
 class WorkflowTasks( TaskBase ):

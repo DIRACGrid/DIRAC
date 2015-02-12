@@ -411,7 +411,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     if 'RemoveFile' in transDict['Body']:
       # When removing files, we don't care about their replicas
       return S_OK( dict.fromkeys( lfns, ['None'] ) )
-    clearCacheFile = os.path.join( self.workDirectory, 'ClearCache_%s' % str( transID ) )
+    clearCacheFile = os.path.join( self.controlDirectory, 'ClearCache_%s' % str( transID ) )
     try:
       clearCache = os.path.exists( clearCacheFile )
       if clearCache:

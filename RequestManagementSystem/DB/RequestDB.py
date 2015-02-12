@@ -297,7 +297,7 @@ class RequestDB( DB ):
       requestID = reqID.get( "RequestID" )
       status = reqID.get( "Status" )
       if not all( ( requestID, status ) ):
-        return S_ERROR( "getRequest: request '%s' not exists" % requestName )
+        return S_ERROR( "getRequest: Request '%s' does not exist" % requestName )
       if requestID and status and status == "Assigned" and assigned:
         return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % requestName )
     else:
@@ -366,21 +366,21 @@ class RequestDB( DB ):
     """
 
     # r_RequestID : RequestID, r_LastUpdate : LastUpdate...
-    requestAttrDict = dict ( ("r_%s"%r, r) for r in Request.tableDesc()["Fields"])
+    requestAttrDict = dict ( ( "r_%s" % r, r ) for r in Request.tableDesc()["Fields"] )
     # o_RequestID : RequestID, o_OperationID : OperationID...
-    operationAttrDict = dict ( ("o_%s"%o, o) for o in Operation.tableDesc()["Fields"])
+    operationAttrDict = dict ( ( "o_%s" % o, o ) for o in Operation.tableDesc()["Fields"] )
     # f_OperationID : OperationID, f_FileID : FileID...
-    fileAttrDict = dict ( ("f_%s"%f, f) for f in File.tableDesc()["Fields"])
+    fileAttrDict = dict ( ( "f_%s" % f, f ) for f in File.tableDesc()["Fields"] )
 
     # o.OperationID as o_OperationID, ..., r_RequestID, ..., f_FileID, ...
-    allFieldsStr = ",".join([ "o.%s as %s"%(operationAttrDict[o], o) for o in operationAttrDict]\
-                            + requestAttrDict.keys() + fileAttrDict.keys())
+    allFieldsStr = ",".join( [ "o.%s as %s" % ( operationAttrDict[o], o ) for o in operationAttrDict]\
+                            + requestAttrDict.keys() + fileAttrDict.keys() )
 
     # RequestID as r_RequestID, LastUpdate as r_LastUpdate, ...
-    requestAttrStr = ",".join([ "%s as %s"%(requestAttrDict[r], r) for r in requestAttrDict])
+    requestAttrStr = ",".join( [ "%s as %s" % ( requestAttrDict[r], r ) for r in requestAttrDict] )
 
     # OperationID as f_OperationID, FileID as f_FileID...
-    fileAttrStr = ",".join([ "%s as %s"%(fileAttrDict[f], f) for f in fileAttrDict])
+    fileAttrStr = ",".join( [ "%s as %s" % ( fileAttrDict[f], f ) for f in fileAttrDict] )
 
 
     # Selects all the Request (limited to numberOfRequest, sorted by LastUpdate) , Operation and File information.
