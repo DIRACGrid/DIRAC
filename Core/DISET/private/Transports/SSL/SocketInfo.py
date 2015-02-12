@@ -20,6 +20,7 @@ class SocketInfo:
 
 
   def __init__( self, infoDict, sslContext = None ):
+    self.__retry = 0
     self.infoDict = infoDict
     #HACK:DISABLE CRLS!!!!!
     self.infoDict[ 'IgnoreCRLs' ] = True
@@ -317,12 +318,23 @@ class SocketInfo:
       except GSI.SSL.WantWriteError:
         time.sleep( 0.001 )
       except GSI.SSL.Error, v:
-        #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
-        gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
       except Exception, v:
         gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
+        
     credentialsDict = self.gatherPeerCredentials()
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]

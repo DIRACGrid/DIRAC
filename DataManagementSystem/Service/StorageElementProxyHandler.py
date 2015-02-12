@@ -83,7 +83,7 @@ class HttpThread( threading.Thread ):
   """ 
   .. class:: HttpThread
 
-  Single daemon thread runing HttpStorageAccessHandler.
+  Single daemon thread running HttpStorageAccessHandler.
   """
   def __init__( self, port, path ):
     """ c'tor """
@@ -166,10 +166,10 @@ class StorageElementProxyHandler(RequestHandler):
       gLogger.error("prepareFile: Failed to put local file to storage.", res['Message'] )
     # Clear the local cache
     try:
-      shutil.rmtree(putFileDir)
-      gLogger.debug("Cleared existing putFile cache")
+      gLogger.debug("Removing temporary file", localFileName )
+      os.remove( localFileName )
     except Exception, x:
-      gLogger.exception("Failed to remove destination dir.", putFileDir, x )
+      gLogger.exception("Failed to remove local file", localFileName, x )
     return res
 
   types_prepareFile = [ StringType, StringType ]
@@ -189,13 +189,8 @@ class StorageElementProxyHandler(RequestHandler):
   
     # Clear the local cache
     getFileDir = "%s/getFile" % BASE_PATH
-    if os.path.exists(getFileDir):
-      try:
-        shutil.rmtree(getFileDir)
-        gLogger.debug("Cleared existing getFile cache")
-      except Exception, x:
-        gLogger.exception("Failed to remove destination directory.", getFileDir, x )
-    os.mkdir(getFileDir)        
+    if not os.path.exists(getFileDir):
+      os.mkdir(getFileDir)        
    
     # Get the file to the cache 
     try:
@@ -310,6 +305,10 @@ class StorageElementProxyHandler(RequestHandler):
     result = fileHelper.FDToNetwork(fileDescriptor)
     if not result['OK']:
       return S_ERROR('Failed to get file %s' % fileID )
+    
+    if os.path.exists(file_path):
+      os.remove( file_path )
+    
     return result
 
   def transfer_fromClient( self, fileID, token, fileSize, fileHelper ):

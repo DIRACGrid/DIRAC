@@ -1,16 +1,25 @@
-########################################################################
-# $HeadURL$
-########################################################################
+""" CSAPI exposes update functionalities to the Configuration.
+
+    Most of these functions can only be done by administrators
+"""
+
 __RCSID__ = "$Id$"
+
 import types
-from DIRAC.ConfigurationSystem.private.Modificator import Modificator
+
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.private.Modificator import Modificator
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-class CSAPI:
+
+class CSAPI( object ):
+  """ CSAPI objects need an initialization phase
+  """
 
   def __init__( self ):
     """
@@ -113,12 +122,14 @@ class CSAPI:
       return self.__initialized
     return S_OK( self.__csMod.getSections( "%s/Hosts" % self.__baseSecurity ) )
 
-  def describeUsers( self, users = False ):
+  def describeUsers( self, users = None ):
+    if users is None: users = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__describeEntity( users ) )
 
-  def describeHosts( self, hosts = False ):
+  def describeHosts( self, hosts = None ):
+    if hosts is None: hosts = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__describeEntity( hosts, True ) )
@@ -154,10 +165,11 @@ class CSAPI:
       return self.__initialized
     return S_OK( self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ) )
 
-  def describeGroups( self, mask = False ):
+  def describeGroups( self, mask = None ):
     """
     List all groups that are in the mask (or all if no mask) with their properties
     """
+    if mask is None: mask = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     groups = [ group for group in self.__csMod.getSections( "%s/Groups" % self.__baseSecurity ) if not mask or ( mask and group in mask ) ]
@@ -197,7 +209,7 @@ class CSAPI:
     Remove user from a group
     """
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-    if usersInGroup != None:
+    if usersInGroup is not None:
       userList = List.fromChar( usersInGroup, "," )
       userPos = userList.index( username )
       userList.pop( userPos )
@@ -208,7 +220,7 @@ class CSAPI:
     Add user to a group
     """
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-    if usersInGroup != None:
+    if usersInGroup is not None:
       userList = List.fromChar( usersInGroup )
       if username not in userList:
         userList.append( username )
@@ -389,6 +401,85 @@ class CSAPI:
     gLogger.info( "Registered host %s" % hostname )
     self.__csModified = True
     return S_OK( True )
+
+  def addShifter( self, shifters = None ):
+    """
+    Adds or modify one or more shifters. Also, adds the shifter section in case this is not present.
+    Shifter identities are used in several places, mostly for running agents
+
+    shifters should be in the form {'ShifterRole':{'User':'aUserName', 'Group':'aDIRACGroup'}}
+
+    :return: S_OK/S_ERROR
+    """
+
+    def getOpsSection( ):
+      """
+      Where is the shifters section?
+      """
+      vo = CSGlobals.getVO( )
+      setup = CSGlobals.getSetup( )
+
+      if vo:
+        res = gConfig.getSections( '/Operations/%s/%s/Shifter' % (vo, setup) )
+        if res['OK']:
+          return '/Operations/%s/%s/Shifter' % (vo, setup)
+
+        res = gConfig.getSections( '/Operations/%s/Defaults/Shifter' % vo )
+        if res['OK']:
+          return '/Operations/%s/Defaults/Shifter' % vo
+
+      else:
+        res = gConfig.getSections( '/Operations/%s/Shifter' % setup )
+        if res['OK']:
+          return '/Operations/%s/Shifter' % setup
+
+        res = gConfig.getSections( '/Operations/Defaults/Shifter' )
+        if res['OK']:
+          return '/Operations/Defaults/Shifter'
+
+      raise RuntimeError( "no shifter section???" )
+
+    if shifters is None: shifters = {}
+    if not self.__initialized['OK']:
+      return self.__initialized
+
+    # get current shifters
+    opsH = Operations( )
+    currentShifterRoles = opsH.getSections( 'Shifter' )
+    if not currentShifterRoles['OK']:
+      # we assume the shifter section is not present
+      currentShifterRoles = []
+    else:
+      currentShifterRoles = currentShifterRoles['Value']
+    currentShiftersDict = {}
+    for currentShifterRole in currentShifterRoles:
+      currentShifter = opsH.getOptionsDict( 'Shifter/%s' % currentShifterRole )
+      if not currentShifter['OK']:
+        return currentShifter
+      currentShifter = currentShifter['Value']
+      currentShiftersDict[currentShifterRole] = currentShifter
+
+    # Removing from shifters what does not need to be changed
+    for sRole in shifters:
+      if sRole in currentShiftersDict:
+        if currentShiftersDict[sRole] == shifters[sRole]:
+          shifters.pop( sRole )
+
+    #shifters section to modify
+    section = getOpsSection( )
+
+    #add or modify shifters
+    for shifter in shifters:
+      self.__csMod.removeSection( section + '/' + shifter )
+      self.__csMod.createSection( section + '/' + shifter )
+      self.__csMod.createSection( section + '/' + shifter + '/' + 'User' )
+      self.__csMod.createSection( section + '/' + shifter + '/' + 'Group' )
+      self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'User', shifters[shifter]['User'] )
+      self.__csMod.setOptionValue( section + '/' + shifter + '/' + 'Group', shifters[shifter]['Group'] )
+
+    self.__csModified = True
+    return S_OK( True )
+
 
   def modifyHost( self, hostname, properties, createIfNonExistant = False ):
     """
@@ -612,7 +703,7 @@ class CSAPI:
     if not self.__csMod.removeOption( optionPath ):
       return S_ERROR( "Couldn't delete option %s" % optionPath )
     self.__csModified = True
-    return S_OK( 'Deleted option %s' % ( optionPath ) )
+    return S_OK( 'Deleted option %s' % optionPath )
 
   def createSection( self, sectionPath, comment = "" ):
     """ Create a new section
@@ -632,6 +723,33 @@ class CSAPI:
       return self.__initialized
     if not self.__csMod.removeSection( sectionPath ):
       return S_ERROR( "Could not delete section %s " % sectionPath )
+    self.__csModified = True
+    return S_OK( )
+
+  def copySection( self, originalPath, targetPath ):
+    """ Copy a whole section to a new location
+    """
+    if not self.__initialized['OK']:
+      return self.__initialized
+    cfg = self.__csMod.getCFG( )
+    sectionCfg = cfg[originalPath]
+    result = self.createSection( targetPath )
+    if not result['OK']:
+      return result
+    if not self.__csMod.mergeSectionFromCFG( targetPath, sectionCfg ):
+      return S_ERROR( "Could not merge cfg into section %s" % targetPath )
+    self.__csModified = True
+    return S_OK( )
+
+  def moveSection( self, originalPath, targetPath ):
+    """  Move a whole section to a new location
+    """
+    result = self.copySection( originalPath, targetPath )
+    if not result['OK']:
+      return result
+    result = self.delSection( originalPath )
+    if not result['OK']:
+      return result
     self.__csModified = True
     return S_OK()
   

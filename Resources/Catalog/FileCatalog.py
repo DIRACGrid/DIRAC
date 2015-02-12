@@ -16,7 +16,7 @@ class FileCatalog( object ):
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups'] 
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
   
   ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata', 'getDirectoryMetadata',
                      'getFileUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
@@ -110,6 +110,7 @@ class FileCatalog( object ):
       
       method = getattr( oCatalog, self.call )
       res = method( fileInfo, *parms, **kws )
+
       if not res['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs

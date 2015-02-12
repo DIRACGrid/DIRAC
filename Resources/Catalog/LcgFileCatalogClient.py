@@ -23,6 +23,15 @@ importedLFC = None
 # These are some functions used by all methods in the class
 #
 
+def setLfnReplicas( lfn, replicas, successful, failed ):
+  if not lfn:
+    return
+  if replicas:
+    successful[lfn] = replicas.copy()
+    replicas.clear()
+  elif lfn not in failed:
+    failed[lfn] = 'No active replica'
+
 def getClientCertInfo():
   res = getProxyInfo( False, False )
   if not res['OK']:
@@ -516,7 +525,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not res['OK']:
       return res
     lfns = res['Value']
-    lfnChunks = breakListIntoChunks( lfns.keys(), 2 )
+    lfnChunks = breakListIntoChunks( lfns.keys(), 1000 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
     if False and len( lfnChunks ) > 2:
@@ -541,39 +550,31 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       it = iter( lfnList )
       replicas = {}
       # This is useless but makes pylinit happy as lfn is defined in the loop when the guid changes
-      lfn = lfnList[0]
+      lfn = None
       for oReplica in replicaList:
         if oReplica.errcode != 0:
           if ( oReplica.guid == '' ) or ( oReplica.guid != guid ):
-            if replicas:
-              successful[lfn] = replicas
-              replicas = {}
+            setLfnReplicas( lfn, replicas, successful, failed )
             lfn = it.next()
             failed[lfn] = lfc.sstrerror( oReplica.errcode )
             guid = oReplica.guid
         elif oReplica.sfn == '':
-          if replicas:
-            successful[lfn] = replicas
-            replicas = {}
+          setLfnReplicas( lfn, replicas, successful, failed )
           lfn = it.next()
           failed[lfn] = 'File has zero replicas'
           guid = oReplica.guid
         else:
           # This is where we change lfn for good!
-          if ( oReplica.guid != guid ):
-            if replicas:
-              successful[lfn] = replicas
-              replicas = {}
+          if oReplica.guid != guid:
+            setLfnReplicas( lfn, replicas, successful, failed )
             lfn = it.next()
             guid = oReplica.guid
           if ( oReplica.status != 'P' ) or allStatus:
             se = oReplica.host
             pfn = oReplica.sfn  # .strip()
             replicas[se] = pfn
-      if replicas:
-        successful[lfn] = replicas
-      elif lfn not in failed:
-        failed[lfn] = 'No active replica'
+      # This is for the last file in the list
+      setLfnReplicas( lfn, replicas, successful, failed )
     if created:
       self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
@@ -895,7 +896,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       if not res['OK']:
         continue
     lfc.lfc_umask( 0000 )
-    for lfnList in breakListIntoChunks( sorted( lfns ), 1000 ):
+    for lfnList in breakListIntoChunks( lfns, 1000 ):
       fileChunk = []
       for lfn in list( lfnList ):
         lfnInfo = lfns[lfn]
@@ -1352,6 +1353,24 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     """
     error = lfc.lfc_access( self.__fullLfn( lfn ), 0 )
     return returnCode( error and lfc.cvar.serrno != 2, error == 0 )
+  
+  def getLFNForGUID(self, guids):
+    res = checkArgumentFormat( guids )
+    if not res['OK']:
+      return res
+    guids = res['Value']
+    guidLFN = {}
+    failed = {}
+
+    for guid in guids:
+      # I somehow have the feeling that lfnlist[0] of __getLfnForGUID
+      # could throw an exception if the guid does not exist in the DB
+      # but... not touching this black magic
+      try:
+        guidLFN[guid] = self.__getLfnForGUID( guid )['Value']
+      except Exception, _e:
+        failed[guid] = "GUID does not exist"
+    return S_OK( {"Successful" : guidLFN, "Failed" : failed} )
 
   def __getLfnForGUID( self, guid ):
     """ Resolve the LFN for a supplied GUID
@@ -1897,36 +1916,3 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return self.prefix + lfn
 
   # THIS IS NOT YET WORKING
-  def getReplicasNew( self, lfn, allStatus = False ):
-    """ Returns replicas for an LFN or list of LFNs
-    """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
-    lfnChunks = breakListIntoChunks( sorted( lfns ), 1000 )
-    # If we have less than three groups to query a session doesn't make sense
-    created = False
-    if len( lfnChunks ) > 2:
-      created = self.__openSession()
-      if created < 0:
-        return S_ERROR( "Error opening LFC session" )
-    failed = {}
-    successful = {}
-    for lfnList in lfnChunks:
-      value, replicaList = lfc.lfc_getreplicasl( lfnList, '' )
-      if value != 0:
-        for lfn in lfnList:
-          failed[lfn] = lfc.sstrerror( lfc.cvar.serrno )
-        continue
-      for oReplica in replicaList:
-        # TODO WORK OUT WHICH LFN THIS CORRESPONDS
-        status = oReplica.status
-        if ( status != 'P' ) or allStatus:
-          se = oReplica.host
-          pfn = oReplica.sfn  # .strip()
-          # replicas[se] = pfn
-    if created:
-      self.__closeSession()
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )

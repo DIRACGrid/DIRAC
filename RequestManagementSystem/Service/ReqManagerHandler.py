@@ -2,7 +2,7 @@
 # $HeadURL $
 # File: ReqManagerHandler.py
 ########################################################################
-""" 
+"""
 :mod: ReqManagerHandler
 
 .. module: ReqManagerHandler
@@ -88,16 +88,22 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestJSON: request serialized to JSON format
     """
-
-
     requestDict = json.loads( requestJSON )
     requestName = requestDict.get( "RequestID", requestDict.get( 'RequestName', "***UNKNOWN***" ) )
+    requestID = requestDict.get( "RequestID", 0 )
     request = Request( requestDict )
     optimized = request.optimize()
-    if optimized.get("Value", False):
-      gLogger.debug( "putRequest: request was optimized" )
+    if optimized.get( "Value", False ):
+      if request.RequestID == 0 and requestID != 0:
+        # A new request has been created, delete the old one
+        delete = cls.__requestDB.deleteRequest( request.RequestName )
+        if not delete['OK']:
+          return delete
+        gLogger.debug( "putRequest: request was optimized and removed for a new insertion" )
+      else:
+        gLogger.debug( "putRequest: request was optimized" )
     else:
-      gLogger.debug( "putRequest: request unchanged", optimized.get( "Message", "Nothing could be optimize" ) )
+      gLogger.debug( "putRequest: request unchanged", optimized.get( "Message", "Nothing could be optimized" ) )
 
     valid = cls.validate( request )
     if not valid["OK"]:

@@ -620,7 +620,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     
     client = SystemAdministratorClient( self.host, self.port )
     print "Software update can take a while, please wait ..."
-    result = client.updateSoftware( version, rootPath, lcgVersion )
+    result = client.updateSoftware( version, rootPath, lcgVersion, timeout = 300 )
     if not result['OK']:
       self.__errMsg( "Failed to update the software" )
       print result['Message']

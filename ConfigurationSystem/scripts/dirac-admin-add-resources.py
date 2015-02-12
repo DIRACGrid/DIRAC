@@ -11,11 +11,12 @@
 __RCSID__ = "$Id$"
 
 import signal
-import pprint
 import re
 import os
 from urlparse import urlparse
+
 from DIRAC.Core.Base import Script
+
 
 def processScriptSwitches():
   
@@ -48,12 +49,10 @@ def processScriptSwitches():
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getCEsFromCS, \
                                                        getGridSRMs, getSRMUpdates
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.Core.Utilities.Grid import ldapService, getBdiiSEInfo
-from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
 
 ceBdiiDict = None
@@ -132,8 +131,8 @@ def checkUnusedCEs():
         gLogger.notice( '\nEnter DIRAC site name in the form <domain>.<name>.%s\n' % country )
         diracSite = raw_input( '[<domain>.<name>.%s]: ' % country )
       try:
-        domain,siteName,country = diracSite.split('.')
-      except Exception, x:
+        _, _, _ = diracSite.split( '.' )
+      except ValueError:
         gLogger.error( 'ERROR: DIRAC site name does not follow convention: %s' % diracSite )
         continue
       diracSites = [diracSite]
@@ -261,7 +260,7 @@ def checkUnusedSEs():
   if result['OK']:
     csVOs = set( result['Value'] )
   else:
-    csVOs = set( [vo] ) 
+    csVOs = {vo}
 
   changeSetFull = set()
 

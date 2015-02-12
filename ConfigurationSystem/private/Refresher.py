@@ -138,20 +138,20 @@ class Refresher( threading.Thread ):
     gatewayList = getGatewayURLs( "Configuration/Server" )
     updatingErrorsList = []
     if gatewayList:
-      lInitialListOfServers = gatewayList
-      gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
+      initialServerList = gatewayList
+      gLogger.debug( "Using configuration gateway", str( initialServerList[0] ) )
     else:
-      lInitialListOfServers = gConfigurationData.getServers()
-      gLogger.debug( "Refreshing from list %s" % str( lInitialListOfServers ) )
+      initialServerList = gConfigurationData.getServers()
+      gLogger.debug( "Refreshing from list %s" % str( initialServerList ) )
       
     # If no servers in the initial list, we are supposed to use the local configuration only
-    if not lInitialListOfServers:
+    if not initialServerList:
       return S_OK()    
-      
-    lRandomListOfServers = List.randomize( lInitialListOfServers )
-    gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
 
-    for sServer in lRandomListOfServers:
+    randomServerList = List.randomize( initialServerList )
+    gLogger.debug( "Randomized server list is %s" % ", ".join( randomServerList ) )
+
+    for sServer in randomServerList:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       oClient = RPCClient( sServer,
                          useCertificates = gConfigurationData.useServerCertificate(),

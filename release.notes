@@ -108,13 +108,21 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre12]
+[v6r13-pre13]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
 
+*Configuration
+NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
+     shifter in the CS
+
 *Core
 NEW: Changes to make the DISET protocol IP V6 ready
+CHANGE: BaseClient - retry service call on another instance in case of failure
+CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport layer
+CHANGE: SocketInfo - retry 3 times in case of handshaking error
+CHANGE: MySQL - possibility to specify charset in the table definition
 
 *DMS
 NEW: Native use of the FTS3 services
@@ -136,6 +144,31 @@ NEW: GFAL2_StorageBase.py, GFAL2_SRM2Storage.py, GFAL2_XROOTStorage.py
 *RSS:
 NEW: dirac-admin-allow(ban)-se - added RemoveAccess status
 CHANGE: TokenAgent - added more info to the mail
+
+[v6r12p20]
+
+*DMS
+FIX: DataManager - more informative log messages, checking return structure
+FIX: FileCatalog - make exists() behave like LFC file catalog client by checking
+     the unicity of supplied GUID if any
+FIX: StorageElementProxyHandler - do not remove the cache directory
+
+*Framework
+FIX: SystemAdministratorClient - increase the timeout to 300 for the software update     
+
+*RMS
+FIX: Operation.py - set Operation Scheduled if one file is Scheduled
+CHANGE: Request - group ReplicateAndRegister operations together for failover 
+        requests: it allows to launch all FTS jobs at once
+
+*Resources
+FIX: LcgFileCatalogClient - fix longstanding problem in LFC when several files 
+     were not available (only one was returned) 
+
+*TS
+BUGFIX: TransformationCleaning,ValidateOutputDataAgent - interpret correctly
+        the result of getTransformationParameters() call
+FIX: TaskManager - fix exception in RequestTaskAgent        
 
 [v6r12p19]
 

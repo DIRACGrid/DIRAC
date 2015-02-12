@@ -399,7 +399,6 @@ class FileCatalogDB(DB):
 
       :return Successful/Failed dict.
     """
-
     res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
@@ -760,6 +759,23 @@ class FileCatalogDB(DB):
       
     return S_OK(resultDict) 
 
+  def getLFNForGUID( self, guids, credDict ):
+    """
+        Gets the lfns that match a list of guids
+        :param list lfns: list of guid to look for
+        :param creDict credential
+
+        :return S_OK({guid:lfn}) dict.
+    """
+
+    res = self._checkAdminPermission( credDict )
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR( "Permission denied" )
+    res = self.fileManager.getLFNForGUID( guids )
+
+    return res
   ########################################################################
   #
   #  Directory based Write methods

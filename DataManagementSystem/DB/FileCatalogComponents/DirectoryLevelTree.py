@@ -263,6 +263,9 @@ class DirectoryLevelTree(DirectoryTreeBase):
     dirs = dirIDList
     if type(dirIDList) != ListType:
       dirs = [dirIDList]
+
+    if not dirs:
+      return S_OK( {} )
       
     dirListString = ','.join( [ str(dir_) for dir_ in dirs ] )
 
