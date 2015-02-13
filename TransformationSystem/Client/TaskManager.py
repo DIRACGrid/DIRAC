@@ -41,6 +41,8 @@ class TaskBase( object ):
     else:
       self.log = logger
 
+    self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
+
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     return S_ERROR( "Not implemented" )
 
@@ -298,7 +300,7 @@ class WorkflowTasks( TaskBase ):
   '''
 
   def __init__( self, transClient = None, logger = None, submissionClient = None, jobMonitoringClient = None,
-                outputDataModule = None, jobClass = None, opsH = None ):
+                outputDataModule = None, jobClass = None, opsH = None, destinationPlugin = None ):
     ''' Generates some default objects.
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works:
         VOs can pass in their job class extension, if present
@@ -334,6 +336,12 @@ class WorkflowTasks( TaskBase ):
     else:
       self.outputDataModule = outputDataModule
 
+    if not destinationPlugin:
+      self.destinationPlugin = self.opsH.getValue( 'Transformations/DestinationPlugin', 'BySE' )
+    else:
+      self.destinationPlugin = destinationPlugin
+
+    self.destinationPlugin_o = None
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     ''' Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
@@ -358,6 +366,8 @@ class WorkflowTasks( TaskBase ):
       paramsDict = taskDict[taskNumber]
       site = oJob.workflow.findParameter( 'Site' ).getValue()
       paramsDict['Site'] = site
+      jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
+      paramsDict['JobType'] = jobType
       transID = paramsDict['TransformationID']
       self.log.verbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
       oJob.setOwner( owner )
@@ -410,9 +420,9 @@ class WorkflowTasks( TaskBase ):
 
   #############################################################################
 
-  def _handleDestination( self, paramsDict, getSitesForSE = None ):
-    ''' Handle Sites and TargetSE in the parameters
-    '''
+  def _handleDestination( self, paramsDict ):
+    """ Handle Sites and TargetSE in the parameters
+    """
 
     try:
       sites = ['ANY']
@@ -422,38 +432,24 @@ class WorkflowTasks( TaskBase ):
     except KeyError:
       pass
 
-    try:
-      seList = ['Unknown']
-      if paramsDict['TargetSE']:
-        seList = fromChar( paramsDict['TargetSE'] )
-    except KeyError:
-      pass
-
-    if not seList or seList == ['Unknown']:
-      return sites
-
-    # from now on we know there is some TargetSE requested
-    if not getSitesForSE:
-      from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-
-    seSites = set()
-    for se in seList:
-      res = getSitesForSE( se )
+    if not self.destinationPlugin_o:
+      res = self.__generatePluginObject( self.destinationPlugin )
       if not res['OK']:
-        self.log.warn( 'Could not get Sites associated to SE', res['Message'] )
-      else:
-        thisSESites = res['Value']
-        if thisSESites:
-          # We make an OR of the possible sites
-          seSites.update( thisSESites )
+        self.log.fatal( "Could not generate a destination plugin object" )
+        return res
+      self.destinationPlugin_o = res['Value']
+      self.destinationPlugin_o.setParameters( paramsDict )
+
+    destSites = self.destinationPlugin_o.run()
+    if not destSites:
+      return sites
 
     # Now we need to make the AND with the sites, if defined
     if sites != ['ANY']:
       # Need to get the AND
-      seSites &= set( sites )
+      destSites &= set( sites )
 
-    return list( seSites )
-
+    return list( destSites )
 
   def _handleInputs( self, oJob, paramsDict ):
     """ set job inputs (+ metadata)
@@ -482,6 +478,23 @@ class WorkflowTasks( TaskBase ):
     hospitalCEs = self.opsH.getValue( "Hospital/HospitalCEs", [] )
     if hospitalCEs:
       oJob._addJDLParameter( 'GridCE', hospitalCEs )
+
+
+  def __generatePluginObject( self, plugin ):
+    """ This simply instantiates the TaskManagerPlugin class with the relevant plugin name
+    """
+    try:
+      plugModule = __import__( self.pluginLocation, globals(), locals(), ['TaskManagerPlugin'] )
+    except ImportError, e:
+      self.log.exception( "Failed to import 'TaskManagerPlugin' %s: %s" % ( plugin, e ) )
+      return S_ERROR()
+    try:
+      plugin_o = getattr( plugModule, 'TaskManagerPlugin' )( '%s' % plugin, operationsHelper = self.opsH )
+      return S_OK( plugin_o )
+    except AttributeError, e:
+      self.log.exception( "Failed to create %s(): %s." % ( plugin, e ) )
+      return S_ERROR()
+
 
   #############################################################################
 
