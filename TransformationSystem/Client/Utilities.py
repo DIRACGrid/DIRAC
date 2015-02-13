@@ -31,11 +31,10 @@ def timeThis( method ):
     result = method( *args, **kw )
     te = time.time()
 
-    gLogger.verbose( "Exec time === ", " %2.2f sec - function %r arguments len: %d" % ( te - ts, method.__name__, len( kw ) ) )
+    gLogger.verbose( "Exec time === ", " function %r arguments len: %d -> %2.2f sec" % ( method.__name__, len( kw ), te - ts ) )
     return result
 
   return timed
-
 
 class PluginUtilities( object ):
   """
@@ -76,7 +75,7 @@ class PluginUtilities( object ):
     self.transString = ''
     self.debug = debug
 
-    self.log = gLogger.getSubLogger( "%s-PU" % plugin )
+    self.log = gLogger.getSubLogger( "%s/PluginUtilities" % plugin )
 
   def logVerbose( self, message, param = '' ):
     if self.debug:
@@ -122,19 +121,19 @@ class PluginUtilities( object ):
                '/this/is/at_4': ['SE4']}
 
     """
-    if not self.groupSize:
-      self.groupSize = self.getPluginParam( 'GroupSize', 10 )
-
-    flush = ( status == 'Flush' )
-    self.logVerbose( "groupByReplicas: %d files, groupSize %d, flush %s" % ( len( files ), self.groupSize, flush ) )
-
-    # Group files by SE
-    fileGroups = getFileGroups( files )
-    self.logDebug( "fileGroups set: ", fileGroups )
-
-    # Create tasks based on the group size
     tasks = []
     nTasks = 0
+
+    if not len( files ):
+      return S_OK( tasks )
+
+    files = dict( files )
+
+    # Parameters
+    if not self.groupSize:
+      self.groupSize = self.getPluginParam( 'GroupSize', 10 )
+    flush = ( status == 'Flush' )
+    self.logVerbose( "groupByReplicas: %d files, groupSize %d, flush %s" % ( len( files ), self.groupSize, flush ) )
 
     # Consider files by groups of SEs, a file is only in one group
     # Then consider files site by site, but a file can now be at more than one site
@@ -142,6 +141,7 @@ class PluginUtilities( object ):
       if not files:
         break
       seFiles = getFileGroups( files, groupSE = groupSE )
+      self.logDebug( "fileGroups set: ", seFiles )
 
       for replicaSE in sortSEs( seFiles ):
         lfns = seFiles[replicaSE]
@@ -172,27 +172,33 @@ class PluginUtilities( object ):
     """
     Generate a task for a given amount of data
     """
+    tasks = []
+    nTasks = 0
+
+    if not len( files ):
+      return S_OK( tasks )
+
+    files = dict( files )
+    # Parameters
     if not self.groupSize:
       self.groupSize = float( self.getPluginParam( 'GroupSize', 1 ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
-    requestedSize = self.groupSize
-    flush = ( status == 'Flush' )
-    self.logVerbose( "groupBySize: %d files, groupSize %d, flush %s" % ( len( files ), self.groupSize, flush ) )
     if not self.maxFiles:
       self.maxFiles = self.getPluginParam( 'MaxFiles', 100 )
     maxFiles = self.maxFiles
+    flush = ( status == 'Flush' )
+    self.logVerbose( "groupBySize: %d files, groupSize: %d, maxFiles: %d, flush: %s" % ( len( files ), self.groupSize, maxFiles, flush ) )
+
     # Get the file sizes
-    res = self.getFileSize( files.keys() )
+    res = self._getFileSize( files.keys() )
     if not res['OK']:
       return res
     fileSizes = res['Value']
-    tasks = []
-    nTasks = 0
-    # Group files by SE
-    files = files.copy()
+
     for groupSE in ( True, False ):
       if not files:
         break
       seFiles = getFileGroups( files, groupSE = groupSE )
+
       for replicaSE in sorted( seFiles ) if groupSE else sortSEs( seFiles ):
         lfns = seFiles[replicaSE]
         lfnsInTasks = []
@@ -202,13 +208,13 @@ class PluginUtilities( object ):
         for lfn in lfns:
           size = fileSizes.get( lfn, 0 )
           if size:
-            if size > requestedSize:
+            if size > self.groupSize:
               tasks.append( ( replicaSE, [lfn] ) )
               lfnsInTasks.append( lfn )
             else:
               taskSize += size
               taskLfns.append( lfn )
-              if ( taskSize > requestedSize ) or ( len( taskLfns ) >= maxFiles ):
+              if ( taskSize > self.groupSize ) or ( len( taskLfns ) >= maxFiles ):
                 tasks.append( ( replicaSE, taskLfns ) )
                 lfnsInTasks += taskLfns
                 taskLfns = []
@@ -224,7 +230,8 @@ class PluginUtilities( object ):
           for se in [se for se in seFiles if se != replicaSE]:
             seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
         # Remove the selected files from the size cache
-        self.clearCachedFileSize( lfnsInTasks )
+#         print "self.cachedLFNSize", self.cachedLFNSize
+#         self.clearCachedFileSize( lfnsInTasks )
       self.logVerbose( "groupBySize: %d tasks created with groupSE %s" % ( len( tasks ) - nTasks, str( groupSE ) ) )
       self.logVerbose( "groupBySize: %d files have not been included in tasks" % len( files ) )
       nTasks = len( tasks )
@@ -258,18 +265,24 @@ class PluginUtilities( object ):
     return S_OK( usageDict )
 
   @timeThis
-  def getFileSize( self, lfns ):
+  def _getFileSize( self, lfns ):
     """ Get file size from a cache, if not from the catalog
     #FIXME: have to fill the cachedLFNSize!
     """
+    lfns = list( lfns )
+    cachedLFNSize = dict( self.cachedLFNSize )
+
     fileSizes = {}
-    for lfn in [lfn for lfn in lfns if lfn in self.cachedLFNSize]:
-      fileSizes[lfn] = self.cachedLFNSize[lfn]
-    if fileSizes:
-      self.logVerbose( "Cache hit for File size for %d files" % len( fileSizes ) )
-    lfns = [lfn for lfn in lfns if lfn not in self.cachedLFNSize]
+    for lfn in [lfn for lfn in lfns if lfn in cachedLFNSize]:
+      fileSizes[lfn] = cachedLFNSize[lfn]
+    self.logDebug( "Found cache hit for File size for %d files out of %d" % ( len( fileSizes ), len( lfns ) ) )
+    lfns = [lfn for lfn in lfns if lfn not in cachedLFNSize]
     if lfns:
       fileSizes = self._getFileSizeFromCatalog( lfns, fileSizes )
+      if not fileSizes['OK']:
+        self.logError( fileSizes['Message'] )
+        return fileSizes
+      fileSizes = fileSizes['Value']
     return S_OK( fileSizes )
 
   @timeThis
@@ -277,16 +290,19 @@ class PluginUtilities( object ):
     """ 
     Get file size from the catalog 
     """
+    lfns = list( lfns )
+    fileSizes = dict( fileSizes )
+
     res = self.fc.getFileSize( lfns )
     if not res['OK']:
-      return S_ERROR( "Failed to get sizes for all files: " % res['Message'] )
+      return S_ERROR( "Failed to get sizes for all files: %s" % res['Message'] )
     if res['Value']['Failed']:
       errorReason = sorted( set( res['Value']['Failed'].values() ) )
       self.logWarn( "Failed to get sizes for %d files:" % len( res['Value']['Failed'] ), errorReason )
     fileSizes.update( res['Value']['Successful'] )
     self.cachedLFNSize.update( ( res['Value']['Successful'] ) )
     self.logVerbose( "Got size of %d files from catalog" % len( lfns ) )
-    return fileSizes
+    return S_OK( fileSizes )
 
   def clearCachedFileSize( self, lfns ):
     """ Utility function
@@ -307,16 +323,16 @@ class PluginUtilities( object ):
     # First look at a generic value...
     optionPath = "TransformationPlugins/%s" % ( name )
     value = Operations().getValue( optionPath, None )
-    self.logVerbose( "Default plugin param %s: '%s'" % ( optionPath, value ) )
+    self.logDebug( "Default plugin param %s: '%s'" % ( optionPath, value ) )
     # Then look at a plugin-specific value
     optionPath = "TransformationPlugins/%s/%s" % ( self.plugin, name )
     value = Operations().getValue( optionPath, value )
-    self.logVerbose( "Specific plugin param %s: '%s'" % ( optionPath, value ) )
+    self.logDebug( "Specific plugin param %s: '%s'" % ( optionPath, value ) )
     if value != None:
       default = value
     # Finally look at a transformation-specific parameter
     value = self.params.get( name, default )
-    self.logVerbose( "Transformation plugin param %s: '%s'" % ( name, value ) )
+    self.logDebug( "Transformation plugin param %s: '%s'" % ( name, value ) )
     if valueType and type( value ) != valueType:
       if valueType == type( [] ):
         value = ast.literal_eval( value )
@@ -331,7 +347,7 @@ class PluginUtilities( object ):
           value = bool( value )
       elif valueType != type( '' ):
         self.logWarn( "Unknown parameter type (%s) for %s, passed as string" % ( str( valueType ), name ) )
-    self.logVerbose( "Final plugin param %s: '%s'" % ( name, value ) )
+    self.logDebug( "Final plugin param %s: '%s'" % ( name, value ) )
     return value
 
 
@@ -363,8 +379,9 @@ def getFileGroups( fileReplicas, groupSE = True ):
       fileGroups.setdefault( replicaSEs, [] ).append( lfn )
   return fileGroups
 
-seSvcClass = {}
+
 def sortSEs( ses ):
+  seSvcClass = {}
   for se in ses:
     if len( se.split( ',' ) ) != 1:
       return sorted( ses )

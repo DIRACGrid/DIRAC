@@ -10,6 +10,7 @@ from DIRAC.TransformationSystem.Client.Transformation         import Transformat
 from DIRAC.TransformationSystem.Client.TaskManagerPlugin      import TaskManagerPlugin
 from DIRAC.TransformationSystem.Client.Utilities              import PluginUtilities, getFileGroups
 
+# Fake classes
 class opsHelperFakeUser( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
@@ -62,15 +63,6 @@ class opsHelperFakeMC( object ):
 def getSitesFake():
   return S_OK( ['Ferrara', 'Bologna', 'Paris', 'CSCS', 'PAK', 'CERN', 'IN2P3'] )
 
-
-data = {'/this/is/at_1':['SE1'],
-        '/this/is/at_2':['SE2'],
-        '/this/is/at_12':['SE1', 'SE2'],
-        '/this/is/also/at_12':['SE1', 'SE2'],
-        '/this/is/at_123':['SE1', 'SE2', 'SE3'],
-        '/this/is/at_23':['SE2', 'SE3'],
-        '/this/is/at_4':['SE4']}
-
 def getSitesForSE( ses ):
   if ses == ['CERN-DST'] or ses == 'CERN-DST':
     return S_OK( ['CERN'] )
@@ -80,6 +72,25 @@ def getSitesForSE( ses ):
     return S_OK( ['CSCS'] )
   elif ses == ['CERN-DST', 'CSCS-DST'] or ses == 'CERN-DST,CSCS-DST':
     return S_OK( ['CERN', 'CSCS'] )
+
+
+
+# Test data for plugins
+data = {'/this/is/at_1':['SE1'],
+        '/this/is/at_2':['SE2'],
+        '/this/is/at_12':['SE1', 'SE2'],
+        '/this/is/also/at_12':['SE1', 'SE2'],
+        '/this/is/at_123':['SE1', 'SE2', 'SE3'],
+        '/this/is/at_23':['SE2', 'SE3'],
+        '/this/is/at_4':['SE4']}
+
+cachedLFNSize = {'/this/is/at_1':1,
+                 '/this/is/at_2':2,
+                 '/this/is/at_12':12,
+                 '/this/is/also/at_12':12,
+                 '/this/is/at_123':123,
+                 '/this/is/at_23':23,
+                 '/this/is/at_4':4}
 
 #############################################################################
 
@@ -121,7 +132,8 @@ class ClientsTestCase( unittest.TestCase ):
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
-    self.pu = PluginUtilities()
+    self.fcMock = MagicMock()
+    self.fcMock.getFileSize.return_value = S_OK( {'Failed':[], 'Successful': cachedLFNSize} )
 
     gLogger.setLevel( 'DEBUG' )
     
@@ -522,24 +534,29 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
 
     self.assertItemsEqual( res, resExpected )
     
-  def test_groupByReplicas(self):
+  def test_groupByReplicas( self ):
     
-    res = self.pu.groupByReplicas( data, 'Active' )
+    pu = PluginUtilities()
+    res = pu.groupByReplicas( data, 'Active' )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [] )
 
-    self.pu.params['GroupSize'] = 2
-    res = self.pu.groupByReplicas( data, 'Active' )
+    pu = PluginUtilities()
+    pu.params['GroupSize'] = 2
+    res = pu.groupByReplicas( data, 'Active' )
     self.assert_( res['OK'] )
-    resExpected = [( 'SE1,SE2', sorted( ['/this/is/at_123', '/this/is/at_12'] ) ),
-                   ( 'SE1,SE2', sorted( ['/this/is/also/at_12', '/this/is/at_1'] ) ),
-                   ( 'SE2', sorted( ['/this/is/at_23', '/this/is/at_2'] ) ),
-                   ( 'SE4', sorted( ['/this/is/at_4'] ) )]
-    self.assert_( len( resExpected ) == 4 )
-    for tExp in resExpected:
-      self.assert_( len( tExp[1] ) <= 2 )
+    self.assert_( len( res['Value'] ) == 3 )
+    for t in res['Value']:
+      self.assert_( len( t[1] ) <= 2 )
 
-    res = self.pu.groupByReplicas( data, 'Flush' )
+    pu = PluginUtilities()
+    pu.params['GroupSize'] = 2
+    res = pu.groupByReplicas( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 4 )
+
+    pu = PluginUtilities()
+    res = pu.groupByReplicas( data, 'Flush' )
     self.assert_( res['OK'] )
     resExpected = [( 'SE1', sorted( ['/this/is/also/at_12', '/this/is/at_1', '/this/is/at_123', '/this/is/at_12'] ) ),
                    ( 'SE2', sorted( ['/this/is/at_23', '/this/is/at_2'] ) ),
@@ -548,7 +565,84 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
       self.assertEqual( t[0], tExp[0] )
       self.assertEqual( sorted( t[1] ), tExp[1] )
 
-  # FIXME: Need to test BySize and stuff
+  def test_groupBySize( self ):
+
+    # no files, nothing happens
+    pu = PluginUtilities( fc = self.fcMock )
+    res = pu.groupBySize( {}, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    # files, cached, nothing happens as too small
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.cachedLFNSize = cachedLFNSize
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    # files, cached, low GroupSize imposed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.cachedLFNSize = cachedLFNSize
+    pu.groupSize = 10
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1,SE2', ['/this/is/at_12'] ),
+                   ( 'SE2,SE3', ['/this/is/at_23'] ),
+                   ( 'SE1,SE2,SE3', ['/this/is/at_123'] ),
+                   ( 'SE1,SE2', ['/this/is/also/at_12'] )]
+    for tExp in resExpected:
+      self.assert_( tExp in res['Value'] )
+
+    # files, cached, flushed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.cachedLFNSize = cachedLFNSize
+    res = pu.groupBySize( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 6 )
+
+    # files, not cached, nothing happens as too small
+    pu = PluginUtilities( fc = self.fcMock )
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    # files, not cached, flushed
+    pu = PluginUtilities( fc = self.fcMock )
+
+    res = pu.groupBySize( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 6 )
+
+    # files, not cached, low GroupSize imposed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.groupSize = 10
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1,SE2', ['/this/is/at_12'] ),
+                   ( 'SE2,SE3', ['/this/is/at_23'] ),
+                   ( 'SE1,SE2,SE3', ['/this/is/at_123'] ),
+                   ( 'SE1,SE2', ['/this/is/also/at_12'] )]
+    for tExp in resExpected:
+      self.assert_( tExp in res['Value'] )
+
+    # files, not cached, low GroupSize imposed, Flushed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.groupSize = 10
+    res = pu.groupBySize( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1,SE2', ['/this/is/at_12'] ),
+                   ( 'SE2,SE3', ['/this/is/at_23'] ),
+                   ( 'SE1,SE2,SE3', ['/this/is/at_123'] ),
+                   ( 'SE1,SE2', ['/this/is/also/at_12'] )]
+    for tExp in resExpected:
+      self.assert_( tExp in res['Value'] )
+
+
+
+#############################################################################
+#############################################################################
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
