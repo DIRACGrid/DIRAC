@@ -47,24 +47,6 @@ class TransformationPlugin( PluginBase ):
   def setTransformationFiles( self, files ): #TODO ADDED
     self.files = files
 
-  def setParameters( self, params ):
-    self.params = params
-
-  def generateTasks( self ):
-    """ this is a wrapper to invoke the plugin (self._%s()" % self.plugin)
-    """
-    try:
-      evalString = "self._%s()" % self.plugin
-      return eval( evalString )
-    except AttributeError, x:
-      if re.search( self.plugin, str( x ) ):
-        return S_ERROR( "Plugin not found" )
-      else:
-        raise AttributeError, x
-    except Exception, x:
-      self.util.logException( str( x ) )
-      raise Exception, x
-
   def _Standard( self ):
     """ Simply group by replica location (if any)
     """
