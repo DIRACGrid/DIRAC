@@ -68,7 +68,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     # no input data, active
     pluginStandard = TransformationPlugin( 'Standard' )
     pluginStandard.setParameters( paramsBase )
-    res = pluginStandard.generateTasks()
+    res = pluginStandard.run()
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [] )
 
@@ -76,7 +76,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     pluginStandard = TransformationPlugin( 'Standard' )
     pluginStandard.setParameters( paramsBase )
     pluginStandard.setInputData( data )
-    res = pluginStandard.generateTasks()
+    res = pluginStandard.run()
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [] )
 
@@ -85,7 +85,7 @@ class PluginsBaseSuccess( PluginsTestCase ):
     paramsBase['Status'] = 'Flush'
     pluginStandard.setParameters( paramsBase )
     pluginStandard.setInputData( data )
-    res = pluginStandard.generateTasks()
+    res = pluginStandard.run()
     self.assert_( res['OK'] )
     self.assertNotEqual( res['Value'], [] )
 
