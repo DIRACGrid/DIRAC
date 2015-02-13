@@ -140,7 +140,6 @@ class Operation( Record ):
       if self.__data__["Status"] != newStatus:
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
-
     self.__data__["Status"] = newStatus
     if self._parent:
       self._parent._notify()
@@ -397,6 +396,8 @@ class Operation( Record ):
     if type( value ) == str:
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
+    if self._parent:
+      self._parent.LastUpdate = value
 
   def __str__( self ):
     """ str operator """
