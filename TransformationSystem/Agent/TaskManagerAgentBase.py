@@ -50,6 +50,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     self.ownerGroup = ''
     self.ownerDN = ''
 
+    self.pluginLocation = ''
+
     # for the threading
     self.transQueue = Queue()
     self.transInQueue = []
@@ -68,6 +70,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
+
+    self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Client.TaskManagerPlugin' )
 
     # Default clients
     self.transClient = TransformationClient()
@@ -231,6 +235,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     """
     threadTransformationClient = TransformationClient()
     threadTaskManager = WorkflowTasks()  # this is for wms tasks, replace it with something else if needed
+    threadTaskManager.pluginLocation = self.pluginLocation
 
     return {'TransformationClient': threadTransformationClient,
             'TaskManager': threadTaskManager}

@@ -1,19 +1,19 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-import re
 import random
 
 from DIRAC                              import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
+from DIRAC.TransformationSystem.Client.Plugins import Plugins
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 
 __RCSID__ = "$Id$"
 
-class TransformationPlugin( object ):
+class TransformationPlugin( Plugins ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """
 
@@ -21,9 +21,9 @@ class TransformationPlugin( object ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
     """
-    self.params = {}
+    super( TransformationPlugin, self ).__init__( plugin )
+
     self.data = {}
-    self.plugin = plugin
     self.files = False
     if transClient is None:
       self.transClient = TransformationClient()
@@ -49,24 +49,6 @@ class TransformationPlugin( object ):
 
   def setTransformationFiles( self, files ): #TODO ADDED
     self.files = files
-
-  def setParameters( self, params ):
-    self.params = params
-
-  def generateTasks( self ):
-    """ this is a wrapper to invoke the plugin (self._%s()" % self.plugin)
-    """
-    try:
-      evalString = "self._%s()" % self.plugin
-      return eval( evalString )
-    except AttributeError, x:
-      if re.search( self.plugin, str( x ) ):
-        return S_ERROR( "Plugin not found" )
-      else:
-        raise AttributeError, x
-    except Exception, x:
-      gLogger.exception()
-      raise Exception, x
 
   def _Standard( self ):
     """ Simply group by replica location
