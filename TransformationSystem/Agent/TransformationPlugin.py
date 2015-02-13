@@ -12,9 +12,6 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities, getFileGroups
 
 
@@ -173,7 +170,7 @@ class TransformationPlugin( PluginBase ):
         self.util.logInfo( "%s: %.1f" % ( se.ljust( 15 ), normalisedExistingCount[se] ) )
 
     # Group the input files by their existing replicas
-    res = self._groupByReplicas()
+    res = self.util.groupByReplicas( self.data, self.params['Status'] )
     if not res['OK']:
       return res
     replicaGroups = res['Value']
