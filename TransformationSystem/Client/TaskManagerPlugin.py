@@ -6,10 +6,10 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-from DIRAC.TransformationSystem.Client.Plugins import Plugins
+from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 
 
-class TaskManagerPlugin( Plugins ):
+class TaskManagerPlugin( PluginBase ):
   """ A TaskManagerPlugin object should be instantiated by every TaskManager object.
   
       self.params here could be 

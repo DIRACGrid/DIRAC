@@ -6,14 +6,14 @@ from DIRAC                              import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
-from DIRAC.TransformationSystem.Client.Plugins import Plugins
+from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 
 __RCSID__ = "$Id$"
 
-class TransformationPlugin( Plugins ):
+class TransformationPlugin( PluginBase ):
   """ A TransformationPlugin object should be instantiated by every transformation.
   """
 

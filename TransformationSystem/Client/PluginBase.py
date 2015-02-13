@@ -6,7 +6,7 @@ import re
 from DIRAC import S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-class Plugins( object ):
+class PluginBase( object ):
   
   def __init__( self, plugin, transClient = None, operationsHelper = None ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
