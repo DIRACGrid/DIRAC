@@ -136,7 +136,7 @@ class Operation( Record ):
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
-    if newStatus in ( 'Failed', 'Done' ):
+    if newStatus in ( 'Failed', 'Done', 'Scheduled' ):
       if self.__data__["Status"] != newStatus:
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 

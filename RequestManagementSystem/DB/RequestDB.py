@@ -328,6 +328,7 @@ class RequestDB( DB ):
     selectReq = selectReq["Value"]
 
     request = Request( selectReq[selectQuery[0]][0] )
+    origLastUpdate = request.LastUpdate
     if not requestName:
       log.verbose( "selected request '%s'%s" % ( request.RequestName, ' (Assigned)' if assigned else '' ) )
     for records in sorted( selectReq[selectQuery[1]], key = lambda k: k["Order"] ):
@@ -344,6 +345,8 @@ class RequestDB( DB ):
         getFileDict = dict( [ ( key, value ) for key, value in getFile.items() if value != None ] )
         operation.addFile( File( getFileDict ) )
       request.addOperation( operation )
+
+    request.LastUpdate = origLastUpdate
 
     if assigned:
       setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned', `LastUpdate`=UTC_TIMESTAMP() WHERE RequestID = %s;" % requestID )
