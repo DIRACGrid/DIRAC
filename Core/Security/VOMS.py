@@ -8,8 +8,7 @@ import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities import Os
+from DIRAC.Core.Utilities import List, Time, Os
 
 
 class VOMS( BaseSecurity ):
@@ -88,6 +87,73 @@ class VOMS( BaseSecurity ):
     return self.getVOMSProxyInfo( proxy, "fqan" )
 
   def getVOMSProxyInfo( self, proxy, option = False ):
+    validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
+    if option:
+      if option not in validOptions:
+        S_ERROR( 'Non valid option %s' % option )
+
+    retVal = File.multiProxyArgument( proxy )
+    if not retVal[ 'OK' ]:
+      return retVal
+    proxyDict = retVal[ 'Value' ]
+
+    try:
+      res = proxyDict[ 'chain' ].getVOMSData()
+      if not res[ 'OK' ]:
+        return res
+
+      data = res[ 'Value' ]
+
+      if option == 'actimeleft':
+        now = Time.dateTime()
+        left = data[ 'notAfter' ] - now
+        return S_OK( "%d\n" % left.total_seconds() )
+      if option == "timeleft":
+        now = Time.dateTime()
+        left = proxyDict[ 'chain' ].getNotAfterDate()[ 'Value' ] - now
+        return S_OK( "%d\n" % left.total_seconds() )
+      if option == "identity":
+        return S_OK( "%s\n" % data[ 'subject' ] )
+      if option == "fqan":
+        return S_OK( "\n".join( [ f.replace( "/Role=NULL", "" ).replace( "/Capability=NULL", "" ) for f in data[ 'fqan' ] ] ) )
+      if option == "all":
+        lines = []
+        creds = proxyDict[ 'chain' ].getCredentials()[ 'Value' ]
+        lines.append( "subject : %s" % creds[ 'subject' ] )
+        lines.append( "issuer : %s" % creds[ 'issuer' ] )
+        lines.append( "identity : %s" % creds[ 'identity' ] )
+        if proxyDict[ 'chain' ].isRFC():
+          lines.append( "type : RFC compliant proxy" )
+        else:
+          lines.append( "type : proxy" )
+        left = creds[ 'secondsLeft' ]
+        h = int( left / 3600 )
+        m = int( left / 60 ) - h * 60
+        s = int( left ) - m * 60 - h * 3600
+        lines.append( "timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" % (  h, m, s ) )
+        lines.append( "== VO %s extension information ==" % data[ 'vo' ] )
+        lines.append( "VO: %s" % data[ 'vo' ] )
+        lines.append( "subject : %s" % data[ 'subject' ] )
+        lines.append( "issuer : %s" % data[ 'issuer' ] )
+        for fqan in data[ 'fqan' ]:
+          lines.append( "attribute : %s" % fqan )
+        lines.append( "attribute : %s" % data[ 'attribute' ] )
+        now = Time.dateTime()
+        left = ( data[ 'notAfter' ] - now ).total_seconds()
+        h = int( left / 3600 )
+        m = int( left / 60 ) - h * 60
+        s = int( left ) - m * 60 - h * 3600
+        lines.append( "timeleft : %s:%s:%s" % ( h, m , s ) )
+
+        return S_OK( "\n".join( lines ) )
+      else:
+        return S_ERROR( "NOT IMP" )
+
+    finally:
+      if proxyDict[ 'tempFile' ]:
+        self._unlinkFiles( proxyDict[ 'tempFile' ] )
+
+  def OLDgetVOMSProxyInfo( self, proxy, option = False ):
     """ Returns information about a proxy certificate (both grid and voms).
         Available information is:
           1. Full (grid)voms-proxy-info output

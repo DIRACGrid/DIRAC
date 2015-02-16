@@ -19,6 +19,7 @@ class CLIParams:
   proxyLoc = False
   onTheFly = False
   stdinPasswd = False
+  rfcIfPossible = False
   userPasswd = ""
 
   def __str__( self ):
@@ -168,4 +169,4 @@ def uploadProxy( params ):
     restrictLifeTime = 0
 
   DIRAC.gLogger.info( " Uploading..." )
-  return gProxyManager.uploadProxy( chain, diracGroup, restrictLifeTime = restrictLifeTime )
+  return gProxyManager.uploadProxy( chain, diracGroup, restrictLifeTime = restrictLifeTime, rfcIfPossible = params.rfcIfPossible )

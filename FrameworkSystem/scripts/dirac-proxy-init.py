@@ -151,6 +151,7 @@ class ProxyInit:
     upParams = ProxyUpload.CLIParams()
     upParams.onTheFly = True
     upParams.proxyLifeTime = issuerCert.getRemainingSecs()[ 'Value' ] - 300
+    upParams.rfcIfPossible = self.__piParams.rfc
     upParams.diracGroup = userGroup
     for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
       setattr( upParams, k , getattr( self.__piParams, k ) )
