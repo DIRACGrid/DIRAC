@@ -232,13 +232,13 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         if newCEType in ['ARC','CREAM']:
           newSubmissionMode = "Direct" 
         newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
-  
+
         # Adding CE data to the change list
         addToChangeSet( ( ceSection, 'architecture', arch, newarch ), changeSet )
         addToChangeSet( ( ceSection, 'OS', OS, newOS ), changeSet )
         addToChangeSet( ( ceSection, 'SI00', si00, newsi00 ), changeSet )
         addToChangeSet( ( ceSection, 'CEType', ceType, newCEType ), changeSet )
-        addToChangeSet( ( ceSection, 'HostRAM', ram, newRAM ), changeSet )
+        addToChangeSet( ( ceSection, 'MaxRAM', ram, newRAM ), changeSet )
         if submissionMode == "Unknown":
           addToChangeSet( ( ceSection, 'SubmissionMode', submissionMode, newSubmissionMode ), changeSet )
   
