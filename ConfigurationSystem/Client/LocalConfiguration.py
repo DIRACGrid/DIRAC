@@ -359,7 +359,7 @@ class LocalConfiguration:
   def syncRemoteConfiguration( self, strict = False ):
     """
     Force a Resync with Configuration Server
-    Under normal conditions this is triggered by an access to any 
+    Under normal conditions this is triggered by an access to any
     configuration data.
     """
     if self.componentName == "Configuration/Server" :
@@ -495,12 +495,12 @@ class LocalConfiguration:
       for iPos in range( iLastOpt + 1, len( self.commandOptionList ) ):
         optionTuple = self.commandOptionList[ iPos ]
         if optionTuple[0].endswith( ':' ):
-          line = "\n  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ),
+          line = "  -%s --%s : %s" % ( optionTuple[0][:-1].ljust( 2 ),
                                          (optionTuple[1][:-1] + ' <value> ').ljust( 22 ),
                                          optionTuple[2] )
           gLogger.notice( line )
         else:
-          gLogger.notice( "\n  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
+          gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 2 ), optionTuple[1].ljust( 22 ), optionTuple[2] ) )
 
     gLogger.notice( "" )
     DIRAC.exit( exitCode )
