@@ -197,7 +197,7 @@ class X509Certificate:
         data[ 'issuer' ] = name.one_line()
         data[ 'notBefore' ] = raw[0][0][0][5][0]
         data[ 'notAfter' ] = raw[0][0][0][5][1]
-        data[ 'fqan' ] = str(raw[0][0][0][6][0][1][0][1][0])
+        data[ 'fqan' ] = [ str(fqan) for fqan in raw[0][0][0][6][0][1][0][1] ]
         for extBundle in raw[0][0][0][7]:
           if extBundle[0] == "VOMS attribute":
             attr = GSI.crypto.asn1_loads( str(extBundle[1]) ).get_value()

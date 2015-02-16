@@ -115,7 +115,7 @@ class VOMS( BaseSecurity ):
       if option == "identity":
         return S_OK( "%s\n" % data[ 'subject' ] )
       if option == "fqan":
-        return S_OK( data[ 'fqan' ].replace( "/Role=NULL", "" ).replace( "/Capability=NULL", "" ) )
+        return S_OK( "\n".join( [ f.replace( "/Role=NULL", "" ).replace( "/Capability=NULL", "" ) for f in data[ 'fqan' ] ] ) )
       if option == "all":
         lines = []
         creds = proxyDict[ 'chain' ].getCredentials()[ 'Value' ]
@@ -135,7 +135,8 @@ class VOMS( BaseSecurity ):
         lines.append( "VO: %s" % data[ 'vo' ] )
         lines.append( "subject : %s" % data[ 'subject' ] )
         lines.append( "issuer : %s" % data[ 'issuer' ] )
-        lines.append( "attribute : %s" % data[ 'fqan' ] )
+        for fqan in data[ 'fqan' ]:
+          lines.append( "attribute : %s" % fqan )
         lines.append( "attribute : %s" % data[ 'attribute' ] )
         now = Time.dateTime()
         left = ( data[ 'notAfter' ] - now ).total_seconds()
@@ -150,7 +151,7 @@ class VOMS( BaseSecurity ):
 
     finally:
       if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyLocation )
+        self._unlinkFiles( proxyDict[ 'tempFile' ] )
 
   def OLDgetVOMSProxyInfo( self, proxy, option = False ):
     """ Returns information about a proxy certificate (both grid and voms).
