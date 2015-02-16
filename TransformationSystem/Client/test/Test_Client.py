@@ -75,23 +75,6 @@ def getSitesForSE( ses ):
 
 
 
-# Test data for plugins
-data = {'/this/is/at_1':['SE1'],
-        '/this/is/at_2':['SE2'],
-        '/this/is/at_12':['SE1', 'SE2'],
-        '/this/is/also/at_12':['SE1', 'SE2'],
-        '/this/is/at_123':['SE1', 'SE2', 'SE3'],
-        '/this/is/at_23':['SE2', 'SE3'],
-        '/this/is/at_4':['SE4']}
-
-cachedLFNSize = {'/this/is/at_1':1,
-                 '/this/is/at_2':2,
-                 '/this/is/at_12':12,
-                 '/this/is/also/at_12':12,
-                 '/this/is/at_123':123,
-                 '/this/is/at_23':23,
-                 '/this/is/at_4':4}
-
 #############################################################################
 
 class ClientsTestCase( unittest.TestCase ):
@@ -511,6 +494,30 @@ class TransformationSuccess( ClientsTestCase ):
     self.assertRaises( AttributeError, self.transformation.getTargetSE )
     self.assertRaises( AttributeError, self.transformation.getSourceSE )
 
+
+#############################################################################
+###### Plugins tests
+#############################################################################
+
+
+# Test data for plugins
+data = {'/this/is/at_1':['SE1'],
+        '/this/is/at_2':['SE2'],
+        '/this/is/at_12':['SE1', 'SE2'],
+        '/this/is/also/at_12':['SE1', 'SE2'],
+        '/this/is/at_123':['SE1', 'SE2', 'SE3'],
+        '/this/is/at_23':['SE2', 'SE3'],
+        '/this/is/at_4':['SE4']}
+
+cachedLFNSize = {'/this/is/at_1':1,
+                 '/this/is/at_2':2,
+                 '/this/is/at_12':12,
+                 '/this/is/also/at_12':12,
+                 '/this/is/at_123':123,
+                 '/this/is/at_23':23,
+                 '/this/is/at_4':4}
+
+
 class PluginsUtilitiesSuccess( ClientsTestCase ):
 
   def test_getFileGroups( self ):
@@ -638,7 +645,6 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
                    ( 'SE1,SE2', ['/this/is/also/at_12'] )]
     for tExp in resExpected:
       self.assert_( tExp in res['Value'] )
-
 
 
 #############################################################################
