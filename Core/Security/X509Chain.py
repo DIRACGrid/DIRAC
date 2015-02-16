@@ -225,8 +225,8 @@ class X509Chain:
     if not self.__loadedPKey:
       return S_ERROR( "No pkey loaded" )
 
-    if rfc == False and self.isRFC().get( 'Value', False ):
-      rfc = True
+    if self.__isProxy:
+      rfc = self.isRFC().get( 'Value', False )
 
     issuerCert = self.__certList[0]
 
@@ -491,7 +491,7 @@ class X509Chain:
     x509 = self.getCertInChain( 0 )[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
-  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False ):
+  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False, rfc = False ):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -505,7 +505,7 @@ class X509Chain:
     except Exception, e:
       return S_ERROR( "Can't load request data: %s" % str( e ) )
     limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
-    return self.generateProxyToString( lifetime, diracGroup, 1024, limited, self.isRFC().get( 'Value', False ), req.get_pubkey() )
+    return self.generateProxyToString( lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey() )
 
   def getRemainingSecs( self ):
     """

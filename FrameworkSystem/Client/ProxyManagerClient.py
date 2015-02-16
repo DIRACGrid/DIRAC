@@ -126,7 +126,7 @@ class ProxyManagerClient:
                              record )
     return retVal
 
-  def uploadProxy( self, proxy = False, diracGroup = False, chainToConnect = False, restrictLifeTime = 0 ):
+  def uploadProxy( self, proxy = False, diracGroup = False, chainToConnect = False, restrictLifeTime = 0, rfcIfPossible = False ):
     """
     Upload a proxy to the proxy management service using delegation
     """
@@ -174,7 +174,7 @@ class ProxyManagerClient:
       chainLifeTime = restrictLifeTime
     retVal = chain.generateChainFromRequestString( reqDict[ 'request' ],
                                                    lifetime = chainLifeTime,
-                                                   diracGroup = diracGroup )
+                                                   diracGroup = diracGroup, rfc = rfcIfPossible)
     if not retVal[ 'OK' ]:
       return retVal
     #Upload!
@@ -187,7 +187,7 @@ class ProxyManagerClient:
 
 
   @gProxiesSync
-  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, 
+  def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
                      cacheTime = 43200, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management
@@ -216,7 +216,7 @@ class ProxyManagerClient:
     self.__proxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, 
+  def downloadProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
                            cacheTime = 43200, filePath = False, proxyToConnect = False, token = False ):
     """
     Get a proxy Chain from the proxy management and write it to file
@@ -232,7 +232,7 @@ class ProxyManagerClient:
     return retVal
 
   @gVOMSProxiesSync
-  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, 
+  def downloadVOMSProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200,
                          cacheTime = 43200, requiredVOMSAttribute = False, proxyToConnect = False, token = False ):
     """
     Download a proxy if needed and transform it into a VOMS one
@@ -263,12 +263,12 @@ class ProxyManagerClient:
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
-  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, cacheTime = 43200, 
+  def downloadVOMSProxyToFile( self, userDN, userGroup, limited = False, requiredTimeLeft = 1200, cacheTime = 43200,
                                requiredVOMSAttribute = False, filePath = False, proxyToConnect = False, token = False ):
     """
     Download a proxy if needed, transform it into a VOMS one and write it to file
     """
-    retVal = self.downloadVOMSProxy( userDN, userGroup, limited, requiredTimeLeft, cacheTime, 
+    retVal = self.downloadVOMSProxy( userDN, userGroup, limited, requiredTimeLeft, cacheTime,
                                      requiredVOMSAttribute, proxyToConnect, token )
     if not retVal[ 'OK' ]:
       return retVal
