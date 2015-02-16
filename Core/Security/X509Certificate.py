@@ -173,6 +173,41 @@ class X509Certificate:
         return S_OK( True )
     return S_OK( False )
 
+  def getVOMSData( self ):
+    """
+    Has voms extensions
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    extList = self.__certObj.get_extensions()
+    for ext in extList:
+      if ext.get_sn() == "vomsExtensions":
+        data = {}
+        raw = ext.get_asn1_value().get_value()
+        name = self.__certObj.get_subject().clone()
+        while name.num_entries() > 0:
+          name.remove_entry( 0 )
+        for entry in raw[0][0][0][1][0][0][0][0]:
+          name.insert_entry( entry[0][0], entry[0][1] )
+        data[ 'subject' ] = name.one_line()
+        while name.num_entries() > 0:
+          name.remove_entry( 0 )
+        for entry in raw[0][0][0][2][0][0][0]:
+          name.insert_entry( entry[0][0], entry[0][1] )
+        data[ 'issuer' ] = name.one_line()
+        data[ 'notBefore' ] = raw[0][0][0][5][0]
+        data[ 'notAfter' ] = raw[0][0][0][5][1]
+        data[ 'fqan' ] = str(raw[0][0][0][6][0][1][0][1][0])
+        for extBundle in raw[0][0][0][7]:
+          if extBundle[0] == "VOMS attribute":
+            attr = GSI.crypto.asn1_loads( str(extBundle[1]) ).get_value()
+            attr = attr[0][0][1][0]
+            data[ 'attribute' ] = "%s = %s (%s)" % attr
+            data[ 'vo' ] = attr[2]
+        return S_OK( data )
+    return S_ERROR( "No VOMS data available" )
+
+
   def generateProxyRequest( self, bitStrength = 1024, limited = False ):
     """
     Generate a proxy request

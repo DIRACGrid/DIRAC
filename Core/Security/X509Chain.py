@@ -211,7 +211,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( len( self.__certList ) )
 
-  def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False ):
+  def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False, proxyKey = False ):
     """
     Generate a proxy and get it as a string
       Args:
@@ -230,8 +230,9 @@ class X509Chain:
 
     issuerCert = self.__certList[0]
 
-    proxyKey = crypto.PKey()
-    proxyKey.generate_key( crypto.TYPE_RSA, strength )
+    if not proxyKey:
+      proxyKey = crypto.PKey()
+      proxyKey.generate_key( crypto.TYPE_RSA, strength )
 
     proxyCert = crypto.X509()
 
@@ -340,6 +341,21 @@ class X509Chain:
       if cert.hasVOMSExtensions()[ 'Value' ]:
         return S_OK( True )
     return S_OK( False )
+
+  def getVOMSData( self ):
+    """
+    Check wether this chain is a proxy
+    """
+    retVal = self.isProxy()
+    if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+      return retVal
+    for i in range( len( self.__certList ) ):
+      cert = self.getCertInChain( i )[ 'Value' ]
+      res = cert.getVOMSData()
+      if res[ 'OK' ]:
+        return res
+    return S_ERROR( "No VOMS data" )
+
 
   def __checkProxyness( self ):
     self.__hash = False
@@ -488,46 +504,8 @@ class X509Chain:
       req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load request data: %s" % str( e ) )
-
-    issuerCert = self.__certList[0]
-
-    childCert = crypto.X509()
-    childCert.set_serial_number( issuerCert.get_serial_number() )
-    childCert.set_subject( newSubj )
-    childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
-
-    reqSubj = req.get_subject()
-
     limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
-
-    if self.isRFC().get( 'Value', False ):
-      childCert.set_serial_number( str( int( random.random()*10**10 ) ) )
-      cloneSubject = issuerCert.get_subject().clone()
-      cloneSubject.insert_entry( "CN", str( int( random.random()*10**10 ) ) )
-      childCert.set_subject( cloneSubject )
-      childCert.add_extensions( self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ) )
-    else:
-      childCert.set_serial_number( issuerCert.get_serial_number() )
-      newSubj = issuerCert.get_subject().clone()
-      if limited:
-        newSubj.insert_entry( "CN", "limited proxy" )
-      else:
-        newSubj.insert_entry( "CN", "proxy" )
-      childCert.set_subject( cloneSubject )
-      childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
-
-    childCert.set_issuer( issuerCert.get_subject() )
-    childCert.set_version( issuerCert.get_version() )
-    childCert.set_pubkey( req.get_pubkey() )
-    childCert.gmtime_adj_notBefore( -900 )
-    childCert.gmtime_adj_notAfter( int( lifetime ) )
-    childCert.sign( self.__keyObj, 'sha256' )
-
-    childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )
-    for i in range( len( self.__certList ) ):
-      childString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
-
-    return S_OK( childString )
+    return self.generateProxyToString( lifetime, diracGroup, 1024, limited, self.isRFC().get( 'Value', False ), req.get_pubkey() )
 
   def getRemainingSecs( self ):
     """
