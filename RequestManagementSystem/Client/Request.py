@@ -89,6 +89,8 @@ class Request( object ):
     self.OwnerGroup = None
     self.SourceComponent = None
 
+    self.RequestID = 0
+
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
       proxyInfo = proxyInfo["Value"]
