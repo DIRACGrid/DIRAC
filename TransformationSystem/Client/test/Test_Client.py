@@ -582,14 +582,14 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
 
     # files, cached, nothing happens as too small
     pu = PluginUtilities( fc = self.fcMock )
-    pu.cachedLFNSize = cachedLFNSize
+    pu.cachedLFNSize = dict( cachedLFNSize )
     res = pu.groupBySize( data, 'Active' )
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [] )
 
     # files, cached, low GroupSize imposed
     pu = PluginUtilities( fc = self.fcMock )
-    pu.cachedLFNSize = cachedLFNSize
+    pu.cachedLFNSize = dict( cachedLFNSize )
     pu.groupSize = 10
     res = pu.groupBySize( data, 'Active' )
     self.assert_( res['OK'] )
@@ -602,7 +602,7 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
 
     # files, cached, flushed
     pu = PluginUtilities( fc = self.fcMock )
-    pu.cachedLFNSize = cachedLFNSize
+    pu.cachedLFNSize = dict( cachedLFNSize )
     res = pu.groupBySize( data, 'Flush' )
     self.assert_( res['OK'] )
     self.assert_( len( res['Value'] ) == 6 )

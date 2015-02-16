@@ -230,8 +230,7 @@ class PluginUtilities( object ):
           for se in [se for se in seFiles if se != replicaSE]:
             seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
         # Remove the selected files from the size cache
-#         print "self.cachedLFNSize", self.cachedLFNSize
-#         self.clearCachedFileSize( lfnsInTasks )
+        self.clearCachedFileSize( lfnsInTasks )
       self.logVerbose( "groupBySize: %d tasks created with groupSE %s" % ( len( tasks ) - nTasks, str( groupSE ) ) )
       self.logVerbose( "groupBySize: %d files have not been included in tasks" % len( files ) )
       nTasks = len( tasks )
