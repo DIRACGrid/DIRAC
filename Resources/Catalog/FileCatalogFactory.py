@@ -4,9 +4,12 @@ __RCSID__ = "$Id$"
     configuration description
 """
 
+import os.path
+
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import ObjectLoader
 
 class FileCatalogFactory:
@@ -22,7 +25,7 @@ class FileCatalogFactory:
       return S_OK( catalog )
 
     # get the CS description first
-    catalogPath = getCatalogPath( catalogName )
+    catalogPath = self._getCatalogPath( catalogName )
     catalogType = gConfig.getValue( catalogPath + '/CatalogType', catalogName )
     catalogURL = gConfig.getValue( catalogPath + '/CatalogURL', "DataManagement/" + catalogType )
 
@@ -58,3 +61,15 @@ class FileCatalogFactory:
     # Catalog module was not loaded
     return S_ERROR( 'No suitable client found for %s' % catalogName )
 
+  def _getCatalogPath( self, catalogName ):
+    """
+    Check first in Operation/Services section prior to return the standard location in Resources
+    """
+    fileCatalogSections = Operations().getSections( '/Services/Catalogs', [] )
+    if fileCatalogSections['OK']:
+      if catalogName in fileCatalogSections['Value']:
+        for opt in ['Status', 'AccessType']:
+          catPath = Operations().getPath( 'Services/Catalogs/%s/%s' % ( catalogName, opt ) )
+          if catPath:
+            return os.path.dirname( catPath )
+    return getCatalogPath( catalogName )
