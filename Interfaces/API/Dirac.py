@@ -47,6 +47,12 @@ from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
 COMPONENT_NAME = 'DiracAPI'
 
+def parseArguments( args ):
+  argList = []
+  for arg in args:
+    argList += arg.split( ',' )
+  return argList
+
 class Dirac( API ):
   """
    DIRAC API Class
@@ -1080,10 +1086,10 @@ class Dirac( API ):
           records.append( ( lfnPrint, se, url ) )
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
-        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )    
-      
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )
+
       printTable( fields, records, numbering = False )
-      
+
       print self.pPrint.pformat( repsResult['Value'] )
 
     return repsResult
@@ -2587,12 +2593,12 @@ class Dirac( API ):
 
     if printOutput:
       loggingTupleList = result['Value']
-      
+
       fields = [ 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' ]
       records = []
       for l in loggingTupleList:
         records.append( [ l[i] for i in ( 4, 0, 1, 2, 3 ) ] )
-      printTable( fields, records, numbering = False, columnSeparator = '  ' )  
+      printTable( fields, records, numbering = False, columnSeparator = '  ' )
 
     return result
 
