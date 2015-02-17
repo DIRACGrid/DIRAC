@@ -27,15 +27,11 @@ def _resolveSEGroup( seGroupList ):
 
   return seList
 
-class CSHelpers( object ):
 
-  def __init__( self ):
-    self.__operations = Operations()
+def isSEFailover( storageElement ):
+  seList = Operations().getValue( 'DataManagement/SEsUsedForFailover', [] )
+  return storageElement in _resolveSEGroup( seList )
 
-  def isSEFailover( self, storageElement ):
-    seList = self.__operations.getValue( 'DataManagement/SEsUsedForFailover', [] )
-    return storageElement in _resolveSEGroup( seList )
-
-  def isSEForJobs( self, storageElement ):
-    seList = self.__operations.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] )
-    return storageElement not in _resolveSEGroup( seList )
+def isSEForJobs( storageElement ):
+  seList = Operations().getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] )
+  return storageElement not in _resolveSEGroup( seList )
