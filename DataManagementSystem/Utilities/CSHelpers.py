@@ -35,3 +35,7 @@ def isSEFailover( storageElement ):
 def isSEForJobs( storageElement ):
   seList = Operations().getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] )
   return storageElement not in _resolveSEGroup( seList )
+
+def isSEArchive( storageElement ):
+  seList = Operations().getValue( 'DataManagement/SEsUsedForArchive', [] )
+  return storageElement in _resolveSEGroup( seList )
