@@ -128,7 +128,7 @@ class Operation( object ):
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
-    if newStatus in ('Failed', 'Done'):
+    if newStatus in ('Failed', 'Done', 'Scheduled'):
       if self._Status != newStatus:
         self._LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
@@ -310,9 +310,17 @@ class Operation( object ):
     """ last update setter """
     if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
+<<<<<<< HEAD
     if type( value ) in StringTypes:
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._LastUpdate = value
+=======
+    if type( value ) == str:
+      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    self.__data__["LastUpdate"] = value
+    if self._parent:
+      self._parent.LastUpdate = value
+>>>>>>> rel-v6r12
 
   def __str__( self ):
     """ str operator """
