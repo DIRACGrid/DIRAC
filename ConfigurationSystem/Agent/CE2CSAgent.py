@@ -1,5 +1,4 @@
-﻿# $HeadURL$
-""" Queries BDII for unknown CE.
+﻿""" Queries BDII for unknown CE.
     Queries BDII for CE information and puts it to CS.
 """
 __RCSID__ = "$Id$"
@@ -17,11 +16,16 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 
 class CE2CSAgent( AgentModule ):
 
-  addressTo = ''
-  addressFrom = ''
-  voName = ''
-  subject = "CE2CSAgent"
-  alternativeBDIIs = []
+  def __init__(self):
+    """ c'tor
+    """
+    self.addressTo = ''
+    self.addressFrom = ''
+    self.voName = ''
+    self.subject = "CE2CSAgent"
+    self.alternativeBDIIs = []
+
+    self.csAPI = None
 
   def initialize( self ):
 
@@ -147,6 +151,7 @@ class CE2CSAgent( AgentModule ):
           self.log.warn( "Error during BDII request", response['Message'] )
           response = self.__checkAlternativeBDIISite( ldapCluster, ce )
           continue
+        clusters = {}
         clusters = response['Value']
         if len( clusters ) != 1:
           self.log.warn( "Error in cluster length", " CE %s Length %d" % ( ce, len( clusters ) ) )

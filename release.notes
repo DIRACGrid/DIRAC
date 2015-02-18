@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre13]
+[v6r13-pre14]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -147,6 +147,16 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p21]
+
+*RMS
+BUGFIX: File,Operation,RequestDB - bug making that the request would always show 
+        the current time for LastUpdate
+  
+*WMS
+FIX: JobAgent - storing on disk retrieved job JDL as required by VMDIRAC
+     ( to be reviewed )        
 
 [v6r12p20]
 

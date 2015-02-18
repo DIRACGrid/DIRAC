@@ -219,14 +219,12 @@ class RequestTasks( TaskBase ):
     updateDict = {}
 
     for taskDict in taskDicts:
-      transID = taskDict['TransformationID']
-      taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
 
       newStatus = self.__getRequestStatus( taskDict['ExternalID'] )
       if not newStatus['OK']:
         log = self.log.verbose if 'not exist' in newStatus['Message'] else self.log.warn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s: %s' % ( requestName, newStatus['Message'] ) )
+        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s' % newStatus['Message'] )
       else:
         newStatus = newStatus['Value']
         if newStatus != oldStatus:
@@ -272,7 +270,7 @@ class RequestTasks( TaskBase ):
       statusDict = self.__getRequestFileStatus( requestID, lfnDict.keys() )
       if not statusDict['OK']:
         log = self.log.verbose if 'not exist' in statusDict['Message'] else self.log.warn
-        log( "getSubmittedFileStatus: Failed to get files status for request", '%s: %s' % ( requestName, statusDict['Message'] ) )
+        log( "getSubmittedFileStatus: Failed to get files status for request", '%s' % statusDict['Message'] )
         continue
 
       statusDict = statusDict['Value']
