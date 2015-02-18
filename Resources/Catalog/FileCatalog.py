@@ -16,25 +16,25 @@ class FileCatalog( object ):
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
                 'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
-  
+
   ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata', 'getDirectoryMetadata',
                      'getFileUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
                      'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
                      'getMetadataSet']
-  
+
   ro_methods += ro_meta_methods
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
                    'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
                    'changePathOwner', 'changePathGroup']
-  
+
   write_meta_methods = ['addMetadataField', 'deleteMetadataField', 'setMetadata', 'setMetadataBulk',
                         'removeMetadata', 'addMetadataSet']
-  
+
   write_methods += write_meta_methods
 
-  def __init__( self, catalogs = [], vo = None ):
+  def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
     """
     self.valid = True
@@ -46,8 +46,10 @@ class FileCatalog( object ):
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
 
     self.opHelper = Operations( vo = self.vo )
-    if type( catalogs ) in types.StringTypes:
-      catalogs = [catalogs]
+    if catalogs == None:
+      catalogs = []
+    elif type( catalogs ) in types.StringTypes:
+      catalogs = catalogs.split( ',' )
     if catalogs:
       res = self._getSelectedCatalogs( catalogs )
     else:
@@ -65,13 +67,13 @@ class FileCatalog( object ):
 
   def getWriteCatalogs( self ):
     return self.writeCatalogs
-  
+
   def getMasterCatalogNames( self ):
     """ Returns the list of names of the Master catalogs """
 
     masterNames = [catalogName for catalogName, oCatalog, master in self.writeCatalogs if master]
     return S_OK( masterNames )
-    
+
 
   def __getattr__( self, name ):
     self.call = name
@@ -96,11 +98,11 @@ class FileCatalog( object ):
     allLfns = fileInfo.keys()
     parms = parms[1:]
     for catalogName, oCatalog, master in self.writeCatalogs:
-      
+
       # Skip if metadata related method on pure File Catalog
       if self.call in FileCatalog.write_meta_methods and not catalogName in self.metaCatalogs:
         continue
-      
+
       method = getattr( oCatalog, self.call )
       res = method( fileInfo, *parms, **kws )
 
@@ -135,11 +137,11 @@ class FileCatalog( object ):
     successful = {}
     failed = {}
     for catalogName, oCatalog, _master in self.readCatalogs:
-      
+
       # Skip if metadata related method on pure File Catalog
       if self.call in FileCatalog.ro_meta_methods and not catalogName in self.metaCatalogs:
         continue
-      
+
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
       if res['OK']:
@@ -215,7 +217,7 @@ class FileCatalog( object ):
       self.readCatalogs.append( ( catalogName, oCatalog, True ) )
       self.writeCatalogs.append( ( catalogName, oCatalog, True ) )
       if catalogConfig.get( 'MetaCatalog' ) == 'True':
-        self.metaCatalogs.append( catalogName )  
+        self.metaCatalogs.append( catalogName )
     return S_OK()
 
   def _getCatalogs( self ):
@@ -272,7 +274,7 @@ class FileCatalog( object ):
           else:
             self.writeCatalogs.append( ( catalogName, oCatalog, master ) )
       if catalogConfig.get( 'MetaCatalog' ) == 'True':
-        self.metaCatalogs.append( catalogName )      
+        self.metaCatalogs.append( catalogName )
     return S_OK()
 
   def _getCatalogConfigDetails( self, catalogName ):
