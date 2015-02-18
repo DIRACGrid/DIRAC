@@ -32,6 +32,7 @@ import os
 from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Utilities.File import checkGuid
+import datetime
 
 ########################################################################
 class File( Record ):
@@ -232,6 +233,11 @@ class File( Record ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     if value == 'Done':
       self.__data__['Error'] = ''
+
+    updateTime = ( self.__data__["Status"] != value )
+    if updateTime and self._parent:
+      self._parent.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
     self.__data__["Status"] = value
     if self._parent:
       self._parent._notify()

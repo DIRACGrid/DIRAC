@@ -136,10 +136,9 @@ class Operation( Record ):
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
-    if newStatus in ( 'Failed', 'Done' ):
+    if newStatus in ( 'Failed', 'Done', 'Scheduled' ):
       if self.__data__["Status"] != newStatus:
         self.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
-
 
     self.__data__["Status"] = newStatus
     if self._parent:
@@ -397,6 +396,8 @@ class Operation( Record ):
     if type( value ) == str:
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
+    if self._parent:
+      self._parent.LastUpdate = value
 
   def __str__( self ):
     """ str operator """
