@@ -1,3 +1,13 @@
+[v6r12p21]
+
+*RMS
+BUGFIX: File,Operation,RequestDB - bug making that the request would always show 
+        the current time for LastUpdate
+  
+*WMS
+FIX: JobAgent - storing on disk retrieved job JDL as required by VMDIRAC
+     ( to be reviewed )        
+
 [v6r12p20]
 
 *DMS
