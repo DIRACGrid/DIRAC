@@ -498,6 +498,8 @@ class FTSJob( object ):
 
     # Returns a non zero status if error
     if returnCode != 0:
+      if 'was not found' in outputStr and not errStr:
+        errStr = 'Job was not found'
       return S_ERROR( errStr )
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )

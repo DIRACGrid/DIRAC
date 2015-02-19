@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType
+from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType, BooleanType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -227,11 +227,11 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getJobAttribute( jobID, 'Site' )
 
 ##############################################################################
-  types_getJobJDL = [ IntType ]
+  types_getJobJDL = [ IntType, BooleanType ]
   @staticmethod
-  def export_getJobJDL ( jobID ):
+  def export_getJobJDL( jobID, original ):
 
-    return gJobDB.getJobJDL( jobID )
+    return gJobDB.getJobJDL( jobID, original = original )
 
 ##############################################################################
   types_getJobLoggingInfo = [ IntType ]
