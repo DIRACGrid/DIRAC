@@ -47,6 +47,12 @@ from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
 COMPONENT_NAME = 'DiracAPI'
 
+def parseArguments( args ):
+  argList = []
+  for arg in args:
+    argList += arg.split( ',' )
+  return argList
+
 class Dirac( API ):
   """
    DIRAC API Class
@@ -75,6 +81,24 @@ class Dirac( API ):
 
     self.__clients = None
 
+  def __checkFileArgument( self, fnList, prefix = None, single = False ):
+    if prefix is None:
+      prefix = 'LFN'
+    if type( fnList ) in types.StringTypes:
+      otherPrefix = 'LFN:' if prefix == 'PFN' else 'PFN:'
+      if otherPrefix in fnList:
+        return S_ERROR( self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix ) )
+      return S_OK( fnList.replace( '%s:' % prefix, '' ) )
+    elif type( fnList ) == types.ListType:
+      if single:
+        return S_ERROR( self._errorReport( 'Expected single %s string' % prefix ) )
+      try:
+        return S_OK( [fn.replace( '%s:' % prefix, '' ) for fn in fnList] )
+      except Exception, x:
+        return S_ERROR( self._errorReport( str( x ), 'Expected strings in list of %ss' % prefix ) )
+    else:
+      return S_ERROR( self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix ) )
+
   #############################################################################
   # Repository specific methods
   #############################################################################
@@ -91,8 +115,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    jobs = self.jobRepo.readRepository()['Value']
-    jobIDs = jobs.keys()
+    jobIDs = self.jobRepo.readRepository()['Value'].keys()
     if printOutput:
       print self.pPrint.pformat( jobIDs )
     return S_OK( jobIDs )
@@ -116,15 +139,10 @@ class Dirac( API ):
     if not res['OK']:
       return self._errorReport( res['Message'], 'Failed to get status of jobs from WMS' )
 
-    jobs = self.jobRepo.readRepository()['Value']
     statusDict = {}
     for jobDict in jobs.values():
-      state = 'Unknown'
-      if jobDict.has_key( 'State' ):
-        state = jobDict['State']
-      if not statusDict.has_key( state ):
-        statusDict[state] = 0
-      statusDict[state] += 1
+      state = jobDict.get( 'State', 'Unknown' )
+      statusDict[state] = statusDict.setdefault( state, 0 ) + 1
     if printOutput:
       print self.pPrint.pformat( statusDict )
     return S_OK( statusDict )
@@ -151,9 +169,8 @@ class Dirac( API ):
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
-      if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
-        if ( jobDict.has_key( 'Retrieved' ) and ( not int( jobDict['Retrieved'] ) ) ) \
-           or ( not jobDict.has_key( 'Retrieved' ) ):
+      if jobDict.get( 'State' ) in requestedStates:
+        if not jobDict.get( 'Retrieved' ) :
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
 
@@ -179,9 +196,8 @@ class Dirac( API ):
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
-      if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
-        if ( jobDict.has_key( 'OutputData' ) and ( not int( jobDict['OutputData'] ) ) ) \
-           or ( not jobDict.has_key( 'OutputData' ) ):
+      if jobDict.get( 'State' ) in requestedStates:
+        if not jobDict.get( 'OutputData' ):
           destDir = jobID
           if destinationDirectory:
             destDir = "%s/%s" % ( destinationDirectory, jobID )
@@ -204,9 +220,9 @@ class Dirac( API ):
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
-      if jobDict.has_key( 'Sandbox' ) and os.path.exists( jobDict['Sandbox'] ):
+      if os.path.exists( jobDict.get( 'Sandbox', '' ) ):
         shutil.rmtree( jobDict['Sandbox'], ignore_errors = True )
-      if jobDict.has_key( 'OutputFiles' ):
+      if 'OutputFiles' in jobDict:
         for fileName in eval( jobDict['OutputFiles'] ):
           if os.path.exists( fileName ):
             os.remove( fileName )
@@ -621,15 +637,10 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    if type( lfns ) == type( " " ):
-      lfns = [lfns.replace( 'LFN:', '' )]
-    elif type( lfns ) == type( [] ):
-      try:
-        lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for LFNs' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfns = ret['Value']
 
     if not siteName:
       siteName = DIRAC.siteName()
@@ -647,14 +658,12 @@ class Dirac( API ):
     if not inputDataPolicy:
       return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
-    catalogFailed = {}
     self.log.info( 'Attempting to resolve data for %s' % siteName )
     self.log.verbose( '%s' % ( '\n'.join( lfns ) ) )
     replicaDict = self.getReplicas( lfns )
     if not replicaDict['OK']:
       return replicaDict
-    if replicaDict['Value'].has_key( 'Failed' ):
-      catalogFailed = replicaDict['Value']['Failed']
+    catalogFailed = replicaDict['Value'].get( 'Failed', {} )
 
     guidDict = self.getMetadata( lfns )
     if not guidDict['OK']:
@@ -689,16 +698,15 @@ class Dirac( API ):
     result = module.execute()
     self.log.debug( result )
     if not result['OK']:
-      if result.has_key( 'Failed' ):
+      if 'Failed' in result:
         self.log.error( 'Input data resolution failed for the following files:\n', '\n'.join( result['Failed'] ) )
 
     if catalogFailed:
       self.log.error( 'Replicas not found for the following files:' )
       for key, value in catalogFailed.items():
         self.log.error( '%s %s' % ( key, value ) )
-      if result.has_key( 'Failed' ):
-        failedKeys = catalogFailed.keys()
-        result['Failed'] = failedKeys
+      if 'Failed' in result:
+        result['Failed'] = catalogFailed.keys()
 
     return result
 
@@ -723,9 +731,7 @@ class Dirac( API ):
     replicaDict = self.getReplicas( inputData )
     if not replicaDict['OK']:
       return replicaDict
-    catalogFailed = {}
-    if replicaDict['Value'].has_key( 'Failed' ):
-      catalogFailed = replicaDict['Value']['Failed']
+    catalogFailed = replicaDict['Value'].get( 'Failed', {} )
 
     guidDict = self.getMetadata( inputData )
     if not guidDict['OK']:
@@ -756,9 +762,8 @@ class Dirac( API ):
       self.log.error( 'Replicas not found for the following files:' )
       for key, value in catalogFailed.items():
         self.log.error( '%s %s' % ( key, value ) )
-      if result.has_key( 'Failed' ):
-        failedKeys = catalogFailed.keys()
-        result['Failed'] = failedKeys
+      if 'Failed' in result:
+        result['Failed'] = catalogFailed.keys()
 
     return result
 
@@ -792,12 +797,10 @@ class Dirac( API ):
       return parameters
 
     self.log.verbose( parameters )
-    inputData = None
-    if parameters['Value'].has_key( 'InputData' ):
-      if parameters['Value']['InputData']:
-        inputData = parameters['Value']['InputData']
-        if type( inputData ) == type( " " ):
-          inputData = [inputData]
+    inputData = parameters['Value'].get( 'InputData' )
+    if inputData:
+      if type( inputData ) == type( " " ):
+        inputData = [inputData]
 
     jobParamsDict = {'Job':parameters['Value']}
 
@@ -868,8 +871,8 @@ class Dirac( API ):
       self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
       # return self._errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
-    if parameters['Value'].has_key( 'InputSandbox' ):
-      sandbox = parameters['Value']['InputSandbox']
+    sandbox = parameters['Value'].get( 'InputSandbox' )
+    if sandbox:
       if type( sandbox ) in types.StringTypes:
         sandbox = [sandbox]
       for isFile in sandbox:
@@ -901,22 +904,20 @@ class Dirac( API ):
 
     self.log.info( 'Attempting to submit job to local site: %s' % DIRAC.siteName() )
 
-    if parameters['Value'].has_key( 'Executable' ):
+    if 'Executable' in parameters['Value']:
       executable = os.path.expandvars( parameters['Value']['Executable'] )
     else:
       return self._errorReport( 'Missing job "Executable"' )
 
-    arguments = ''
-    if parameters['Value'].has_key( 'Arguments' ):
-      arguments = parameters['Value']['Arguments']
+    arguments = parameters['Value'].get( 'Arguments', '' )
 
     command = '%s %s' % ( executable, arguments )
 
     self.log.info( 'Executing: %s' % command )
     executionEnv = dict( os.environ )
-    if parameters['Value'].has_key( 'ExecutionEnvironment' ):
+    variableList = parameters['Value'].get( 'ExecutionEnvironment' )
+    if variableList:
       self.log.verbose( 'Adding variables to execution environment' )
-      variableList = parameters['Value']['ExecutionEnvironment']
       if type( variableList ) == type( " " ):
         variableList = [variableList]
       for var in variableList:
@@ -936,13 +937,9 @@ class Dirac( API ):
     status = result['Value'][0]
     self.log.verbose( 'Status after execution is %s' % ( status ) )
 
-    outputFileName = None
-    errorFileName = None
     # FIXME: if there is an callbackFunction, StdOutput and StdError will be empty soon
-    if parameters['Value'].has_key( 'StdOutput' ):
-      outputFileName = parameters['Value']['StdOutput']
-    if parameters['Value'].has_key( 'StdError' ):
-      errorFileName = parameters['Value']['StdError']
+    outputFileName = parameters['Value'].get( 'StdOutput' )
+    errorFileName = parameters['Value'].get( 'StdError' )
 
     if outputFileName:
       stdout = result['Value'][1]
@@ -963,16 +960,12 @@ class Dirac( API ):
       errorFile = open( errorFileName, 'w' )
       print >> errorFile, stderr
       errorFile.close()
+      sandbox = None
     else:
       self.log.warn( 'Job JDL has no StdError file parameter defined' )
+      sandbox = parameters['Value'].get( 'OutputSandbox' )
 
-      if parameters['Value'].has_key( 'OutputSandbox' ):
-        sandbox = parameters['Value']['OutputSandbox']
-        if type( sandbox ) in types.StringTypes:
-          sandbox = [sandbox]
-
-    if parameters['Value'].has_key( 'OutputSandbox' ):
-      sandbox = parameters['Value']['OutputSandbox']
+    if sandbox:
       if type( sandbox ) in types.StringTypes:
         sandbox = [sandbox]
       for i in sandbox:
@@ -1048,15 +1041,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfns ) == type( " " ):
-      lfns = lfns.replace( 'LFN:', '' )
-    elif type( lfns ) == type( [] ):
-      try:
-        lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for LFNs' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfns = ret['Value']
 
     start = time.time()
     dm = DataManager()
@@ -1080,11 +1068,9 @@ class Dirac( API ):
           records.append( ( lfnPrint, se, url ) )
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
-        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )    
-      
+        records.append( ( lfn, 'Unknown', str( repsResult['Value']['Failed'][lfn] ) ) )
+
       printTable( fields, records, numbering = False )
-      
-      print self.pPrint.pformat( repsResult['Value'] )
 
     return repsResult
 
@@ -1109,15 +1095,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfns ) == type( " " ):
-      lfns = lfns.replace( 'LFN:', '' )
-    elif type( lfns ) == type( [] ):
-      try:
-        lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for LFNs' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfns = ret['Value']
 
 #     rm = ReplicaManager()
 #     start = time.time()
@@ -1161,15 +1142,10 @@ class Dirac( API ):
     """
     from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
     sitesForSE = {}
-    if type( lfns ) == type( " " ):
-      lfns = lfns.replace( 'LFN:', '' )
-    elif type( lfns ) == type( [] ):
-      try:
-        lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for LFNs' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfns = ret['Value']
 
     if not type( maxFilesPerJob ) == types.IntType:
       try:
@@ -1201,6 +1177,8 @@ class Dirac( API ):
 
   #############################################################################
   def getMetadata( self, lfns, printOutput = False ):
+    return self.getLfnMetadata( lfns, printOutput = printOutput )
+  def getLfnMetadata( self, lfns, printOutput = False ):
     """Obtain replica metadata from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -1216,15 +1194,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfns ) == type( " " ):
-      lfns = lfns.replace( 'LFN:', '' )
-    elif type( lfns ) == type( [] ):
-      try:
-        lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for LFNs' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfns, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfns = ret['Value']
 
     fc = FileCatalog()
     start = time.time()
@@ -1265,10 +1238,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
-      lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     if not os.path.exists( fullPath ):
       return self._errorReport( 'Local file %s does not exist' % ( fullPath ) )
@@ -1280,10 +1253,8 @@ class Dirac( API ):
     result = dm.putAndRegister( lfn, fullPath, diracSE, guid = fileGuid )
     if not result['OK']:
       return self._errorReport( 'Problem during putAndRegister call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1305,15 +1276,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
-      lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) == type( [] ):
-      try:
-        lfn = [str( lfnName.replace( 'LFN:', '' ) ) for lfnName in lfn]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for LFN(s)' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     dm = DataManager()
     result = dm.getFile( lfn, destinationDir = destDir )
@@ -1326,10 +1292,8 @@ class Dirac( API ):
         print self.pPrint.pformat( result['Value'] )
       return S_ERROR( result['Value'] )
 
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1358,10 +1322,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) in types.StringTypes:
-      lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) != types.ListType:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     if not sourceSE:
       sourceSE = ''
@@ -1376,10 +1340,8 @@ class Dirac( API ):
     result = dm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
     if not result['OK']:
       return self._errorReport( 'Problem during replicateFile call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if  printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   def replicate( self, lfn, destinationSE, sourceSE = '', printOutput = False ):
@@ -1404,10 +1366,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
-      lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     if not sourceSE:
       sourceSE = ''
@@ -1419,10 +1381,8 @@ class Dirac( API ):
     result = dm.replicate( lfn, destinationSE, sourceSE, '' )
     if not result['OK']:
       return self._errorReport( 'Problem during replicate call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1444,19 +1404,17 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
-      lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string for LFN' )
+    ret = self.__checkFileArgument( lfn, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     dm = DataManager()
-    result = dm.getReplicaAccessUrl( [lfn], storageElement )
+    result = dm.getReplicaAccessUrl( lfn, storageElement )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1478,25 +1436,16 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( pfn ) == type( " " ):
-      if re.search( 'LFN:', pfn ):
-        return self._errorReport( 'Expected PFN not LFN' )
-      pfn = pfn.replace( 'PFN:', '' )
-    elif type( pfn ) == type( [] ):
-      try:
-        pfn = [str( pfnName.replace( 'PFN:', '' ) ) for pfnName in pfn]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected strings for PFN(s)' )
-    else:
-      return self._errorReport( 'Expected single string for PFN' )
+    ret = self.__checkFileArgument( pfn, 'PFN' )
+    if not ret['OK']:
+      return ret['Message']
+    pfn = ret['Value']
 
-    result = StorageElement( storageElement ).getAccessUrl( [pfn] )
+    result = StorageElement( storageElement ).getAccessUrl( pfn )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1519,26 +1468,16 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( pfn ) == type( " " ):
-      if re.search( 'LFN:', pfn ):
-        return self._errorReport( 'Expected PFN not LFN' )
-      pfn = pfn.replace( 'PFN:', '' )
-      pfn = [pfn]
-    elif type( pfn ) == type( [] ):
-      try:
-        pfn = [str( pfile.replace( 'PFN:', '' ) ) for pfile in pfn]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected list of strings for PFNs' )
-    else:
-      return self._errorReport( 'Expected single string or list of strings for PFN(s)' )
+    ret = self.__checkFileArgument( pfn, 'PFN' )
+    if not ret['OK']:
+      return ret['Message']
+    pfn = ret['Value']
 
     result = StorageElement( storageElement ).getFileMetadata( pfn )
     if not result['OK']:
       return self._errorReport( 'Problem during getStorageFileMetadata call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1558,10 +1497,10 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    if type( lfn ) in types.StringTypes:
-      lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) != types.ListType:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfn, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     dm = DataManager()
     result = dm.removeFile( lfn )
@@ -1585,10 +1524,10 @@ class Dirac( API ):
        :type storageElement: string
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) in types.StringTypes:
-      lfn = lfn.replace( 'LFN:', '' )
-    elif type( lfn ) != types.ListType:
-      return self._errorReport( 'Expected single string or list of strings for LFN(s)' )
+    ret = self.__checkFileArgument( lfn, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     dm = DataManager()
     result = dm.removeReplica( storageElement, lfn )
@@ -1611,10 +1550,10 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( lfn ) == type( " " ):
-      lfn = lfn.replace( 'LFN:', '' )
-    else:
-      return self._errorReport( 'Expected single string for LFN' )
+    ret = self.__checkFileArgument( lfn, 'LFN' )
+    if not ret['OK']:
+      return ret['Message']
+    lfn = ret['Value']
 
     dataLogging = RPCClient( 'DataManagement/DataLogging' )
     result = dataLogging.getFileLoggingInfo( lfn )
@@ -1786,7 +1725,7 @@ class Dirac( API ):
       self.log.verbose( 'Could not retrieve job parameters to check for oversized sandbox' )
       return params
 
-    if not params['Value'].has_key( 'OutputSandboxLFN' ):
+    if not params['Value'].get( 'OutputSandboxLFN' ):
       self.log.verbose( 'No oversized output sandbox for job %s:\n%s' % ( jobID, params ) )
       return result
 
@@ -1826,6 +1765,8 @@ class Dirac( API ):
 
   #############################################################################
   def delete( self, jobID ):
+    return self.jobDelete( jobID )
+  def jobDelete( self, jobID ):
     """Delete job or list of jobs from the WMS, if running these jobs will
        also be killed.
 
@@ -1895,6 +1836,9 @@ class Dirac( API ):
     return result
 
   def kill( self, jobID ):
+    return self.jobKill( jobID )
+
+  def jobKill( self, jobID ):
     """Issue a kill signal to a running job.  If a job has already completed this
        action is harmless but otherwise the process will be killed on the compute
        resource by the Watchdog.
@@ -1980,9 +1924,8 @@ class Dirac( API ):
       result[job].update( vals )
     for job, vals in minorStatusDict['Value'].items():
       result[job].update( vals )
-    for job, vals in result.items():
-      if result[job].has_key( 'JobID' ):
-        del result[job]['JobID']
+    for job in result:
+      result[job].pop( 'JobID', None )
 
     return S_OK( result )
 
@@ -2051,7 +1994,7 @@ class Dirac( API ):
     result = self.parameters( int( jobID ) )
     if not result['OK']:
       return result
-    if not result['Value'].has_key( 'UploadedOutputData' ):
+    if not result['Value'].get( 'UploadedOutputData' ):
       self.log.info( 'Parameters for job %s do not contain uploaded output data:\n%s' % ( jobID, result ) )
       return S_ERROR( 'No output data found for job %s' % jobID )
 
@@ -2091,7 +2034,7 @@ class Dirac( API ):
     result = self.parameters( int( jobID ) )
     if not result['OK']:
       return result
-    if not result['Value'].has_key( 'UploadedOutputData' ):
+    if not result['Value'].get( 'UploadedOutputData' ):
       self.log.info( 'Parameters for job %s do not contain uploaded output data:\n%s' % ( jobID, result ) )
       return S_ERROR( 'No output data found for job %s' % jobID )
 
@@ -2261,13 +2204,9 @@ class Dirac( API ):
     for job in jobID:
       summary[job] = {}
       for key in headers:
-        if not jobSummary.has_key( job ):
+        if job not in jobSummary:
           self.log.warn( 'No records for JobID %s' % job )
-          value = 'None'
-        elif jobSummary[job].has_key( key ):
-          value = jobSummary[job][key]
-        else:
-          value = 'None'
+        value = jobSummary.get( job, {} ).get( key, 'None' )
         summary[job][key] = value
 
     if outputFile:
@@ -2472,6 +2411,9 @@ class Dirac( API ):
 
   #############################################################################
   def attributes( self, jobID, printOutput = False ):
+    return self.jobAttributes( jobID, printOutput = printOutput )
+
+  def jobAttributes( self, jobID, printOutput = False ):
     """Return DIRAC attributes associated with the given job.
 
        Each job will have certain attributes that affect the journey through the
@@ -2514,6 +2456,8 @@ class Dirac( API ):
 
   #############################################################################
   def parameters( self, jobID, printOutput = False ):
+    return self.jobParameters( jobID, printOutput = printOutput )
+  def jobParameters( self, jobID, printOutput = False ):
     """Return DIRAC parameters associated with the given job.
 
        DIRAC keeps track of several job parameters which are kept in the job monitoring
@@ -2544,8 +2488,7 @@ class Dirac( API ):
     if not result['OK']:
       return result
 
-    if result['Value'].has_key( 'StandardOutput' ):
-      del result['Value']['StandardOutput']
+    result['Value'].pop( 'StandardOutput', None )
 
     if printOutput:
       print self.pPrint.pformat( result['Value'] )
@@ -2554,6 +2497,8 @@ class Dirac( API ):
 
   #############################################################################
   def loggingInfo( self, jobID, printOutput = False ):
+    return self.jobLoggingInfo( jobID, printOutput = printOutput )
+  def jobLoggingInfo( self, jobID, printOutput = False ):
     """DIRAC keeps track of job transitions which are kept in the job monitoring
        service, see example below.  Logging summary also printed to screen at the
        INFO level.
@@ -2587,17 +2532,19 @@ class Dirac( API ):
 
     if printOutput:
       loggingTupleList = result['Value']
-      
+
       fields = [ 'Source', 'Status', 'MinorStatus', 'ApplicationStatus', 'DateTime' ]
       records = []
       for l in loggingTupleList:
         records.append( [ l[i] for i in ( 4, 0, 1, 2, 3 ) ] )
-      printTable( fields, records, numbering = False, columnSeparator = '  ' )  
+      printTable( fields, records, numbering = False, columnSeparator = '  ' )
 
     return result
 
   #############################################################################
-  def peek( self, jobID, printout = False ):
+  def peek( self, jobID, printout = False, printOutput = False ):
+    return self.jobPeek( jobID, printOutput = printout or printOutput )
+  def jobPeek( self, jobID, printOutput = False ):
     """The peek function will attempt to return standard output from the WMS for
        a given job if this is available.  The standard output is periodically
        updated from the compute resource via the application Watchdog. Available
@@ -2625,13 +2572,14 @@ class Dirac( API ):
     if not result['OK']:
       return self._errorReport( result, 'Could not retrieve job attributes' )
 
-    stdout = 'Not available yet.'
-    if result['Value'].has_key( 'StandardOutput' ):
-      self.log.verbose( result['Value']['StandardOutput'] )
-      stdout = result['Value']['StandardOutput']
-      if printout:
-        print stdout
+    stdout = result['Value'].get( 'StandardOutput' )
+    if stdout:
+      if printOutput:
+        self.log.always( stdout )
+      else:
+        self.log.verbose( stdout )
     else:
+      stdout = 'Not available yet.'
       self.log.info( 'No standard output available to print.' )
 
     return S_OK( stdout )
@@ -2678,7 +2626,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getJobJDL( self, jobID, printOutput = False ):
+  def getJobJDL( self, jobID, original = False, printOutput = False ):
     """Simple function to retrieve the current JDL of an existing job in the
        workload management system.  The job JDL is converted to a dictionary
        and returned in the result structure.
@@ -2700,7 +2648,7 @@ class Dirac( API ):
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
-    result = monitoring.getJobJDL( jobID )
+    result = monitoring.getJobJDL( jobID, original )
     if not result['OK']:
       return result
 

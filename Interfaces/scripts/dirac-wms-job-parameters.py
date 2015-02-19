@@ -22,12 +22,12 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                              import Dirac
+from DIRAC.Interfaces.API.Dirac                              import Dirac, parseArguments
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
-for job in args:
+for job in parseArguments( args ):
 
   result = dirac.parameters( job, printOutput = True )
   if not result['OK']:

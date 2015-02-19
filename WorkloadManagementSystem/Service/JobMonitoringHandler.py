@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType
+from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType, BooleanType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -228,11 +228,11 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getJobAttribute( jobID, 'Site' )
 
 ##############################################################################
-  types_getJobJDL = [ IntType ]
+  types_getJobJDL = [ IntType, BooleanType ]
   @staticmethod
-  def export_getJobJDL ( jobID ):
+  def export_getJobJDL ( jobID, original ):
 
-    return gJobDB.getJobJDL( jobID )
+    return gJobDB.getJobJDL( jobID, original = original )
 
 ##############################################################################
   types_getJobLoggingInfo = [ IntType ]
@@ -355,7 +355,7 @@ class JobMonitoringHandler( RequestHandler ):
         return S_ERROR( 'Failed to select jobs: ' + result['Message'] )
 
       summaryJobList = result['Value']
-      if not self.globalJobsInfo:      
+      if not self.globalJobsInfo:
         validJobs, _invalidJobs, _nonauthJobs, _ownJobs = self.jobPolicy.evaluateJobRights( summaryJobList,
                                                                                             RIGHT_GET_INFO )
         summaryJobList = validJobs
@@ -502,7 +502,7 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get input data for the specified jobs
     """
     return  gJobDB.getInputData( jobID )
-  
+
 
 ##############################################################################
   types_getOwnerGroup = []
@@ -512,4 +512,3 @@ class JobMonitoringHandler( RequestHandler ):
     Return Distinct Values of OwnerGroup from the JobsDB
     """
     return gJobDB.getDistinctJobAttributes( 'OwnerGroup' )
-  

@@ -11,6 +11,8 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
+original = False
+Script.registerSwitch( '', 'Original', '   Gets the original JDL' )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
@@ -19,17 +21,21 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+for switch in Script.getUnprocessedSwitches():
+  if switch[0] == 'Original':
+    original = True
+
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                              import Dirac
+from DIRAC.Interfaces.API.Dirac                              import Dirac, parseArguments
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
-for job in args:
+for job in parseArguments( args ):
 
-  result = dirac.getJobJDL( job, printOutput = True )
+  result = dirac.getJobJDL( job, original = original, printOutput = True )
   if not result['OK']:
     errorList.append( ( job, result['Message'] ) )
     exitCode = 2

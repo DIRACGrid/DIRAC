@@ -159,7 +159,7 @@ class JobManifest( object ):
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
     # Check CPUTime
-    
+
     # Hack, sorry Adri, for v6r7 branch only
     result = self.__checkNumericalVar( "MaxCPUTime", 86400, 0, 1500000 )
     if not result[ 'OK' ]:
@@ -182,7 +182,8 @@ class JobManifest( object ):
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( 500 )
+    maxInputData = Operations().getValue( "JobDescription/MaxInputData", 500 )
+    result = self.__checkMaxInputData( maxInputData )
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
