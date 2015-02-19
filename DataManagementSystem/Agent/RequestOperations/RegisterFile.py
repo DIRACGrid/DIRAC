@@ -57,7 +57,7 @@ class RegisterFile( OperationHandlerBase ):
     # # counter for failed files
     failedFiles = 0
     # # catalog(s) to use
-    catalogs = self.operation.Catalog.split( ',' )
+    catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
     dm = DataManager( catalogs = catalogs )
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
