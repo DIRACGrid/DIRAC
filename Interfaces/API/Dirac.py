@@ -89,7 +89,7 @@ class Dirac( API ):
       if otherPrefix in fnList:
         return S_ERROR( self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix ) )
       return S_OK( fnList.replace( '%s:' % prefix, '' ) )
-    elif type( fnList ) == type.ListType:
+    elif type( fnList ) == types.ListType:
       if single:
         return S_ERROR( self._errorReport( 'Expected single %s string' % prefix ) )
       try:
