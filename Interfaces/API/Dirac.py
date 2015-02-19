@@ -1072,8 +1072,6 @@ class Dirac( API ):
 
       printTable( fields, records, numbering = False )
 
-      print self.pPrint.pformat( repsResult['Value'] )
-
     return repsResult
 
   #############################################################################
