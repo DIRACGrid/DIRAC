@@ -102,12 +102,13 @@ class PutAndRegister( DMSRequestOperationsBase ):
       guid = opFile.GUID
       checksum = opFile.Checksum
 
-      # # call RM at least
-      putAndRegister = DataManager( catalogs = self.operation.Catalog ).putAndRegister( lfn,
-                                                             pfn,
-                                                             targetSE,
-                                                             guid = guid,
-                                                             checksum = checksum )
+      # # call DataManager passing a list of requested catalogs
+      catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
+      putAndRegister = DataManager( catalogs = catalogs ).putAndRegister( lfn,
+                                                                          pfn,
+                                                                          targetSE,
+                                                                          guid = guid,
+                                                                          checksum = checksum )
       if not putAndRegister["OK"]:
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )

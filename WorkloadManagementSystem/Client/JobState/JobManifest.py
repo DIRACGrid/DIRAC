@@ -182,7 +182,9 @@ class JobManifest( object ):
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( 500 )
+
+    maxInputData = Operations().getValue( "JobDescription/MaxInputData", 500 )
+    result = self.__checkMaxInputData( maxInputData )
     if not result[ 'OK' ]:
       return result
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
