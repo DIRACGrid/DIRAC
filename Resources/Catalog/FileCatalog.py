@@ -46,7 +46,7 @@ class FileCatalog( object ):
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
 
     self.opHelper = Operations( vo = self.vo )
-    if catalogs == None:
+    if not catalogs:
       catalogs = []
     elif type( catalogs ) in types.StringTypes:
       catalogs = catalogs.split( ',' )
