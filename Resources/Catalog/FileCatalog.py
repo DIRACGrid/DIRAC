@@ -34,7 +34,7 @@ class FileCatalog( object ):
   
   write_methods += write_meta_methods
 
-  def __init__( self, catalogs = [], vo = None ):
+  def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
     """
     self.valid = True
@@ -46,10 +46,14 @@ class FileCatalog( object ):
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
 
     self.opHelper = Operations( vo = self.vo )
-    if type( catalogs ) in types.StringTypes:
-      catalogs = [catalogs]
-    if catalogs:
-      res = self._getSelectedCatalogs( catalogs )
+
+    if catalogs is None:
+      catalogList = []
+    elif type( catalogs ) in types.StringTypes:
+      catalogList = [catalogs]
+
+    if catalogList:
+      res = self._getSelectedCatalogs( catalogList )
     else:
       res = self._getCatalogs()
     if not res['OK']:

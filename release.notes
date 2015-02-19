@@ -38,6 +38,19 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p22]
+
+*DMS
+FIX: RegisterFile, PutAndRegister - pass a list of catalogs to the DataManager instead of a comma separated string
+FIX: FTSJob - log when a job is not found in FTS
+CHANGE: dropped commands dirac-admin-allow(ban)-catalog
+
+*Interfaces
+CHANGE: Dirac, JobMonitoringHandler,dirac-wms-job-get-jdl - possibility to retrieve original JDL
+
+*WMS
+CHANGE: JobManifest - make MaxInputData a configurable option
+
 [v6r12p21]
 
 *RMS

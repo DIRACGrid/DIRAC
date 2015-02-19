@@ -2678,7 +2678,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getJobJDL( self, jobID, printOutput = False ):
+  def getJobJDL( self, jobID, original = False, printOutput = False ):
     """Simple function to retrieve the current JDL of an existing job in the
        workload management system.  The job JDL is converted to a dictionary
        and returned in the result structure.
@@ -2700,7 +2700,7 @@ class Dirac( API ):
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
-    result = monitoring.getJobJDL( jobID )
+    result = monitoring.getJobJDL( jobID, original )
     if not result['OK']:
       return result
 
