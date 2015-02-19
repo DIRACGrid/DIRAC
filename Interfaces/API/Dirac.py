@@ -1253,10 +1253,8 @@ class Dirac( API ):
     result = dm.putAndRegister( lfn, fullPath, diracSE, guid = fileGuid )
     if not result['OK']:
       return self._errorReport( 'Problem during putAndRegister call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1294,10 +1292,8 @@ class Dirac( API ):
         print self.pPrint.pformat( result['Value'] )
       return S_ERROR( result['Value'] )
 
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1344,10 +1340,8 @@ class Dirac( API ):
     result = dm.replicateAndRegister( lfn, destinationSE, sourceSE, '', localCache )
     if not result['OK']:
       return self._errorReport( 'Problem during replicateFile call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if  printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   def replicate( self, lfn, destinationSE, sourceSE = '', printOutput = False ):
@@ -1387,10 +1381,8 @@ class Dirac( API ):
     result = dm.replicate( lfn, destinationSE, sourceSE, '' )
     if not result['OK']:
       return self._errorReport( 'Problem during replicate call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1421,10 +1413,8 @@ class Dirac( API ):
     result = dm.getReplicaAccessUrl( lfn, storageElement )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1454,10 +1444,8 @@ class Dirac( API ):
     result = StorageElement( storageElement ).getAccessUrl( pfn )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
@@ -1488,10 +1476,8 @@ class Dirac( API ):
     result = StorageElement( storageElement ).getFileMetadata( pfn )
     if not result['OK']:
       return self._errorReport( 'Problem during getStorageFileMetadata call', result['Message'] )
-    if not printOutput:
-      return result
-
-    print self.pPrint.pformat( result['Value'] )
+    if printOutput:
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
