@@ -1177,6 +1177,8 @@ class Dirac( API ):
 
   #############################################################################
   def getMetadata( self, lfns, printOutput = False ):
+    return self.getLfnMetadata( lfns, printOutput = printOutput )
+  def getLfnMetadata( self, lfns, printOutput = False ):
     """Obtain replica metadata from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -1777,6 +1779,8 @@ class Dirac( API ):
 
   #############################################################################
   def delete( self, jobID ):
+    return self.jobDelete( jobID )
+  def jobDelete( self, jobID ):
     """Delete job or list of jobs from the WMS, if running these jobs will
        also be killed.
 
@@ -1846,6 +1850,9 @@ class Dirac( API ):
     return result
 
   def kill( self, jobID ):
+    return self.jobKill( jobID )
+
+  def jobKill( self, jobID ):
     """Issue a kill signal to a running job.  If a job has already completed this
        action is harmless but otherwise the process will be killed on the compute
        resource by the Watchdog.
@@ -2418,6 +2425,9 @@ class Dirac( API ):
 
   #############################################################################
   def attributes( self, jobID, printOutput = False ):
+    return self.jobAttributes( jobID, printOutput = printOutput )
+
+  def jobAttributes( self, jobID, printOutput = False ):
     """Return DIRAC attributes associated with the given job.
 
        Each job will have certain attributes that affect the journey through the
@@ -2460,6 +2470,8 @@ class Dirac( API ):
 
   #############################################################################
   def parameters( self, jobID, printOutput = False ):
+    return self.jobParameters( jobID, printOutput = printOutput )
+  def jobParameters( self, jobID, printOutput = False ):
     """Return DIRAC parameters associated with the given job.
 
        DIRAC keeps track of several job parameters which are kept in the job monitoring
@@ -2499,6 +2511,8 @@ class Dirac( API ):
 
   #############################################################################
   def loggingInfo( self, jobID, printOutput = False ):
+    return self.jobLoggingInfo( jobID, printOutput = printOutput )
+  def jobLoggingInfo( self, jobID, printOutput = False ):
     """DIRAC keeps track of job transitions which are kept in the job monitoring
        service, see example below.  Logging summary also printed to screen at the
        INFO level.
@@ -2542,7 +2556,9 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def peek( self, jobID, printout = False ):
+  def peek( self, jobID, printout = False, printOutput = False ):
+    return self.jobPeek( jobID, printOutput = printout or printOutput )
+  def jobPeek( self, jobID, printOutput = False ):
     """The peek function will attempt to return standard output from the WMS for
        a given job if this is available.  The standard output is periodically
        updated from the compute resource via the application Watchdog. Available
@@ -2572,7 +2588,7 @@ class Dirac( API ):
 
     stdout = result['Value'].get( 'StandardOutput' )
     if stdout:
-      if printout:
+      if printOutput:
         self.log.always( stdout )
       else:
         self.log.verbose( stdout )
