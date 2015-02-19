@@ -57,4 +57,3 @@ class FileCatalogFactory:
 
     # Catalog module was not loaded
     return S_ERROR( 'No suitable client found for %s' % catalogName )
-
