@@ -404,7 +404,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         sourceSE = validReplicas[0]
 
       # # loop over targetSE
-      catalog = self.operation.Catalog
+      catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
+
       for targetSE in self.operation.targetSEList:
 
         # # call DataManager
@@ -412,7 +413,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           self.log.warn( "Request to replicate %s to an existing location: %s" % ( lfn, targetSE ) )
           opFile.Status = 'Done'
           continue
-        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE, catalog = catalog )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE, catalog = catalogs )
         if res["OK"]:
 
           if lfn in res["Value"]["Successful"]:
