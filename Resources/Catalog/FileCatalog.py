@@ -51,6 +51,8 @@ class FileCatalog( object ):
       catalogList = []
     elif type( catalogs ) in types.StringTypes:
       catalogList = [catalogs]
+    else:
+      catalogList = list( catalogs )  
 
     if catalogList:
       res = self._getSelectedCatalogs( catalogList )
