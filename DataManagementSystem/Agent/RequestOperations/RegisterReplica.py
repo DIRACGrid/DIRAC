@@ -43,7 +43,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
 
     failedReplicas = 0
     # # catalog to use
-    catalog = self.operation.Catalog
+    catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # loop over files
@@ -58,12 +58,12 @@ class RegisterReplica( DMSRequestOperationsBase ):
       targetSE = self.operation.targetSEList[0]
       replicaTuple = ( lfn , opFile.PFN, targetSE )
       # # call ReplicaManager
-      registerReplica = self.dm.registerReplica( replicaTuple, catalog )
+      registerReplica = self.dm.registerReplica( replicaTuple, catalogs )
       # # check results
       if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
         # There have been some errors
         gMonitor.addMark( "RegisterReplicaFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", catalog, "", "RegisterReplica" )
+        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ), "", "RegisterReplica" )
 
         reason = registerReplica.get( "Message", registerReplica.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, str( reason ) )
@@ -87,7 +87,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
             for failedCatalog in reason:
               catMaster = catMaster and FileCatalog()._getCatalogConfigDetails( failedCatalog ).get( 'Value', {} ).get( 'Master', False )
           # If one targets explicitly a catalog and it fails or if it fails on the master catalog
-          if ( catalog or catMaster ) and ( 'file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower() ) :
+          if ( catalogs or catMaster ) and ( 'file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower() ) :
             opFile.Status = 'Failed'
           failedReplicas += 1
         self.log.warn( errorStr )
@@ -95,9 +95,9 @@ class RegisterReplica( DMSRequestOperationsBase ):
       else:
         # All is OK
         gMonitor.addMark( "RegisterReplicaOK", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", catalog, "", "RegisterReplica" )
+        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", ','.join( catalogs ), "", "RegisterReplica" )
 
-        self.log.info( "Replica %s has been registered at %s" % ( lfn, catalog ) )
+        self.log.info( "Replica %s has been registered at %s" % ( lfn, ','.join( catalogs ) ) )
         opFile.Status = "Done"
 
     # # if we have new replications to take place, put them at the end
