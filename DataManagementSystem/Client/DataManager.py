@@ -1494,7 +1494,10 @@ class DataManager( object ):
     if not result['OK']:
       return S_ERROR( 'SE not known' )
     resolvedName = result['Value']
-    res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
+    for _i in range( 5 ):
+      res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
+      if res['OK']:
+        break
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 
