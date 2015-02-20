@@ -148,6 +148,12 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p23]
+
+*DMS
+FIX: pass a catalog list to the DataManager methods
+FIX: FileCatalog - bug fixed in the catalog list evaluation
+
 [v6r12p22]
 
 *DMS
