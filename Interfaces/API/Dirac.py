@@ -87,17 +87,32 @@ class Dirac( API ):
     if type( fnList ) in types.StringTypes:
       otherPrefix = 'LFN:' if prefix == 'PFN' else 'PFN:'
       if otherPrefix in fnList:
-        return S_ERROR( self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix ) )
+        return self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix )
       return S_OK( fnList.replace( '%s:' % prefix, '' ) )
     elif type( fnList ) == types.ListType:
       if single:
-        return S_ERROR( self._errorReport( 'Expected single %s string' % prefix ) )
+        return self._errorReport( 'Expected single %s string' % prefix )
       try:
         return S_OK( [fn.replace( '%s:' % prefix, '' ) for fn in fnList] )
       except Exception, x:
-        return S_ERROR( self._errorReport( str( x ), 'Expected strings in list of %ss' % prefix ) )
+        return self._errorReport( str( x ), 'Expected strings in list of %ss' % prefix )
     else:
-      return S_ERROR( self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix ) )
+      return self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix )
+
+  def __checkJobArgument( self, jobID, multiple = False ):
+    try:
+      if type( jobID ) in types.StringTypes + ( types.IntType, types.LongType ):
+        jobID = int( jobID )
+        if multiple:
+          jobID = [jobID]
+      elif type( jobID ) in ( types.ListType, types.DictType ):
+        if multiple:
+          jobID = [int( job ) for job in jobID]
+        else:
+          return self._errorReport( 'Expected int or string, not list' )
+      return S_OK( jobID )
+    except Exception, x:
+      return self._errorReport( str( x ), 'Expected %sinteger or string for existing jobID' % '(list of) ' if multiple else '' )
 
   #############################################################################
   # Repository specific methods
@@ -641,7 +656,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfns = ret['Value']
 
     if not siteName:
@@ -1045,7 +1060,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfns = ret['Value']
 
     start = time.time()
@@ -1099,7 +1114,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfns = ret['Value']
 
 #     rm = ReplicaManager()
@@ -1146,7 +1161,7 @@ class Dirac( API ):
     sitesForSE = {}
     ret = self.__checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfns = ret['Value']
 
     if not type( maxFilesPerJob ) == types.IntType:
@@ -1198,7 +1213,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfns, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfns = ret['Value']
 
     fc = FileCatalog()
@@ -1242,7 +1257,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     if not os.path.exists( fullPath ):
@@ -1280,7 +1295,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     dm = DataManager()
@@ -1326,7 +1341,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     if not sourceSE:
@@ -1370,7 +1385,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN', single = True )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     if not sourceSE:
@@ -1408,7 +1423,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     dm = DataManager()
@@ -1440,7 +1455,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     pfn = ret['Value']
 
     result = StorageElement( storageElement ).getAccessUrl( pfn )
@@ -1472,7 +1487,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( pfn, 'PFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     pfn = ret['Value']
 
     result = StorageElement( storageElement ).getFileMetadata( pfn )
@@ -1501,7 +1516,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     dm = DataManager()
@@ -1528,7 +1543,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     dm = DataManager()
@@ -1554,7 +1569,7 @@ class Dirac( API ):
     """
     ret = self.__checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
-      return ret['Message']
+      return ret
     lfn = ret['Value']
 
     dataLogging = RPCClient( 'DataManagement/DataLogging' )
@@ -1632,11 +1647,10 @@ class Dirac( API ):
        :type outputDir: string
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     # TODO: Do not check if dir already exists
     dirPath = ''
@@ -1683,11 +1697,10 @@ class Dirac( API ):
        :type oversized: boolean
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     # TODO: Do not check if dir already exists
     dirPath = ''
@@ -1767,7 +1780,7 @@ class Dirac( API ):
 
   #############################################################################
   def delete( self, jobID ):
-    return self.jobDelete( jobID )
+    return self.deleteJob( jobID )
   def deleteJob( self, jobID ):
     """Delete job or list of jobs from the WMS, if running these jobs will
        also be killed.
@@ -1782,16 +1795,10 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     result = WMSClient().deleteJob( jobID )
     if result['OK']:
@@ -1819,16 +1826,10 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     result = WMSClient().rescheduleJob( jobID )
     if result['OK']:
@@ -1840,7 +1841,7 @@ class Dirac( API ):
     return result
 
   def kill( self, jobID ):
-    return self.jobKill( jobID )
+    return self.killJob( jobID )
   def killJob( self, jobID ):
     """Issue a kill signal to a running job.  If a job has already completed this
        action is harmless but otherwise the process will be killed on the compute
@@ -1856,16 +1857,10 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     result = WMSClient().killJob( jobID )
     if result['OK']:
@@ -1889,18 +1884,10 @@ class Dirac( API ):
        :type jobID: int, string or list
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = [int( jobID )]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == types.IntType:
-      jobID = [jobID]
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     statusDict = monitoring.getJobsStatus( jobID )
@@ -1949,18 +1936,10 @@ class Dirac( API ):
        :type jobID: int, string or list
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = [int( jobID )]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( 1 ):
-      jobID = [jobID]
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     summary = {}
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
@@ -1990,13 +1969,12 @@ class Dirac( API ):
        :type jobID: int or string
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    try:
+      jobID = int( jobID )
+    except Exception, x:
+      return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self.parameters( int( jobID ) )
+    result = self.parameters( jobID )
     if not result['OK']:
       return result
     if not result['Value'].get( 'UploadedOutputData' ):
@@ -2030,13 +2008,12 @@ class Dirac( API ):
        :type outputFiles: string or list
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    try:
+      jobID = int( jobID )
+    except Exception, x:
+      return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    result = self.parameters( int( jobID ) )
+    result = self.parameters( jobID )
     if not result['OK']:
       return result
     if not result['Value'].get( 'UploadedOutputData' ):
@@ -2120,22 +2097,18 @@ class Dirac( API ):
     """
     options = {'Status':status, 'MinorStatus':minorStatus, 'ApplicationStatus':applicationStatus, 'Owner':owner,
                'Site':site, 'JobGroup':jobGroup, 'OwnerGroup':ownerGroup }
-    conditions = {}
-    for key, value in options.items():
-      if value:
-        try:
-          conditions[key] = str( value )
-        except Exception, x:
-          return self._errorReport( str( x ), 'Expected string for %s field' % key )
+    try:
+      conditions = dict( [( key, str( value ) ) for key, value in options.items() if value] )
+    except Exception, x:
+      # Note: it is unlikely this will ever fire
+      return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
-    if not type( date ) == type( " " ):
+    if date:
       try:
-        if date:
-          date = str( date )
+        date = str( date )
       except Exception, x:
         return self._errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
-
-    if not date:
+    else:
       date = '%s' % Time.date()
       self.log.verbose( 'Setting date to %s' % ( date ) )
 
@@ -2176,22 +2149,13 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = [int( jobID )]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     headers = ['Status', 'MinorStatus', 'ApplicationStatus', 'Site', 'JobGroup', 'LastUpdateTime',
                'HeartBeatTime', 'SubmissionTime', 'Owner']
-
-    if type( jobID ) == type( 1 ):
-      jobID = [jobID]
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobsSummary( jobID )
@@ -2259,11 +2223,10 @@ class Dirac( API ):
        :type jobID: int or string
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    try:
+      jobID = int( jobID )
+    except Exception, x:
+      return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.status( jobID )
     if not result['OK']:
@@ -2380,19 +2343,10 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = [int( jobID )]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-
-    if type( jobID ) == type( 1 ):
-      jobID = [jobID]
+    ret = self.__checkJobArgument( jobID, multiple = True )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     summary = {}
     for job in jobID:
@@ -2416,7 +2370,7 @@ class Dirac( API ):
 
   #############################################################################
   def attributes( self, jobID, printOutput = False ):
-    return self.jobAttributes( jobID, printOutput = printOutput )
+    return self.getJobAttributes( jobID, printOutput = printOutput )
   def getJobAttributes( self, jobID, printOutput = False ):
     """Return DIRAC attributes associated with the given job.
 
@@ -2437,16 +2391,10 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = [int( jobID )]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobAttributes( jobID )
@@ -2454,13 +2402,14 @@ class Dirac( API ):
       return result
 
     if printOutput:
+      print '=================\n', jobID
       print self.pPrint.pformat( result['Value'] )
 
     return result
 
   #############################################################################
   def parameters( self, jobID, printOutput = False ):
-    return self.jobParameters( jobID, printOutput = printOutput )
+    return self.getJobParameters( jobID, printOutput = printOutput )
   def getJobParameters( self, jobID, printOutput = False ):
     """Return DIRAC parameters associated with the given job.
 
@@ -2479,13 +2428,10 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      return self._errorReport( 'Expected integer or string for jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobParameters( jobID )
@@ -2501,7 +2447,7 @@ class Dirac( API ):
 
   #############################################################################
   def loggingInfo( self, jobID, printOutput = False ):
-    return self.jobLoggingInfo( jobID, printOutput = printOutput )
+    return self.getJobLoggingInfo( jobID, printOutput = printOutput )
   def getJobLoggingInfo( self, jobID, printOutput = False ):
     """DIRAC keeps track of job transitions which are kept in the job monitoring
        service, see example below.  Logging summary also printed to screen at the
@@ -2519,13 +2465,10 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
      """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      return self._errorReport( 'Expected int or string, not list' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobLoggingInfo( jobID )
@@ -2547,7 +2490,7 @@ class Dirac( API ):
 
   #############################################################################
   def peek( self, jobID, printout = False, printOutput = False ):
-    return self.jobPeek( jobID, printOutput = printout or printOutput )
+    return self.peekJob( jobID, printOutput = printout or printOutput )
   def peekJob( self, jobID, printOutput = False ):
     """The peek function will attempt to return standard output from the WMS for
        a given job if this is available.  The standard output is periodically
@@ -2563,13 +2506,10 @@ class Dirac( API ):
        :type jobID: int or string
        :returns: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( [] ):
-      return self._errorReport( 'Expected int or string, not list' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobParameter( jobID, 'StandardOutput' )
@@ -2645,11 +2585,10 @@ class Dirac( API ):
        :returns: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
+    ret = self.__checkJobArgument( jobID, multiple = False )
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring' )
     result = monitoring.getJobJDL( jobID, original )

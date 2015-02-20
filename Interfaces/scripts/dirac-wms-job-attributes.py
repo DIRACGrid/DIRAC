@@ -29,7 +29,7 @@ errorList = []
 
 for job in parseArguments( args ):
 
-  result = dirac.getJobAttributes( int( job ), printOutput = True )
+  result = dirac.getJobAttributes( job, printOutput = True )
   if not result['OK']:
     errorList.append( ( job, result['Message'] ) )
     exitCode = 2

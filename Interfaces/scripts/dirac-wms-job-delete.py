@@ -30,8 +30,6 @@ if __name__ == "__main__":
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
   dirac = Dirac()
-  exitCode = 0
-  errorList = []
 
   jobs = []
   for sw, value in Script.getUnprocessedSwitches():
@@ -59,16 +57,12 @@ if __name__ == "__main__":
     Script.showHelp()
     DIRAC.exit( 0 )
 
-  for job in jobs:
-
-    result = dirac.deleteJob( job )
-    if result['OK']:
-      print 'Deleted job %s' % ( result['Value'][0] )
-    else:
-      errorList.append( ( job, result['Message'] ) )
-      exitCode = 2
-
-  for error in errorList:
-    print "ERROR %s: %s" % error
+  result = dirac.deleteJob( jobs )
+  if result['OK']:
+    print 'Deleted jobs %s' % ','.join( [str( j ) for j in result['Value'] ] )
+    exitCode = 0
+  else:
+    print result['Message']
+    exitCode = 2
 
   DIRAC.exit( exitCode )

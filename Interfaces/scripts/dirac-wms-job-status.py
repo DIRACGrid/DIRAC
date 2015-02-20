@@ -53,19 +53,12 @@ if len( args ) < 1 and not jobs:
 if len( args ) > 0:
   jobs += parseArguments( args )
 
-try:
-  jobs = [ int( job ) for job in jobs ]
-except Exception, x:
-  print 'Expected integer for jobID'
-  exitCode = 2
-  DIRAC.exit( exitCode )
-
 result = dirac.getJobStatus( jobs )
 if result['OK']:
   for job in result['Value']:
     print 'JobID=' + str( job ),
-    for status in result['Value'][job]:
-      print status + '=' + result['Value'][job][status] + ';',
+    for status in result['Value'][job].items():
+      print '%s=%s;' % status,
     print
 else:
   exitCode = 2
