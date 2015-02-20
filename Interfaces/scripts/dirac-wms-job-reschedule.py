@@ -22,14 +22,14 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                              import Dirac
+from DIRAC.Interfaces.API.Dirac                              import Dirac, parseArguments
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
-for job in args:
+for job in parseArguments( args ):
 
-  result = dirac.reschedule( job )
+  result = dirac.rescheduleJob( job )
   if result['OK']:
     print 'Rescheduled job %s' % ( result['Value'][0] )
   else:

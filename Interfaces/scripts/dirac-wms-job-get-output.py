@@ -27,7 +27,7 @@ Script.registerSwitch( "g:", "JobGroup=", "Get output for jobs in the given grou
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.Dirac  import Dirac
+from DIRAC.Interfaces.API.Dirac  import Dirac, parseArguments
 from DIRAC.Core.Utilities.Time import toString, date, day
 
 dirac = Dirac()
@@ -45,31 +45,31 @@ for sw, value in Script.getUnprocessedSwitches():
       jFile = open( value )
       jobs += jFile.read().split()
       jFile.close()
-  elif sw.lower() in ( 'g', 'jobgroup' ):    
+  elif sw.lower() in ( 'g', 'jobgroup' ):
     group = value
-    jobDate = toString( date() - 30*day )
-    
+    jobDate = toString( date() - 30 * day )
+
     # Choose jobs in final state, no more than 30 days old
-    result = dirac.selectJobs( jobGroup=value, date=jobDate, status='Done' )
-    if not result['OK']:
-      if not "No jobs selected" in result['Message']:
-        print "Error:", result['Message']
-        DIRAC.exit( -1 )
-    else:    
-      jobs += result['Value']      
-    result = dirac.selectJobs( jobGroup=value, date=jobDate, status='Failed' )
+    result = dirac.selectJobs( jobGroup = value, date = jobDate, status = 'Done' )
     if not result['OK']:
       if not "No jobs selected" in result['Message']:
         print "Error:", result['Message']
         DIRAC.exit( -1 )
     else:
-      jobs += result['Value']      
+      jobs += result['Value']
+    result = dirac.selectJobs( jobGroup = value, date = jobDate, status = 'Failed' )
+    if not result['OK']:
+      if not "No jobs selected" in result['Message']:
+        print "Error:", result['Message']
+        DIRAC.exit( -1 )
+    else:
+      jobs += result['Value']
 
-for arg in args:
-  if os.path.isdir(arg):  
+for arg in parseArguments( args ):
+  if os.path.isdir( arg ):
     print "Output for job %s already retrieved, remove the output directory to redownload" % arg
   else:
-    jobs.append(arg)
+    jobs.append( arg )
 
 if not jobs:
   print "No jobs selected"
@@ -77,25 +77,25 @@ if not jobs:
 
 if group:
   if outputDir:
-    outputDir = os.path.join(outputDir,group)
+    outputDir = os.path.join( outputDir, group )
   else:
-    outputDir = group  
+    outputDir = group
 
-if outputDir: 
-  if not os.path.exists(outputDir):
-    os.makedirs( outputDir)
+if outputDir:
+  if not os.path.exists( outputDir ):
+    os.makedirs( outputDir )
 else:
-  outputDir = os.getcwd()    
+  outputDir = os.getcwd()
 
-jobs = [ str(job) for job in jobs ]
+jobs = [ str( job ) for job in jobs ]
 doneJobs = os.listdir( outputDir )
 todoJobs = [ job for job in jobs if not job in doneJobs ]
-  
+
 for job in todoJobs:
 
   result = dirac.getOutputSandbox( job, outputDir = outputDir )
-  
-  jobDir = str(job)
+
+  jobDir = str( job )
   if outputDir:
     jobDir = os.path.join( outputDir, job )
   if result['OK']:

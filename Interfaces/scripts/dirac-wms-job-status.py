@@ -27,31 +27,31 @@ Script.registerSwitch( "g:", "JobGroup=", "Get status for jobs in the given grou
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.Dirac  import Dirac
+from DIRAC.Interfaces.API.Dirac  import Dirac, parseArguments
 dirac = Dirac()
 exitCode = 0
 
 jobs = []
-for key, value in Script.getUnprocessedSwitches():  
+for key, value in Script.getUnprocessedSwitches():
   if key.lower() in ( 'f', 'file' ):
     if os.path.exists( value ):
       jFile = open( value )
       jobs += jFile.read().split()
       jFile.close()
-  elif key.lower() in ( 'g', 'jobgroup' ):    
-    jobDate = toString( date() - 30*day )
+  elif key.lower() in ( 'g', 'jobgroup' ):
+    jobDate = toString( date() - 30 * day )
     # Choose jobs no more than 30 days old
-    result = dirac.selectJobs( jobGroup=value, date=jobDate )    
+    result = dirac.selectJobs( jobGroup = value, date = jobDate )
     if not result['OK']:
       print "Error:", result['Message']
       DIRACExit( -1 )
-    jobs += result['Value']  
-        
+    jobs += result['Value']
+
 if len( args ) < 1 and not jobs:
   Script.showHelp()
 
-if len(args) > 0:
-  jobs += args
+if len( args ) > 0:
+  jobs += parseArguments( args )
 
 try:
   jobs = [ int( job ) for job in jobs ]
@@ -60,7 +60,7 @@ except Exception, x:
   exitCode = 2
   DIRAC.exit( exitCode )
 
-result = dirac.status( jobs )
+result = dirac.getJobStatus( jobs )
 if result['OK']:
   for job in result['Value']:
     print 'JobID=' + str( job ),
