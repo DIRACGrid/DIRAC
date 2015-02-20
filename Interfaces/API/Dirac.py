@@ -253,6 +253,8 @@ class Dirac( API ):
 
   #############################################################################
   def submit( self, job, mode = 'wms' ):
+    return self.submitJob( job, mode = mode )
+  def submitJob( self, job, mode = 'wms' ):
     """Submit jobs to DIRAC WMS.
        These can be either:
 
@@ -1800,6 +1802,8 @@ class Dirac( API ):
 
   #############################################################################
   def reschedule( self, jobID ):
+    return self.rescheduleJob( jobID )
+  def rescheduleJob( self, jobID ):
     """Reschedule a job or list of jobs in the WMS.  This operation is the same
        as resubmitting the same job as new.  The rescheduling operation may be
        performed to a configurable maximum number of times but the owner of a job
@@ -1872,6 +1876,8 @@ class Dirac( API ):
 
   #############################################################################
   def status( self, jobID ):
+    return self.getJobStatus( jobID )
+  def getJobStatus( self, jobID ):
     """Monitor the status of DIRAC Jobs.
 
        Example Usage:
