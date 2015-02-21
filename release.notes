@@ -1,3 +1,9 @@
+[v6r12p25]
+
+*DMS
+BUGFIX: PutAndRegister, RegitserFile, RegisterReplica, ReplicateAndRegister - do not
+        evaluate the catalog list if None
+
 [v6r12p24]
 
 *DMS:
