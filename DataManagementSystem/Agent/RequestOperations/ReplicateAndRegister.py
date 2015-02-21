@@ -402,7 +402,9 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         sourceSE = validReplicas[0]
 
       # # loop over targetSE
-      catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
+      catalogs = self.operation.Catalog
+      if catalogs:
+        catalogs = [ cat.strip() for cat in catalogs.split( ',' ) ]
 
       for targetSE in self.operation.targetSEList:
 

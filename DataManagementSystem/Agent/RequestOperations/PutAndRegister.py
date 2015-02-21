@@ -103,7 +103,9 @@ class PutAndRegister( DMSRequestOperationsBase ):
       checksum = opFile.Checksum
 
       # # call DataManager passing a list of requested catalogs
-      catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
+      catalogs = self.operation.Catalog
+      if catalogs:
+        catalogs = [ cat.strip() for cat in catalogs.split( ',' ) ]
       putAndRegister = DataManager( catalogs = catalogs ).putAndRegister( lfn,
                                                                           pfn,
                                                                           targetSE,
