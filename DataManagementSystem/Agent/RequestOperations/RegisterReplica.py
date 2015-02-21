@@ -43,7 +43,9 @@ class RegisterReplica( DMSRequestOperationsBase ):
 
     failedReplicas = 0
     # # catalog to use
-    catalogs = [ cat.strip() for cat in self.operation.Catalog.split( ',' ) ]
+    catalogs = self.operation.Catalog
+    if catalogs:
+      catalogs = [ cat.strip() for cat in catalogs.split( ',' ) ]
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # loop over files
