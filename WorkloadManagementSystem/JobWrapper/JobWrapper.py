@@ -104,6 +104,7 @@ class JobWrapper( object ):
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
+    self.masterCatalogOnlyFlag = gConfig.getValue( self.section + '/MasterCatalogOnlyFlag', True )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )
     self.defaultOutputPath = ''
     self.dm = DataManager()
@@ -878,12 +879,13 @@ class JobWrapper( object ):
                        "GUID" : fileGUID }
 
       outputSEList = self.__getSortedSEList( outputSE )
-      upload = self.failoverTransfer.transferAndRegisterFile( localfile,
-                                                              outputFilePath,
-                                                              lfn,
-                                                              outputSEList,
-                                                              fileMetaDict,
-                                                              self.defaultCatalog )
+      upload = self.failoverTransfer.transferAndRegisterFile( fileName = localfile,
+                                                              localPath = outputFilePath,
+                                                              lfn = lfn,
+                                                              destinationSEList = outputSEList,
+                                                              fileMetaDict = fileMetaDict,
+                                                              fileCatalog = self.defaultCatalog,
+                                                              masterCatalogOnly = self.masterCatalogOnlyFlag )
       if upload['OK']:
         self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile,
                                                                             upload['Value']['uploadedSE'],
@@ -903,13 +905,14 @@ class JobWrapper( object ):
 
       failoverSEs = self.__getSortedSEList( self.defaultFailoverSE )
       targetSE = outputSEList[0]
-      result = self.failoverTransfer.transferAndRegisterFileFailover( localfile,
-                                                                      outputFilePath,
-                                                                      lfn,
-                                                                      targetSE,
-                                                                      failoverSEs,
-                                                                      fileMetaDict,
-                                                                      self.defaultCatalog )
+      result = self.failoverTransfer.transferAndRegisterFileFailover( fileName = localfile,
+                                                                      localPath = outputFilePath,
+                                                                      lfn = lfn,
+                                                                      destinationSEList = targetSE,
+                                                                      failoverSEList = failoverSEs,
+                                                                      fileMetaDict = fileMetaDict,
+                                                                      fileCatalog = self.defaultCatalog,
+                                                                      masterCatalogOnly = self.masterCatalogOnlyFlag )
       if not result['OK']:
         self.log.error( 'Completely failed to upload file to failover SEs', result['Message'] )
         missing.append( outputFile )
