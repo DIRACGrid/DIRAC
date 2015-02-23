@@ -302,6 +302,12 @@ class Operation( Record ):
   @Catalog.setter
   def Catalog( self, value ):
     """ catalog setter """
+    # FIXME
+    ######### THIS IS A TEMPORARY HOT FIX MEANT TO SMOOTH THE LFC->DFC MIGRATION
+    if value == "LcgFileCatalogCombined":
+      value = "FileCatalog,LcgFileCatalogCombined"
+    ###########################################################################
+
     value = ",".join( self._uniqueList( value ) )
     if len( value ) > 255:
       raise ValueError( "Catalog list too long" )
