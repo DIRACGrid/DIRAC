@@ -148,7 +148,6 @@ class FileCatalog( object ):
 
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
-      print res
       if res['OK']:
         if 'Successful' in res['Value']:
           for key, item in res['Value']['Successful'].items():
