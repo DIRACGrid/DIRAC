@@ -17,7 +17,7 @@ class FileCatalog( object ):
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
                 'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
 
-  ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata', 'getDirectoryMetadata',
+  ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata',
                      'getFileUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
                      'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
                      'getMetadataSet']
@@ -148,6 +148,7 @@ class FileCatalog( object ):
 
       method = getattr( oCatalog, self.call )
       res = method( *parms, **kws )
+      print res
       if res['OK']:
         if 'Successful' in res['Value']:
           for key, item in res['Value']['Successful'].items():
