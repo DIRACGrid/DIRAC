@@ -77,7 +77,7 @@ class RegisterFile( OperationHandlerBase ):
       if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
 
         gMonitor.addMark( "RegisterFail", 1 )
-#         self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", ','.join( catalogs ), "", "RegisterFile" )
+#        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
         reason = registerFile.get( "Message", registerFile.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
@@ -88,9 +88,9 @@ class RegisterFile( OperationHandlerBase ):
       else:
 
         gMonitor.addMark( "RegisterOK", 1 )
-#         self.dataLoggingClient().addFileRecord( lfn, "Register", ','.join( catalogs ), "", "RegisterFile" )
+#        self.dataLoggingClient().addFileRecord( lfn, "Register", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
-        self.log.info( "file %s has been registered at %s" % ( lfn, ','.join( catalogs ) ) )
+        self.log.info( "file %s has been registered at %s" % ( lfn, ','.join( catalogs ) if catalogs else "all catalogs" ) )
         opFile.Status = "Done"
 
     # # final check
