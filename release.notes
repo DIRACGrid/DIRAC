@@ -38,6 +38,18 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p26]
+
+*DMS
+BUGFIX: FileCatalog - getDirectoryMetadata was wrongly in ro_meta_methods list 
+
+*RMS
+FIX: Operation - temporary fix in catalog names evaluation to smooth
+     LFC->DFC migration - not to forget to remove afterwards !
+
+*WMS
+CHANGE: JobWrapper - added MasterCatalogOnlyFlag configuration option
+
 [v6r12p25]
 
 *DMS
