@@ -454,7 +454,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     if type( pathOrDirId ) in StringTypes:
       psName = 'ps_get_all_directory_info'
     # it is the dirId
-    elif type( pathOrDirId ) in IntType:
+    elif type( pathOrDirId ) is IntType:
       psName = 'ps_get_all_directory_info_from_id'
     else:
       return S_ERROR( "Unknown type of pathOrDirId %s" % type( pathOrDirId ) )
@@ -471,7 +471,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     row = result['Value'][0]
 
-    # Create a dictionnary from the fieldNames
+    # Create a dictionary from the fieldNames
     rowDict = dict( zip( fieldNames, row ) )
 
 
