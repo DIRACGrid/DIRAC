@@ -9,13 +9,10 @@
     setPilotStatus()
     deletePilot()
     clearPilots()
-    getPilotOwner()
     setPilotDestinationSite()
     storePilotOutput()
     getPilotOutput()
     setJobForPilot()
-    getPilotsForJob()
-    getPilotOwner()
     getPilotsSummary()
 
 """
@@ -378,7 +375,7 @@ class PilotAgentsDB( DB ):
     if not result['OK']:
       return S_ERROR( 'Failed to escape error string' )
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput VALUES (%d,%s,%s)" % ( pilotID, e_output, e_error )
+    req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % ( pilotID, e_output, e_error )
     result = self._update( req )
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
     result = self._update( req )
@@ -445,7 +442,7 @@ class PilotAgentsDB( DB ):
                                      gridSite = site )
         if not result['OK']:
           return result
-      req = "INSERT INTO JobToPilotMapping VALUES (%d,%d,UTC_TIMESTAMP())" % ( pilotID, jobID )
+      req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % ( pilotID, jobID )
       result = self._update( req )
       return result
     else:
@@ -459,21 +456,6 @@ class PilotAgentsDB( DB ):
     req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % ( jobID, pilotRef )
     result = self._update( req )
     return result
-
-##########################################################################################
-  def getExePilotsForJob( self, jobID ):
-    """ Get IDs of Pilot Agents that attempted to execute the given job
-    """
-    req = "SELECT PilotID FROM JobToPilotMapping WHERE JobID=%d ORDER BY StartTime" % jobID
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    else:
-      if result['Value']:
-        pilotList = [ x[0] for x in result['Value'] ]
-        return S_OK( pilotList )
-      else:
-        return S_ERROR( 'PilotID ' + jobID + ' not found' )
 
 ##########################################################################################
   def getJobsForPilot( self, pilotID ):
@@ -495,26 +477,6 @@ class PilotAgentsDB( DB ):
         resDict[ row[0] ] = []
       resDict[ row[0] ].append( row[1] )
     return S_OK( resDict )
-
-##########################################################################################
-  def getPilotsForJob( self, jobID, gridType = None ):
-    """ Get IDs of Pilot Agents that were submitted for the given job, specify optionally the grid type
-    """
-
-    if gridType:
-      req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s AND GridType='%s' " % ( jobID, gridType )
-    else:
-      req = "SELECT PilotJobReference FROM PilotAgents WHERE InitialJobID=%s " % jobID
-
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    else:
-      if result['Value']:
-        pilotList = [ x[0] for x in result['Value'] ]
-        return S_OK( pilotList )
-      else:
-        return S_ERROR( 'PilotJobReferences for job %s not found' % jobID )
 
 ##########################################################################################
   def getPilotsForTaskQueue( self, taskQueueID, gridType = None, limit = None ):
@@ -576,22 +538,7 @@ class PilotAgentsDB( DB ):
         return S_ERROR( 'Current job ID for pilot %s is not known' % pilotRef )
 
 ##########################################################################################
-  def getPilotOwner( self, pilotRef ):
-    """ Get the pilot owner DN and group for the given pilot job reference
-    """
-
-    req = "SELECT OwnerDN, OwnerGroup FROM PilotAgents WHERE PilotJobReference='%s'" % pilotRef
-    result = self._query( req )
-    if not result['OK']:
-      return result
-    else:
-      if result['Value']:
-        ownerTuple = ( result['Value'][0][0], result['Value'][0][1] )
-        return S_OK( ownerTuple )
-      else:
-        return S_ERROR( 'PilotJobReference ' + str( pilotRef ) + ' not found' )
-
-##########################################################################################
+  #FIXME: investigate it getPilotSummaryShort can replace this method
   def getPilotSummary( self, startdate = '', enddate = '' ):
     """ Get summary of the pilot jobs status by site
     """
@@ -644,6 +591,48 @@ class PilotAgentsDB( DB ):
 
     return S_OK( summary_dict )
 
+#   def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
+#     """
+#     Spin off the method getPilotSummary. It is doing things in such a way that
+#     do not make much sense. This method returns the pilots that were updated in the
+#     time window [ startTimeWindow, endTimeWindow ), if they are present.
+#     """
+#
+#     sqlSelect = 'SELECT DestinationSite,Status,count(Status) FROM PilotAgents'
+#
+#     whereSelect = []
+#
+#     if startTimeWindow is not None:
+#       whereSelect.append( ' LastUpdateTime >= "%s"' % startTimeWindow )
+#     if endTimeWindow is not None:
+#       whereSelect.append( ' LastUpdateTime < "%s"' % endTimeWindow )
+#     if ce:
+#       whereSelect.append( ' DestinationSite = "%s"' % ce )
+#
+#     if whereSelect:
+#       sqlSelect += ' WHERE'
+#       sqlSelect += ' AND'.join( whereSelect )
+#
+#     sqlSelect += ' GROUP BY DestinationSite,Status'
+#
+#     resSelect = self._query( sqlSelect )
+#     if not resSelect[ 'OK' ]:
+#       return resSelect
+#
+#     result = { 'Total' : collections.defaultdict( int ) }
+#
+#     for row in resSelect[ 'Value' ]:
+#
+#       ceName, statusName, statusCount = row
+#
+#       if not ceName in result:
+#         result[ ceName ] = {}
+#       result[ ceName ][ statusName ] = int( statusCount )
+#
+#       result[ 'Total' ][ statusName ] += int( statusCount )
+#
+#     return S_OK( result )
+ 
 ##########################################################################################
   def getPilotSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
