@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.List import intListToString, stringListToString
 __RCSID__ = "$Id$"
 
 import os
-from types import ListType, StringTypes, IntType
+from types import ListType, StringTypes, IntType, LongType
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
@@ -454,7 +454,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     if type( pathOrDirId ) in StringTypes:
       psName = 'ps_get_all_directory_info'
     # it is the dirId
-    elif type( pathOrDirId ) in IntType:
+    elif type( pathOrDirId ) in [IntType, LongType]:
       psName = 'ps_get_all_directory_info_from_id'
     else:
       return S_ERROR( "Unknown type of pathOrDirId %s" % type( pathOrDirId ) )
@@ -471,7 +471,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     row = result['Value'][0]
 
-    # Create a dictionnary from the fieldNames
+    # Create a dictionary from the fieldNames
     rowDict = dict( zip( fieldNames, row ) )
 
 
@@ -593,7 +593,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def _getDirectoryLogicalSize( self, lfns, connection ):
     """ Get the total "logical" size of the requested directories
     """
-    return self.__getLogicalSize( lfns, 'ps_get_dir_logical_size', connection )
+    return self.__getLogicalSize( lfns, 'ps_calculate_dir_logical_size', connection )
 
 
   def __getPhysicalSize( self, lfns, ps_name, connection ):
