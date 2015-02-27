@@ -673,7 +673,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_dir_id
-(IN dir_id INT, IN file_names TEXT)
+(IN dir_id INT, IN file_names MEDIUMTEXT)
 BEGIN
 
   SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, FileName FROM FC_Files f WHERE DirID = ', dir_id, ' AND FileName IN (', file_names, ')');
@@ -1371,12 +1371,13 @@ DELIMITER ;
 --
 -- output : File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_logical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE SUM(SESize), SUM(SEFiles) FROM FC_DirectoryUsage u
+  SELECT SQL_NO_CACHE COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
   JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
   JOIN FC_StorageElements s ON s.SEID = u.SEID 
   WHERE s.SEName = 'FakeSE'
@@ -1395,6 +1396,7 @@ DELIMITER ;
 --
 -- output : File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_calculate_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_logical_size
 (IN dir_id INT)
@@ -1402,7 +1404,7 @@ BEGIN
   DECLARE log_size BIGINT DEFAULT 0;
   DECLARE log_files INT DEFAULT 0;
   
-  SELECT SQL_NO_CACHE SUM(f.Size), COUNT(*) INTO log_size, log_files FROM FC_Files f
+  SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
   JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID
   WHERE ParentID = dir_id;
   
@@ -1423,12 +1425,13 @@ DELIMITER ;
 --
 -- output : SEName, File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE SEName, SUM(SESize), SUM(SEFiles)
+  SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
   FROM FC_DirectoryUsage u
   JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
   JOIN FC_StorageElements se ON se.SEID = u.SEID
@@ -1451,12 +1454,13 @@ DELIMITER ;
 --
 -- output : SEName, File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_calculate_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE se.SEName, sum(f.Size), count(*)
+  SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
   FROM FC_Replicas r
   JOIN FC_Files f ON f.FileID = r.FileID
   JOIN FC_StorageElements se ON se.SEID = r.SEID

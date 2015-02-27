@@ -1213,7 +1213,7 @@ class FileManagerBase( object ):
   def getFilesInDirectory( self, dirID, verbose = False, connection = False ):
     connection = self._getConnection( connection )
     files = {}
-    res = self._getDirectoryFiles( dirID, [], ['FileID', 'Size',
+    res = self._getDirectoryFiles( dirID, [], ['FileID', 'Size', 'GUID',
                                                'Checksum', 'ChecksumType',
                                                'Type', 'UID',
                                                'GID', 'CreationDate',

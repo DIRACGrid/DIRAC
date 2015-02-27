@@ -26,7 +26,7 @@ class FileCatalog( object ):
   ro_methods += ro_meta_methods
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory', 'setDirectoryStatus',
+                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
                    'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
                    'changePathOwner', 'changePathGroup']
 
