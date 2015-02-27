@@ -4,8 +4,6 @@
 
 import types, re
 
-import copy
-
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
@@ -142,30 +140,19 @@ class FileCatalog( object ):
     """
     successful = {}
     failed = {}
-
-    lfns = copy.deepcopy( parms[0] )
-    res = checkArgumentFormat( lfns )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
-    parms = parms[1:]
-
     for catalogName, oCatalog, _master in self.readCatalogs:
+
       # Skip if metadata related method on pure File Catalog
       if self.call in FileCatalog.ro_meta_methods and not catalogName in self.metaCatalogs:
         continue
 
-      if not lfns:
-        break
-
       method = getattr( oCatalog, self.call )
-      res = method( lfns, *parms, **kws )
+      res = method( *parms, **kws )
       if res['OK']:
         if 'Successful' in res['Value']:
           for key, item in res['Value']['Successful'].items():
-            successful[key] = item
+            successful.setdefault( key, item )
             failed.pop( key, None )
-            lfns.pop( key, None )
           for key, item in res['Value']['Failed'].items():
             if key not in successful:
               failed[key] = item
