@@ -1,3 +1,15 @@
+[v6r12p27]
+
+*Core
+CHANGE: InstallTools - install "t" script to gracefully stop agents
+
+*DMS
+FIX: FileCatalog - return GUID in DirectoryParameters
+
+*Resource
+CHANGE: DFC/LFC clients - added setReplicaProblematic()
+
+
 [v6r12p26]
 
 *DMS
