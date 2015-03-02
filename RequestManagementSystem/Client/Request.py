@@ -570,16 +570,6 @@ class Request( Record ):
     # List of attributes that must be equal for operations to be merged
     attrList = ["Type", "Arguments", "SourceSE", "TargetSE", "Catalog" ]
 
-
-    # We could do it with a single loop (the 2nd one), but by doing this,
-    # we can replace
-    #   i += 1
-    #   continue
-    #
-    # with
-    #   break
-    #
-    # which is nicer in my opinion
     i = 0
     while i < len( self.__operations__ ):
       while  ( i + 1 ) < len( self.__operations__ ):
