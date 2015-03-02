@@ -21,14 +21,6 @@ try:
 except ImportError:
   import md5
 
-globalDistribution = Distribution.Distribution()
-
-g_uploadCmd = {
-  'DIRAC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh $USER@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'LHCb' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh $USER@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'ILC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh $USER@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'",
-}
-
 ###
 # Load release manager from dirac-install
 ##
@@ -354,10 +346,7 @@ class DistributionMaker:
   def getUploadCmd( self ):
     result = self.relConf.getUploadCommand()
     upCmd = False
-    if not result['OK']:
-      if self.cliParams.projectName in g_uploadCmd:
-        upCmd = g_uploadCmd[ self.cliParams.projectName ]
-    else:
+    if result['OK']:
       upCmd = result[ 'Value' ]
 
     filesToCopy = []

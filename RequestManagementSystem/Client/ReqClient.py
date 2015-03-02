@@ -129,7 +129,7 @@ class ReqClient( Client ):
     errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'" % request.RequestName
     return errorsDict
 
-  def getRequest( self, requestID = 0 ):
+  def getRequest( self, requestName = None ):
     """ get request from RequestDB
 
     :param self: self reference
@@ -140,7 +140,7 @@ class ReqClient( Client ):
     self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestID )
     if not getRequest["OK"]:
-      self.log.error( "getRequest: unable to get request", "request: '%s' %s" % ( requestID, getRequest["Message"] ) )
+      self.log.error( "getRequest: unable to get request", "'%s' %s" % ( requestName, getRequest["Message"] ) )
       return getRequest
     if not getRequest["Value"]:
       return getRequest
