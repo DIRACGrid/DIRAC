@@ -571,16 +571,7 @@ class Request( Record ):
     # the Request is already in the DB, so we don't touch anything
     # unless it was optimized, in which case we reset the IDs to default
     if self.RequestID:
-      if optimized:
-        self.RequestID = 0
-        for op in self.__operations__:
-          op.OperationID = 0
-          op.RequestID = 0
-          for f in op:
-            f.FileID = 0
-            f.OperationID = 0
-      else:
-        return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
+      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
 
     # We could do it with a single loop (the 2nd one), but by doing this,
     # we can replace
