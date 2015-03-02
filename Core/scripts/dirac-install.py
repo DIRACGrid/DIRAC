@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $HeadURL$
 """
-Compile the externals
+The main DIRAC installer script
 """
 __RCSID__ = "$Id$"
 
@@ -61,7 +61,6 @@ cliParams = Params()
 
 class ReleaseConfig:
 
-  #Because python's INI parser is the utmost shittiest thing ever done
   class CFG:
     def __init__( self, cfgData = "" ):
       self.__data = {}
@@ -255,7 +254,9 @@ class ReleaseConfig:
       for k in cfg.options():
         self.__data[ k ] = cfg.get( k )
 
-    #END OF CFG CLASS
+############################################################################
+# END OF CFG CLASS
+############################################################################
 
   def __init__( self, instName = 'DIRAC', projectName = 'DIRAC', globalDefaultsURL = False ):
 
@@ -273,15 +274,6 @@ class ReleaseConfig:
     self.__debugCB = False
     self.__instName = instName
     self.__projectName = projectName
-    self.__projectReleaseLocation = {
-        'DIRAC' : "http://svn.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/releases.cfg",
-        'LHCb' : "http://svn.cern.ch/guest/lbdirac/LHCbDIRAC/trunk/LHCbDIRAC/releases.cfg"
-        }
-    self.__projectTarLocation = {
-        'DIRAC' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/installSource",
-        'LHCb' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/LHCbDirac_project"
-        }
-
 
   def getInstallation( self ):
     return self.__instName
@@ -437,8 +429,6 @@ class ReleaseConfig:
     defLoc = self.__globalDefaults.get( "Projects/%s/BaseURL" % project, "" )
     if defLoc:
       return S_OK( defLoc )
-    elif project in self.__projectTarLocation:
-      return S_OK( self.__projectTarLocation[ project ] )
     return S_ERROR( "Don't know how to find the installation tarballs for project %s" % project )
 
   def getUploadCommand( self, project = False ):
@@ -734,9 +724,9 @@ class ReleaseConfig:
     return S_OK( ( modsOrder, modsToInstall ) )
 
 
-###
+#################################################################################
 # End of ReleaseConfig
-###
+#################################################################################
 
 
 #platformAlias = { 'Darwin_i386_10.6' : 'Darwin_i386_10.5' }

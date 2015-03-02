@@ -228,6 +228,16 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+          if "Tag" in self.queueDict[queueName]['ParametersDict'] and \
+             type( self.queueDict[queueName]['ParametersDict']['Tag'] ) in types.StringTypes:
+               self.queueDict[queueName]['ParametersDict']['Tag'] = fromChar( self.queueDict[queueName]['ParametersDict']['Tag'] )
+          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
+          if maxMemory:
+            maxMemoryList = range( 1, int( maxMemory ) + 1 )
+            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
+            if memoryTags:
+              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -432,9 +442,6 @@ class SiteDirector( AgentModule ):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
       
-      if "Tag" in ceDict and type( ceDict['Tag'] ) in types.StringTypes:
-        ceDict['Tag'] = fromChar( ceDict['Tag'] )
-
       result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
         continue
@@ -728,7 +735,7 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
     if "Tag" in queueDict:
-      tagString = ','.join( fromChar( queueDict['Tag'] ) )
+      tagString = ','.join( queueDict['Tag'] )
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
