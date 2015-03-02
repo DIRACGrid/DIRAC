@@ -528,7 +528,6 @@ class Request( Record ):
     # the Request is already in the DB, so we don't touch anything
     if self.RequestID:
       return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
-
     # Set to True if the request could be optimized
     optimized = False
     # Recognise Failover request series
