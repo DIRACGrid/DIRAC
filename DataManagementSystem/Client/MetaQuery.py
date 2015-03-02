@@ -20,13 +20,18 @@ class MetaQuery( object ):
 
   def __init__( self, queryDict = None, typeDict = None ):
 
-    self.__metaQueryDict = queryDict
-    self.__metaTypeDict = typeDict
+    self.__metaQueryDict = {}
+    if queryDict is not None:
+      self.__metaQueryDict = queryDict
+    self.__metaTypeDict = {}
+    if typeDict is not None:
+      self.__metaTypeDict = typeDict
 
-  def setMetaQuery( self, queryList, metaTypeDict ):
+  def setMetaQuery( self, queryList, metaTypeDict = None ):
     """ Create the metadata query out of the command line arguments
     """
-    self.__metaTypeDict = metaTypeDict
+    if metaTypeDict is not None:
+      self.__metaTypeDict = metaTypeDict
     metaDict = {}
     contMode = False
     value = ''
@@ -41,10 +46,10 @@ class MetaQuery( object ):
           return S_ERROR( 'Illegal query element %s' % arg )
 
         name,value = arg.split(operation)
-        if not name in metaTypeDict:
+        if not name in self.__metaTypeDict:
           return S_ERROR( "Metadata field %s not defined" % name )
 
-        mtype = metaTypeDict[name]
+        mtype = self.__metaTypeDict[name]
       else:
         value += ' ' + arg
         value = value.replace(contMode,'')
