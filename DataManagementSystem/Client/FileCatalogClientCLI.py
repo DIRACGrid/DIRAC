@@ -1650,7 +1650,7 @@ File Catalog Client $Revision: 1.17 $Date:
       dirFlag = not result['Value']['Successful'][path]        
         
     if dirFlag:    
-      result = self.fc.getDirectoryMetadata(path)      
+      result = self.fc.getDirectoryUserMetadata(path)
       if not result['OK']:
         print ("Error: %s" % result['Message']) 
         return
