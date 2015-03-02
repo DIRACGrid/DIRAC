@@ -14,7 +14,8 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
-from DIRAC.DataManagementSystem.Client import DirectoryListing
+from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
+from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
@@ -1560,11 +1561,11 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(args) >= 2 and (args[1] in self._available_meta_cmd):
       # if the sub command is not in self._meta_cmd_need_lfn
       # Don't need any auto completion
-      if (args[1] in self._meta_cmd_need_lfn):
+      if args[1] in self._meta_cmd_need_lfn:
         # TODO
-        if (len(args) == 2):
+        if len(args) == 2:
           cur_path = ""
-        elif ( len(args) > 2 ):
+        elif len(args) > 2:
           # If the line ends with ' '
           # this means a new parameter begin.
           if line.endswith(' '):
@@ -1861,7 +1862,11 @@ File Catalog Client $Revision: 1.17 $Date:
       if argss[0][0] == '{':
         metaDict = eval(argss[0])
       else:  
-        metaDict = self.__createQuery(' '.join(argss))
+        result = self.__createQuery(' '.join(argss))
+        if not result['OK']:
+          print "Illegal metaQuery:", ' '.join(argss), result['Message']
+          return
+        metaDict = result['Value']
     else:
       metaDict = {}    
     if verbose: print "Query:",metaDict
@@ -1930,101 +1935,9 @@ File Catalog Client $Revision: 1.17 $Date:
     typeDict['User'] = 'VARCHAR'
     typeDict['Group'] = 'VARCHAR'
     typeDict['Path'] = 'VARCHAR'
-  
-    metaDict = {}
-    contMode = False
-    for arg in argss:
-      if not contMode:
-        operation = ''
-        for op in ['>=','<=','>','<','!=','=']:
-          if arg.find(op) != -1:
-            operation = op
-            break
-        if not operation:
-          
-          print "Error: operation is not found in the query"
-          return None
-          
-        name,value = arg.split(operation)
-        if not name in typeDict:
-          print "Error: metadata field %s not defined" % name
-          return None
-        mtype = typeDict[name]
-      else:
-        value += ' ' + arg
-        value = value.replace(contMode,'')
-        contMode = False  
-      
-      if value[0] in ['"', "'"] and value[-1] not in ['"', "'"]:
-        contMode = value[0]
-        continue 
-      
-      if value.find(',') != -1:
-        valueList = [ x.replace("'","").replace('"','') for x in value.split(',') ]
-        mvalue = valueList
-        if mtype[0:3].lower() == 'int':
-          mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
-          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
-        if mtype[0:5].lower() == 'float':
-          mvalue = [ float(x) for x in valueList if not x in ['Missing','Any'] ]
-          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
-        if operation == "=":
-          operation = 'in'
-        if operation == "!=":
-          operation = 'nin'    
-        mvalue = {operation:mvalue}  
-      else:            
-        mvalue = value.replace("'","").replace('"','')
-        if not value in ['Missing','Any']:
-          if mtype[0:3].lower() == 'int':
-            mvalue = int(value)
-          if mtype[0:5].lower() == 'float':
-            mvalue = float(value)               
-        if operation != '=':     
-          mvalue = {operation:mvalue}      
-                                
-      if name in metaDict:
-        if type(metaDict[name]) == DictType:
-          if type(mvalue) == DictType:
-            op,value = mvalue.items()[0]
-            if op in metaDict[name]:
-              if type(metaDict[name][op]) == ListType:
-                if type(value) == ListType:
-                  metaDict[name][op] = uniqueElements(metaDict[name][op] + value)
-                else:
-                  metaDict[name][op] = uniqueElements(metaDict[name][op].append(value))     
-              else:
-                if type(value) == ListType:
-                  metaDict[name][op] = uniqueElements([metaDict[name][op]] + value)
-                else:
-                  metaDict[name][op] = uniqueElements([metaDict[name][op],value])       
-            else:
-              metaDict[name].update(mvalue)
-          else:
-            if type(mvalue) == ListType:
-              metaDict[name].update({'in':mvalue})
-            else:  
-              metaDict[name].update({'=':mvalue})
-        elif type(metaDict[name]) == ListType:   
-          if type(mvalue) == DictType:
-            metaDict[name] = {'in':metaDict[name]}
-            metaDict[name].update(mvalue)
-          elif type(mvalue) == ListType:
-            metaDict[name] = uniqueElements(metaDict[name] + mvalue)
-          else:
-            metaDict[name] = uniqueElements(metaDict[name].append(mvalue))      
-        else:
-          if type(mvalue) == DictType:
-            metaDict[name] = {'=':metaDict[name]}
-            metaDict[name].update(mvalue)
-          elif type(mvalue) == ListType:
-            metaDict[name] = uniqueElements([metaDict[name]] + mvalue)
-          else:
-            metaDict[name] = uniqueElements([metaDict[name],mvalue])          
-      else:            
-        metaDict[name] = mvalue         
-    
-    return metaDict 
+
+    mq = MetaQuery( typeDict = typeDict )
+    return mq.setMetaQuery( argss )
 
   def do_dataset( self, args ):
     """ A set of dataset manipulation commands
@@ -2074,7 +1987,11 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     datasetName = argss[0]
     metaSelections = ' '.join( argss[1:] )
-    metaDict = self.__createQuery( metaSelections )
+    result = self.__createQuery( metaSelections )
+    if not result['OK']:
+      print "Illegal metaQuery:", metaSelections
+      return
+    metaDict = result['Value']
     datasetName = self.getPath( datasetName )
     
     result = self.fc.addDataset( datasetName, metaDict )
@@ -2286,19 +2203,15 @@ if __name__ == "__main__":
   
   if len(sys.argv) > 2:
     print FileCatalogClientCLI.__doc__
-    sys.exit(2)      
-  elif len(sys.argv) == 2:
-    catype = sys.argv[1]
-    if catype == "LFC":
-      from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
-      cli = FileCatalogClientCLI(LcgFileCatalogProxyClient())
-      print "Starting LFC Proxy FileCatalog client"
-      cli.cmdloop() 
-    elif catype == "DiracFC":
-      from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-      cli = FileCatalogClientCLI(FileCatalogClient())
-      print "Starting ProcDB FileCatalog client"
-      cli.cmdloop()  
-    else:
-      print "Unknown catalog type", catype
+    sys.exit(2)
+
+  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+  catalogs = None
+  if len(sys.argv) == 2:
+    catalogs = [ sys.argv[1] ]
+  fc = FileCatalog( catalogs = catalogs )
+  cli = FileCatalogClientCLI( fc )
+  if catalogs:
+    print "Starting %s file catalog client", catalogs[0]
+  cli.cmdloop()
       
