@@ -18,7 +18,7 @@ class FileCatalog( object ):
                 'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
 
   ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata',
-                     'getFileUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
+                     'getDirectoryUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
                      'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
                      'getMetadataSet']
 
