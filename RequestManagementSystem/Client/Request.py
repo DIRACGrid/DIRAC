@@ -524,9 +524,13 @@ class Request( Record ):
                 S_OK(False) if no optimization were carried out
     """
 
+    # If the RequestID is not the default one (0), it probably means
+    # the Request is already in the DB, so we don't touch anything
+    if self.RequestID:
+      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
+
     # Set to True if the request could be optimized
     optimized = False
-
     # Recognise Failover request series
     repAndRegList = []
     removeRepList = []
@@ -567,11 +571,6 @@ class Request( Record ):
     # List of attributes that must be equal for operations to be merged
     attrList = ["Type", "Arguments", "SourceSE", "TargetSE", "Catalog" ]
 
-    # If the RequestID is not the default one (0), it probably means
-    # the Request is already in the DB, so we don't touch anything
-    # unless it was optimized, in which case we reset the IDs to default
-    if self.RequestID:
-      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
 
     # We could do it with a single loop (the 2nd one), but by doing this,
     # we can replace
