@@ -20,6 +20,6 @@ class ComponentMonitoringClient( Client ):
     self.setServer( 'dips://%s:%s/Framework/ComponentMonitoring' % ( host, port ) )
 
     if 'testing' in kwargs.keys():
-        result = self.setCommit( not kwargs[ 'testing' ] )
-        if not result[ 'OK' ]:
-          raise Exception( "Could not set the commit flag on the service" )
+      result = self.setCommit( not kwargs[ 'testing' ] )
+      if not result[ 'OK' ]:
+        raise Exception( "Could not set the commit flag on the service" )

@@ -326,7 +326,7 @@ class InstalledComponentsDB( object ):
       try:
         self.session.execute( filteredTemp )
       except Exception, e:
-        return S_ERROR( 'Couldn\'t filter the fields: %s' % ( e ) )
+        return S_ERROR( 'Could not filter the fields: %s' % ( e ) )
       filtered = filteredTemp
 
     return S_OK( filtered )
@@ -425,7 +425,7 @@ class InstalledComponentsDB( object ):
     try:
       self.session.add( component )
     except Exception, e:
-      return S_ERROR( 'Couldn\'t add Component: %s' % ( e ) )
+      return S_ERROR( 'Could not add Component: %s' % ( e ) )
 
     return S_OK( 'Component successfully added' )
 
@@ -514,7 +514,7 @@ class InstalledComponentsDB( object ):
     try:
       self.session.add( host )
     except Exception, e:
-      return S_ERROR( 'Couldn\'t add Host: %s' % ( e ) )
+      return S_ERROR( 'Could not add Host: %s' % ( e ) )
 
     return S_OK( 'Host successfully added' )
 
@@ -684,7 +684,7 @@ class InstalledComponentsDB( object ):
       self.session.flush()
     except Exception, e:
       self.session.rollback()
-      return S_ERROR( 'Couldn\'t flush the changes: %s' % ( e ) )
+      return S_ERROR( 'Could not flush the changes: %s' % ( e ) )
 
     return S_OK( 'Changes successfully flushed' )
 
@@ -697,6 +697,6 @@ class InstalledComponentsDB( object ):
       self.session.commit()
     except Exception, e:
       self.session.rollback()
-      return S_ERROR( 'Couldn\'t commit the changes: %s' % ( e ) )
+      return S_ERROR( 'Could not commit the changes: %s' % ( e ) )
 
     return S_OK( 'Changes successfully committed' )
