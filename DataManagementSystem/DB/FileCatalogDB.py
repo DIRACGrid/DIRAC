@@ -918,7 +918,27 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     queryTime = res['Value'].get('QueryTime',-1.)
     return S_OK( {'Successful':successful,'Failed':failed,'QueryTime':queryTime} )
-  
+
+  def getDirectoryMetadata( self, lfns, credDict ):
+    ''' Get standard directory metadata
+    :param list lfns: list of directory paths
+    :param dict credDict: credentials
+    :return: Successful/Failed dict.
+    '''
+    res = self._checkPathPermissions('Read', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    for lfn in res['Value']['Successful']:
+      result = self.dtree.getDirectoryParameters( lfn )
+      if result['OK']:
+        successful[lfn] = result['Value']
+      else:
+        failed[lfn] = result['Message']
+
+    return S_OK( { 'Successful': successful, 'Failed': failed } )
+
   def rebuildDirectoryUsage(self):
     """ Rebuild DirectoryUsage table from scratch
     """

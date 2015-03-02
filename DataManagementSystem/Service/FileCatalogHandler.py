@@ -358,6 +358,11 @@ class FileCatalogHandler( RequestHandler ):
     """ Determine whether supplied path is a directory """
     return gFileCatalogDB.isDirectory( lfns, self.getRemoteCredentials() )
 
+  types_getDirectoryMetadata = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_getDirectoryMetadata( self, lfns ):
+    """ Get the size of the supplied directory """
+    return gFileCatalogDB.getDirectoryMetadata( lfns, self.getRemoteCredentials() )
+
   types_getDirectorySize = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getDirectorySize( self, lfns, longOut = False, fromFiles = False ):
     """ Get the size of the supplied directory """
@@ -451,8 +456,8 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.removeMetadata( pathMetadataDict, self.getRemoteCredentials() )
 
-  types_getDirectoryMetadata = [ StringTypes ]
-  def export_getDirectoryMetadata( self, path ):
+  types_getDirectoryUserMetadata = [ StringTypes ]
+  def export_getDirectoryUserMetadata( self, path ):
     """ Get all the metadata valid for the given directory path
     """
     return gFileCatalogDB.dmeta.getDirectoryMetadata( path, self.getRemoteCredentials() )
