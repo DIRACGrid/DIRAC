@@ -32,7 +32,7 @@ class FailoverRequest( ModuleBase ):
     """ checks if is to do, then prepare few things
     """
     if not self._enableModule():
-      raise GracefulTermination, "Skipping FailoverRequest module"
+      raise GracefulTermination( "Skipping FailoverRequest module" )
 
     self.request.setRequestName( 'job_%d_request.xml' % self.jobID )
     self.request.setJobID( self.jobID )
@@ -81,7 +81,7 @@ class FailoverRequest( ModuleBase ):
         or step status.
     """
     if not self._checkWFAndStepStatus( True ):
-      raise RuntimeError, "Workflow failed, FailoverRequest module completed"
+      raise RuntimeError( "Workflow failed, FailoverRequest module completed" )
 
     super( FailoverRequest, self )._finalize( "Workflow successful, end of FailoverRequest module execution." )
 
