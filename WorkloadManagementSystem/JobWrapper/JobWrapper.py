@@ -908,13 +908,13 @@ class JobWrapper( object ):
       result = self.failoverTransfer.transferAndRegisterFileFailover( fileName = localfile,
                                                                       localPath = outputFilePath,
                                                                       lfn = lfn,
-                                                                      destinationSEList = targetSE,
+                                                                      targetSE = targetSE,
                                                                       failoverSEList = failoverSEs,
                                                                       fileMetaDict = fileMetaDict,
                                                                       fileCatalog = self.defaultCatalog,
                                                                       masterCatalogOnly = self.masterCatalogOnlyFlag )
       if not result['OK']:
-        self.log.error( 'Completely failed to upload file to failover SEs with result:\n%s' % result )
+        self.log.error( 'Completely failed to upload file to failover SEs', result['Message'] )
         missing.append( outputFile )
       else:
         self.log.info( 'File %s successfully uploaded to failover storage element' % lfn )
