@@ -96,7 +96,7 @@ def execute ( arguments ):
   try:
     result = job.execute( arguments )
     if not result['OK']:
-      gLogger.error( result['Message'] )
+      gLogger.error( 'Failed to execute job', result['Message'] )
       raise JobWrapperError( result['Message'] )
   except Exception, x:
     if str( x ) == '0':

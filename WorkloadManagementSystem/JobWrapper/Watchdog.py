@@ -454,7 +454,7 @@ class Watchdog:
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
     except Exception, e:
-      self.log.error( "Cannot convert CPU consumed from string to int: %s" % str( e ) )
+      self.log.error( "Cannot convert CPU consumed from string to int", "%s" % str( e ) )
 
     return S_OK()
 
