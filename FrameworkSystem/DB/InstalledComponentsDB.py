@@ -24,7 +24,7 @@ class Component( Base ):
     'mysql_charset': 'utf8'
   }
 
-  ComponentID = Column('ComponentID', Integer, primary_key = True )
+  ComponentID = Column( 'ComponentID', Integer, primary_key = True )
   System = Column( 'System', String( 32 ), nullable = False )
   Module = Column( 'Module', String( 32 ), nullable = False )
   Type = Column( 'Type', String( 32 ), nullable = False )
@@ -83,7 +83,7 @@ class Host( Base ):
     'mysql_charset': 'utf8'
   }
 
-  HostID = Column('HostID', Integer, primary_key = True )
+  HostID = Column( 'HostID', Integer, primary_key = True )
   HostName = Column( 'HostName', String( 32 ), nullable = False )
   CPU = Column( 'CPU', String( 64 ), nullable = False )
   InstallationList = relationship( 'InstalledComponent', backref = 'InstallationHost' )
@@ -138,8 +138,8 @@ class InstalledComponent( Base ):
     'mysql_charset': 'utf8'
   }
 
-  ComponentID = Column('ComponentID', Integer, ForeignKey('Components.ComponentID'), primary_key = True )
-  HostID = Column('HostID', Integer, ForeignKey('Hosts.HostID'), primary_key = True )
+  ComponentID = Column( 'ComponentID', Integer, ForeignKey( 'Components.ComponentID' ), primary_key = True )
+  HostID = Column( 'HostID', Integer, ForeignKey( 'Hosts.HostID' ), primary_key = True )
   Instance = Column( 'Instance', String( 32 ), primary_key = True )
   InstallationTime = Column( 'InstallationTime', DateTime, primary_key = True )
   UnInstallationTime = Column( 'UnInstallationTime', DateTime )
@@ -199,7 +199,7 @@ class InstalledComponent( Base ):
 class InstalledComponentsDB( object ):
 
   def __init__( self ):
-    self.__initializeConnection('Framework/InstalledComponentsDB')
+    self.__initializeConnection( 'Framework/InstalledComponentsDB' )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )
@@ -219,7 +219,7 @@ class InstalledComponentsDB( object ):
     if not self.user[ 'OK' ]:
       raise Exception( "Cannot retrieve the user: %s" % self.user[ 'Message' ] )
     else:
-      self.user = self.user['Value']
+      self.user = self.user[ 'Value' ]
 
     self.password = gConfig.getOption( '/Systems/Databases/Password' )
     if not self.password[ 'OK' ]:
@@ -234,10 +234,10 @@ class InstalledComponentsDB( object ):
       self.db = self.db[ 'Value' ]
 
     self.engine = create_engine( 'mysql://%s:%s@%s/%s' %
-                    ( self.user, self.password, self.host, self.db ) )
-    self.Session = sessionmaker(bind=self.engine)
+                    ( self.user, self.password, self.host, self.db ), pool_recycle = 3600 )
+    self.Session = sessionmaker( bind = self.engine )
     self.session = self.Session()
-    self.inspector = Inspector.from_engine(self.engine)
+    self.inspector = Inspector.from_engine( self.engine )
 
   def __initializeDB( self ):
     """
