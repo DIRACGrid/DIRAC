@@ -403,13 +403,13 @@ class DataRecoveryAgent(AgentModule):
     result = self.prodDB.setFileStatusForTransformation(int(transformation), fileStatus, fileList, force=True)
     self.log.debug(result)
     if not result['OK']:
-      self.log.error(result)
+      self.log.error(result['Message'])
       return result
     if result['Value'] and 'Failed' in result['Value']:
       self.log.error(result['Value']['Failed'])
       return result
 
-    msg = result['Value']['Successful']
+    msg = result['Value']
     for lfn, message in msg.items():
       self.log.info('%s => %s' % (lfn, message))
 
