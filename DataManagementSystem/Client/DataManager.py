@@ -1269,9 +1269,13 @@ class DataManager( object ):
     failed = res['Value']['Failed']
     for lfn, error in failed.items():
       # Ignore error if file doesn't exist
-      if 'no such file or directory' in str( error ).lower():
+      # This assumes all catalogs return an error as { catalog : error }
+      for catalog, err in error.items():
+        if 'no such file' in err:
+          success.setdefault( lfn, {} ).update( { catalog : True} )
+          error.pop( catalog )
+      if not failed[lfn]:
         failed.pop( lfn )
-        success.setdefault( lfn, {} ).update( { ','.join( error.keys() ) : True} )
       else:
         self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
 
