@@ -234,7 +234,7 @@ class NotificationDB( DB ):
     followers = []
     for field in modifications:
       if field not in self.__updateAlarmModificableFields:
-        return S_ERROR( "%s is not a valid modifiable field" % field )
+        return S_ERROR( "%s is not a valid modificable field" % field )
       value = modifications[ field ]
       result = self.__checkAlarmField( field , value )
       if not result[ 'OK' ]:
@@ -454,7 +454,6 @@ class NotificationDB( DB ):
   def getAlarms( self, condDict = {}, sortList = False, start = 0, limit = 0, modifiedAfter = False ):
 
     condSQL = []
-    eSortList = []
     for field in self.__alarmQueryFields:
       if field in condDict:
         fieldValues = []
@@ -475,16 +474,14 @@ class NotificationDB( DB ):
             return result
           fieldValues.append( result[ 'Value' ] )
         condSQL.append( "%s in ( %s )" % ( field, ",".join( fieldValues ) ) )
-      if field in sortList:
-        eSortList.append( field )
 
     selSQL = "SELECT %s FROM `ntf_Alarms`" % ",".join( self.__alarmQueryFields )
     if modifiedAfter:
       condSQL.append( "ModTime >= %s" % modifiedAfter.strftime( "%Y-%m-%d %H:%M:%S" ) )
     if condSQL:
       selSQL = "%s WHERE %s" % ( selSQL, " AND ".join( condSQL ) )
-    if eSortList:
-      selSQL += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in eSortList ] )
+    if sortList:
+      selSQL += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in sortList ] )
     if limit:
       selSQL += " LIMIT %d,%d" % ( start, limit )
 
@@ -782,7 +779,6 @@ class NotificationDB( DB ):
   def getNotifications( self, condDict = {}, sortList = False, start = 0, limit = 0 ):
 
     condSQL = []
-    eSortList = []
     for field in self.__notificationQueryFields:
       if field in condDict:
         fieldValues = []
@@ -792,8 +788,11 @@ class NotificationDB( DB ):
             return result
           fieldValues.append( result[ 'Value' ] )
         condSQL.append( "%s in ( %s )" % ( field, ",".join( fieldValues ) ) )
-      if field in sortList:
-        eSortList.append( field )
+
+    eSortList = []
+    for field, order in sortList:
+      if order.lower() in [ 'asc', 'desc' ]:
+        eSortList.append( ( '`%s`' % field.replace( '`', '' ), order ) )
 
     selSQL = "SELECT %s FROM `ntf_Notifications`" % ",".join( self.__notificationQueryFields )
     if condSQL:
