@@ -7,6 +7,7 @@ __RCSID__ = "$Id:  $"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC import exit as dexit
+from DIRAC import gLogger
 Script.setUsageMessage( """
 Remove the given file or a list of files from the File Catalog
 
@@ -16,6 +17,16 @@ Usage:
 
 Script.parseCommandLine()
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+res = getProxyInfo()
+if not res['OK']:
+  gLogger.fatal( "Can't get proxy info", res['Message'] )
+  dexit( 1 )
+properties = res['Value'].get( 'groupProperties', [] )
+if not 'FileCatalogManagement' in properties:
+  gLogger.error( "You need to use a proxy from a group with FileCatalogManagement" )
+  dexit( 5 )
+
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 fc = FileCatalog()
@@ -23,7 +34,7 @@ import os
 
 args = Script.getPositionalArgs()
 
-if len( args) < 1:
+if len( args ) < 1:
   Script.showHelp()
   DIRAC.exit( -1 )
 else:
@@ -40,7 +51,7 @@ else:
 res = fc.removeFile( lfns )
 if not res['OK']:
   print "Error:", res['Message']
-  dexit(1)
+  dexit( 1 )
 for lfn in sortList( res['Value']['Failed'].keys() ):
   message = res['Value']['Failed'][lfn]
   print 'Error: failed to remove %s: %s' % ( lfn, message )
