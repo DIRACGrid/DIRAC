@@ -1,11 +1,13 @@
 """
-This Service provides functionality to access and modify the InstalledComponents database
+This Service provides functionality to access and modify the
+InstalledComponentsDB database
 """
 
 __RCSID__ = "$Id$"
 
 import types
-from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent
+from DIRAC.FrameworkSystem.DB.InstalledComponentsDB \
+      import InstalledComponentsDB, Component, Host, InstalledComponent
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 
@@ -26,7 +28,10 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( 'Initialization went well' )
 
-  def __joinInstallationMatch( self, installationFields, componentFields, hostFields ):
+  def __joinInstallationMatch( self,
+                                  installationFields,
+                                  componentFields,
+                                  hostFields ):
     matchFields = installationFields
     for key in componentFields.keys():
       matchFields[ 'Component.' + key ] = componentFields[ key ]
@@ -38,7 +43,7 @@ class ComponentMonitoringHandler( RequestHandler ):
   types_setCommit = [ types.BooleanType ]
   def export_setCommit( self, value ):
     """
-    Sets whether or not changes should be commited to the database
+    Sets whether or not changes should be committed to the database
     """
 
     ComponentMonitoringHandler.doCommit = value
@@ -49,7 +54,8 @@ class ComponentMonitoringHandler( RequestHandler ):
   def export_addComponent( self, component ):
     """
     Creates a new Component object on the database
-    component argument should be a dictionary with the Component fields and its values
+    component argument should be a dictionary with the Component fields and
+    its values
     """
 
     newComponent = Component()
@@ -69,21 +75,28 @@ class ComponentMonitoringHandler( RequestHandler ):
     """
     Returns whether components matching the given criteria exist
     matchFields argument should be a dictionary with the fields to match
-    matchFields accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships.
+    matchFields accepts fields of the form <Field.bigger> and <Field.smaller>
+    to filter using > and < relationships.
     """
 
     return ComponentMonitoringHandler.db.exists( Component, matchFields )
 
   types_getComponents = [ types.DictType ]
-  def export_getComponents( self, matchFields, includeInstallations, includeHosts ):
+  def export_getComponents( self,
+                                matchFields,
+                                includeInstallations,
+                                includeHosts ):
     """
     Returns a list of all the Components in the database
-    matchFields argument should be a dictionary with the fields to match or empty to get all the instances
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
-    includeInstallations indicates whether data about the installations in which the components takes part
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    includeInstallations indicates whether data about the installations in
+    which the components takes part is to be retrieved
+    includeHosts (only if includeInstallations is set to True) indicates
+    whether data about the host in which there are instances of this component
     is to be retrieved
-    includeHosts (only if includeInstallations is set to True) indicates whether data about the host in
-    which there are instances of this component is to be retrieved
     """
 
     result = ComponentMonitoringHandler.db.getComponents( matchFields )
@@ -93,7 +106,8 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     components = []
     for component in result:
-      components.append( component.toDict( includeInstallations, includeHosts )[ 'Value' ] )
+      components.append( 
+            component.toDict( includeInstallations, includeHosts )[ 'Value' ] )
 
     return S_OK( components )
 
@@ -101,10 +115,13 @@ class ComponentMonitoringHandler( RequestHandler ):
   def export_updateComponents( self, matchFields, updates ):
     """
     Updates Components objects on the database
-    matchFields argument should be a dictionary with the fields to match (instances matching the fields
-    will be updated) or empty to update all the instances
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
-    updates argument should be a dictionary with the Component fields and their new updated values
+    matchFields argument should be a dictionary with the fields to match
+    (instances matching the fields will be updated) or empty to update all
+    the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships updates argument
+    should be a dictionary with the Component fields and their new
+    updated values
     """
 
     result = ComponentMonitoringHandler.db.getComponents( matchFields )
@@ -123,8 +140,10 @@ class ComponentMonitoringHandler( RequestHandler ):
   def export_removeComponents( self, matchFields ):
     """
     Removes from the database components that match the given fields
-    matchFields argument should be a dictionary with the fields to match or empty to remove all the instances
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
+    matchFields argument should be a dictionary with the fields to match or
+    empty to remove all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
     """
 
     result = ComponentMonitoringHandler.db.removeComponents( matchFields )
@@ -160,21 +179,28 @@ class ComponentMonitoringHandler( RequestHandler ):
     """
     Returns whether hosts matching the given criteria exist
     matchFields argument should be a dictionary with the fields to match
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
     """
 
     return ComponentMonitoringHandler.db.exists( Host, matchFields )
 
   types_getHosts = [ types.DictType ]
-  def export_getHosts( self, matchFields, includeInstallations, includeComponents ):
+  def export_getHosts( self,
+                          matchFields,
+                          includeInstallations,
+                          includeComponents ):
     """
     Returns a list of all the Hosts in the database
-    matchFields argument should be a dictionary with the fields to match or empty to get all the instances
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
-    includeInstallations indicates whether data about the installations in which the host takes part
-    is to be retrieved
-    includeComponents (only if includeInstallations is set to True) indicates whether data about the
-    components installed into this host is to be retrieved
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    includeInstallations indicates whether data about the installations in
+    which the host takes part is to be retrieved
+    includeComponents (only if includeInstallations is set to True) indicates
+    whether data about the components installed into this host is to
+    be retrieved
     """
 
     result = ComponentMonitoringHandler.db.getHosts( matchFields )
@@ -184,7 +210,8 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     hosts = []
     for host in result:
-      hosts.append( host.toDict( includeInstallations, includeComponents )[ 'Value' ] )
+      hosts.append( 
+            host.toDict( includeInstallations, includeComponents )[ 'Value' ] )
 
     return S_OK( hosts )
 
@@ -192,10 +219,12 @@ class ComponentMonitoringHandler( RequestHandler ):
   def export_updateHosts( self, matchFields, updates ):
     """
     Updates Hosts objects on the database
-    matchFields argument should be a dictionary with the fields to match (instances matching the fields
-    will be updated) or empty to update all the instances
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
-    updates argument should be a dictionary with the Host fields and their new updated values
+    matchFields argument should be a dictionary with the fields to
+    match (instances matching the fields will be updated) or empty to update
+    all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships updates argument
+    should be a dictionary with the Host fields and their new updated values
     """
 
     result = ComponentMonitoringHandler.db.getHosts( matchFields )
@@ -214,8 +243,10 @@ class ComponentMonitoringHandler( RequestHandler ):
   def export_removeHosts( self, matchFields ):
     """
     Removes from the database hosts that match the given fields
-    matchFields argument should be a dictionary with the fields to match or empty to remove all the instances
-    matchFields also accepts fields of the form <Field.bigger> and <Field.smaller> to filter using > and < relationships
+    matchFields argument should be a dictionary with the fields to match or
+    empty to remove all the instances matchFields also accepts fields of the
+    form <Field.bigger> and <Field.smaller> to filter
+    using > and < relationships
     """
 
     result = ComponentMonitoringHandler.db.removeHosts( matchFields )
@@ -228,13 +259,21 @@ class ComponentMonitoringHandler( RequestHandler ):
       return ComponentMonitoringHandler.db.flushChanges()
 
   types_addInstallation = [ types.DictType ]
-  def export_addInstallation( self, installation, componentDict, hostDict, forceCreate ):
+  def export_addInstallation( self,
+                                  installation,
+                                  componentDict,
+                                  hostDict,
+                                  forceCreate ):
     """
     Creates a new InstalledComponent object on the database
-    installation argument should be a dictionary with the InstalledComponent fields and its values
-    componentDict argument should be a dictionary with the Component fields and its values
-    hostDict argument should be a dictionary with the Host fields and its values
-    forceCreate indicates whether a new Component and/or Host should be created if the given ones do not exist
+    installation argument should be a dictionary with the InstalledComponent
+    fields and its values
+    componentDict argument should be a dictionary with the Component fields
+    and its values
+    hostDict argument should be a dictionary with the Host fields and
+    its values
+    forceCreate indicates whether a new Component and/or Host should be
+    created if the given ones do not exist
     """
 
     newInstallation = InstalledComponent()
@@ -270,7 +309,8 @@ class ComponentMonitoringHandler( RequestHandler ):
     else:
       host = result[ 'Value' ][0]
 
-    result = ComponentMonitoringHandler.db.addInstalledComponent( newInstallation, component, host, forceCreate )
+    result = ComponentMonitoringHandler.db.addInstalledComponent \
+                              ( newInstallation, component, host, forceCreate )
     if not result[ 'OK' ]:
       return result
 
@@ -280,32 +320,46 @@ class ComponentMonitoringHandler( RequestHandler ):
       return ComponentMonitoringHandler.db.flushChanges()
 
   types_installationExists = [ types.DictType ]
-  def export_installationExists( self, installationFields, componentFields, hostFields ):
+  def export_installationExists( self,
+                                    installationFields,
+                                    componentFields,
+                                    hostFields ):
     """
     Returns whether installations matching the given criteria exist
-    installationFields argument should be a dictionary with the fields to match for the installation
-    componentFields argument should be a dictionary with the fields to match for the component installed
-    hostFields argument should be a dictionary with the fields to match for the host where the
-    installation is made
+    installationFields argument should be a dictionary with the fields to
+    match for the installation
+    componentFields argument should be a dictionary with the fields to match
+    for the component installed
+    hostFields argument should be a dictionary with the fields to match for
+    the host where the installation is made
     """
 
-    matchFields = self.__joinInstallationMatch( installationFields, componentFields, hostFields )[ 'Value' ]
+    matchFields = self.__joinInstallationMatch \
+                  ( installationFields, componentFields, hostFields )[ 'Value' ]
 
-    return ComponentMonitoringHandler.db.exists( InstalledComponent, matchFields )
+    return ComponentMonitoringHandler.db.exists \
+                                            ( InstalledComponent, matchFields )
 
   types_getInstallations = [ types.DictType ]
-  def export_getInstallations( self, installationFields, componentFields, hostFields, installationsInfo ):
+  def export_getInstallations( self,
+                                  installationFields,
+                                  componentFields,
+                                  hostFields,
+                                  installationsInfo ):
     """
     Returns a list of installations matching the given criteria
-    installationFields argument should be a dictionary with the fields to match for the installation
-    componentFields argument should be a dictionary with the fields to match for the component installed
-    hostFields argument should be a dictionary with the fields to match for the host where the
-    installation is made
-    installationsInfo indicates whether information about the components and host taking part in the
-    installation is to be provided
+    installationFields argument should be a dictionary with the fields to
+    match for the installation
+    componentFields argument should be a dictionary with the fields to match
+    for the component installed
+    hostFields argument should be a dictionary with the fields to match for
+    the host where the installation is made
+    installationsInfo indicates whether information about the components and
+    host taking part in the installation is to be provided
     """
 
-    matchFields = self.__joinInstallationMatch( installationFields, componentFields, hostFields )[ 'Value' ]
+    matchFields = self.__joinInstallationMatch \
+                  ( installationFields, componentFields, hostFields )[ 'Value' ]
 
     result = ComponentMonitoringHandler.db.getInstalledComponents( matchFields )
     if not result[ 'OK' ]:
@@ -314,23 +368,32 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     installations = []
     for installation in result:
-      installations.append( installation.toDict( installationsInfo, installationsInfo )[ 'Value' ] )
+      installations.append( 
+        installation.toDict( installationsInfo, installationsInfo )[ 'Value' ] )
 
     return S_OK( installations )
 
   types_updateInstallations = [ types.DictType ]
-  def export_updateInstallations( self, installationFields, componentFields, hostFields, updates ):
+  def export_updateInstallations( self,
+                                      installationFields,
+                                      componentFields,
+                                      hostFields,
+                                      updates ):
     """
     Updates installations matching the given criteria
-    installationFields argument should be a dictionary with the fields to match for the installation
-    componentFields argument should be a dictionary with the fields to match for the component installed
-    or empty to update regardless of component
-    hostFields argument should be a dictionary with the fields to match for the host where the
-    installation is made or empty to update regardless of host
-    updates argument should be a dictionary with the Installation fields and their new updated values
+    installationFields argument should be a dictionary with the fields to
+    match for the installation
+    componentFields argument should be a dictionary with the fields to match
+    for the component installed or empty to update regardless of component
+    hostFields argument should be a dictionary with the fields to match for
+    the host where the installation is made or empty to update
+    regardless of host
+    updates argument should be a dictionary with the Installation fields and
+    their new updated values
     """
 
-    matchFields = self.__joinInstallationMatch( installationFields, componentFields, hostFields )[ 'Value' ]
+    matchFields = self.__joinInstallationMatch \
+                  ( installationFields, componentFields, hostFields )[ 'Value' ]
 
     result = ComponentMonitoringHandler.db.getInstalledComponents( matchFields )
     if not result[ 'OK' ]:
@@ -345,18 +408,25 @@ class ComponentMonitoringHandler( RequestHandler ):
       return ComponentMonitoringHandler.db.flushChanges()
 
   types_removeInstallations = [ types.DictType ]
-  def export_removeInstallations( self, installationFields, componentFields, hostFields ):
+  def export_removeInstallations( self,
+                                      installationFields,
+                                      componentFields,
+                                      hostFields ):
     """
     Removes installations matching the given criteria
-    installationFields argument should be a dictionary with the fields to match for the installation
-    componentFields argument should be a dictionary with the fields to match for the component installed
-    hostFields argument should be a dictionary with the fields to match for the host where the
-    installation is made
+    installationFields argument should be a dictionary with the fields to
+    match for the installation
+    componentFields argument should be a dictionary with the fields to match
+    for the component installed
+    hostFields argument should be a dictionary with the fields to match for
+    the host where the installation is made
     """
 
-    matchFields = self.__joinInstallationMatch( installationFields, componentFields, hostFields )[ 'Value' ]
+    matchFields = self.__joinInstallationMatch \
+                  ( installationFields, componentFields, hostFields )[ 'Value' ]
 
-    result = ComponentMonitoringHandler.db.removeInstalledComponents( matchFields )
+    result = \
+          ComponentMonitoringHandler.db.removeInstalledComponents( matchFields )
     if not result[ 'OK' ]:
       return result
 
