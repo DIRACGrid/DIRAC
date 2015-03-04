@@ -45,14 +45,10 @@ class Component( Base ):
     The dictionary may contain the keys: ComponentID, System, Module, Type
     """
 
-    if dictionary.has_key( 'ComponentID' ):
-      self.componentID = dictionary[ 'ComponentID' ]
-    if dictionary.has_key( 'System' ):
-      self.system = dictionary[ 'System' ]
-    if dictionary.has_key( 'Module' ):
-      self.module = dictionary[ 'Module' ]
-    if dictionary.has_key( 'Type' ):
-      self.cType = dictionary[ 'Type' ]
+    self.componentID = dictionary.get( 'ComponentID', self.componentID )
+    self.system = dictionary.get( 'System', self.system )
+    self.module = dictionary.get( 'Module', self.module )
+    self.cType = dictionary.get( 'Type', self.cType )
 
     return S_OK( 'Successfully read from dictionary' )
 
@@ -109,12 +105,9 @@ class Host( Base ):
     The dictionary may contain the keys: HostID, HostName, CPU
     """
 
-    if dictionary.has_key( 'HostID' ):
-      self.hostID = dictionary[ 'HostID' ]
-    if dictionary.has_key( 'HostName' ):
-      self.hostName = dictionary[ 'HostName' ]
-    if dictionary.has_key( 'CPU' ):
-      self.cpu = dictionary[ 'CPU' ]
+    self.hostID = dictionary.get( 'HostID', self.hostID )
+    self.hostName = dictionary.get( 'HostName', self.hostName )
+    self.cpu = dictionary.get( 'CPU', self.cpu )
 
     return S_OK( 'Successfully read from dictionary' )
 
@@ -188,16 +181,13 @@ class InstalledComponent( Base ):
     InstallationTime, UnInstallationTime
     """
 
-    if dictionary.has_key( 'ComponentID' ):
-      self.componentID = dictionary[ 'ComponentID' ]
-    if dictionary.has_key( 'HostID' ):
-      self.hostID = dictionary[ 'HostID' ]
-    if dictionary.has_key( 'Instance' ):
-      self.instance = dictionary[ 'Instance' ]
-    if dictionary.has_key( 'InstallationTime' ):
-      self.installationTime = dictionary[ 'InstallationTime' ]
-    if dictionary.has_key( 'UnInstallationTime' ):
-      self.unInstallationTime = dictionary[ 'UnInstallationTime' ]
+    self.componentID = dictionary.get( 'ComponentID', self.componentID )
+    self.hostID = dictionary.get( 'HostID', self.hostID )
+    self.instance = dictionary.get( 'Instance', self.instance )
+    self.installationTime = dictionary.get( 'InstallationTime',
+                                            self.installationTime )
+    self.unInstallationTime = dictionary.get( 'UnInstallationTime',
+                                              self.unInstallationTime )
 
     return S_OK( 'Successfully read from dictionary' )
 
