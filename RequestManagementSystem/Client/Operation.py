@@ -328,7 +328,7 @@ class Operation( Record ):
     """ error setter """
     if type( value ) != str:
       raise TypeError( "Error has to be a string!" )
-    self.__data__["Error"] = self._escapeStr( value, 255 )
+    self.__data__["Error"] = self._escapeStr( value[:240], 255 )
 
   @property
   def Status( self ):
