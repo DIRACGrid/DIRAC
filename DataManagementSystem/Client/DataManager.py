@@ -1271,7 +1271,7 @@ class DataManager( object ):
       # Ignore error if file doesn't exist
       # This assumes all catalogs return an error as { catalog : error }
       for catalog, err in error.items():
-        if 'no such file' in err:
+        if 'no such file' in err.lower():
           success.setdefault( lfn, {} ).update( { catalog : True} )
           error.pop( catalog )
       if not failed[lfn]:
