@@ -231,8 +231,6 @@ class InstalledComponentsDB( object ):
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )
 
-    self.componentFields = [ 'ComponentId', 'System', 'Module', 'Type' ]
-
   def __initializeConnection( self, dbPath ):
     self.dbs = getDatabaseSection( dbPath )
 
