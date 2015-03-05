@@ -1,11 +1,17 @@
-[v6r13-pre16]
+[v6r13-pre17]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
 
+*Core
+FIX: MySQL.py - treat in detailed way datetime functions in __escapeString()
+
 *Configuration
 NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
      shifter in the CS
+
+*Framework
+FIX: NotificationDB - escape fields for sorting in getNotifications()
 
 *Core
 NEW: Changes to make the DISET protocol IP V6 ready
