@@ -1245,14 +1245,14 @@ class DataManager( object ):
       return S_ERROR( errStr )
     return self.__removeCatalogReplica( replicaTuples )
 
-  def __removeCatalogReplica( self, replicaTuple ):
+  def __removeCatalogReplica( self, replicaTuples ):
     """ remove replica form catalogue """
-    oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuple ) )
+    oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuples ) )
     oDataOperation.setStartTime()
     start = time.time()
     # HACK!
     replicaDict = {}
-    for lfn, pfn, se in replicaTuple:
+    for lfn, pfn, se in replicaTuples:
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
     res = self.fc.removeReplica( replicaDict )
     oDataOperation.setEndTime()
@@ -1261,25 +1261,29 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'RegistrationOK', 0 )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
       gDataStoreClient.addRegister( oDataOperation )
-      errStr = "__removeCatalogReplica: Completely failed to remove replica."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "__removeCatalogReplica: Completely failed to remove replica: " + res['Message']
+      self.log.debug( errStr )
       return S_ERROR( errStr )
 
-
-    for lfn in res['Value']['Successful']:
-      infoStr = "__removeCatalogReplica: Successfully removed replica."
-      self.log.debug( infoStr, lfn )
-    if res['Value']['Successful']:
-      self.log.debug( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
-
     success = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn, error in failed.items():
+      # Ignore error if file doesn't exist
+      # This assumes all catalogs return an error as { catalog : error }
+      for catalog, err in error.items():
+        if 'no such file' in err.lower():
+          success.setdefault( lfn, {} ).update( { catalog : True} )
+          error.pop( catalog )
+      if not failed[lfn]:
+        failed.pop( lfn )
+      else:
+        self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
+
+    # Only for logging information
     if success:
-      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
+      self.log.debug( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
       for lfn in success:
         self.log.debug( "__removeCatalogReplica: Successfully removed replica.", lfn )
-
-    for lfn, error in res['Value']['Failed'].items():
-      self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
 
     oDataOperation.setValueByKey( 'RegistrationOK', len( success ) )
     gDataStoreClient.addRegister( oDataOperation )
