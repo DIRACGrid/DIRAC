@@ -149,7 +149,6 @@
 
 __RCSID__ = "$Id$"
 
-
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DataStructures    import MutableStruct
@@ -169,7 +168,7 @@ with warnings.catch_warnings():
   warnings.simplefilter( 'ignore', DeprecationWarning )
   import MySQLdb
   
-# This is for proper initialization of embeded server, it should only be called once
+# This is for proper initialization of embedded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
 gDebugFile = None
@@ -471,6 +470,20 @@ class MySQL:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
       return S_ERROR( '%s: (%s)' % ( err, str( e ) ) )
 
+  def __isDateTime( self, dateString ):
+
+    if dateString == 'UTC_TIMESTAMP()':
+      return True
+    try:
+      dtime = dateString.replace( '"', '').replace( "'", "" )
+      dtime = Time.fromString( dtime )
+      if dtime is None:
+        return False
+      else:
+        return True
+    except:
+      return False
+
 
   def __escapeString( self, myString ):
     """
@@ -484,17 +497,29 @@ class MySQL:
       return retDict
     connection = retDict['Value']
 
-    specialValues = ( 'UTC_TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF' )
-
     try:
       myString = str( myString )
     except ValueError:
       return S_ERROR( "Cannot escape value!" )
 
+    timeUnits = [ 'MICROSECOND', 'SECOND', 'MINUTE', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR' ]
+
     try:
-      for sV in specialValues:
-        if myString.find( sV ) == 0:
-          return S_OK( myString )
+      # Check datetime functions first
+      if myString.strip() == 'UTC_TIMESTAMP()':
+        return S_OK( myString )
+
+      for func in [ 'TIMESTAMPDIFF', 'TIMESTAMPADD' ]:
+        if myString.strip().startswith( '%s(' % func ) and myString.strip().endswith( ')' ):
+          args = myString.strip()[:-1].replace( '%s(' % func, '' ).strip().split(',')
+          arg1, arg2, arg3 = [ x.strip() for x in args ]
+          if arg1 in timeUnits:
+            if self.__isDateTime( arg2 ) or arg2.isalnum():
+              if self.__isDateTime( arg3 ) or arg3.isalnum():
+                return S_OK( myString )
+          self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
+          return S_ERROR( '__escape_string: Could not escape string' )
+
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )

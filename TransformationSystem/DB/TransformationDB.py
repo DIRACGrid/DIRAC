@@ -294,7 +294,7 @@ class TransformationDB( DB ):
     self.isTransformationTasksInnoDB = True
     res = self._query( "SELECT Engine FROM INFORMATION_SCHEMA.TABLES WHERE table_name = 'TransformationTasks'" )
     if not res['OK']:
-      raise RuntimeError, res['Message']
+      raise RuntimeError( res['Message'] )
     else:
       engine = res['Value'][0][0]
       if engine.lower() != 'innodb':

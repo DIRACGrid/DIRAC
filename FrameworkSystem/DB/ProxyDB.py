@@ -197,9 +197,9 @@ class ProxyDB( DB ):
     except KeyError:
       return S_ERROR( "Cannot escape DN" )
     cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
-    cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( sUserDN,
+    cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % ( sUserDN,
                                                                               sAllStr,
-                                                                              self.__defaultRequestLifetime )
+                                                                              int( self.__defaultRequestLifetime ) )
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
@@ -390,7 +390,7 @@ class ProxyDB( DB ):
                 'UserDN' : sUserDN,
                 'UserGroup' : sUserGroup,
                 'Pem' : self._escapeString( pemChain )[ 'Value' ],
-                'ExpirationTime' : 'TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )' % int( remainingSecs ),
+                'ExpirationTime' : 'TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )' % int( remainingSecs ),
                 'PersistentFlag' : "'False'" }
     if sqlInsert:
       sqlFields = []
@@ -913,7 +913,7 @@ class ProxyDB( DB ):
     valuesSQL = ", ".join( ( self._escapeString( token )['Value'],
                               self._escapeString( requesterDN )['Value'],
                               self._escapeString( requesterGroup )['Value'],
-                            "TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % lifeTime,
+                            "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int( lifeTime ),
                             str( numUses ) ) )
 
     insertSQL = "INSERT INTO `ProxyDB_Tokens` ( %s ) VALUES ( %s )" % ( fieldsSQL, valuesSQL )

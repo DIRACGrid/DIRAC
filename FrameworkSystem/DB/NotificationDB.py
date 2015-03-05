@@ -791,11 +791,16 @@ class NotificationDB( DB ):
           fieldValues.append( result[ 'Value' ] )
         condSQL.append( "%s in ( %s )" % ( field, ",".join( fieldValues ) ) )
 
+    eSortList = []
+    for field, order in sortList:
+      if order.lower() in [ 'asc', 'desc' ]:
+        eSortList.append( ( '`%s`' % field.replace( '`', '' ), order ) )
+
     selSQL = "SELECT %s FROM `ntf_Notifications`" % ",".join( self.__notificationQueryFields )
     if condSQL:
       selSQL = "%s WHERE %s" % ( selSQL, " AND ".join( condSQL ) )
-    if sortList:
-      selSQL += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in sortList ] )
+    if eSortList:
+      selSQL += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in eSortList ] )
     else:
       selSQL += " ORDER BY Id DESC"
     if limit:

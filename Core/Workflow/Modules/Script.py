@@ -48,7 +48,7 @@ class Script( ModuleBase ):
     """ simple checks
     """
     if not self.executable:
-      raise RuntimeError, 'No executable defined'
+      raise RuntimeError( 'No executable defined' )
 
   def _setCommand( self ):
     """ set the command that will be executed
@@ -101,7 +101,7 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError, "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status )
+      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status ) )
 
 
   def _finalize( self ):

@@ -4,8 +4,9 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-from DIRAC           import exit as DIRACExit
+from DIRAC           import exit as dexit
 from DIRAC.Core.Base import Script
+from DIRAC           import gLogger
 
 Script.setUsageMessage( """
 Remove the given file replica or a list of file replicas from the File Catalog
@@ -18,13 +19,22 @@ Usage:
 
 Script.parseCommandLine()
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+res = getProxyInfo()
+if not res['OK']:
+  gLogger.fatal( "Can't get proxy info", res['Message'] )
+  dexit( 1 )
+properties = res['Value'].get( 'groupProperties', [] )
+if not 'FileCatalogManagement' in properties:
+  gLogger.error( "You need to use a proxy from a group with FileCatalogManagement" )
+  dexit( 5 )
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 dm = DataManager()
 import os, sys
 args = Script.getPositionalArgs()
 if len( args ) < 2:
   Script.showHelp()
-  DIRACExit( -1 )
+  dexit( -1 )
 else:
   inputFileName = args[0]
   storageElementName = args[1]
@@ -40,7 +50,7 @@ else:
 res = dm.removeReplicaFromCatalog( storageElementName, lfns )
 if not res['OK']:
   print res['Message']
-  DIRACExit(0)
+  dexit( 0 )
 for lfn in sorted( res['Value']['Failed'] ):
   message = res['Value']['Failed'][lfn]
   print 'Failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )

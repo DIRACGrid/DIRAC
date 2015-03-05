@@ -353,9 +353,10 @@ DELIMITER ;
 -- dirNames : list of directory name, coma separated
 
 
+DROP PROCEDURE IF EXISTS ps_find_dirs;
 DELIMITER //
 CREATE PROCEDURE ps_find_dirs
-(IN dirNames TEXT)
+(IN dirNames MEDIUMTEXT)
 BEGIN
 --   SELECT DirID from FC_DirectoryList where Name in (dirNames);
   SET @sql = CONCAT('SELECT SQL_NO_CACHE Name, DirID from FC_DirectoryList where Name in (', dirNames, ')');

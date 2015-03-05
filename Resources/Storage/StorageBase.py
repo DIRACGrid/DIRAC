@@ -38,7 +38,7 @@ from DIRAC.Resources.Utilities import checkArgumentFormat
 import os
 PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
 
-class StorageBase:
+class StorageBase( object ):
   """
   .. class:: StorageBase
   
