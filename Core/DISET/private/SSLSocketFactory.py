@@ -21,7 +21,7 @@ class SSLSocketFactory:
   def __checkKWArgs( self, kwargs ):
     for arg, value in ( ( self.KW_TIMEOUT, False ),
                         ( self.KW_ENABLE_SESSIONS, True ),
-                        ( self.KW_SSL_METHOD, "SSLv3" ) ):
+                        ( self.KW_SSL_METHOD, "TLSv1" ) ):
       if arg not in kwargs:
         kwargs[ arg ] = value
 
