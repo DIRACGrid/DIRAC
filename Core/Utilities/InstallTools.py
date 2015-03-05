@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    InstallTools.py
 # Author :  Ricardo Graciani
 ########################################################################
@@ -1331,7 +1330,7 @@ def setupSite( scriptCfg, cfg = None ):
     result = execCommand( 0, ['ps', '-ef'] )
     if not result['OK']:
       if exitOnError:
-        gLogger.error( result['Message'] )
+        gLogger.error( 'Failed to verify runsvdir running', result['Message'] )
         DIRAC.exit( -1 )
       return S_ERROR( result['Message'] )
     processList = result['Value'][1].split( '\n' )
@@ -1448,7 +1447,7 @@ def setupSite( scriptCfg, cfg = None ):
     result = getDatabases()
     if not result['OK']:
       if exitOnError:
-        gLogger.error( result['Message'] )
+        gLogger.error( 'Failed to get databases', result['Message'] )
         DIRAC.exit( -1 )
       return result
     installedDatabases = result['Value']
@@ -2247,7 +2246,7 @@ def installDatabase( dbName ):
   # now creating the Database
   result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
   if not result['OK']:
-    gLogger.error( result['Message'] )
+    gLogger.error( 'Failed to create databases', result['Message'] )
     if exitOnError:
       DIRAC.exit( -1 )
     return result
@@ -2268,7 +2267,7 @@ def installDatabase( dbName ):
       return S_ERROR( error )
   result = execMySQL( 'FLUSH PRIVILEGES' )
   if not result['OK']:
-    gLogger.error( result['Message'] )
+    gLogger.error( 'Failed to flush provileges', result['Message'] )
     if exitOnError:
       exit( -1 )
     return result
@@ -2452,8 +2451,7 @@ def execCommand( timeout, cmd ):
   if not result['OK']:
     if timeout and result['Message'].find( 'Timeout' ) == 0:
       return result
-    gLogger.error( 'Failed to execute', cmd[0] )
-    gLogger.error( result['Message'] )
+    gLogger.error( 'Failed to execute', '%s: %s' % ( cmd[0], result['Message'] ) )
     if exitOnError:
       DIRAC.exit( -1 )
     return result
