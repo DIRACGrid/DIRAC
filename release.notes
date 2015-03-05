@@ -1,3 +1,19 @@
+[v6r12p29]
+
+*CS
+CHANGE: CSCLI - use readline to store and resurrect command history
+
+*WMS
+FIX: JobWrapper - bug fixed in the failoverTransfer() call
+CHANGE: dirac-wms-job-submit - added -f flag to store ids
+
+*DMS
+FIX: DataManager - make successful removeReplica if missing replica 
+     in one catalog
+
+*RMS
+FIX: Operation, Request - limit the length of the error message
+
 [v6r12p28]
 
 *RMS
