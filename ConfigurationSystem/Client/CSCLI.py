@@ -9,6 +9,10 @@ import cmd
 import sys
 import signal
 import types
+import atexit
+import os
+import readline
+
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -54,6 +58,16 @@ class CSCLI( cmd.Cmd ):
     self._initSignals()
     #User friendly hack
     self.do_exit = self.do_quit
+    # store history
+    histfilename = os.path.basename(sys.argv[0])
+    historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
+    if not os.path.exists( os.path.dirname(historyFile) ):
+      os.makedirs( os.path.dirname(historyFile) )
+    if os.path.isfile( historyFile ):
+      readline.read_history_file( historyFile )
+    readline.set_history_length(1000)
+    atexit.register( readline.write_history_file, historyFile )
+
 
   def start( self ):
     if self.connected:

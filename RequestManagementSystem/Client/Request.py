@@ -383,7 +383,6 @@ class Request( object ):
     opStatuses = [ op.Status for op in self.__operations__ ]
     return opStatuses.index( "Waiting" ) if "Waiting" in opStatuses else len( opStatuses )
 
-
   def toJSON( self ):
     """ Returns the JSON formated string that describes the request """
 

@@ -908,7 +908,7 @@ class JobWrapper( object ):
       result = self.failoverTransfer.transferAndRegisterFileFailover( fileName = localfile,
                                                                       localPath = outputFilePath,
                                                                       lfn = lfn,
-                                                                      destinationSEList = targetSE,
+                                                                      targetSE = targetSE,
                                                                       failoverSEList = failoverSEs,
                                                                       fileMetaDict = fileMetaDict,
                                                                       fileCatalog = self.defaultCatalog,
