@@ -1,3 +1,8 @@
+[v6r12p28]
+
+*RMS
+FIX: Request - do not optimize requests already in the DB 
+
 [v6r12p27]
 
 *Core
