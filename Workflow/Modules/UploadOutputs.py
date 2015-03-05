@@ -41,7 +41,7 @@ class UploadOutputs( ModuleBase ):
     elif self.workflow_commons.has_key( 'outputList' ):
       self.outputList = self.workflow_commons['outputList']
     else:
-      raise GracefulTermination, 'Nothing to upload'
+      raise GracefulTermination( 'Nothing to upload' )
 
     # in case you want to put a mask on the steps
     # TODO: add it to the DIRAC API
@@ -68,7 +68,7 @@ class UploadOutputs( ModuleBase ):
     # lfnsList = self.__getOutputLFNs( self.outputData ) or outputList?
 
     if not self._checkWFAndStepStatus():
-      raise GracefulTermination, 'No output data upload attempted'
+      raise GracefulTermination( 'No output data upload attempted' )
 
   def __getOuputLFNs( self, outputList, *args ):
     """ This is really VO-specific.
