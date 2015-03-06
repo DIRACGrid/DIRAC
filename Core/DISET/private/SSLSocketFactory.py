@@ -2,7 +2,7 @@
 __RCSID__ = "$Id$"
 
 import types
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
 from DIRAC.Core.DISET.private.Transports.SSLTransport import checkSanity
@@ -17,6 +17,7 @@ class SSLSocketFactory:
   KW_TIMEOUT = "timeout"
   KW_ENABLE_SESSIONS = 'enableSessions'
   KW_SSL_METHOD = "sslMethod"
+  KW_SSL_CIPHERS = "sslCiphers"
 
   def __checkKWArgs( self, kwargs ):
     for arg, value in ( ( self.KW_TIMEOUT, False ),
@@ -28,6 +29,12 @@ class SSLSocketFactory:
   def createClientSocket( self, addressTuple , **kwargs ):
     if type( addressTuple ) not in ( types.ListType, types.TupleType ):
       return S_ERROR( "hostAdress is not in a tuple form ( 'hostnameorip', port )" )
+    res = gConfig.getOptionsDict( "/DIRAC/Security/ConnConf/%s:%s" % addressTuple )
+    if res[ 'OK' ]:
+      opts = res[ 'Value' ]
+      for k in opts:
+        if k not in kwargs:
+          kwargs[k] = opts[k]
     self.__checkKWArgs( kwargs )
     result = checkSanity( addressTuple, kwargs )
     if not result[ 'OK' ]:

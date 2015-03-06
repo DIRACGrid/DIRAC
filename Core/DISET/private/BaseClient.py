@@ -98,6 +98,13 @@ class BaseClient:
       return S_ERROR( "URL is malformed: %s" % retVal[ 'Message' ] )
     self.__URLTuple = retVal[ 'Value' ]
     self._serviceName = self.__URLTuple[-1]
+    print self.__URLTuple[1:3]
+    res = gConfig.getOptionsDict( "/DIRAC/Security/ConnConf/%s:%s" % self.__URLTuple[1:3] )
+    if res[ 'OK' ]:
+      opts = res[ 'Value' ]
+      for k in opts:
+        if k not in self.kwargs:
+          self.kwargs[k] = opts[k]
     return S_OK()
 
   def __discoverTimeout( self ):
