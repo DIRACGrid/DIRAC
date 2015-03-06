@@ -28,6 +28,7 @@ ENOMETH = 1004
 EFILESIZE = 1005
 ECONF = 1006
 EGFAL = 1007
+EBADCKS = 1008
 
 # This translates the integer number into the name of the variable
 dErrorCode = { 1001 : 'ERRX',
@@ -37,6 +38,7 @@ dErrorCode = { 1001 : 'ERRX',
                1005 : 'EFILESIZE',
                1006 : 'ECONF',
                1007 : 'EGFAL',
+               1008 : 'EBADCKS',
                 }
 
 
@@ -46,7 +48,8 @@ dStrError = { ERRX : "A human readable error message for ERRX",
               ENOMETH : "No such method or function",
               EFILESIZE : "Bad file size",
               ECONF : "Configuration error",
-              EGFAL : "Error with the gfal call"}
+              EGFAL : "Error with the gfal call",
+              EBADCKS : "Bad checksum", }
 
 
 # In case the error is returned as a string, and not as a DIRACError object, 

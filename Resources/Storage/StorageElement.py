@@ -7,8 +7,8 @@ __RCSID__ = "$Id$"
 import re
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DIRACError
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult 
+from DIRAC import gLogger, gConfig, DError, DIRACError, S_ERROR_N as S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_OK, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -494,7 +494,8 @@ class StorageElementItem( object ):
     else:
       errStr = "Supplied urls must be string, list of strings or a dictionary."
       self.log.getSubLogger( 'getLFNFromURL' ).debug( errStr )
-      return S_ERROR( errStr )
+      return S_ERROR( DError( errno.EINVAL, errStr ) )
+
 
     retDict = { "Successful" : {}, "Failed" : {} }
     for url in urlDict:
