@@ -29,7 +29,7 @@ class SSLSocketFactory:
   def createClientSocket( self, addressTuple , **kwargs ):
     if type( addressTuple ) not in ( types.ListType, types.TupleType ):
       return S_ERROR( "hostAdress is not in a tuple form ( 'hostnameorip', port )" )
-    res = gConfig.getOptionsDict( "/DIRAC/Security/ConnConf/%s:%s" % addressTuple )
+    res = gConfig.getOptionsDict( "/DIRAC/ConnConf/%s:%s" % addressTuple )
     if res[ 'OK' ]:
       opts = res[ 'Value' ]
       for k in opts:
