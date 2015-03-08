@@ -16,6 +16,38 @@ import DIRAC.Core.Utilities.Time as Time
 from types import ListType, DictType, StringTypes, IntType, LongType, FloatType
 import json
 
+FILE_STANDARD_METAKEYS = { 'SE': 'VARCHAR',
+                           'CreationDate': 'DATETIME',
+                           'ModificationDate': 'DATETIME',
+                           'LastAccessDate': 'DATETIME',
+                           'User': 'VARCHAR',
+                           'Group': 'VARCHAR',
+                           'Path': 'VARCHAR',
+                           'Name': 'VARCHAR',
+                           'FileName': 'VARCHAR',
+                           'CheckSum': 'VARCHAR',
+                           'GUID': 'VARCHAR',
+                           'UID': 'INTEGER',
+                           'GID': 'INTEGER',
+                           'Size': 'INTEGER',
+                           'Status': 'VARCHAR' }
+
+FILES_TABLE_METAKEYS = { 'Name': 'FileName',
+                         'FileName': 'FileName',
+                         'Size': 'Size',
+                         'User': 'UID',
+                         'Group': 'GID',
+                         'UID': 'UID',
+                         'GID': 'GID',
+                         'Status': 'Status' }
+
+FILEINFO_TABLE_METAKEYS = { 'GUID': 'GUID',
+                            'CheckSum': 'CheckSum',
+                            'CreationDate': 'CreationDate',
+                            'ModificationDate': 'ModificationDate',
+                            'LastAccessDate': 'LastAccessDate' }
+
+
 class MetaQuery( object ):
 
   def __init__( self, queryDict = None, typeDict = None ):
