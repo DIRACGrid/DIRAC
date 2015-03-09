@@ -697,10 +697,11 @@ DELIMITER ;
 -- visibleFileStatus : list of status we are interested in
 -- output : FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
 --                     GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
-                     
+            
+drop procedure if exists ps_get_all_info_for_files_in_dir;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_for_files_in_dir
-(IN dir_id INT, IN specificFiles BOOLEAN, IN file_names TEXT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255))
+(IN dir_id INT, IN specificFiles BOOLEAN, IN file_names MEDIUMTEXT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255))
 BEGIN
 
   set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
@@ -896,9 +897,10 @@ DELIMITER ;
 -- file_ids list of file ids
 -- output 0, 'OK'
 
+DROP PROCEDURE IF EXISTS ps_delete_files;
 DELIMITER //
 CREATE PROCEDURE ps_delete_files
-(IN  file_ids TEXT)
+(IN  file_ids MEDIUMTEXT)
 BEGIN
   START TRANSACTION;
   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f
