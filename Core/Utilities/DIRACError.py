@@ -156,9 +156,15 @@ def cmpError( inErr, candidate ):
   """
 
   if type( inErr ) == str :  # old style
-    for pos in compatErrorString[candidate]:
+    for pos in compatErrorString.get( candidate, [] ):
       if pos in inErr:
         return True
+    # If the string is exactly the one of strerror, it's the same
+    try:
+      if inErr == strerror( candidate ):
+        return True
+    except:
+      pass
   elif type( inErr ) == int:
     return inErr == candidate
   elif isinstance( inErr, DError ):
