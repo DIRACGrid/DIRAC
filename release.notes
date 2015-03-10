@@ -1,4 +1,4 @@
-[v6r13-pre17]
+[v6r13-pre18]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -30,6 +30,7 @@ CHANGE: MetaQuery - extracted from FileCatalogClientCLI as an independent utilit
 CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
 CHANGE: FileCatalog - replace getDirectoryMetadata by getDirectoryUserMetadata
 NEW: FileCatalog - added new getDirectoryMetadata() interface to get standard directory metadata
+NEW: FileCatalog - possibility to find files by standard metadata
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
