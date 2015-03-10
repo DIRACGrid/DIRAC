@@ -8,7 +8,7 @@
 
 __RCSID__ = "$Id$"
 
-import types
+from types import IntType, ListType, LongType, DictType, StringTypes, FloatType
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 from DIRAC.Core.Utilities.List import intListToString
@@ -285,7 +285,7 @@ class FileMetadata:
     metaDict = {}
     for fileID, key, value in result['Value']:
       if metaDict.has_key( key ):
-        if type( metaDict[key] ) == types.ListType:
+        if isinstance( metaDict[key], ListType ):
           metaDict[key].append( value )
         else:
           metaDict[key] = [metaDict[key]].append( value )
@@ -340,11 +340,11 @@ class FileMetadata:
     ''' Create selection string to be used in the SQL query
     '''
     queryList = []
-    if type( value ) == types.FloatType:
+    if isinstance( value, FloatType ):
       queryList.append( ( '=', '%f' % value ) )
-    elif type( value ) in [ types.IntType, types.LongType ]:
+    elif isinstance( value, ( IntType, LongType ) ):
       queryList.append( ( '=', '%d' % value ) )
-    elif type( value ) in types.StringTypes:
+    elif isinstance( value, StringTypes ):
       if value.lower() == 'any':
         queryList.append( ( 'IS', 'NOT NULL' ) )
       elif value.lower() == 'missing':
@@ -360,7 +360,7 @@ class FileMetadata:
           queryList.append( ( '=', eValue ) )
       else:
         queryList.append( ( '', '' ) )
-    elif type( value ) == types.ListType:
+    elif isinstance( value, ListType ):
       if not value:
         queryList.append( ( '', '' ) )
       else:
@@ -369,18 +369,18 @@ class FileMetadata:
           return result
         query = '( $s )' % ', '.join( result['Value'] )
         queryList.append( ( 'IN', query ) )
-    elif type( value ) == types.DictType:
+    elif isinstance( value, DictType ):
       for operation, operand in value.items():
 
         # Prepare the escaped operand first
-        if type( operand ) == types.ListType:
+        if isinstance( operand, ListType ):
           result = self.db._escapeValues( operand )
           if not result['OK']:
             return result
           escapedOperand = ', '.join( result['Value'] )
-        elif type( operand ) in [types.IntType, types.LongType]:
+        elif isinstance( operand, ( IntType, LongType ) ):
           escapedOperand = '%d' % operand
-        elif type( operand ) == types.FloatType:
+        elif isinstance( operand, FloatType ):
           escapedOperand = '%f' % operand
         else:
           result = self.db._escapeString( operand )
@@ -390,17 +390,17 @@ class FileMetadata:
 
         # Treat the operations
         if operation in ['>', '<', '>=', '<=']:
-          if type( operand ) == types.ListType:
+          if isinstance( operand, ListType ):
             return S_ERROR( 'Illegal query: list of values for comparison operation' )
           else:
             queryList.append( ( operation, escapedOperand ) )
         elif operation == 'in' or operation == "=":
-          if type( operand ) == types.ListType:
+          if isinstance( operand, ListType ):
             queryList.append( ( 'IN', '( %s )' % escapedOperand ) )
           else:
             queryList.append( ( '=', escapedOperand ) )
         elif operation == 'nin' or operation == "!=":
-          if type( operand ) == types.ListType:
+          if isinstance( operand, ListType ):
             queryList.append( ( 'NOT IN', '( %s )' % escapedOperand ) )
           else:
             queryList.append( ( '!=', escapedOperand ) )
@@ -505,7 +505,7 @@ class FileMetadata:
     leftJoinTables = []
     for meta, value in metaDict.items():
       if meta == "SE":
-        if type( value ) == types.DictType:
+        if isinstance( value, DictType ):
           storageElements = value.get( 'in', [] )
         else:
           storageElements = [ value ]
