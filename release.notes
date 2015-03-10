@@ -1,3 +1,16 @@
+[v6r12p30]
+
+*Core
+FIX: InstallTools - 't' file is deployed for agents installation only
+FIX: GOCDBClient - creates unique DowntimeID using the ENDPOINT
+
+*Framework
+FIX: SystemAdministratorHandler - use WebAppDIRAC extension, not just WebApp
+
+*DMS:
+FIX: FileCatalogComponents.Utilities - do not allow empty LFN names in
+     checkArgumentDict()
+
 [v6r12p29]
 
 *CS
