@@ -48,6 +48,9 @@ def checkArgumentFormat( path ):
   # Bring the lfn path to the normalized form
   urls = {}
   for url in pathDict:
+    # avoid empty path...
+    if not url:
+      continue
     mUrl = url
     if url.lower().startswith( 'lfn:' ):
       mUrl = url[4:]

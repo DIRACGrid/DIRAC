@@ -108,7 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre17]
+[v6r13-pre18]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -140,6 +140,7 @@ CHANGE: MetaQuery - extracted from FileCatalogClientCLI as an independent utilit
 CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
 CHANGE: FileCatalog - replace getDirectoryMetadata by getDirectoryUserMetadata
 NEW: FileCatalog - added new getDirectoryMetadata() interface to get standard directory metadata
+NEW: FileCatalog - possibility to find files by standard metadata
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
@@ -162,6 +163,19 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p30]
+
+*Core
+FIX: InstallTools - 't' file is deployed for agents installation only
+FIX: GOCDBClient - creates unique DowntimeID using the ENDPOINT
+
+*Framework
+FIX: SystemAdministratorHandler - use WebAppDIRAC extension, not just WebApp
+
+*DMS:
+FIX: FileCatalogComponents.Utilities - do not allow empty LFN names in
+     checkArgumentDict()
 
 [v6r12p29]
 
@@ -556,6 +570,13 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p32]
+
+*Core
+CHANGE: BaseClient, SSLSocketFactory, SocketInfo - enable TLSv1 for outgoing 
+        connections via suds, possibility to configure SSL connection details
+        per host/IP 
 
 [v6r11p31]
 

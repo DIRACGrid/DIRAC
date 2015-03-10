@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    InstallTools.py
 # Author :  Ricardo Graciani
 ########################################################################
@@ -1589,18 +1588,19 @@ exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(co
 
     os.chmod( runFile, gDefaultPerms )
 
-    stopFile = os.path.join( runitCompDir, 'control', 't' )
-    fd = open( stopFile, 'w' )
-    fd.write( 
+    if componentType.lower() == 'agent':
+      stopFile = os.path.join( runitCompDir, 'control', 't' )
+      fd = open( stopFile, 'w' )
+      fd.write( 
 """#!/bin/bash
 echo %(controlDir)s/%(system)s/%(component)s/stop_agent
 touch %(controlDir)s/%(system)s/%(component)s/stop_agent
 """ % {'controlDir': runitDir,
        'system' : system,
        'component': component } )
-    fd.close()
+      fd.close()
 
-    os.chmod( stopFile, gDefaultPerms )
+      os.chmod( stopFile, gDefaultPerms )
 
   except Exception:
     error = 'Failed to prepare setup for %s %s/%s' % ( componentType, system, component )

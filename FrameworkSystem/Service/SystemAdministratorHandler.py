@@ -235,7 +235,7 @@ class SystemAdministratorHandler( RequestHandler ):
     
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False )  # this is the new portal
     if webPortal: 
-      extensionList.append( 'WebApp' )
+      extensionList.append( 'WebAppDIRAC' )
           
     if extensionList:
       cmdList += ['-e', ','.join( extensionList )]
