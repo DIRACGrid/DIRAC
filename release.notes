@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [v7r0-pre36]
 
 FIX: removed __init__ files from test directories to avoid importing
@@ -109,10 +108,7 @@ NEW: Stager API: dirac-stager-monitor-file, dirac-stager-monitor-jobs,
 *SMS
 NEW: StorageManagementDB - use python table description      
 
-[v6r13-pre16]
-=======
 [v6r13-pre17]
->>>>>>> rel-v6r13
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
