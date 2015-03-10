@@ -407,6 +407,13 @@ NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
 
+[v6r11p32]
+
+*Core
+CHANGE: BaseClient, SSLSocketFactory, SocketInfo - enable TLSv1 for outgoing 
+        connections via suds, possibility to configure SSL connection details
+        per host/IP 
+
 [v6r11p31]
 
 *Core
