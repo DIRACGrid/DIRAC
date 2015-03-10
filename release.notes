@@ -54,6 +54,19 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p30]
+
+*Core
+FIX: InstallTools - 't' file is deployed for agents installation only
+FIX: GOCDBClient - creates unique DowntimeID using the ENDPOINT
+
+*Framework
+FIX: SystemAdministratorHandler - use WebAppDIRAC extension, not just WebApp
+
+*DMS:
+FIX: FileCatalogComponents.Utilities - do not allow empty LFN names in
+     checkArgumentDict()
+
 [v6r12p29]
 
 *CS
@@ -447,6 +460,13 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p32]
+
+*Core
+CHANGE: BaseClient, SSLSocketFactory, SocketInfo - enable TLSv1 for outgoing 
+        connections via suds, possibility to configure SSL connection details
+        per host/IP 
 
 [v6r11p31]
 
