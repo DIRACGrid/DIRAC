@@ -26,10 +26,12 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
 
     self.getGOCSiteNameMock = mock.MagicMock()
     self.CSHelpersMock = mock.MagicMock()
+    self.getStorageElementOptionsMock = mock.MagicMock()
     self.CSHelpersMock.getSEHost.return_value = 'aRealName'
     self.dowtimeCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.DowntimeCommand' )
     self.dowtimeCommandModule.getGOCSiteName = self.getGOCSiteNameMock
     self.dowtimeCommandModule.CSHelpers = self.CSHelpersMock
+    self.dowtimeCommandModule.getStorageElementOptions = self.getStorageElementOptionsMock
     self.mock_GOCDBClient = mock.MagicMock()
     self.args = {'name':'aName', 'element':'Resource', 'elementType': 'StorageElement'}
 
@@ -99,6 +101,10 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
     """
     self.mock_GOCDBClient.selectDowntimeCache.return_value = {'OK':True, 'Value':{}}
     command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
+    self.getStorageElementOptionsMock.return_value = {'OK':True, 'Value': {'TapeSE':True, 'DiskSE': False}}
+    res = command.doCache()
+    self.assert_( res['OK'] )
+    self.getStorageElementOptionsMock.return_value = {'OK':True, 'Value': {'TapeSE':False, 'DiskSE': True}}
     res = command.doCache()
     self.assert_( res['OK'] )
     
