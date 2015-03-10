@@ -15,7 +15,7 @@ from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
 from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
-from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
+from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
@@ -1838,7 +1838,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage: find [-q] [-D] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
-   
+
     argss = args.split()
     if (len(argss) < 1):
       print self.do_find.__doc__
@@ -1930,11 +1930,8 @@ File Catalog Client $Revision: 1.17 $Date:
     typeDict = result['Value']['FileMetaFields']
     typeDict.update(result['Value']['DirectoryMetaFields'])
     
-    # Special meta tags    
-    typeDict['SE'] = 'VARCHAR'
-    typeDict['User'] = 'VARCHAR'
-    typeDict['Group'] = 'VARCHAR'
-    typeDict['Path'] = 'VARCHAR'
+    # Special meta tags
+    typeDict.update( FILE_STANDARD_METAKEYS )
 
     mq = MetaQuery( typeDict = typeDict )
     return mq.setMetaQuery( argss )
