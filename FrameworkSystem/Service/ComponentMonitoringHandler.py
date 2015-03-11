@@ -81,7 +81,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.exists( Component, matchFields )
 
-  types_getComponents = [ types.DictType ]
+  types_getComponents = [ types.DictType, types.BooleanType, types.BooleanType ]
   def export_getComponents( self,
                                 matchFields,
                                 includeInstallations,
@@ -111,7 +111,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( components )
 
-  types_updateComponents = [ types.DictType ]
+  types_updateComponents = [ types.DictType, types.DictType ]
   def export_updateComponents( self, matchFields, updates ):
     """
     Updates Components objects on the database
@@ -185,7 +185,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return ComponentMonitoringHandler.db.exists( Host, matchFields )
 
-  types_getHosts = [ types.DictType ]
+  types_getHosts = [ types.DictType, types.BooleanType, types.BooleanType ]
   def export_getHosts( self,
                           matchFields,
                           includeInstallations,
@@ -215,7 +215,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( hosts )
 
-  types_updateHosts = [ types.DictType ]
+  types_updateHosts = [ types.DictType, types.DictType ]
   def export_updateHosts( self, matchFields, updates ):
     """
     Updates Hosts objects on the database
@@ -258,7 +258,10 @@ class ComponentMonitoringHandler( RequestHandler ):
     else:
       return ComponentMonitoringHandler.db.flushChanges()
 
-  types_addInstallation = [ types.DictType ]
+  types_addInstallation = [ types.DictType,
+                            types.DictType,
+                            types.DictType,
+                            types.BooleanType ]
   def export_addInstallation( self,
                                   installation,
                                   componentDict,
@@ -319,7 +322,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     else:
       return ComponentMonitoringHandler.db.flushChanges()
 
-  types_installationExists = [ types.DictType ]
+  types_installationExists = [ types.DictType, types.DictType, types.DictType ]
   def export_installationExists( self,
                                     installationFields,
                                     componentFields,
@@ -340,7 +343,10 @@ class ComponentMonitoringHandler( RequestHandler ):
     return ComponentMonitoringHandler.db.exists \
                                             ( InstalledComponent, matchFields )
 
-  types_getInstallations = [ types.DictType ]
+  types_getInstallations = [ types.DictType,
+                             types.DictType,
+                             types.DictType,
+                             types.BooleanType ]
   def export_getInstallations( self,
                                   installationFields,
                                   componentFields,
@@ -373,7 +379,10 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( installations )
 
-  types_updateInstallations = [ types.DictType ]
+  types_updateInstallations = [ types.DictType,
+                                types.DictType,
+                                types.DictType,
+                                types.DictType ]
   def export_updateInstallations( self,
                                       installationFields,
                                       componentFields,
@@ -407,7 +416,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     else:
       return ComponentMonitoringHandler.db.flushChanges()
 
-  types_removeInstallations = [ types.DictType ]
+  types_removeInstallations = [ types.DictType, types.DictType, types.DictType ]
   def export_removeInstallations( self,
                                       installationFields,
                                       componentFields,

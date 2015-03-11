@@ -5,14 +5,15 @@ Classes and functions for easier management of the InstalledComponents database
 __RCSID__ = "$Id$"
 
 import datetime
-from sqlalchemy import *
-from sqlalchemy.orm import session, sessionmaker, mapper, relationship
-from sqlalchemy.orm.collections import InstrumentedList
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import *
-from sqlalchemy.engine.reflection import Inspector
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine
+from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import session, sessionmaker, scoped_session, mapper, relationship
+from sqlalchemy.orm.collections import InstrumentedList
+from sqlalchemy.schema import ForeignKey
+from sqlalchemy.sql.expression import null
 
 metadata = MetaData()
 Base = declarative_base()
