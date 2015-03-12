@@ -9,13 +9,15 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import stat
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC                                               import S_OK, S_ERROR
 
-import os
 
 class InProcessComputingElement( ComputingElement ):
 
@@ -66,7 +68,7 @@ class InProcessComputingElement( ComputingElement ):
       renewTask = result[ 'Value' ]
 
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     cmd = os.path.abspath( executableFile )
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
     result = systemCall( 0, cmd, callbackFunction = self.sendOutput, env = payloadEnv )

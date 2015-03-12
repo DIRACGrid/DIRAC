@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   SSHComputingElement.py
 # Author : Dumitru Laurentiu, A.T.
 ########################################################################
@@ -7,22 +6,27 @@
 """ SSH (Virtual) Computing Element: For a given IP/host it will send jobs directly through ssh
 """
 
+import os
+import urllib
+import json
+import stat
+from types import StringTypes
+from urlparse import urlparse
+
+from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import rootPath
+from DIRAC                                               import gLogger
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript    
 from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
-from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import rootPath
-from DIRAC                                               import gLogger
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 
-import os, urllib, json
-from types import StringTypes
-from urlparse import urlparse
 
 __RCSID__ = "$Id$"
 
-class SSH:
+class SSH( object ):
   """ SSH class encapsulates passing commands and files through an SSH tunnel
       to a remote host. It can use either ssh or gsissh access. The final host
       where the commands will be executed and where the files will copied/retrieved
@@ -136,7 +140,9 @@ class SSH:
     if self.sshTunnel:
       command = command.replace( "'", '\\\\\\\"' )
       command = command.replace( '$', '\\\\\\$' )
-      command = '/bin/sh -c \' %s -q %s -l %s %s "%s \\\"echo %s; %s\\\" " \' ' % ( self.sshType, self.options, self.user, self.host, self.sshTunnel, pattern, command )    
+      command = '/bin/sh -c \' %s -q %s -l %s %s "%s \\\"echo %s; %s\\\" " \' ' % ( self.sshType, self.options,
+                                                                                    self.user, self.host,
+                                                                                    self.sshTunnel, pattern, command )
     else:
       #command = command.replace( '$', '\$' )
       command = '%s -q %s -l %s %s "echo %s; %s"' % ( self.sshType, self.options, self.user, self.host, pattern, command )    
@@ -199,21 +205,21 @@ class SSH:
       if self.sshTunnel:
         remoteFile = remoteFile.replace( '$', '\\\\\\$' )
         command = "/bin/sh -c '%s -q %s -l %s %s \"%s \\\"cat %s\\\"\" %s'" % ( self.sshType, 
-                                                                                        self.options, 
-                                                                                        self.user, 
-                                                                                        self.host, 
-                                                                                        self.sshTunnel, 
-                                                                                        remoteFile, 
-                                                                                        finalCat )
+                                                                                self.options,
+                                                                                self.user,
+                                                                                self.host,
+                                                                                self.sshTunnel,
+                                                                                remoteFile,
+                                                                                finalCat )
       else:  
         remoteFile = remoteFile.replace( '$', '\$' )
         command = "/bin/sh -c '%s -q %s -l %s %s \"cat %s\" %s'" % ( self.sshType,
-                                                                             self.options, 
-                                                                             self.user, 
-                                                                             self.host, 
-                                                                             remoteFile, 
-                                                                             finalCat )      
-  
+                                                                     self.options,
+                                                                     self.user,
+                                                                     self.host,
+                                                                     remoteFile,
+                                                                     finalCat )
+
     self.log.debug( "SSH copy command: %s" % command )
     return self.__ssh_call( command, timeout )
 
@@ -306,7 +312,7 @@ class SSHComputingElement( ComputingElement ):
         
     return S_OK()    
 
-  def _prepareRemoteHost(self, host=None ):
+  def _prepareRemoteHost( self, host = None ):
     """ Prepare remote directories and upload control script 
     """
     
@@ -428,7 +434,7 @@ class SSHComputingElement( ComputingElement ):
 
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
 
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node

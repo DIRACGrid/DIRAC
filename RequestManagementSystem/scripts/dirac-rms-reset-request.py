@@ -25,14 +25,14 @@ if __name__ == "__main__":
   resetFailed = False
   requests = []
   jobs = []
-  all = False
+  allR = False
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   reqClient = ReqClient()
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Failed':
       resetFailed = True
     elif switch[0] == 'All':
-      all = True
+      allR = True
     elif switch[0] == 'Maximum':
       try:
         maxReset = int( switch[1] )
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     requests = sorted( res['Value']['Successful'].values() )
 
   if resetFailed:
-    all = False
+    allR = False
     res = reqClient.getRequestIDsList( ['Failed'], maxReset );
     if not res['OK']:
         print "Error", res['Message'];
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     for reqID in requests:
       if len( requests ) > 1:
         gLogger.always( '============ Request %s =============' % reqID )
-      ret = reqClient.resetFailedRequest( reqID, all = all )
+      ret = reqClient.resetFailedRequest( reqID, allR = allR )
       if not ret['OK']:
         notReset += 1
         print "Error", ret['Message']

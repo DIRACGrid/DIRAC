@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   BOINCComputingElement.py
 # Author : J.Wu
 ########################################################################
@@ -9,11 +8,15 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import bz2
+import base64
+import tempfile
+
+from urlparse import urlparse
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR
-
-import os, bz2, base64,tempfile
-from urlparse import urlparse
 
 CE_NAME = 'BOINC'
 
@@ -85,14 +88,20 @@ class BOINCComputingElement( ComputingElement ):
       wrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
 # Wrapper script for executable and proxy
-import os, tempfile, sys, base64, bz2, shutil
+import os
+import tempfile
+import sys
+import base64
+import bz2
+import shutil
+import stat
 try:
   workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
   os.chdir( workingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
   open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
-  os.chmod('proxy',0600)
-  os.chmod('%(executable)s',0700)
+  os.chmod('proxy',stat.S_IRUSR | stat.S_IWUSR)
+  os.chmod('%(executable)s',stat.S_IRWXU)
   os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
 except Exception, x:
   print >> sys.stderr, x
@@ -267,7 +276,7 @@ EOF
       return S_OK( ( strOutfile, strErrorfile ) )
 
 ##############################################################################
-  def _fromFileToStr(self, fileName ):
+  def _fromFileToStr( self, fileName ):
     """ Read a file and return the file content as a string
     """
     strFile = ''
@@ -283,13 +292,13 @@ EOF
           fileHander.close( )
     return strFile
  
- #####################################################################
-  def _fromStrToFile(self, strContent, fileName ):
+#####################################################################
+  def _fromStrToFile( self, strContent, fileName ):
     """ Write a string to a file
     """
     try:
       fileHander = open ( fileName, "w" )
-      strFile = fileHander.write ( strContent ) 
+      _ = fileHander.write ( strContent )
     except:
       self.log.verbose( "To create %s failed!" % fileName )
       pass
@@ -327,7 +336,7 @@ if __name__ == "__main__":
     if not jobStatus['OK']:
       print jobStatus['Message']
     else:
-      for id in jobTestList:
+      for _ in jobTestList:
         print 'The status of the job %s is %s' % (id, jobStatus['Value'][id])
 
   if test_parameter & test_getDynamic:
