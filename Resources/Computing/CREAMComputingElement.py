@@ -90,7 +90,7 @@ class CREAMComputingElement( ComputingElement ):
 
     self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
 
     batchIDList = []
     stampDict = {}
