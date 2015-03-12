@@ -30,9 +30,8 @@ __RCSID__ = "$Id$"
 
 ## imports
 import os
-import shutil
+import stat
 import re
-from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMODE
 from types import StringType, StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
@@ -440,7 +439,7 @@ token is used for access rights confirmation.
     if not os.path.exists( dir_path ):
       return S_ERROR( 'Failed to receive data' )
     try:
-      os.chmod( dir_path, 0755 )
+      os.chmod( dir_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
     except Exception, error:
       gLogger.exception( 'Could not set permissions of destination directory.', dir_path, error )
     return S_OK()
@@ -579,7 +578,7 @@ token is used for access rights confirmation.
     """ Send the storage element resource information
 """
 
-    conn , error, userDict = self.__irodsClient( )
+    conn , error, _ = self.__irodsClient()
     if not conn:
       return S_ERROR( error )
 

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   BatchComputingElement.py
 # Author : Ricardo Graciani, A.T.
 ########################################################################
@@ -7,18 +6,20 @@
 """ BatchComputingElement is a class to handle non-grid computing clusters
 """
 
+import os
+import stat
+import shutil, tempfile
+import getpass
+from urlparse import urlparse
+
+from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import gConfig
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
-from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import gConfig
-
-import os
-import shutil, tempfile
-import getpass
-from urlparse import urlparse
 
 class LocalComputingElement( ComputingElement ):
 
@@ -134,7 +135,7 @@ class LocalComputingElement( ComputingElement ):
   def submitJob( self, executableFile, proxy = None, numberOfJobs = 1 ):
 
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0o755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
 
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node

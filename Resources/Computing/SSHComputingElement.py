@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   SSHComputingElement.py
 # Author : Dumitru Laurentiu, A.T.
 ########################################################################
@@ -7,18 +6,23 @@
 """ SSH (Virtual) Computing Element: For a given IP/host it will send jobs directly through ssh
 """
 
+import os
+import urllib
+import json
+import stat
+from types import StringTypes
+from urlparse import urlparse
+
+from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import rootPath
+from DIRAC                                               import gLogger
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript    
 from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
-from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import rootPath
-from DIRAC                                               import gLogger
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 
-import os, urllib, json
-from types import StringTypes
-from urlparse import urlparse
 
 __RCSID__ = "$Id$"
 
@@ -428,7 +432,7 @@ class SSHComputingElement( ComputingElement ):
 
 #    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
 
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node

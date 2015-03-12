@@ -46,7 +46,7 @@ def getExecutableScript( executable, arguments=[], proxy=None, sandboxDict = {},
 
   script = """#!/usr/bin/env python
 try:
-  import os, tempfile, sys, shutil, base64, bz2, subprocess, datetime
+  import os, stat, tempfile, sys, shutil, base64, bz2, subprocess, datetime
 except:
   print 'Failed to import os, tempfile, sys, shutil, base64, bz2, subprocess'
   print 'Unsupported python version'
@@ -96,11 +96,11 @@ for fileName, fileCont in %(compressedAndEncodedFiles)s.items():
   f.write( bz2.decompress( base64.decodestring( fileCont ) ) )
   f.close()
   if fileName == '.proxy':
-    os.chmod( fileName, 0600 )
+    os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
     os.environ['X509_USER_PROXY'] = os.path.join( workingDirectory, fileName )
     print 'X509_USER_PROXY', '=', os.path.join( workingDirectory, fileName )
   elif fileName == executable:
-    os.chmod( fileName, 0755 )
+    os.chmod( fileName, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
     executable = './' + executable
 print
 print '==========================================================='
@@ -145,14 +145,14 @@ def bundleProxy( executableFile, proxy ):
 
   bundle = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
-import os, tempfile, sys, base64, bz2, shutil
+import os, tempfile, sys, stat, base64, bz2, shutil
 try:
   workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
   os.chdir( workingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
   open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
-  os.chmod('proxy',0600)
-  os.chmod('%(executable)s',0700)
+  os.chmod('proxy', stat.S_IRUSR | stat.S_IWUSR)
+  os.chmod('%(executable)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
   os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
 except Exception, x:
   print >> sys.stderr, x
