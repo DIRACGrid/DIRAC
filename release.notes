@@ -1,3 +1,8 @@
+[v6r12p31]
+
+*WMS
+FIX: pilotCommands - import json module only in case it is needed
+
 [v6r12p30]
 
 *Core
