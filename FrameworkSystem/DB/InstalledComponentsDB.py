@@ -272,10 +272,9 @@ class InstalledComponentsDB( object ):
 
     self.engine = create_engine( 'mysql://%s:%s@%s/%s' %
                     ( self.user, self.password, self.host, self.db ),
-                    pool_recycle = 30, echo_pool = True
+                    pool_recycle = 3600, echo_pool = True
                     )
     self.Session = scoped_session( sessionmaker( bind = self.engine ) )
-    # session = Session()
     self.inspector = Inspector.from_engine( self.engine )
 
   def __initializeDB( self ):
