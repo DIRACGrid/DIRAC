@@ -7,10 +7,19 @@ __RCSID__ = "$Id$"
 import datetime
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine
+from sqlalchemy import MetaData, \
+                        Column, \
+                        Integer, \
+                        String, \
+                        DateTime, \
+                        create_engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import session, sessionmaker, scoped_session, mapper, relationship
+from sqlalchemy.orm import session, \
+                            sessionmaker, \
+                            scoped_session, \
+                            mapper, \
+                            relationship
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.sql.expression import null
@@ -149,7 +158,7 @@ class InstalledComponent( Base ):
     'mysql_charset': 'utf8'
   }
 
-  componentID = Column( 'ComponentID', 
+  componentID = Column( 'ComponentID',
                         Integer,
                         ForeignKey( 'Components.ComponentID' ),
                         primary_key = True )
@@ -249,7 +258,7 @@ class InstalledComponentsDB( object ):
 
     self.password = gConfig.getOption( '/Systems/Databases/Password' )
     if not self.password[ 'OK' ]:
-      raise Exception( "Cannot retrieve the password: %s" 
+      raise Exception( "Cannot retrieve the password: %s"
                           % self.password[ 'Message' ] )
     else:
       self.password = self.password[ 'Value' ]
@@ -263,9 +272,10 @@ class InstalledComponentsDB( object ):
 
     self.engine = create_engine( 'mysql://%s:%s@%s/%s' %
                     ( self.user, self.password, self.host, self.db ),
-                    pool_recycle = 3600 )
-    Session = sessionmaker( bind = self.engine )
-    self.session = Session()
+                    pool_recycle = 30, echo_pool = True
+                    )
+    self.Session = scoped_session( sessionmaker( bind = self.engine ) )
+    # session = Session()
     self.inspector = Inspector.from_engine( self.engine )
 
   def __initializeDB( self ):
@@ -304,9 +314,10 @@ class InstalledComponentsDB( object ):
 
     return S_OK( 'Tables created' )
 
-  def __filterFields( self, table, matchFields = {} ):
+  def __filterFields( self, session, table, matchFields = {} ):
     """
     Filters instances of a selection by finding matches on the given fields
+    session argument is a Session instance used to retrieve the items
     table argument must be one the following three: Component, Host,
     InstalledComponent
     matchFields argument should be a dictionary with the fields to match.
@@ -315,7 +326,7 @@ class InstalledComponentsDB( object ):
     If matchFields is empty, no filtering will be done
     """
 
-    filtered = self.session.query(table)
+    filtered = session.query( table )
 
     for key in matchFields.keys():
       actualKey = key
@@ -358,14 +369,15 @@ class InstalledComponentsDB( object ):
 
       filteredTemp = filtered.filter( sql )
       try:
-        self.session.execute( filteredTemp )
+        session.execute( filteredTemp )
+        session.commit()
       except Exception, e:
         return S_ERROR( 'Could not filter the fields: %s' % ( e ) )
       filtered = filteredTemp
 
     return S_OK( filtered )
 
-  def __filterInstalledComponentsFields( self, matchFields = {} ):
+  def __filterInstalledComponentsFields( self, session, matchFields = {} ):
     """
     Filters instances by finding matches on the given fields in the same way
     as the '__filterFields' function
@@ -374,6 +386,7 @@ class InstalledComponentsDB( object ):
     and accepts fields of the form <Component.Field> and <Host.Field>
     ( e.g., 'Component.System' ) to filter installations using attributes
     from their associated Components and Hosts.
+    session argument is a Session instance used to retrieve the items
     matchFields also accepts fields of the form <Field.bigger> and
     <Field.smaller> to filter using > and < relationships.
     matchFields argument should be a dictionary with the fields to match.
@@ -396,7 +409,7 @@ class InstalledComponentsDB( object ):
         selfKeys[ key ] = val
 
     # Get the matching components
-    result = self.__filterFields( Component, componentKeys )
+    result = self.__filterFields( session, Component, componentKeys )
     if not result[ 'OK' ]:
       return result
 
@@ -405,7 +418,7 @@ class InstalledComponentsDB( object ):
       componentIDs.append( component.componentID )
 
     # Get the matching hosts
-    result = self.__filterFields( Host, hostKeys )
+    result = self.__filterFields( session, Host, hostKeys )
     if not result[ 'OK' ]:
       return result
 
@@ -414,7 +427,7 @@ class InstalledComponentsDB( object ):
       hostIDs.append( host.hostID )
 
     # Get the matching InstalledComponents
-    result = self.__filterFields( InstalledComponent, selfKeys )
+    result = self.__filterFields( session, InstalledComponent, selfKeys )
     if not result[ 'OK' ]:
       return result
 
@@ -436,36 +449,56 @@ class InstalledComponentsDB( object ):
     'Host.attribute' if table equals InstalledComponent
     """
 
+    session = self.Session()
+
     if table == InstalledComponent:
-      result = self.__filterInstalledComponentsFields( matchFields )
+      result = self.__filterInstalledComponentsFields( session, matchFields )
     else:
-      result = self.__filterFields( table, matchFields )
+      result = self.__filterFields( session, table, matchFields )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
     query = result[ 'Value' ]
+
+    session.commit()
+    session.close()
 
     if query.count() == 0:
       return S_OK( False )
     else:
       return S_OK( True )
 
-  def addComponent( self, component ):
+  def addComponent( self, newComponent ):
     """
     Add a new component to the database
-    component argument should be of class Component
+    newComponent argument should be a dictionary with the Component fields and
+    its values
 
     NOTE: The addition of the items is temporary. To commit the changes to
     the database it is necessary to call commitChanges()
     """
 
-    if type( component ) != Component:
-      return S_ERROR( 'Only a component can be added by addComponent' )
+    session = self.Session()
+
+    component = Component()
+    component.fromDict( newComponent )
 
     try:
-      self.session.add( component )
+      session.add( component )
     except Exception, e:
+      session.rollback()
+      session.close()
       return S_ERROR( 'Could not add Component: %s' % ( e ) )
 
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
     return S_OK( 'Component successfully added' )
 
   def removeComponents( self, matchFields = {} ):
@@ -481,33 +514,66 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    result = self.__filterFields( Component, matchFields )
+    session = self.Session()
+
+    result = self.__filterFields( session, Component, matchFields )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
 
     for component in result[ 'Value' ]:
-      self.session.delete( component )
+      session.delete( component )
 
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
     return S_OK( 'Components successfully removed' )
 
-  def getComponents( self, matchFields = {} ):
+  def getComponents( self,
+                        matchFields = {},
+                        includeInstallations = False,
+                        includeHosts = False ):
     """
     Returns a list with all the components with matches in the given fields
     matchFields argument should be a dictionary with the fields to match or
     empty to get all the instances
     matchFields also accepts fields of the form <Field.bigger> and
     <Field.smaller> to filter using > and < relationships
+    includeInstallations indicates whether data about the installations in
+    which the components takes part is to be retrieved
+    includeHosts (only if includeInstallations is set to True) indicates
+    whether data about the host in which there are instances of this component
+    is to be retrieved
     """
 
-    result = self.__filterFields( Component, matchFields )
+    session = self.Session()
+
+    result = self.__filterFields( session, Component, matchFields )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
 
     components = result[ 'Value' ]
     if not components:
+      session.rollback()
+      session.close()
       return S_ERROR( 'No matching Components were found' )
 
-    return S_OK( components )
+    dictComponents = []
+    for component in components:
+      dictComponents.append \
+          ( component.toDict( includeInstallations, includeHosts )[ 'Value' ] )
+
+    session.commit()
+    session.close()
+    return S_OK( dictComponents )
 
   def getComponentByID( self, id ):
     """
@@ -529,37 +595,92 @@ class InstalledComponentsDB( object ):
     Checks whether the given component exists in the database or not
     """
 
+    session = self.Session()
+
     try:
-      query = self.session.query( Component )\
+      query = session.query( Component )\
                           .filter( Component.system == component.system )\
                           .filter( Component.module == component.module )\
                           .filter( Component.cType == component.cType )
     except Exception, e:
+      session.rollback()
+      session.close()
       return S_ERROR( 
-                  'Could\'t check the existence of the component: %s' % ( e ) )
+                  'Couldn\'t check the existence of the component: %s' % ( e ) )
 
+    session.commit()
+    session.close()
     if query.count() == 0:
       return S_OK( False )
     else:
       return S_OK( True )
 
-  def addHost( self, host ):
+  def updateComponents( self, matchFields = {}, updates = {} ):
+    """
+    Updates Components objects on the database
+    matchFields argument should be a dictionary with the fields to match
+    (instances matching the fields will be updated) or empty to update all
+    the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships updates argument
+    should be a dictionary with the Component fields and their new
+    updated values
+    updates argument should be a dictionary with the Installation fields and
+    their new updated values
+    """
+
+    session = self.Session()
+
+    result = self.__filterFields( session, Component, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    components = result[ 'Value' ]
+
+    for component in components:
+      component.fromDict( updates )
+
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Component(s) updated' )
+
+  def addHost( self, newHost ):
     """
     Add a new host to the database
-    host argument should be of class Host
+    host argument should be a dictionary with the Host fields and its values
 
     NOTE: The addition of the items is temporary. To commit the changes to
     the database it is necessary to call commitChanges()
     """
 
-    if type( host ) != Host:
-      return S_ERROR( 'Only a host can be added by addHost' )
+    session = self.Session()
+
+    host = Host()
+    host.fromDict( newHost )
 
     try:
-      self.session.add( host )
+      session.add( host )
     except Exception, e:
+      sesion.rollback()
+      session.close()
       return S_ERROR( 'Could not add Host: %s' % ( e ) )
 
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
     return S_OK( 'Host successfully added' )
 
   def removeHosts( self, matchFields = {} ):
@@ -575,33 +696,67 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    result = self.__filterFields( Host, matchFields )
+    session = self.Session()
+
+    result = self.__filterFields( session, Host, matchFields )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
 
     for host in result[ 'Value' ]:
-      self.session.delete( host )
+      session.delete( host )
 
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
     return S_OK( 'Hosts successfully removed' )
 
-  def getHosts( self, matchFields = {} ):
+  def getHosts( self,
+                  matchFields = {},
+                  includeInstallations = False,
+                  includeComponents = False ):
     """
     Returns a list with all the hosts with matches in the given fields
     matchFields argument should be a dictionary with the fields to match or
     empty to get all the instances
     matchFields also accepts fields of the form <Field.bigger> and
     <Field.smaller> to filter using > and < relationships
+    includeInstallations indicates whether data about the installations in
+    which the host takes part is to be retrieved
+    includeComponents (only if includeInstallations is set to True) indicates
+    whether data about the components installed into this host is to
+    be retrieved
     """
 
-    result = self.__filterFields( Host, matchFields )
+    session = self.Session()
+
+    result = self.__filterFields( session, Host, matchFields )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
 
     hosts = result[ 'Value' ]
     if not hosts:
+      session.rollback()
+      session.close()
       return S_ERROR( 'No matching Hosts were found' )
 
-    return S_OK( hosts )
+    dictHosts = []
+    for host in hosts:
+      dictHosts.append \
+          ( host.toDict( includeInstallations, includeComponents )[ 'Value' ] )
+
+    session.commit()
+    session.close()
+
+    return S_OK( dictHosts )
 
   def getHostByID( self, id ):
     """
@@ -623,28 +778,73 @@ class InstalledComponentsDB( object ):
     Checks whether the given host exists in the database or not
     """
 
+    session = self.Session()
+
     try:
-      query = self.session.query( Host )\
+      query = session.query( Host )\
                           .filter( Host.hostName == host.hostName )\
                           .filter( Host.cpu == host.cpu )
     except Exception, e:
-      return S_ERROR( 'Could\'t check the existence of the host: %s' % ( e ) )
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Couldn\'t check the existence of the host: %s' % ( e ) )
 
+    session.commit()
+    session.close()
     if query.count() == 0:
       return S_OK( False )
     else:
       return S_OK( True )
 
+  def updateHosts( self, matchFields = {}, updates = {} ):
+    """
+    Updates Hosts objects on the database
+    matchFields argument should be a dictionary with the fields to
+    match (instances matching the fields will be updated) or empty to update
+    all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships updates argument
+    should be a dictionary with the Host fields and their new updated values
+    updates argument should be a dictionary with the Installation fields and
+    their new updated values
+    """
+
+    session = self.Session()
+
+    result = self.__filterFields( session, Host, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    hosts = result[ 'Value' ]
+
+    for host in hosts:
+      host.fromDict( updates )
+
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Host(s) updated' )
+
   def addInstalledComponent( self,
-                                installation,
-                                component,
-                                host,
+                                newInstallation,
+                                componentDict,
+                                hostDict,
                                 forceCreate = False ):
     """
     Add a new installation of a component to the database
-    installation argument should be of class InstalledComponent
-    component argument should be of class Component
-    host argument should be of class Host
+    installation argument should be a dictionary with the InstalledComponent
+    fields and its values
+    componentDict argument should be a dictionary with the Component fields
+    and its values
+    hostDict argument should be a dictionary with the Host fields and
+    its values
     If forceCreate is set to True, both the component and the host will be
     created if they do not exist
 
@@ -652,37 +852,149 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    if type( component ) != Component:
-      return S_ERROR( 'A Component must be provided to addInstalledComponent' )
-    if type( host ) != Host:
-      return S_ERROR( 'A Host must be provided to addInstalledComponent' )
+    session = self.Session()
 
-    result = self.componentExists( component )
+    installation = InstalledComponent()
+    installation.fromDict( newInstallation )
+
+    result = self.__filterFields( session, Component, componentDict )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
-    if not result[ 'Value' ]:
-      if forceCreate:
-        result = self.addComponent( component )
-        if not result[ 'OK' ]:
-          return result
-      else:
-        return S_ERROR( 'Given Component does not exist' )
+    if result[ 'Value' ].count() != 1:
+      if result[ 'Value' ].count() > 1:
+        session.rollback()
+        session.close()
+        return S_ERROR( 'Too many Components match the criteria' )
+      if result[ 'Value' ].count() < 1:
+        if not forceCreate:
+          session.rollback()
+          session.close()
+          return S_ERROR( 'Given component does not exist' )
+        else:
+          component = Component()
+          component.fromDict( componentDict )
+    else:
+      component = result[ 'Value' ][0]
 
-    result = self.hostExists( host )
+
+    result = self.__filterFields( session, Host, hostDict )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
-    if not result[ 'Value' ]:
-      if forceCreate:
-        result = self.addHost( host )
-        if not result[ 'OK' ]:
-          return result
-      else:
-        return S_ERROR( 'Given Host does not exist' )
+    if result[ 'Value' ].count() != 1:
+      if result[ 'Value' ].count() > 1:
+        session.rollback()
+        session.close()
+        return S_ERROR( 'Too many Hosts match the criteria' )
+      if result[ 'Value' ].count() < 1:
+        if not forceCreate:
+          session.rollback()
+          session.close()
+          return S_ERROR( 'Given host does not exist' )
+        else:
+          host = Host()
+          host.fromDict( hostDict )
+    else:
+      host = result[ 'Value' ][0]
 
-    installation.installationComponent = component
-    installation.installationHost = host
+    if component:
+      installation.installationComponent = component
+    if host:
+      installation.installationHost = host
 
+    try:
+      session.add( installation )
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not add installation: %s' % ( e ) )
+
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
     return S_OK( 'InstalledComponent successfully added' )
+
+  def getInstalledComponents( self,
+                                  matchFields = {},
+                                  installationsInfo = False ):
+    """
+    Returns a list with all the InstalledComponents with matches in the given
+    fields
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances and may contain entries of the form
+    'Component.attribute' or 'Host.attribute'
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    installationsInfo indicates whether information about the components and
+    host taking part in the installation is to be provided
+    """
+
+    session = self.Session()
+
+    result = self.__filterInstalledComponentsFields( session, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    installations = result[ 'Value' ]
+    if not installations:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'No matching Installations were found' )
+
+    dictInstallations = []
+    for installation in installations:
+      dictInstallations.append \
+      ( installation.toDict( installationsInfo, installationsInfo )[ 'Value' ] )
+
+    session.commit()
+    session.close()
+
+    return S_OK( dictInstallations )
+
+  def updateInstalledComponents( self, matchFields = {}, updates = {} ):
+    """
+    Updates installations matching the given criteria
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances and may contain entries of the form
+    'Component.attribute' or 'Host.attribute'
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    updates argument should be a dictionary with the Installation fields and
+    their new updated values
+    """
+
+    session = self.Session()
+
+    result = self.__filterInstalledComponentsFields( session, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    installations = result[ 'Value' ]
+
+    for installation in installations:
+      installation.fromDict( updates )
+
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'InstalledComponent(s) updated' )
 
   def removeInstalledComponents( self, matchFields = {} ):
     """
@@ -698,62 +1010,25 @@ class InstalledComponentsDB( object ):
     the database it is necessary to call commitChanges()
     """
 
-    result = self.__filterInstalledComponentsFields( matchFields )
+    session = self.Session()
+
+    result = self.__filterInstalledComponentsFields( session, matchFields )
     if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
       return result
 
     installations = result[ 'Value' ]
 
     for installation in installations:
-      self.session.delete( installation )
+      session.delete( installation )
 
+    try:
+      session.commit()
+    except Exception, e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
     return S_OK( 'InstalledComponents successfully removed' )
-
-  def getInstalledComponents( self, matchFields = {} ):
-    """
-    Returns a list with all the InstalledComponents with matches in the given
-    fields
-    matchFields argument should be a dictionary with the fields to match or
-    empty to get all the instances and may contain entries of the form
-    'Component.attribute' or 'Host.attribute'
-    matchFields also accepts fields of the form <Field.bigger> and
-    <Field.smaller> to filter using > and < relationships
-    """
-
-    result = self.__filterInstalledComponentsFields( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    installations = result[ 'Value' ]
-    if not installations:
-      return S_ERROR( 'No matching Installations were found' )
-
-    return S_OK( installations )
-
-  def flushChanges( self ):
-    """
-    Flushes all the previous changes.
-
-    NOTE: This will not keep the data in the database after execution
-    """
-
-    try:
-      self.session.flush()
-    except Exception, e:
-      self.session.rollback()
-      return S_ERROR( 'Could not flush the changes: %s' % ( e ) )
-
-    return S_OK( 'Changes successfully flushed' )
-
-  def commitChanges( self ):
-    """
-    Commits all the previous changes to the database
-    """
-
-    try:
-      self.session.commit()
-    except Exception, e:
-      self.session.rollback()
-      return S_ERROR( 'Could not commit the changes: %s' % ( e ) )
-
-    return S_OK( 'Changes successfully committed' )

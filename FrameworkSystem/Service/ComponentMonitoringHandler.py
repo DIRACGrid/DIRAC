@@ -40,16 +40,6 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     return S_OK( matchFields )
 
-  types_setCommit = [ types.BooleanType ]
-  def export_setCommit( self, value ):
-    """
-    Sets whether or not changes should be committed to the database
-    """
-
-    ComponentMonitoringHandler.doCommit = value
-
-    return S_OK( 'Changes set' )
-
   types_addComponent = [ types.DictType ]
   def export_addComponent( self, component ):
     """
@@ -58,17 +48,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     its values
     """
 
-    newComponent = Component()
-    newComponent.fromDict( component )
-
-    result = ComponentMonitoringHandler.db.addComponent( newComponent )
-    if not result[ 'OK' ]:
-      return result
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.addComponent( component )
 
   types_componentExists = [ types.DictType ]
   def export_componentExists( self, matchFields ):
@@ -99,17 +79,8 @@ class ComponentMonitoringHandler( RequestHandler ):
     is to be retrieved
     """
 
-    result = ComponentMonitoringHandler.db.getComponents( matchFields )
-    if not result[ 'OK' ]:
-      return result
-    result = result[ 'Value' ]
-
-    components = []
-    for component in result:
-      components.append( 
-            component.toDict( includeInstallations, includeHosts )[ 'Value' ] )
-
-    return S_OK( components )
+    return ComponentMonitoringHandler.db.getComponents \
+                            ( matchFields, includeInstallations, includeHosts )
 
   types_updateComponents = [ types.DictType, types.DictType ]
   def export_updateComponents( self, matchFields, updates ):
@@ -120,21 +91,12 @@ class ComponentMonitoringHandler( RequestHandler ):
     the instances
     matchFields also accepts fields of the form <Field.bigger> and
     <Field.smaller> to filter using > and < relationships updates argument
-    should be a dictionary with the Component fields and their new
+    updates should be a dictionary with the Component fields and their new
     updated values
     """
 
-    result = ComponentMonitoringHandler.db.getComponents( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    for component in result[ 'Value' ]:
-      component.fromDict( updates )
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.updateComponents \
+                                                        ( matchFields, updates )
 
   types_removeComponents = [ types.DictType ]
   def export_removeComponents( self, matchFields ):
@@ -146,14 +108,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     <Field.smaller> to filter using > and < relationships
     """
 
-    result = ComponentMonitoringHandler.db.removeComponents( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.removeComponents( matchFields )
 
   types_addHost = [ types.DictType ]
   def export_addHost( self, host ):
@@ -162,17 +117,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     host argument should be a dictionary with the Host fields and its values
     """
 
-    newHost = Host()
-    newHost.fromDict( host )
-
-    result = ComponentMonitoringHandler.db.addHost( newHost )
-    if not result[ 'OK' ]:
-      return result
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.addHost( host )
 
   types_hostExists = [ types.DictType ]
   def export_hostExists( self, matchFields ):
@@ -203,17 +148,8 @@ class ComponentMonitoringHandler( RequestHandler ):
     be retrieved
     """
 
-    result = ComponentMonitoringHandler.db.getHosts( matchFields )
-    if not result[ 'OK' ]:
-      return result
-    result = result[ 'Value' ]
-
-    hosts = []
-    for host in result:
-      hosts.append( 
-            host.toDict( includeInstallations, includeComponents )[ 'Value' ] )
-
-    return S_OK( hosts )
+    return ComponentMonitoringHandler.db.getHosts \
+                        ( matchFields, includeInstallations, includeComponents )
 
   types_updateHosts = [ types.DictType, types.DictType ]
   def export_updateHosts( self, matchFields, updates ):
@@ -225,19 +161,11 @@ class ComponentMonitoringHandler( RequestHandler ):
     matchFields also accepts fields of the form <Field.bigger> and
     <Field.smaller> to filter using > and < relationships updates argument
     should be a dictionary with the Host fields and their new updated values
+    updates argument should be a dictionary with the Host fields and
+    their new updated values
     """
 
-    result = ComponentMonitoringHandler.db.getHosts( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    for host in result[ 'Value' ]:
-      host.fromDict( updates )
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.updateHosts( matchFields, updates )
 
   types_removeHosts = [ types.DictType ]
   def export_removeHosts( self, matchFields ):
@@ -249,14 +177,7 @@ class ComponentMonitoringHandler( RequestHandler ):
     using > and < relationships
     """
 
-    result = ComponentMonitoringHandler.db.removeHosts( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.removeHosts( matchFields )
 
   types_addInstallation = [ types.DictType,
                             types.DictType,
@@ -279,48 +200,8 @@ class ComponentMonitoringHandler( RequestHandler ):
     created if the given ones do not exist
     """
 
-    newInstallation = InstalledComponent()
-    newInstallation.fromDict( installation )
-
-    result = ComponentMonitoringHandler.db.getComponents( componentDict )
-    if not result[ 'OK' ]:
-      return result
-    if result[ 'Value' ].count() != 1:
-      if result[ 'Value' ].count() > 1:
-        return S_ERROR( 'Too many Components match the criteria' )
-      if result[ 'Value' ].count() < 1:
-        if not forceCreate:
-          return S_ERROR( 'Given component does not exist' )
-        else:
-          component = Component()
-          component.fromDict( componentDict )
-    else:
-      component = result[ 'Value' ][0]
-
-    result = ComponentMonitoringHandler.db.getHosts( hostDict )
-    if not result[ 'OK' ]:
-      return result
-    if result[ 'Value' ].count() != 1:
-      if result[ 'Value' ].count() > 1:
-        return S_ERROR( 'Too many Hosts match the criteria' )
-      if result[ 'Value' ].count() < 1:
-        if not forceCreate:
-          return S_ERROR( 'Given host does not exist' )
-        else:
-          host = Host()
-          host.fromDict( hostDict )
-    else:
-      host = result[ 'Value' ][0]
-
-    result = ComponentMonitoringHandler.db.addInstalledComponent \
-                              ( newInstallation, component, host, forceCreate )
-    if not result[ 'OK' ]:
-      return result
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.addInstalledComponent \
+                          ( installation, componentDict, hostDict, forceCreate )
 
   types_installationExists = [ types.DictType, types.DictType, types.DictType ]
   def export_installationExists( self,
@@ -367,17 +248,8 @@ class ComponentMonitoringHandler( RequestHandler ):
     matchFields = self.__joinInstallationMatch \
                   ( installationFields, componentFields, hostFields )[ 'Value' ]
 
-    result = ComponentMonitoringHandler.db.getInstalledComponents( matchFields )
-    if not result[ 'OK' ]:
-      return result
-    result = result[ 'Value' ]
-
-    installations = []
-    for installation in result:
-      installations.append( 
-        installation.toDict( installationsInfo, installationsInfo )[ 'Value' ] )
-
-    return S_OK( installations )
+    return ComponentMonitoringHandler.db.getInstalledComponents \
+                                              ( matchFields, installationsInfo )
 
   types_updateInstallations = [ types.DictType,
                                 types.DictType,
@@ -404,17 +276,8 @@ class ComponentMonitoringHandler( RequestHandler ):
     matchFields = self.__joinInstallationMatch \
                   ( installationFields, componentFields, hostFields )[ 'Value' ]
 
-    result = ComponentMonitoringHandler.db.getInstalledComponents( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    for installation in result[ 'Value' ]:
-      installation.fromDict( updates )
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
+    return ComponentMonitoringHandler.db.updateInstalledComponents \
+                                                        ( matchFields, updates )
 
   types_removeInstallations = [ types.DictType, types.DictType, types.DictType ]
   def export_removeInstallations( self,
@@ -434,19 +297,5 @@ class ComponentMonitoringHandler( RequestHandler ):
     matchFields = self.__joinInstallationMatch \
                   ( installationFields, componentFields, hostFields )[ 'Value' ]
 
-    result = \
+    return \
           ComponentMonitoringHandler.db.removeInstalledComponents( matchFields )
-    if not result[ 'OK' ]:
-      return result
-
-    if( ComponentMonitoringHandler.doCommit ):
-      return ComponentMonitoringHandler.db.commitChanges()
-    else:
-      return ComponentMonitoringHandler.db.flushChanges()
-
-  types_commit = [ ]
-  def export_commit( self ):
-    """
-    Commit all the unsaved changes to the database
-    """
-    return ComponentMonitoringHandler.db.commitChages()
