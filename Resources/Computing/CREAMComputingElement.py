@@ -243,7 +243,7 @@ class CREAMComputingElement( ComputingElement ):
     idFile.write( '##CREAMJOBS##' )
     for id_ in jobIDList:
       if ":::" in id_:
-        ref, stamp = id_.split( ':::' )
+        ref, _stamp = id_.split( ':::' )
       else:
         ref = id_
       idFile.write( '\n' + ref )
