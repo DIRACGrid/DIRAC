@@ -25,7 +25,6 @@ import sys
 import os
 import stat
 import socket
-import json
 
 from pilotTools import CommandBase, retrieveUrlTimeout
 
@@ -44,6 +43,11 @@ class GetPilotVersion( CommandBase ):
     if self.pp.releaseVersion:
       self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
     else:
+      try:
+        import json
+      except ImportError:
+        self.log.error( 'No json module available, exiting ...' )
+        sys.exit( 2 )
       self.log.info( "Pilot version not requested as pilot script option, going to find it" )
       result = retrieveUrlTimeout( self.pp.pilotCFGFileLocation + '/' + self.pp.pilotCFGFile,
                                    self.pp.pilotCFGFile,
