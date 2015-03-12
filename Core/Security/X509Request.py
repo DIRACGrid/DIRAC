@@ -30,6 +30,7 @@ class X509Request:
       self.__reqObj.get_subject().insert_entry( "CN", "limited proxy" )
     else:
       self.__reqObj.get_subject().insert_entry( "CN", "proxy" )
+    self.__reqObj.sign( self.__pkeyObj, "SHA256" )
     self.__valid = True
 
   def dumpRequest( self ):
