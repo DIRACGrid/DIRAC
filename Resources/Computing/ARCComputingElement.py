@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   ARCComputingElement.py
 # Author : A.T.
 ########################################################################
@@ -9,12 +8,15 @@
 
 __RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
 
-from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.Grid                           import executeGridCommand
+import os
+import stat
+import tempfile
+from types import StringTypes
+
 from DIRAC                                               import S_OK, S_ERROR
 
-import os, re, tempfile
-from types import StringTypes
+from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
+from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 
 CE_NAME = 'ARC'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -83,7 +85,7 @@ class ARCComputingElement( ComputingElement ):
 
     self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
 
     batchIDList = []
     stampDict = {}
@@ -219,7 +221,7 @@ class ARCComputingElement( ComputingElement ):
           elif stateARC in ['Failed']:
             resultDict[jobRef] = "Failed"
           else:
-            log.warn( "Unknown state %s for job %s" % ( stateARC, jobRef ) )
+            self.log.warn( "Unknown state %s for job %s" % ( stateARC, jobRef ) )
       elif lines[ln].startswith( "WARNING: Job information not found:" ):
         jobRef = lines[ln].replace( 'WARNING: Job information not found:', '' ).strip()
         resultDict[jobRef] = "Scheduled"

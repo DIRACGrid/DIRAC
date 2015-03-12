@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   SSHComputingElement.py
 # Author : Dumitru Laurentiu
 ########################################################################
@@ -9,13 +8,17 @@
     It's still under development & debugging,
 """
 
-from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
+import os
+import socket
+import stat
+from urlparse import urlparse
+
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import rootPath
+
+from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
 
-import os, socket
-from urlparse import urlparse
 
 CE_NAME = 'SSHBatch'
 
@@ -103,7 +106,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
       return S_ERROR( "No online node found on queue" )
     ##make it executable
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node

@@ -4,8 +4,13 @@
 
 __RCSID__ = "$Id$"
 
-
-import os, stat, tempfile, pickle, shutil, random, base64
+import os
+import stat
+import tempfile
+import pickle
+import shutil
+import random
+import base64
 from string import Template
 import distutils.spawn
 
@@ -15,8 +20,6 @@ from DIRAC.Core.Utilities.Subprocess                        import systemCall
 from DIRAC.Core.Utilities.Os                                import which
 from DIRAC.Core.Security                                    import ProxyInfo, Properties
 from DIRAC                                                  import S_OK, S_ERROR, gConfig
-
-import DIRAC
 
 class glexecComputingElement( ComputingElement ):
 
@@ -436,7 +439,7 @@ os.execl( "$executable" )
     fopen.close()
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
-      os.chmod( os.path.abspath( testFile ), 0755 )
+      os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
                       '\n%s' % ( x ) )

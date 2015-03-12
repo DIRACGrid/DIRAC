@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    DiracSiteAgent.py
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
@@ -8,14 +7,18 @@
 """
 __RCSID__ = "$Id$"
 
+import os
+import time
+import urllib
+import stat
+
+import DIRAC
+from DIRAC                                               import S_OK, S_ERROR, gConfig
+
 from DIRAC.Core.Base.AgentModule                         import AgentModule
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Locations                       import getProxyLocation
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC                                               import S_OK, S_ERROR, gConfig
-import DIRAC
-
-import os, time, urllib
 
 AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
 
@@ -118,7 +121,7 @@ class DiracSiteAgent( AgentModule ):
       self.diracInstallPath = self.diracInstallFileName
       try:
         urllib.urlretrieve( self.diracInstallURL, self.diracInstallPath )
-        os.chmod( self.diracInstallPath, 0755 )
+        os.chmod( self.diracInstallPath, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       except:
         self.log.error( 'Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' %
                         { 'diracInstallFileName':self.diracInstallFileName,

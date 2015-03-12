@@ -5,6 +5,11 @@
   :synopsis: implementation of client for RequestDB using DISET framework
 
 """
+
+import os
+import time
+import random
+
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -13,10 +18,6 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-import datetime
-import os
-import time
-import random
 
 class ReqClient( Client ):
   """
@@ -129,7 +130,7 @@ class ReqClient( Client ):
     errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'" % request.RequestName
     return errorsDict
 
-  def getRequest( self, requestName = None ):
+  def getRequest( self, requestID = 0 ):
     """ get request from RequestDB
 
     :param self: self reference
@@ -140,7 +141,7 @@ class ReqClient( Client ):
     self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestID )
     if not getRequest["OK"]:
-      self.log.error( "getRequest: unable to get request", "'%s' %s" % ( requestName, getRequest["Message"] ) )
+      self.log.error( "getRequest: unable to get request", "'%s' %s" % ( requestID, getRequest["Message"] ) )
       return getRequest
     if not getRequest["Value"]:
       return getRequest
@@ -317,7 +318,7 @@ class ReqClient( Client ):
       # update the job pending request digest in any case since it is modified
       self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
 
-      digest = self.getDigest( requestName )
+      digest = self.getDigest( requestID )
       if digest["OK"]:
         digest = digest["Value"]
         self.log.verbose( digest )
@@ -326,7 +327,7 @@ class ReqClient( Client ):
           self.log.info( "finalizeRequest: Failed to set job %d parameter: %s" % ( jobID, res["Message"] ) )
           return res
       else:
-        self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestName,
+        self.log.error( "finalizeRequest: Failed to get request digest for %s: %s" % ( requestID,
                                                                                        digest["Message"] ) )
       stateUpdate = None
       if jobStatus == 'Completed':
@@ -382,7 +383,7 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestID, all = False ):
+  def resetFailedRequest( self, requestID, allR = False ):
     """ Reset a failed request to "Waiting" status
     """
 
@@ -391,7 +392,7 @@ class ReqClient( Client ):
     if not res['OK']:
       return res
     req = res['Value']
-    if all or recoverableRequest( req ):
+    if allR or recoverableRequest( req ):
       # Only reset requests that can be recovered
       for i, op in enumerate( req ):
         op.Error = ''

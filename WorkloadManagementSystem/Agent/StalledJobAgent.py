@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File : StalledJobAgent.py
 ########################################################################
 """ The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
@@ -250,7 +249,8 @@ the stalledTime limit.
     if not result['OK']:
       self.log.error( 'Failed to get job attributes', result['Message'] )
     if not result['OK'] or not result['Value']:
-      return S_ERROR( 'Could not get attributes for job', '%s' % job )
+      self.log.error( 'Could not get attributes for job', '%s' % job )
+      return S_ERROR( 'Could not get attributes for job' )
 
     self.log.verbose( result )
     latestUpdate = 0
