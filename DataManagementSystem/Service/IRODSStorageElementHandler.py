@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File: IRODSStorageElementHandler.py
 ########################################################################
 """ 
@@ -439,7 +438,7 @@ token is used for access rights confirmation.
     if not os.path.exists( dir_path ):
       return S_ERROR( 'Failed to receive data' )
     try:
-      os.chmod( dir_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+      os.chmod( dir_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, error:
       gLogger.exception( 'Could not set permissions of destination directory.', dir_path, error )
     return S_OK()
