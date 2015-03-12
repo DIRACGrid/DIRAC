@@ -19,7 +19,7 @@ import time
 
 #Check PYTHONPATH and LD_LIBARY_PATH
 try:
-  os.umask( 022 )
+  os.umask( 0o22 )
 
   pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
   newpythonpath = []
