@@ -577,7 +577,7 @@ token is used for access rights confirmation.
     """ Send the storage element resource information
 """
 
-    conn , error, _ = self.__irodsClient()
+    conn , error, _userDict = self.__irodsClient()
     if not conn:
       return S_ERROR( error )
 
