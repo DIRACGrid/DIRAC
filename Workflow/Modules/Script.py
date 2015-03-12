@@ -60,7 +60,7 @@ class Script( ModuleBase ):
     if os.path.exists( os.path.basename( self.executable ) ):
       self.executable = os.path.basename( self.executable )
       if not os.access( '%s/%s' % ( os.getcwd(), self.executable ), 5 ):
-        os.chmod( '%s/%s' % ( os.getcwd(), self.executable ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+        os.chmod( '%s/%s' % ( os.getcwd(), self.executable ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )

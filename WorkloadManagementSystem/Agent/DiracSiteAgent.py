@@ -121,7 +121,7 @@ class DiracSiteAgent( AgentModule ):
       self.diracInstallPath = self.diracInstallFileName
       try:
         urllib.urlretrieve( self.diracInstallURL, self.diracInstallPath )
-        os.chmod( self.diracInstallPath, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+        os.chmod( self.diracInstallPath, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       except:
         self.log.error( 'Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' %
                         { 'diracInstallFileName':self.diracInstallFileName,

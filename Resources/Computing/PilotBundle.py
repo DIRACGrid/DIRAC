@@ -100,7 +100,7 @@ for fileName, fileCont in %(compressedAndEncodedFiles)s.items():
     os.environ['X509_USER_PROXY'] = os.path.join( workingDirectory, fileName )
     print 'X509_USER_PROXY', '=', os.path.join( workingDirectory, fileName )
   elif fileName == executable:
-    os.chmod( fileName, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+    os.chmod( fileName, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     executable = './' + executable
 print
 print '==========================================================='

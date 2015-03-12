@@ -99,7 +99,7 @@ class glexecComputingElement( ComputingElement ):
     #Submit job
     self.log.info( 'Changing permissions of executable to 0755' )
     try:
-      os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+      os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
                       '\n%s' % ( x ) )
@@ -122,7 +122,7 @@ class glexecComputingElement( ComputingElement ):
     currentDir = os.getcwd()
     try:
       self.log.info( 'Trying to explicitly change permissions for parent directory %s' % currentDir )
-      os.chmod( currentDir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+      os.chmod( currentDir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Problem changing directory permissions in parent directory', str( x ) )
 
@@ -157,11 +157,11 @@ class glexecComputingElement( ComputingElement ):
       try:
         self.log.info( 'Changing file and directory permissions to 0755 for %s' % dirName )
         if os.stat( dirName )[4] == userID and not os.path.islink( dirName ):
-          os.chmod( dirName, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+          os.chmod( dirName, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
         for toChange in files:
           toChange = os.path.join( dirName, toChange )
           if os.stat( toChange )[4] == userID and not os.path.islink( toChange ):
-            os.chmod( toChange, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+            os.chmod( toChange, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       except Exception, x:
         self.log.error( 'Problem changing directory permissions', str( x ) )
 
@@ -253,7 +253,7 @@ class glexecComputingElement( ComputingElement ):
     fopen.close()
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
-      os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+      os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
                       '\n%s' % ( x ) )

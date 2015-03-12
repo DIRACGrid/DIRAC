@@ -106,7 +106,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
       return S_ERROR( "No online node found on queue" )
     ##make it executable
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node
