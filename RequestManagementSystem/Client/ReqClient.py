@@ -383,7 +383,7 @@ class ReqClient( Client ):
         ret["Successful"][jobID] = Request( fromJSON )
     return S_OK( ret )
 
-  def resetFailedRequest( self, requestID, all = False ):
+  def resetFailedRequest( self, requestID, allR = False ):
     """ Reset a failed request to "Waiting" status
     """
 
@@ -392,7 +392,7 @@ class ReqClient( Client ):
     if not res['OK']:
       return res
     req = res['Value']
-    if all or recoverableRequest( req ):
+    if allR or recoverableRequest( req ):
       # Only reset requests that can be recovered
       for i, op in enumerate( req ):
         op.Error = ''
