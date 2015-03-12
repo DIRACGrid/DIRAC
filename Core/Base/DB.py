@@ -17,61 +17,87 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 ########################################################################
 class DB( MySQL ):
 
-  def __init__( self, dbname, fullname, maxQueueSize, debug = False ):
+  @classmethod
+  def getDBParameters( cls, fullname, maxQueueSize ):
+    """
+    Retrieve Database parameters from CS
+    fullname should be of the form <System>/<DBname>
+    maxQueueSize is the default value to give to maxQueueSize if it is not 
+    available in the CS
+    """
 
-    self.database_name = dbname
-    self.fullname = fullname
-    self.cs_path = getDatabaseSection( fullname )
+    fullname = fullname
+    cs_path = getDatabaseSection( fullname )
 
-    self.log = gLogger.getSubLogger( self.database_name )
-
-    self.dbHost = ''
-    result = gConfig.getOption( self.cs_path + '/Host' )
+    dbHost = ''
+    result = gConfig.getOption( cs_path + '/Host' )
     if not result['OK']:
       raise RuntimeError( 'Failed to get the configuration parameters: Host' )
-    self.dbHost = result['Value']
+    dbHost = result['Value']
     # Check if the host is the local one and then set it to 'localhost' to use
     # a socket connection
-    if self.dbHost != 'localhost':
+    if dbHost != 'localhost':
       localHostName = socket.getfqdn()
-      if localHostName == self.dbHost:
-        self.dbHost = 'localhost'
+      if localHostName == dbHost:
+        dbHost = 'localhost'
 
-    self.dbPort = 3306
-    result = gConfig.getOption( self.cs_path + '/Port' )
+    dbPort = 3306
+    result = gConfig.getOption( cs_path + '/Port' )
     if not result['OK']:
       # No individual port number found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/Port' )
       if result['OK']:
-        self.dbPort = int( result['Value'] )
+        dbPort = int( result['Value'] )
     else:
-      self.dbPort = int( result['Value'] )
+      dbPort = int( result['Value'] )
 
-    self.dbUser = ''
-    result = gConfig.getOption( self.cs_path + '/User' )
+    dbUser = ''
+    result = gConfig.getOption( cs_path + '/User' )
     if not result['OK']:
       # No individual user name found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/User' )
       if not result['OK']:
         raise RuntimeError( 'Failed to get the configuration parameters: User' )
-    self.dbUser = result['Value']
-    self.dbPass = ''
-    result = gConfig.getOption( self.cs_path + '/Password' )
+    dbUser = result['Value']
+
+    dbPass = ''
+    result = gConfig.getOption( cs_path + '/Password' )
     if not result['OK']:
       # No individual password found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/Password' )
       if not result['OK']:
-        raise RuntimeError( 'Failed to get the configuration parameters: Password' )
-    self.dbPass = result['Value']
-    self.dbName = ''
-    result = gConfig.getOption( self.cs_path + '/DBName' )
+        raise RuntimeError \
+                      ( 'Failed to get the configuration parameters: Password' )
+    dbPass = result['Value']
+
+    dbName = ''
+    result = gConfig.getOption( cs_path + '/DBName' )
     if not result['OK']:
       raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
-    self.dbName = result['Value']
-    self.maxQueueSize = maxQueueSize
-    result = gConfig.getOption( self.cs_path + '/MaxQueueSize' )
+    dbName = result['Value']
+
+    qSize = maxQueueSize
+    result = gConfig.getOption( cs_path + '/MaxQueueSize' )
     if result['OK']:
-      self.maxQueueSize = int( result['Value'] )
+      qSize = int( result['Value'] )
+
+    return S_OK( [ dbHost, dbPort, dbUser, dbPass, dbName, qSize ] )
+
+  def __init__( self, dbname, fullname, maxQueueSize, debug = False ):
+
+    database_name = dbname
+    self.log = gLogger.getSubLogger( database_name )
+
+    result = DB.getDBParameters( fullname, maxQueueSize )
+    if( not result[ 'OK' ] ):
+      raise Exception \
+                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
+    self.dbHost, \
+      self.dbPort, \
+      self.dbUser, \
+      self.dbPass, \
+      self.dbName, \
+      self.maxQueueSize = result[ 'Value' ]
 
     MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
                    self.dbName, self.dbPort, maxQueueSize = maxQueueSize, debug = debug )

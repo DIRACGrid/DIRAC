@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 import datetime
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC.Core.Base.DB import DB
 from sqlalchemy import MetaData, \
                         Column, \
                         Integer, \
@@ -242,33 +243,17 @@ class InstalledComponentsDB( object ):
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )
 
   def __initializeConnection( self, dbPath ):
-    self.dbs = getDatabaseSection( dbPath )
 
-    self.host = gConfig.getOption( self.dbs + '/Host' )
-    if not self.host[ 'OK' ]:
-      raise Exception( "Cannot retrieve the host: %s" % self.host[ 'Message' ] )
-    else:
-      self.host = self.host[ 'Value' ]
-
-    self.user = gConfig.getOption( '/Systems/Databases/User' )
-    if not self.user[ 'OK' ]:
-      raise Exception( "Cannot retrieve the user: %s" % self.user[ 'Message' ] )
-    else:
-      self.user = self.user[ 'Value' ]
-
-    self.password = gConfig.getOption( '/Systems/Databases/Password' )
-    if not self.password[ 'OK' ]:
-      raise Exception( "Cannot retrieve the password: %s"
-                          % self.password[ 'Message' ] )
-    else:
-      self.password = self.password[ 'Value' ]
-
-    self.db = gConfig.getOption( self.dbs + '/DBName' )
-    if not self.db[ 'OK' ]:
-      raise Exception( "Cannot retrieve the DB name: %s"
-                          % self.db[ 'Message' ] )
-    else:
-      self.db = self.db[ 'Value' ]
+    result = DB.getDBParameters( dbPath, 10 )
+    if not result[ 'OK' ]:
+      raise Exception \
+                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
+    self.host, \
+          port, \
+          self.user, \
+          self.password, \
+          self.db, \
+          qSize = result[ 'Value' ]
 
     self.engine = create_engine( 'mysql://%s:%s@%s/%s' %
                     ( self.user, self.password, self.host, self.db ),
