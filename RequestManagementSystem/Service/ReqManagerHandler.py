@@ -1,5 +1,4 @@
 #####################################################################
-# $HeadURL $
 # File: ReqManagerHandler.py
 ########################################################################
 """
@@ -11,7 +10,7 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, LongType, ListType, StringTypes, StringType
+from types import DictType, IntType, LongType, ListType, StringTypes
 import json
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -45,10 +44,6 @@ class ReqManagerHandler( RequestHandler ):
 
     # # create tables for empty db
     getTables = cls.__requestDB.getTables()
-    if not getTables["OK"]:
-      gLogger.error( getTables["Message"] )
-      return getTables
-    getTables = getTables["Value"]
     toCreate = [ tab for tab in cls.__requestDB.getTableMeta().keys() if tab not in getTables ]
     return cls.__requestDB.createTables( toCreate )
 
