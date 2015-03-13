@@ -474,12 +474,13 @@ def getDBParameters( fullname, defaultHost = 'localhost',
   Not used as the method will fail if it cannot be found
   defaultPort is the port to return if the option is not found in the CS
   defaultUser is the user to return if the option is not found in the CS.
+  Not usePassword is the password to return if the option is not found in
+  the CS.
   Not used as the method will fail if it cannot be found
-  defaultUser is the user to return if the option is not found in the CS.
+  defaultDB is the db to return if the option is not found in the CS.
   Not used as the method will fail if it cannot be found
-  defaultUser is the user to return if the option is not found in the CS.
-  Not used as the method will fail if it cannot be found
-  defaultPort is the port to return if the option is not found in the CS
+  defaultQueueSize is the QueueSize to return if the option is not found in the
+  CS
   """
 
   fullname = fullname

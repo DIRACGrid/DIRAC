@@ -770,7 +770,7 @@ class InstalledComponentsDB( object ):
     except Exception, e:
       session.rollback()
       session.close()
-      return S_ERROR( 'Couldn\'t check the existence of the host: %s' % ( e ) )
+      return S_ERROR( 'Could not check the existence of the host: %s' % ( e ) )
 
     session.commit()
     session.close()
