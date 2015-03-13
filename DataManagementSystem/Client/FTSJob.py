@@ -622,7 +622,6 @@ class FTSJob( object ):
     try:
       context = fts3.Context( endpoint = self.FTSServer )
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
-#       jobStatusDict = json.dumps( jobStatusRet )
     except Exception, e:
       return S_ERROR( "Error at getting the job status %s" % e )
 
