@@ -40,7 +40,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 import fts3.rest.client.easy as fts3
-import json
 
 ########################################################################
 class FTSJob( object ):
