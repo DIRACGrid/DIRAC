@@ -87,9 +87,6 @@ if __name__ == "__main__":
       status = switch[1].capitalize()
     elif switch[0] == 'Since':
       since = convertDate( switch[1] )
-
-      print "AT >>> since", since
-
     elif switch[0] == 'Until':
       until = convertDate( switch[1] )
 
