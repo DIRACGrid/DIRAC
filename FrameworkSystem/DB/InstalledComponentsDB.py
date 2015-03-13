@@ -247,12 +247,12 @@ class InstalledComponentsDB( object ):
     if not result[ 'OK' ]:
       raise Exception \
                   ( 'Cannot get the Database parameters' % result( 'Message' ) )
-    self.host, \
-          port, \
-          self.user, \
-          self.password, \
-          self.db, \
-          qSize = result[ 'Value' ]
+
+    dbParameters = result[ 'Value' ]
+    self.host = dbParameters[ 'host' ]
+    self.user = dbParameters[ 'user' ]
+    self.password = dbParameters[ 'password' ]
+    self.db = dbParameters[ 'db' ]
 
     self.engine = create_engine( 'mysql://%s:%s@%s/%s' %
                     ( self.user, self.password, self.host, self.db ),

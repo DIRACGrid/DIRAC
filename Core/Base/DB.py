@@ -26,12 +26,14 @@ class DB( MySQL ):
     if( not result[ 'OK' ] ):
       raise Exception \
                   ( 'Cannot get the Database parameters' % result( 'Message' ) )
-    self.dbHost, \
-      self.dbPort, \
-      self.dbUser, \
-      self.dbPass, \
-      self.dbName, \
-      self.maxQueueSize = result[ 'Value' ]
+
+    dbParameters = result[ 'Value' ]
+    self.dbHost = dbParameters[ 'host' ]
+    self.dbPort = dbParameters[ 'port' ]
+    self.dbUser = dbParameters[ 'user' ]
+    self.dbPass = dbParameters[ 'password' ]
+    self.dbName = dbParameters[ 'db' ]
+    self.maxQueueSize = dbParameters[ 'queueSize' ]
 
     MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
                    self.dbName, self.dbPort, maxQueueSize = maxQueueSize, debug = debug )

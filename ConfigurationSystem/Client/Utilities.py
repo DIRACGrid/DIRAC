@@ -481,10 +481,14 @@ def getDBParameters( fullname, defaultHost = 'localhost',
   Not used as the method will fail if it cannot be found
   defaultQueueSize is the QueueSize to return if the option is not found in the
   CS
+
+  Returns a dictionary with the keys: 'host', 'port', 'user', 'password',
+  'db' and 'queueSize'
   """
 
   fullname = fullname
   cs_path = getDatabaseSection( fullname )
+  parameters = {}
 
   dbHost = defaultHost
   result = gConfig.getOption( cs_path + '/Host' )
@@ -497,6 +501,7 @@ def getDBParameters( fullname, defaultHost = 'localhost',
     localHostName = socket.getfqdn()
     if localHostName == dbHost:
       dbHost = 'localhost'
+  parameters[ 'host' ] = dbHost
 
   dbPort = defaultPort
   result = gConfig.getOption( cs_path + '/Port' )
@@ -507,6 +512,7 @@ def getDBParameters( fullname, defaultHost = 'localhost',
       dbPort = int( result['Value'] )
   else:
     dbPort = int( result['Value'] )
+  parameters[ 'port' ] = dbPort
 
   dbUser = defaultUser
   result = gConfig.getOption( cs_path + '/User' )
@@ -516,6 +522,7 @@ def getDBParameters( fullname, defaultHost = 'localhost',
     if not result['OK']:
       raise RuntimeError( 'Failed to get the configuration parameters: User' )
   dbUser = result['Value']
+  parameters[ 'user' ] = dbUser
 
   dbPass = defaultPassword
   result = gConfig.getOption( cs_path + '/Password' )
@@ -526,16 +533,19 @@ def getDBParameters( fullname, defaultHost = 'localhost',
       raise RuntimeError \
                     ( 'Failed to get the configuration parameters: Password' )
   dbPass = result['Value']
+  parameters[ 'password' ] = dbPass
 
   dbName = defaultDB
   result = gConfig.getOption( cs_path + '/DBName' )
   if not result['OK']:
     raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
   dbName = result['Value']
+  parameters[ 'db' ] = dbName
 
   qSize = defaultQueueSize
   result = gConfig.getOption( cs_path + '/MaxQueueSize' )
   if result['OK']:
     qSize = int( result['Value'] )
+  parameters[ 'queueSize' ] = qSize
 
-  return S_OK( [ dbHost, dbPort, dbUser, dbPass, dbName, qSize ] )
+  return S_OK( parameters )

@@ -24,7 +24,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
@@ -163,52 +163,18 @@ class RequestDB( object ):
     """ Collect from the CS all the info needed to connect to the DB.
         This should be in a base class eventually
     """
-    self.fullname = fullname
-    self.cs_path = getDatabaseSection( self.fullname )
 
-    self.dbHost = ''
-    result = gConfig.getOption( self.cs_path + '/Host' )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
-    self.dbHost = result['Value']
-    # Check if the host is the local one and then set it to 'localhost' to use
-    # a socket connection
-    if self.dbHost != 'localhost':
-      localHostName = socket.getfqdn()
-      if localHostName == self.dbHost:
-        self.dbHost = 'localhost'
+    result = getDBParameters( fullname )
+    if( not result[ 'OK' ] ):
+      raise Exception \
+                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
 
-    self.dbPort = 3306
-    result = gConfig.getOption( self.cs_path + '/Port' )
-    if not result['OK']:
-      # No individual port number found, try at the common place
-      result = gConfig.getOption( '/Systems/Databases/Port' )
-      if result['OK']:
-        self.dbPort = int( result['Value'] )
-    else:
-      self.dbPort = int( result['Value'] )
-
-    self.dbUser = ''
-    result = gConfig.getOption( self.cs_path + '/User' )
-    if not result['OK']:
-      # No individual user name found, try at the common place
-      result = gConfig.getOption( '/Systems/Databases/User' )
-      if not result['OK']:
-        raise RuntimeError( 'Failed to get the configuration parameters: User' )
-    self.dbUser = result['Value']
-    self.dbPass = ''
-    result = gConfig.getOption( self.cs_path + '/Password' )
-    if not result['OK']:
-      # No individual password found, try at the common place
-      result = gConfig.getOption( '/Systems/Databases/Password' )
-      if not result['OK']:
-        raise RuntimeError( 'Failed to get the configuration parameters: Password' )
-    self.dbPass = result['Value']
-    self.dbName = ''
-    result = gConfig.getOption( self.cs_path + '/DBName' )
-    if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
-    self.dbName = result['Value']
+    dbParameters = result[ 'Value' ]
+    self.dbHost = dbParameters[ 'host' ]
+    self.dbPort = dbParameters[ 'port' ]
+    self.dbUser = dbParameters[ 'user' ]
+    self.dbPass = dbParameters[ 'password' ]
+    self.dbName = dbParameters[ 'db' ]
 
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
