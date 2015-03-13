@@ -6,6 +6,7 @@ import datetime
 def convertDate( date ):
   try:
     value = datetime.datetime.strptime( date, '%Y-%m-%d' )
+    return value
   except:
     pass
   try:
@@ -171,7 +172,7 @@ if __name__ == "__main__":
       continue
 
     if allR or recoverableRequest( request ):
-      okRequests.append( requestID )
+      okRequests.append( str( requestID ) )
       if reset:
         gLogger.always( '============ Request %s =============' % requestID )
         ret = reqClient.resetFailedRequest( requestID, allR = allR )
