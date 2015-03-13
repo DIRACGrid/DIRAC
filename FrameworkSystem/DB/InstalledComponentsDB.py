@@ -6,8 +6,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-from DIRAC.Core.Base.DB import DB
+from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from sqlalchemy import MetaData, \
                         Column, \
                         Integer, \
@@ -244,7 +243,7 @@ class InstalledComponentsDB( object ):
 
   def __initializeConnection( self, dbPath ):
 
-    result = DB.getDBParameters( dbPath, 10 )
+    result = getDBParameters( dbPath, defaultQueueSize = 10 )
     if not result[ 'OK' ]:
       raise Exception \
                   ( 'Cannot get the Database parameters' % result( 'Message' ) )
