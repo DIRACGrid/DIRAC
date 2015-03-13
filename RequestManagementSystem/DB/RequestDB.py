@@ -517,7 +517,7 @@ class RequestDB( object ):
 
       reqQuery = reqQuery.order_by( Request._LastUpdate )\
                          .limit( limit )
-      requestIDs = [reqIDTuple[0] for reqIDTuple in reqQuery.all()]
+      requestIDs = [ tuple( reqIDTuple ) for reqIDTuple in reqQuery.all() ]
 
     except Exception, e:
       session.rollback()
