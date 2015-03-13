@@ -250,12 +250,13 @@ class InstalledComponentsDB( object ):
 
     dbParameters = result[ 'Value' ]
     self.host = dbParameters[ 'host' ]
+    self.port = dbParameters[ 'port' ]
     self.user = dbParameters[ 'user' ]
     self.password = dbParameters[ 'password' ]
     self.db = dbParameters[ 'db' ]
 
-    self.engine = create_engine( 'mysql://%s:%s@%s/%s' %
-                    ( self.user, self.password, self.host, self.db ),
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' %
+                    ( self.user, self.password, self.host, self.port, self.db ),
                     pool_recycle = 3600, echo_pool = True
                     )
     self.Session = scoped_session( sessionmaker( bind = self.engine ) )
