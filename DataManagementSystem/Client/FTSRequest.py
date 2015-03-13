@@ -1,6 +1,3 @@
-#############################################################################
-# $HeadURL$
-#############################################################################
 """ ..mod: FTSRequest
     =================
 
@@ -786,7 +783,7 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTSServersForSites
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS2ServersForSites
     if not self.targetSE:
       return S_ERROR( "Target SE not set" )
     res = getSitesForSE( self.targetSE )
@@ -796,7 +793,7 @@ class FTSRequest( object ):
 
     targetSite = ''
     for targetSite in targetSites:
-      targetFTS = getFTSServersForSites( [targetSite] )
+      targetFTS = getFTS2ServersForSites( [targetSite] )
       if targetFTS['OK']:
         ftsTarget = targetFTS['Value'][targetSite]
         if ftsTarget:
