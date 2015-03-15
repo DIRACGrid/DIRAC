@@ -1,3 +1,9 @@
+[v6r12p32]
+
+*RMS
+FIX: ReqManager - in getRequest() possibility to accept None type
+     argument for any request 
+
 [v6r12p31]
 
 *WMS
@@ -232,7 +238,9 @@ BUGFIX: TransformationDB - fix return value in setTransformationParameter()
 [v6r12p9]
 
 *Core
-CHANGE: SiteCEMapping - getSiteForCE can take site argument to avoid confusion
+CHANGE: SiteCEMapping - getSiteForCE can take site argu
+
+ment to avoid confusion
 
 *Interfaces
 FIX: Job - provide optional site name in setDestinationCE()
