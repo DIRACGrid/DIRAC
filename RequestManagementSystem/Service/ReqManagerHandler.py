@@ -11,7 +11,7 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, LongType, ListType, StringTypes, StringType
+from types import DictType, IntType, LongType, ListType, StringTypes
 import json
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
