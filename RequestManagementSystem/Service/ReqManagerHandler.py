@@ -11,7 +11,7 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, LongType, ListType, StringTypes
+from types import DictType, IntType, LongType, ListType, StringTypes, NoneType
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -130,7 +130,7 @@ class ReqManagerHandler( RequestHandler ):
     """ Get the summary of requests in the Request DB """
     return cls.__requestDB.getDBSummary()
 
-  types_getRequest = [ StringTypes ]
+  types_getRequest = [ list( StringTypes ) + [NoneType] ]
   @classmethod
   def export_getRequest( cls, requestName = "" ):
     """ Get a request of given type from the database """
