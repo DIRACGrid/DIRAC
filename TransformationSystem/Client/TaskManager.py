@@ -46,6 +46,7 @@ class TaskBase( TransformationAgentsUtilities ):
     self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
 
     self.transInThread = {}
+    self.debug = False
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     return S_ERROR( "Not implemented" )
