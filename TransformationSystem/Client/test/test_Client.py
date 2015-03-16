@@ -1,4 +1,9 @@
-import unittest, types, importlib
+""" test
+"""
+
+import unittest
+import types
+import importlib
 
 from DIRAC import S_OK
 

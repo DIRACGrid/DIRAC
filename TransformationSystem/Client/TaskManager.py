@@ -4,7 +4,9 @@ __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
 
-import time, types, os
+import time
+import types
+import os
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
