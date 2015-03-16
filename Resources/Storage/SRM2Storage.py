@@ -101,9 +101,9 @@ class SRM2Storage( StorageBase ):
         # # GFAL_CKSM_NONE
         self.checksumType = 0
     else:
+      self.checksumType = 0
       # # invert and get name
-      self.log.debug( "SRM2Storage: will use %s checksum" % dict( zip( self.checksumTypes.values(),
-                                                                     self.checksumTypes.keys() ) )[self.checksumType] )
+      self.log.debug( "SRM2Storage: will use no checksum" )
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
