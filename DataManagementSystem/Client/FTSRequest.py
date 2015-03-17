@@ -783,7 +783,7 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS2ServersForSites
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTSServersForSites
     if not self.targetSE:
       return S_ERROR( "Target SE not set" )
     res = getSitesForSE( self.targetSE )
@@ -793,7 +793,7 @@ class FTSRequest( object ):
 
     targetSite = ''
     for targetSite in targetSites:
-      targetFTS = getFTS2ServersForSites( [targetSite] )
+      targetFTS = getFTSServersForSites( [targetSite] )
       if targetFTS['OK']:
         ftsTarget = targetFTS['Value'][targetSite]
         if ftsTarget:
