@@ -18,8 +18,8 @@ return_running()
 
     ls $infoarea | grep ".pid" > /dev/null && for i in `ls -1 $infoarea/*.pid`; do
         test_pid=`cat $i`                        
-        q=`ps -f -p $test_pid | grep $user | wc -l`                     
-        if (( $q == 1 ))
+        q=`ps -f -p $test_pid | wc -l`                     
+        if (( $q -ge 1 ))
         then                          
             let running=running+1    
         else
