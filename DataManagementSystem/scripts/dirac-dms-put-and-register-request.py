@@ -33,7 +33,7 @@ if __name__ == "__main__":
   LFN = None
   PFN = None
   targetSE = None
-  if not len( args ) != 4:
+  if len( args ) != 4:
     Script.showHelp()
     DIRAC.exit( 0 )
   else:
