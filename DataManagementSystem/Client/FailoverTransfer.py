@@ -218,7 +218,7 @@ class FailoverTransfer( object ):
     """
     self.log.info( 'Setting registration request for %s at %s.' % ( lfn, targetSE ) )
 
-    if not type( catalog ) == type( [] ):
+    if not isinstance( catalog, list ):
       catalog = [catalog]
 
     for cat in catalog:
@@ -254,7 +254,7 @@ class FailoverTransfer( object ):
     :param str lfn: LFN
     :param se:
     """
-    if type( se ) == str:
+    if isinstance( se, str ):
       se = ",".join( [ se.strip() for se in se.split( "," ) if se.strip() ] )
 
     removeReplica = Operation()
