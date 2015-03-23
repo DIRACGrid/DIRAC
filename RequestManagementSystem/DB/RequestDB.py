@@ -224,7 +224,7 @@ class RequestDB( object ):
 
 
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
-    self.engine = create_engine( 'mysql://%s:%s@%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbName ),
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
                                  echo = runDebug )
 
     metadata.bind = self.engine
@@ -232,7 +232,7 @@ class RequestDB( object ):
     self.DBSession = sessionmaker( bind = self.engine )
 
 
-  def createTables( self, toCreate = None, force = False ):
+  def createTables( self ):
     """ create tables """
     try:
       metadata.create_all( self.engine )
@@ -240,16 +240,6 @@ class RequestDB( object ):
       return S_ERROR( e )
     return S_OK()
 
-  @staticmethod
-  def getTableMeta():
-    """ get db schema in a dict format """
-    return dict( [ ( classDef.__name__, None )
-                   for classDef in ( Request, Operation, File ) ] )
-
-
-  def getTables(self):
-    """ Return the table names """
-    return S_OK( metadata.tables.keys() )
 
   def cancelRequest( self, requestID ):
     session = self.DBSession()
