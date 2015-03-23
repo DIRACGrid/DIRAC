@@ -54,8 +54,9 @@ dStrError = { ERRX : "A human readable error message for ERRX",
 
 # In case the error is returned as a string, and not as a DIRACError object, 
 # these strings are used to test the error. 
-compatErrorString = { ERRX : ['not found', 'X'],
-                      ERRY : ['Y']
+compatErrorString = {
+                     # ERRX : ['not found', 'X'],
+
                      }
 
 def strerror(code):
@@ -110,7 +111,7 @@ class DError( object ):
 
   def __repr__( self ):
     """ String representation """
-    repr = "%s ( %s : %s)" % ( strerror( self.errno ), self.errno, self.errmsg )
+    reprStr = "%s ( %s : %s)" % ( strerror( self.errno ), self.errno, self.errmsg )
 
     isVerbose = False
     stack = traceback.extract_stack()
@@ -122,15 +123,42 @@ class DError( object ):
           break
 
     if isVerbose:
-      repr += "\n" + "".join( self._callStack )
+      reprStr += "\n" + "".join( self._callStack )
 
-    return repr
+    return reprStr
 
-  def __contains__( self, item ):
+  def __contains__( self, errorStr ):
     """ For compatibility reasons.
-        Checks whether 'item' is in the human readable form of the error msg
+        Checks whether 'errorStr' is in the human readable form of the error msg or compat err msg
+        errorStr has to be an str
     """
-    return item in strerror( self.errno )
+    # Check if the errorStr is in the standard message
+    ret = ( errorStr in strerror( self.errno ) )
+    if ret:
+      return ret
+
+    # If not, check whether the errorStr is in one of the compatibility error message
+    ret = reduce( lambda x, y : x or ( errorStr in y ), compatErrorString.get( self.errno, [] ), False )
+
+    return ret
+  
+  def __cmp__( self, errorStr ):
+    """ For compatibility reasons.
+        Checks whether 'other', which should be a string, is equal to the human readable form of the error msg
+    """
+    # !!! Caution, if there is equality, we have to return 0 (rules of __cmp__)
+
+    try:
+      if errorStr == strerror( self.errno ):
+        return 0
+    except:
+      pass
+
+    if errorStr in compatErrorString.get( self.errno, [] ):
+      return 0
+
+    return 1
+
 
 
 def S_ERROR_N( messageString = '' ):
@@ -152,19 +180,13 @@ def cmpError( inErr, candidate ):
 
       If a DError instance is passed, we compare the code with DError.errno
       If it is a Integer, we do a direct comparison
-      If it is a String, we use compatErrorString to check the error string
+      If it is a String, we use compatErrorString and strerror to check the error string
   """
 
   if type( inErr ) == str :  # old style
-    for pos in compatErrorString.get( candidate, [] ):
-      if pos in inErr:
-        return True
-    # If the string is exactly the one of strerror, it's the same
-    try:
-      if inErr == strerror( candidate ):
-        return True
-    except:
-      pass
+    # Create a DError object to represent the candidate
+    derr = DError( candidate )
+    return inErr == derr
   elif type( inErr ) == int:
     return inErr == candidate
   elif isinstance( inErr, DError ):
