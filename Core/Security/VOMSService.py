@@ -51,6 +51,17 @@ class VOMSService:
       return S_OK( _processListDictReturn( result.listMembersReturn ) )
     return S_OK( _processListDictReturn( result ) )
 
+
+  def admListCertificates( self, dn, ca ):
+    try:
+      UserID = self.__soapClients[ 'Certificates' ].service.getUserIdFromDn( dn, ca )
+      result = self.__soapClients[ 'Certificates' ].service.getCertificates( UserID )
+    except Exception, e:
+      return S_ERROR( "Error in function getCertificates: %s" % str( e ) )
+    if 'listCertificatesReturn' in dir( result ):
+      return S_OK( _processListDictReturn( result.listCertificatesReturn ) )
+    return S_OK( _processListDictReturn( result ) )
+
   def admListRoles( self ):
     try:
       result = self.__soapClients[ 'Admin' ].service.listRoles()
