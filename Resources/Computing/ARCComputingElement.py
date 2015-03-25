@@ -76,7 +76,8 @@ class ARCComputingElement( ComputingElement ):
 
   def _reset( self ):
     self.queue = self.ceParameters['Queue']
-    self.gridEnv = self.ceParameters['GridEnv']
+    if 'GridEnv' in self.ceParameters:
+      self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
   def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
