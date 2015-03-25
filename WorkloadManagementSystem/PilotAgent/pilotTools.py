@@ -15,6 +15,8 @@ import types
 import urllib2
 import signal
 
+from PilotLogger import PilotLogger
+
 __RCSID__ = '$Id$'
 
 def printVersion( log ):
@@ -277,6 +279,47 @@ class Logger( object ):
   def info( self, msg, header = True ):
     self.__outputMessage( msg, "INFO", header )
 
+
+class ExtendedLogger( Logger ):
+  """ The logger object, for use inside the pilot. It prints messages.
+      But can be also used to send messages to the queue
+  """
+  def __init__( self, name = 'Pilot', debugFlag = False, pilotOutput = 'pilot.out', isPilotLoggerOn = False ):
+    """ c'tor
+    If flag PilotLoggerOn is not set, the logger will behave just like
+    the original Logger object, that means it will just print logs locally on the screen
+    """
+    super(ExtendedLogger, self).__init__(name, debugFlag, pilotOutput)
+    if isPilotLoggerOn:
+      self.pilotLogger = PilotLogger()
+    else:
+      self.pilotLogger = None
+    self.isPilotLoggerOn = isPilotLoggerOn
+
+  def debug( self, msg, header = True, sendPilotLog = False ):
+    super(ExtendedLogger, self).debug(msg,header)
+    if self.isPilotLoggerOn:
+      if sendPilotLog == True:
+        self.pilotLogger.sendMessage(msg,"debug")
+
+  def error( self, msg, header = True, sendPilotLog = False ):
+    super(ExtendedLogger, self).error(msg,header)
+    if self.isPilotLoggerOn:
+      if sendPilotLog == True:
+        self.pilotLogger.sendMessage(msg,"error")
+
+  def warn( self, msg, header = True, sendPilotLog = False):
+    super(ExtendedLogger, self).warn(msg,header)
+    if self.isPilotLoggerOn:
+      if sendPilotLog == True:
+        self.pilotLogger.sendMessage(msg,"warning")
+
+  def info( self, msg, header = True, sendPilotLog = False ):
+    super(ExtendedLogger, self).info(msg,header)
+    if self.isPilotLoggerOn:
+      if sendPilotLog == True:
+        print 'wtf'
+        self.pilotLogger.sendMessage(msg,"info")
 class CommandBase( object ):
   """ CommandBase is the base class for every command in the pilot commands toolbox
   """
@@ -288,7 +331,13 @@ class CommandBase( object ):
     """
 
     self.pp = pilotParams
-    self.log = Logger( self.__class__.__name__ )
+    self.log = ExtendedLogger(
+        self.__class__.__name__,
+        False,
+        'pilot.out',
+        self.pp.pilotLogging 
+        )
+    #self.log = Logger( self.__class__.__name__ )
     self.debugFlag = False
     for o, _ in self.pp.optList:
       if o == '-d' or o == '--debug':
@@ -382,6 +431,7 @@ class PilotParams( object ):
     self.certsLocation = '%s/etc/grid-security' % self.workingDir
     self.pilotCFGFile = 'pilot.json'
     self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
+    self.pilotLogging = False 
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
