@@ -469,6 +469,7 @@ class PilotParams( object ):
                      ( 'F:', 'pilotCFGFile=', 'Specify pilot CFG file' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
+                     ( 'z:', 'pilotLogging', 'Activate pilot logging system' ),
                    )
 
     self.__initOptions()
@@ -538,4 +539,6 @@ class PilotParams( object ):
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
+      elif o == '-z' or o == '--pilotLogging':
+        self.pilotLogging = True 
 
