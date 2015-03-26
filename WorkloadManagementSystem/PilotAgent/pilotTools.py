@@ -15,8 +15,6 @@ import types
 import urllib2
 import signal
 
-from PilotLogger import PilotLogger
-
 __RCSID__ = '$Id$'
 
 def printVersion( log ):
@@ -291,6 +289,10 @@ class ExtendedLogger( Logger ):
     """
     super(ExtendedLogger, self).__init__(name, debugFlag, pilotOutput)
     if isPilotLoggerOn:
+      #<the import here was suggest F.S cause PilotLogger imports pika 
+      #which is not yet in the DIRAC externals
+      #so up to now we want to turn it off
+      from PilotLogger import PilotLogger  
       self.pilotLogger = PilotLogger()
     else:
       self.pilotLogger = None
