@@ -7,8 +7,9 @@ __RCSID__ = "$Id$"
 import unittest
 # sut
 import os
-from DIRAC.WorkloadManagementSystem.PilotLogger.PilotLogger import PilotLogger, getPilotIdFromFile
-from DIRAC.WorkloadManagementSystem.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
+from PilotLogger import PilotLogger, getPilotUUIDFromFile
+from PilotLoggerTools import generateUniqueIDAndSaveToFile
+
 class TestPilotLogger( unittest.TestCase ):
 
   def setUp( self ):
@@ -27,24 +28,22 @@ class TestPilotLogger( unittest.TestCase ):
 class TestGetPilotIdFromFile( TestPilotLogger ):
 
   def test_success( self ):
-    id = getPilotIdFromFile( self.testFile )
-    self.assertTrue( id )
+    uuid = getPilotUUIDFromFile( self.testFile )
+    self.assertTrue( uuid )
 
   def test_failureBadFile( self ):
-    id = getPilotIdFromFile( self.badFile )
-    self.assertFalse( id )
+    uuid = getPilotUUIDFromFile( self.badFile )
+    self.assertFalse( uuid )
 
   def test_failureNonExistent( self ):
-    id = getPilotIdFromFile( self.nonExistentFile )
-    self.assertFalse( id )
+    uuid = getPilotUUIDFromFile( self.nonExistentFile )
+    self.assertFalse( uuid )
 
 class TestPilotLogger_isCorrectFlag( TestPilotLogger ):
 
   def test_success( self ):
-    self.assertTrue( self.logger._isCorrectFlag( 'info' ) )
-    self.assertTrue( self.logger._isCorrectFlag( 'warning' ) )
-    self.assertTrue( self.logger._isCorrectFlag( 'error' ) )
-    self.assertTrue( self.logger._isCorrectFlag( 'debug' ) )
+    for flag in self.logger.FLAGS:
+      self.assertTrue( self.logger._isCorrectFlag( flag ) )
 
   def test_failure( self ):
     self.assertFalse( self.logger._isCorrectFlag( 'mamma Mia' ) )
@@ -52,14 +51,25 @@ class TestPilotLogger_isCorrectFlag( TestPilotLogger ):
   def test_failureEmpty( self ):
     self.assertFalse( self.logger._isCorrectFlag( '' ) )
 
+class TestPilotLogger_isCorrectStatus( TestPilotLogger ):
+
+  def test_success( self ):
+    for status in self.logger.STATUSES:
+      self.assertTrue( self.logger._isCorrectStatus( status ) )
+       
+  def test_failure( self ):
+    self.assertFalse( self.logger._isCorrectStatus( 'mamma Mia' ) )
+
+  def test_failureEmpty( self ):
+    self.assertFalse( self.logger._isCorrectStatus( '' ) )
+
 class TestPilotLogger_sendMessage( TestPilotLogger ):
 
   # here some mocks needed
   def test_success( self ):
     pass
-
-  def test_NotCorrectFlag( self ):
-    self.assertFalse( self.logger._sendMessage( '', 'badFlag' ) )
+  def test_failure( self ):
+    pass
 
 class TestPilotLoggersendMessage( TestPilotLogger ):
 
@@ -67,13 +77,14 @@ class TestPilotLoggersendMessage( TestPilotLogger ):
   def test_success( self ):
     pass
 
-  def test_failure( self ):
-    pass
+  def test_NotCorrectFlag( self ):
+    self.assertFalse( self.logger.sendMessage( '', 'badFlag' ) )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestGetPilotIdFromFile ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger_isCorrectFlag ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger_isCorrectStatus ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger_sendMessage ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggersendMessage ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

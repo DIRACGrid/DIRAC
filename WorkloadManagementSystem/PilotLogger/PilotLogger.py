@@ -1,5 +1,3 @@
-# $HeadURL$
-
 """ Pilot logger module for the remote loggin system
 """
 
@@ -14,9 +12,12 @@ from PilotLoggerTools import (
     isMessageFormatCorrect
     )
 
-def getPilotIdFromFile( filename = 'PilotAgentUUID' ):
+import Queue
+
+
+def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
   """
-  Function retrives PilotUniqueId from the file of given name
+  Function retrives Pilot UUID from the file of given name
   @return : string or empty string in case of errors
   """
   try:
@@ -29,8 +30,6 @@ def getPilotIdFromFile( filename = 'PilotAgentUUID' ):
     myFile.close()
     return uniqueId
 
-
-
 class PilotLogger( object ):
   """ Base pilot logger class
   """
@@ -39,15 +38,56 @@ class PilotLogger( object ):
     """ctr
     """
     self.FLAGS = ['info', 'warning', 'error', 'debug']
-    self.pilotID = getPilotIdFromFile( fileWithID )
+    self.STATUSES = [
+        'Landed',
+        'Installing',
+        'Configuring', 
+        'Matching', 
+        'Running', 
+        'Done', 
+        'Failed'
+        ]
+    self.pilotID = getPilotUUIDFromFile( fileWithID )
     self.networkCfg = {
-    'host':'localhost',
+    'host':'10.0.2.2',
+    #'host':'192.245.169.39',
+    #'host':'localhost',
     'exchangeName': 'myExchanger',
     'exchangeType': 'direct'}
 
-  def _isCorrectFlag ( self, flag ):
+  def _eraseFileContent( self, filename ):
     """
-    Method check if the flag corresponds to one of the predefined
+    Method erases the content of a given file 
+    """
+
+    with open(filename, 'r+') as myFile:
+      myFile.truncate()
+
+  def _saveMessageToLocalStorage(self, msg, filename = 'myLocalQueueOfMessages' ):
+    """ Method adds the message to a file appended as a next line.
+    """
+
+    with open(filename, 'a+') as myFile:
+      print >>myFile, msg
+
+  def _readMessagesFromLocalStorage( self, filename = 'myLocalQueueOfMessages' ):
+    """
+    Method generates the queue FIFO and fills it
+    with values from the file, assuming that one line
+    corresponds to one message.
+    Finallym the file content is erased.
+    @return: Queue 
+    """
+    queue = Queue.Queue()
+    with open( filename, 'r') as myFile:
+      for line in myFile:
+        queue.put(line)
+    self._eraseFileContent( filename )
+    return queue
+
+  def _isCorrectFlag( self, flag ):
+    """
+    Method checks if the flag corresponds to one of the predefined
     FLAGS, check constructor for current set
     """
 
@@ -55,43 +95,98 @@ class PilotLogger( object ):
       return True
     return False
 
-  def _sendMessage( self, msg, flag ):
-    """Method sends the msg to the RabbitMQ exchange object
-       the flag string is used as routing_key, it can be
-       of type 'info', 'warning', 'error', 'debug'
-       @return: False in case of any errors, True otherwise
+  def _isCorrectStatus( self, status ):
+
     """
-    if not self._isCorrectFlag( flag ):
-      return False
-    connection = pika.BlockingConnection( pika.ConnectionParameters(
-                   self.networkCfg['host'] )
-                 )
-    channel = connection.channel()
+    Method checks if the flag corresponds to one of the predefined
+    STATUSES, check constructor for current set
+    """
+
+    if status in self.STATUSES:
+      return True
+    return False
+  
+  def _connect(self):
+    """ Methods connects to RabbitMQ and returns connection
+    handler or None in case of connection down
+    """
+    try:
+      connection = pika.BlockingConnection(
+      pika.ConnectionParameters( self.networkCfg['host'] ) 
+        )
+    except pika.exceptions.AMQPConnectionError, Argument:
+      print 'Connection error: %r' %(Argument,)
+      return None 
+    else:
+      return connection
+  
+
+  def _sendAllLocalMessages(self, connect_handler, flag = 'info' ):
+    """
+    Method retrives all messages from the local storage
+    and sends it.
+    """
+
+    channel = connect_handler.channel()
     channel.exchange_declare(
                 exchange = self.networkCfg['exchangeName'],
                 type = self.networkCfg['exchangeType']
                 )
-    channel.basic_publish(
-                        exchange = self.networkCfg['exchangeName'],
-                        routing_key = flag,
-                        body = msg
-                        )
-    print " [x] Sent %r %r" % ( type, msg )
+    queue =self._readMessagesFromLocalStorage() 
+    while not queue.empty():
+      msg = queue.get()
+      channel.basic_publish(
+                          exchange = self.networkCfg['exchangeName'],
+                          routing_key = flag,
+                          body = msg,
+                          )
+      print " [x] Sent %r %r" % ( type, msg )
+     
+
+  def _sendMessage( self, msg, flag ):
+    """Method first copies the message content to the 
+       local storage, then itchecks if the connection  
+       to RabbitMQ server is up,
+       If it is the case it sends all messages stored
+       locally.  The string flag can be used as routing_key, 
+       it can contain:  'info', 'warning', 'error', 
+       'debug'. If the connection is down, the method
+       does nothing and returns False
+       @return: False in case of any errors, True otherwise
+    """
+
+    if not self._isCorrectFlag( flag ):
+      return False
+    self._saveMessageToLocalStorage(msg)
+    connection = self._connect()      
+    if not connection:
+      return False
+    self._sendAllLocalMessages(connection, flag)
     connection.close()
     return True
 
-  def sendMessage( self, content, flag = "info" ):
+  def sendMessage( self, minorStatus, flag = 'info', status='Installing' ):
     """
-    Method creates the correct format of the message
-    including content, timestamp, status and the id
+    Method sends the message after
+    creating the correct format: 
+    including content, timestamp, status, minor status and the uuid
     of the pilot
     @return : False in case of any errors, True otherwise
     """
-    myId = getPilotIdFromFile()
+    print "im sending"
+    if not self._isCorrectFlag( flag ):
+      return False
+    print "really?"
+    print status
+    if not self._isCorrectStatus( status ):
+      return False
+    print "really?"
+    myUUID = getPilotUUIDFromFile()
     message = generateDict(
-        myId,
-        "installing",
-        content,
+        myUUID,
+        '',  # pilotID is unknown for a moment
+        status,
+        minorStatus,
         generateTimeStamp(),
         "pilot"
         )
@@ -100,14 +195,14 @@ class PilotLogger( object ):
     encodedMsg = encodeMessage( message )
     return self._sendMessage( encodedMsg, flag )
 
-
 def main():
+
   """ main() function  is used to send a message
   before any DIRAC related part is installed
   """
-  message = ' '.join( sys.argv[1:] ) or "Something wrong not message to send!"
+  message = ' '.join( sys.argv[1:] ) or "Something wrong no message to send!"
   logger = PilotLogger()
-  logger.sendMessage( message )
+  logger.sendMessage( message, 'info', 'Landed' )
 
 if __name__ == '__main__':
   main()

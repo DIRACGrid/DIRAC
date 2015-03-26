@@ -3,29 +3,23 @@ import unittest
 # sut
 import json
 import os
-from DIRAC.WorkloadManagementSystem.PilotLogger.PilotLoggerTools import ( 
+from PilotLoggerTools import ( 
     generateDict,
     encodeMessage,
     decodeMessage,
     isMessageFormatCorrect,
     generateUniqueIDAndSaveToFile
-    )   
-#from DIRAC.WorkloadManagementSystem.PilotLogger import ( 
-#    generateDict,
-#    encodeMessage,
-#    decodeMessage,
-#    isMessageFormatCorrect,
-#    generateUniqueIDAndSaveToFile
-#    )
+    )
 
 class TestPilotLoggerTools( unittest.TestCase ):
 
   def setUp( self ):
     self.msg = {
-      'status': 'DIRAC Installation',
+      'status': 'Installing',
       'timestamp': '1427121370.7',
       'minorStatus': 'Uname = Linux localhost 3.10.64-85.cernvm.x86_64',
-      'pilotId': 'eda78924-d169-11e4-bfd2-0800275d1a0a',
+      'pilotID': '1',
+      'pilotUUID': 'eda78924-d169-11e4-bfd2-0800275d1a0a',
       'source': 'pilot'
        }
     self.testFile = 'test_file_to_remove'
@@ -41,7 +35,8 @@ class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
   def test_success( self ):
     result = generateDict( 
         'eda78924-d169-11e4-bfd2-0800275d1a0a',
-        'DIRAC Installation',
+        '1',
+        'Installing',
         'Uname = Linux localhost 3.10.64-85.cernvm.x86_64',
         '1427121370.7',
         'pilot'
@@ -50,6 +45,7 @@ class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
   def test_failure( self ):
     result = generateDict( 
         'eda78924-d169-11e4-bfd2-0800275d1a0a',
+        '1',
         'AAA Installation',
         'Uname = Linux localhost 3.10.64-85.cernvm.x86_64',
         '1427121370.7',
@@ -86,6 +82,11 @@ class TestPilotLoggerIsMessageFormatCorrect( TestPilotLoggerTools ):
 
   def test_success( self ):
     self.assertTrue( isMessageFormatCorrect( self.msg ) )
+    
+  def test_successEvenThatpilotIDEmpty( self ):
+    goodDict = self.msg.copy()
+    goodDict['pilotID'] = ''
+    self.assertTrue( isMessageFormatCorrect( goodDict ) )
 
   def test_notDict( self ):
     self.assertFalse( isMessageFormatCorrect( ['a', 2] ) )
@@ -97,8 +98,14 @@ class TestPilotLoggerIsMessageFormatCorrect( TestPilotLoggerTools ):
 
   def test_valuesNotStrings ( self ):
     badDict = self.msg.copy()
-    badDict['source'] = 10  # changing one value to int
+    badDict['source'] = 10
     self.assertFalse( isMessageFormatCorrect( badDict ) )
+
+  def test_someValuesAreEmpty( self ):
+    badDict = self.msg.copy()
+    badDict['timestamp'] = ''
+    self.assertFalse( isMessageFormatCorrect( badDict ) )
+
 
 class TestPilotLoggerGenerateUniqueIDAndSaveToFile( TestPilotLoggerTools ):
   def test_success( self ):

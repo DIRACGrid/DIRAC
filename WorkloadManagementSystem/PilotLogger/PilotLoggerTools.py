@@ -1,5 +1,3 @@
-# $HeadURL$
-
 """ A set of tools for the remote pilot agent logging system
 """
 
@@ -10,15 +8,29 @@ import json
 from uuid import uuid1
 import sys
 
-def generateDict( pilotId, status, minorStatus, timestamp, source ):
+def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
   """
   Helper function that returs a dictionnary based on the
   set of input values
   @return : dict
   """
 
-  keys = ['pilotId', 'status', 'minorStatus', 'timestamp', 'source']
-  values = [pilotId, status, minorStatus, timestamp, source]
+  keys = [
+      'pilotUUID', 
+      'pilotID',  
+      'status', 
+      'minorStatus', 
+      'timestamp', 
+      'source'
+      ]
+  values = [
+      pilotUUID,
+      pilotID,
+      status,
+      minorStatus,
+      timestamp,
+      source
+      ]
   return dict( zip( keys, values ) )
 
 def encodeMessage( content ):
@@ -45,20 +57,29 @@ def isMessageFormatCorrect( content ):
   in the following format:
   0) content is a dictionary
   1) it contains only those keys of string types:
-  'pilotId', 'status', 'minorStatus', 'timestamp', 'source'
+  'pilotUUID', 'pilotId', 'status', 'minorStatus', 'timestamp', 'source'
   2) it contains only values of string types
   e.g.
   {"status": "DIRAC Installation",
    "timestamp": "1427121370.7",
     "minorStatus": "Uname = Linux localhost 3.10.64-85.cernvm.x86_64",
-    "pilotId": "eda78924-d169-11e4-bfd2-0800275d1a0a",
+    "pilotID": "1",
+    "pilotUUID": "eda78924-d169-11e4-bfd2-0800275d1a0a",
     "source": "pilot"
     }
+  3)pilotID can be empty, other values must be non-empty 
   @return : True if message format is correct, False otherwise
   """
   if not isinstance( content, dict ):
     return False
-  refKeys = ['pilotId', 'status', 'minorStatus', 'timestamp', 'source']
+  refKeys = [
+      'pilotUUID',
+      'pilotID',
+      'status',
+      'minorStatus',
+      'timestamp',
+      'source'
+      ]
   refKeys.sort()
   keys = content.keys()
   keys.sort()
@@ -67,6 +88,12 @@ def isMessageFormatCorrect( content ):
   values = content.values()
   # if any value is not of string type
   if any( not isinstance( val, str ) for val in values ):
+    return False
+  #checking if not empty for all except pilotID
+  contentCopy = content.copy()
+  contentCopy.pop('pilotID',None)
+  values = contentCopy.values()
+  if any( not val for val in values ):
     return False
   return True
 
