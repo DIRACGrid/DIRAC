@@ -1,12 +1,15 @@
-# $HeadURL$
+"""
+"""
+
 __RCSID__ = "$Id$"
-import DIRAC
+
+from DIRAC import S_OK, S_ERROR
+
 from DIRAC import gLogger, rootPath, gConfig
 from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 
-class ServiceInterface:
+class ServiceInterface( object ):
 
   __sourceToComponentIdMapping = {}
 
@@ -30,12 +33,6 @@ class ServiceInterface:
     from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
     return MonitoringCatalog( self.dataPath )
 
-  def serviceRunning( self ):
-    """
-    Returns if monitoring service is running
-    """
-    return self.srvUp
-
   def initialize( self, dataPath ):
     """
     Initialize monitoring server
@@ -48,8 +45,8 @@ class ServiceInterface:
     self.srvUp = True
     try:
       self.compmonDB = ComponentMonitoringDB()
-    except Exception, e:
-      gLogger.exception( "Cannot initialize component monitoring db" )
+    except Exception as e:
+      gLogger.exception( "Cannot initialize component monitoring db: %s" % e )
 
   def initializeDB( self ):
     """
@@ -325,7 +322,6 @@ class ServiceInterface:
     """
     Get a list of activities
     """
-    acDict = {}
     catalog = self.__createCatalog()
     total = 0
     for sourceTuple in catalog.getSources( dbCond ):
