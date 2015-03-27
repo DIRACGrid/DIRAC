@@ -16,11 +16,11 @@ def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
   """
 
   keys = [
-      'pilotUUID', 
-      'pilotID',  
-      'status', 
-      'minorStatus', 
-      'timestamp', 
+      'pilotUUID',
+      'pilotID',
+      'status',
+      'minorStatus',
+      'timestamp',
       'source'
       ]
   values = [
@@ -67,7 +67,7 @@ def isMessageFormatCorrect( content ):
     "pilotUUID": "eda78924-d169-11e4-bfd2-0800275d1a0a",
     "source": "pilot"
     }
-  3)pilotID can be empty, other values must be non-empty 
+  3)pilotID can be empty, other values must be non-empty
   @return : True if message format is correct, False otherwise
   """
   if not isinstance( content, dict ):

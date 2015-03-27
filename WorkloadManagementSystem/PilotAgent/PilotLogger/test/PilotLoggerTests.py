@@ -8,6 +8,7 @@ import unittest
 # sut
 import os
 from PilotLogger import PilotLogger, getPilotUUIDFromFile
+from PilotLogger import eraseFileContent
 from PilotLoggerTools import generateUniqueIDAndSaveToFile
 
 class TestPilotLogger( unittest.TestCase ):
@@ -25,7 +26,7 @@ class TestPilotLogger( unittest.TestCase ):
       pass
 
 
-class TestGetPilotIdFromFile( TestPilotLogger ):
+class TestGetPilotUUIDFromFile( TestPilotLogger ):
 
   def test_success( self ):
     uuid = getPilotUUIDFromFile( self.testFile )
@@ -56,13 +57,15 @@ class TestPilotLogger_isCorrectStatus( TestPilotLogger ):
   def test_success( self ):
     for status in self.logger.STATUSES:
       self.assertTrue( self.logger._isCorrectStatus( status ) )
-       
+
   def test_failure( self ):
     self.assertFalse( self.logger._isCorrectStatus( 'mamma Mia' ) )
 
   def test_failureEmpty( self ):
     self.assertFalse( self.logger._isCorrectStatus( '' ) )
 
+class TestPilotLogger_connect( TestPilotLogger ):
+  pass
 class TestPilotLogger_sendMessage( TestPilotLogger ):
 
   # here some mocks needed
@@ -82,7 +85,7 @@ class TestPilotLoggersendMessage( TestPilotLogger ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestGetPilotIdFromFile ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestGetPilotUUIDFromFile ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger_isCorrectFlag ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger_isCorrectStatus ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLogger_sendMessage ) )

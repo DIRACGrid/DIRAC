@@ -30,6 +30,37 @@ def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
     myFile.close()
     return uniqueId
 
+def eraseFileContent( filename ):
+  """
+  Function erases the content of a given file
+  """
+
+  with open(filename, 'r+') as myFile:
+    myFile.truncate()
+
+def saveMessageToFile( msg, filename = 'myLocalQueueOfMessages' ):
+  """ Method adds the message to a file appended as a next line.
+  """
+
+  with open(filename, 'a+') as myFile:
+    print >>myFile, msg
+
+def readMessagesFromFileAndEraseFileContent( filename = 'myLocalQueueOfMessages' ):
+  """
+  Method generates the queue FIFO and fills it
+  with values from the file, assuming that one line
+  corresponds to one message.
+  Finallym the file content is erased.
+  @return: Queue
+  """
+
+  queue = Queue.Queue()
+  with open( filename, 'r') as myFile:
+    for line in myFile:
+      queue.put(line)
+  eraseFileContent( filename )
+  return queue
+
 class PilotLogger( object ):
   """ Base pilot logger class
   """
@@ -41,10 +72,10 @@ class PilotLogger( object ):
     self.STATUSES = [
         'Landed',
         'Installing',
-        'Configuring', 
-        'Matching', 
-        'Running', 
-        'Done', 
+        'Configuring',
+        'Matching',
+        'Running',
+        'Done',
         'Failed'
         ]
     self.pilotID = getPilotUUIDFromFile( fileWithID )
@@ -55,35 +86,6 @@ class PilotLogger( object ):
     'exchangeName': 'myExchanger',
     'exchangeType': 'direct'}
 
-  def _eraseFileContent( self, filename ):
-    """
-    Method erases the content of a given file 
-    """
-
-    with open(filename, 'r+') as myFile:
-      myFile.truncate()
-
-  def _saveMessageToLocalStorage(self, msg, filename = 'myLocalQueueOfMessages' ):
-    """ Method adds the message to a file appended as a next line.
-    """
-
-    with open(filename, 'a+') as myFile:
-      print >>myFile, msg
-
-  def _readMessagesFromLocalStorage( self, filename = 'myLocalQueueOfMessages' ):
-    """
-    Method generates the queue FIFO and fills it
-    with values from the file, assuming that one line
-    corresponds to one message.
-    Finallym the file content is erased.
-    @return: Queue 
-    """
-    queue = Queue.Queue()
-    with open( filename, 'r') as myFile:
-      for line in myFile:
-        queue.put(line)
-    self._eraseFileContent( filename )
-    return queue
 
   def _isCorrectFlag( self, flag ):
     """
@@ -105,21 +107,21 @@ class PilotLogger( object ):
     if status in self.STATUSES:
       return True
     return False
-  
+
   def _connect(self):
     """ Methods connects to RabbitMQ and returns connection
     handler or None in case of connection down
     """
     try:
       connection = pika.BlockingConnection(
-      pika.ConnectionParameters( self.networkCfg['host'] ) 
+      pika.ConnectionParameters( self.networkCfg['host'] )
         )
-    except pika.exceptions.AMQPConnectionError, Argument:
-      print 'Connection error: %r' %(Argument,)
-      return None 
+    except pika.exceptions.AMQPConnectionError, argument:
+      print 'Connection error: %r' %(argument,)
+      return None
     else:
       return connection
-  
+
 
   def _sendAllLocalMessages(self, connect_handler, flag = 'info' ):
     """
@@ -132,7 +134,7 @@ class PilotLogger( object ):
                 exchange = self.networkCfg['exchangeName'],
                 type = self.networkCfg['exchangeType']
                 )
-    queue =self._readMessagesFromLocalStorage() 
+    queue =readMessagesFromFileAndEraseFileContent()
     while not queue.empty():
       msg = queue.get()
       channel.basic_publish(
@@ -141,15 +143,15 @@ class PilotLogger( object ):
                           body = msg,
                           )
       print " [x] Sent %r %r" % ( type, msg )
-     
+
 
   def _sendMessage( self, msg, flag ):
-    """Method first copies the message content to the 
-       local storage, then itchecks if the connection  
+    """Method first copies the message content to the
+       local storage, then itchecks if the connection
        to RabbitMQ server is up,
        If it is the case it sends all messages stored
-       locally.  The string flag can be used as routing_key, 
-       it can contain:  'info', 'warning', 'error', 
+       locally.  The string flag can be used as routing_key,
+       it can contain:  'info', 'warning', 'error',
        'debug'. If the connection is down, the method
        does nothing and returns False
        @return: False in case of any errors, True otherwise
@@ -157,8 +159,8 @@ class PilotLogger( object ):
 
     if not self._isCorrectFlag( flag ):
       return False
-    self._saveMessageToLocalStorage(msg)
-    connection = self._connect()      
+    saveMessageToFile(msg)
+    connection = self._connect()
     if not connection:
       return False
     self._sendAllLocalMessages(connection, flag)
@@ -168,7 +170,7 @@ class PilotLogger( object ):
   def sendMessage( self, minorStatus, flag = 'info', status='Installing' ):
     """
     Method sends the message after
-    creating the correct format: 
+    creating the correct format:
     including content, timestamp, status, minor status and the uuid
     of the pilot
     @return : False in case of any errors, True otherwise
