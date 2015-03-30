@@ -11,21 +11,16 @@ import bz2
 import tempfile
 import random
 import socket
-
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
+import hashlib
 
 import DIRAC
+from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
-from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
@@ -197,7 +192,7 @@ class SiteDirector( AgentModule ):
   def __generateQueueHash( self, queueDict ):
     """ Generate a hash of the queue description
     """
-    myMD5 = md5.md5()
+    myMD5 = hashlib.md5()
     myMD5.update( str( queueDict ) )
     hexstring = myMD5.hexdigest()
     return hexstring
@@ -549,7 +544,7 @@ class SiteDirector( AgentModule ):
         rndm = random.random()*sumPriority
         tqDict = {}
         for pilotID in pilotList:
-          rndm = random.random()*sumPriority
+          rndm = random.random() * sumPriority
           for tq, prio in tqPriorityList:
             if rndm < prio:
               tqID = tq
@@ -560,13 +555,13 @@ class SiteDirector( AgentModule ):
 
         for tqID, pilotList in tqDict.items():
           result = pilotAgentsDB.addPilotTQReference( pilotList,
-                                                     tqID,
-                                                     self.pilotDN,
-                                                     self.pilotGroup,
-                                                     self.localhost,
-                                                     ceType,
-                                                     '',
-                                                     stampDict )
+                                                      tqID,
+                                                      self.pilotDN,
+                                                      self.pilotGroup,
+                                                      self.localhost,
+                                                      ceType,
+                                                      '',
+                                                      stampDict )
           if not result['OK']:
             self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
             continue
@@ -1065,4 +1060,3 @@ EOF
       return result
 
     return S_OK()
-
