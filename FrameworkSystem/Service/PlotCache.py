@@ -1,18 +1,14 @@
-# $HeadURL$
-
 """ Cache for the Plotting service plots
 """
 
 __RCSID__ = "$Id$"
 
-import os
 import os.path
 import time
 import threading
 
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.Graphs import graph
 
 class PlotCache:

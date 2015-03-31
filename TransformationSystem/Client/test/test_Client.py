@@ -1,4 +1,9 @@
-import unittest, types, importlib
+""" test
+"""
+
+import unittest
+import types
+import importlib
 
 from DIRAC import S_OK
 
@@ -188,6 +193,10 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     res = self.wfTasks._handleDestination( paramsDict )
     self.assertEqual( res, ['PIPPO'] )
 
+  def test_submitTransformationTasks( self ):
+    taskDict = {}
+    res = self.wfTasks.submitTransformationTasks( taskDict )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
 
 
 #############################################################################

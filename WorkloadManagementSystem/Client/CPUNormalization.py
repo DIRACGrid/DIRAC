@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    CPUNormalization.py
 # Author :  Ricardo Graciani
 ########################################################################
@@ -101,8 +100,8 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   n = int( 1000 * 1000 * 12.5 )
   calib = 250.0 / UNITS[reference]
 
-  m = 0L
-  m2 = 0L
+  m = long( 0 )
+  m2 = long( 0 )
   p = 0
   p2 = 0
   # Do one iteration extra to allow CPUs with variable speed

@@ -916,7 +916,7 @@ class Job( API ):
       inBool = False
       outBool = True
     else:
-      raise TypeError, 'I/O flag is either input or output'
+      raise TypeError( 'I/O flag is either input or output' )
 
     par = Parameter( name, value, ptype, "", "", inBool, outBool, description )
     wObject.addParameter( Parameter( parameter = par ) )

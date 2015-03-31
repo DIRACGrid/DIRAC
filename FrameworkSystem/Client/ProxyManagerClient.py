@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
 __RCSID__ = "$Id$"
@@ -8,9 +5,9 @@ __RCSID__ = "$Id$"
 import os
 import datetime
 import types
-from DIRAC.Core.Utilities import Time, ThreadSafe, DIRACSingleton
+from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Security import Locations, CS, File, Properties
+from DIRAC.Core.Security import Locations, CS, File
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
@@ -351,17 +348,17 @@ class ProxyManagerClient:
     result = chain.hash()
     if not result[ 'OK' ]:
       return result
-    hash = result[ 'Value' ]
-    if self.__filesCache.exists( hash, requiredTimeLeft ):
-      filepath = self.__filesCache.get( hash )
+    cHash = result[ 'Value' ]
+    if self.__filesCache.exists( cHash, requiredTimeLeft ):
+      filepath = self.__filesCache.get( cHash )
       if os.path.isfile( filepath ):
         return S_OK( filepath )
-      self.__filesCache.delete( hash )
+      self.__filesCache.delete( cHash )
     retVal = chain.dumpAllToFile( destinationFile )
     if not retVal[ 'OK' ]:
       return retVal
     filename = retVal[ 'Value' ]
-    self.__filesCache.add( hash, chain.getRemainingSecs()['Value'], filename )
+    self.__filesCache.add( cHash, chain.getRemainingSecs()['Value'], filename )
     return S_OK( filename )
 
   def deleteGeneratedProxyFile( self, chain ):

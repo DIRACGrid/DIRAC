@@ -305,7 +305,7 @@ class MonitoringClient(object):
 
   def __sendData( self, secsTimeout = False ):
     from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
-    if gServiceInterface.serviceRunning():
+    if gServiceInterface.srvUp:
       self.logger.debug( "Using internal interface to send data" )
       rpcClient = gServiceInterface
     else:
