@@ -182,8 +182,9 @@ class IRODSStorageElementHandler( RequestHandler ):
     return fileID
 
   def __getFileStat( self, path ):
-    """ Get the file stat information
-"""
+    """
+    Get the file stat information
+    """
 
     conn , error, userDict = self.__irodsClient( )
     if not conn:
@@ -206,7 +207,7 @@ class IRODSStorageElementHandler( RequestHandler ):
       resultDict['Migrated'] = 0
       resultDict['Lost'] = 0
       resultDict['Unavailable'] = 0
-      resultDict['Mode'] = 0755
+      resultDict['Mode'] = 0o755
       return S_OK( resultDict )
     else:
       coll = irodsCollection( conn, file_path )
@@ -219,7 +220,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         resultDict['Migrated'] = 0
         resultDict['Lost'] = 0
         resultDict['Unavailable'] = 0
-        resultDict['Mode'] = 0755
+        resultDict['Mode'] = 0o755
         return S_OK( resultDict )
       else:
         return S_ERROR( 'Path does not exist' )
@@ -247,14 +248,16 @@ class IRODSStorageElementHandler( RequestHandler ):
 
   types_getMetadata = [StringType]
   def export_getMetadata( self, fileID ):
-    """ Get metadata for the file or directory specified by fileID
-"""
+    """
+    Get metadata for the file or directory specified by fileID
+    """
     return self.__getFileStat( fileID )
 
   types_createDirectory = [StringType]
   def export_createDirectory( self, dir_path ):
-    """ Creates the directory on the storage
-"""
+    """
+    Creates the directory on the storage
+    """
     conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
@@ -273,8 +276,9 @@ class IRODSStorageElementHandler( RequestHandler ):
 
   types_listDirectory = [StringType, StringType]
   def export_listDirectory( self, dir_path, mode ):
-    """ Return the dir_path directory listing
-"""
+    """
+    Return the dir_path directory listing
+    """
     conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
@@ -347,11 +351,12 @@ class IRODSStorageElementHandler( RequestHandler ):
 
 
   def transfer_fromClient( self, fileID, token, fileSize, fileHelper ):
-    """ Method to receive file from clients.
-fileID is the local file name in the SE.
-fileSize can be Xbytes or -1 if unknown.
-token is used for access rights confirmation.
-"""
+    """
+    Method to receive file from clients.
+    fileID is the local file name in the SE.
+    fileSize can be Xbytes or -1 if unknown.
+    token is used for access rights confirmation.
+    """
 
     conn , error, userDict = self.__irodsClient( )
     if not conn:

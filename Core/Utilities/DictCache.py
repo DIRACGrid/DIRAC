@@ -105,7 +105,7 @@ class DictCache( object ):
         else:
           # Delete expired
           self.delete( cKey )
-      return False
+      return None
     finally:
       self.lock.release()
 

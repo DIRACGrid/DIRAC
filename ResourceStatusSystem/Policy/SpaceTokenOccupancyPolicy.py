@@ -1,4 +1,3 @@
-# $HeadURL $
 """ SpaceTokenOccupancyPolicy
 
    SpaceTokenOccupancyPolicy.__bases__:
@@ -9,7 +8,7 @@
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id: SpaceTokenOccupancyPolicy.py 61805 2013-02-15 12:47:51Z ubeda $'
+__RCSID__ = '$Id$'
 
 class SpaceTokenOccupancyPolicy( PolicyBase ):
   """
@@ -64,7 +63,7 @@ class SpaceTokenOccupancyPolicy( PolicyBase ):
     # Units are TB ! ( 0.01 == 10 GB )
     if free < 0.1: 
       result[ 'Status' ] = 'Banned'
-      result[ 'Reason' ] = 'Free space < 10GB'
+      result[ 'Reason' ] = 'Free space < 100GB'
     elif free < 5: 
       result[ 'Status' ] = 'Degraded'
       result[ 'Reason' ] = 'Free space < 5TB'
