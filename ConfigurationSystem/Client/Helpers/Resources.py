@@ -72,14 +72,14 @@ def getFTS3Servers():
   """
 
   csPath = cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS3" )
-  # We do it in two times to keep the order
-  ftsServerNames = gConfig.getOptions( csPath ).get( 'Value', [] )
-
+  # retrieving list of params
+  params = gConfig.getOptions( csPath ).get( 'Value', [] )
+  # we get just the first param out of ['FTSEndpoint', 'FTSType']
   ftsServers = []
-  for name in ftsServerNames:
-    ftsServers.append( gConfig.getValue( cfgPath( csPath, name ) ) )
-
+  ftsServers.append(gConfig.getValue(cfgPath( csPath, params[0] )))
+  
   return S_OK( ftsServers )
+ 
 
 def getSiteTier( site ):
   """

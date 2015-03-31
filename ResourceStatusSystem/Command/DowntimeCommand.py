@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSit
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
 
 __RCSID__ = '$Id:  $'
 
@@ -106,6 +106,13 @@ class DowntimeCommand( Command ):
       if not seHost:
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
+      
+    elif elementType == 'FTS':
+    	gocdbServiceType = "FTS"
+    	try:
+    		elementName	= getFTS3Servers()[ 'Value' ][0]
+    	except:
+    		return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
 
     return S_OK( ( element, elementName, hours, gocdbServiceType ) )
 
@@ -289,13 +296,14 @@ class DowntimeCommand( Command ):
     sesHosts = sesHosts[ 'Value' ]
 
     resources = sesHosts
-
-    # TODO: file catalogs need also to use their hosts
-    # something similar applies to FTS Channels
-    #
-    #fts = CSHelpers.getFTS()
-    #if fts[ 'OK' ]:
-    #  resources = resources + fts[ 'Value' ]
+    
+    ftsServer = getFTS3Servers()
+    if ftsServer[ 'OK' ]:
+    	resources = resources + getFTS3Servers()[ 'Value' ]   
+    
+    
+ 		# TODO: file catalogs need also to use their hosts
+   
     #fc = CSHelpers.getFileCatalogs()
     #if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
@@ -303,6 +311,9 @@ class DowntimeCommand( Command ):
     ce = CSHelpers.getComputingElements()
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
+      
+    print resources
+    return  
 
     gLogger.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
 
