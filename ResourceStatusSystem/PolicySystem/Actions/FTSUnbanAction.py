@@ -8,6 +8,8 @@ from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmi
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTSServers
 import fts3.rest.client.easy as fts3
 import json
 
@@ -62,8 +64,10 @@ class FTSUnbanAction( BaseAction ):
 #		diracAdmin = DiracAdmin()
 #		address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
 		
-		endpoint = 'https://fts3-pilot.cern.ch:8446'
-		context = fts3.Context(endpoint, '/tmp/x509up_u1000')
+		#endpoint = 'https://fts3-pilot.cern.ch:8446'
+		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
+		proxyPath = getProxyInfo().get('Value').get('path')
+		context = fts3.Context(endpoint, proxyPath)
 		#site = 'gsiftp://example.com'
 		output = fts3.unban_se(context, storageElement)
 			

@@ -8,6 +8,8 @@ from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmi
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTSServers
 import fts3.rest.client.easy as fts3
 import json
 
@@ -55,23 +57,19 @@ class FTSBanAction( BaseAction ):
 		if elementType != 'StorageElement':
 			return S_ERROR( "'elementType' should be 'StorageElement'" )
 					
-		return self._banSite( storageElement )		
-
+		return self._banSite( storageElement )
+	
 	def _banSite( self, storageElement ):
-
-#		from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-#		diracAdmin = DiracAdmin()
-#		address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
-		
-		endpoint = 'https://fts3-pilot.cern.ch:8446'
-		context = fts3.Context(endpoint, '/tmp/x509up_u1000')
-		#site = 'gsiftp://example.com'
-		timeout = 3600
-		status = 'wait' #or...
+		#endpoint = 'https://fts3-pilot.cern.ch:8446'
+		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
+		proxyPath = getProxyInfo().get('Value').get('path')
+		context = fts3.Context(endpoint, proxyPath)
+		timeout = 3600  #or...?
+		status = 'wait' #or...?
 		allow_submit = False
 		output = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
-			
-		return S_OK( json.loads(context.get("ban/se")) 
-
+		
+		return S_OK( json.loads(context.get("ban/se"))
+		 		
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

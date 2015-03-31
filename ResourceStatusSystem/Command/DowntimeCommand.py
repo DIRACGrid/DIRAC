@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSit
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTSServers
 
 __RCSID__ = '$Id:  $'
 
@@ -110,7 +110,7 @@ class DowntimeCommand( Command ):
     elif elementType == 'FTS':
     	gocdbServiceType = "FTS"
     	try:
-    		elementName	= getFTS3Servers()[ 'Value' ][0]
+    		elementName	= getFTSServers("FTS3")[ 'Value' ][0]
     	except:
     		return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
 
@@ -297,9 +297,9 @@ class DowntimeCommand( Command ):
 
     resources = sesHosts
     
-    ftsServer = getFTS3Servers()
+    ftsServer = getFTSServers("FTS3")
     if ftsServer[ 'OK' ]:
-    	resources = resources + getFTS3Servers()[ 'Value' ]   
+    	resources = resources + ftsServer[ 'Value' ]   
     
     
  		# TODO: file catalogs need also to use their hosts
