@@ -66,9 +66,14 @@ class FTSUnbanAction( BaseAction ):
 		
 		#endpoint = 'https://fts3-pilot.cern.ch:8446'
 		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
-		proxyPath = getProxyInfo().get('Value').get('path')
+		
+		proxyPath = getProxyInfo()
+		if not proxyPath.get('OK'):
+			return S_ERROR("Proxy not found!")
+		proxyPath = proxyPath.get('Value').get('path')	
+			
 		context = fts3.Context(endpoint, proxyPath)
-		#site = 'gsiftp://example.com'
+		
 		output = fts3.unban_se(context, storageElement)
 			
 		return S_OK( json.loads(context.get("ban/se")) )

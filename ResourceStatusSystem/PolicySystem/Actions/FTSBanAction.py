@@ -62,11 +62,17 @@ class FTSBanAction( BaseAction ):
 	def _banSite( self, storageElement ):
 		#endpoint = 'https://fts3-pilot.cern.ch:8446'
 		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
-		proxyPath = getProxyInfo().get('Value').get('path')
+		
+		proxyPath = getProxyInfo()
+		if not proxyPath.get('OK'):
+			return S_ERROR("Proxy not found!")
+		proxyPath = proxyPath.get('Value').get('path')
+		
 		context = fts3.Context(endpoint, proxyPath)
+		
 		timeout = 3600  #or...?
 		status = 'wait' #or...?
-		allow_submit = False
+		allow_submit = False #or...?
 		output = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
 		
 		return S_OK( json.loads(context.get("ban/se"))
