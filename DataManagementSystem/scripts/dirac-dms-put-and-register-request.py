@@ -33,7 +33,7 @@ if __name__ == "__main__":
   LFN = None
   PFN = None
   targetSE = None
-  if not len( args ) != 4:
+  if len( args ) != 4:
     Script.showHelp()
     DIRAC.exit( 0 )
   else:
@@ -79,14 +79,14 @@ if __name__ == "__main__":
   opFile.Checksum = adler32
   opFile.ChecksumType = "ADLER32"
   putAndRegister.addFile( opFile )
-
+  request.addOperation( putAndRegister )
   reqClient = ReqClient()
   putRequest = reqClient.putRequest( request )
   if not putRequest["OK"]:
     gLogger.error( "unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )
     DIRAC.exit( -1 )
 
-  gLogger.always( "Request '%s' has been put to ReqDB for execution." )
+  gLogger.always( "Request '%s' has been put to ReqDB for execution." % requestName )
   gLogger.always( "You can monitor its status using command: 'dirac-rms-show-request %s'" % requestName )
   DIRAC.exit( 0 )
 
