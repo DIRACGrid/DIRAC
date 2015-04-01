@@ -11,27 +11,25 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 class DB( MySQL ):
 
-  def __init__( self, dbname, fullname, maxQueueSize, debug = False ):
+  def __init__( self, dbname, fullname, debug = False ):
 
     self.fullname = fullname
     database_name = dbname
     self.log = gLogger.getSubLogger( database_name )
 
-    result = getDBParameters( fullname, defaultQueueSize = maxQueueSize )
+    result = getDBParameters( fullname )
     if( not result[ 'OK' ] ):
-      raise Exception \
-                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
+      raise Exception( 'Cannot get database parameters: %s' % result['Message'] )
 
     dbParameters = result[ 'Value' ]
-    self.dbHost = dbParameters[ 'host' ]
-    self.dbPort = dbParameters[ 'port' ]
-    self.dbUser = dbParameters[ 'user' ]
-    self.dbPass = dbParameters[ 'password' ]
-    self.dbName = dbParameters[ 'db' ]
-    self.maxQueueSize = dbParameters[ 'queueSize' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DB' ]
 
     MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
-                   self.dbName, self.dbPort, maxQueueSize = maxQueueSize, debug = debug )
+                   self.dbName, self.dbPort, debug = debug )
 
     if not self._connected:
       raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
@@ -44,7 +42,6 @@ class DB( MySQL ):
     self.log.info( "Port:           " + str( self.dbPort ) )
     #self.log.info("Password:       "+self.dbPass)
     self.log.info( "DBName:         " + self.dbName )
-    self.log.info( "MaxQueue:       " + str( self.maxQueueSize ) )
     self.log.info( "==================================================" )
 
 #############################################################################
