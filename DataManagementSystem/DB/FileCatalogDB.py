@@ -26,7 +26,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             i
 #############################################################################
 class FileCatalogDB(DB):
 
-  def __init__( self, databaseLocation = 'DataManagement/FileCatalogDB', maxQueueSize = 10 ):
+  def __init__( self, databaseLocation = 'DataManagement/FileCatalogDB' ):
     """ Standard Constructor
     """
 
@@ -36,7 +36,7 @@ class FileCatalogDB(DB):
     if db.find('/') == -1:
       db = 'DataManagement/' + db
 
-    DB.__init__( self, 'FileCatalogDB', db, maxQueueSize )
+    DB.__init__( self, 'FileCatalogDB', db )
 
   def setConfig(self,databaseConfig):
 

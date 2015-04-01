@@ -240,16 +240,16 @@ class InstalledComponentsDB( object ):
 
   def __initializeConnection( self, dbPath ):
 
-    result = getDBParameters( dbPath, defaultQueueSize = 10 )
+    result = getDBParameters( dbPath )
     if not result[ 'OK' ]:
-      raise Exception( 'Cannot get the Database parameters: %s' % result['Message'] )
+      raise Exception( 'Cannot get database parameters: %s' % result['Message'] )
 
     dbParameters = result[ 'Value' ]
-    self.host = dbParameters[ 'host' ]
-    self.port = dbParameters[ 'port' ]
-    self.user = dbParameters[ 'user' ]
-    self.password = dbParameters[ 'password' ]
-    self.db = dbParameters[ 'db' ]
+    self.host = dbParameters[ 'Host' ]
+    self.port = dbParameters[ 'Port' ]
+    self.user = dbParameters[ 'User' ]
+    self.password = dbParameters[ 'Password' ]
+    self.db = dbParameters[ 'DBName' ]
 
     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' %
                     ( self.user, self.password, self.host, self.port, self.db ),

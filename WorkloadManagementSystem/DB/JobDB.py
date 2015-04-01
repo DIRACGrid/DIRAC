@@ -75,11 +75,11 @@ JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
 #############################################################################
 class JobDB( DB ):
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self ):
     """ Standard Constructor
     """
 
-    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB', maxQueueSize, debug = DEBUG )
+    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB', debug = DEBUG )
 
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
@@ -109,7 +109,6 @@ class JobDB( DB ):
     print "Host:     ", self.dbHost
     print "Password  ", self.dbPass
     print "DBName    ", self.dbName
-    print "MaxQueue  ", self.maxQueueSize
     print "=================================================="
 
     return S_OK()
