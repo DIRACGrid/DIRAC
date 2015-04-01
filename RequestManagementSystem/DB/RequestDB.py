@@ -162,7 +162,7 @@ class RequestDB( object ):
     self.dbName = dbParameters[ 'DBName' ]
 
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+  def __init__( self, systemInstance = 'Default' ):
     """c'tor
 
     :param self: self reference
