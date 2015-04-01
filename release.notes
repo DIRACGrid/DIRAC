@@ -165,6 +165,11 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p34]
+
+*DMS
+BUGFIX: FileCatalogWithFkAndPsDB - fix storage usage calculation
+
 [v6r12p33]
 
 *Core
