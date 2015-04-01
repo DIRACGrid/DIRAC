@@ -1,3 +1,8 @@
+[v6r12p34]
+
+*DMS
+BUGFIX: FileCatalogWithFkAndPsDB - fix storage usage calculation
+
 [v6r12p33]
 
 *Core
