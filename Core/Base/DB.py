@@ -26,7 +26,7 @@ class DB( MySQL ):
     self.dbPort = dbParameters[ 'Port' ]
     self.dbUser = dbParameters[ 'User' ]
     self.dbPass = dbParameters[ 'Password' ]
-    self.dbName = dbParameters[ 'DB' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
     MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
                    self.dbName, self.dbPort, debug = debug )
