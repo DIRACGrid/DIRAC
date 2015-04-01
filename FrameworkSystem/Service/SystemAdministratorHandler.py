@@ -5,17 +5,19 @@
 
 __RCSID__ = "$Id$"
 
-from types import *
+from types import ListType, StringTypes, BooleanType
 import os, re, commands, getpass
 from datetime import timedelta
-from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools, CFG, Os
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
 import DIRAC
+from DIRAC.Core.Utilities import InstallTools
 
 class SystemAdministratorHandler( RequestHandler ):
 
@@ -59,12 +61,12 @@ class SystemAdministratorHandler( RequestHandler ):
     for compType in statusDict:
       for system in statusDict[compType]:
         for component in statusDict[compType][system]:
-          result = InstallTools.getComponentModule( gConfig,system,component,compType )
+          result = InstallTools.getComponentModule( gConfig, system, component, compType )
           if not result['OK']:
             statusDict[compType][system][component]['Module'] = "Unknown"
           else:
             statusDict[compType][system][component]['Module'] = result['Value']
-    return S_OK(statusDict)   
+    return S_OK( statusDict )
 
   types_getStartupComponentStatus = [ ListType ]
   def export_getStartupComponentStatus( self, componentTupleList ):
@@ -74,13 +76,13 @@ class SystemAdministratorHandler( RequestHandler ):
     return InstallTools.getStartupComponentStatus( componentTupleList )
 
   types_installComponent = [ StringTypes, StringTypes, StringTypes ]
-  def export_installComponent( self, componentType, system, component, componentModule='' ):
+  def export_installComponent( self, componentType, system, component, componentModule = '' ):
     """ Install runit directory for the specified component
     """
     return InstallTools.installComponent( componentType, system, component, getCSExtensions(), componentModule )
 
   types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
-  def export_setupComponent( self, componentType, system, component, componentModule='' ):
+  def export_setupComponent( self, componentType, system, component, componentModule = '' ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
@@ -100,12 +102,12 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     return InstallTools.unsetupComponent( system, component )
 
-  types_uninstallComponent = [ StringTypes, StringTypes ]
-  def export_uninstallComponent( self, system, component ):
+  types_uninstallComponent = [ StringTypes, StringTypes, BooleanType ]
+  def export_uninstallComponent( self, system, component, removeLogs ):
     """ Remove runit directory for the specified component
         It implies unsetupComponent
     """
-    return InstallTools.uninstallComponent( system, component )
+    return InstallTools.uninstallComponent( gConfig, system, component, removeLogs )
 
   types_startComponent = [ StringTypes, StringTypes ]
   def export_startComponent( self, system, component ):
@@ -177,6 +179,14 @@ class SystemAdministratorHandler( RequestHandler ):
     if mysqlPassword :
       InstallTools.setMySQLPasswords( mysqlPassword )
     return InstallTools.installDatabase( dbName )
+
+  types_uninstallDatabase = [ StringTypes ]
+  def export_uninstallDatabase( self, dbName, mysqlPassword = None ):
+    """ Uninstall a DIRAC database named dbName
+    """
+    if mysqlPassword :
+      InstallTools.setMySQLPasswords( mysqlPassword )
+    return InstallTools.uninstallDatabase( gConfig, dbName )
 
   types_addDatabaseOptionsToCS = [ StringTypes, StringTypes ]
   def export_addDatabaseOptionsToCS( self, system, database, overwrite = False ):
@@ -283,7 +293,7 @@ class SystemAdministratorHandler( RequestHandler ):
         error.append( 'Failed to install Oracle client module' )
         return S_ERROR( '\n'.join( error ) )
     return S_OK()
-  
+
   types_revertSoftware = [ ]
   def export_revertSoftware( self ):
     """ Revert the last installed version of software to the previous one
@@ -291,9 +301,9 @@ class SystemAdministratorHandler( RequestHandler ):
     oldLink = os.path.join( InstallTools.instancePath, 'old' )
     oldPath = os.readlink( oldLink )
     proLink = os.path.join( InstallTools.instancePath, 'pro' )
-    os.remove(proLink)
+    os.remove( proLink )
     os.symlink( oldPath, proLink )
-    
+
     return S_OK( oldPath )
 
   def __loadDIRACCFG( self ):
@@ -306,7 +316,7 @@ class SystemAdministratorHandler( RequestHandler ):
       diracCFG = CFG.CFG().loadFromFile( cfgPath )
     except Exception, excp:
       return S_ERROR( "Could not load dirac.cfg: %s" % str( excp ) )
-    #HACK: Remove me once the v6 migration hell is over
+    # HACK: Remove me once the v6 migration hell is over
     if diracCFG.isOption( "/LocalInstallation/ExtraPackages" ):
       diracCFG[ "LocalInstallation" ].renameKey( "ExtraPackages", "ExtraModules" )
       try:
@@ -316,7 +326,7 @@ class SystemAdministratorHandler( RequestHandler ):
       except IOError, excp :
         gLogger.warn( "Could not write dirac.cfg: %s" % str( excp ) )
         pass
-    #EOH (End Of Hack)
+    # EOH (End Of Hack)
     return S_OK( ( cfgPath, diracCFG ) )
 
   types_setProject = [ StringTypes ]
@@ -410,103 +420,103 @@ class SystemAdministratorHandler( RequestHandler ):
     return S_OK( resultDict )
 
   types_getHostInfo = []
-  def export_getHostInfo(self):
+  def export_getHostInfo( self ):
     """ Get host current loads, memory, etc
     """
 
     result = dict()
     # Memory info
-    re_parser = re.compile(r'^(?P<key>\S*):\s*(?P<value>\d*)\s*kB' )
-    for line in open('/proc/meminfo'):
-      match = re_parser.match(line)
+    re_parser = re.compile( r'^(?P<key>\S*):\s*(?P<value>\d*)\s*kB' )
+    for line in open( '/proc/meminfo' ):
+      match = re_parser.match( line )
       if not match:
         continue
-      key, value = match.groups(['key', 'value'])
-      result[key] = int(value)
+      key, value = match.groups( ['key', 'value'] )
+      result[key] = int( value )
 
-    for mtype in ['Mem','Swap']:
-      memory = int(result.get(mtype+'Total'))
-      mfree = int(result.get(mtype+'Free'))
+    for mtype in ['Mem', 'Swap']:
+      memory = int( result.get( mtype + 'Total' ) )
+      mfree = int( result.get( mtype + 'Free' ) )
       if memory > 0:
-        percentage = float(memory-mfree)/float(memory)*100.
+        percentage = float( memory - mfree ) / float( memory ) * 100.
       else:
         percentage = 0
       name = 'Memory'
       if mtype == "Swap":
         name = 'Swap'
-      result[name] = '%.1f%%/%.1fMB' % (percentage,memory/1024.)
+      result[name] = '%.1f%%/%.1fMB' % ( percentage, memory / 1024. )
 
     # Loads
-    line = open('/proc/loadavg').read()
-    l1,l5,l15,d1,d2 = line.split()
+    line = open( '/proc/loadavg' ).read()
+    l1, l5, l15, d1, d2 = line.split()
     result['Load1'] = l1
     result['Load5'] = l5
     result['Load15'] = l15
-    result['Load'] = '/'.join([l1,l5,l15])
-    
+    result['Load'] = '/'.join( [l1, l5, l15] )
+
     # CPU info
     lines = open( '/proc/cpuinfo', 'r' ).readlines()
     processors = 0
     physCores = {}
     for line in lines:
       if line.strip():
-        parameter, value = line.split(':')
+        parameter, value = line.split( ':' )
         parameter = parameter.strip()
         value = value.strip()
-        if parameter.startswith('processor'):
+        if parameter.startswith( 'processor' ):
           processors += 1
-        if parameter.startswith('physical id'):
+        if parameter.startswith( 'physical id' ):
           physCores[value] = parameter
-        if parameter.startswith('model name'):
+        if parameter.startswith( 'model name' ):
           result['CPUModel'] = value
-        if parameter.startswith('cpu MHz'):     
+        if parameter.startswith( 'cpu MHz' ):
           result['CPUClock'] = value
     result['Cores'] = processors
-    result['PhysicalCores'] = len(physCores)      
+    result['PhysicalCores'] = len( physCores )
 
     # Disk occupancy
     summary = ''
-    status,output = commands.getstatusoutput('df')
-    lines = output.split('\n')
+    status, output = commands.getstatusoutput( 'df' )
+    lines = output.split( '\n' )
     for i in range( len( lines ) ):
-      if lines[i].startswith('/dev'):
+      if lines[i].startswith( '/dev' ):
         fields = lines[i].split()
         if len( fields ) == 1:
-          fields += lines[i+1].split()
-        disk = fields[0].replace('/dev/sd','')
+          fields += lines[i + 1].split()
+        disk = fields[0].replace( '/dev/sd', '' )
         partition = fields[5]
         occupancy = fields[4]
-        summary += ",%s:%s" % (partition,occupancy)
+        summary += ",%s:%s" % ( partition, occupancy )
     result['DiskOccupancy'] = summary[1:]
     result['RootDiskSpace'] = Os.getDiskSpace( DIRAC.rootPath )
-    
+
     # Open files
-    puser= getpass.getuser()
-    status,output = commands.getstatusoutput('lsof')
+    puser = getpass.getuser()
+    status, output = commands.getstatusoutput( 'lsof' )
     pipes = 0
     files = 0
     sockets = 0
-    lines = output.split('\n')
+    lines = output.split( '\n' )
     for line in lines:
       fType = line.split()[4]
       user = line.split()[2]
       if user == puser:
         if fType in ['REG']:
           files += 1
-        elif fType in ['unix','IPv4']:
+        elif fType in ['unix', 'IPv4']:
           sockets += 1
         elif fType in ['FIFO']:
           pipes += 1
     result['OpenSockets'] = sockets
     result['OpenFiles'] = files
     result['OpenPipes'] = pipes
-    
+
     infoResult = InstallTools.getInfo( getCSExtensions() )
     if infoResult['OK']:
       result.update( infoResult['Value'] )
 
     # Host certificate properties
-    certFile,keyFile = getHostCertificateAndKeyLocation()
+    certFile, keyFile = getHostCertificateAndKeyLocation()
     chain = X509Chain()
     chain.loadChainFromFile( certFile )
     resultCert = chain.getCredentials()
@@ -519,11 +529,11 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Host uptime
     try:
-      upFile = open('/proc/uptime', 'r')
-      uptime_seconds = float(upFile.readline().split()[0])
+      upFile = open( '/proc/uptime', 'r' )
+      uptime_seconds = float( upFile.readline().split()[0] )
       upFile.close()
-      result['Uptime'] = str(timedelta(seconds = uptime_seconds))
+      result['Uptime'] = str( timedelta( seconds = uptime_seconds ) )
     except:
       pass
 
-    return S_OK(result)
+    return S_OK( result )

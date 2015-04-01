@@ -12,6 +12,7 @@ import os
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -461,21 +462,64 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
         usage:
 
-          uninstall <system> <component>
+          uninstall db <database>
+          uninstall <-f ForceLogUninstall> <system> <component>
     """
     argss = args.split()
-    if not argss or len(argss) != 2:
+    if not argss:
       print self.do_uninstall.__doc__
       return
     
-    system,component = argss
-    client = SystemAdministratorClient( self.host, self.port )
-    result = client.uninstallComponent( system, component )
-    if not result['OK']:
-      print "Error:", result['Message']
+    option = argss[0]
+    if option == 'db':
+      component = argss[1]
+      client = SystemAdministratorClient( self.host, self.port )
+
+      result = client.uninstallDatabase( component )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+      else:
+        print "Successfully uninstalled %s" % ( component )
     else:
-      print "Successfully uninstalled %s/%s" % (system,component)  
-    
+      if option == '-f':
+        force = True
+        del argss[0]
+      else:
+        force = False
+
+      if len( argss ) != 2:
+        print self.do_uninstall.__doc__
+        return
+
+      system, component = argss
+      client = SystemAdministratorClient( self.host, self.port )
+
+      monitoringClient = ComponentMonitoringClient()
+      result = monitoringClient.getInstallations( { 'Instance': component, 'UnInstallationTime': None },
+                                                  { 'System': system },
+                                                  { 'HostName': self.host }, True )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      if len( result[ 'Value' ] ) < 1:
+        self.__errMsg( "Given component does not exist" )
+        return
+      if len( result[ 'Value' ] ) > 1:
+        self.__errMsg( "Too many components match" )
+        return
+
+      removeLogs = False
+      if force:
+        removeLogs = True
+      else:
+        if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in self.runitComponents:
+          removeLogs = raw_input( 'Remove logs? ' ).lower().strip( ' \t' ) in [ 'y', 'yes' ]
+
+      result = client.uninstallComponent( system, component, removeLogs )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+      else:
+        print "Successfully uninstalled %s/%s" % ( system, component )
 
   def do_start( self, args ):
     """ Start services or agents or database server
