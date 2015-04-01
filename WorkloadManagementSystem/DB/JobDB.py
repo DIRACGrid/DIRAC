@@ -81,7 +81,7 @@ class JobDB( DB ):
 
     DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB', maxQueueSize, debug = DEBUG )
 
-    self.maxRescheduling = gConfig.getValue( self.cs_path + '/MaxRescheduling', 3 )
+    self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
     self.nJobAttributeNames = 0
@@ -1352,7 +1352,7 @@ class JobDB( DB ):
     # Check the Reschedule counter first
     rescheduleCounter = int( resultDict['RescheduleCounter'] ) + 1
 
-    self.maxRescheduling = gConfig.getValue( self.cs_path + '/MaxRescheduling', self.maxRescheduling )
+    self.maxRescheduling = self.getCSOption( 'MaxRescheduling', self.maxRescheduling )
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
