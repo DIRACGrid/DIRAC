@@ -4,10 +4,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig
-from DIRAC.Core.Utilities.MySQL import MySQL
+from DIRAC                                       import gLogger, gConfig
+from DIRAC.Core.Utilities.MySQL                  import MySQL
+from DIRAC.ConfigurationSystem.Client.Utilities  import getDBParameters
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 class DB( MySQL ):
 
