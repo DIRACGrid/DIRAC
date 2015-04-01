@@ -178,7 +178,7 @@ exit 0
       infoFile.close()
       jobInfo = json.loads( jobInfo )
       pid = jobInfo['PID']
-      cmd = 'ps -f -p %s | grep %s | wc -l' % ( pid, user )
+      cmd = 'ps -f -p %s --no-headers | wc -l' % pid
       status,output = commands.getstatusoutput( cmd )
       if status == 0:
         if output.strip() == '1':
