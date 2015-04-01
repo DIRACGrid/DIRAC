@@ -5,7 +5,7 @@ Classes and functions for easier management of the InstalledComponents database
 __RCSID__ = "$Id$"
 
 import datetime
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from sqlalchemy import MetaData, \
                         Column, \
@@ -15,12 +15,9 @@ from sqlalchemy import MetaData, \
                         create_engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import session, \
-                            sessionmaker, \
-                            scoped_session, \
-                            mapper, \
-                            relationship
-from sqlalchemy.orm.collections import InstrumentedList
+from sqlalchemy.orm import sessionmaker, \
+                           scoped_session, \
+                           relationship
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.sql.expression import null
 
@@ -245,8 +242,7 @@ class InstalledComponentsDB( object ):
 
     result = getDBParameters( dbPath, defaultQueueSize = 10 )
     if not result[ 'OK' ]:
-      raise Exception \
-                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
+      raise Exception( 'Cannot get the Database parameters: %s' % result['Message'] )
 
     dbParameters = result[ 'Value' ]
     self.host = dbParameters[ 'host' ]
@@ -559,18 +555,18 @@ class InstalledComponentsDB( object ):
     session.close()
     return S_OK( dictComponents )
 
-  def getComponentByID( self, id ):
+  def getComponentByID( self, cId ):
     """
     Returns a component given its id
     """
 
-    result = self.getComponents( matchFields = { 'ComponentID': id } )
+    result = self.getComponents( matchFields = { 'ComponentID': cId } )
     if not result[ 'OK' ]:
       return result
 
     component = result[ 'Value' ]
     if component.count() == 0:
-      return S_ERROR( 'Component with ID %s does not exist' % ( id ) )
+      return S_ERROR( 'Component with ID %s does not exist' % ( cId ) )
 
     return S_OK( component[0] )
 
@@ -653,7 +649,7 @@ class InstalledComponentsDB( object ):
     try:
       session.add( host )
     except Exception, e:
-      sesion.rollback()
+      session.rollback()
       session.close()
       return S_ERROR( 'Could not add Host: %s' % ( e ) )
 
@@ -742,18 +738,18 @@ class InstalledComponentsDB( object ):
 
     return S_OK( dictHosts )
 
-  def getHostByID( self, id ):
+  def getHostByID( self, cId ):
     """
     Returns a host given its id
     """
 
-    result = self.getHosts( matchFields = { 'HostID': id } )
+    result = self.getHosts( matchFields = { 'HostID': cId } )
     if not result[ 'OK' ]:
       return result
 
     host = result[ 'Value' ]
     if host.count() == 0:
-      return S_ERROR( 'Host with ID %s does not exist' % ( id ) )
+      return S_ERROR( 'Host with ID %s does not exist' % ( cId ) )
 
     return S_OK( host[0] )
 

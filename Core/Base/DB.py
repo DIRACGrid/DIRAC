@@ -1,24 +1,19 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
-""" BaseDB is the base class for multiple DIRAC databases. It uniforms the
-    way how the database objects are constructed
+""" DB is a base class for multiple DIRAC databases that are based on MySQL.
+    It uniforms the way the database objects are constructed
 """
 
 __RCSID__ = "$Id$"
 
-import sys, types
-from DIRAC                           import gLogger, gConfig, S_OK
-from DIRAC.Core.Utilities.MySQL      import MySQL
+from DIRAC import gLogger, gConfig
+from DIRAC.Core.Utilities.MySQL import MySQL
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-
-########################################################################
 class DB( MySQL ):
 
   def __init__( self, dbname, fullname, maxQueueSize, debug = False ):
 
+    self.fullname = fullname
     database_name = dbname
     self.log = gLogger.getSubLogger( database_name )
 
@@ -54,4 +49,5 @@ class DB( MySQL ):
 
 #############################################################################
   def getCSOption( self, optionName, defaultValue = None ):
-    return gConfig.getValue( "/%s/%s" % ( self.cs_path, optionName ), defaultValue )
+    cs_path = getDatabaseSection( self.fullname )
+    return gConfig.getValue( "/%s/%s" % ( cs_path, optionName ), defaultValue )
