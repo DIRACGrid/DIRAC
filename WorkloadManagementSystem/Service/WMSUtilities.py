@@ -74,7 +74,6 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   return result
 
 def getARCPilotOutput( proxy, pilotRef ):
-  print "In getARCPilotOutput ..."
   tmp_dir = mkdtemp()
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
