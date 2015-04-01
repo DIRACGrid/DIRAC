@@ -462,11 +462,11 @@ def getSRMUpdates( vo, bdiiInfo = None ):
   return S_OK( changeSet )  
     
 def getDBParameters( fullname, defaultHost = 'localhost',
-                                  defaultPort = 3306,
-                                  defaultUser = '',
-                                  defaultPassword = '',
-                                  defaultDB = '',
-                                  defaultQueueSize = 10 ):
+                     defaultPort = 3306,
+                     defaultUser = '',
+                     defaultPassword = '',
+                     defaultDB = '',
+                     defaultQueueSize = 10 ):
   """
   Retrieve Database parameters from CS
   fullname should be of the form <System>/<DBname>
@@ -486,11 +486,9 @@ def getDBParameters( fullname, defaultHost = 'localhost',
   'db' and 'queueSize'
   """
 
-  fullname = fullname
   cs_path = getDatabaseSection( fullname )
   parameters = {}
 
-  dbHost = defaultHost
   result = gConfig.getOption( cs_path + '/Host' )
   if not result['OK']:
     raise RuntimeError( 'Failed to get the configuration parameters: Host' )
@@ -514,7 +512,6 @@ def getDBParameters( fullname, defaultHost = 'localhost',
     dbPort = int( result['Value'] )
   parameters[ 'port' ] = dbPort
 
-  dbUser = defaultUser
   result = gConfig.getOption( cs_path + '/User' )
   if not result['OK']:
     # No individual user name found, try at the common place
@@ -524,18 +521,15 @@ def getDBParameters( fullname, defaultHost = 'localhost',
   dbUser = result['Value']
   parameters[ 'user' ] = dbUser
 
-  dbPass = defaultPassword
   result = gConfig.getOption( cs_path + '/Password' )
   if not result['OK']:
     # No individual password found, try at the common place
     result = gConfig.getOption( '/Systems/Databases/Password' )
     if not result['OK']:
-      raise RuntimeError \
-                    ( 'Failed to get the configuration parameters: Password' )
+      raise RuntimeError( 'Failed to get the configuration parameters: Password' )
   dbPass = result['Value']
   parameters[ 'password' ] = dbPass
 
-  dbName = defaultDB
   result = gConfig.getOption( cs_path + '/DBName' )
   if not result['OK']:
     raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
