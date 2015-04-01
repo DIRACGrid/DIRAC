@@ -152,7 +152,7 @@ class RequestDB( object ):
 
     result = getDBParameters( fullname )
     if not result[ 'OK' ]:
-      raise Exception( 'Cannot get the Database parameters: %s' % result[ 'Message' ] )
+      raise Exception( 'Cannot get database parameters: %s' % result[ 'Message' ] )
 
     dbParameters = result[ 'Value' ]
     self.dbHost = dbParameters[ 'Host' ]
