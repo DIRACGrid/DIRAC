@@ -173,17 +173,6 @@ from types import StringTypes, DictType, ListType, TupleType, BooleanType
 
 MAXCONNECTRETRY = 10
 
-def _checkQueueSize( maxQueueSize ):
-  """
-    Helper to check maxQueueSize
-  """
-  if maxQueueSize <= 0:
-    raise Exception( 'MySQL.__init__: maxQueueSize must positive' )
-  try:
-    maxQueueSize - 1
-  except Exception:
-    raise Exception( 'MySQL.__init__: wrong type for maxQueueSize' )
-
 def _checkFields( inFields, inValues ):
   """
     Helper to check match between inFields and inValues lengths
@@ -387,7 +376,7 @@ class MySQL:
 
   __connectionPools = {}
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3, debug = False ):
+  def __init__( self, hostName, userName, passwd, dbName, port = 3306, debug = False ):
     """
     set MySQL connection parameters and try to connect
     """
@@ -403,8 +392,6 @@ class MySQL:
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
     self.log.debug( 'thread_safe = %s' % self._threadsafe )
-
-    _checkQueueSize( maxQueueSize )
 
     self.__hostName = str( hostName )
     self.__userName = str( userName )
