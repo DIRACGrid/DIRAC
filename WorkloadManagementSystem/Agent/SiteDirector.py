@@ -231,7 +231,8 @@ class SiteDirector( AgentModule ):
             self.queueDict[queueName]['ParametersDict']['Tag'] = fromChar( self.queueDict[queueName]['ParametersDict']['Tag'] )
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
           if maxMemory:
-            maxMemoryList = range( 1, int( maxMemory ) + 1 )
+            # MaxRAM value is supposed to be in MB
+            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
             memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
             if memoryTags:
               self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
