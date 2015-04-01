@@ -207,6 +207,9 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
+        ceTags = ceDict.get( 'Tag' )
+        if isinstance( ceTags, basestring ):
+          ceTags = fromChar( ceTags )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -227,8 +230,17 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
-          if "Tag" in self.queueDict[queueName]['ParametersDict'] and isinstance( self.queueDict[queueName]['ParametersDict']['Tag'], str ):
-            self.queueDict[queueName]['ParametersDict']['Tag'] = fromChar( self.queueDict[queueName]['ParametersDict']['Tag'] )
+          queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
+          if queueTags and isinstance( queueTags, basestring ):
+            queueTags = fromChar( queueTags )
+            self.queueDict[queueName]['ParametersDict']['Tag'] = queueTags
+          if ceTags:
+            if queueTags:
+              allTags = list( set( ceTags + queueTags ) )
+              self.queueDict[queueName]['ParametersDict']['Tag'] = allTags
+            else:
+              self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
+
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
           if maxMemory:
             # MaxRAM value is supposed to be in MB
@@ -392,6 +404,7 @@ class SiteDirector( AgentModule ):
     queues = self.queueDict.keys()
     random.shuffle( queues )
     totalSubmittedPilots = 0
+    matchedQueues = 0
     for queue in queues:
 
       # Check if the queue failed previously
@@ -456,6 +469,7 @@ class SiteDirector( AgentModule ):
         self.log.verbose( 'No matching TQs found for %s' % queue )
         continue
 
+      matchedQueues += 1
       totalTQJobs = 0
       tqIDList = taskQueueDict.keys()
       for tq in taskQueueDict:
@@ -574,7 +588,7 @@ class SiteDirector( AgentModule ):
               self.log.error( 'Failed to set pilot status: ', result['Message'] )
               continue
 
-    self.log.info( "%d pilots submitted in total in this cycle" % totalSubmittedPilots )
+    self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
 
   def __getQueueSlots( self, queue ):
