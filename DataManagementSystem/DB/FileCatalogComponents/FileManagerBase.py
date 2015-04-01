@@ -618,9 +618,6 @@ class FileManagerBase( object ):
            ( existingSize != newSize ) or \
            ( existingChecksum != newChecksum ):
           failed[lfn] = "File already registered with alternative metadata"
-        # If the DB does not have replicas for this file return an error
-        elif not fileID in replicaDict or not replicaDict[fileID]:
-          failed[lfn] = "File already registered with no replicas"
         # If the supplied SE is not in the existing replicas return an error
         elif not lfns[lfn]['SE'] in replicaDict[fileID].keys():
           failed[lfn] = "File already registered with alternative replicas"
