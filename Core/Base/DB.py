@@ -18,7 +18,7 @@ class DB( MySQL ):
     self.log = gLogger.getSubLogger( database_name )
 
     result = getDBParameters( fullname )
-    if( not result[ 'OK' ] ):
+    if not result['OK'] :
       raise Exception( 'Cannot get database parameters: %s' % result['Message'] )
 
     dbParameters = result[ 'Value' ]
