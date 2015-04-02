@@ -80,7 +80,7 @@ def getARCPilotOutput( proxy, pilotRef ):
   gridEnv = getGridEnv()
   mySite = getCESiteMapping()['Value'][myce]
   WorkDB = gConfig.getValue(cfgPath['Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'])
-  myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL2", WorkDB)
+  myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL", WorkDB)
   cmd = [ 'arcget' ]
   cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
   ret = executeGridCommand( proxy, cmd, gridEnv )
