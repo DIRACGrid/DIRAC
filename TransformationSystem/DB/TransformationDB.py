@@ -28,13 +28,13 @@ class TransformationDB( DB ):
   """ TransformationDB class
   """
 
-  def __init__( self, maxQueueSize = 10, dbIn = None ):
+  def __init__( self, dbIn = None ):
     ''' The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     '''
 
     if not dbIn:
-      DB.__init__( self, 'TransformationDB', 'Transformation/TransformationDB', maxQueueSize )
+      DB.__init__( self, 'TransformationDB', 'Transformation/TransformationDB' )
 
     self.lock = threading.Lock()
     self.filters = ()

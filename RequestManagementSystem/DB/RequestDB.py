@@ -14,11 +14,10 @@ from types import ListType
 __RCSID__ = "$Id $"
 
 import random
-import socket
 import datetime
 
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -152,19 +151,18 @@ class RequestDB( object ):
     """
 
     result = getDBParameters( fullname )
-    if( not result[ 'OK' ] ):
-      raise Exception \
-                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
+    if not result[ 'OK' ]:
+      raise Exception( 'Cannot get database parameters: %s' % result[ 'Message' ] )
 
     dbParameters = result[ 'Value' ]
-    self.dbHost = dbParameters[ 'host' ]
-    self.dbPort = dbParameters[ 'port' ]
-    self.dbUser = dbParameters[ 'user' ]
-    self.dbPass = dbParameters[ 'password' ]
-    self.dbName = dbParameters[ 'db' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+  def __init__( self, systemInstance = 'Default' ):
     """c'tor
 
     :param self: self reference

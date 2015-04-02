@@ -43,11 +43,11 @@ class JobLoggingDB( DB ):
 #                                  'Indexes' : { 'JobID' : [ 'JobID' ] }
                                  }
 
-  def __init__( self, maxQueueSize = 10, checkTables = False ):
+  def __init__( self, checkTables = False ):
     """ Standard Constructor
     """
 
-    DB.__init__( self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB', maxQueueSize )
+    DB.__init__( self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB' )
     self.gLogger = gLogger
     
     if checkTables:

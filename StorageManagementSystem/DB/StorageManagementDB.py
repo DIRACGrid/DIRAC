@@ -102,8 +102,8 @@ class StorageManagementDB( DB ):
 
 
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10, checkTables = False ):
-    DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB', maxQueueSize )
+  def __init__( self, systemInstance = 'Default', checkTables = False ):
+    DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB' )
 
     # FIXME: substitute with self._tablesDict ( but watch out, the order will not be the same ! )
 

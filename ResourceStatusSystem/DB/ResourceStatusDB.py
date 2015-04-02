@@ -71,7 +71,7 @@ class ResourceStatusDB( object ):
                    }
   
   
-  def __init__( self, maxQueueSize = 10, mySQL = None, checkTables = False ):
+  def __init__( self, mySQL = None, checkTables = False ):
     '''
       Constructor, accepts any DB or mySQL connection, mostly used for testing
       purposes.
@@ -82,8 +82,7 @@ class ResourceStatusDB( object ):
     if mySQL is not None:
       self.database = mySQL
     else:
-      self.database = DB( 'ResourceStatusDB', 
-                          'ResourceStatus/ResourceStatusDB', maxQueueSize )
+      self.database = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB' )
     if checkTables:
       result = self._createTables( self._tablesDict )
       if not result['OK']:

@@ -105,9 +105,9 @@ class PilotAgentsDB( DB ):
                                         'PrimaryKey' : [ 'PilotID' ]
                                        }
    
-  def __init__( self, maxQueueSize = 10, checkTables = False ):
+  def __init__( self, checkTables = False ):
 
-    DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB', maxQueueSize )
+    DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB' )
     self.lock = threading.Lock()
 
     if checkTables:

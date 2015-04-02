@@ -19,9 +19,9 @@ TQ_MIN_SHARE = 0.001
 
 class TaskQueueDB( DB ):
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self ):
     random.seed()
-    DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB', maxQueueSize )
+    DB.__init__( self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB' )
     self.__multiValueDefFields = ( 'Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
                                    'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags' )
     self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'Platform',

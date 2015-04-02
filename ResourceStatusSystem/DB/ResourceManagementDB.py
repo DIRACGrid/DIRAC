@@ -196,7 +196,7 @@ class ResourceManagementDB( object ):
                    'PolicyResultHistory' : 'PolicyResultWithID',
                   }
   
-  def __init__( self, maxQueueSize = 10, mySQL = None, checkTables = False ):
+  def __init__( self, mySQL = None, checkTables = False ):
     '''
       Constructor, accepts any DB or mySQL connection, mostly used for testing
       purposes.
@@ -206,8 +206,7 @@ class ResourceManagementDB( object ):
     if mySQL is not None:
       self.database = mySQL
     else:
-      self.database = DB( 'ResourceManagementDB', 
-                          'ResourceStatus/ResourceManagementDB', maxQueueSize )
+      self.database = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB' )
     if checkTables:
       result = self._createTables( self._tablesDict )
       if not result['OK']:

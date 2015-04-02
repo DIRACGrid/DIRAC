@@ -11,8 +11,8 @@ from DIRAC.Core.Security import Properties, CS
 
 class SandboxMetadataDB( DB ):
 
-  def __init__( self, maxQueueSize = 10 ):
-    DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB', maxQueueSize )
+  def __init__( self ):
+    DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB' )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise RuntimeError( "Can't create tables: %s" % result[ 'Message' ] )

@@ -17,7 +17,7 @@ import re
 import types
 import socket
 from urlparse import urlparse
-from DIRAC import gConfig, gLogger, S_OK
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
@@ -461,12 +461,7 @@ def getSRMUpdates( vo, bdiiInfo = None ):
 
   return S_OK( changeSet )  
     
-def getDBParameters( fullname, defaultHost = 'localhost',
-                                  defaultPort = 3306,
-                                  defaultUser = '',
-                                  defaultPassword = '',
-                                  defaultDB = '',
-                                  defaultQueueSize = 10 ):
+def getDBParameters( fullname ):
   """
   Retrieve Database parameters from CS
   fullname should be of the form <System>/<DBname>
@@ -486,14 +481,15 @@ def getDBParameters( fullname, defaultHost = 'localhost',
   'db' and 'queueSize'
   """
 
-  fullname = fullname
   cs_path = getDatabaseSection( fullname )
   parameters = {}
 
-  dbHost = defaultHost
   result = gConfig.getOption( cs_path + '/Host' )
   if not result['OK']:
-    raise RuntimeError( 'Failed to get the configuration parameters: Host' )
+    # No host name found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/Host' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Host' )
   dbHost = result['Value']
   # Check if the host is the local one and then set it to 'localhost' to use
   # a socket connection
@@ -501,9 +497,10 @@ def getDBParameters( fullname, defaultHost = 'localhost',
     localHostName = socket.getfqdn()
     if localHostName == dbHost:
       dbHost = 'localhost'
-  parameters[ 'host' ] = dbHost
+  parameters[ 'Host' ] = dbHost
 
-  dbPort = defaultPort
+  # Mysql standard
+  dbPort = 3306
   result = gConfig.getOption( cs_path + '/Port' )
   if not result['OK']:
     # No individual port number found, try at the common place
@@ -512,40 +509,30 @@ def getDBParameters( fullname, defaultHost = 'localhost',
       dbPort = int( result['Value'] )
   else:
     dbPort = int( result['Value'] )
-  parameters[ 'port' ] = dbPort
+  parameters[ 'Port' ] = dbPort
 
-  dbUser = defaultUser
   result = gConfig.getOption( cs_path + '/User' )
   if not result['OK']:
     # No individual user name found, try at the common place
     result = gConfig.getOption( '/Systems/Databases/User' )
     if not result['OK']:
-      raise RuntimeError( 'Failed to get the configuration parameters: User' )
+      return S_ERROR( 'Failed to get the configuration parameter: User' )
   dbUser = result['Value']
-  parameters[ 'user' ] = dbUser
+  parameters[ 'User' ] = dbUser
 
-  dbPass = defaultPassword
   result = gConfig.getOption( cs_path + '/Password' )
   if not result['OK']:
     # No individual password found, try at the common place
     result = gConfig.getOption( '/Systems/Databases/Password' )
     if not result['OK']:
-      raise RuntimeError \
-                    ( 'Failed to get the configuration parameters: Password' )
+      return S_ERROR( 'Failed to get the configuration parameter: Password' )
   dbPass = result['Value']
-  parameters[ 'password' ] = dbPass
+  parameters[ 'Password' ] = dbPass
 
-  dbName = defaultDB
   result = gConfig.getOption( cs_path + '/DBName' )
   if not result['OK']:
-    raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
+    return S_ERROR( 'Failed to get the configuration parameter: DBName' )
   dbName = result['Value']
-  parameters[ 'db' ] = dbName
-
-  qSize = defaultQueueSize
-  result = gConfig.getOption( cs_path + '/MaxQueueSize' )
-  if result['OK']:
-    qSize = int( result['Value'] )
-  parameters[ 'queueSize' ] = qSize
+  parameters[ 'DBName' ] = dbName
 
   return S_OK( parameters )

@@ -173,11 +173,10 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                }
 
 
-  def __init__( self, maxQueueSize = 10, checkTables = False ):
+  def __init__( self, checkTables = False ):
     """ Standard Constructor
     """
-    DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
-                 maxQueueSize, debug = DEBUG )
+    DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB', debug = DEBUG )
     if checkTables:
       result = self._checkTable()
       if not result['OK']:
