@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    HttpStorageAccessHandler.py
 # Author :  A.T.
 ########################################################################
@@ -16,9 +15,11 @@ import BaseHTTPServer
 import shutil
 import random
 
+from DIRAC.Core.Utilities.DictCache import DictCache
+
 class HttpStorageAccessHandler(BaseHTTPServer.BaseHTTPRequestHandler):
   
-  register = {}
+  register = DictCache()
   basePath = ''
 
   def do_GET(self):

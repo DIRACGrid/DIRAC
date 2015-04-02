@@ -321,6 +321,11 @@ class FileCatalogHandler( RequestHandler ):
       dList = [depths]
     lfnDict = dict.fromkeys( lfns, True )
     return gFileCatalogDB.getFileDescendents( lfnDict, dList, self.getRemoteCredentials() )
+  
+  types_getLFNForGUID = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_getLFNForGUID( self, guids ):
+    """Get the matching lfns for given guids"""
+    return gFileCatalogDB.getLFNForGUID( guids, self.getRemoteCredentials() )
 
   ########################################################################
   #
@@ -352,6 +357,11 @@ class FileCatalogHandler( RequestHandler ):
   def export_isDirectory( self, lfns ):
     """ Determine whether supplied path is a directory """
     return gFileCatalogDB.isDirectory( lfns, self.getRemoteCredentials() )
+
+  types_getDirectoryMetadata = [ [ ListType, DictType ] + list( StringTypes ) ]
+  def export_getDirectoryMetadata( self, lfns ):
+    """ Get the size of the supplied directory """
+    return gFileCatalogDB.getDirectoryMetadata( lfns, self.getRemoteCredentials() )
 
   types_getDirectorySize = [ [ ListType, DictType ] + list( StringTypes ) ]
   def export_getDirectorySize( self, lfns, longOut = False, fromFiles = False ):
@@ -446,8 +456,8 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.removeMetadata( pathMetadataDict, self.getRemoteCredentials() )
 
-  types_getDirectoryMetadata = [ StringTypes ]
-  def export_getDirectoryMetadata( self, path ):
+  types_getDirectoryUserMetadata = [ StringTypes ]
+  def export_getDirectoryUserMetadata( self, path ):
     """ Get all the metadata valid for the given directory path
     """
     return gFileCatalogDB.dmeta.getDirectoryMetadata( path, self.getRemoteCredentials() )

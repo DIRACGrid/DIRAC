@@ -7,8 +7,9 @@ __RCSID__ = "$Id$"
 
 from types import ListType, DictType
 import os
-from DIRAC                              import S_OK, S_ERROR
-from DIRAC.Core.Base.Client             import Client
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Base.Client import Client
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 
 class FileCatalogClient(Client):
   """ Client code to the DIRAC File Catalogue
@@ -54,6 +55,77 @@ class FileCatalogClient(Client):
       
     return S_OK( lfnDict )  
 
+
+  def setReplicaProblematic( self, lfns, revert = False ):
+    """
+      Set replicas to problematic.
+      :param lfn lfns has to be formated this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+      :param revert If True, remove the problematic flag
+
+      :return { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
+    """
+
+    # This method does a batch treatment because the setReplicaStatus can only take one replica per lfn at once
+    #
+    # Illustration :
+    #
+    # lfns {'L2': {'S1': 'P3'}, 'L3': {'S3': 'P5', 'S2': 'P4', 'S4': 'P6'}, 'L1': {'S2': 'P2', 'S1': 'P1'}}
+    #
+    # loop1: lfnSEs {'L2': ['S1'], 'L3': ['S3', 'S2', 'S4'], 'L1': ['S2', 'S1']}
+    # loop1 : batch {'L2': {'Status': 'P', 'SE': 'S1', 'PFN': 'P3'}, 'L3': {'Status': 'P', 'SE': 'S4', 'PFN': 'P6'}, 'L1': {'Status': 'P', 'SE': 'S1', 'PFN': 'P1'}}
+    #
+    # loop2: lfnSEs {'L2': [], 'L3': ['S3', 'S2'], 'L1': ['S2']}
+    # loop2 : batch {'L3': {'Status': 'P', 'SE': 'S2', 'PFN': 'P4'}, 'L1': {'Status': 'P', 'SE': 'S2', 'PFN': 'P2'}}
+    #
+    # loop3: lfnSEs {'L3': ['S3'], 'L1': []}
+    # loop3 : batch {'L3': {'Status': 'P', 'SE': 'S3', 'PFN': 'P5'}}
+    #
+    # loop4: lfnSEs {'L3': []}
+    # loop4 : batch {}
+
+
+    successful = {}
+    failed = {}
+
+    status = 'AprioriGood' if revert else 'Trash'
+
+    # { lfn : [ se1, se2, ...], ...}
+    lfnsSEs = dict( ( lfn, [se for se in lfns[lfn]] ) for lfn in lfns )
+
+    while lfnsSEs:
+
+      # { lfn : { 'SE' : se1, 'PFN' : pfn1, 'Status' : status }, ... }
+      batch = {}
+
+      for lfn in lfnsSEs.keys():
+        # If there are still some Replicas (SE) for the given LFN, we put it in the next batch
+        # else we remove the entry from the lfnsSEs dict
+        if lfnsSEs[lfn]:
+          se = lfnsSEs[lfn].pop()
+          batch[lfn] = { 'SE' : se, 'PFN' : lfns[lfn][se], 'Status' : status }
+        else:
+          del lfnsSEs[lfn]
+
+      # Happens when there is nothing to treat anymore
+      if not batch:
+        break
+
+      res = self.setReplicaStatus( batch )
+      if not res['OK']:
+        for lfn in batch:
+          failed.setdefault( lfn, {} )[batch[lfn]['SE']] = res['Message']
+        continue
+
+      for lfn in res['Value']['Failed']:
+        failed.setdefault( lfn, {} )[batch[lfn]['SE']] = res['Value']['Failed'][lfn]
+
+      for lfn in res['Value']['Successful']:
+        successful.setdefault( lfn, [] ).append( batch[lfn]['SE'] )
+
+    return S_OK( {'Successful' : successful, 'Failed': failed} )
+
+
   def listDirectory(self, lfn, verbose=False, rpc='', url='', timeout=120):
     """ List the given directory's contents
     """
@@ -70,6 +142,25 @@ class FileCatalogClient(Client):
           lfn = os.path.join( path, os.path.basename( fname ) )
           entryDict[lfn] = detailsDict
     return result      
+
+  def getDirectoryMetadata( self, lfns, rpc='', url='', timeout=120):
+    ''' Get standard directory metadata
+    '''
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
+    result = rpcClient.getDirectoryMetadata( lfns )
+    if not result['OK']:
+      return result
+    # Add some useful fields
+    for path in result['Value']['Successful']:
+      owner = result['Value']['Successful'][path]['Owner']
+      group = result['Value']['Successful'][path]['OwnerGroup']
+      res = getDNForUsername( owner )
+      if result['OK']:
+        result['Value']['Successful'][path]['OwnerDN'] = res['Value'][0]
+      else:
+        result['Value']['Successful'][path]['OwnerDN'] = ''
+      result['Value']['Successful'][path]['OwnerDRole'] = getVOMSAttributeForGroup( group )
+    return result
 
   def removeDirectory(self, lfn, recursive=False, rpc='', url='', timeout=120):
     """ Remove the directory from the File Catalog. The recursive keyword is for the ineterface.
@@ -127,7 +218,7 @@ class FileCatalogClient(Client):
     if not result['OK']:
       return result
     fmeta = result['Value']
-    result = rpcClient.getDirectoryMetadata(directory)
+    result = rpcClient.getDirectoryUserMetadata(directory)
     if not result['OK']:
       return result
     fmeta.update(result['Value'])

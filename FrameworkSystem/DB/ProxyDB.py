@@ -6,11 +6,8 @@ __RCSID__ = "$Id$"
 import time
 import random
 import types
-try:
-  import hashlib 
-  md5 = hashlib
-except:
-  import md5
+import hashlib
+
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security.X509Request import X509Request
@@ -194,9 +191,9 @@ class ProxyDB( DB ):
     except KeyError:
       return S_ERROR( "Cannot escape DN" )
     cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
-    cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( sUserDN,
+    cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % ( sUserDN,
                                                                               sAllStr,
-                                                                              self.__defaultRequestLifetime )
+                                                                              int( self.__defaultRequestLifetime ) )
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
@@ -387,7 +384,7 @@ class ProxyDB( DB ):
                 'UserDN' : sUserDN,
                 'UserGroup' : sUserGroup,
                 'Pem' : self._escapeString( pemChain )[ 'Value' ],
-                'ExpirationTime' : 'TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )' % int( remainingSecs ),
+                'ExpirationTime' : 'TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )' % int( remainingSecs ),
                 'PersistentFlag' : "'False'" }
     if sqlInsert:
       sqlFields = []
@@ -902,7 +899,7 @@ class ProxyDB( DB ):
       lifeTime = gConfig.getValue( "/DIRAC/VOPolicy/TokenLifeTime", self.__defaultTokenLifetime )
     maxUses = gConfig.getValue( "/DIRAC/VOPolicy/TokenMaxUses", self.__defaultTokenMaxUses )
     numUses = max( 1, min( numUses, maxUses ) )
-    m = md5.md5()
+    m = hashlib.md5()
     rndData = "%s.%s.%s.%s" % ( time.time(), random.random(), numUses, lifeTime )
     m.update( rndData )
     token = m.hexdigest()
@@ -910,7 +907,7 @@ class ProxyDB( DB ):
     valuesSQL = ", ".join( ( self._escapeString( token )['Value'],
                               self._escapeString( requesterDN )['Value'],
                               self._escapeString( requesterGroup )['Value'],
-                            "TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % lifeTime,
+                            "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int( lifeTime ),
                             str( numUses ) ) )
 
     insertSQL = "INSERT INTO `ProxyDB_Tokens` ( %s ) VALUES ( %s )" % ( fieldsSQL, valuesSQL )
@@ -978,7 +975,7 @@ class ProxyDB( DB ):
         if notKey in notifDone and notifDone[ notKey ] <= notifLimit:
           #Already notified for this notification limit
           break
-        if not self.__notifyProxyAboutToExpire( userDN, group, lTime, notifLimit ):
+        if not self._notifyProxyAboutToExpire( userDN, group, lTime, notifLimit ):
           #Cannot send notification, retry later
           break
         try:
@@ -1002,7 +999,7 @@ class ProxyDB( DB ):
         notifDone[ notKey ] = notifLimit
     return S_OK( sent )
 
-  def __notifyProxyAboutToExpire( self, userDN, userGroup, lTime, notifLimit ):
+  def _notifyProxyAboutToExpire( self, userDN, userGroup, lTime, notifLimit ):
     result = Registry.getUsernameForDN( userDN )
     if not result[ 'OK' ]:
       return False

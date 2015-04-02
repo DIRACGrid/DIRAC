@@ -1,25 +1,26 @@
 ########################################################################
-# $HeadURL$
 # File :    SiteDirector.py
 # Author :  A.T.
 ########################################################################
 
 """  The Site Director is a simple agent performing pilot job submission to particular sites.
 """
+import os
+import base64
+import bz2
+import tempfile
+import random
+import socket
+import hashlib
 
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
-
+import DIRAC
+from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
-from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
@@ -28,8 +29,6 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
-import os, base64, bz2, tempfile, random, socket, types
-import DIRAC
 
 __RCSID__ = "$Id$"
 
@@ -193,7 +192,7 @@ class SiteDirector( AgentModule ):
   def __generateQueueHash( self, queueDict ):
     """ Generate a hash of the queue description
     """
-    myMD5 = md5.md5()
+    myMD5 = hashlib.md5()
     myMD5.update( str( queueDict ) )
     hexstring = myMD5.hexdigest()
     return hexstring
@@ -228,6 +227,15 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+          if "Tag" in self.queueDict[queueName]['ParametersDict'] and isinstance( self.queueDict[queueName]['ParametersDict']['Tag'], str ):
+            self.queueDict[queueName]['ParametersDict']['Tag'] = fromChar( self.queueDict[queueName]['ParametersDict']['Tag'] )
+          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
+          if maxMemory:
+            maxMemoryList = range( 1, int( maxMemory ) + 1 )
+            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
+            if memoryTags:
+              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -432,9 +440,6 @@ class SiteDirector( AgentModule ):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
       
-      if "Tag" in ceDict and type( ceDict['Tag'] ) in types.StringTypes:
-        ceDict['Tag'] = fromChar( ceDict['Tag'] )
-
       result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
         continue
@@ -539,7 +544,7 @@ class SiteDirector( AgentModule ):
         rndm = random.random()*sumPriority
         tqDict = {}
         for pilotID in pilotList:
-          rndm = random.random()*sumPriority
+          rndm = random.random() * sumPriority
           for tq, prio in tqPriorityList:
             if rndm < prio:
               tqID = tq
@@ -550,13 +555,13 @@ class SiteDirector( AgentModule ):
 
         for tqID, pilotList in tqDict.items():
           result = pilotAgentsDB.addPilotTQReference( pilotList,
-                                                     tqID,
-                                                     self.pilotDN,
-                                                     self.pilotGroup,
-                                                     self.localhost,
-                                                     ceType,
-                                                     '',
-                                                     stampDict )
+                                                      tqID,
+                                                      self.pilotDN,
+                                                      self.pilotGroup,
+                                                      self.localhost,
+                                                      ceType,
+                                                      '',
+                                                      stampDict )
           if not result['OK']:
             self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
             continue
@@ -728,7 +733,7 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
     if "Tag" in queueDict:
-      tagString = ','.join( fromChar( queueDict['Tag'] ) )
+      tagString = ','.join( queueDict['Tag'] )
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
@@ -769,7 +774,7 @@ class SiteDirector( AgentModule ):
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
-import os, tempfile, sys, shutil, base64, bz2
+import os, stat, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
@@ -779,12 +784,12 @@ try:
   os.chdir( pilotWorkingDirectory )
   if %(proxyFlag)s:
     open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedProxy)s\"\"\" ) ) )
-    os.chmod("proxy",0600)
+    os.chmod("proxy", stat.S_IRUSR | stat.S_IWUSR)
     os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
   open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedPilot)s\"\"\" ) ) )
   open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedInstall)s\"\"\" ) ) )
-  os.chmod("%(pilotScript)s",0700)
-  os.chmod("%(installScript)s",0700)
+  os.chmod("%(pilotScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
+  os.chmod("%(installScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
   %(extraModuleString)s
   if "LD_LIBRARY_PATH" not in os.environ:
     os.environ["LD_LIBRARY_PATH"]=""
@@ -1055,4 +1060,3 @@ EOF
       return result
 
     return S_OK()
-

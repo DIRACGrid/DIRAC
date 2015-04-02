@@ -1,11 +1,10 @@
 ########################################################################
-# $HeadURL$
 # File :    InstallTools.py
 # Author :  Ricardo Graciani
 ########################################################################
 
 """
-Collection of Tools for installation of DIRAC components: 
+Collection of Tools for installation of DIRAC components:
 MySQL, DB's, Services's, Agents
 
 It only makes use of defaults in LocalInstallation Section in dirac.cfg
@@ -634,7 +633,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   if not addOptions:
     return S_OK( 'Component options already exist' )
 
-  # Add the component options now  
+  # Add the component options now
   result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions, addDefaultOptions )
   if not result['OK']:
     return result
@@ -643,7 +642,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   gLogger.notice( 'Adding to CS', '%s %s/%s' % ( componentType, system, component ) )
   resultAddToCFG = _addCfgToCS( compCfg )
   if componentType == 'executor':
-    # Is it a container ?        
+    # Is it a container ?
     execList = compCfg.getOption( '%s/Load' % componentSection, [] )
     for element in execList:
       result = addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, setup,
@@ -818,7 +817,7 @@ def removeDatabaseOptionsFromCS( gConfig, system, dbName, mySetup = setup ):
   return S_OK( 'Successfully removed entries from CS' )
 
 def getDatabaseCfg( system, dbName, compInstance ):
-  """ 
+  """
   Get the CFG object of the database configuration
   """
   databasePath = cfgPath( 'Systems', system, compInstance, 'Databases', dbName )
@@ -829,7 +828,7 @@ def getDatabaseCfg( system, dbName, compInstance ):
   return S_OK( cfg )
 
 def addSystemInstance( systemName, compInstance, mySetup = setup, myCfg = False ):
-  """ 
+  """
   Add a new system instance to dirac.cfg and CS
   """
   system = systemName.replace( 'System', '' )
@@ -844,16 +843,16 @@ def addSystemInstance( systemName, compInstance, mySetup = setup, myCfg = False 
 
 def printStartupStatus( rDict ):
   """
-  Print in nice format the return dictionary from getStartupComponentStatus 
+  Print in nice format the return dictionary from getStartupComponentStatus
   (also returned by runsvctrlComponent)
   """
   fields = ['Name','Runit','Uptime','PID']
   records = []
   try:
     for comp in rDict:
-      records.append( [comp, 
-                       rDict[comp]['RunitStatus'], 
-                       rDict[comp]['Timeup'], 
+      records.append( [comp,
+                       rDict[comp]['RunitStatus'],
+                       rDict[comp]['Timeup'],
                        str( rDict[comp]['PID'] ) ] )
     printTable( fields, records )
   except Exception, x:
@@ -881,7 +880,7 @@ def printOverallStatus( rDict ):
             record.append( 'NotInstalled' )
           record.append( str( rDict[compType][system][component]['RunitStatus'] ) )
           record.append( str( rDict[compType][system][component]['Timeup'] ) )
-          record.append( str( rDict[compType][system][component]['PID'] ) ) 
+          record.append( str( rDict[compType][system][component]['PID'] ) )
           records.append( record )
     printTable( fields, records )
   except Exception, x:
@@ -890,7 +889,7 @@ def printOverallStatus( rDict ):
   return S_OK()
 
 def getAvailableSystems( extensions ):
-  """ 
+  """
   Get the list of all systems (in all given extensions) locally available
   """
   systems = []
@@ -904,11 +903,11 @@ def getAvailableSystems( extensions ):
   return systems
 
 def getSoftwareComponents( extensions ):
-  """  
+  """
   Get the list of all the components ( services and agents ) for which the software
   is installed on the system
   """
-  # The Gateway does not need a handler 
+  # The Gateway does not need a handler
   services = { 'Framework' : ['Gateway'] }
   agents = {}
   executors = {}
@@ -971,7 +970,7 @@ def getSoftwareComponents( extensions ):
 
 def getInstalledComponents():
   """
-  Get the list of all the components ( services and agents ) 
+  Get the list of all the components ( services and agents )
   installed on the system in the runit directory
   """
 
@@ -1010,9 +1009,9 @@ def getInstalledComponents():
   return S_OK( resultDict )
 
 def getSetupComponents():
-  """  
-  Get the list of all the components ( services and agents ) 
-  set up for running with runsvdir in startup directory 
+  """
+  Get the list of all the components ( services and agents )
+  set up for running with runsvdir in startup directory
   """
 
   services = {}
@@ -1052,9 +1051,9 @@ def getSetupComponents():
   return S_OK( resultDict )
 
 def getStartupComponentStatus( componentTupleList ):
-  """  
-  Get the list of all the components ( services and agents ) 
-  set up for running with runsvdir in startup directory 
+  """
+  Get the list of all the components ( services and agents )
+  set up for running with runsvdir in startup directory
   """
   try:
     if componentTupleList:
@@ -1119,7 +1118,7 @@ def getStartupComponentStatus( componentTupleList ):
   return S_OK( componentDict )
 
 def getComponentModule( gConfig, system, component, compType ):
-  """ 
+  """
   Get the component software module
   """
   setup = CSGlobals.getSetup()
@@ -1132,9 +1131,9 @@ def getComponentModule( gConfig, system, component, compType ):
   return S_OK( module )
 
 def getOverallStatus( extensions ):
-  """  
-  Get the list of all the components ( services and agents ) 
-  set up for running with runsvdir in startup directory 
+  """
+  Get the list of all the components ( services and agents )
+  set up for running with runsvdir in startup directory
   """
 
   result = getSoftwareComponents( extensions )
@@ -1227,7 +1226,7 @@ def getOverallStatus( extensions ):
   return S_OK( resultDict )
 
 def checkComponentModule( componentType, system, module ):
-  """ 
+  """
   Check existence of the given module
   and if it inherits from the proper class
   """
@@ -1244,7 +1243,7 @@ def checkComponentModule( componentType, system, module ):
   return loader.loadModule( "%s/%s" % ( system, module ) )
 
 def checkComponentSoftware( componentType, system, component, extensions ):
-  """ 
+  """
   Check the component software
   """
   result = getSoftwareComponents( extensions )
@@ -1592,7 +1591,7 @@ def setupSite( scriptCfg, cfg = None ):
         result = addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
         if not result['OK']:
           gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
-      else:    
+      else:
         gLogger.notice( 'Database %s already installed' % dbName )
 
   if mysqlPassword:
@@ -1634,6 +1633,9 @@ def setupSite( scriptCfg, cfg = None ):
   return S_OK()
 
 def _createRunitLog( runitCompDir ):
+  controlDir = os.path.join( runitCompDir, 'control' )
+  os.makedirs( controlDir )
+
   logDir = os.path.join( runitCompDir, 'log' )
   os.makedirs( logDir )
 
@@ -1727,7 +1729,7 @@ def monitorUninstallation( system, component ):
   return result
 
 def installComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
-  """ 
+  """
   Install runit directory for the specified component
   """
   # Check if the component is already installed
@@ -1784,6 +1786,20 @@ exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(co
     fd.close()
 
     os.chmod( runFile, gDefaultPerms )
+
+    if componentType.lower() == 'agent':
+      stopFile = os.path.join( runitCompDir, 'control', 't' )
+      fd = open( stopFile, 'w' )
+      fd.write( 
+"""#!/bin/bash
+echo %(controlDir)s/%(system)s/%(component)s/stop_agent
+touch %(controlDir)s/%(system)s/%(component)s/stop_agent
+""" % {'controlDir': runitDir,
+       'system' : system,
+       'component': component } )
+      fd.close()
+
+      os.chmod( stopFile, gDefaultPerms )
 
   except Exception:
     error = 'Failed to prepare setup for %s %s/%s' % ( componentType, system, component )
@@ -2028,15 +2044,15 @@ def setupNewPortal():
   # Create the startup entries now
   runitCompDir = result['Value']
   startCompDir = os.path.join( startDir, 'Web_WebApp' )
-                    
+
 
   if not os.path.exists( startDir ):
     os.makedirs( startDir )
-  
+
   if not os.path.lexists( startCompDir ):
       gLogger.notice( 'Creating startup link at', startCompDir )
       os.symlink( runitCompDir, startCompDir )
-      
+
   time.sleep( 5 )
 
   # Check the runsv status
@@ -2057,7 +2073,7 @@ def installNewPortal():
   """
   Install runit directories for the Web Portal
   """
-    
+
   result = execCommand( False, ["pip", "install", "tornado"] )
   if not result['OK']:
     error = "Tornado can not be installed:%s" % result['Value']
@@ -2066,7 +2082,7 @@ def installNewPortal():
     return error
   else:
     gLogger.notice("Tornado is installed successfully!")
-    
+
   # Check that the software for the Web Portal is installed
   error = ''
   webDir = os.path.join( linkedRootPath, 'WebAppDIRAC' )
@@ -2090,7 +2106,7 @@ def installNewPortal():
                                                                        webappCompileScript ) )
     else:
       prodMode = "-p"
-  
+
   # Check if the component is already installed
   runitWebAppDir = os.path.join( runitDir, 'Web', 'WebApp' )
 
@@ -2150,7 +2166,7 @@ def fixMySQLScripts( startupScript = mysqlStartupScript ):
         line += 'export HOME=%s\n' % mysqlDir
       if line.find( 'basedir=' ) == 0:
         platform = getPlatformString()
-        line = 'basedir=%s\n' % os.path.join( rootPath, platform )  
+        line = 'basedir=%s\n' % os.path.join( rootPath, platform )
       if line.find( 'extra_args=' ) == 0:
         line = 'extra_args="-n"\n'
       if line.find( '$bindir/mysqld_safe --' ) >= 0 and not ' --no-defaults ' in line:
@@ -2193,7 +2209,7 @@ def getMySQLPasswords():
     mysqlRootPwd = getpass.getpass( 'MySQL root password: ' )
 
   if not mysqlPassword:
-    # Take it if it is already defined 
+    # Take it if it is already defined
     mysqlPassword = localCfg.getOption( '/Systems/Databases/Password', '' )
     if not mysqlPassword:
       mysqlPassword = getpass.getpass( 'MySQL Dirac password: ' )
@@ -2234,11 +2250,11 @@ def installMySQL():
   """
   Attempt an installation of MySQL
   mode:
-  
+
     -Master
     -Slave
     -None
-  
+
   """
   fixMySQLScripts()
 
@@ -2336,17 +2352,17 @@ def installMySQL():
   result = execCommand( 0, ['mysqladmin', '-u', mysqlRootUser, 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
-  
+
   # MySQL tends to define root@host user rather than root@host.domain
   hostName = mysqlHost.split('.')[0]
-  result = execMySQL( "UPDATE user SET Host='%s' WHERE Host='%s'" % (mysqlHost,hostName), 
+  result = execMySQL( "UPDATE user SET Host='%s' WHERE Host='%s'" % ( mysqlHost, hostName ),
                                                                      localhost=True )
   if not result['OK']:
     return result
   result = execMySQL( "FLUSH PRIVILEGES" )
   if not result['OK']:
     return result
-  
+
   if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
     result = execCommand( 0, ['mysqladmin', '-u', mysqlRootUser, '-h', mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
@@ -2444,7 +2460,7 @@ def installDatabase( dbName ):
     return S_ERROR( error )
 
   dbFile = dbFile[0]
-  
+
   # just check
   result = execMySQL( 'SHOW STATUS' )
   if not result['OK']:

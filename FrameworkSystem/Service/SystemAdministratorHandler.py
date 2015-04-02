@@ -536,4 +536,4 @@ class SystemAdministratorHandler( RequestHandler ):
     except:
       pass
 
-    return S_OK( result )
+    return S_OK(result)

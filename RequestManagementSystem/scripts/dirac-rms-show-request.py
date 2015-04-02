@@ -6,6 +6,7 @@ import datetime
 def convertDate( date ):
   try:
     value = datetime.datetime.strptime( date, '%Y-%m-%d' )
+    return value
   except:
     pass
   try:
@@ -54,7 +55,7 @@ if __name__ == "__main__":
   until = None
   since = None
   terse = False
-  all = False
+  allR = False
   reset = False
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     elif switch[0] == 'Terse':
       terse = True
     elif switch[0] == 'All':
-      all = True
+      allR = True
     elif switch[0] == 'Reset':
       reset = True
     elif switch[0] == 'Status':
@@ -110,12 +111,12 @@ if __name__ == "__main__":
     # If ever this would not work anymore, we would need to use the transformationClient
     # to fetch the ExternalID
     requests = ['%08d_%08d' % ( transID, task ) for task in taskIDs]
-    all = True
+    allR = True
 
   elif not jobs:
     args = Script.getPositionalArgs()
     if len( args ) == 1:
-      all = True
+      allR = True
       requests = [reqID for reqID in args[0].split( ',' ) if reqID]
   else:
     res = reqClient.getRequestIDsForJobs( jobs )
@@ -126,11 +127,11 @@ if __name__ == "__main__":
       gLogger.error( "No request found for jobs %s" % str( res['Value']['Failed'].keys() ) )
     requests = sorted( res['Value']['Successful'].values() )
     if requests:
-      all = True
+      allR = True
 
 
   if status and not requests:
-    all = all or status != 'Failed'
+    allR = allR or status != 'Failed'
     res = reqClient.getRequestIDsList( [status], limit = 999999999, since = since, until = until )
 
     if not res['OK']:
@@ -170,11 +171,11 @@ if __name__ == "__main__":
         warningPrinted = True
       continue
 
-    if all or recoverableRequest( request ):
-      okRequests.append( requestID )
+    if allR or recoverableRequest( request ):
+      okRequests.append( str( requestID ) )
       if reset:
         gLogger.always( '============ Request %s =============' % requestID )
-        ret = reqClient.resetFailedRequest( requestID, all = all )
+        ret = reqClient.resetFailedRequest( requestID, allR = allR )
         if not ret['OK']:
           gLogger.error( "Error resetting request %s" % requestID, ret['Message'] )
       else:

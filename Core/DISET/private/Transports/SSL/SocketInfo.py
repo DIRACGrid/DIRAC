@@ -12,6 +12,8 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
+DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
+
 class SocketInfo:
 
   __cachedCAsCRLs = False
@@ -20,6 +22,7 @@ class SocketInfo:
 
 
   def __init__( self, infoDict, sslContext = None ):
+    self.__retry = 0
     self.infoDict = infoDict
     #HACK:DISABLE CRLS!!!!!
     self.infoDict[ 'IgnoreCRLs' ] = True
@@ -217,6 +220,7 @@ class SocketInfo:
     except:
       return S_ERROR( "SSL method %s is not valid" % self.infoDict[ 'sslMethod' ] )
     self.sslContext = GSI.SSL.Context( method )
+    self.sslContext.set_cipher_list( self.infoDict.get( 'sslCiphers', DEFAULT_SSL_CIPHERS ) )
     if contextOptions:
       self.sslContext.set_options( contextOptions )
     #self.sslContext.set_read_ahead( 1 )
@@ -317,12 +321,23 @@ class SocketInfo:
       except GSI.SSL.WantWriteError:
         time.sleep( 0.001 )
       except GSI.SSL.Error, v:
-        #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
-        gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
       except Exception, v:
         gLogger.warn( "Error while handshaking", v )
-        return S_ERROR( "Error while handshaking" )
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn( "Error while handshaking", v )
+          return S_ERROR( "Error while handshaking" )
+        
     credentialsDict = self.gatherPeerCredentials()
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]

@@ -1064,7 +1064,7 @@ class FTSAgent( AgentModule ):
     scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in operation
                               if opFile.Status in ( "Scheduled", "Waiting" ) ] )
     # # get replicas
-    replicas = FileCatalog().getReplicas( scheduledFiles )
+    replicas = FileCatalog().getReplicas( scheduledFiles.keys() )
     if not replicas["OK"]:
       self.log.error( replicas["Message"] )
       return replicas

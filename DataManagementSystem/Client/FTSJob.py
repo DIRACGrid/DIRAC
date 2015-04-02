@@ -40,7 +40,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 import fts3.rest.client.easy as fts3
-import json
 
 ########################################################################
 class FTSJob( object ):
@@ -498,6 +497,8 @@ class FTSJob( object ):
 
     # Returns a non zero status if error
     if returnCode != 0:
+      if 'was not found' in outputStr and not errStr:
+        errStr = 'Job was not found'
       return S_ERROR( errStr )
 
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
@@ -621,7 +622,6 @@ class FTSJob( object ):
     try:
       context = fts3.Context( endpoint = self.FTSServer )
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
-#       jobStatusDict = json.dumps( jobStatusRet )
     except Exception, e:
       return S_ERROR( "Error at getting the job status %s" % e )
 

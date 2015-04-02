@@ -353,9 +353,10 @@ DELIMITER ;
 -- dirNames : list of directory name, coma separated
 
 
+DROP PROCEDURE IF EXISTS ps_find_dirs;
 DELIMITER //
 CREATE PROCEDURE ps_find_dirs
-(IN dirNames TEXT)
+(IN dirNames MEDIUMTEXT)
 BEGIN
 --   SELECT DirID from FC_DirectoryList where Name in (dirNames);
   SET @sql = CONCAT('SELECT SQL_NO_CACHE Name, DirID from FC_DirectoryList where Name in (', dirNames, ')');
@@ -403,21 +404,7 @@ CREATE PROCEDURE ps_insert_dir
 BEGIN
   DECLARE dir_id INT DEFAULT 0;
   
-  DECLARE EXIT HANDLER FOR 1062 BEGIN
-    ROLLBACK;
-    SELECT 0 as dir_id, 'Error, duplicate key occurred' as msg;
-  END;
 
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 0 as dir_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
-  
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
-      ROLLBACK;
-      SELECT 0 as dir_id, 'Unknown error occured' as msg;
-  END;
-    
   
   START TRANSACTION;
    
@@ -434,7 +421,7 @@ BEGIN
     END IF;
     
     
-    SELECT dir_id, 'OK';
+    SELECT dir_id;
     
    COMMIT;
 END //
@@ -687,7 +674,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_dir_id
-(IN dir_id INT, IN file_names TEXT)
+(IN dir_id INT, IN file_names MEDIUMTEXT)
 BEGIN
 
   SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, FileName FROM FC_Files f WHERE DirID = ', dir_id, ' AND FileName IN (', file_names, ')');
@@ -710,10 +697,11 @@ DELIMITER ;
 -- visibleFileStatus : list of status we are interested in
 -- output : FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
 --                     GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
-                     
+            
+drop procedure if exists ps_get_all_info_for_files_in_dir;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_for_files_in_dir
-(IN dir_id INT, IN specificFiles BOOLEAN, IN file_names TEXT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255))
+(IN dir_id INT, IN specificFiles BOOLEAN, IN file_names MEDIUMTEXT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255))
 BEGIN
 
   set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
@@ -777,22 +765,7 @@ CREATE PROCEDURE ps_insert_file
 BEGIN
   DECLARE file_id INT DEFAULT 0;
   
-  DECLARE EXIT HANDLER FOR 1062 BEGIN
-    ROLLBACK;
-    SELECT 0 as file_id, 'Error, duplicate key occurred' as msg;
-  END;
-
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 0 as file_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
-  
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
-      ROLLBACK;
-      SELECT 0 as file_id, 'Unknown error occured' as msg;
-  END;
-    
-  
+ 
   START TRANSACTION;
   INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName,GUID, Checksum, ChecksumType, CreationDate, ModificationDate, Mode )
   VALUES (dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, UTC_TIMESTAMP(), UTC_TIMESTAMP(), mode);
@@ -802,7 +775,7 @@ BEGIN
 
   COMMIT;
 
-  SELECT file_id, 'OK' as msg;
+  SELECT file_id;
  
 END //
 DELIMITER ;
@@ -866,6 +839,24 @@ BEGIN
 END //
 DELIMITER ;
 
+-- ps_get_lfns_from_guids : return list of file lfns for given guids
+-- guids : list of guids
+-- output : GUID, LFN
+
+DELIMITER //
+CREATE PROCEDURE ps_get_lfns_from_guids
+(IN  guids TEXT)
+BEGIN
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, CONCAT(d.Name, "/", f.FileName) FROM FC_Files f JOIN FC_DirectoryList d on f.DirID = d.DirID WHERE GUID IN (', guids, ')');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+  
+ 
+END //
+DELIMITER ;
+
 
 -- ps_delete_replicas_from_file_ids : delete all the replicas for given file ids and update the DirectoryUsage table
 -- file_ids : list of file ids
@@ -876,12 +867,29 @@ CREATE PROCEDURE ps_delete_replicas_from_file_ids
 BEGIN
 
   START TRANSACTION;
-  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
-                    SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
-                    WHERE r.FileID = f.FileID 
-                    AND f.DirID = d.DirID 
-                    AND r.SEID = d.SEID
-                    AND f.FileID IN (', file_ids, ')');
+  
+  
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
+                      (SELECT d1.DirID, d1.SEID, SUM(f.Size) as t_size, count(*) as t_file
+                        FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r
+                        WHERE r.FileID = f.FileID
+                        AND f.DirID = d1.DirID
+                        AND r.SEID = d1.SEID 
+                        AND f.FileID IN (', file_ids, ')
+                        GROUP BY d1.DirID, d1.SEID ) t
+                     SET d.SESize = d.SESize - t.t_size,
+                         d.SEFiles = d.SEFiles - t.t_file
+                     WHERE d.DirID = t.DirID
+                     AND d.SEID = t.SEID');
+                     
+-- This is buggy in case we remove two files that have a replica on the same SE
+-- 
+--   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
+--                     SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
+--                     WHERE r.FileID = f.FileID 
+--                     AND f.DirID = d.DirID 
+--                     AND r.SEID = d.SEID
+--                     AND f.FileID IN (', file_ids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -906,9 +914,10 @@ DELIMITER ;
 -- file_ids list of file ids
 -- output 0, 'OK'
 
+DROP PROCEDURE IF EXISTS ps_delete_files;
 DELIMITER //
 CREATE PROCEDURE ps_delete_files
-(IN  file_ids TEXT)
+(IN  file_ids MEDIUMTEXT)
 BEGIN
   START TRANSACTION;
   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f
@@ -948,21 +957,12 @@ CREATE PROCEDURE ps_insert_replica
 BEGIN
   DECLARE replica_id INT DEFAULT 0;
   
+  -- The replica already exists
   DECLARE EXIT HANDLER FOR 1062 BEGIN
     ROLLBACK;
-    SELECT RepID as replica_id, 'Replica already exists' as msg from FC_Replicas where FileID = file_id and SEID = se_id;
+    SELECT RepID as replica_id from FC_Replicas where FileID = file_id and SEID = se_id;
   END;
 
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 0 as replica_id, 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
-  
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN
-      ROLLBACK;
-      SELECT 0 as replica_id, 'Unknown error occured' as msg;
-  END;
-    
     
   START TRANSACTION;
   INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)
@@ -972,7 +972,7 @@ BEGIN
 
   COMMIT;
   
-  SELECT replica_id, 'OK' as msg;
+  SELECT replica_id;
  
 END //
 DELIMITER ;
@@ -1046,11 +1046,12 @@ DELIMITER ;
 --
 -- output : 0, 'OK'
 
+DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
 (IN  file_id INT, IN se_id INT) 
 BEGIN
-  DECLARE file_size INT DEFAULT 0;
+  DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
 
   SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
@@ -1080,7 +1081,7 @@ BEGIN
 
   UPDATE FC_Replicas SET Status = status_id WHERE FileID = file_id AND SEID = se_id;
   
-  SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as msg;
+  SELECT ROW_COUNT() as affected;
 
 END //
 DELIMITER ;
@@ -1100,12 +1101,9 @@ DELIMITER //
 CREATE PROCEDURE ps_set_replica_host
 (IN  file_id INT, IN old_se_id INT, IN new_se_id INT)
 BEGIN
-  DECLARE file_size INT DEFAULT 0;
+  DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
+
   
 
   SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
@@ -1116,7 +1114,7 @@ BEGIN
     UPDATE FC_Replicas SET SEID = new_se_id WHERE FileID = file_id AND SEID = old_se_id;
   COMMIT;
 
-  SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as msg;
+  SELECT ROW_COUNT() as affected;
 
 END //
 DELIMITER ;
@@ -1133,14 +1131,10 @@ DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
 (IN  file_id INT, IN in_uid INT) 
 BEGIN
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
 
   UPDATE FC_Files SET UID = in_uid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
  
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1157,14 +1151,11 @@ DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
 (IN  file_id INT, IN in_gid INT) 
 BEGIN
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
+
   
   UPDATE FC_Files SET GID = in_gid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
   
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1181,14 +1172,11 @@ DELIMITER //
 CREATE PROCEDURE ps_set_file_status
 (IN  file_id INT, IN status_id INT) 
 BEGIN
-  DECLARE EXIT HANDLER FOR 1452 BEGIN
-    ROLLBACK;
-    SELECT 1 , 'Cannot add or update a child row: a foreign key constraint fails' as msg;
-  END;
+
 
   UPDATE FC_Files SET Status = status_id, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
 
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1208,7 +1196,7 @@ BEGIN
 
   UPDATE FC_Files SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
 
-  SELECT 0, 'OK';
+  SELECT ROW_COUNT();
 
 END //
 DELIMITER ;
@@ -1404,12 +1392,13 @@ DELIMITER ;
 --
 -- output : File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_logical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE SUM(SESize), SUM(SEFiles) FROM FC_DirectoryUsage u
+  SELECT SQL_NO_CACHE COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
   JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
   JOIN FC_StorageElements s ON s.SEID = u.SEID 
   WHERE s.SEName = 'FakeSE'
@@ -1428,6 +1417,7 @@ DELIMITER ;
 --
 -- output : File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_calculate_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_logical_size
 (IN dir_id INT)
@@ -1435,7 +1425,7 @@ BEGIN
   DECLARE log_size BIGINT DEFAULT 0;
   DECLARE log_files INT DEFAULT 0;
   
-  SELECT SQL_NO_CACHE SUM(f.Size), COUNT(*) INTO log_size, log_files FROM FC_Files f
+  SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
   JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID
   WHERE ParentID = dir_id;
   
@@ -1456,12 +1446,13 @@ DELIMITER ;
 --
 -- output : SEName, File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE SEName, SUM(SESize), SUM(SEFiles)
+  SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
   FROM FC_DirectoryUsage u
   JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
   JOIN FC_StorageElements se ON se.SEID = u.SEID
@@ -1484,12 +1475,13 @@ DELIMITER ;
 --
 -- output : SEName, File Size, number of files
 
+DROP PROCEDURE IF EXISTS ps_calculate_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_physical_size
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE se.SEName, sum(f.Size), count(*)
+  SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
   FROM FC_Replicas r
   JOIN FC_Files f ON f.FileID = r.FileID
   JOIN FC_StorageElements se ON se.SEID = r.SEID
@@ -1521,7 +1513,7 @@ BEGIN
     ORDER BY NULL;
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
-    SELECT SQL_NO_CACHE DirID, SEID, sum(Size), count(*)
+    SELECT SQL_NO_CACHE DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
     FROM FC_Replicas r
     JOIN FC_Files f ON r.FileID = f.FileID
     GROUP BY DirID, SEID
@@ -1531,6 +1523,35 @@ BEGIN
 END //
 DELIMITER ;
 
+
+-- Rebuild the directoryUsage table for one directory
+DELIMITER //
+CREATE PROCEDURE ps_rebuild_directory_usage_for_dir
+(IN dir_id INT)
+BEGIN
+
+  START TRANSACTION;
+  
+  DELETE FROM FC_DirectoryUsage where DirID = dir_id;
+
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
+    SELECT SQL_NO_CACHE DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
+    FROM FC_Files 
+    WHERE DirID = dir_id
+    GROUP BY DirID
+    ORDER BY NULL;
+
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
+    SELECT SQL_NO_CACHE DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
+    FROM FC_Replicas r
+    JOIN FC_Files f ON r.FileID = f.FileID
+    WHERE f.DirID = dir_id
+    GROUP BY DirID, SEID
+    ORDER BY NULL;
+   
+  COMMIT;
+END //
+DELIMITER ;
 -- Consistency checks
 
 

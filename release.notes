@@ -1,15 +1,40 @@
-[v6r13-pre12]
+[v6r13-pre20]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
 
 *Core
+FIX: MySQL.py - treat in detailed way datetime functions in __escapeString()
+
+*Configuration
+NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
+     shifter in the CS
+
+*Framework
+FIX: NotificationDB - escape fields for sorting in getNotifications()
+NEW: Database, Service and Client for tracking the installed DIRAC components
+
+*Core
 NEW: Changes to make the DISET protocol IP V6 ready
+CHANGE: BaseClient - retry service call on another instance in case of failure
+CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport layer
+CHANGE: SocketInfo - retry 3 times in case of handshaking error
+CHANGE: MySQL - possibility to specify charset in the table definition
+FIX: dirac-install, dirac-distribution - removed obsoleted defaults
 
 *DMS
 NEW: Native use of the FTS3 services
 CHANGE: Removed the use of current DataLogging service
 CHANGE: DataManager - changes to manage URLs inside StorageElement objects only
+CHANGE: DirectoryListing - extracted from FileCatalogClientCLI as an independent utility
+CHANGE: MetaQuery - extracted from FileCatalogClientCLI as an independent utility
+CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
+CHANGE: FileCatalog - replace getDirectoryMetadata by getDirectoryUserMetadata
+NEW: FileCatalog - added new getDirectoryMetadata() interface to get standard directory metadata
+NEW: FileCatalog - possibility to find files by standard metadata
+
+*WMS
+NEW: SiteDirector - support for the MaxRAM queue description parameter
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
@@ -26,6 +51,158 @@ NEW: GFAL2_StorageBase.py, GFAL2_SRM2Storage.py, GFAL2_XROOTStorage.py
 *RSS:
 NEW: dirac-admin-allow(ban)-se - added RemoveAccess status
 CHANGE: TokenAgent - added more info to the mail
+
+*TS
+CHANGE: Task Manager plugins
+
+[v6r12p34]
+
+*DMS
+BUGFIX: FileCatalogWithFkAndPsDB - fix storage usage calculation
+
+[v6r12p33]
+
+*Core
+NEW: VOMSService - added method admListCertificates()
+
+*DMS
+BUGFIX: dirac-dms-put-and-register-request - missing Operation in the request
+
+*Resources
+FIX: sshce - better interpretation of the "ps" command output
+
+[v6r12p32]
+
+*RMS
+FIX: ReqManager - in getRequest() possibility to accept None type
+     argument for any request 
+
+[v6r12p31]
+
+*WMS
+FIX: pilotCommands - import json module only in case it is needed
+
+[v6r12p30]
+
+*Core
+FIX: InstallTools - 't' file is deployed for agents installation only
+FIX: GOCDBClient - creates unique DowntimeID using the ENDPOINT
+
+*Framework
+FIX: SystemAdministratorHandler - use WebAppDIRAC extension, not just WebApp
+
+*DMS:
+FIX: FileCatalogComponents.Utilities - do not allow empty LFN names in
+     checkArgumentDict()
+
+[v6r12p29]
+
+*CS
+CHANGE: CSCLI - use readline to store and resurrect command history
+
+*WMS
+FIX: JobWrapper - bug fixed in the failoverTransfer() call
+CHANGE: dirac-wms-job-submit - added -f flag to store ids
+
+*DMS
+FIX: DataManager - make successful removeReplica if missing replica 
+     in one catalog
+
+*RMS
+FIX: Operation, Request - limit the length of the error message
+
+[v6r12p28]
+
+*RMS
+FIX: Request - do not optimize requests already in the DB 
+
+[v6r12p27]
+
+*Core
+CHANGE: InstallTools - install "t" script to gracefully stop agents
+
+*DMS
+FIX: FileCatalog - return GUID in DirectoryParameters
+
+*Resource
+CHANGE: DFC/LFC clients - added setReplicaProblematic()
+
+[v6r12p26]
+
+*DMS
+BUGFIX: FileCatalog - getDirectoryMetadata was wrongly in ro_meta_methods list 
+
+*RMS
+FIX: Operation - temporary fix in catalog names evaluation to smooth
+     LFC->DFC migration - not to forget to remove afterwards !
+
+*WMS
+CHANGE: JobWrapper - added MasterCatalogOnlyFlag configuration option
+
+[v6r12p25]
+
+*DMS
+BUGFIX: PutAndRegister, RegitserFile, RegisterReplica, ReplicateAndRegister - do not
+        evaluate the catalog list if None
+
+[v6r12p24]
+
+*DMS:
+FIX: DataManager - retry RSS call 5 times - to be reviewed
+
+[v6r12p23]
+
+*DMS
+FIX: pass a catalog list to the DataManager methods
+FIX: FileCatalog - bug fixed in the catalog list evaluation
+
+[v6r12p22]
+
+*DMS
+FIX: RegisterFile, PutAndRegister - pass a list of catalogs to the DataManager instead of a comma separated string
+FIX: FTSJob - log when a job is not found in FTS
+CHANGE: dropped commands dirac-admin-allow(ban)-catalog
+
+*Interfaces
+CHANGE: Dirac, JobMonitoringHandler,dirac-wms-job-get-jdl - possibility to retrieve original JDL
+
+*WMS
+CHANGE: JobManifest - make MaxInputData a configurable option
+
+[v6r12p21]
+
+*RMS
+BUGFIX: File,Operation,RequestDB - bug making that the request would always show 
+        the current time for LastUpdate
+  
+*WMS
+FIX: JobAgent - storing on disk retrieved job JDL as required by VMDIRAC
+     ( to be reviewed )        
+
+[v6r12p20]
+
+*DMS
+FIX: DataManager - more informative log messages, checking return structure
+FIX: FileCatalog - make exists() behave like LFC file catalog client by checking
+     the unicity of supplied GUID if any
+FIX: StorageElementProxyHandler - do not remove the cache directory
+
+*Framework
+FIX: SystemAdministratorClient - increase the timeout to 300 for the software update     
+
+*RMS
+FIX: Operation.py - set Operation Scheduled if one file is Scheduled
+CHANGE: Request - group ReplicateAndRegister operations together for failover 
+        requests: it allows to launch all FTS jobs at once
+
+*Resources
+FIX: LcgFileCatalogClient - fix longstanding problem in LFC when several files 
+     were not available (only one was returned) 
+
+*TS
+BUGFIX: TransformationCleaning,ValidateOutputDataAgent - interpret correctly
+        the result of getTransformationParameters() call
+FIX: TaskManager - fix exception in RequestTaskAgent        
 
 [v6r12p19]
 
@@ -132,7 +309,9 @@ BUGFIX: TransformationDB - fix return value in setTransformationParameter()
 [v6r12p9]
 
 *Core
-CHANGE: SiteCEMapping - getSiteForCE can take site argument to avoid confusion
+CHANGE: SiteCEMapping - getSiteForCE can take site argu
+
+ment to avoid confusion
 
 *Interfaces
 FIX: Job - provide optional site name in setDestinationCE()
@@ -311,6 +490,13 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p32]
+
+*Core
+CHANGE: BaseClient, SSLSocketFactory, SocketInfo - enable TLSv1 for outgoing 
+        connections via suds, possibility to configure SSL connection details
+        per host/IP 
 
 [v6r11p31]
 

@@ -63,7 +63,7 @@ class Transformation( API ):
       if res['OK']:
         self.exists = True
       elif res['Message'] == 'Transformation does not exist':
-        raise AttributeError, 'TransformationID %d does not exist' % transID
+        raise AttributeError( 'TransformationID %d does not exist' % transID )
       else:
         self.paramValues['TransformationID'] = 0
         gLogger.fatal( "Failed to get transformation from database", "%s @ %s" % ( transID,
@@ -108,7 +108,7 @@ class Transformation( API ):
       item = name[3:]
       self.item_called = item
       return self.__setParam
-    raise AttributeError, name
+    raise AttributeError( name )
 
   def __getParam( self ):
     if self.item_called == 'Available':
@@ -117,7 +117,7 @@ class Transformation( API ):
       return S_OK( self.paramValues )
     if self.item_called in self.paramValues:
       return S_OK( self.paramValues[self.item_called] )
-    raise AttributeError, "Unknown parameter for transformation: %s" % self.item_called
+    raise AttributeError( "Unknown parameter for transformation: %s" % self.item_called )
 
   def __setParam( self, value ):
     change = False
@@ -127,8 +127,8 @@ class Transformation( API ):
         if type( value ) in self.paramTypes[self.item_called]:
           change = True
         else:
-          raise TypeError, "%s %s %s expected one of %s" % ( self.item_called, value, type( value ),
-                                                             self.paramTypes[self.item_called] )
+          raise TypeError( "%s %s %s expected one of %s" % ( self.item_called, value, type( value ),
+                                                             self.paramTypes[self.item_called] ) )
     if not self.item_called in self.paramTypes.keys():
       if not self.paramValues.has_key( self.item_called ):
         change = True

@@ -117,10 +117,10 @@ class Operation( object ):
     if fStatus == set( ['Failed'] ):
       # All files Failed -> Failed
       newStatus = 'Failed'
-    elif "Waiting" in fStatus:
-      newStatus = 'Queued'
     elif 'Scheduled' in fStatus:
       newStatus = 'Scheduled'
+    elif "Waiting" in fStatus:
+      newStatus = 'Queued'
     elif 'Failed' in fStatus:
       newStatus = 'Failed'
     else:
@@ -128,7 +128,7 @@ class Operation( object ):
       newStatus = 'Done'
 
     # If the status moved to Failed or Done, update the lastUpdate time
-    if newStatus in ('Failed', 'Done'):
+    if newStatus in ('Failed', 'Done', 'Scheduled'):
       if self._Status != newStatus:
         self._LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
 
@@ -313,6 +313,8 @@ class Operation( object ):
     if type( value ) in StringTypes:
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._LastUpdate = value
+    if self._parent:
+      self._parent.LastUpdate = value
 
   def __str__( self ):
     """ str operator """

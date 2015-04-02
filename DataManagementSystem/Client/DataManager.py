@@ -117,6 +117,8 @@ class DataManager( object ):
     :param str folder: directory name
     """
     res = self.__verifyWritePermission( folder )
+    if not res['OK']:
+      return res
     if folder not in res['Value']['Successful']:
       errStr = "__cleanDirectory: Write access not permitted for this credential."
       self.log.debug( errStr, folder )
@@ -315,12 +317,14 @@ class DataManager( object ):
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
     if not replicas:
-      self.log.debug( "No accessible replicas found" )
-      return S_ERROR( "No accessible replicas found" )
+      errStr = "No accessible replicas found"
+      self.log.debug( errStr )
+      return S_ERROR( errStr )
     # Determine the best replicas
     res = self._getSEProximity( replicas.keys() )
     if not res['OK']:
       return res
+    errTuple = ( "No SE", "found" )
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
@@ -334,7 +338,7 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'TransferTime', getTime )
 
       if not res['OK']:
-        self.log.debug( "Failed to get %s from %s" % ( lfn, storageElementName ), res['Message'] )
+        errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
         oDataOperation.setValueByKey( 'TransferOK', 0 )
         oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
         oDataOperation.setEndTime()
@@ -348,23 +352,23 @@ class DataManager( object ):
 
         if ( metadata['Size'] != res['Value'] ):
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
-          self.log.debug( "Size of downloaded file (%d) does not match catalog (%d)" % ( res['Value'],
-                                                                                        metadata['Size'] ) )
+          errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
-          self.log.debug( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler,
-                                                                                            metadata['Checksum'] ) )
+          errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
 
         else:
           oDataOperation.setEndTime()
           gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
+      # If we are here, there was an error, log it debug level
+      self.log.debug( errTuple[0], errTuple[1] )
 
     gDataStoreClient.addRegister( oDataOperation )
-    self.log.debug( "getFile: Failed to get local copy from any replicas.", lfn )
+    self.log.verbose( "getFile: Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
-    return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas." )
+    return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas\n%s %s" % errTuple )
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """
@@ -391,6 +395,8 @@ class DataManager( object ):
 #     ancestors = ancestors if ancestors else list(
     folder = os.path.dirname( lfn )
     res = self.__verifyWritePermission( folder )
+    if not res['OK']:
+      return res
     if folder not in res['Value']['Successful']:
       errStr = "putAndRegister: Write access not permitted for this credential."
       self.log.debug( errStr, lfn )
@@ -595,6 +601,8 @@ class DataManager( object ):
     ###########################################################
     # Check that we have write permissions to this directory.
     res = self.__verifyWritePermission( lfn )
+    if not res['OK']:
+      return res
     if lfn not in res['Value']['Successful']:
       errStr = "__replicate: Write access not permitted for this credential."
       log.debug( errStr, lfn )
@@ -993,6 +1001,8 @@ class DataManager( object ):
       for lfn in lfns:
         dir4lfns.setdefault( os.path.dirname( lfn ), [] ).append( lfn )
       res = self.__verifyWritePermission( dir4lfns.keys() )
+      if not res['OK']:
+        return res
       if res['Value']['Failed']:
         errStr = "removeFile: Write access not permitted for this credential."
         self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
@@ -1081,6 +1091,8 @@ class DataManager( object ):
     failed = {}
     # Check that we have write permissions to this file.
     res = self.__verifyWritePermission( lfns )
+    if not res['OK']:
+      return res
     if res['Value']['Failed']:
       errStr = "removeReplica: Write access not permitted for this credential."
       self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
@@ -1136,6 +1148,8 @@ class DataManager( object ):
 
     for lfn in lfns:
       res = self.__verifyWritePermission( lfn )
+      if not res['OK']:
+        return res
       if lfn not in res['Value']['Successful']:
         errStr = "__removeReplica: Write access not permitted for this credential."
         self.log.debug( errStr, lfn )
@@ -1232,16 +1246,16 @@ class DataManager( object ):
       return S_ERROR( errStr )
     return self.__removeCatalogReplica( replicaTuples )
 
-  def __removeCatalogReplica( self, replicaTuple ):
-    """ remove replica form catalogue
-      :param replicaTuple : list of (lfn, catalogPFN, se)
-     """
-    oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuple ) )
+  def __removeCatalogReplica( self, replicaTuples ):
+    """ remove replica form catalogue 
+        :param replicaTuples : list of (lfn, catalogPFN, se)
+    """
+    oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuples ) )
     oDataOperation.setStartTime()
     start = time.time()
     # HACK!
     replicaDict = {}
-    for lfn, pfn, se in replicaTuple:
+    for lfn, pfn, se in replicaTuples:
       replicaDict[lfn] = {'SE':se, 'PFN':pfn}
     res = self.fc.removeReplica( replicaDict )
     oDataOperation.setEndTime()
@@ -1250,25 +1264,29 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'RegistrationOK', 0 )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
       gDataStoreClient.addRegister( oDataOperation )
-      errStr = "__removeCatalogReplica: Completely failed to remove replica."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "__removeCatalogReplica: Completely failed to remove replica: " + res['Message']
+      self.log.debug( errStr )
       return S_ERROR( errStr )
 
-
-    for lfn in res['Value']['Successful']:
-      infoStr = "__removeCatalogReplica: Successfully removed replica."
-      self.log.debug( infoStr, lfn )
-    if res['Value']['Successful']:
-      self.log.debug( "__removeCatalogReplica: Removed %d replicas" % len( res['Value']['Successful'] ) )
-
     success = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn, error in failed.items():
+      # Ignore error if file doesn't exist
+      # This assumes all catalogs return an error as { catalog : error }
+      for catalog, err in error.items():
+        if 'no such file' in err.lower():
+          success.setdefault( lfn, {} ).update( { catalog : True} )
+          error.pop( catalog )
+      if not failed[lfn]:
+        failed.pop( lfn )
+      else:
+        self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
+
+    # Only for logging information
     if success:
-      self.log.info( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
+      self.log.debug( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
       for lfn in success:
         self.log.debug( "__removeCatalogReplica: Successfully removed replica.", lfn )
-
-    for lfn, error in res['Value']['Failed'].items():
-      self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
 
     oDataOperation.setValueByKey( 'RegistrationOK', len( success ) )
     gDataStoreClient.addRegister( oDataOperation )
@@ -1292,6 +1310,8 @@ class DataManager( object ):
     failed = {}
     # Check that we have write permissions to this directory.
     res = self.__verifyWritePermission( lfns )
+    if not res['OK']:
+      return res
     if res['Value']['Failed']:
       errStr = "removePhysicalReplica: Write access not permitted for this credential."
       self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
@@ -1479,7 +1499,10 @@ class DataManager( object ):
     if not result['OK']:
       return S_ERROR( 'SE not known' )
     resolvedName = result['Value']
-    res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
+    for _i in range( 5 ):
+      res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
+      if res['OK']:
+        break
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )
 
@@ -1525,7 +1548,6 @@ class DataManager( object ):
   def getReplicas( self, lfns, allStatus = True ):
     """ get replicas from catalogue """
     res = self.fc.getReplicas( lfns, allStatus = allStatus )
-
     if not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}

@@ -1,16 +1,81 @@
-import unittest, types
+""" test
+"""
 
-from mock import Mock, MagicMock
+import unittest
+import types
+import importlib
+
+from DIRAC import S_OK
+
+from mock import MagicMock
+
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
+from DIRAC.TransformationSystem.Client.TaskManagerPlugin      import TaskManagerPlugin
+
+class opsHelperFakeUser( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return 'CERN, IN2P3'
+    return 'PAK, Ferrara, Bologna, Paris'
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': True, 'Value': {'Paris': 'IN2P3'}}
+
+class opsHelperFakeUser2( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return ''
+    return 'PAK, Ferrara, Bologna, Paris, CERN, IN2P3'
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': True, 'Value': {'Paris': 'IN2P3', 'CERN': 'CERN', 'IN2P3':'IN2P3'}}
+
+class opsHelperFakeDataReco( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return 'CERN, IN2P3'
+    return 'PAK, Ferrara, CERN, IN2P3'
+  def getOptionsDict(self, foo = ''):
+    return {'OK': True, 'Value': {'Ferrara': 'CERN', 'IN2P3': 'IN2P3, CERN'}}
+
+class opsHelperFakeMerge( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return 'CERN, IN2P3'
+    return 'ALL'
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': False, 'Message': 'JobTypeMapping/MCSimulation/Allow in Operations does not exist'}
+
+class opsHelperFakeMerge2( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return ''
+    return 'ALL'
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': True, 'Value': {'CERN': 'CERN', 'IN2P3': 'IN2P3'}}
+
+class opsHelperFakeMC( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return 'CERN, IN2P3'
+    return ''
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': False, 'Message': 'JobTypeMapping/MCSimulation/Allow in Operations does not exist'}
+
+
+def getSitesFake():
+  return S_OK( ['Ferrara', 'Bologna', 'Paris', 'CSCS', 'PAK', 'CERN', 'IN2P3'] )
 
 def getSitesForSE( ses ):
-  if ses == 'pippo':
-    return {'OK':True, 'Value':['Site2', 'Site3']}
-  else:
-    return {'OK':True, 'Value':['Site3']}
+  if ses == ['CERN-DST'] or ses == 'CERN-DST':
+    return S_OK( ['CERN'] )
+  elif ses == ['IN2P3-DST'] or ses == 'IN2P3-DST':
+    return S_OK( ['IN2P3'] )
+  elif ses == ['CSCS-DST'] or ses == 'CSCS-DST':
+    return S_OK( ['CSCS'] )
+  elif ses == ['CERN-DST', 'CSCS-DST'] or ses == 'CERN-DST,CSCS-DST':
+    return S_OK( ['CERN', 'CSCS'] )
 
 #############################################################################
 
@@ -19,17 +84,20 @@ class ClientsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
 
-    self.mockTransClient = Mock()
+    from DIRAC import gLogger
+    gLogger.setLevel( 'DEBUG' )
+
+    self.mockTransClient = MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK':True}
 
-    self.WMSClientMock = Mock()
-    self.jobMonitoringClient = Mock()
-    self.mockReqClient = Mock()
+    self.WMSClientMock = MagicMock()
+    self.jobMonitoringClient = MagicMock()
+    self.mockReqClient = MagicMock()
 
-    self.jobMock = Mock()
-    self.jobMock2 = Mock()
-    mockWF = Mock()
-    mockPar = Mock()
+    self.jobMock = MagicMock()
+    self.jobMock2 = MagicMock()
+    mockWF = MagicMock()
+    mockPar = MagicMock()
     mockWF.findParameter.return_value = mockPar
     mockPar.getValue.return_value = 'MySite'
 
@@ -52,7 +120,6 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.maxDiff = None
 
-
   def tearDown( self ):
     pass
 
@@ -71,43 +138,191 @@ class WorkflowTasksSuccess( ClientsTestCase ):
   def test_prepareTranformationTasks( self ):
     taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
                 2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
-                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'},
-                }
+                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}}
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
 
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
-                                          'b1': 'bb1', 'Site': 'MySite'},
+                                          'b1': 'bb1', 'Site': 'MySite', 'JobType': 'MySite'},
                                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite'},
+                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite', 'JobType': 'MySite'},
                                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3', 'Site': 'MySite'}
-                                     }
-                            }
-                    )
+                                         'b3': 'bb3', 'Site': 'MySite', 'JobType': 'MySite'}}} )
 
-  def test__handleDestination( self ):
-    res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
+  def test__handleDestination(self):
+    destPluginMock = MagicMock()
+
+    # nothing out of the plugin
+    destPluginMock.run.return_value = set( [] )
+    self.wfTasks.destinationPlugin_o = destPluginMock
+
+    paramsDict = {'Site':'', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
     self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':''} )
+
+    paramsDict = {'Site':'ANY', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
     self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
-    self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
-    self.assertEqual( res, ['Site1', 'Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
-    self.assertEqual( res, [] )
+
+    paramsDict = {'Site':'PIPPO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO'] )
+
+    paramsDict = {'Site':'PIPPO;PLUTO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO', 'PLUTO'] )
+
+    # something out of the plugin
+    destPluginMock.run.return_value = set( ['Site1', 'PIPPO'] )
+    self.wfTasks.destinationPlugin_o = destPluginMock
+
+    paramsDict = {'Site':'', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'PIPPO'] ) )
+
+    paramsDict = {'Site':'ANY', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( sorted( res ), sorted( ['Site1', 'PIPPO'] ) )
+
+    paramsDict = {'Site':'PIPPO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO'] )
+
+    paramsDict = {'Site':'PIPPO;PLUTO', 'TargetSE':''}
+    res = self.wfTasks._handleDestination( paramsDict )
+    self.assertEqual( res, ['PIPPO'] )
+
+  def test_submitTransformationTasks( self ):
+    taskDict = {}
+    res = self.wfTasks.submitTransformationTasks( taskDict )
+    self.assertEqual( res['OK'], True, res['Message'] if 'Message' in res else 'OK' )
+
+
+#############################################################################
+
+class TaskManagerPluginSuccess(ClientsTestCase):
+
+  def test__BySE( self ):
+
+    ourPG = importlib.import_module( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin' )
+    ourPG.getSitesForSE = getSitesForSE
+    p_o = TaskManagerPlugin( 'BySE', operationsHelper = MagicMock() )
+
+    p_o.params = {'Site':'', 'TargetSE':''}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'Site':'ANY', 'TargetSE':''}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'TargetSE':'Unknown'}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'Site':'Site1;Site2', 'TargetSE':''}
+    res = p_o.run()
+    self.assertEqual( res, set( [] ) )
+
+    p_o.params = {'TargetSE':'CERN-DST'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN'] ) )
+
+    p_o.params = {'TargetSE':'IN2P3-DST'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['IN2P3'] ) )
+
+    p_o.params = {'TargetSE':'CERN-DST,CSCS-DST'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+
+    p_o.params = {'TargetSE':['CERN-DST', 'CSCS-DST']}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+
+
+  def test__ByJobType( self ):
+
+    ourPG = importlib.import_module( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin' )
+    ourPG.getSites = getSitesFake
+    ourPG.getSitesForSE = getSitesForSE
+
+    # "User" case - 1
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeUser() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'User'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'User'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['IN2P3', 'Paris', 'CSCS'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':['CERN-DST', 'CSCS-DST'], 'JobType':'User'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+
+    # "User" case - 2
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeUser2() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'User'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'User'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['IN2P3', 'Paris', 'CSCS'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':['CERN-DST', 'CSCS-DST'], 'JobType':'User'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'CSCS'] ) )
+
+    # "DataReconstruction" case
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeDataReco() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'DataReconstruction'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Bologna', 'Ferrara', 'Paris', 'CSCS', 'CERN', 'IN2P3'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'DataReconstruction'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Bologna', 'Paris', 'CSCS', 'IN2P3'] ) )
+
+
+    # "Merge" case - 1
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeMerge() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'Merge'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'Merge'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['IN2P3'] ) )
+
+    # "Merge" case - 2
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeMerge2() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'Merge'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'Merge'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['IN2P3'] ) )
+
+    # "MC" case
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeMC() )
+
+    p_o.params = {'Site':'', 'TargetSE':'', 'JobType':'MC'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'IN2P3', 'Bologna', 'Ferrara', 'Paris', 'CSCS', 'PAK'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'', 'JobType':'MC'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['CERN', 'IN2P3', 'Bologna', 'Ferrara', 'Paris', 'CSCS', 'PAK'] ) )
+
 
 #############################################################################
 

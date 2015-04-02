@@ -9,6 +9,8 @@ import cmd
 import sys
 import pprint
 import os
+import atexit
+import readline
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
@@ -36,6 +38,16 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     self.cwd = ''  
     self.previous_cwd = ''
     self.homeDir = ''
+    # store history
+    histfilename = os.path.basename(sys.argv[0])
+    historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
+    if not os.path.exists( os.path.dirname(historyFile) ):
+      os.makedirs( os.path.dirname(historyFile) )
+    if os.path.isfile( historyFile ):
+      readline.read_history_file( historyFile )
+    readline.set_history_length(1000)
+    atexit.register( readline.write_history_file, historyFile )
+
 
   def __setHost( self, host ):
     hostList = host.split( ':' )
@@ -664,7 +676,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     
     client = SystemAdministratorClient( self.host, self.port )
     print "Software update can take a while, please wait ..."
-    result = client.updateSoftware( version, rootPath, lcgVersion )
+    result = client.updateSoftware( version, rootPath, lcgVersion, timeout = 300 )
     if not result['OK']:
       self.__errMsg( "Failed to update the software" )
       print result['Message']

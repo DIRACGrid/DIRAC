@@ -1,6 +1,5 @@
-########################################################################
-# $Id$
-########################################################################
+""" FileManager (add doc here)
+"""
 
 __RCSID__ = "$Id$"
 
@@ -303,12 +302,51 @@ class FileManager( FileManagerBase ):
       guidDict[guid] = fileID
     return S_OK(guidDict)
 
+
+
+
+  def getLFNForGUID( self, guids, connection = False ):
+    """ Returns the lfns matching given guids"""
+
+    connection = self._getConnection( connection )
+    if not guids:
+      return S_OK( {} )
+    if type( guids ) not in [ListType, TupleType]:
+      guids = [guids]
+    req = "SELECT f.FileID, f.FileName, fi.GUID, f.DirID FROM FC_FileInfo fi JOIN FC_Files f on fi.FileID = f.FileID WHERE GUID IN (%s)" % stringListToString( guids )
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    
+
+    fileIDguid = {}
+    dirIDFileIDs = {}
+    fileIDName = {}
+    for fileID, fileName, guid, dirID in res['Value']:
+      fileIDguid[fileID] = guid
+      dirIDFileIDs.setdefault( dirID, [] ).append( fileID )
+      fileIDName[fileID] = fileName
+
+    res = self.db.dtree.getDirectoryPaths( dirIDFileIDs.keys() )
+    if not res['OK']:
+      return res
+    
+    dirIDName = res['Value']
+    
+    guidLFN = dict( [ ( fileIDguid[fId], os.path.join( dirIDName[dId], fileIDName[fId] ) )
+                        for dId in dirIDName
+                        for fId in dirIDFileIDs[dId]] )
+    failedGuid = set( guids ) - set( guidLFN )
+    failed = dict.fromkeys( failedGuid, "GUID does not exist" ) if failedGuid else {}
+
+    return S_OK( {"Successful" : guidLFN, "Failed" : failed} )
+
   ######################################################
   #
   # _deleteFiles related methods
   #
 
-  def _deleteFiles(self,fileIDs,connection=False):
+  def _deleteFiles( self, fileIDs, connection = False ):
     connection = self._getConnection(connection)
     replicaPurge = self.__deleteFileReplicas(fileIDs)
     filePurge = self.__deleteFiles(fileIDs,connection=connection)
@@ -318,7 +356,7 @@ class FileManager( FileManagerBase ):
       return filePurge
     return S_OK()
 
-  def __deleteFileReplicas(self,fileIDs,connection=False):
+  def __deleteFileReplicas( self, fileIDs, connection = False ):
     connection = self._getConnection(connection)
     res = self.__getFileIDReplicas(fileIDs,connection=connection)
     if not res['OK']:
@@ -326,22 +364,22 @@ class FileManager( FileManagerBase ):
     repIDs = res['Value'].keys()
     return self.__deleteReplicas(repIDs, connection=connection)
 
-  def __deleteFiles(self,fileIDs,connection=False):
+  def __deleteFiles( self, fileIDs, connection = False ):
     connection = self._getConnection(connection)
     if type(fileIDs) not in [ ListType, TupleType]:
       fileIDs = [fileIDs]
     if not fileIDs:
       return S_OK()
-    fileIDString = intListToString(fileIDs)
+    fileIDString = intListToString( fileIDs )
     failed = []
     for table in ['FC_Files','FC_FileInfo']:
-      req = "DELETE FROM %s WHERE FileID in (%s)" % (table,fileIDString)
+      req = "DELETE FROM %s WHERE FileID in (%s)" % ( table, fileIDString )
       res = self.db._update(req,connection)
       if not res['OK']:
-        gLogger.error("Failed to remove files from table", "%s" % table,res['Message'])
+        gLogger.error( "Failed to remove files from table %s" % table, res['Message'] )
         failed.append(table)
     if failed:
-      return S_ERROR("Failed to remove files from %s" % stringListToString(failed))
+      return S_ERROR( "Failed to remove files from %s" % stringListToString( failed ) )
     return S_OK()
 
   ######################################################
@@ -349,7 +387,7 @@ class FileManager( FileManagerBase ):
   # _addReplicas related methods
   #
   
-  def _insertReplicas(self,lfns,master=False,connection=False): 
+  def _insertReplicas( self, lfns, master = False, connection = False ):
     connection = self._getConnection(connection)
     # Add the files
     failed = {}
@@ -457,11 +495,11 @@ class FileManager( FileManagerBase ):
   # _deleteReplicas related methods
   #
   
-  def _deleteReplicas(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def _deleteReplicas( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     failed = {}
     successful = {}
-    res = self._findFiles(lfns.keys(),['DirID','FileID','Size'],connection=connection)
+    res = self._findFiles( lfns.keys(), ['DirID', 'FileID', 'Size'], connection = connection )
 
     # If the file does not exist we consider the deletion successful
     for lfn, error in res['Value']['Failed'].items():
@@ -481,14 +519,14 @@ class FileManager( FileManagerBase ):
         if not res['OK']:
           return res
       seID = res['Value']
-      toRemove.append((fileID,seID))
+      toRemove.append( ( fileID, seID ) )
       # Now prepare the storage usage update
       dirID = fileDict['DirID']
       directorySESizeDict.setdefault( dirID, {} )
       directorySESizeDict[dirID].setdefault( seID, {'Files':0,'Size':0} )
       directorySESizeDict[dirID][seID]['Size'] += fileDict['Size']
       directorySESizeDict[dirID][seID]['Files'] += 1
-    res = self._getRepIDsForReplica(toRemove, connection)
+    res = self._getRepIDsForReplica( toRemove, connection )
     if not res['OK']:
       for lfn in lfnFileIDDict.keys():
         failed[lfn] = res['Message']
@@ -497,18 +535,18 @@ class FileManager( FileManagerBase ):
       for fileID,seDict in res['Value'].items():
         for seID,repID in seDict.items():
           repIDs.append(repID)    
-      res = self.__deleteReplicas(repIDs,connection=connection)
+      res = self.__deleteReplicas( repIDs, connection = connection )
       if not res['OK']:
         for lfn in lfnFileIDDict.keys():
           failed[lfn] = res['Message']
       else:
         # Update the directory usage
-        self._updateDirectoryUsage(directorySESizeDict,'-',connection=connection)
+        self._updateDirectoryUsage( directorySESizeDict, '-', connection = connection )
         for lfn in lfnFileIDDict.keys():
           successful[lfn] = True
-    return S_OK({"Successful":successful,"Failed":failed})
+    return S_OK( {"Successful":successful, "Failed":failed} )
 
-  def __deleteReplicas(self,repIDs,connection=False):
+  def __deleteReplicas( self, repIDs, connection = False ):
     connection = self._getConnection(connection)
     if type(repIDs) not in [ ListType, TupleType]:
       repIDs = [repIDs]
@@ -520,7 +558,7 @@ class FileManager( FileManagerBase ):
       req = "DELETE FROM %s WHERE RepID in (%s)" % (table,repIDString)
       res = self.db._update(req,connection)
       if not res['OK']:
-        gLogger.error("Failed to remove replicas from table", "%s" % table,res['Message'])
+        gLogger.error( "Failed to remove replicas from table %s" % table, res['Message'] )
         failed.append(table)
     if failed:
       return S_ERROR("Failed to remove replicas from %s" % stringListToString(failed))
@@ -532,7 +570,7 @@ class FileManager( FileManagerBase ):
   # _setFileParameter method
   #
   
-  def _setReplicaStatus(self,fileID,se,status,connection=False):
+  def _setReplicaStatus( self, fileID, se, status, connection = False ):
     if not status in self.db.validReplicaStatus:
       return S_ERROR( 'Invalid replica status %s' % status )
     connection = self._getConnection(connection)
@@ -551,13 +589,13 @@ class FileManager( FileManagerBase ):
     req = "UPDATE FC_Replicas SET Status=%d WHERE RepID=%d" % (statusID,repID)
     return self.db._update(req,connection)
 
-  def _setReplicaHost(self,fileID,se,newSE,connection=False):
-    connection = self._getConnection(connection)
-    res = self.db.seManager.findSE(newSE)
+  def _setReplicaHost( self, fileID, se, newSE, connection = False ):
+    connection = self._getConnection( connection )
+    res = self.db.seManager.findSE( newSE )
     if not res['OK']:
       return res
     newSE = res['Value']
-    res = self.__getRepIDForReplica(fileID,se,connection=connection)
+    res = self.__getRepIDForReplica( fileID, se, connection = connection )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -566,7 +604,7 @@ class FileManager( FileManagerBase ):
     req = "UPDATE FC_Replicas SET SEID=%d WHERE RepID = %d;" % (newSE,repID)
     return self.db._update(req,connection)
     
-  def _setReplicaParameter(self,fileID,se,paramName,paramValue,connection=False):
+  def _setReplicaParameter( self, fileID, se, paramName, paramValue, connection = False ):
     connection = self._getConnection(connection)
     res = self.__getRepIDForReplica(fileID,se,connection=connection)
     if not res['OK']:
@@ -574,7 +612,7 @@ class FileManager( FileManagerBase ):
     if not res['Value']:
       return res
     repID = res['Value']
-    req = "UPDATE FC_ReplicaInfo SET %s='%s', ModificationDate = UTC_TIMESTAMP() WHERE RepID IN (%d)" % (paramName,paramValue,repID)
+    req = "UPDATE FC_ReplicaInfo SET %s='%s', ModificationDate = UTC_TIMESTAMP() WHERE RepID IN (%d)" % ( paramName, paramValue, repID )
     return self.db._update(req,connection)
 
   def _setFileParameter( self, fileID, paramName, paramValue, connection = False ):
@@ -584,23 +622,24 @@ class FileManager( FileManagerBase ):
       
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
-      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % (paramName,paramValue,intListToString(fileID))
+      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % ( paramName, paramValue, intListToString( fileID ) )
       result = self.db._update(req,connection)
       if not result['OK']:
         return result
-      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % intListToString(fileID)
+      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % intListToString( fileID )
     else:  
-      req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % (paramName,paramValue,intListToString(fileID))
+      req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % ( paramName, paramValue,
+                                                                                                       intListToString( fileID ) )
     return self.db._update(req,connection)
     
-  def __getRepIDForReplica(self,fileID,seID,connection=False):
+  def __getRepIDForReplica( self, fileID, seID, connection = False ):
     connection = self._getConnection(connection)
     if type(seID) in StringTypes:
       res = self.db.seManager.findSE(seID)
       if not res['OK']:
         return res
       seID = res['Value']
-    res = self._getRepIDsForReplica([(fileID,seID)],connection=connection)
+    res = self._getRepIDsForReplica( [( fileID, seID )], connection = connection )
     if not res['OK']:
       return res
     if not res['Value']:

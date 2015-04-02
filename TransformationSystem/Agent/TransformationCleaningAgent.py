@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 
 # # imports
 import re
+import ast
 from datetime import datetime, timedelta
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -194,7 +195,10 @@ class TransformationCleaningAgent( AgentModule ):
       if not res['OK']:
         self.log.error( "Failed to obtain transformation directories", res['Message'] )
         return res
-      transDirectories = res['Value'].splitlines()
+      if type( res['Value'] ) != type( [] ):
+        transDirectories = ast.literal_eval( res['Value'] )
+      else:
+        transDirectories = res['Value']
       directories = self._addDirs( transID, transDirectories, directories )
 
     if 'MetadataCatalog' in self.directoryLocations:

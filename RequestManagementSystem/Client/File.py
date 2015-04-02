@@ -28,7 +28,7 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 
 from sqlalchemy.ext.hybrid import hybrid_property
-
+import datetime
 
 ########################################################################
 class File( object ):
@@ -154,7 +154,13 @@ class File( object ):
 
     if value == 'Done':
       self.Error = ''
+      
+    updateTime = ( self._Status != value )
+    if updateTime and self._parent:
+      self._parent.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )  
+      
     self._Status = value
+
     if self._parent:
       self._parent._notify()
 

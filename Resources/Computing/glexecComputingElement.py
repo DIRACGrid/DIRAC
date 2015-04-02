@@ -4,15 +4,19 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
-from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
-from DIRAC.Core.Utilities.Subprocess                        import shellCall
-from DIRAC                                                  import S_OK, S_ERROR
+import os
+import stat
+import distutils.spawn
 
 import DIRAC
 
-import os
-import distutils.spawn
+from DIRAC                                                  import S_OK, S_ERROR
+
+from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
+from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
+from DIRAC.Core.Utilities.Subprocess                        import shellCall
+
+
 
 MandatoryParameters = [ ]
 
@@ -95,7 +99,7 @@ class glexecComputingElement( ComputingElement ):
     #Submit job
     self.log.info( 'Changing permissions of executable to 0755' )
     try:
-      os.chmod( os.path.abspath( executableFile ), 0755 )
+      os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
                       '\n%s' % ( x ) )
@@ -118,7 +122,7 @@ class glexecComputingElement( ComputingElement ):
     currentDir = os.getcwd()
     try:
       self.log.info( 'Trying to explicitly change permissions for parent directory %s' % currentDir )
-      os.chmod( currentDir, 0755 )
+      os.chmod( currentDir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Problem changing directory permissions in parent directory', str( x ) )
 
@@ -149,15 +153,15 @@ class glexecComputingElement( ComputingElement ):
       self.log.error( 'Failed to list the parent directory contents', str( res['Value'][2] ) )
 
     self.log.verbose( 'Changing permissions to 0755 in current directory %s' % currentDir )
-    for dirName, subDirs, files in os.walk( currentDir ):
+    for dirName, _, files in os.walk( currentDir ):
       try:
         self.log.info( 'Changing file and directory permissions to 0755 for %s' % dirName )
         if os.stat( dirName )[4] == userID and not os.path.islink( dirName ):
-          os.chmod( dirName, 0755 )
+          os.chmod( dirName, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
         for toChange in files:
           toChange = os.path.join( dirName, toChange )
           if os.stat( toChange )[4] == userID and not os.path.islink( toChange ):
-            os.chmod( toChange, 0755 )
+            os.chmod( toChange, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       except Exception, x:
         self.log.error( 'Problem changing directory permissions', str( x ) )
 
@@ -249,7 +253,7 @@ class glexecComputingElement( ComputingElement ):
     fopen.close()
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
-      os.chmod( os.path.abspath( testFile ), 0755 )
+      os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     except Exception, x:
       self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
                       '\n%s' % ( x ) )

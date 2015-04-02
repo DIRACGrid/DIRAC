@@ -13,8 +13,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 def _parseSingleElement( element, attributes = None ):
   """
-  Given a DOM Element, return a dictionary of its
-  child elements and values (as strings).
+  Given a DOM Element, return a dictionary of its child elements and values (as strings).
   """
 
   handler = {}
@@ -235,7 +234,7 @@ class GOCDBClient( object ):
       :attr:`entity` : a string. Actual name of the entity.
     """
     if type( granularity ) != str or type( entity ) != str:
-      raise ValueError, "Arguments must be strings."
+      raise ValueError( "Arguments must be strings." )
 
     # GOCDB-PI query
     gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
@@ -274,15 +273,18 @@ class GOCDBClient( object ):
     dtDict = {}
 
     for dtElement in downtimeElements:
-      elements = _parseSingleElement( dtElement, ['SEVERITY', 'SITENAME', 'HOSTNAME',
+      elements = _parseSingleElement( dtElement, ['SEVERITY', 'SITENAME', 'HOSTNAME', 'ENDPOINT',
                                                   'HOSTED_BY', 'FORMATED_START_DATE',
                                                   'FORMATED_END_DATE', 'DESCRIPTION',
                                                   'GOCDB_PORTAL_URL', 'SERVICE_TYPE' ] )
 
       try:
-        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['HOSTNAME'] ] = elements
+        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['ENDPOINT'] ] = elements
       except Exception:
-        dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['SITENAME'] ] = elements
+        try:
+          dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['HOSTNAME'] ] = elements
+        except Exception:
+          dtDict[ str( dtElement.getAttributeNode( "PRIMARY_KEY" ).nodeValue ) + ' ' + elements['SITENAME'] ] = elements
 
     for dt_ID in dtDict.keys():
       if siteOrRes in ( 'Site', 'Sites' ):

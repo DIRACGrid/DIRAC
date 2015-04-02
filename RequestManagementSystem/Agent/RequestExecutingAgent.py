@@ -275,7 +275,10 @@ class RequestExecutingAgent( AgentModule ):
         # # save current request in cache
         self.cacheRequest( request )
         # # serialize to JSON
-        requestJSON = request.toJSON()
+        result = request.toJSON()
+        if not result['OK']:
+          continue
+        requestJSON = result['Value']
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )

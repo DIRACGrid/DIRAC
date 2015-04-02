@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: RequestDB.py
 # Date: 2012/12/04 08:06:30
 ########################################################################
@@ -15,12 +14,10 @@ from types import ListType
 __RCSID__ = "$Id $"
 
 import random
-import socket
 
 import datetime
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Base.DB import DB
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -31,6 +28,7 @@ from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, 
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
                        Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
+from sqlalchemy.engine.reflection import Inspector
 
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -40,30 +38,27 @@ metadata = MetaData()
 # Description of the file table
 
 fileTable = Table( 'File', metadata,
-            Column( 'FileID', Integer, primary_key = True ),
-            Column( 'OperationID', Integer,
-                        ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
-                        nullable = False ),
-            Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' ),
-            Column( 'LFN', String( 255 ), index = True ),
-            Column( 'PFN', String( 255 ) ),
-            Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' ),
-            Column( 'Checksum', String( 255 ) ),
-            Column( 'GUID', String( 36 ) ),
-            Column( 'Size', BigInteger ),
-            Column( 'Attempt', Integer ),
-            Column( 'Error', String( 255 ) ),
-            mysql_engine = 'InnoDB'
-        )
+                   Column( 'FileID', Integer, primary_key = True ),
+                   Column( 'OperationID', Integer,
+                           ForeignKey( 'Operation.OperationID', ondelete = 'CASCADE' ),
+                           nullable = False ),
+                   Column( 'Status', Enum( 'Waiting', 'Done', 'Failed', 'Scheduled' ), server_default = 'Waiting' ),
+                   Column( 'LFN', String( 255 ), index = True ),
+                   Column( 'PFN', String( 255 ) ),
+                   Column( 'ChecksumType', Enum( 'ADLER32', 'MD5', 'SHA1', '' ), server_default = '' ),
+                   Column( 'Checksum', String( 255 ) ),
+                   Column( 'GUID', String( 36 ) ),
+                   Column( 'Size', BigInteger ),
+                   Column( 'Attempt', Integer ),
+                   Column( 'Error', String( 255 ) ),
+                   mysql_engine = 'InnoDB' )
 
 # Map the File object to the fileTable, with a few special attributes
 
-mapper( File, fileTable, properties = {
-   '_Status': fileTable.c.Status,
-   '_LFN': fileTable.c.LFN,
-   '_ChecksumType' : fileTable.c.ChecksumType,
-   '_GUID' : fileTable.c.GUID,
-} )
+mapper( File, fileTable, properties = {'_Status': fileTable.c.Status,
+                                       '_LFN': fileTable.c.LFN,
+                                       '_ChecksumType' : fileTable.c.ChecksumType,
+                                       '_GUID' : fileTable.c.GUID} )
 
 
 # Description of the Operation table
@@ -76,77 +71,68 @@ operationTable = Table( 'Operation', metadata,
                         Column( 'Error', String( 255 ) ),
                         Column( 'Type', String( 64 ), nullable = False ),
                         Column( 'Order', Integer, nullable = False ),
-                        Column( 'Status', Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Queued' ),
+                        Column( 'Status',
+                                Enum( 'Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled' ),
+                                server_default = 'Queued' ),
                         Column( 'LastUpdate', DateTime ),
                         Column( 'SubmitTime', DateTime ),
                         Column( 'Catalog', String( 255 ) ),
                         Column( 'OperationID', Integer, primary_key = True ),
                         Column( 'RequestID', Integer,
-                                  ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
-                                  nullable = False ),
-                       mysql_engine = 'InnoDB'
-                       )
+                                ForeignKey( 'Request.RequestID', ondelete = 'CASCADE' ),
+                                nullable = False ),
+                        mysql_engine = 'InnoDB' )
 
 
 # Map the Operation object to the operationTable, with a few special attributes
 
-mapper(Operation, operationTable, properties={
-   '_CreationTime': operationTable.c.CreationTime,
-   '_Order': operationTable.c.Order,
-   '_Status': operationTable.c.Status,
-   '_LastUpdate': operationTable.c.LastUpdate,
-   '_SubmitTime': operationTable.c.SubmitTime,
-   '_Catalog': operationTable.c.Catalog,
-   '__files__':relationship( File,
-                            backref = backref( '_parent', lazy = 'immediate' ),
-                            lazy = 'immediate',
-                            passive_deletes = True,
-                            cascade = "all, delete-orphan" )
-
-})
+mapper( Operation, operationTable, properties = {'_CreationTime': operationTable.c.CreationTime,
+                                                 '_Order': operationTable.c.Order,
+                                                 '_Status': operationTable.c.Status,
+                                                 '_LastUpdate': operationTable.c.LastUpdate,
+                                                 '_SubmitTime': operationTable.c.SubmitTime,
+                                                 '_Catalog': operationTable.c.Catalog,
+                                                 '__files__':relationship( File,
+                                                                           backref = backref( '_parent', lazy = 'immediate' ),
+                                                                           lazy = 'immediate',
+                                                                           passive_deletes = True,
+                                                                           cascade = "all, delete-orphan" )} )
 
 
 # Description of the Request Table
 
 requestTable = Table( 'Request', metadata,
-                        Column( 'DIRACSetup', String( 32 ) ),
-                        Column( 'CreationTime', DateTime ),
-                        Column( 'JobID', Integer, server_default = '0' ),
-                        Column( 'OwnerDN', String( 255 ) ),
-                        Column( 'RequestName', String( 255 ), nullable = False ),
-                        Column( 'Error', String( 255 ) ),
-                        Column( 'Status', Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ), server_default = 'Waiting' ),
-                        Column( 'LastUpdate', DateTime ),
-                        Column( 'OwnerGroup', String( 32 ) ),
-                        Column( 'SubmitTime', DateTime ),
-                        Column( 'RequestID', Integer, primary_key = True ),
-                        Column( 'SourceComponent', BLOB ),
-                        Column( 'NotBefore', DateTime ),
-                        mysql_engine = 'InnoDB'
-
-                       )
+                      Column( 'DIRACSetup', String( 32 ) ),
+                      Column( 'CreationTime', DateTime ),
+                      Column( 'JobID', Integer, server_default = '0' ),
+                      Column( 'OwnerDN', String( 255 ) ),
+                      Column( 'RequestName', String( 255 ), nullable = False ),
+                      Column( 'Error', String( 255 ) ),
+                      Column( 'Status',
+                              Enum( 'Waiting', 'Assigned', 'Done', 'Failed', 'Canceled', 'Scheduled' ),
+                              server_default = 'Waiting' ),
+                      Column( 'LastUpdate', DateTime ),
+                      Column( 'OwnerGroup', String( 32 ) ),
+                      Column( 'SubmitTime', DateTime ),
+                      Column( 'RequestID', Integer, primary_key = True ),
+                      Column( 'SourceComponent', BLOB ),
+                      Column( 'NotBefore', DateTime ),
+                      mysql_engine = 'InnoDB' )
 
 # Map the Request object to the requestTable, with a few special attributes
 
-mapper( Request, requestTable, properties = {
-   '_CreationTime': requestTable.c.CreationTime,
-   '_Status': requestTable.c.Status,
-   '_LastUpdate': requestTable.c.LastUpdate,
-   '_SubmitTime': requestTable.c.SubmitTime,
-   '_NotBefore': requestTable.c.NotBefore,
-   '__operations__' : relationship( Operation,
-                                  backref = backref( '_parent', lazy = 'immediate' ),
-                                  order_by = operationTable.c.Order,
-                                  lazy = 'immediate',
-                                  passive_deletes = True,
-                                  cascade = "all, delete-orphan"
-                                )
-
-} )
-
-
-
-
+mapper( Request, requestTable, properties = {'_CreationTime': requestTable.c.CreationTime,
+                                             '_Status': requestTable.c.Status,
+                                             '_LastUpdate': requestTable.c.LastUpdate,
+                                             '_SubmitTime': requestTable.c.SubmitTime,
+                                             '_NotBefore': requestTable.c.NotBefore,
+                                             '__operations__' : relationship( Operation,
+                                                                              backref = backref( '_parent',
+                                                                                                 lazy = 'immediate' ),
+                                                                              order_by = operationTable.c.Order,
+                                                                              lazy = 'immediate',
+                                                                              passive_deletes = True,
+                                                                              cascade = "all, delete-orphan" )} )
 
 
 
@@ -165,9 +151,8 @@ class RequestDB( object ):
     """
 
     result = getDBParameters( fullname )
-    if( not result[ 'OK' ] ):
-      raise Exception \
-                  ( 'Cannot get the Database parameters' % result( 'Message' ) )
+    if not result[ 'OK' ]:
+      raise Exception( 'Cannot get the Database parameters: %s' % result[ 'Message' ] )
 
     dbParameters = result[ 'Value' ]
     self.dbHost = dbParameters[ 'host' ]
@@ -190,7 +175,7 @@ class RequestDB( object ):
 
 
     runDebug = ( gLogger.getLevel() == 'DEBUG' )
-    self.engine = create_engine( 'mysql://%s:%s@%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbName ),
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
                                  echo = runDebug )
 
     metadata.bind = self.engine
@@ -215,7 +200,8 @@ class RequestDB( object ):
 
   def getTables(self):
     """ Return the table names """
-    return S_OK( metadata.tables.keys() )
+    inspector = Inspector.from_engine( self.engine )
+    return inspector.get_table_names()
 
   def cancelRequest( self, requestID ):
     session = self.DBSession()
@@ -424,7 +410,6 @@ class RequestDB( object ):
     requestDict = {}
 
     try:
-
       # If we are here, the request MUST exist, so no try catch
       # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
       try:
@@ -484,7 +469,7 @@ class RequestDB( object ):
 
       reqQuery = reqQuery.order_by( Request._LastUpdate )\
                          .limit( limit )
-      requestIDs = [reqIDTuple[0] for reqIDTuple in reqQuery.all()]
+      requestIDs = [ tuple( reqIDTuple ) for reqIDTuple in reqQuery.all() ]
 
     except Exception, e:
       session.rollback()

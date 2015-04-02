@@ -26,7 +26,6 @@ import re
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler
 
-from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 
@@ -138,6 +137,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     # Clients
     self.fc = FileCatalog()
     if hasattr( self, "FTSMode" ) and getattr( self, "FTSMode" ):
+      from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
       self.ftsClient = FTSClient()
 
   def __call__( self ):
@@ -404,7 +404,10 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
         sourceSE = validReplicas[0]
 
       # # loop over targetSE
-      catalog = self.operation.Catalog
+      catalogs = self.operation.Catalog
+      if catalogs:
+        catalogs = [ cat.strip() for cat in catalogs.split( ',' ) ]
+
       for targetSE in self.operation.targetSEList:
 
         # # call DataManager
@@ -412,7 +415,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           self.log.warn( "Request to replicate %s to an existing location: %s" % ( lfn, targetSE ) )
           opFile.Status = 'Done'
           continue
-        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE, catalog = catalog )
+        res = self.dm.replicateAndRegister( lfn, targetSE, sourceSE = sourceSE, catalog = catalogs )
         if res["OK"]:
 
           if lfn in res["Value"]["Successful"]:
