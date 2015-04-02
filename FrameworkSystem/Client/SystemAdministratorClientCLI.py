@@ -38,6 +38,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     self.cwd = ''  
     self.previous_cwd = ''
     self.homeDir = ''
+    self.runitComponents = [ "service", "agent", "executor" ]
+
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
