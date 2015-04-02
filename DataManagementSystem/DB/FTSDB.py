@@ -41,14 +41,14 @@ class FTSDB( DB ):
   database holding FTS jobs and their files
   """
 
-  def __init__( self, systemInstance = "Default", maxQueueSize = 10 ):
+  def __init__( self, systemInstance = "Default" ):
     """c'tor
 
     :param self: self reference
     :param str systemInstance: ???
     :param int maxQueueSize: size of queries queue
     """
-    DB.__init__( self, "FTSDB", "DataManagement/FTSDB", maxQueueSize )
+    DB.__init__( self, "FTSDB", "DataManagement/FTSDB" )
 #    self.log = gLogger.getSubLogger( "DataManagement/FTSDB" )
     # # private lock
     self.getIdLock = LockRing().getLock( "FTSDBLock" )

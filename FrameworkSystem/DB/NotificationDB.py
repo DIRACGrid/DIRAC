@@ -18,8 +18,8 @@ from DIRAC.Core.Security import CS
 
 class NotificationDB( DB ):
 
-  def __init__( self, maxQueueSize = 10 ):
-    DB.__init__( self, 'NotificationDB', 'Framework/NotificationDB', maxQueueSize )
+  def __init__( self ):
+    DB.__init__( self, 'NotificationDB', 'Framework/NotificationDB' )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )

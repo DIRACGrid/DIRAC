@@ -24,9 +24,8 @@ class ProxyDB( DB ):
   NOTIFICATION_TIMES = [ 2592000, 1296000 ]
 
   def __init__( self,
-                useMyProxy = False,
-                maxQueueSize = 10 ):
-    DB.__init__( self, 'ProxyDB', 'Framework/ProxyDB', maxQueueSize )
+                useMyProxy = False ):
+    DB.__init__( self, 'ProxyDB', 'Framework/ProxyDB' )
     random.seed()
     self.__defaultRequestLifetime = 300 # 5min
     self.__defaultTokenLifetime = 86400 * 7 # 1 week

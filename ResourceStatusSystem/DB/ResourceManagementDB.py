@@ -176,7 +176,7 @@ class ResourceManagementDB( object ):
                    'PolicyResultHistory' : 'PolicyResultWithID',
                   }
   
-  def __init__( self, maxQueueSize = 10, mySQL = None ):
+  def __init__( self, mySQL = None ):
     '''
       Constructor, accepts any DB or mySQL connection, mostly used for testing
       purposes.
@@ -187,7 +187,7 @@ class ResourceManagementDB( object ):
       self.database = mySQL
     else:
       self.database = DB( 'ResourceManagementDB', 
-                          'ResourceStatus/ResourceManagementDB', maxQueueSize )
+                          'ResourceStatus/ResourceManagementDB' )
 
   ## SQL Methods ############################################################### 
       

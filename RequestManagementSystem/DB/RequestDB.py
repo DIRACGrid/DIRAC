@@ -152,17 +152,17 @@ class RequestDB( object ):
 
     result = getDBParameters( fullname )
     if not result[ 'OK' ]:
-      raise Exception( 'Cannot get the Database parameters: %s' % result[ 'Message' ] )
+      raise Exception( 'Cannot get database parameters: %s' % result[ 'Message' ] )
 
     dbParameters = result[ 'Value' ]
-    self.dbHost = dbParameters[ 'host' ]
-    self.dbPort = dbParameters[ 'port' ]
-    self.dbUser = dbParameters[ 'user' ]
-    self.dbPass = dbParameters[ 'password' ]
-    self.dbName = dbParameters[ 'db' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+  def __init__( self, systemInstance = 'Default' ):
     """c'tor
 
     :param self: self reference

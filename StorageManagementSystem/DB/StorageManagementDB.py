@@ -35,8 +35,8 @@ THROTTLING_STEPS = 12
 
 class StorageManagementDB( DB ):
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
-    DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB', maxQueueSize )
+  def __init__( self, systemInstance = 'Default' ):
+    DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB' )
     self.lock = threading.Lock()
     self.TASKPARAMS = ['TaskID', 'Status', 'Source', 'SubmitTime', 'LastUpdate', 'CompleteTime', 'CallBackMethod', 'SourceTaskID']
     self.REPLICAPARAMS = ['ReplicaID', 'Type', 'Status', 'SE', 'LFN', 'PFN', 'Size', 'FileChecksum', 'GUID', 'SubmitTime', 'LastUpdate', 'Reason', 'Links']
