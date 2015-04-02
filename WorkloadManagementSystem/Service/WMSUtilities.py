@@ -12,6 +12,7 @@ import shutil, os
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
@@ -78,7 +79,7 @@ def getARCPilotOutput( proxy, pilotRef ):
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
   mySite = getCESiteMapping()['Value'][myce]
-  WorkDB = gConfig.getValue(os.path.join('Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'))
+  WorkDB = gConfig.getValue(cfgPath['Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'])
   myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL2", WorkDB)
   cmd = [ 'arcget' ]
   cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
