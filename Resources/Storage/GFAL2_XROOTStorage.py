@@ -33,7 +33,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     GFAL2_StorageBase.__init__( self, storageName, parameters )
 
     # XROOT has problems with checksums at the moment.
-    self.checksumType = None
+    self.checksumType = 'ADLER32'
 
 #     self.log.setLevel( "DEBUG" )
 

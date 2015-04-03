@@ -29,7 +29,7 @@ class GFAL2_StorageBase( StorageBase ):
 
   SRM v2 interface to StorageElement using gfal2
   """
-  
+
   def __init__( self, storageName, parameters ):
     """ c'tor
 
