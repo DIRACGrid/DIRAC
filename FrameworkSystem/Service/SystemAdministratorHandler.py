@@ -107,7 +107,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """ Remove runit directory for the specified component
         It implies unsetupComponent
     """
-    return InstallTools.uninstallComponent( gConfig, system, component, removeLogs )
+    return InstallTools.uninstallComponent( system, component, removeLogs )
 
   types_startComponent = [ StringTypes, StringTypes ]
   def export_startComponent( self, system, component ):
@@ -235,10 +235,6 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Check if there are extensions
     extensionList = getCSExtensions()
-    webFlag = gConfig.getValue( '/LocalInstallation/WebPortal', False ) # this is the old web portal
-    # TODO: It can be removed when we do not use anymore the old portal...
-    if webFlag:
-      extensionList.append( 'Web' )
     if extensionList:
       cmdList += ['-e', ','.join( extensionList )]
 
@@ -339,17 +335,7 @@ class SystemAdministratorHandler( RequestHandler ):
       diracCFG = CFG.CFG().loadFromFile( cfgPath )
     except Exception, excp:
       return S_ERROR( "Could not load dirac.cfg: %s" % str( excp ) )
-    # HACK: Remove me once the v6 migration hell is over
-    if diracCFG.isOption( "/LocalInstallation/ExtraPackages" ):
-      diracCFG[ "LocalInstallation" ].renameKey( "ExtraPackages", "ExtraModules" )
-      try:
-        fd = open( cfgPath, "w" )
-        fd.write( str( diracCFG ) )
-        fd.close()
-      except IOError, excp :
-        gLogger.warn( "Could not write dirac.cfg: %s" % str( excp ) )
-        pass
-    # EOH (End Of Hack)
+
     return S_OK( ( cfgPath, diracCFG ) )
 
   types_setProject = [ StringTypes ]

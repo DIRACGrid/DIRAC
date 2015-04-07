@@ -54,12 +54,14 @@ If a Master Configuration Server is being installed the following Options can be
 __RCSID__ = "$Id$"
 
 #
-import os, re, glob, stat, time, shutil, socket, datetime
+import datetime
+import os, re, glob, stat, time, shutil, socket
 
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
 import DIRAC
 from DIRAC import rootPath
+from DIRAC import gConfig
 from DIRAC import gLogger
 from DIRAC import systemCall
 from DIRAC import S_OK, S_ERROR
@@ -526,11 +528,10 @@ def addOptionToDiracCfg( option, value ):
 
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
-def removeComponentOptionsFromCS( gConfig, system, component, mySetup = setup ):
+def removeComponentOptionsFromCS( system, component, mySetup = setup ):
   """
   Remove the section with Component options from the CS, if possible
   """
-  global monitoringClient
 
   result = monitoringClient.getInstallations( { 'UnInstallationTime': None, 'Instance': component },
                                               { 'System': system },
@@ -1877,7 +1878,7 @@ def unsetupComponent( system, component ):
 
   return S_OK()
 
-def uninstallComponent( gConfig, system, component, removeLogs ):
+def uninstallComponent( system, component, removeLogs ):
   """
   Remove startup and runit directories
   """
@@ -1894,7 +1895,7 @@ def uninstallComponent( gConfig, system, component, removeLogs ):
       except Exception:
         gLogger.exception()
 
-  result = removeComponentOptionsFromCS( gConfig, system, component )
+  result = removeComponentOptionsFromCS( system, component )
   if not result [ 'OK' ]:
     return result
 

@@ -18,6 +18,7 @@ from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMoni
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import gConfig
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
@@ -527,7 +528,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         removeLogs = True
       else:
         if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in self.runitComponents:
-          removeLogs = raw_input( 'Remove logs? ' ).lower().strip( ' \t' ) in [ 'y', 'yes' ]
+          result = promptUser( 'Remove logs?', ['y', 'n'], 'n' )
+          if result[ 'OK' ]:
+            removeLogs = result[ 'Value' ] == 'y'
 
       result = client.uninstallComponent( system, component, removeLogs )
       if not result[ 'OK' ]:
