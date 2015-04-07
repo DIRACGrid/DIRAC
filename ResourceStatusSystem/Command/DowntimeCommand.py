@@ -256,6 +256,9 @@ class DowntimeCommand( Command ):
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
+        if dt[ 'EndDate' ] < dtDate:
+          removed = self.rmClient.deleteDowntimeCache( downtimeID = dt[ 'DowntimeID' ] )
+                
     else:
       # If hours defined, we want ongoing downtimes and downtimes starting 
       # in the next <hours>
