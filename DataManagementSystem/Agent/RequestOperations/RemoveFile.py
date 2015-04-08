@@ -55,7 +55,7 @@ class RemoveFile( OperationHandlerBase ):
     gMonitor.registerActivity( "RemoveFileFail", "Failed file removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     # # re pattern for not existing files
-    self.reNotExisting = re.compile( "(no|not) such file or directory", re.IGNORECASE )
+    self.reNotExisting = re.compile( "(no|not) such file.*", re.IGNORECASE )
 
   def __call__( self ):
     """ action for 'removeFile' operation  """
