@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' FTSUnbanAction
+''' FTSstorageUnbanAction
 
 '''
 
@@ -17,7 +17,7 @@ from DIRAC import gLogger
 
 __RCSID__  = '$Id:  $'
 
-class FTSUnbanAction( BaseAction ):
+class FTSStorageUnbanAction( BaseAction ):
 	'''
 		Action that sends to the FTS server a unbanning request for a given list of sites.
 	'''

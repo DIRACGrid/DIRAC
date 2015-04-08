@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' FTSBanAction
+''' FTSStorageBanAction
 
 '''
 
@@ -17,7 +17,7 @@ from DIRAC import gLogger
 
 __RCSID__  = '$Id:  $'
 
-class FTSBanAction( BaseAction ):
+class FTSStorageBanAction( BaseAction ):
 	'''
 		Action that sends to the FTS server a banning request for a given list of sites.
 	'''
