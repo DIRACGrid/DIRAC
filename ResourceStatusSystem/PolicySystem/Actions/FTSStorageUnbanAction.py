@@ -24,7 +24,7 @@ class FTSStorageUnbanAction( BaseAction ):
 	
 	def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, clients ):
 		
-		super( FTSUnbanAction, self ).__init__( name, decissionParams, enforcementResult, 
+		super( FTSStorageUnbanAction, self ).__init__( name, decissionParams, enforcementResult, 
                                          singlePolicyResults, clients )
 		self.diracAdmin = DiracAdmin()
 		
