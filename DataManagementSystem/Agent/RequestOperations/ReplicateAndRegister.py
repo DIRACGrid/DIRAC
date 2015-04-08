@@ -50,7 +50,7 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
   if not replicas["OK"]:
     log.error( replicas["Message"] )
     return replicas
-  reNotExists = re.compile( ".*such file.*" )
+  reNotExists = re.compile( r".*such file.*" )
   replicas = replicas["Value"]
   failed = replicas["Failed"].get( opFile.LFN , "" )
   if reNotExists.match( failed.lower() ):
@@ -173,7 +173,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
       self.log.error( replicas["Message"] )
       return replicas
 
-    reMissing = re.compile( ".*such file.*" )
+    reMissing = re.compile( r".*such file.*" )
     for failedLFN, errStr in replicas["Value"]["Failed"].items():
       waitingFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
