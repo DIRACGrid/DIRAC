@@ -75,7 +75,8 @@ class FTSStorageBanAction( BaseAction ):
 		allow_submit = False #or...?
 		output = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
 		
-		return S_OK( json.loads(context.get("ban/se"))
-		 		
+		return S_OK( json.loads(context.get("ban/se")) )
+								
+									
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
