@@ -655,45 +655,6 @@ class GFAL2_StorageBase( StorageBase ):
 
     try:
       statInfo = self.gfal2.stat( path )
-      metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
-
-      res = self._getExtendedAttributes( path )
-
-      # add extended attributes to the dict if available
-      if res['OK']:
-        attributeDict = res['Value']
-      else:
-        # no extendted attributes could be retrieved. Ignore it
-        attributeDict = {}
-      # 'user.status' is the extended attribute we are interested in
-      if metadataDict['File']:
-        if not self.checksumType:
-          res = self.__getChecksum( path )
-        else:
-          res = self.__getChecksum( path, self.checksumType )
-        if res['OK']:
-          metadataDict['Checksum'] = res['Value']
-        else:
-          metadataDict['Checksum'] = 'Failed to get checksum'
-        if 'user.status' in attributeDict.keys():
-          if attributeDict['user.status'] == 'ONLINE':
-            metadataDict['Cached'] = 1
-          else:
-            metadataDict['Cached'] = 0
-          if attributeDict['user.status'] == 'NEARLINE':
-            metadataDict['Migrated'] = 1
-          else:
-            metadataDict['Migrated'] = 0
-          if attributeDict['user.status'] == 'LOST':
-            metadataDict['Lost'] = 1
-          else:
-            metadataDict['Lost'] = 0
-          if attributeDict['user.status'] == 'UNAVAILABLE':
-            metadataDict['Unavailable'] = 1
-          else:
-            metadataDict['Unavailable'] = 0
-
-      return S_OK ( metadataDict )
 
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
@@ -705,7 +666,43 @@ class GFAL2_StorageBase( StorageBase ):
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
+    metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
+    res = self._getExtendedAttributes( path )
+    # add extended attributes to the dict if available
+    if res['OK']:
+      attributeDict = res['Value']
+    else:
+      # no extendted attributes could be retrieved. Ignore it
+      attributeDict = {}
 
+    if metadataDict['File']:
+      if self.checksumType:
+        res = self.__getChecksum( path, self.checksumType )
+      if res['OK']:
+        metadataDict['Checksum'] = res['Value']
+      else:
+        metadataDict['Checksum'] = 'Failed to get checksum'
+
+      # 'user.status' is the extended attribute we are interested in
+      if 'user.status' in attributeDict.keys():
+        if attributeDict['user.status'] == 'ONLINE':
+          metadataDict['Cached'] = 1
+        else:
+          metadataDict['Cached'] = 0
+        if attributeDict['user.status'] == 'NEARLINE':
+          metadataDict['Migrated'] = 1
+        else:
+          metadataDict['Migrated'] = 0
+        if attributeDict['user.status'] == 'LOST':
+          metadataDict['Lost'] = 1
+        else:
+          metadataDict['Lost'] = 0
+        if attributeDict['user.status'] == 'UNAVAILABLE':
+          metadataDict['Unavailable'] = 1
+        else:
+          metadataDict['Unavailable'] = 0
+
+    return S_OK ( metadataDict )
 
   def prestageFile( self, path, lifetime = 86400 ):
     """ Issue prestage request for file(s)
@@ -959,7 +956,7 @@ class GFAL2_StorageBase( StorageBase ):
 
 
 
-  def __getChecksum( self, path, checksumType = 'ADLER32' ):
+  def __getChecksum( self, path, checksumType = None ):
     """ Calculate the checksum (ADLER32 by default) of a file on the storage
 
     :param self: self reference
@@ -967,7 +964,13 @@ class GFAL2_StorageBase( StorageBase ):
     :returns S_OK( checksum ) if checksum could be calculated
              S_ERROR( errMsg ) if something failed
     """
+    if not checksumType:
+      errStr = "GFAL2_StorageBase.__getChecksum: No checksum type set by the storage element. Can't retrieve checksum"
+      self.log.error( errStr, path )
+      return S_ERROR( errStr )
+
     self.log.debug( 'GFAL2_StorageBase.__getChecksum: Trying to calculate checksum of file %s' % path )
+
     res = self.__isSingleFile( path )
 
     if not res['OK']:
@@ -1787,32 +1790,33 @@ class GFAL2_StorageBase( StorageBase ):
 ##################################################################
 
 
-  def _getExtendedAttributes( self, path ):
+  def _getExtendedAttributes( self, path, attributes = None ):
     """ Get all the available extended attributes of path
 
     :param self: self reference
     :param str path: path of which we wan't extended attributes
+    :param str list attributes: list of extended attributes we want to receive
     :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
     """
     attributeDict = {}
     # get all the extended attributes from path
     try:
-      attributes = self.gfal2.listxattr( path )
+      if not attributes:
+        attributes = self.gfal2.listxattr( path )
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
+        self.log.debug( "GFAL2_StorageBase._getExtendedAttributes: Path is %s" % path )
         attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
 
       return S_OK( attributeDict )
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
-        errStr = 'Path does not exist.'
+        errStr = 'GFAL2_StorageBase._getExtendedAttributesPath does not exist.'
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
       else:
-        errStr = 'Something went wrong while checking for extended attributes. Please see error log for more information.'
+        errStr = 'GFAL2_StorageBase._getExtendedAttributes: Something went wrong while checking for extended attributes. Please see error log for more information.'
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
-
-
 
