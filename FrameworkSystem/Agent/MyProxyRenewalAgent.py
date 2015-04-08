@@ -1,14 +1,11 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
 """
 __RCSID__ = "$Id$"
 
+from DIRAC import gLogger, S_OK
+
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC  import gLogger, gConfig, S_OK
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
@@ -18,7 +15,6 @@ class MyProxyRenewalAgent(AgentModule):
 
     requiredLifeTime = self.am_getOption( "MinimumLifeTime", 3600 )
     renewedLifeTime = self.am_getOption( "RenewedLifeTime", 54000 )
-    myProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
     self.proxyDB = ProxyDB( useMyProxy = True )
 
     gLogger.info( "Minimum Life time      : %s" % requiredLifeTime )

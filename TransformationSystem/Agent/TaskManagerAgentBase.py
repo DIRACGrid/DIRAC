@@ -257,13 +257,15 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
           self._logWarn( "Got a transf not in transInQueue...?", method = method, transID = transID )
           break
         self.transInThread[transID] = ' [Thread%d] [%s] ' % ( threadID, str( transID ) )
+        clients['TaskManager'].transInThread = self.transInThread
         for operation in operations:
           self._logInfo( "Starting processing operation %s" % operation, method = method, transID = transID )
           startTime = time.time()
           res = getattr( self, operation )( transIDOPBody, clients )
           if not res['OK']:
             self._logError( "Failed to %s: %s" % ( operation, res['Message'] ), method = method, transID = transID )
-          self._logInfo( "Processed operation %s" % operation, method = method, transID = transID )
+          self._logInfo( "Processed operation %s in %.1f seconds" % ( operation, time.time() - startTime if startTime else time.time() ),
+                         method = method, transID = transID )
       except Exception, x:
         self._logException( 'Exception executing operation %s' % operation, lException = x, transID = transID, method = method )
       finally:

@@ -1,8 +1,4 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ This is the StorageElement class.
-
 """
 from types import ListType
 
@@ -736,8 +732,3 @@ class StorageElementItem( object ):
 
 
 StorageElement = StorageElementCache()
-
-
-
-
-

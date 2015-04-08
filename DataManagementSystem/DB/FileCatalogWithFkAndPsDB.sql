@@ -867,12 +867,29 @@ CREATE PROCEDURE ps_delete_replicas_from_file_ids
 BEGIN
 
   START TRANSACTION;
-  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
-                    SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
-                    WHERE r.FileID = f.FileID 
-                    AND f.DirID = d.DirID 
-                    AND r.SEID = d.SEID
-                    AND f.FileID IN (', file_ids, ')');
+  
+  
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
+                      (SELECT d1.DirID, d1.SEID, SUM(f.Size) as t_size, count(*) as t_file
+                        FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r
+                        WHERE r.FileID = f.FileID
+                        AND f.DirID = d1.DirID
+                        AND r.SEID = d1.SEID 
+                        AND f.FileID IN (', file_ids, ')
+                        GROUP BY d1.DirID, d1.SEID ) t
+                     SET d.SESize = d.SESize - t.t_size,
+                         d.SEFiles = d.SEFiles - t.t_file
+                     WHERE d.DirID = t.DirID
+                     AND d.SEID = t.SEID');
+                     
+-- This is buggy in case we remove two files that have a replica on the same SE
+-- 
+--   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
+--                     SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
+--                     WHERE r.FileID = f.FileID 
+--                     AND f.DirID = d.DirID 
+--                     AND r.SEID = d.SEID
+--                     AND f.FileID IN (', file_ids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -1029,11 +1046,12 @@ DELIMITER ;
 --
 -- output : 0, 'OK'
 
+DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
 (IN  file_id INT, IN se_id INT) 
 BEGIN
-  DECLARE file_size INT DEFAULT 0;
+  DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
 
   SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
@@ -1083,7 +1101,7 @@ DELIMITER //
 CREATE PROCEDURE ps_set_replica_host
 (IN  file_id INT, IN old_se_id INT, IN new_se_id INT)
 BEGIN
-  DECLARE file_size INT DEFAULT 0;
+  DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
 
   
@@ -1495,7 +1513,7 @@ BEGIN
     ORDER BY NULL;
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
-    SELECT SQL_NO_CACHE DirID, SEID, sum(Size), count(*)
+    SELECT SQL_NO_CACHE DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
     FROM FC_Replicas r
     JOIN FC_Files f ON r.FileID = f.FileID
     GROUP BY DirID, SEID
@@ -1505,6 +1523,35 @@ BEGIN
 END //
 DELIMITER ;
 
+
+-- Rebuild the directoryUsage table for one directory
+DELIMITER //
+CREATE PROCEDURE ps_rebuild_directory_usage_for_dir
+(IN dir_id INT)
+BEGIN
+
+  START TRANSACTION;
+  
+  DELETE FROM FC_DirectoryUsage where DirID = dir_id;
+
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
+    SELECT SQL_NO_CACHE DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
+    FROM FC_Files 
+    WHERE DirID = dir_id
+    GROUP BY DirID
+    ORDER BY NULL;
+
+  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
+    SELECT SQL_NO_CACHE DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
+    FROM FC_Replicas r
+    JOIN FC_Files f ON r.FileID = f.FileID
+    WHERE f.DirID = dir_id
+    GROUP BY DirID, SEID
+    ORDER BY NULL;
+   
+  COMMIT;
+END //
+DELIMITER ;
 -- Consistency checks
 
 

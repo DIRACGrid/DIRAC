@@ -50,3 +50,8 @@ class TransformationAgentsUtilities( object ):
   def _logException( self, message, param = '', lException = False, method = "execute", transID = 'None' ):
     ''' exception '''
     gLogger.exception( self.__threadForTrans( transID ) + method + ' ' + message, param, lException )
+
+  def _logFatal( self, message, param = '', method = "execute", transID = 'None' ):
+    ''' error '''
+    gLogger.fatal( self.__threadForTrans( transID ) + method + ' ' + message, param )
+

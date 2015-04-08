@@ -1,15 +1,9 @@
-try:
-  import sqlite3
-except:
-  pass
-
+import sqlite3
 import os
 import types
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
 import time
+
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.private.monitoring.Activity import Activity
@@ -60,14 +54,14 @@ class MonitoringCatalog:
     try:
       filePath = "%s/monitoringSchema.sql" % os.path.dirname( __file__ )
       fd = open( filePath )
-      buffer = fd.read()
+      buff = fd.read()
       fd.close()
     except IOError, e:
       DIRAC.abort( 1, "Can't read monitoring schema", filePath )
-    while buffer.find( ";" ) > -1:
-      limit = buffer.find( ";" ) + 1
-      sqlQuery = buffer[ : limit ].replace( "\n", "" )
-      buffer = buffer[ limit : ]
+    while buff.find( ";" ) > -1:
+      limit = buff.find( ";" ) + 1
+      sqlQuery = buff[ : limit ].replace( "\n", "" )
+      buff = buff[ limit : ]
       try:
         self.__dbExecute( sqlQuery )
       except Exception, e:
@@ -221,7 +215,7 @@ class MonitoringCatalog:
     """
     Register an activity
     """
-    m = md5.md5()
+    m = hashlib.md5()
     acDict[ 'name' ] = acName
     acDict[ 'sourceId' ] = sourceId
     m.update( str( acDict ) )

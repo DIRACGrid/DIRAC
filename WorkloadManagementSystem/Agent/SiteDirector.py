@@ -5,20 +5,22 @@
 
 """  The Site Director is a simple agent performing pilot job submission to particular sites.
 """
+import os
+import base64
+import bz2
+import tempfile
+import random
+import socket
+import hashlib
 
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
-
+import DIRAC
+from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper   import findGenericPilotCredentials
-from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
@@ -27,8 +29,6 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
-import os, base64, bz2, tempfile, random, socket, types
-import DIRAC
 
 __RCSID__ = "$Id$"
 
@@ -192,7 +192,7 @@ class SiteDirector( AgentModule ):
   def __generateQueueHash( self, queueDict ):
     """ Generate a hash of the queue description
     """
-    myMD5 = md5.md5()
+    myMD5 = hashlib.md5()
     myMD5.update( str( queueDict ) )
     hexstring = myMD5.hexdigest()
     return hexstring
@@ -207,6 +207,9 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
+        ceTags = ceDict.get( 'Tag' )
+        if isinstance( ceTags, basestring ):
+          ceTags = fromChar( ceTags )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -227,12 +230,21 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
-          if "Tag" in self.queueDict[queueName]['ParametersDict'] and \
-             type( self.queueDict[queueName]['ParametersDict']['Tag'] ) in types.StringTypes:
-               self.queueDict[queueName]['ParametersDict']['Tag'] = fromChar( self.queueDict[queueName]['ParametersDict']['Tag'] )
+          queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
+          if queueTags and isinstance( queueTags, basestring ):
+            queueTags = fromChar( queueTags )
+            self.queueDict[queueName]['ParametersDict']['Tag'] = queueTags
+          if ceTags:
+            if queueTags:
+              allTags = list( set( ceTags + queueTags ) )
+              self.queueDict[queueName]['ParametersDict']['Tag'] = allTags
+            else:
+              self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
+
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
           if maxMemory:
-            maxMemoryList = range( 1, int( maxMemory ) + 1 )
+            # MaxRAM value is supposed to be in MB
+            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
             memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
             if memoryTags:
               self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
@@ -392,6 +404,7 @@ class SiteDirector( AgentModule ):
     queues = self.queueDict.keys()
     random.shuffle( queues )
     totalSubmittedPilots = 0
+    matchedQueues = 0
     for queue in queues:
 
       # Check if the queue failed previously
@@ -456,6 +469,7 @@ class SiteDirector( AgentModule ):
         self.log.verbose( 'No matching TQs found for %s' % queue )
         continue
 
+      matchedQueues += 1
       totalTQJobs = 0
       tqIDList = taskQueueDict.keys()
       for tq in taskQueueDict:
@@ -545,7 +559,7 @@ class SiteDirector( AgentModule ):
         rndm = random.random()*sumPriority
         tqDict = {}
         for pilotID in pilotList:
-          rndm = random.random()*sumPriority
+          rndm = random.random() * sumPriority
           for tq, prio in tqPriorityList:
             if rndm < prio:
               tqID = tq
@@ -556,13 +570,13 @@ class SiteDirector( AgentModule ):
 
         for tqID, pilotList in tqDict.items():
           result = pilotAgentsDB.addPilotTQReference( pilotList,
-                                                     tqID,
-                                                     self.pilotDN,
-                                                     self.pilotGroup,
-                                                     self.localhost,
-                                                     ceType,
-                                                     '',
-                                                     stampDict )
+                                                      tqID,
+                                                      self.pilotDN,
+                                                      self.pilotGroup,
+                                                      self.localhost,
+                                                      ceType,
+                                                      '',
+                                                      stampDict )
           if not result['OK']:
             self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
             continue
@@ -574,7 +588,7 @@ class SiteDirector( AgentModule ):
               self.log.error( 'Failed to set pilot status: ', result['Message'] )
               continue
 
-    self.log.info( "%d pilots submitted in total in this cycle" % totalSubmittedPilots )
+    self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
 
   def __getQueueSlots( self, queue ):
@@ -1061,4 +1075,3 @@ EOF
       return result
 
     return S_OK()
-

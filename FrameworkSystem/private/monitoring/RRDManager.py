@@ -1,17 +1,16 @@
-# $HeadURL$
+"""
+"""
+
 __RCSID__ = "$Id$"
-import os
+
 import os.path
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.FrameworkSystem.private.monitoring.ColorGenerator import ColorGenerator
 from DIRAC.Core.Utilities import Subprocess, Time
 
-class RRDManager:
+class RRDManager( object ):
 
   __sizesList = [ [ 200, 50 ], [ 400, 100 ], [ 600, 150 ], [ 800, 200 ] ]
   __logRRDCommands = False
@@ -161,7 +160,7 @@ class RRDManager:
     """
     Generate a random name
     """
-    m = md5.md5()
+    m = hashlib.md5()
     m.update( str( args ) )
     m.update( str( kwargs ) )
     return m.hexdigest()

@@ -50,10 +50,10 @@ CREATE TABLE Problematics(
 
   fieldList = ['FileID', 'LFN', 'PFN', 'Size', 'SE', 'GUID', 'Prognosis']
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self ):
     """ Standard Constructor
     """
-    DB.__init__( self, 'DataIntegrityDB', 'DataManagement/DataIntegrityDB', maxQueueSize )
+    DB.__init__( self, 'DataIntegrityDB', 'DataManagement/DataIntegrityDB' )
 
   def _checkTable( self ):
     """ Make sure the table is created

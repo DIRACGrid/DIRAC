@@ -15,13 +15,15 @@ __RCSID__ = "$Id$"
 
 import re
 import types
+import socket
 from urlparse import urlparse
-from DIRAC import gConfig, gLogger, S_OK
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
@@ -459,5 +461,78 @@ def getSRMUpdates( vo, bdiiInfo = None ):
 
   return S_OK( changeSet )  
     
-    
-    
+def getDBParameters( fullname ):
+  """
+  Retrieve Database parameters from CS
+  fullname should be of the form <System>/<DBname>
+  defaultHost is the host to return if the option is not found in the CS.
+  Not used as the method will fail if it cannot be found
+  defaultPort is the port to return if the option is not found in the CS
+  defaultUser is the user to return if the option is not found in the CS.
+  Not usePassword is the password to return if the option is not found in
+  the CS.
+  Not used as the method will fail if it cannot be found
+  defaultDB is the db to return if the option is not found in the CS.
+  Not used as the method will fail if it cannot be found
+  defaultQueueSize is the QueueSize to return if the option is not found in the
+  CS
+
+  Returns a dictionary with the keys: 'host', 'port', 'user', 'password',
+  'db' and 'queueSize'
+  """
+
+  cs_path = getDatabaseSection( fullname )
+  parameters = {}
+
+  result = gConfig.getOption( cs_path + '/Host' )
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/Host' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Host' )
+  dbHost = result['Value']
+  # Check if the host is the local one and then set it to 'localhost' to use
+  # a socket connection
+  if dbHost != 'localhost':
+    localHostName = socket.getfqdn()
+    if localHostName == dbHost:
+      dbHost = 'localhost'
+  parameters[ 'Host' ] = dbHost
+
+  # Mysql standard
+  dbPort = 3306
+  result = gConfig.getOption( cs_path + '/Port' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/Port' )
+    if result['OK']:
+      dbPort = int( result['Value'] )
+  else:
+    dbPort = int( result['Value'] )
+  parameters[ 'Port' ] = dbPort
+
+  result = gConfig.getOption( cs_path + '/User' )
+  if not result['OK']:
+    # No individual user name found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/User' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: User' )
+  dbUser = result['Value']
+  parameters[ 'User' ] = dbUser
+
+  result = gConfig.getOption( cs_path + '/Password' )
+  if not result['OK']:
+    # No individual password found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/Password' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Password' )
+  dbPass = result['Value']
+  parameters[ 'Password' ] = dbPass
+
+  result = gConfig.getOption( cs_path + '/DBName' )
+  if not result['OK']:
+    return S_ERROR( 'Failed to get the configuration parameter: DBName' )
+  dbName = result['Value']
+  parameters[ 'DBName' ] = dbName
+
+  return S_OK( parameters )
