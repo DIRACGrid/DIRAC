@@ -66,20 +66,28 @@ def getFTS2ServersForSites( self, siteList = None ):
 
 
 def getFTS3Servers():
-  """ get FTSServers for sites
-
-  :param list siteList: list of sites
+  """ get FTS3 Server URL
   """
 
   csPath = cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS3" )
-  # We do it in two times to keep the order
-  ftsServerNames = gConfig.getOptions( csPath ).get( 'Value', [] )
-
+  # retrieving list of params
+  params = gConfig.getOptions( csPath ).get( 'Value', [] )
+  # we get just the first param out of ['FTSEndpoint', 'FTSType']
   ftsServers = []
-  for name in ftsServerNames:
-    ftsServers.append( gConfig.getValue( cfgPath( csPath, name ) ) )
-
+  ftsServers.append(gConfig.getValue(cfgPath( csPath, params[0] )))
+  
   return S_OK( ftsServers )
+
+def getFTSServers( version = None, siteList = None ):
+  """ get FTSServers depending on the version 'FTS2' or 'FTS3'
+
+  :param str version: <'FTS2'|'FTS3'>
+  :param list siteList: list of sites
+  """  
+  if version == "FTS3":
+    return getFTS3Servers()
+  else:
+    return getFTS2ServersForSites( siteList )
 
 def getSiteTier( site ):
   """

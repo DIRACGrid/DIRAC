@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSit
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTSServers
 
 __RCSID__ = '$Id:  $'
 
@@ -106,6 +106,13 @@ class DowntimeCommand( Command ):
       if not seHost:
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
+      
+    elif elementType == 'FTS':
+    	gocdbServiceType = "FTS"
+    	try:
+    		elementName	= getFTSServers("FTS3")[ 'Value' ][0]
+    	except:
+    		return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
 
     return S_OK( ( element, elementName, hours, gocdbServiceType ) )
 
@@ -249,6 +256,9 @@ class DowntimeCommand( Command ):
             dtOutages.append( dt )
           else:
             dtWarnings.append( dt )
+        if dt[ 'EndDate' ] < dtDate:
+          removed = self.rmClient.deleteDowntimeCache( downtimeID = dt[ 'DowntimeID' ] )
+                
     else:
       # If hours defined, we want ongoing downtimes and downtimes starting 
       # in the next <hours>
@@ -289,13 +299,14 @@ class DowntimeCommand( Command ):
     sesHosts = sesHosts[ 'Value' ]
 
     resources = sesHosts
-
-    # TODO: file catalogs need also to use their hosts
-    # something similar applies to FTS Channels
-    #
-    #fts = CSHelpers.getFTS()
-    #if fts[ 'OK' ]:
-    #  resources = resources + fts[ 'Value' ]
+    
+    ftsServer = getFTSServers("FTS3")
+    if ftsServer[ 'OK' ]:
+    	resources = resources + ftsServer[ 'Value' ]   
+    
+    
+ 		# TODO: file catalogs need also to use their hosts
+   
     #fc = CSHelpers.getFileCatalogs()
     #if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
@@ -303,6 +314,9 @@ class DowntimeCommand( Command ):
     ce = CSHelpers.getComputingElements()
     if ce[ 'OK' ]:
       resources = resources + ce[ 'Value' ]
+      
+    print resources
+    return  
 
     gLogger.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
 
