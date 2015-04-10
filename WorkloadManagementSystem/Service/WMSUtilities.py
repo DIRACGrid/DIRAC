@@ -3,6 +3,7 @@
 ########################################################################
 
 """ A set of utilities used in the WMS services
+    Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
 
 __RCSID__ = "$Id$"
@@ -15,6 +16,10 @@ from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 from DIRAC import S_OK, S_ERROR, gConfig
+
+import sys
+sys.path.append('/usr/lib64/python2.6/site-packages')
+import arc
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
@@ -79,7 +84,7 @@ def getARCPilotOutput( proxy, pilotRef ):
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
   mySite = getCESiteMapping()['Value'][myce]
-  workDB = gConfig.getValue(cfgPath(['Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile']))
+  workDB = gConfig.getValue(cfgPath('Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'))
   myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL", workDB)
   cmd = [ 'arcget' ]
   cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
