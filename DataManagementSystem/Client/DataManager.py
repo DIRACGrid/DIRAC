@@ -1542,7 +1542,7 @@ class DataManager( object ):
 
 ##########################################
   #
-  # Defunct methods only there before checking backward compatability
+  # Defunct methods only there before checking backward compatibility
   #
 
 
