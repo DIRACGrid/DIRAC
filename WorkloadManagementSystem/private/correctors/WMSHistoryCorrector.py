@@ -90,7 +90,11 @@ class WMSHistoryCorrector( BaseCorrector ):
     if not result[ 'OK' ]:
       self.__log.error( "Cannot get history from Accounting", result[ 'Message' ] )
       return result
-    data = result[ 'Value' ][ 'data' ]
+    data = result['Value'].get( 'data', [] )
+    if not data:
+      message = "Empty history data from Accounting"
+      self.__log.error( message )
+      return S_ERROR( message )
 
     #Map the usernames to DNs
     if groupToUse:
