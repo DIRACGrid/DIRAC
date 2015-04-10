@@ -276,7 +276,7 @@ class GFAL2_StorageBase( StorageBase ):
       # we wont need this hard coded list below anymore but can implement a function in StorageBase
       # similar to isNativeURL which returns true if the src_file contains a known protocol.
       protocols = ['srm', 'root']
-      if any( protocol in src_file for protocol in protocols ):
+      if any( src_file.startswith( protocol + ':' ) for protocol in protocols ):
         src_url = src_file
         if not sourceSize:
           errStr = "GFAL2_StorageBase.__putFile: For file replication the source file size in bytes must be provided."
