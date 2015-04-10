@@ -662,6 +662,8 @@ class DataManager( object ):
         self.getFile( lfn, destinationDir = localDir )
         localFile = os.path.join( localDir, os.path.basename( lfn ) )
         fileDict = {destPfn:localFile}
+        #FIXME: This is to avoid third party transfer attempt by the SE, will be better treated in the future
+        catalogueSize = 0
 
       res = destStorageElement.replicateFile( fileDict, sourceSize = catalogueSize, singleFile = True )
       if localFile and os.path.exists( localFile ):
