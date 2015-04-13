@@ -21,9 +21,9 @@ def _processListDictReturn( soapReturn ):
 
 class VOMSService:
 
-  def __init__( self, adminUrl = False, attributesUrl = False ):
+  def __init__( self, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
     self.__soapClients = {}
-    for key, url in ( ( 'Admin', adminUrl ), ( 'Attributes', attributesUrl ) ):
+    for key, url in ( ( 'Admin', adminUrl ), ( 'Attributes', attributesUrl ), ( 'Certificates', certificatesUrl ) ):
       if not url:
         url = gConfig.getValue( "/Registry/VOMS/URLs/VOMS%s" % key, "" )
       if not url:
