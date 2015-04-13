@@ -1,4 +1,4 @@
-[v6r13-pre21]
+[v6r13-pre22]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
