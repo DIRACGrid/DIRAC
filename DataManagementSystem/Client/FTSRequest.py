@@ -125,6 +125,7 @@ class FTSRequest( object ):
 
     self.submitCommand = Operations().getValue( 'DataManagement/FTSPlacement/FTS2/SubmitCommand', 'glite-transfer-submit' )
     self.monitorCommand = Operations().getValue( 'DataManagement/FTSPlacement/FTS2/MonitorCommand', 'glite-transfer-status' )
+    self.ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     self.ftsJob = None
     self.ftsFiles = []
 
@@ -760,7 +761,7 @@ class FTSRequest( object ):
     log = gLogger.getSubLogger( 'Submit' )
     self.__createFTSJob()
 
-    submit = self.ftsJob.submitFTS2( command = self.submitCommand )
+    submit = self.ftsJob.submitFTS( self.ftsVersion, command = self.submitCommand )
     if not submit["OK"]:
       log.error( "unable to submit FTSJob: %s" % submit["Message"] )
       return submit
@@ -783,24 +784,44 @@ class FTSRequest( object ):
 
     :param self: self reference
     """
-    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTSServersForSites
-    if not self.targetSE:
-      return S_ERROR( "Target SE not set" )
-    res = getSitesForSE( self.targetSE )
-    if not res['OK'] or not res['Value']:
-      return S_ERROR( "Could not determine target site" )
-    targetSites = res['Value']
+    if self.ftsVersion.upper() == 'FTS2':
 
-    targetSite = ''
-    for targetSite in targetSites:
-      targetFTS = getFTSServersForSites( [targetSite] )
-      if targetFTS['OK']:
-        ftsTarget = targetFTS['Value'][targetSite]
-        if ftsTarget:
-          self.ftsServer = ftsTarget
-          return S_OK( self.ftsServer )
-      else:
-        return targetFTS
+      from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS2ServersForSites
+      if not self.targetSE:
+        return S_ERROR( "Target SE not set" )
+      res = getSitesForSE( self.targetSE )
+      if not res['OK'] or not res['Value']:
+        return S_ERROR( "Could not determine target site" )
+      targetSites = res['Value']
+
+      targetSite = ''
+      for targetSite in targetSites:
+        targetFTS = getFTS2ServersForSites( [targetSite] )
+        if targetFTS['OK']:
+          ftsTarget = targetFTS['Value'][targetSite]
+          if ftsTarget:
+            self.ftsServer = ftsTarget
+            return S_OK( self.ftsServer )
+        else:
+          return targetFTS
+
+    elif self.ftsVersion.upper() == 'FTS3':
+
+      from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+      res = getFTS3Servers()
+      if not res['OK']:
+        return res
+      ftsServerList = res['Value']
+      if ftsServerList:
+        # Here we take the first one, regardless of the policy...
+        # Unclean but all this will disapear after refactoring the fts code
+        self.ftsServer = ftsServerList[0]
+        return S_OK( self.ftsServer )
+
+    else:
+      return S_ERROR( 'Unknown FTS version %s' % self.ftsVersion )
+
+
     return S_ERROR( 'No FTS server found for %s' % targetSite )
 
   ####################################################################
@@ -922,7 +943,7 @@ class FTSRequest( object ):
     :param self: self reference
     :param bool full: glite-transfer-status verbosity level, when set, collect information of files as well
     """
-    monitor = self.ftsJob.monitorFTS2( command = self.monitorCommand, full = full )
+    monitor = self.ftsJob.monitorFTS( self.ftsVersion, command = self.monitorCommand, full = full )
     if not monitor['OK']:
       return monitor
     self.percentageComplete = self.ftsJob.Completeness
