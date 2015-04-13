@@ -57,14 +57,12 @@ class GFAL2_StorageBase( StorageBase ):
     # # gfal2 API
     self.gfal2 = gfal2.creat_context()
     self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-    # # save c'tor params
-
     self.spaceToken = parameters['SpaceToken']
-    # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
+    self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
+    self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '0' )
 
     if self.checksumType == '0':
@@ -76,7 +74,7 @@ class GFAL2_StorageBase( StorageBase ):
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
       self.voName = getVOForGroup( ret['Value']['group'] )
-    self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+
 
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
@@ -1233,24 +1231,6 @@ class GFAL2_StorageBase( StorageBase ):
     try:
       listing = self.gfal2.listdir( path )
 
-      files = {}
-      subDirs = {}
-
-      for entry in listing:
-        fullPath = '/'.join( [ path, entry ] )
-        self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % fullPath )
-        res = self.__getSingleMetadata( fullPath )
-        if res['OK']:
-          metadataDict = res['Value']
-          if metadataDict['Directory']:
-            subDirs[fullPath] = metadataDict
-          elif metadataDict['File']:
-            files[fullPath] = metadataDict
-          else:
-            self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
-
-      return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
-
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
         errStr = 'GFAL2_StorageBase.__listSingleDirectory: directory does not exist'
@@ -1261,7 +1241,23 @@ class GFAL2_StorageBase( StorageBase ):
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
+    files = {}
+    subDirs = {}
 
+    for entry in listing:
+      fullPath = '/'.join( [ path, entry ] )
+      self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % fullPath )
+      res = self.__getSingleMetadata( fullPath )
+      if res['OK']:
+        metadataDict = res['Value']
+        if metadataDict['Directory']:
+          subDirs[fullPath] = metadataDict
+        elif metadataDict['File']:
+          files[fullPath] = metadataDict
+        else:
+          self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
+
+    return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
 
 
 
