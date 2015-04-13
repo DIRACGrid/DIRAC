@@ -732,7 +732,6 @@ class DataManager( object ):
       if not res['OK']:
         log.debug( "could not get fileSize on %s" % candidateSEName, res['Message'] )
         continue
-
       seFileSize = res['Value']
 
       
@@ -1541,7 +1540,7 @@ class DataManager( object ):
 
 ##########################################
   #
-  # Defunct methods only there before checking backward compatability
+  # Defunct methods only there before checking backward compatibility
   #
 
 
