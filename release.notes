@@ -1,3 +1,18 @@
+[v6r12p35]
+
+*Core
+CHANGE: VOMSService - add URL for the method to get certificates
+
+*DMS
+FIX: DataManager - in __replicate() set do not pass file size to the SE if no
+     third party transfer
+FIX: RemoveFile, ReplicateAndRegister - regular expression for "no replicas"
+     common for both DFC and LFC     
+     
+*WMS
+FIX: WMSHistoryCorrector - make explicit error if no data returned from WMSHistory
+     accounting query     
+
 [v6r12p34]
 
 *DMS
