@@ -38,14 +38,6 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 #     self.log.setLevel( "DEBUG" )
 
     self.pluginName = 'GFAL2_XROOT'
-    self.protocol = self.protocolParameters['Protocol']
-    self.host = self.protocolParameters['Host']
-
-    # Aweful hack to cope for the moment with the inability of RSS to deal with something else than SRM
-
-    # self.port = ""
-    # self.wspath = ""
-    # self.spaceToken = ""
 
     self.protocolParameters['Port'] = 0
     self.protocolParameters['WSUrl'] = 0
