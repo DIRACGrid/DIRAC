@@ -14,17 +14,20 @@ import readline
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import gConfig
+from DIRAC import gLogger
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """
   """
   def __errMsg( self, errMsg ):
-    print "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg )
+    gLogger.error( "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg ) )
 
   def __init__( self, host = None ):
     cmd.Cmd.__init__( self )
@@ -37,6 +40,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     self.cwd = ''  
     self.previous_cwd = ''
     self.homeDir = ''
+    self.runitComponents = [ "service", "agent", "executor" ]
+
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
@@ -55,7 +60,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.port = hostList[1]
     else:
       self.port = None
-    print "Pinging %s..." % self.host
+    gLogger.notice( "Pinging %s..." % self.host )
     result = self.__getClient().ping()
     if result[ 'OK' ]:
       colorHost = colorize( host, "green" )
@@ -76,6 +81,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           set host <hostname>     - Set the hostname to work with
           set project <project>   - Set the project to install/upgrade in the host
     """
+    if not args:
+      gLogger.notice( self.do_set.__doc__ )
+      return
+
     cmds = { 'host' : ( 1, self.__do_set_host ),
              'project' : ( 1, self.__do_set_project ) }
 
@@ -85,11 +94,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if cmd == args[0]:
         if len( args ) != 1 + cmds[ cmd ][0]:
           self.__errMsg( "Missing arguments" )
-          print self.do_set.__doc__
+          gLogger.notice( self.do_set.__doc__ )
           return
         return cmds[ cmd ][1]( args[1:] )
     self.__errMsg( "Invalid command" )
-    print self.do_set.__doc__
+    gLogger.notice( self.do_set.__doc__ )
     return
 
   def __do_set_host( self, args ):
@@ -105,7 +114,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if not result[ 'OK' ]:
       self.__errMsg( "Cannot set project: %s" % result[ 'Message' ] )
     else:
-      print "Project set to %s" % project
+      gLogger.notice( "Project set to %s" % project )
 
 
   def do_show( self, args ):
@@ -132,7 +141,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     argss = args.split()
     if not argss:
-      print self.do_show.__doc__
+      gLogger.notice( self.do_show.__doc__ )
       return
 
     option = argss[0]
@@ -144,7 +153,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print
+        gLogger.notice( '' )
         pprint.pprint( result['Value'] )
     elif option == 'installed':
       client = SystemAdministratorClient( self.host, self.port )
@@ -152,7 +161,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print
+        gLogger.notice( '' )
         pprint.pprint( result['Value'] )
     elif option == 'setup':
       client = SystemAdministratorClient( self.host, self.port )
@@ -160,14 +169,14 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print
+        gLogger.notice( '' )
         pprint.pprint( result['Value'] )
     elif option == 'project':
       result = SystemAdministratorClient( self.host, self.port ).getProject()
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print "Current project is %s" % result[ 'Value' ]
+        gLogger.notice( "Current project is %s" % result[ 'Value' ] )
     elif option == 'status':
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getOverallStatus()
@@ -215,25 +224,25 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
       sw = resultSW['Value']
       installed = result['Value']
-      print
+      gLogger.notice( '' )
       for db in sw:
         if db in installed:
-          print db.rjust( 25 ), ': Installed'
+          gLogger.notice( db.rjust( 25 ), ': Installed' )
         else:
-          print db.rjust( 25 ), ': Not installed'
+          gLogger.notice( db.rjust( 25 ), ': Not installed' )
       if not sw:
-        print "No database found"
+        gLogger.notice( "No database found" )
     elif option == 'mysql':
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getMySQLStatus()
       if not result['OK']:
         self.__errMsg( result['Message'] )
       elif result['Value']:
-        print
+        gLogger.notice( '' )
         for par, value in result['Value'].items():
-          print par.rjust( 28 ), ':', value
+          gLogger.notice( par.rjust( 28 ), ':', value )
       else:
-        print "No MySQL database found"
+        gLogger.notice( "No MySQL database found" )
     elif option == "log":
       self.getLog( argss )
     elif option == "info":
@@ -242,22 +251,22 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print
-        print "Setup:", result['Value']['Setup']
-        print "DIRAC version:", result['Value']['DIRAC']
+        gLogger.notice( '' )
+        gLogger.notice( "Setup:", result['Value']['Setup'] )
+        gLogger.notice( "DIRAC version:", result['Value']['DIRAC'] )
         if result['Value']['Extensions']:
           for e, v in result['Value']['Extensions'].items():
-            print "%s version" % e, v
-        print
+            gLogger.notice( "%s version" % e, v )
+        gLogger.notice( '' )
     elif option == "host":
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getHostInfo()
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:   
-        print   
-        print "Host info:"
-        print
+        gLogger.notice()
+        gLogger.notice( "Host info:" )
+        gLogger.notice( '' )
         
         fields = ['Parameter','Value']
         records = []
@@ -269,10 +278,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     elif option == "errors":
       self.getErrors( argss )
     else:
-      print "Unknown option:", option
+      gLogger.notice( "Unknown option:", option )
 
   def getErrors( self, argss ):
-    """ Get and print out errors from the logs of specified components
+    """ Get and gLogger.notice( out errors from the logs of specified components )
     """
     component = ''
     if len( argss ) < 1:
@@ -283,8 +292,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         component = '*'
       else:
         if len( argss ) < 2:
-          print
-          print self.do_show.__doc__
+          gLogger.notice( '' )
+          gLogger.notice( self.do_show.__doc__ )
           return
         comp = argss[1]
         component = '/'.join( [system, comp] )
@@ -313,8 +322,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     """ Get the tail of the log file of the given component
     """
     if len( argss ) < 2:
-      print
-      print self.do_show.__doc__
+      gLogger.notice( '' )
+      gLogger.notice( self.do_show.__doc__ )
       return
 
     system = argss[0]
@@ -328,10 +337,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.__errMsg( result['Message'] )
     elif result['Value']:
       for line in result['Value']['_'.join( [system, component] )].split( '\n' ):
-        print '   ', line
+        gLogger.notice( '   ', line )
 
     else:
-      print "No logs found"
+      gLogger.notice( "No logs found" )
 
   def do_install( self, args ):
     """
@@ -347,13 +356,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     """
     argss = args.split()
     if not argss:
-      print self.do_install.__doc__
+      gLogger.notice( self.do_install.__doc__ )
       return
 
     option = argss[0]
     del argss[0]
     if option == "mysql":
-      print "Installing MySQL database, this can take a while ..."
+      gLogger.notice( "Installing MySQL database, this can take a while ..." )
       client = SystemAdministratorClient( self.host, self.port )
       if InstallTools.mysqlPassword == 'LocalConfig':
         InstallTools.mysqlPassword = ''
@@ -362,11 +371,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print "MySQL:", result['Value']
-        print "You might need to restart SystemAdministrator service to take new settings into account"
+        gLogger.notice( "MySQL:", result['Value'] )
+        gLogger.notice( "You might need to restart SystemAdministrator service to take new settings into account" )
     elif option == "db":
       if not argss:
-        print self.do_install.__doc__
+        gLogger.notice( self.do_install.__doc__ )
         return
       database = argss[0]
       client = SystemAdministratorClient( self.host, self.port )
@@ -407,10 +416,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
-      print "Database %s from %s/%s installed successfully" % ( database, extension, system )
+      gLogger.notice( "Database %s from %s/%s installed successfully" % ( database, extension, system ) )
     elif option in ["service","agent","executor"] :
       if len( argss ) < 2:
-        print self.do_install.__doc__
+        gLogger.notice( self.do_install.__doc__ )
         return
 
       system = argss[0]
@@ -463,9 +472,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
       compType = result['Value']['ComponentType']
       runit = result['Value']['RunitStatus']
-      print "%s %s_%s is installed, runit status: %s" % ( compType, system, component, runit )
+      gLogger.notice( "%s %s_%s is installed, runit status: %s" % ( compType, system, component, runit ) )
     else:
-      print "Unknown option:", option
+      gLogger.notice( "Unknown option:", option )
 
   def do_uninstall( self, args ):
     """
@@ -473,21 +482,66 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
         usage:
 
-          uninstall <system> <component>
+          uninstall db <database>
+          uninstall <-f ForceLogUninstall> <system> <component>
     """
     argss = args.split()
-    if not argss or len(argss) != 2:
-      print self.do_uninstall.__doc__
+    if not argss:
+      gLogger.notice( self.do_uninstall.__doc__ )
       return
     
-    system,component = argss
-    client = SystemAdministratorClient( self.host, self.port )
-    result = client.uninstallComponent( system, component )
-    if not result['OK']:
-      print "Error:", result['Message']
+    option = argss[0]
+    if option == 'db':
+      component = argss[1]
+      client = SystemAdministratorClient( self.host, self.port )
+
+      result = client.uninstallDatabase( component )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+      else:
+        gLogger.notice( "Successfully uninstalled %s" % ( component ) )
     else:
-      print "Successfully uninstalled %s/%s" % (system,component)  
-    
+      if option == '-f':
+        force = True
+        del argss[0]
+      else:
+        force = False
+
+      if len( argss ) != 2:
+        gLogger.notice( self.do_uninstall.__doc__ )
+        return
+
+      system, component = argss
+      client = SystemAdministratorClient( self.host, self.port )
+
+      monitoringClient = ComponentMonitoringClient()
+      result = monitoringClient.getInstallations( { 'Instance': component, 'UnInstallationTime': None },
+                                                  { 'System': system },
+                                                  { 'HostName': self.host }, True )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      if len( result[ 'Value' ] ) < 1:
+        self.__errMsg( "Given component does not exist" )
+        return
+      if len( result[ 'Value' ] ) > 1:
+        self.__errMsg( "Too many components match" )
+        return
+
+      removeLogs = False
+      if force:
+        removeLogs = True
+      else:
+        if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in self.runitComponents:
+          result = promptUser( 'Remove logs?', ['y', 'n'], 'n' )
+          if result[ 'OK' ]:
+            removeLogs = result[ 'Value' ] == 'y'
+
+      result = client.uninstallComponent( system, component, removeLogs )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+      else:
+        gLogger.notice( "Successfully uninstalled %s/%s" % ( system, component ) )
 
   def do_start( self, args ):
     """ Start services or agents or database server
@@ -499,14 +553,14 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     """
     argss = args.split()
     if len( argss ) < 2:
-      print self.do_start.__doc__
+      gLogger.notice( self.do_start.__doc__ )
       return
     option = argss[0]
     del argss[0]
 
     if option != 'mysql':
       if len( argss ) < 1:
-        print self.do_start.__doc__
+        gLogger.notice( self.do_start.__doc__ )
         return
       system = option
       if system != '*':
@@ -519,13 +573,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
       else:
         if system != '*' and component != '*':
-          print "\n%s_%s started successfully, runit status:\n" % ( system, component )
+          gLogger.notice( "\n%s_%s started successfully, runit status:\n" % ( system, component ) )
         else:
-          print "\nComponents started successfully, runit status:\n"
+          gLogger.notice( "\nComponents started successfully, runit status:\n" )
         for comp in result['Value']:
-          print comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus']
+          gLogger.notice( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] )
     else:
-      print "Not yet implemented"
+      gLogger.notice( "Not yet implemented" )
 
   def do_restart( self, args ):
     """ Restart services or agents or database server
@@ -535,13 +589,17 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           restart <system|*> <service|agent|*>
           restart mysql
     """
+    if not args:
+      gLogger.notice( self.do_restart.__doc__ )
+      return
+
     argss = args.split()
     option = argss[0]
     del argss[0]
     if option != 'mysql':
       if option != "*":
         if len( argss ) < 1:
-          print self.do_restart.__doc__
+          gLogger.notice( self.do_restart.__doc__ )
           return
       system = option
       if system != '*':
@@ -552,18 +610,18 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       result = client.restartComponent( system, component )
       if not result['OK']:
         if system == '*':
-          print "All systems are restarted, connection to SystemAdministrator is lost"
+          gLogger.notice( "All systems are restarted, connection to SystemAdministrator is lost" )
         else:
           self.__errMsg( result['Message'] )
       else:
         if system != '*' and component != '*':
-          print "\n%s_%s started successfully, runit status:\n" % ( system, component )
+          gLogger.notice( "\n%s_%s started successfully, runit status:\n" % ( system, component ) )
         else:
-          print "\nComponents started successfully, runit status:\n"
+          gLogger.notice( "\nComponents started successfully, runit status:\n" )
         for comp in result['Value']:
-          print comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus']
+          gLogger.notice( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] )
     else:
-      print "Not yet implemented"
+      gLogger.notice( "Not yet implemented" )
 
   def do_stop( self, args ):
     """ Stop services or agents or database server
@@ -573,6 +631,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           stop <system|*> <service|agent|*>
           stop mysql
     """
+    if not args:
+      gLogger.notice( self.do_stop.__doc__ )
+      return
+
     argss = args.split()
     if argss[0] != 'mysql':
       system = argss[0]
@@ -586,13 +648,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
       else:
         if system != '*' and component != '*':
-          print "\n%s_%s stopped successfully, runit status:\n" % ( system, component )
+          gLogger.notice( "\n%s_%s stopped successfully, runit status:\n" % ( system, component ) )
         else:
-          print "\nComponents stopped successfully, runit status:\n"
+          gLogger.notice( "\nComponents stopped successfully, runit status:\n" )
         for comp in result['Value']:
-          print comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus']
+          gLogger.notice( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] )
     else:
-      print "Not yet implemented"
+      gLogger.notice( "Not yet implemented" )
 
   def do_update( self, args ):
     """ Update the software on the target host to a given version
@@ -604,12 +666,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
               where rootPath - path to the DIRAC installation
                     lcgVersion - version of the LCG bindings to install
     """
-    argss = args.split()
-    version = argss[0]
-    rootPath = ''
-    lcgVersion = ''
-    del argss[0]
     try:
+      argss = args.split()
+      version = argss[0]
+      rootPath = ''
+      lcgVersion = ''
+      del argss[0]
+
       while len( argss ) > 0:
         if argss[0] == '-r':
           rootPath = argss[1]
@@ -620,26 +683,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           del argss[0]
           del argss[0]
     except Exception, x:
-      print "ERROR: wrong input:", str(x)
-      print """usage:
-
-          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
-          
-              where rootPath - path to the DIRAC installation
-                    lcgVersion - version of the LCG bindings to install
-"""           
+      gLogger.notice( "ERROR: wrong input:", str( x ) )
+      gLogger.notice( self.do_update.__doc__ )
       return  
     
     client = SystemAdministratorClient( self.host, self.port )
-    print "Software update can take a while, please wait ..."
+    gLogger.notice( "Software update can take a while, please wait ..." )
     result = client.updateSoftware( version, rootPath, lcgVersion, timeout = 300 )
     if not result['OK']:
       self.__errMsg( "Failed to update the software" )
-      print result['Message']
+      gLogger.notice( result['Message'] )
     else:
-      print "Software successfully updated."
-      print "You should restart the services to use the new software version."
-      print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
+      gLogger.notice( "Software successfully updated." )
+      gLogger.notice( "You should restart the services to use the new software version." )
+      gLogger.notice( "Think of updating /Operation/<vo>/<setup>/Versions section in the CS" )
 
   def do_revert( self, args ):
     """ Revert the last installed version of software to the previous one
@@ -651,9 +708,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     client = SystemAdministratorClient( self.host, self.port )
     result = client.revertSoftware()
     if not result['OK']:
-      print "Error:", result['Message']
+      gLogger.notice( "Error:", result['Message'] )
     else:
-      print "Software reverted to", result['Value']  
+      gLogger.notice( "Software reverted to", result['Value'] )
 
   def do_add( self, args ):
     """
@@ -663,6 +720,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
           add system <system> <instance>
     """
+    if not args:
+      gLogger.notice( self.do_add.__doc__ )
+      return
+
     argss = args.split()
     option = argss[0]
     del argss[0]
@@ -677,7 +738,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       instanceName = gConfig.getValue( '/DIRAC/Setups/%s/%s' % ( hostSetup, system ), '' )
       if instanceName:
         if instanceName == instance:
-          print "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup )
+          gLogger.notice( "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup ) )
         else:
           self.__errMsg( "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup ) )
         return
@@ -685,9 +746,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
-        print "%s system instance %s added successfully" % ( system, instance )
+        gLogger.notice( "%s system instance %s added successfully" % ( system, instance ) )
     else:
-      print "Unknown option:", option
+      gLogger.notice( "Unknown option:", option )
 
   def do_exec( self, args ):
     """ Execute a shell command on the remote host and get back the output
@@ -703,13 +764,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.__errMsg( result['Message'] )
       return
     status, output, error = result['Value']
-    print
+    gLogger.notice( '' )
     for line in output.split( '\n' ):
-      print line
+      gLogger.notice( line )
     if error:
       self.__errMsg( status )
       for line in error.split( '\n' ):
-        print line
+        gLogger.notice( line )
 
   def do_execfile( self, args ):
     """ Execute a series of administrator CLI commands from a given file
@@ -718,6 +779,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
           execfile <filename>
     """
+    if not args:
+      gLogger.notice( self.do_execfile.__doc__ )
+      return
+
     argss = args.split()
     fname = argss[0]
     execfile = open( fname, 'r' )
@@ -730,7 +795,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       line = line.strip()
       if not line:
         continue
-      print "\n--> Executing %s\n" % line
+      gLogger.notice( "\n--> Executing %s\n" % line )
       elements = line.split()
       command = elements[0]
       args = ' '.join( elements[1:] )
@@ -901,7 +966,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     usage: exit
     """
-    print
+    gLogger.notice( '' )
     sys.exit( 0 )
 
   def do_quit( self, args ):
@@ -909,7 +974,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     usage: quit
     """
-    print
+    gLogger.notice( '' )
     sys.exit( 0 )
 
   def emptyline( self ):
