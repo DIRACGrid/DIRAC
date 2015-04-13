@@ -56,10 +56,16 @@ class GFAL2_StorageBase( StorageBase ):
 
     # # gfal2 API
     self.gfal2 = gfal2.creat_context()
+
+    # by default turn off BDII checks
     self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
+    # spaceToken used for copying from and to the storage element
     self.spaceToken = parameters['SpaceToken']
+    # stageTimeout, default timeout to try and stage/pin a file
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
+    # gfal2Timeout, amount of time it takes until an operation times out
     self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
+    # set the gfal2 default protocols, e.g. used when trying to retrieve transport url
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
