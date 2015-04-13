@@ -58,6 +58,8 @@ class GFAL2_StorageBase( StorageBase ):
     self.gfal2 = gfal2.creat_context()
     self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
     # # save c'tor params
+
+    self.spaceToken = parameters['SpaceToken']
     # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
 
