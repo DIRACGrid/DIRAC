@@ -29,7 +29,7 @@ class GFAL2_StorageBase( StorageBase ):
 
   SRM v2 interface to StorageElement using gfal2
   """
-  
+
   def __init__( self, storageName, parameters ):
     """ c'tor
 
@@ -57,18 +57,12 @@ class GFAL2_StorageBase( StorageBase ):
     # # gfal2 API
     self.gfal2 = gfal2.creat_context()
     self.gfal2.set_opt_boolean( "BDII", "ENABLE", False )
-    # # save c'tor params
-    self.name = storageName
-    self.protocol = parameters['Protocol']
     self.spaceToken = parameters['SpaceToken']
-
-    # #stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
-    # # gfal2 timeout
     self.gfal2Timeout = gConfig.getValue( "/Resources/StorageElements/GFAL_Timeout", 100 )
+    self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '0' )
 
     if self.checksumType == '0':
@@ -80,7 +74,7 @@ class GFAL2_StorageBase( StorageBase ):
     ret = getProxyInfo( disableVOMS = True )
     if ret['OK'] and 'group' in ret['Value']:
       self.voName = getVOForGroup( ret['Value']['group'] )
-    self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+
 
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
@@ -270,8 +264,13 @@ class GFAL2_StorageBase( StorageBase ):
       errStr = 'GFAL2_StorageBase.__putSingleFile: no source defined, please check argument format { destination : localfile }'
       return S_ERROR( errStr )
     else:
-      # check whether the source is local or on another srm storage
-      if src_file.startswith( 'srm' ):
+      # check whether the source is local or on another storage
+
+      # TODO: as soon as self.protocolParameters contains all known protocols to the SE
+      # we wont need this hard coded list below anymore but can implement a function in StorageBase
+      # similar to isNativeURL which returns true if the src_file contains a known protocol.
+      protocols = ['srm', 'root']
+      if any( src_file.startswith( protocol + ':' ) for protocol in protocols ):
         src_url = src_file
         if not sourceSize:
           errStr = "GFAL2_StorageBase.__putFile: For file replication the source file size in bytes must be provided."
@@ -655,45 +654,6 @@ class GFAL2_StorageBase( StorageBase ):
 
     try:
       statInfo = self.gfal2.stat( path )
-      metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
-
-      res = self._getExtendedAttributes( path )
-
-      # add extended attributes to the dict if available
-      if res['OK']:
-        attributeDict = res['Value']
-      else:
-        # no extendted attributes could be retrieved. Ignore it
-        attributeDict = {}
-      # 'user.status' is the extended attribute we are interested in
-      if metadataDict['File']:
-        if not self.checksumType:
-          res = self.__getChecksum( path )
-        else:
-          res = self.__getChecksum( path, self.checksumType )
-        if res['OK']:
-          metadataDict['Checksum'] = res['Value']
-        else:
-          metadataDict['Checksum'] = 'Failed to get checksum'
-        if 'user.status' in attributeDict.keys():
-          if attributeDict['user.status'] == 'ONLINE':
-            metadataDict['Cached'] = 1
-          else:
-            metadataDict['Cached'] = 0
-          if attributeDict['user.status'] == 'NEARLINE':
-            metadataDict['Migrated'] = 1
-          else:
-            metadataDict['Migrated'] = 0
-          if attributeDict['user.status'] == 'LOST':
-            metadataDict['Lost'] = 1
-          else:
-            metadataDict['Lost'] = 0
-          if attributeDict['user.status'] == 'UNAVAILABLE':
-            metadataDict['Unavailable'] = 1
-          else:
-            metadataDict['Unavailable'] = 0
-
-      return S_OK ( metadataDict )
 
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
@@ -705,7 +665,43 @@ class GFAL2_StorageBase( StorageBase ):
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
+    metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
+    res = self._getExtendedAttributes( path )
+    # add extended attributes to the dict if available
+    if res['OK']:
+      attributeDict = res['Value']
+    else:
+      # no extendted attributes could be retrieved. Ignore it
+      attributeDict = {}
 
+    if metadataDict['File']:
+      if self.checksumType:
+        res = self.__getChecksum( path, self.checksumType )
+      if res['OK']:
+        metadataDict['Checksum'] = res['Value']
+      else:
+        metadataDict['Checksum'] = ""
+
+      # 'user.status' is the extended attribute we are interested in
+      if 'user.status' in attributeDict.keys():
+        if attributeDict['user.status'] == 'ONLINE':
+          metadataDict['Cached'] = 1
+        else:
+          metadataDict['Cached'] = 0
+        if attributeDict['user.status'] == 'NEARLINE':
+          metadataDict['Migrated'] = 1
+        else:
+          metadataDict['Migrated'] = 0
+        if attributeDict['user.status'] == 'LOST':
+          metadataDict['Lost'] = 1
+        else:
+          metadataDict['Lost'] = 0
+        if attributeDict['user.status'] == 'UNAVAILABLE':
+          metadataDict['Unavailable'] = 1
+        else:
+          metadataDict['Unavailable'] = 0
+
+    return S_OK ( metadataDict )
 
   def prestageFile( self, path, lifetime = 86400 ):
     """ Issue prestage request for file(s)
@@ -959,7 +955,7 @@ class GFAL2_StorageBase( StorageBase ):
 
 
 
-  def __getChecksum( self, path, checksumType = 'ADLER32' ):
+  def __getChecksum( self, path, checksumType = None ):
     """ Calculate the checksum (ADLER32 by default) of a file on the storage
 
     :param self: self reference
@@ -967,7 +963,13 @@ class GFAL2_StorageBase( StorageBase ):
     :returns S_OK( checksum ) if checksum could be calculated
              S_ERROR( errMsg ) if something failed
     """
+    if not checksumType:
+      errStr = "GFAL2_StorageBase.__getChecksum: No checksum type set by the storage element. Can't retrieve checksum"
+      self.log.error( errStr, path )
+      return S_ERROR( errStr )
+
     self.log.debug( 'GFAL2_StorageBase.__getChecksum: Trying to calculate checksum of file %s' % path )
+
     res = self.__isSingleFile( path )
 
     if not res['OK']:
@@ -1229,24 +1231,6 @@ class GFAL2_StorageBase( StorageBase ):
     try:
       listing = self.gfal2.listdir( path )
 
-      files = {}
-      subDirs = {}
-
-      for entry in listing:
-        fullPath = '/'.join( [ path, entry ] )
-        self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % fullPath )
-        res = self.__getSingleMetadata( fullPath )
-        if res['OK']:
-          metadataDict = res['Value']
-          if metadataDict['Directory']:
-            subDirs[fullPath] = metadataDict
-          elif metadataDict['File']:
-            files[fullPath] = metadataDict
-          else:
-            self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
-
-      return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
-
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
         errStr = 'GFAL2_StorageBase.__listSingleDirectory: directory does not exist'
@@ -1257,7 +1241,23 @@ class GFAL2_StorageBase( StorageBase ):
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
+    files = {}
+    subDirs = {}
 
+    for entry in listing:
+      fullPath = '/'.join( [ path, entry ] )
+      self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % fullPath )
+      res = self.__getSingleMetadata( fullPath )
+      if res['OK']:
+        metadataDict = res['Value']
+        if metadataDict['Directory']:
+          subDirs[fullPath] = metadataDict
+        elif metadataDict['File']:
+          files[fullPath] = metadataDict
+        else:
+          self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
+
+    return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
 
 
 
@@ -1787,32 +1787,33 @@ class GFAL2_StorageBase( StorageBase ):
 ##################################################################
 
 
-  def _getExtendedAttributes( self, path ):
+  def _getExtendedAttributes( self, path, attributes = None ):
     """ Get all the available extended attributes of path
 
     :param self: self reference
     :param str path: path of which we wan't extended attributes
+    :param str list attributes: list of extended attributes we want to receive
     :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
     """
     attributeDict = {}
     # get all the extended attributes from path
     try:
-      attributes = self.gfal2.listxattr( path )
+      if not attributes:
+        attributes = self.gfal2.listxattr( path )
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
+        self.log.debug( "GFAL2_StorageBase._getExtendedAttributes: Path is %s" % path )
         attributeDict[attribute] = self.gfal2.getxattr( path, attribute )
 
       return S_OK( attributeDict )
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
-        errStr = 'Path does not exist.'
+        errStr = 'GFAL2_StorageBase._getExtendedAttributesPath does not exist.'
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
       else:
-        errStr = 'Something went wrong while checking for extended attributes. Please see error log for more information.'
+        errStr = 'GFAL2_StorageBase._getExtendedAttributes: Something went wrong while checking for extended attributes. Please see error log for more information.'
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
-
-
 

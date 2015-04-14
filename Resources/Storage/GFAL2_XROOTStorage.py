@@ -5,9 +5,12 @@
     :synopsis: XROOT module based on the GFAL2_StorageBase class.
 """
 
+
 # from DIRAC
 from DIRAC import gLogger
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
+
+
 
 class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
@@ -32,21 +35,26 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     # # init base class
     GFAL2_StorageBase.__init__( self, storageName, parameters )
 
-    # XROOT has problems with checksums at the moment.
-    self.checksumType = None
-
 #     self.log.setLevel( "DEBUG" )
 
     self.pluginName = 'GFAL2_XROOT'
-    self.protocol = self.protocolParameters['Protocol']
-    self.host = self.protocolParameters['Host']
-
-    # Aweful hack to cope for the moment with the inability of RSS to deal with something else than SRM
-
-    # self.port = ""
-    # self.wspath = ""
-    # self.spaceToken = ""
 
     self.protocolParameters['Port'] = 0
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
+
+
+  def _getExtendedAttributes( self, path ):
+    """ Hard coding list of attributes and then call the base method of GFAL2_StorageBase
+
+    :param self: self reference
+    :param str path: path of which we want extended attributes
+    :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
+    """
+
+    # hard coding the attributes list for xroot because the plugin returns the wrong values
+    # xrootd.* instead of xroot.* see: https://its.cern.ch/jira/browse/DMC-664
+    attributes = ['xroot.cksum', 'xroot.space']
+    res = GFAL2_StorageBase._getExtendedAttributes( self, path, attributes )
+    return res
+
