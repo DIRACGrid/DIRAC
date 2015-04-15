@@ -13,7 +13,6 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
-from types import ListType, DictType, StringTypes, IntType, LongType, FloatType
 import json
 
 FILE_STANDARD_METAKEYS = { 'SE': 'VARCHAR',
@@ -116,40 +115,40 @@ class MetaQuery( object ):
           mvalue = {operation:mvalue}
 
       if name in metaDict:
-        if type(metaDict[name]) == DictType:
-          if type(mvalue) == DictType:
+        if isinstance( metaDict[name], dict ):
+          if isinstance( mvalue, dict ):
             op,value = mvalue.items()[0]
             if op in metaDict[name]:
-              if type(metaDict[name][op]) == ListType:
-                if type(value) == ListType:
+              if isinstance( metaDict[name][op], list ):
+                if isinstance( value, list ):
                   metaDict[name][op] = list( set( metaDict[name][op] + value) )
                 else:
                   metaDict[name][op] = list( set( metaDict[name][op].append( value ) ) )
               else:
-                if type(value) == ListType:
+                if isinstance( value, list ):
                   metaDict[name][op] = list( set( [metaDict[name][op]] + value) )
                 else:
                   metaDict[name][op] = list( set( [metaDict[name][op],value]) )
             else:
               metaDict[name].update(mvalue)
           else:
-            if type(mvalue) == ListType:
+            if isinstance( mvalue, list ):
               metaDict[name].update({'in':mvalue})
             else:
               metaDict[name].update({'=':mvalue})
-        elif type(metaDict[name]) == ListType:
-          if type(mvalue) == DictType:
+        elif isinstance( mvalue, list ):
+          if isinstance( mvalue, dict ):
             metaDict[name] = {'in':metaDict[name]}
             metaDict[name].update(mvalue)
-          elif type(mvalue) == ListType:
+          elif metaDict[name]:
             metaDict[name] = list( set( (metaDict[name] + mvalue ) ) )
           else:
             metaDict[name] = list( set( metaDict[name].append( mvalue ) ) )
         else:
-          if type(mvalue) == DictType:
+          if isinstance( mvalue, dict ):
             metaDict[name] = {'=':metaDict[name]}
             metaDict[name].update(mvalue)
-          elif type(mvalue) == ListType:
+          elif isinstance( mvalue, list ):
             metaDict[name] = list( set( [metaDict[name]] + mvalue ) )
           else:
             metaDict[name] = list( set( [metaDict[name],mvalue] ) )
@@ -171,9 +170,9 @@ class MetaQuery( object ):
     """  Return a list of tuples with tables and conditions to locate files for a given user Metadata
     """
     def getOperands( value ):
-      if type( value ) == ListType:
+      if isinstance( value, list ):
         return [ ('in', value) ]
-      elif type( value ) == DictType:
+      elif isinstance( value, dict ):
         resultList = []
         for operation, operand in value.items():
           resultList.append( ( operation, operand ) )
@@ -212,7 +211,7 @@ class MetaQuery( object ):
       # Check operations
       for operation, operand in getOperands( value ):
         try:
-          if type( operand ) == ListType:
+          if isinstance( operand, list ):
             typedValue = [ getTypedValue( x, mtype ) for x in operand ]
           else:
             typedValue = getTypedValue( operand, mtype )
@@ -221,7 +220,7 @@ class MetaQuery( object ):
 
         # Apply query operation
         if operation in ['>', '<', '>=', '<=']:
-          if type( typedValue ) == ListType:
+          if isinstance( typedValue, list ):
             return S_ERROR( 'Illegal query: list of values for comparison operation' )
           elif operation == '>' and typedValue >= userValue:
             return S_OK( False )
@@ -232,14 +231,14 @@ class MetaQuery( object ):
           elif operation == '<=' and typedValue < userValue:
             return S_OK( False )
         elif operation == 'in' or operation == "=":
-          if type( typedValue ) == ListType and not userValue in typedValue:
+          if isinstance( typedValue, list ) and not userValue in typedValue:
             return S_OK( False )
-          elif type( typedValue ) != ListType and userValue != typedValue:
+          elif not isinstance( typedValue, list ) and userValue != typedValue:
             return S_OK( False )
         elif operation == 'nin' or operation == "!=":
-          if type( typedValue ) == ListType and userValue in typedValue:
+          if isinstance( typedValue, list ) and userValue in typedValue:
             return S_OK( False )
-          elif type( typedValue ) != ListType and userValue == typedValue:
+          elif isinstance( typedValue, list ) and userValue == typedValue:
             return S_OK( False )
 
     return S_OK( True )
