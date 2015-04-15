@@ -162,7 +162,7 @@ class GridPilotDirector( PilotDirector ):
       availableCEs = []
       now = Time.dateTime()
       availableCEs = self.listMatchCache.get( pilotRequirements )
-      if availableCEs == False:
+      if availableCEs is None:
         availableCEs = self._listMatch( proxy, jdl, taskQueueID, rb )
         if availableCEs != False:
           self.log.verbose( 'LastListMatch', now )
