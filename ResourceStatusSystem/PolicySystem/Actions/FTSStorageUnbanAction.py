@@ -26,7 +26,7 @@ class FTSStorageUnbanAction( BaseAction ):
 		
 		super( FTSStorageUnbanAction, self ).__init__( name, decissionParams, enforcementResult, 
                                          singlePolicyResults, clients )
-		self.diracAdmin = DiracAdmin()
+
 		
 		# enforcementResult supposed to look like:
 		# { 
@@ -56,9 +56,9 @@ class FTSStorageUnbanAction( BaseAction ):
 		if elementType != 'StorageElement':
 			return S_ERROR( "'elementType' should be 'StorageElement'" )
 					
-		return self._unbanSite( storageElement )		
+		return self._unbanStorageElement( storageElement )		
 
-	def _unbanSite( self, storageElement ):
+	def _unbanStorageElement( self, storageElement ):
 
 #		from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 #		diracAdmin = DiracAdmin()
@@ -67,6 +67,7 @@ class FTSStorageUnbanAction( BaseAction ):
 		#endpoint = 'https://fts3-pilot.cern.ch:8446'
 		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
 		
+		#TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
 		proxyPath = getProxyInfo()
 		if not proxyPath.get('OK'):
 			return S_ERROR("Proxy not found!")
@@ -74,7 +75,7 @@ class FTSStorageUnbanAction( BaseAction ):
 			
 		context = fts3.Context(endpoint, proxyPath)
 		
-		output = fts3.unban_se(context, storageElement)
+		fts3.unban_se(context, storageElement)
 			
 		return S_OK( json.loads(context.get("ban/se")) )
 

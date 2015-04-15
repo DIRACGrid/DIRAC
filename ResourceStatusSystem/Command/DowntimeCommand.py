@@ -7,13 +7,16 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getGOCFTSName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTSServers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
+from operator                                                   import itemgetter
+from copy                                                       import deepcopy
 
 __RCSID__ = '$Id:  $'
+
 
 class DowntimeCommand( Command ):
   '''
@@ -50,9 +53,7 @@ class DowntimeCommand( Command ):
                                description = dt[ 'Description' ],
                                link = dt[ 'Link' ],
                                gocdbServiceType = dt[ 'GOCDBServiceType' ] )
-      if not resQuery[ 'OK' ]:
-        return resQuery
-    return S_OK()
+    return resQuery
 
   def _prepareCommand( self ):
     '''
@@ -108,13 +109,15 @@ class DowntimeCommand( Command ):
       elementName = seHost
       
     elif elementType == 'FTS':
-    	gocdbServiceType = "FTS"
-    	try:
-    		elementName	= getFTSServers("FTS3")[ 'Value' ][0]
-    	except:
-    		return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
+      gocdbServiceType = elementType
+      try:
+        #WARNING: this method presupposes that the server is an FTS3 type
+        elementName  = getGOCFTSName(elementName)
+      except:
+        return S_ERROR( 'No FTS3 server specified in dirac.cfg (see Resources/FTSEndpoints)' )
 
     return S_OK( ( element, elementName, hours, gocdbServiceType ) )
+
 
   def doNew( self, masterParams = None ):
     '''
@@ -140,14 +143,17 @@ class DowntimeCommand( Command ):
       element, elementName, hours, gocdbServiceType = params[ 'Value' ]
       elementNames = [ elementName ]
 
-    startDate = datetime.utcnow() - timedelta( days = 14 )
+    #we'll check all the DT that are ongoing or starting in 'hours' hours from now
+    startDate = None 
+    if hours is not None:
+      startDate = datetime.utcnow() + timedelta( hours = hours )
 
     try:
-      results = self.gClient.getStatus( element, elementName, startDate, 120 )
+      results = self.gClient.getStatus( element, elementName, startDate )
     except urllib2.URLError:
       try:
         #Let's give it a second chance..
-        results = self.gClient.getStatus( element, elementName, startDate, 120 )
+        results = self.gClient.getStatus( element, elementName, startDate )
       except urllib2.URLError, e:
         return S_ERROR( e )
 
@@ -164,16 +170,28 @@ class DowntimeCommand( Command ):
     for downtime, downDic in results.items():
 
       dt = {}
-      if gocdbServiceType and downDic[ 'SERVICE_TYPE' ]:
-        if  gocdbServiceType.lower() != downDic[ 'SERVICE_TYPE' ].lower():
-          continue
-      if element == 'Resource':
+      
+      if 'HOSTNAME' in downDic.keys():
         dt[ 'Name' ] = downDic[ 'HOSTNAME' ]
-      else:
+      elif 'SITENAME' in downDic.keys():
         dt[ 'Name' ] = downDic[ 'SITENAME' ]
-
+      else:
+        return S_ERROR( "SITENAME or HOSTNAME are missing" )
+      
       if not dt[ 'Name' ] in elementNames:
-        continue
+        #it is not a site/resource we are interested to monitor
+        continue      
+      
+      if gocdbServiceType and 'SERVICE_TYPE' in downDic.keys():
+        gocdbST = gocdbServiceType.lower()
+        csST = downDic[ 'SERVICE_TYPE' ].lower()
+        if gocdbST != csST:
+          return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )
+        else:
+          dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      else:
+        #WARNING: do we want None as default value?
+        dt[ 'GOCDBServiceType' ] = None
 
       dt[ 'DowntimeID' ] = downtime
       dt[ 'Element' ] = element
@@ -182,11 +200,6 @@ class DowntimeCommand( Command ):
       dt[ 'Severity' ] = downDic[ 'SEVERITY' ]
       dt[ 'Description' ] = downDic[ 'DESCRIPTION' ].replace( '\'', '' )
       dt[ 'Link' ] = downDic[ 'GOCDB_PORTAL_URL' ]
-      try:
-        dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
-      except KeyError:
-        # SERVICE_TYPE is not always defined
-        pass
 
       uniformResult.append( dt )
 
@@ -194,33 +207,7 @@ class DowntimeCommand( Command ):
     if not storeRes[ 'OK' ]:
       return storeRes
 
-    # We return only one downtime, if its ongoing at dtDate
-    startDate = datetime.utcnow()
-    if hours:
-      startDate = startDate + timedelta( hours = hours )
-    endDate = startDate
-
-    result = None
-    dtOutages = []
-    dtWarnings = []
-
-    for dt in uniformResult:
-      if ( dt[ 'StartDate' ] < str( startDate ) ) and ( dt[ 'EndDate' ] > str( endDate ) ):
-        if dt[ 'Severity' ] == 'Outage':
-          dtOutages.append( dt )
-        else:
-          dtWarnings.append( dt )
-
-    #In case many overlapping downtimes have been declared, the first one in
-    #severity and then time order will be selected. We want to get the latest one
-    #( they are sorted by insertion time )
-    if len( dtOutages ) > 0:
-      result = dtOutages[-1]
-    elif len( dtWarnings ) > 0:
-      result = dtWarnings[-1]
-
-    return S_OK( result )
-
+    return S_OK()
 
 
   def doCache( self ):
@@ -241,42 +228,24 @@ class DowntimeCommand( Command ):
       return result
 
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+    #sorting for convenient manipulation
+    uniformResult.sort(key=itemgetter('Name','Severity','StartDate'))
 
-    # We return only one downtime, if its ongoing at dtDate
-    dtDate = datetime.utcnow()
-    result = None
-    dtOutages = []
-    dtWarnings = []
+    # We return only one downtime, if its ongoing at targetDate
+    currentDate = datetime.utcnow()
+    if hours is not None:
+      futureDate = currentDate + timedelta( hours = hours )
+      
+    result = []
 
-    if not hours:
-      # If hours not defined, we want the ongoing downtimes
-      for dt in uniformResult:
-        if ( dt[ 'StartDate' ] < dtDate ) and ( dt[ 'EndDate' ] > dtDate ):
-          if dt[ 'Severity' ] == 'Outage':
-            dtOutages.append( dt )
-          else:
-            dtWarnings.append( dt )
-        if dt[ 'EndDate' ] < dtDate:
-          removed = self.rmClient.deleteDowntimeCache( downtimeID = dt[ 'DowntimeID' ] )
-                
-    else:
-      # If hours defined, we want ongoing downtimes and downtimes starting 
-      # in the next <hours>
-      dtDateFuture = dtDate + timedelta( hours = hours )
-      for dt in uniformResult:
-        if ( dt[ 'StartDate' ] < dtDate and dt[ 'EndDate' ] > dtDate ) or ( 
-           dt[ 'StartDate' ] >= dtDate and dt[ 'StartDate' ] < dtDateFuture ):
-          if dt[ 'Severity' ] == 'Outage':
-            dtOutages.append( dt )
-          else:
-            dtWarnings.append( dt )
+    # If hours not defined, we want the ongoing downtimes
+    for dt in uniformResult:
+      if ( dt[ 'StartDate' ] < currentDate ) and ( dt[ 'EndDate' ] > currentDate ):
+        result.append( dt )
+      # If hours not none, we want ongoing dt and dt starting before futureDate
+      if hours is not None and dt[ 'StartDate' ] < futureDate:
+        result.append( dt )
 
-    #In case many overlapping downtimes have been declared, the first one in
-    #severity and then time order will be selected.
-    if len( dtOutages ) > 0:
-      result = dtOutages[0]
-    elif len( dtWarnings ) > 0:
-      result = dtWarnings[0]
 
     return S_OK( result )
 
@@ -300,9 +269,9 @@ class DowntimeCommand( Command ):
 
     resources = sesHosts
     
-    ftsServer = getFTSServers("FTS3")
+    ftsServer = getFTS3Servers()
     if ftsServer[ 'OK' ]:
-    	resources = resources + ftsServer[ 'Value' ]   
+    	resources.extend( ftsServer[ 'Value' ] )   
     
     
  		# TODO: file catalogs need also to use their hosts
@@ -313,7 +282,7 @@ class DowntimeCommand( Command ):
 
     ce = CSHelpers.getComputingElements()
     if ce[ 'OK' ]:
-      resources = resources + ce[ 'Value' ]
+      resources.extend( ce[ 'Value' ] )
       
     print resources
     return  

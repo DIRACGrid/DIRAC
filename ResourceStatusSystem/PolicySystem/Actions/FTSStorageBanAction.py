@@ -26,7 +26,7 @@ class FTSStorageBanAction( BaseAction ):
 		
 		super( FTSStorageBanAction, self ).__init__( name, decissionParams, enforcementResult, 
                                          singlePolicyResults, clients )
-		self.diracAdmin = DiracAdmin()
+
 		
 		# enforcementResult supposed to look like:
 		# { 
@@ -57,12 +57,13 @@ class FTSStorageBanAction( BaseAction ):
 		if elementType != 'StorageElement':
 			return S_ERROR( "'elementType' should be 'StorageElement'" )
 					
-		return self._banSite( storageElement )
+		return self._banStorageElement( storageElement )
 	
-	def _banSite( self, storageElement ):
+	def _banStorageElement( self, storageElement ):
 		#endpoint = 'https://fts3-pilot.cern.ch:8446'
 		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
 		
+		#TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
 		proxyPath = getProxyInfo()
 		if not proxyPath.get('OK'):
 			return S_ERROR("Proxy not found!")
@@ -73,7 +74,9 @@ class FTSStorageBanAction( BaseAction ):
 		timeout = 3600  #or...?
 		status = 'wait' #or...?
 		allow_submit = False #or...?
-		output = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
+		
+		#TODO: ban_se returns the list of jobIDs interrupted by the banning
+		pausedJobIDs = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
 		
 		return S_OK( json.loads(context.get("ban/se")) )
 								

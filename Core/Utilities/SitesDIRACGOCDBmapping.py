@@ -24,6 +24,23 @@ def getGOCSiteName( diracSiteName ):
     return S_ERROR( "No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName )
   else:
     return S_OK( gocDBName )
+  
+  
+def getGOCFTSName( diracFTSName ):
+  """
+  Get GOC DB FTS server URL, given the DIRAC FTS server name, as it stored in the CS
+
+  :params:
+    :attr:`diracFTSName` - string: DIRAC FTS server name (e.g. 'CERN-FTS3')
+  """
+  
+  csPath = "/Resources/FTSEndpoints/FTS3"
+  gocFTSName = gConfig.getValue( "%s/%s" % (csPath, diracFTSName) )
+  if not gocFTSName:
+    return S_ERROR( "No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName )
+  else:
+    return S_OK( gocFTSName )
+   
 
 #############################################################################
 
