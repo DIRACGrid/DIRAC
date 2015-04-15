@@ -136,11 +136,11 @@ class MetaQuery( object ):
               metaDict[name].update({'in':mvalue})
             else:
               metaDict[name].update({'=':mvalue})
-        elif isinstance( mvalue, list ):
+        elif isinstance( metaDict[name], list ):
           if isinstance( mvalue, dict ):
             metaDict[name] = {'in':metaDict[name]}
             metaDict[name].update(mvalue)
-          elif metaDict[name]:
+          elif isinstance( mvalue, list ):
             metaDict[name] = list( set( (metaDict[name] + mvalue ) ) )
           else:
             metaDict[name] = list( set( metaDict[name].append( mvalue ) ) )
@@ -238,7 +238,7 @@ class MetaQuery( object ):
         elif operation == 'nin' or operation == "!=":
           if isinstance( typedValue, list ) and userValue in typedValue:
             return S_OK( False )
-          elif isinstance( typedValue, list ) and userValue == typedValue:
+          elif not isinstance( typedValue, list ) and userValue == typedValue:
             return S_OK( False )
 
     return S_OK( True )
