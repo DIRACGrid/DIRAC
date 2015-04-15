@@ -13,7 +13,6 @@ from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
 from operator                                                   import itemgetter
-from copy                                                       import deepcopy
 
 __RCSID__ = '$Id:  $'
 
@@ -54,6 +53,7 @@ class DowntimeCommand( Command ):
                                link = dt[ 'Link' ],
                                gocdbServiceType = dt[ 'GOCDBServiceType' ] )
     return resQuery
+
 
   def _prepareCommand( self ):
     '''
@@ -143,7 +143,7 @@ class DowntimeCommand( Command ):
       element, elementName, hours, gocdbServiceType = params[ 'Value' ]
       elementNames = [ elementName ]
 
-    #we'll check all the DT that are ongoing or starting in 'hours' hours from now
+    #WARNING: checking all the DT that are ongoing or starting in given <hours> from now
     startDate = None 
     if hours is not None:
       startDate = datetime.utcnow() + timedelta( hours = hours )
@@ -237,14 +237,59 @@ class DowntimeCommand( Command ):
       futureDate = currentDate + timedelta( hours = hours )
       
     result = []
-
-    # If hours not defined, we want the ongoing downtimes
+    #dtOverlapping is a buffer to assure only one dt is returned 
+    #when there are overlapping outage/warning dt for same resource/site
+    #fon top of the buffer we put the most recent outages 
+    #while at the bottom the most recent warnings,
+    #assumption: uniformResult list is already ordered by resource/site name, severity, startdate
+    dtOverlapping = [] 
+    countdown = len(uniformResult)
+    
     for dt in uniformResult:
-      if ( dt[ 'StartDate' ] < currentDate ) and ( dt[ 'EndDate' ] > currentDate ):
-        result.append( dt )
-      # If hours not none, we want ongoing dt and dt starting before futureDate
-      if hours is not None and dt[ 'StartDate' ] < futureDate:
-        result.append( dt )
+      countdown = countdown - 1
+      # If hours defined, we want ongoing dt and dt starting before futureDate
+      if hours is not None:
+        if (dt[ 'StartDate' ] > currentDate) and (dt[ 'StartDate' ] < futureDate):
+          result.append( dt )
+      else:
+        # if overlapping DTs for the same resource/site, then get just the most recent Outage
+        if ( dt[ 'StartDate' ] < currentDate ) and ( dt[ 'EndDate' ] > currentDate ):
+          if len(dtOverlapping) == 0:
+            dtOverlapping.append(dt)
+            #unless last iteration
+            if countdown == 0:
+              result.append( dt )
+          else:
+            dtTop = dtOverlapping[0]
+            dtBottom = dtOverlapping[-1]
+            if dtTop['Name'] != dt['Name']:
+              if dtTop['Severity'] == 'OUTAGE':
+                result.append( dtTop )
+              else:
+                # there are just warning dts
+                result.append( dtBottom )
+              #resetting the overlapping buffer
+              dtOverlapping = [dt]
+            else:
+              #if outage we put it on top of the overlapping buffer
+              #i.e. the most recent outage is top the most
+              if dt['Severity'] == 'OUTAGE':
+                dtOverlapping = [dt] + dtOverlapping
+                #if last iteration, then dt must be the most recent outage
+                if countdown == 0:
+                  result.append( dt )
+              #if warning we put it at the bottom of the overlapping buffer
+              #i.e. the most recent warning is bottom the most
+              elif  dt['Severity'] == 'WARNING':
+                dtOverlapping.append(dt)
+                #if last iteration, then look for overlapping outages
+                if countdown == 0:
+                  dtTop = dtOverlapping[0]
+                  dtBottom = dtOverlapping[-1]
+                  if dtTop['Severity'] == 'OUTAGE':
+                    result.append( dtTop )
+                  else:
+                    result.append( dtBottom )
 
 
     return S_OK( result )
@@ -271,10 +316,9 @@ class DowntimeCommand( Command ):
     
     ftsServer = getFTS3Servers()
     if ftsServer[ 'OK' ]:
-    	resources.extend( ftsServer[ 'Value' ] )   
-    
-    
- 		# TODO: file catalogs need also to use their hosts
+      resources.extend( ftsServer[ 'Value' ] )
+      
+    #TODO: file catalogs need also to use their hosts
    
     #fc = CSHelpers.getFileCatalogs()
     #if fc[ 'OK' ]:
