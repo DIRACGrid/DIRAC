@@ -32,6 +32,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     #    is not the default there is a method defined in this class, setting
     #    the proper values and then calling the base class method.
     # ##
+
     self.gfal2requestLifetime = gConfig.getValue( '/Resources/StorageElements/RequestLifeTime', 100 )
 
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
