@@ -2,8 +2,6 @@
 
 """
 Populates the database with the current installations of components
-Requires the local dirac.cfg to contain the full list of hosts
-under Registry/Hosts
 """
 
 __RCSID__ = "$Id$"
@@ -12,6 +10,7 @@ import sys
 from datetime import datetime
 from DIRAC import exit as DIRACexit
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
   import SystemAdministratorIntegrator
@@ -112,7 +111,7 @@ for host in resultAll[ 'Value' ]:
   # Databases
   csClient = CSAPI()
   cfg = csClient.getCurrentCFG()[ 'Value' ]
-  setup = cfg.getOption( 'DIRAC/Setup' )
+  setup = getSetup()
 
   allDB = allDBResult[ 'Value' ]
   availableDB = availableDBResult[ 'Value' ]
