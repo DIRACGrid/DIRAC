@@ -2,6 +2,8 @@
 
 """
 Populates the database with the current installations of components
+This script assumes that both the InstalledComponentsDB and the
+ComponentMonitoring service are installed and running
 """
 
 __RCSID__ = "$Id$"
@@ -92,7 +94,8 @@ for host in resultAll[ 'Value' ]:
       components.sort()
       for component in components:
         record = { 'Installation': {}, 'Component': {}, 'Host': {} }
-        if rDict[ compType ][ system ][ component ][ 'Installed' ]:
+        if rDict[ compType ][ system ][ component ][ 'Installed' ] and \
+            component != 'ComponentMonitoring':
           runitStatus = \
               str( rDict[ compType ][ system ][ component ][ 'RunitStatus' ] )
           if runitStatus != 'Unknown':
@@ -118,7 +121,7 @@ for host in resultAll[ 'Value' ]:
 
   for db in allDB:
     # Check for DIRAC only databases
-    if db in availableDB.keys():
+    if db in availableDB.keys() and db != 'InstalledComponentsDB':
       # Check for 'installed' databases
       isSection = cfg.isSection \
                     ( 'Systems/' + availableDB[ db ][ 'System' ] + '/' +
