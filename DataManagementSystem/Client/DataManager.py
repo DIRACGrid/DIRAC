@@ -700,7 +700,7 @@ class DataManager( object ):
 
       if res['OK']:
         self.log.debug( "__replicate: Replication successful." )
-        resDict = {'DestSE':destSE, 'DestPfn':destPfn}
+        resDict = {'DestSE':destSEName, 'DestPfn':destPfn}
         return S_OK( resDict )
       else:
         errStr = "__replicate: Replication failed."
