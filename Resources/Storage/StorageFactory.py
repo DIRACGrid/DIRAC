@@ -11,6 +11,7 @@
     getStorages()      This takes a DIRAC SE definition and creates storage stubs for the protocols found in the CS.
                       By providing an optional list of protocols it is possible to limit the created stubs.
 """
+from __builtin__ import False
 
 __RCSID__ = "$Id$"
 
@@ -115,7 +116,11 @@ class StorageFactory:
     self.name = storageName
 
     # In case the storage is made from a base SE, get this information
-    storageName = self._getBaseStorageName( storageName )
+    res = self._getBaseStorageName( storageName )
+    if not res['OK']:
+      self.valid = False
+      return res
+    storageName = res['Value']
 
     # Get the options defined in the CS for this storage
     res = self._getConfigStorageOptions( storageName )
