@@ -534,10 +534,13 @@ class Request( Record ):
     repAndRegList = []
     removeRepList = []
     i = 0
-    while i < len( self.__operations__ ) - 1:
+    while True:
+      if i >= len( self.__operations__ ) - 1:
+        break
       op1 = self.__operations__[i]
       op2 = self.__operations__[i + 1]
       # print i, getattr( op1, 'Type' ), getattr( op2, 'Type' )
+      optFound = False
       if getattr( op1, 'Type' ) == 'ReplicateAndRegister' and \
          getattr( op2, 'Type' ) == 'RemoveReplica':
         fileSetA = set( list( f.LFN for f in op1 ) )
@@ -550,22 +553,34 @@ class Request( Record ):
           removeRepList.append( ( op2.TargetSE, op2 ) )
           del self.__operations__[i]
           del self.__operations__[i]
-          continue
+          print 'Found sequence starting at %d' % i
+          optFound = True
+      if not optFound:
+        if repAndRegList:
+          # We must insert the new operations there
+          # i.e. insert before operation i (if exists)
+          # If some were found, put them, sorted by SE, at the beginning of the request
+          # Replication first, removeReplica next
+          if not self.isEmpty():
+            insertBefore = self.__operations__[i]
+          else:
+            insertBefore = None
+          print 'Insert new operations before', insertBefore
+          for op in \
+            [op for _targetSE, op in sorted( repAndRegList )] + \
+            [op for _targetSE, op in sorted( removeRepList )]:
+            _res = self.insertBefore( op, insertBefore ) if insertBefore != None else self.addOperation( op )
+            optimized = True
+          repAndRegList = []
+          removeRepList = []
+          # Skip the 2 newly inserted operations
+          i += 2
         else:
+          # Skip current operation
           i += 1
-          continue
-      i += 1
-    # If some were found, put them, sorted by SE, at the beginning of the request
-    # Replication first, removeReplica next
-    if not self.isEmpty():
-      insertBefore = self.__operations__[0]
-    else:
-      insertBefore = None
-    for op in \
-      [op for _targetSE, op in sorted( repAndRegList )] + \
-      [op for _targetSE, op in sorted( removeRepList )]:
-      _res = self.insertBefore( op, insertBefore ) if insertBefore != None else self.addOperation( op )
-      optimized = True
+      else:
+        # Just to show that in that case we don't increment i
+        pass
 
     # List of attributes that must be equal for operations to be merged
     attrList = ["Type", "Arguments", "SourceSE", "TargetSE", "Catalog" ]
