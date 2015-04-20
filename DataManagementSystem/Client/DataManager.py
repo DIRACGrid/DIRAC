@@ -540,7 +540,7 @@ class DataManager( object ):
     successful[lfn] = { 'replicate' : replicationTime }
 
     destPfn = res['Value']['DestPfn']
-    # destSE = res['Value']['DestSE']
+    destSE = res['Value']['DestSE']
     self.log.debug( "replicateAndRegister: Attempting to register %s at %s." % ( destPfn, destSE ) )
     replicaTuple = ( lfn, destPfn, destSE )
     startRegistration = time.time()
