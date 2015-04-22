@@ -93,6 +93,7 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def addPilotsLogging(self, pilotUUID, status, minorStatus, timeStamp, source):
+    "Add new pilot logging entry"
     
     session = self.sqlalchemySession()
     logging = PilotsLogging(pilotUUID, status, minorStatus, timeStamp, source)
@@ -115,6 +116,7 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def getPilotsLogging(self, pilotID):
+    "Gel list of logging entries for pilot"
     
     session = self.sqlalchemySession()
     
@@ -132,6 +134,8 @@ class PilotAgentsDB( DB ):
     return S_OK(pilotLogging)
 ##########################################################################################
   def deletePilotsLogging(self, pilotID):
+    "Delete all logging entries for pilot"
+    
     session = self.sqlalchemySession()
     
     #session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete(synchronize_session = 'fetch')
@@ -148,6 +152,8 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def addPilotsUUID(self, pilotUUID):
+    "Add new pilot UUID to UUID ID mapping, not knowing ID yet"
+    
     session = self.sqlalchemySession()
     
     resp = session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotUUID == pilotUUID).count()
@@ -173,6 +179,8 @@ class PilotAgentsDB( DB ):
   
 ##########################################################################################
   def setPilotsUUIDtoIDMapping(self, pilotUUID, pilotID):
+    "Assign pilot ID to UUID"
+    
     session = self.sqlalchemySession()
     
     mapping = session.query(PilotsUUIDtoID).get(pilotUUID)
@@ -188,6 +196,7 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def addPilotsUUIDtoIDmapping(self, pilotUUID, pilotID):
+    "Add new pilot UUID to ID mapping"
     
     session = self.sqlalchemySession()
     
