@@ -1,8 +1,18 @@
-""" Hello Service is an example of how to build services in the DIRAC framework
+""" PilotAgentsHandler is the implementation of the PilotAgents service
+
+    The following methods are available in the Service interface
+
+    addPilotsLogging()
+    getPilotsLogging
+    setPilotsUUIDtoIDMapping()
+    addPilotsUUID()
+    deletePilotsLogging()
+
 """
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 __RCSID__ = "$Id: $"
+
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
