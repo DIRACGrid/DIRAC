@@ -63,7 +63,7 @@ class PilotAgentsDB( DB ):
       self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' 
                                    %( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
                                    pool_recycle = 3600, echo_pool = True )
-      self.Session = scoped_session( sessionmaker( bind = self.engine ) )
+      self.sqlalchemySession = scoped_session( sessionmaker( bind = self.engine ) )
       self.inspector = Inspector.from_engine( self.engine )
 
 ##########################################################################################
@@ -91,7 +91,7 @@ class PilotAgentsDB( DB ):
 ##########################################################################################
   def addPilotsLogging(self, pilotUUID, status, minorStatus, timeStamp, source):
     
-    session = self.Session()
+    session = self.sqlalchemySession()
     logging = PilotsLogging(pilotUUID, status, minorStatus, timeStamp, source)
     
     try:
@@ -113,7 +113,7 @@ class PilotAgentsDB( DB ):
 ##########################################################################################
   def getPilotsLogging(self, pilotID):
     
-    session = self.Session()
+    session = self.sqlalchemySession()
     
     pilotLogging = []
     for pl in session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).order_by(PilotsLogging.timeStamp).all():
@@ -129,7 +129,7 @@ class PilotAgentsDB( DB ):
     return S_OK(pilotLogging)
 ##########################################################################################
   def deletePilotsLogging(self, pilotID):
-    session = self.Session()
+    session = self.sqlalchemySession()
     
     #session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete(synchronize_session = 'fetch')
     session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete()
@@ -145,7 +145,7 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def addPilotsUUID(self, pilotUUID):
-    session = self.Session()
+    session = self.sqlalchemySession()
     
     resp = session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotUUID == pilotUUID).count()
     if resp > 0:
@@ -170,7 +170,7 @@ class PilotAgentsDB( DB ):
   
 ##########################################################################################
   def setPilotsUUIDtoIDMapping(self, pilotUUID, pilotID):
-    session = self.Session()
+    session = self.sqlalchemySession()
     
     mapping = session.query(PilotsUUIDtoID).get(pilotUUID)
     mapping.pilotID = pilotID
@@ -186,7 +186,7 @@ class PilotAgentsDB( DB ):
 ##########################################################################################
   def addPilotsUUIDtoIDmapping(self, pilotUUID, pilotID):
     
-    session = self.Session()
+    session = self.sqlalchemySession()
     
     uuid2id = PilotsUUIDtoID(pilotUUID, pilotID)
     try:
