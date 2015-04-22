@@ -50,9 +50,9 @@ Base = declarative_base()
 #############################################################################
 class PilotAgentsDB( DB ):
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self ):
 
-    DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB', maxQueueSize )
+    DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB' )
     self.lock = threading.Lock()
     
     self.__initializeConnection('WorkloadManagement/PilotAgentsDB')
