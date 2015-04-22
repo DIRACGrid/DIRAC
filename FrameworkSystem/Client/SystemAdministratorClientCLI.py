@@ -240,7 +240,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       elif result['Value']:
         gLogger.notice( '' )
         for par, value in result['Value'].items():
-          gLogger.notice( par.rjust( 28 ), ':', value )
+          gLogger.notice( ( par.rjust( 28 ), ':', value ) )
       else:
         gLogger.notice( "No MySQL database found" )
     elif option == "log":
@@ -264,7 +264,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:   
-        gLogger.notice()
+        gLogger.notice( '' )
         gLogger.notice( "Host info:" )
         gLogger.notice( '' )
         
@@ -577,7 +577,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         else:
           gLogger.notice( "\nComponents started successfully, runit status:\n" )
         for comp in result['Value']:
-          gLogger.notice( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] )
+          gLogger.notice( ( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] ) )
     else:
       gLogger.notice( "Not yet implemented" )
 
@@ -619,7 +619,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         else:
           gLogger.notice( "\nComponents started successfully, runit status:\n" )
         for comp in result['Value']:
-          gLogger.notice( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] )
+          gLogger.notice( ( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] ) )
     else:
       gLogger.notice( "Not yet implemented" )
 
@@ -652,7 +652,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         else:
           gLogger.notice( "\nComponents stopped successfully, runit status:\n" )
         for comp in result['Value']:
-          gLogger.notice( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] )
+          gLogger.notice( ( comp.rjust( 32 ), ':', result['Value'][comp]['RunitStatus'] ) )
     else:
       gLogger.notice( "Not yet implemented" )
 
