@@ -1,4 +1,3 @@
-# $HeadURL$
 """ 
 The Grid module contains several utilities for grid operations
 """
@@ -315,8 +314,8 @@ For example result['Value'][0]['GlueSESizeFree']
 def ldapSEAccessProtocol( se, attr = None, host = None ):
   """ SE access protocol information from bdii
 
-:param  se: se or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
-:return: standard DIRAC answer with Value equals to list of access protocols.
+      :param  se: se or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
+      :return: standard DIRAC answer with Value equals to list of access protocols.
 
   """
   filt = '(&(objectClass=GlueSEAccessProtocol)(GlueChunkKey=GlueSEUniqueID=%s))' % se
@@ -334,8 +333,8 @@ def ldapSEAccessProtocol( se, attr = None, host = None ):
 def ldapService( serviceID = '*', serviceType = '*', vo = '*', attr = None, host = None):
   """ Service BDII info for a given VO
 
-:param  service: service type, e.g. SRM
-:return: standard DIRAC answer with Value equals to list of services
+      :param  service: service type, e.g. SRM
+      :return: standard DIRAC answer with Value equals to list of services
   """
   voFilters = '(GlueServiceAccessControlBaseRule=VOMS:/%s/*)' % vo
   voFilters += '(GlueServiceAccessControlBaseRule=VOMS:/%s)' % vo
