@@ -1,7 +1,8 @@
-# $HeadURL$
+""" Accounting Cache
+"""
+
 __RCSID__ = "$Id$"
 
-import os
 import os.path
 import time
 import threading
@@ -10,7 +11,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, rootPath, gConfig
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 
-class DataCache:
+class DataCache( object ):
 
   def __init__( self ):
     self.graphsLocation = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data', 'accountingPlots' )
@@ -43,7 +44,7 @@ class DataCache:
     Get report data from cache if exists, else generate it
     """
     reportData = self.__dataCache.get( reportHash )
-    if reportData == False:
+    if not reportData:
       retVal = dataFunc( reportRequest )
       if not retVal[ 'OK' ]:
         return retVal
@@ -56,7 +57,7 @@ class DataCache:
     Get report data from cache if exists, else generate it
     """
     plotDict = self.__graphCache.get( reportHash )
-    if plotDict == False:
+    if not plotDict:
       basePlotFileName = "%s/%s" % ( self.graphsLocation, reportHash )
       retVal = plotFunc( reportRequest, reportData, basePlotFileName )
       if not retVal[ 'OK' ]:
