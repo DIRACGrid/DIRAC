@@ -3,6 +3,7 @@
 ########################################################################
 
 """ A set of utilities used in the WMS services
+    Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
 
 __RCSID__ = "$Id$"
@@ -14,6 +15,10 @@ from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingEleme
 from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
 
 from DIRAC import S_OK, S_ERROR, gConfig
+
+import sys
+sys.path.append('/usr/lib64/python2.6/site-packages')
+import arc
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
@@ -77,17 +82,15 @@ def getARCPilotOutput( proxy, pilotRef ):
   tmp_dir = mkdtemp()
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
-  mySite = getCESiteMapping()['Value'][myce]
-  WorkDB = gConfig.getValue(os.path.join('Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'))
-  myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL2", WorkDB)
-  cmd = [ 'arcget' ]
-  cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
-  ret = executeGridCommand( proxy, cmd, gridEnv )
-  print ret
-  if not ret['OK']:
-    shutil.rmtree( tmp_dir )
-    return ret
-  status, output, error = ret['Value']
+  usercfg = arc.UserConfig()
+  usercfg.CredentialString(proxy)
+  job = arc.Job()
+  job.jobID = pilotRef
+  job.JobStatusURL = arc.URL(os.path.join("ldap://", myce, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
+  job.JobManagementURL = arc.URL(os.path.join("gsiftp://", myce, ":2811/jobs/"))
+  job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+  job.Retrieve(usercfg, arc.URL(tmp_dir), False) 
+
   if 'Results stored at:' in output :
     tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
     result = S_OK()
