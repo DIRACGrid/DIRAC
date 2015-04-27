@@ -19,7 +19,7 @@ __RCSID__ = "$Id$"
 class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
   """
-  
+
   def __init__( self, storageName, parameters ):
     """ """
     self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
@@ -32,7 +32,11 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     #    is not the default there is a method defined in this class, setting
     #    the proper values and then calling the base class method.
     # ##
+
+    self.gfal2requestLifetime = gConfig.getValue( '/Resources/StorageElements/RequestLifeTime', 100 )
+
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
+    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
     self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
 
