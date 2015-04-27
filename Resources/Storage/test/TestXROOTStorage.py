@@ -5,15 +5,14 @@
 # FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
 
 
-from DIRAC.Core.Base.Script import parseCommandLine
+# from DIRAC.Core.Base.Script import parseCommandLine
 from mock import MagicMock
-parseCommandLine()
+# parseCommandLine()
 
 import mock
 import unittest
 
 import DIRAC.Resources.Storage.XROOTStorage as moduleTested
-from DIRAC                                      import  gLogger
 
 
 __RCSID__ = '$Id: $'

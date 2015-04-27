@@ -55,7 +55,7 @@ class Client( object ):
     # evalString = "rpcClient.%s(*parms,**kws)" % toExecute
     # return eval( evalString )
 
-  def _getRPC( self, rpc = False, url = '', timeout = 600 ):
+  def _getRPC( self, rpc = None, url = '', timeout = 600 ):
     """ Return RPCClient object to url
     """
     if not rpc:

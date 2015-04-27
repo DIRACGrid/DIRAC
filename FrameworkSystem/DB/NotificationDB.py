@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
@@ -8,10 +5,8 @@ __RCSID__ = "$Id$"
 
 import time
 import types
-import threading
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Security import CS
@@ -123,7 +118,7 @@ class NotificationDB( DB ):
   def newAlarm( self, alarmDef ):
     """ Create a new alarm record
     """
-    followers = ""
+    followers = []
     for field in self.__newAlarmMandatoryFields:
       if field not in alarmDef:
         return S_ERROR( "Oops. Missing %s" % field )
@@ -141,11 +136,11 @@ class NotificationDB( DB ):
     for field in self.__newAlarmMandatoryFields:
       if field == 'notifications':
         notifications = {}
-        for type in self.__validAlarmNotifications:
-          if type in alarmDef[ field ]:
-            notifications[ type ] = 1
+        for nType in self.__validAlarmNotifications:
+          if nType in alarmDef[ field ]:
+            notifications[ nType ] = 1
           else:
-            notifications[ type ] = 0
+            notifications[ nType ] = 0
         val = DEncode.encode( notifications )
       else:
         val = alarmDef[ field ]
@@ -400,8 +395,8 @@ class NotificationDB( DB ):
     else:
       logToShow = range( len( records ) - 1, -1, -1 )
     finalMessage = []
-    for id in logToShow:
-      rec = records[ id ]
+    for iD in logToShow:
+      rec = records[ iD ]
       data = {}
       for i in range( len( alarmLog[ 'ParameterNames' ] ) ):
         if rec[i]:
@@ -746,8 +741,8 @@ class NotificationDB( DB ):
     delSQL = "DELETE FROM `ntf_Notifications` WHERE User=%s" % user
     escapedIDs = []
     if msgIds:
-      for id in msgIds:
-        result = self._escapeString( str( id ) )
+      for iD in msgIds:
+        result = self._escapeString( str( iD ) )
         if not result[ 'OK' ]:
           return result
         escapedIDs.append( result[ 'Value' ] )
@@ -768,8 +763,8 @@ class NotificationDB( DB ):
     updateSQL = "UPDATE `ntf_Notifications` SET Seen=%d WHERE User=%s" % ( seen, user )
     escapedIDs = []
     if msgIds:
-      for id in msgIds:
-        result = self._escapeString( str( id ) )
+      for iD in msgIds:
+        result = self._escapeString( str( iD ) )
         if not result[ 'OK' ]:
           return result
         escapedIDs.append( result[ 'Value' ] )
@@ -835,8 +830,4 @@ class NotificationDB( DB ):
       ids.append( str( msg[0] ) )
     self.log.info( "Deferred %s notifications" % len( ids ) )
     return self._update( "DELETE FROM `ntf_Notifications` WHERE Id in (%s)" % ",".join( ids ) )
-
-
-
-
 

@@ -1,23 +1,27 @@
-""" This is the RFIO StorageClass """
+""" This is the RFIO StorageClass
+"""
 
 __RCSID__ = "$Id$"
+
+import types
+import re
+import os
+import time
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Utilities                  import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Subprocess            import shellCall
-from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.List                  import breakListIntoChunks
 from DIRAC.Core.Utilities.File                  import getSize
-from stat                                       import *
-import types, re, os, time
+
 
 class RFIOStorage( StorageBase ):
 
   def __init__( self, storageName, parameters ):
     
     StorageBase.__init__( self, storageName, parameters )
-    self.spacetoken = self.protocolParameters['SpaceToken']
+    self.spaceToken = self.protocolParameters['SpaceToken']
     
     self.isok = True
 
@@ -62,7 +66,7 @@ class RFIOStorage( StorageBase ):
           url = line.strip()
           successful[url] = True
         for line in stderr.splitlines():
-          pfn, error = line.split( ': ' )
+          pfn, _ = line.split( ': ' )
           url = pfn.strip()
           successful[url] = False
       else:
@@ -95,7 +99,7 @@ class RFIOStorage( StorageBase ):
     returncode, stdout, stderr = res['Value']
     if returncode in [0, 1]:
       for line in stdout.splitlines():
-        permissions, subdirs, owner, group, size, month, date, timeYear, pfn = line.split()
+        permissions, _subdirs, _owner, _group, _size, _month, _date, _timeYear, pfn = line.split()
         if permissions[0] != 'd':
           successful[pfn] = True
         else:
@@ -169,7 +173,7 @@ class RFIOStorage( StorageBase ):
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      returncode, stdout, stderr = res['Value']
+      _returncode, stdout, _stderr = res['Value']
       for line in stdout.splitlines():
         pfn = line.split()[0]
         status = line.split()[-1]
@@ -189,7 +193,7 @@ class RFIOStorage( StorageBase ):
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     else:
-      returncode, stdout, stderr = res['Value']
+      _returncode, stdout, _stderr = res['Value']
       for line in stdout.splitlines():
         pfn = line.split()[-1]
         checksum = line.split()[-2]
@@ -243,7 +247,7 @@ class RFIOStorage( StorageBase ):
     comm = "rfcp %s %s" % ( src_url, dest_file )
     res = shellCall( timeout, comm )
     if res['OK']:
-      returncode, stdout, stderr = res['Value']
+      returncode, _stdout, stderr = res['Value']
       if returncode == 0:
         gLogger.debug( 'RFIOStorage.__getFile: Got file from storage, performing post transfer check.' )
         localSize = getSize( dest_file )
@@ -321,7 +325,7 @@ class RFIOStorage( StorageBase ):
     comm = "rfcp %s '%s'" % ( src_file, turl )
     res = shellCall( timeout, comm )
     if res['OK']:
-      returncode, stdout, stderr = res['Value']
+      returncode, _stdout, stderr = res['Value']
       if returncode == 0:
         gLogger.debug( 'RFIOStorage.putFile: Put file to storage, performing post transfer check.' )
         res = self.__executeOperation( dest_url, 'getFileSize' )
@@ -364,14 +368,14 @@ class RFIOStorage( StorageBase ):
         comm = "%s -M %s" % ( comm, url )
       res = shellCall( 100, comm )
       if res['OK']:
-        returncode, stdout, stderr = res['Value']
+        returncode, _stdout, stderr = res['Value']
         if returncode in [0, 1]:
           comm = 'nsrm -f'
           for url in urls:
             comm = "%s %s" % ( comm, url )
           res = shellCall( 100, comm )
           if res['OK']:
-            returncode, stdout, stderr = res['Value']
+            returncode, _stdout, stderr = res['Value']
             if returncode in [0, 1]:
               for pfn in urls:
                 successful[pfn] = True
@@ -427,8 +431,8 @@ class RFIOStorage( StorageBase ):
       res = self.__getFileMetadata( files )
       if not res['OK']:
         return res
-      for pfn, dict in res['Value']['Successful'].items():
-        successful[pfn].update( dict )
+      for pfn, pfnDict in res['Value']['Successful'].items():
+        successful[pfn].update( pfnDict )
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -477,10 +481,10 @@ class RFIOStorage( StorageBase ):
       if returncode in [0, 1]:
         for line in stdout.splitlines():
           if re.search( 'SUBREQUEST_READY', line ):
-            pfn, status = line.split()
+            pfn, _status = line.split()
             successful[pfn] = userTag
           elif re.search( 'SUBREQUEST_FAILED', line ):
-            pfn, status, err = line.split( ' ', 2 )
+            pfn, _status, err = line.split( ' ', 2 )
             failed[pfn] = err
       else:
         errStr = "RFIOStorage.prestageFile: Got unexpected return code from stager_get."
@@ -758,10 +762,10 @@ class RFIOStorage( StorageBase ):
     # Get the local directory contents
     contents = os.listdir( src_directory )
     allSuccessful = True
-    for file in contents:
+    for cFile in contents:
       pathSuccessful = False
-      localPath = '%s/%s' % ( src_directory, file )
-      remotePath = '%s/%s' % ( dest_directory, file )
+      localPath = '%s/%s' % ( src_directory, cFile )
+      remotePath = '%s/%s' % ( dest_directory, cFile )
       if os.path.isdir( localPath ):
         res = self.__putDir( localPath, remotePath )
         if res['OK']:
@@ -810,7 +814,7 @@ class RFIOStorage( StorageBase ):
     res = shellCall( 100, comm )
     if not res['OK']:
       return res
-    returncode, stdout, stderr = res['Value']
+    returncode, _stdout, stderr = res['Value']
     if not returncode in [0]:
       return S_ERROR( stderr )
     return S_OK()
@@ -818,7 +822,7 @@ class RFIOStorage( StorageBase ):
   def __makeDirs( self, path ):
     """  Black magic contained within....
     """
-    dir = os.path.dirname( path )
+    pDir = os.path.dirname( path )
     res = self.exists( path )
     if not res['OK']:
       return res
@@ -827,13 +831,13 @@ class RFIOStorage( StorageBase ):
         if res['Value']['Successful'][path]:
           return S_OK()
         else:
-          res = self.exists( dir )
+          res = self.exists( pDir )
           if res['OK']:
-            if res['Value']['Successful'].has_key( dir ):
-              if res['Value']['Successful'][dir]:
+            if res['Value']['Successful'].has_key( pDir ):
+              if res['Value']['Successful'][pDir]:
                 res = self.__makeDir( path )
               else:
-                res = self.__makeDirs( dir )
+                res = self.__makeDirs( pDir )
                 res = self.__makeDir( path )
     return res
 
@@ -852,7 +856,7 @@ class RFIOStorage( StorageBase ):
       comm = "nsrm -r %s" % url
       res = shellCall( 100, comm )
       if res['OK']:
-        returncode, stdout, stderr = res['Value']
+        returncode, _stdout, stderr = res['Value']
         if returncode == 0:
           successful[url] = {'FilesRemoved':0, 'SizeRemoved':0}
         elif returncode == 1:
@@ -902,7 +906,7 @@ class RFIOStorage( StorageBase ):
           files = {}
           successful[directory] = {}
           for line in stdout.splitlines():
-            permissions, subdirs, owner, group, size, month, date, timeYear, pfn = line.split()
+            permissions, _subdirs, _owner, _group, size, _month, _date, _timeYear, pfn = line.split()
             if not pfn == 'dirac_directory':
               path = "%s/%s" % ( directory, pfn )
               if permissions[0] == 'd':
