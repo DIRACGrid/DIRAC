@@ -1,10 +1,11 @@
-[v6r13-pre22]
+[v6r13-pre23]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
 
 *Core
 FIX: MySQL.py - treat in detailed way datetime functions in __escapeString()
+FIX: DictCache.get() returns now None instead of False if no or expired value
 
 *Configuration
 NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
@@ -12,7 +13,7 @@ NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifyi
 
 *Framework
 FIX: NotificationDB - escape fields for sorting in getNotifications()
-NEW: Database, Service and Client for tracking the installed DIRAC components
+NEW: Database, Service, Client, commands for tracking the installed DIRAC components
 
 *Core
 NEW: Changes to make the DISET protocol IP V6 ready
