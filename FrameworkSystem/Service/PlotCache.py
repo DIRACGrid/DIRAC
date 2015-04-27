@@ -40,7 +40,7 @@ class PlotCache:
     """
 
     plotDict = self.__graphCache.get( plotHash )
-    if plotDict == False:
+    if plotDict is None:
       basePlotFileName = "%s/%s.png" % ( self.plotsLocation, plotHash )
       if subplotMetadata:
         retVal = graph( plotData, basePlotFileName, plotMetadata, metadata = subplotMetadata )

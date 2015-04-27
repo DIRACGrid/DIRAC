@@ -351,7 +351,7 @@ class ProxyManagerClient:
     cHash = result[ 'Value' ]
     if self.__filesCache.exists( cHash, requiredTimeLeft ):
       filepath = self.__filesCache.get( cHash )
-      if os.path.isfile( filepath ):
+      if filepath and os.path.isfile( filepath ):
         return S_OK( filepath )
       self.__filesCache.delete( cHash )
     retVal = chain.dumpAllToFile( destinationFile )

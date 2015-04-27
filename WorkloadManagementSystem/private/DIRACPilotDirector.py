@@ -150,7 +150,7 @@ class DIRACPilotDirector(PilotDirector):
       availableQueues = []
       # now = Time.dateTime()
       cachedAvailableQueues = self.listMatchCache.get( pilotRequirementsString )
-      if cachedAvailableQueues == False:
+      if cachedAvailableQueues is None:
         availableQueues = self._listQueues( pilotRequirements )
         if availableQueues != False:
           self.listMatchCache.add( pilotRequirementsString, self.listMatchDelay, availableQueues )
