@@ -1697,14 +1697,14 @@ def monitorInstallation( componentType, system, component, module = None ):
     ( 'There is already an installation of ' + component + ' in the database' )
 
   result = monitoringClient.addInstallation \
-                                ( { 'InstallationTime': datetime.datetime.now(),
-                                    'Instance': instance },
-                                  { 'Type': componentType,
-                                    'System': system,
-                                    'Module': module },
-                                  { 'HostName': hostname,
-                                    'CPU': cpu },
-                                  True )
+                            ( { 'InstallationTime': datetime.datetime.utcnow(),
+                                'Instance': instance },
+                              { 'Type': componentType,
+                                'System': system,
+                                'Module': module },
+                              { 'HostName': hostname,
+                                'CPU': cpu },
+                              True )
   return result
 
 def monitorUninstallation( system, component ):
@@ -1726,7 +1726,7 @@ def monitorUninstallation( system, component ):
                         ( { 'Instance': instance, 'UnInstallationTime': None },
                           { 'System': system },
                           { 'HostName': hostname, 'CPU': cpu },
-                          { 'UnInstallationTime': datetime.datetime.now() } )
+                          { 'UnInstallationTime': datetime.datetime.utcnow() } )
   return result
 
 def installComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
@@ -2528,9 +2528,11 @@ def installDatabase( dbName ):
     return S_ERROR( error )
 
   # If everything went well, add the information to the ComponentMonitoring DB
-  result = monitorInstallation( 'DB', dbSystem, dbName )
-  if not result[ 'OK' ]:
-    return result
+  # Unless we are installing the monitoringDB
+  if dbName != 'InstalledComponentsDB':
+    result = monitorInstallation( 'DB', dbSystem, dbName )
+    if not result[ 'OK' ]:
+      return result
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
 
