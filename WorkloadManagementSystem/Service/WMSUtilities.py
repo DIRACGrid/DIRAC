@@ -17,10 +17,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
-import sys
-sys.path.append('/usr/lib64/python2.6/site-packages')
-import arc
-
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
 outputSandboxFiles = [ 'StdOut', 'StdErr', 'std.out', 'std.err' ]
