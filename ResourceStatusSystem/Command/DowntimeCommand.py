@@ -53,6 +53,29 @@ class DowntimeCommand( Command ):
                                link = dt[ 'Link' ],
                                gocdbServiceType = dt[ 'GOCDBServiceType' ] )
     return resQuery
+  
+  
+  def _cleanCommand( self ):
+    '''
+      Clear Cache from expired DT.
+    '''
+    
+    #reading all the cache entries
+    result = self.rmClient.selectDowntimeCache()
+
+    if not result[ 'OK' ]:
+      return result
+
+    uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+    
+    currentDate = datetime.utcnow()
+    
+    for dt in uniformResult:
+      if dt[ 'EndDate' ] < currentDate:
+        resQuery = self.rmClient.deleteDowntimeCache ( 
+                               downtimeID = dt[ 'DowntimeID' ]
+                               )
+    return resQuery
 
 
   def _prepareCommand( self ):
@@ -163,6 +186,13 @@ class DowntimeCommand( Command ):
 
     if results is None:
       return S_OK( None )
+    
+    
+    #cleaning the Cache
+    cleanRes = self._cleanCommand()
+    if not cleanRes[ 'OK' ]:
+      return cleanRes
+    
 
     uniformResult = []
 
