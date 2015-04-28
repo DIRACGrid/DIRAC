@@ -411,12 +411,12 @@ class CSAPI( object ):
     :return: S_OK/S_ERROR
     """
 
-    def getOpsSection( ):
+    def getOpsSection():
       """
       Where is the shifters section?
       """
-      vo = CSGlobals.getVO( )
-      setup = CSGlobals.getSetup( )
+      vo = CSGlobals.getVO()
+      setup = CSGlobals.getSetup()
 
       if vo:
         res = gConfig.getSections( '/Operations/%s/%s/Shifter' % (vo, setup) )
@@ -465,7 +465,17 @@ class CSAPI( object ):
           shifters.pop( sRole )
 
     #shifters section to modify
-    section = getOpsSection( )
+    try:
+      section = getOpsSection()
+    except RuntimeError as rte:
+      gLogger.warn( rte )
+      gLogger.info( "Adding shifter section" )
+      vo = CSGlobals.getVO()
+      if vo:
+        section = '/Operations/%s/Defaults/Shifter' % vo
+      else:
+        section = '/Operations/Defaults/Shifter'
+      self.__csMod.createSection( section )
 
     #add or modify shifters
     for shifter in shifters:
