@@ -28,28 +28,34 @@ def printTable( fields, records, sortField='', numbering=True,
       if printOut:       
         print "No output"
       return "No output"
-    
-    records = list( records )
 
-    nFields = len(fields)      
-    if nFields != len(records[0]):
-      out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len(records[0]) )
+    fieldList = list( fields )
+    recordList = []
+    for r in records:
+      recordList.append( list( r ) )
+
+
+    nFields = len( fieldList )
+    if nFields != len( recordList[0] ):
+      out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len( recordList[0] ) )
       if printOut:      
         print out
       return out
 
     if sortField:
-      records.sort( None, lambda x: x[fields.index( sortField )] )
+      recordList.sort( None, lambda x: x[fieldList.index( sortField )] )
 
     lengths = []
     for i in range(nFields):
-      lengths.append(len(fields[i]))
-      for r in records:
-        if len(r[i]) > lengths[i]:
-          lengths[i] = len(r[i])
+      fieldList[i] = fieldList[i].strip()
+      lengths.append( len( fieldList[i] ) )
+      for r in recordList:
+        r[i] = r[i].strip()
+        if len( r[i] ) > lengths[i]:
+          lengths[i] = len( r[i] )
 
     
-    numberWidth = len( str( len( records ) ) ) + 1      
+    numberWidth = len( str( len( recordList ) ) ) + 1
     separatorWidth = len( columnSeparator )
     totalLength = 0
     for i in lengths:
@@ -62,22 +68,22 @@ def printTable( fields, records, sortField='', numbering=True,
     if numbering:      
       stringBuffer.write( ' '*(numberWidth+separatorWidth) )      
     for i in range(nFields):
-      stringBuffer.write( fields[i].ljust(lengths[i]+separatorWidth) )
+      stringBuffer.write( fieldList[i].ljust(lengths[i]+separatorWidth) )
     stringBuffer.write( '\n' )
     stringBuffer.write( '='*totalLength + '\n' )
     count = 1
-    for r in records:
+    for r in recordList:
       if numbering:
-        if count == len(records) and records[-1][0] == "Total":
+        if count == len( recordList ) and recordList[-1][0] == "Total":
           stringBuffer.write( " "*(numberWidth+separatorWidth) )  
         else:  
           stringBuffer.write( str(count).rjust(numberWidth)+columnSeparator )
       
-      for i in range(nFields):
-        stringBuffer.write( r[i].ljust(lengths[i])+columnSeparator )
+      for i in range( nFields ):
+        stringBuffer.write( r[i].ljust( lengths[i] )+columnSeparator )
       
       stringBuffer.write( '\n' )    
-      if count == len(records)-1 and records[-1][0] == "Total":
+      if count == len( recordList )-1 and recordList[-1][0] == "Total":
         stringBuffer.write( '-'*totalLength + '\n' )
       count += 1
       
