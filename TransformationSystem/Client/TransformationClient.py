@@ -10,9 +10,6 @@ from DIRAC.Core.Utilities.List                              import breakListInto
 from DIRAC.Resources.Catalog.FileCatalogueBase              import FileCatalogueBase
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 
-rpc = None
-url = None
-
 class TransformationClient( Client, FileCatalogueBase ):
 
   """ Exposes the functionality available in the DIRAC/TransformationHandler
@@ -61,6 +58,8 @@ class TransformationClient( Client, FileCatalogueBase ):
   """
 
   def __init__( self, **kwargs ):
+    """ Simple constructor
+    """
 
     Client.__init__( self, **kwargs )
     opsH = Operations()
@@ -71,9 +70,8 @@ class TransformationClient( Client, FileCatalogueBase ):
   def setServer( self, url ):
     self.serverURL = url
 
-  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None,
-                   rpc = '', url = '' ):
-    rpcClient = self._getRPC( rpc = rpc, url = url )
+  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None ):
+    rpcClient = self._getRPC()
     return rpcClient. getCounters( table, attrList, condDict, older, newer, timeStamp )
 
   def addTransformation( self, transName, description, longDescription, transType, plugin, agentType, fileMask,
@@ -84,19 +82,19 @@ class TransformationClient( Client, FileCatalogueBase ):
                          maxTasks = 0,
                          eventsPerTask = 0,
                          addFiles = True,
-                         rpc = '', url = '', timeout = 1800 ):
+                         timeout = 1800 ):
     """ add a new transformation
     """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC( timeout = timeout )
     return rpcClient.addTransformation( transName, description, longDescription, transType, plugin,
                                         agentType, fileMask, transformationGroup, groupSize, inheritedFrom,
                                         body, maxTasks, eventsPerTask, addFiles )
 
   def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate',
-                          orderAttribute = None, limit = 100, extraParams = False, rpc = '', url = '', timeout = None ):
+                          orderAttribute = None, limit = 100, extraParams = False ):
     """ gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
     """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
 
     transformations = []
     # getting transformations - incrementally
@@ -115,17 +113,17 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
     return S_OK( transformations )
 
-  def getTransformation( self, transName, extraParams = False, rpc = '', url = '', timeout = None ):
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+  def getTransformation( self, transName, extraParams = False ):
+    rpcClient = self._getRPC()
     return rpcClient.getTransformation( transName, extraParams )
 
   def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
-                              orderAttribute = None, limit = None, rpc = '', url = '', timeout = 1800,
+                              orderAttribute = None, limit = None,
                               offset = 0, maxfiles = None ):
     """ gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     transformationFiles = []
     # getting transformationFiles - incrementally
     offsetToApply = offset
@@ -157,12 +155,11 @@ class TransformationClient( Client, FileCatalogueBase ):
 
 
   def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
-                              orderAttribute = None, limit = 10000, inputVector = False, rpc = '',
-                              url = '', timeout = None ):
+                              orderAttribute = None, limit = 10000, inputVector = False ):
     """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     transformationTasks = []
     # getting transformationFiles - incrementally
     offsetToApply = 0
@@ -180,11 +177,11 @@ class TransformationClient( Client, FileCatalogueBase ):
           break
     return S_OK( transformationTasks )
 
-  def cleanTransformation( self, transID, rpc = '', url = '', timeout = None ):
+  def cleanTransformation( self, transID ):
     """ Clean the transformation, and set the status parameter (doing it here, for easier extensibility)
     """
     # Cleaning
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     res = rpcClient.cleanTransformation( transID )
     if not res['OK']:
       return res
@@ -267,8 +264,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False,
-                                      rpc = '', url = '', timeout = 120 ):
+  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False, timeout = 120 ):
     """ Sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
@@ -279,7 +275,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           - newLFNStatus is a string, that applies to all the LFNs in lfns
 
     """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC( timeout = timeout )
 
     # create dictionary in case newLFNsStatus is a string
     if type( lfns ) == type( '' ):
@@ -347,11 +343,10 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return newStatuses
 
-  def setTransformationParameter( self, transID, paramName, paramValue, force = False,
-                                      rpc = '', url = '', timeout = 120 ):
+  def setTransformationParameter( self, transID, paramName, paramValue, force = False, timeout = 120 ):
     """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
     """
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC( timeout = timeout )
 
     if paramName.lower() == 'status':
       # get transformation Type
@@ -400,40 +395,40 @@ class TransformationClient( Client, FileCatalogueBase ):
     """
     return self.name
 
-  def addDirectory( self, path, force = False, rpc = '', url = '', timeout = None ):
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+  def addDirectory( self, path, force = False ):
+    rpcClient = self._getRPC()
     return rpcClient.addDirectory( path, force )
 
-  def getReplicas( self, lfn, rpc = '', url = '', timeout = None ):
+  def getReplicas( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     return rpcClient.getReplicas( lfns )
 
-  def addFile( self, lfn, force = False, rpc = '', url = '', timeout = None ):
+  def addFile( self, lfn, force = False ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     return rpcClient.addFile( lfndicts, force )
 
-  def addReplica( self, lfn, force = False, rpc = '', url = '', timeout = None ):
+  def addReplica( self, lfn, force = False ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     return rpcClient.addReplica( lfndicts, force )
 
-  def removeFile( self, lfn, rpc = '', url = '', timeout = None ):
+  def removeFile( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     successful = {}
     failed = {}
     listOfLists = breakListIntoChunks( lfns, 100 )
@@ -446,12 +441,12 @@ class TransformationClient( Client, FileCatalogueBase ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def removeReplica( self, lfn, rpc = '', url = '', timeout = None ):
+  def removeReplica( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     successful = {}
     failed = {}
     # as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
@@ -471,40 +466,40 @@ class TransformationClient( Client, FileCatalogueBase ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def getReplicaStatus( self, lfn, rpc = '', url = '', timeout = None ):
+  def getReplicaStatus( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     return rpcClient.getReplicaStatus( lfndict )
 
-  def setReplicaStatus( self, lfn, rpc = '', url = '', timeout = None ):
+  def setReplicaStatus( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     return rpcClient.setReplicaStatus( lfndict )
 
-  def setReplicaHost( self, lfn, rpc = '', url = '', timeout = None ):
+  def setReplicaHost( self, lfn ):
     res = self.__checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
-    rpcClient = self._getRPC( rpc = rpc, url = url, timeout = timeout )
+    rpcClient = self._getRPC()
     return rpcClient.setReplicaHost( lfndict )
 
-  def removeDirectory( self, lfn, rpc = '', url = '', timeout = None ):
+  def removeDirectory( self, lfn ):
     return self.__returnOK( lfn )
 
-  def createDirectory( self, lfn, rpc = '', url = '', timeout = None ):
+  def createDirectory( self, lfn, ):
     return self.__returnOK( lfn )
 
-  def createLink( self, lfn, rpc = '', url = '', timeout = None ):
+  def createLink( self, lfn ):
     return self.__returnOK( lfn )
 
-  def removeLink( self, lfn, rpc = '', url = '', timeout = None ):
+  def removeLink( self, lfn ):
     return self.__returnOK( lfn )
 
   def __returnOK( self, lfn ):
