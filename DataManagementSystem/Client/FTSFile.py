@@ -161,7 +161,7 @@ class FTSFile( object ):
   @LFN.setter
   def LFN( self, value ):
     """ lfn setter """
-    if type( value ) != str:
+    if not isinstance( value, basestring ):
       raise TypeError( "LFN has to be a string!" )
     if not os.path.isabs( value ):
       raise ValueError( "LFN should be an absolute path!" )
@@ -175,7 +175,7 @@ class FTSFile( object ):
   @CreationTime.setter
   def CreationTime( self, value = None ):
     """ creation time setter """
-    if type( value ) not in ( datetime.datetime, str ) :
+    if not isinstance( value, basestring ) and not isinstance( value, datetime.datetime ):
       raise TypeError( "CreationTime should be a datetime.datetime!" )
     if type( value ) == str:
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
@@ -189,7 +189,7 @@ class FTSFile( object ):
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
     """ last update setter """
-    if type( value ) not in  ( datetime.datetime, str ):
+    if not isinstance( value, basestring ) and not isinstance( value, datetime.datetime ):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
     if type( value ) == str:
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
@@ -321,10 +321,16 @@ class FTSFile( object ):
                       [ val if val != None else "" for val in self.__data__.values() ] ) ) )
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
-                for column, value in self.__data__.items()
-                if value and column not in ( "FTSFileID", "LastUpdate" )  ]
-    colVals.append( ( "LastUpdate", "UTC_TIMESTAMP()" ) )
+    colVals = []
+    for column, value in self.__data__.items():
+      if value and column not in ( "FTSFileID", "LastUpdate" ):
+        colStr = "`%s`" % column
+        if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
+          valStr = "'%s'" % value
+        else:
+          valStr = str( value )
+        colVals.append( ( colStr, valStr ) )
+    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.FTSFileID:
       query.append( "UPDATE `FTSFile` SET " )
