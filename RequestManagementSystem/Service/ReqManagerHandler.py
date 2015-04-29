@@ -113,10 +113,12 @@ class ReqManagerHandler( RequestHandler ):
 
       # If there is a waiting Operation with Files
       if op and len( op ):
-        maxWaitingAttempt = max( [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ] )
-        # In case it is the first attempt, extraDelay is 0
-        # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
-        extraDelay = datetime.timedelta( minutes = 2 * math.log( maxWaitingAttempt )  if maxWaitingAttempt else 0 )
+        attemptList = [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ]
+        if attemptList:
+          maxWaitingAttempt = max( [ opFile.Attempt for opFile in op if opFile.Status == "Waiting" ] )
+          # In case it is the first attempt, extraDelay is 0
+          # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
+          extraDelay = datetime.timedelta( minutes = 2 * math.log( maxWaitingAttempt )  if maxWaitingAttempt else 0 )
       request.NotBefore = now + extraDelay
 
     gLogger.info( "putRequest: request %s not before %s (extra delay %s)" % ( request.RequestName, request.NotBefore, extraDelay ) )

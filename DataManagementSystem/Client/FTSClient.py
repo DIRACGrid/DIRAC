@@ -37,6 +37,8 @@ from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
 
+import json
+
 ########################################################################
 class FTSClient( Client ):
   """
@@ -249,7 +251,8 @@ class FTSClient( Client ):
 
     # Check whether there are duplicates
     fList = []
-    for fTuple in opFileList:
+    for fileJSON, sourceSEs, targetSEs in opFileList:
+      fTuple = ( json.loads( fileJSON ), sourceSEs, targetSEs )
       if fTuple not in fList:
         fList.append( fTuple )
       else:

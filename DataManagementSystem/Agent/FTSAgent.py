@@ -460,7 +460,7 @@ class FTSAgent( AgentModule ):
       return ftsJobs
     ftsJobs = [ftsJob for ftsJob in ftsJobs.get( "Value", [] ) if ftsJob.Status not in FTSJob.FINALSTATES]
 
-    # # Use a try: finally: for making sure FTS jobs are put back before returnin
+    # # Use a try: finally: for making sure FTS jobs are put back before returning
     try:
       # # dict keeping info about files to reschedule, submit, fail and register
       ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
@@ -793,7 +793,7 @@ class FTSAgent( AgentModule ):
           ftsJob.TargetSE = target
           ftsJob.SourceToken = sourceToken["Value"].get( "SpaceToken", "" )
           ftsJob.TargetToken = targetToken["Value"].get( "SpaceToken", "" )
-          ftsJob.FTSServer = route.toNode.FTSServer
+          ftsJob.FTSServer = route.ftsServer
 
           for ftsFile in fileList:
             ftsFile.Attempt += 1
