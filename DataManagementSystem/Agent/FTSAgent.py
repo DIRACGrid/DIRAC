@@ -793,7 +793,7 @@ class FTSAgent( AgentModule ):
           ftsJob.TargetSE = target
           ftsJob.SourceToken = sourceToken["Value"].get( "SpaceToken", "" )
           ftsJob.TargetToken = targetToken["Value"].get( "SpaceToken", "" )
-          ftsJob.FTSServer = route.toNode.FTSServer
+          ftsJob.FTSServer = route.ftsServer
 
           for ftsFile in fileList:
             ftsFile.Attempt += 1
