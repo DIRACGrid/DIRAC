@@ -345,7 +345,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     timeStamp = str( datetime.datetime.utcnow() - datetime.timedelta( minutes = 10 ) )
     condDict = {'TransformationID' : transID, 'Status' : ['Assigned']}
     transformationFiles = clients['TransformationClient'].getTransformationFiles( condDict = condDict,
-                                                                  older = timeStamp, timeStamp = 'LastUpdate' )
+                                                                                  older = timeStamp, timeStamp = 'LastUpdate' )
     self._logDebug( "getTransformationFiles(%s) return value: %s" % ( str( condDict ), transformationFiles ),
                    method = method, transID = transID )
     if not transformationFiles['OK']:

@@ -6,10 +6,10 @@ InstalledComponentsDB database
 __RCSID__ = "$Id$"
 
 import types
-from DIRAC.FrameworkSystem.DB.InstalledComponentsDB \
-      import InstalledComponentsDB, Component, Host, InstalledComponent
+from DIRAC import S_OK, S_ERROR
+
+from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK, S_ERROR
 
 class ComponentMonitoringHandler( RequestHandler ):
 

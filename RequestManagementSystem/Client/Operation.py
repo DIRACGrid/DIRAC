@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File: Operation.py
 # Date: 2012/07/24 12:12:05
 ########################################################################
@@ -13,7 +12,7 @@
 Operation implementation
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
+# pylint: disable=E0211,W0612,E1101,E0102,C0103
 __RCSID__ = "$Id$"
 
 import datetime
