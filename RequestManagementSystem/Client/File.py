@@ -12,7 +12,7 @@
 operation file
 """
 # for properties
-# pylint: disable=E0211,W0612,W0142,E1101,E0102,C0103
+# pylint: disable=E0211,W0612,E1101,E0102,C0103
 
 __RCSID__ = "$Id $"
 
@@ -28,7 +28,6 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 
 from sqlalchemy.ext.hybrid import hybrid_property
-import datetime
 
 ########################################################################
 class File( object ):
