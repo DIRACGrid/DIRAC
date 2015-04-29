@@ -25,11 +25,18 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
     # Mock external libraries / modules not interesting for the unit test
 
     self.getGOCSiteNameMock = mock.MagicMock()
+    self.getStorageElementOptionsMock = mock.MagicMock()
+    self.getStorageElementOptionsMock.return_value = {'OK': True,
+                                                      'Value': {'BackendType': 'aMassStorage',
+                                                                'DiskSE': False,
+                                                                'SEType': 'T1D0',
+                                                                'TapeSE': True}}
     self.CSHelpersMock = mock.MagicMock()
     self.CSHelpersMock.getSEHost.return_value = 'aRealName'
     self.dowtimeCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.DowntimeCommand' )
     self.dowtimeCommandModule.getGOCSiteName = self.getGOCSiteNameMock
     self.dowtimeCommandModule.CSHelpers = self.CSHelpersMock
+    self.dowtimeCommandModule.getStorageElementOptions = self.getStorageElementOptionsMock
     self.mock_GOCDBClient = mock.MagicMock()
     self.args = {'name':'aName', 'element':'Resource', 'elementType': 'StorageElement'}
 
@@ -134,7 +141,8 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
     command = DowntimeCommand( self.args, {'ResourceManagementClient':self.mock_GOCDBClient} )
     res = command.doCache()
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value']['DowntimeID'], '1 aRealName' )
+    self.assertEqual( len(res['Value']), 0 )
+    #self.assertEqual( res['Value'][0]['DowntimeID'], '1 aRealName' )
 
     self.mock_GOCDBClient.selectDowntimeCache.return_value = resFromDB
     self.args.update( {'hours':2} )

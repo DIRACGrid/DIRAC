@@ -55,13 +55,16 @@ class DowntimeCommand( Command ):
     return resQuery
   
   
-  def _cleanCommand( self ):
+  def _cleanCommand( self, element, elementName):
     '''
       Clear Cache from expired DT.
     '''
     
     #reading all the cache entries
-    result = self.rmClient.selectDowntimeCache()
+    result = self.rmClient.selectDowntimeCache( 
+                               element = element,
+                               name = elementName
+                               )
 
     if not result[ 'OK' ]:
       return result
@@ -69,6 +72,9 @@ class DowntimeCommand( Command ):
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
     
     currentDate = datetime.utcnow()
+    
+    if len(uniformResult) == 0:
+      return S_OK( None ) 
     
     for dt in uniformResult:
       if dt[ 'EndDate' ] < currentDate:
@@ -189,7 +195,7 @@ class DowntimeCommand( Command ):
     
     
     #cleaning the Cache
-    cleanRes = self._cleanCommand()
+    cleanRes = self._cleanCommand(element, elementName)
     if not cleanRes[ 'OK' ]:
       return cleanRes
     
@@ -273,10 +279,8 @@ class DowntimeCommand( Command ):
     #while at the bottom the most recent warnings,
     #assumption: uniformResult list is already ordered by resource/site name, severity, startdate
     dtOverlapping = [] 
-    countdown = len(uniformResult)
     
     for dt in uniformResult:
-      countdown = countdown - 1
       # If hours defined, we want ongoing dt and dt starting before futureDate
       if hours is not None:
         if (dt[ 'StartDate' ] > currentDate) and (dt[ 'StartDate' ] < futureDate):
@@ -284,43 +288,22 @@ class DowntimeCommand( Command ):
       else:
         # if overlapping DTs for the same resource/site, then get just the most recent Outage
         if ( dt[ 'StartDate' ] < currentDate ) and ( dt[ 'EndDate' ] > currentDate ):
-          if len(dtOverlapping) == 0:
+          #if outage we put it on top of the overlapping buffer
+          #i.e. the most recent outage is top the most
+          if dt['Severity'].upper() == 'OUTAGE':
+            dtOverlapping = [dt] + dtOverlapping
+          #if warning we put it at the bottom of the overlapping buffer
+          #i.e. the most recent warning is bottom the most
+          elif  dt['Severity'].upper() == 'WARNING':
             dtOverlapping.append(dt)
-            #unless last iteration
-            if countdown == 0:
-              result.append( dt )
-          else:
-            dtTop = dtOverlapping[0]
-            dtBottom = dtOverlapping[-1]
-            if dtTop['Name'] != dt['Name']:
-              if dtTop['Severity'] == 'OUTAGE':
-                result.append( dtTop )
-              else:
-                # there are just warning dts
-                result.append( dtBottom )
-              #resetting the overlapping buffer
-              dtOverlapping = [dt]
-            else:
-              #if outage we put it on top of the overlapping buffer
-              #i.e. the most recent outage is top the most
-              if dt['Severity'] == 'OUTAGE':
-                dtOverlapping = [dt] + dtOverlapping
-                #if last iteration, then dt must be the most recent outage
-                if countdown == 0:
-                  result.append( dt )
-              #if warning we put it at the bottom of the overlapping buffer
-              #i.e. the most recent warning is bottom the most
-              elif  dt['Severity'] == 'WARNING':
-                dtOverlapping.append(dt)
-                #if last iteration, then look for overlapping outages
-                if countdown == 0:
-                  dtTop = dtOverlapping[0]
-                  dtBottom = dtOverlapping[-1]
-                  if dtTop['Severity'] == 'OUTAGE':
-                    result.append( dtTop )
-                  else:
-                    result.append( dtBottom )
-
+        
+    if len(dtOverlapping) > 0:
+      dtTop = dtOverlapping[0]
+      dtBottom = dtOverlapping[-1]
+      if dtTop['Severity'].upper() == 'OUTAGE':
+        result.append(dtTop)
+      else:
+        result.append( dtBottom )
 
     return S_OK( result )
 
@@ -357,9 +340,7 @@ class DowntimeCommand( Command ):
     ce = CSHelpers.getComputingElements()
     if ce[ 'OK' ]:
       resources.extend( ce[ 'Value' ] )
-      
-    print resources
-    return  
+       
 
     gLogger.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
 
