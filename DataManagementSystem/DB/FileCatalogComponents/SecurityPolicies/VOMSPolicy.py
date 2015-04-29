@@ -1,5 +1,5 @@
 from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getAllGroups,getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getAllGroups, getGroupOption
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager import SecurityManagerBase, __readMethods, __writeMethods
 
 import os
@@ -22,6 +22,7 @@ class VOMSPolicy( SecurityManagerBase ):
     
     # Lifetime of the info in the two dictionaries
     self.CACHE_TIME = datetime.timedelta(seconds = 600)
+    self.__buildRolesAndGroups()
 
 
   def __buildRolesAndGroups( self ):
@@ -29,6 +30,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
     self.lastBuild = datetime.datetime.now()
 
+    print 'ET LA ??'
     allGroups = getAllGroups()
     
 
@@ -45,7 +47,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :returns VOMS role, or None
     """
-    if ( datetime.datetime.now - self.lastBuild ) > self.CACHE_TIME:
+    if ( datetime.datetime.now() - self.lastBuild ) > self.CACHE_TIME:
       self.__buildRolesAndGroups()
 
     return self.diracGroups.get( grpName )
@@ -65,7 +67,10 @@ class VOMSPolicy( SecurityManagerBase ):
   def __shareVomsRole( self, grpName, otherGrpName ):
     """ Returns True if the two DIRAC groups have the same VOMS role"""
 
-    return self.__getVomsRole( grpName ) == self.__getVomsRole( otherGrpName )
+    vomsGrp = self.__getVomsRole( grpName )
+    vomsOtherGrp = self.__getVomsRole( otherGrpName )
+    # The voms group cannot be none
+    return  vomsGrp and vomsOtherGrp and ( vomsGrp == vomsOtherGrp )
 
 
 
@@ -110,6 +115,20 @@ class VOMSPolicy( SecurityManagerBase ):
     return  self.db.fileManager.getPathPermissions( path, credDict )
 
 
+  def __testPermissionOnFile( self, paths, permission, credDict, noExistStrategy = None ):
+    successful = {}
+    failed = {}
+
+    for filename in paths:
+      res = self.__getFilePermission( filename, credDict, noExistStrategy = noExistStrategy )
+      if not res['OK']:
+        failed[filename] = res['Message']
+      else:
+        successful[filename] = res['Value'].get( permission, False )
+
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
+
+
 
   def __getDirectoryPermission( self, path, credDict, recursive = True, noExistStrategy = None ):
     """ Checks POSIX permission for a directory using the VOMS roles.
@@ -122,7 +141,7 @@ class VOMSPolicy( SecurityManagerBase ):
       if not self.__isNotExistError( res['Message'] ):
         return res
 
-      # Very special case to allow creation of very first entriy
+      # Very special case to allow creation of very first entry
       if path == '/':
         return S_OK( {'Read':True, 'Write':True, 'Execute':True} )
 
@@ -141,7 +160,7 @@ class VOMSPolicy( SecurityManagerBase ):
       # Finally, follow the strategy
       return dict.fromkeys( ['Read', 'Write', 'Execute'], noExistStrategy )
 
-    # The file exists.
+    # The directory exists.
     origGrp = res['Value']['OwnerGroup']
 
     # If the two group share the same voms role, we do the query like if we were
@@ -213,9 +232,29 @@ class VOMSPolicy( SecurityManagerBase ):
 
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
+
+
+  def __getFileOrDirectoryPermission( self, path, credDict, recursive = False, noExistStrategy = None ):
+    
+    #First consider it as File
+    # We want to know whether the file does not exist, so we force noExistStrategy to None
+    res = self.__getFilePermission( path, credDict, noExistStrategy = None )
+    if not res['OK']:
+      # If the error is not due to the directory not existing, we return
+      if not self.__isNotExistError( res['Message'] ):
+        return res
+
+      # From now on, we know that the error is due to the File not existing
+      # We Try then the directory method, since path can be a directory
+      # The noExistStrategy will be applied by __getDirectoryPermission, so we don't need to do it ourselves
+      res = self.__getDirectoryPermission( path, credDict, recursive = recursive, noExistStrategy = noExistStrategy )
+
+    return res
+
+
   
   
-  def __policyGeneralModifyDirectory(self,paths,credDict):
+  def __policyDefaultModifyDirectory( self, paths, credDict ):
     """ Test write permission on the directory. If it does not
         exist, go up the hierarchy
     """
@@ -255,8 +294,9 @@ class VOMSPolicy( SecurityManagerBase ):
     for dirName in nonExistingDirectories:
       successful[dirName] = True
       try:
-        paths.remove( path )
+        paths.remove( dirName )
       except Exception, _e:
+        print _e
         pass
       
     res = self.__testPermissionOnParentDirectory( paths, 'Write', credDict, recursive = False )
@@ -299,8 +339,8 @@ class VOMSPolicy( SecurityManagerBase ):
     successful = {}
 
 
-    if not opType.lower() in ['read', 'write', 'execute']:
-      return S_ERROR( "Operation type not known" )
+#     if not opType.lower() in ['read', 'write', 'execute']:
+#       return S_ERROR( "Operation type not known" )
 
 
     if self.db.globalReadAccess and ( opType in __readMethods ):
