@@ -34,7 +34,7 @@ class InputDataByProtocol( object ):
     # FIXME: the structure of the dictionary must be fixed to avoid this mess
     self.metaKeys = set( ['ChecksumType', 'Checksum', 'NumberOfLinks', 'Mode', 'GUID',
                           'Status', 'ModificationDate', 'CreationDate', 'Size',
-                          'Owner', 'OwnerGroup', 'GID', 'UID'] )
+                          'Owner', 'OwnerGroup', 'GID', 'UID', 'FileID'] )
 
   def __storageElement( self, seName ):
     return self.storageElements.setdefault( seName, StorageElement( seName ) )
