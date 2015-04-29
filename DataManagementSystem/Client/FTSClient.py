@@ -37,6 +37,8 @@ from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory   import StorageFactory
 
+import json
+
 ########################################################################
 class FTSClient( Client ):
   """
