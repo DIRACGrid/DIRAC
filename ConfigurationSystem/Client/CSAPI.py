@@ -421,22 +421,22 @@ class CSAPI( object ):
       if vo:
         res = gConfig.getSections( '/Operations/%s/%s/Shifter' % (vo, setup) )
         if res['OK']:
-          return '/Operations/%s/%s/Shifter' % (vo, setup)
+          return S_OK( '/Operations/%s/%s/Shifter' % ( vo, setup ) )
 
         res = gConfig.getSections( '/Operations/%s/Defaults/Shifter' % vo )
         if res['OK']:
-          return '/Operations/%s/Defaults/Shifter' % vo
+          return S_OK( '/Operations/%s/Defaults/Shifter' % vo )
 
       else:
         res = gConfig.getSections( '/Operations/%s/Shifter' % setup )
         if res['OK']:
-          return '/Operations/%s/Shifter' % setup
+          return S_OK( '/Operations/%s/Shifter' % setup )
 
         res = gConfig.getSections( '/Operations/Defaults/Shifter' )
         if res['OK']:
-          return '/Operations/Defaults/Shifter'
+          return S_OK( '/Operations/Defaults/Shifter' )
 
-      raise RuntimeError( "no shifter section???" )
+      return S_ERROR( "No shifter section" )
 
     if shifters is None: shifters = {}
     if not self.__initialized['OK']:
@@ -464,18 +464,29 @@ class CSAPI( object ):
         if currentShiftersDict[sRole] == shifters[sRole]:
           shifters.pop( sRole )
 
-    #shifters section to modify
-    try:
-      section = getOpsSection()
-    except RuntimeError as rte:
-      gLogger.warn( rte )
-      gLogger.info( "Adding shifter section" )
-      vo = CSGlobals.getVO()
-      if vo:
-        section = '/Operations/%s/Defaults/Shifter' % vo
+    # get shifters section to modify
+    section = getOpsSection()
+
+    # Is this section present?
+    if not section['OK']:
+      if section['Message'] == "No shifter section":
+        gLogger.warn( section['Message'] )
+        gLogger.info( "Adding shifter section" )
+        vo = CSGlobals.getVO()
+        if vo:
+          section = '/Operations/%s/Defaults/Shifter' % vo
+        else:
+          section = '/Operations/Defaults/Shifter'
+        res = self.__csMod.createSection( section )
+        if not res:
+          gLogger.error( "Section %s not created" % section )
+          return S_ERROR( "Section %s not created" % section )
       else:
-        section = '/Operations/Defaults/Shifter'
-      self.__csMod.createSection( section )
+        gLogger.error( section['Message'] )
+        return section
+    else:
+      section = section['Value']
+
 
     #add or modify shifters
     for shifter in shifters:
