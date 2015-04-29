@@ -19,6 +19,7 @@ from DIRAC.Core.Utilities.List                        import sortList
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Path    import cfgPath
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
+from DIRAC.Core.Security.ProxyInfo                    import getVOfromProxyGroup
 
 class StorageFactory:
 
@@ -28,6 +29,12 @@ class StorageFactory:
     self.proxy = useProxy
     self.resourceStatus = ResourceStatus()
     self.vo = vo
+    if self.vo is None:
+      result = getVOfromProxyGroup()
+      if result['OK']:
+        self.vo = result['Value']
+      else:
+        RuntimeError( "Can not get the current VO context" )
 
   ###########################################################################################
   #
