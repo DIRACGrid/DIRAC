@@ -119,11 +119,12 @@ class TransformationClient( Client, FileCatalogueBase ):
 
   def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
                               orderAttribute = None, limit = None,
+                              timeout = 1800,
                               offset = 0, maxfiles = None ):
     """ gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
-    rpcClient = self._getRPC()
+    rpcClient = self._getRPC( timeout = timeout )
     transformationFiles = []
     # getting transformationFiles - incrementally
     offsetToApply = offset
@@ -264,7 +265,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False, timeout = 120 ):
+  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False ):
     """ Sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
@@ -275,7 +276,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           - newLFNStatus is a string, that applies to all the LFNs in lfns
 
     """
-    rpcClient = self._getRPC( timeout = timeout )
+    rpcClient = self._getRPC()
 
     # create dictionary in case newLFNsStatus is a string
     if type( lfns ) == type( '' ):
@@ -343,10 +344,10 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return newStatuses
 
-  def setTransformationParameter( self, transID, paramName, paramValue, force = False, timeout = 120 ):
+  def setTransformationParameter( self, transID, paramName, paramValue, force = False ):
     """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
     """
-    rpcClient = self._getRPC( timeout = timeout )
+    rpcClient = self._getRPC()
 
     if paramName.lower() == 'status':
       # get transformation Type
