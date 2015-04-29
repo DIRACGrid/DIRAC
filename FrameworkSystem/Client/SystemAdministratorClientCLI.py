@@ -11,6 +11,7 @@ import pprint
 import os
 import atexit
 import readline
+import datetime
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
@@ -134,6 +135,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
           show host          - show host related parameters
+          show hosts         - show all available hosts
+          show installations [ list | current | -n <Name> | -h <Host> | -s <System> | -m <Module> | -t <Type> | -itb <InstallationTime before>
+                              | -ita <InstallationTime after> | -utb <UnInstallationTime before> | -uta <UnInstallationTime after> ]*
+                             - show all the installations of components that match the given parameters
           show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
@@ -270,13 +275,28 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         
         fields = ['Parameter','Value']
         records = []
-        for key,value in result['Value'].items():
-          records.append( [key, str(value) ] )
+        for key, value in result['Value'].items():
+          records.append( [key, str( value ) ] )
           
         printTable( fields, records )  
-            
+    elif option == "hosts":
+      client = ComponentMonitoringClient()
+      result = client.getHosts( {}, False, False )
+      if not result[ 'OK' ]:
+        self.__errMsg( 'Error retrieving the list of hosts: %s' % ( result[ 'Message' ] ) )
+      else:
+        hostList = result[ 'Value' ]
+        gLogger.notice( '' )
+        gLogger.notice( ' ' + 'Host'.center( 32 ) + ' ' + 'CPU'.center( 34 ) + ' ' )
+        gLogger.notice( ( '-' * 69 ) )
+        for element in hostList:
+          gLogger.notice( '|' + element[ 'HostName' ].center( 32 ) + '|' + element[ 'CPU' ].center( 34 ) + '|' )
+        gLogger.notice( ( '-' * 69 ) )
+        gLogger.notice( '' )
     elif option == "errors":
       self.getErrors( argss )
+    elif option == "installations":
+      self.getInstallations( argss )
     else:
       gLogger.notice( "Unknown option:", option )
 
@@ -317,6 +337,103 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       records.sort()
       printTable( fields, records )
 
+  def getInstallations( self, argss ):
+    """ Get data from the component monitoring database
+    """
+    display = 'table'
+    installationFilter = {}
+    componentFilter = {}
+    hostFilter = {}
+
+    key = None
+    for arg in argss:
+      if not key:
+        if arg == 'list':
+          display = 'list'
+        elif arg == 'current':
+          installationFilter[ 'UnInstallationTime' ] = None
+        elif arg == '-t':
+          key = 'Component.Type'
+        elif arg == '-m':
+          key = 'Component.Module'
+        elif arg == '-s':
+          key = 'Component.System'
+        elif arg == '-h':
+          key = 'Host.HostName'
+        elif arg == '-n':
+          key = 'Instance'
+        elif arg == '-itb':
+          key = 'InstallationTime.smaller'
+        elif arg == '-ita':
+          key = 'InstallationTime.bigger'
+        elif arg == '-utb':
+          key = 'UnInstallationTime.smaller'
+        elif arg == '-uta':
+          key = 'UnInstallationTime.bigger'
+      else:
+        if 'Component.' in key:
+          componentFilter[ key.replace( 'Component.', '' ) ] = arg
+        elif 'Host.' in key:
+          hostFilter[ key.replace( 'Host.', '' ) ] = arg
+        else:
+          if 'Time.' in key:
+            arg = datetime.datetime.strptime( arg, '%d-%m-%Y' )
+          installationFilter[ key ] = arg
+        key = None
+
+    client = ComponentMonitoringClient()
+    result = client.getInstallations( installationFilter, componentFilter, hostFilter, True )
+    if not result[ 'OK' ]:
+      self.__errMsg( 'Could not retrieve the installations: %s' % ( result[ 'Message' ] ) )
+      installations = None
+    else:
+      installations = result[ 'Value' ]
+
+    if installations:
+      if display == 'table':
+        gLogger.notice( '' )
+        gLogger.notice( ' ' + 'Num'.center( 5 ) + ' ' \
+                        + 'Host'.center( 20 ) + ' ' \
+                        + 'Name'.center( 24 ) + ' ' \
+                        + 'Module'.center( 24 ) + ' ' \
+                        + 'System'.center( 20 ) + ' ' \
+                        + 'Type'.center( 12 ) + ' ' \
+                        + 'Installed on'.center( 18 ) + ' ' \
+                        + 'Uninstalled on'.center( 18 ) + ' ' )
+        gLogger.notice( ( '-' ) * 150 )
+      for i, installation in enumerate( installations ):
+        if installation[ 'UnInstallationTime' ]:
+          uninstalledOn = installation[ 'UnInstallationTime' ].strftime( "%d-%m-%Y %H:%M" )
+          isInstalled = 'No'
+        else:
+          uninstalledOn = ''
+          isInstalled = 'Yes'
+
+        if display == 'table':
+          gLogger.notice( '|' + str( i + 1 ).center( 5 ) + '|' \
+                          + installation[ 'Host' ][ 'HostName' ].center( 20 ) + '|' \
+                          + installation[ 'Instance' ].center( 24 ) + '|' \
+                          + installation[ 'Component' ][ 'Module' ].center( 24 ) + '|' \
+                          + installation[ 'Component' ][ 'System' ].center( 20 ) + '|' \
+                          + installation[ 'Component' ][ 'Type' ].center( 12 ) + '|' \
+                          + installation[ 'InstallationTime' ].strftime( "%d-%m-%Y %H:%M" ).center( 18 ) + '|' \
+                          + uninstalledOn.center( 18 ) + '|' )
+          gLogger.notice( ( '-' ) * 150 )
+        elif display == 'list':
+          gLogger.notice( '' )
+          gLogger.notice( 'Installation: '.rjust( 20 ) + str ( i + 1 ) )
+          gLogger.notice( 'Installed: '.rjust( 20 ) + isInstalled )
+          gLogger.notice( 'Host: '.rjust( 20 ) + installation[ 'Host' ][ 'HostName' ] )
+          gLogger.notice( 'Name: '.rjust( 20 ) + installation[ 'Instance' ] )
+          gLogger.notice( 'Module: '.rjust( 20 ) + installation[ 'Component' ][ 'Module' ] )
+          gLogger.notice( 'System: '.rjust( 20 ) + installation[ 'Component' ][ 'System' ] )
+          gLogger.notice( 'Type: '.rjust( 20 ) + installation[ 'Component' ][ 'Type' ] )
+          gLogger.notice( 'Installed on: '.rjust( 20 ) + installation[ 'InstallationTime' ].strftime( "%d-%m-%Y %H:%M" ) )
+          if uninstalledOn != '':
+            gLogger.notice( 'Uninstalled on: '.rjust( 20 ) + uninstalledOn )
+        else:
+          self.__errMsg( 'No display mode was selected' )
+      gLogger.notice( '' )
 
   def getLog( self, argss ):
     """ Get the tail of the log file of the given component
