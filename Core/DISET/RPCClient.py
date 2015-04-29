@@ -1,9 +1,11 @@
-# $HeadURL$
+""" RPCClient object is used to create RPC connection to services
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
-class _MagicMethod:
+class _MagicMethod( object ):
 
   def __init__( self, doRPCFunc, remoteFuncName ):
     self.__doRPCFunc = doRPCFunc
@@ -18,7 +20,7 @@ class _MagicMethod:
   def __str__( self ):
     return "<RPCClient method %s>" % self.__remoteFuncName
 
-class RPCClient:
+class RPCClient( object ):
 
   def __init__( self, *args, **kwargs ):
     """
