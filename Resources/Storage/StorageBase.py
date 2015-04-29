@@ -226,7 +226,9 @@ class StorageBase( object ):
       return self.getURL( fileName )
     
     urlDict = dict( self.protocolParameters )
-    urlDict['Path'] = self.cwd
+    if not fileName.startswith( '/' ):
+      # Relative path is given
+      urlDict['Path'] = self.cwd
     result = pfnunparse( urlDict )
     if not result['OK']:
       return result
