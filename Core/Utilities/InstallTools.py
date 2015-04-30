@@ -102,6 +102,7 @@ def loadDiracCfg( verbose = False ):
   global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
   global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
   global monitoringClient
+  global componentTypes
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -210,6 +211,8 @@ def loadDiracCfg( verbose = False ):
   if verbose and monitoringClient:
     gLogger.notice( 'Client configured for Component Monitoring' )
 
+  componentTypes = [ 'service', 'agent', 'executor' ]
+
 # FIXME: we probably need a better way to do this
 mysqlRootPwd = ''
 mysqlPassword = ''
@@ -238,6 +241,7 @@ mysqlPort = ''
 mysqlRootUser = ''
 mysqlSmallMem = ''
 mysqlLargeMem = ''
+componentTypes = [ 'service', 'agent', 'executor' ]
 loadDiracCfg()
 
 def getInfo( extensions ):
@@ -616,11 +620,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   if not compInstance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
-  sectionName = "Agents"
-  if componentType == 'service':
-    sectionName = "Services"
-  elif componentType == 'executor':
-    sectionName = "Executors"
+  sectionName = _getSectionName ( componentType )[ 'Value' ]
 
   # Check if the component CS options exist
   addOptions = True
@@ -675,9 +675,7 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   """
   Add some extra configuration to the local component cfg
   """
-  sectionName = 'Services'
-  if componentType == 'agent':
-    sectionName = 'Agents'
+  sectionName = _getSectionName ( componentType )[ 'Value' ]
   if not cfg:
     return S_OK()
   system = systemName.replace( 'System', '' )
@@ -705,11 +703,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   """
   Get the CFG object of the component configuration
   """
-  sectionName = 'Services'
-  if componentType == 'agent':
-    sectionName = 'Agents'
-  if componentType == 'executor':
-    sectionName = 'Executors'
+  sectionName = _getSectionName ( componentType )[ 'Value' ]
 
   componentModule = component
   if "Module" in specialOptions:
@@ -764,6 +758,9 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, mySetup = setup, overwr
   """
   Add the section with the database options to the CS
   """
+  if gConfig:
+    gConfig.forceRefresh()
+
   system = systemName.replace( 'System', '' )
   instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
   if gConfig:
@@ -912,6 +909,17 @@ def getSoftwareComponents( extensions ):
   services = { 'Framework' : ['Gateway'] }
   agents = {}
   executors = {}
+  remainders = {}
+
+  resultDict = {}
+
+  remainingTypes = [ cType for cType in componentTypes if cType not in [ 'service', 'agent', 'executor' ] ]
+  resultIndexes = {}
+  # Components other than services, agents and executors
+  for cType in remainingTypes:
+    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    resultDict[ resultIndexes[ cType ] ] = {}
+    remainders[ cType ] = {}
 
   for extension in ['DIRAC'] + [ x + 'DIRAC' for x in extensions]:
     if not os.path.exists( os.path.join( rootPath, extension ) ):
@@ -963,10 +971,28 @@ def getSoftwareComponents( extensions ):
       except OSError:
         pass
 
-  resultDict = {}
+      # Rest of component types
+      for cType in remainingTypes:
+        try:
+          remainDir = os.path.join( rootPath, extension, sys, cType.title() )
+          remainList = os.listdir( remainDir )
+          for remainder in remainList:
+            if remainder[-3:] == ".py":
+              remainFile = os.path.join( remainDir, remainder )
+              afile = open( remainFile, 'r' )
+              body = afile.read()
+              afile.close()
+              if not remainders[ cType ].has_key( system ):
+                remainders[ cType ][system] = []
+              remainders[ cType ][system].append( remainder.replace( '.py', '' ) )
+        except OSError:
+          pass
+
   resultDict['Services'] = services
   resultDict['Agents'] = agents
   resultDict['Executors'] = executors
+  for cType in remainingTypes:
+    resultDict[ resultIndexes[ cType ] ] = remainders[ cType ]
   return S_OK( resultDict )
 
 def getInstalledComponents():
@@ -975,9 +1001,12 @@ def getInstalledComponents():
   installed on the system in the runit directory
   """
 
-  services = {}
-  agents = {}
-  executors = {}
+  resultDict = {}
+  resultIndexes = {}
+  for cType in componentTypes:
+    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    resultDict[ resultIndexes[ cType ] ] = {}
+
   systemList = os.listdir( runitDir )
   for system in systemList:
     systemDir = os.path.join( runitDir, system )
@@ -988,25 +1017,15 @@ def getInstalledComponents():
         rfile = open( runFile, 'r' )
         body = rfile.read()
         rfile.close()
-        if body.find( 'dirac-service' ) != -1:
-          if not services.has_key( system ):
-            services[system] = []
-          services[system].append( component )
-        elif body.find( 'dirac-agent' ) != -1:
-          if not agents.has_key( system ):
-            agents[system] = []
-          agents[system].append( component )
-        elif body.find( 'dirac-executor' ) != -1:
-          if not executors.has_key( system ):
-            executors[system] = []
-          executors[system].append( component )
+
+        for cType in componentTypes:
+          if body.find( 'dirac-%s' % ( cType ) ) != -1:
+            if not resultDict[ resultIndexes[ cType ] ].has_key( system ):
+              resultDict[ resultIndexes[ cType ] ][system] = []
+            resultDict[ resultIndexes[ cType ] ][system].append( component )
       except IOError:
         pass
 
-  resultDict = {}
-  resultDict['Services'] = services
-  resultDict['Agents'] = agents
-  resultDict['Executors'] = executors
   return S_OK( resultDict )
 
 def getSetupComponents():
@@ -1015,9 +1034,12 @@ def getSetupComponents():
   set up for running with runsvdir in startup directory
   """
 
-  services = {}
-  agents = {}
-  executors = {}
+  resultDict = {}
+  resultIndexes = {}
+  for cType in componentTypes:
+    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    resultDict[ resultIndexes[ cType ] ] = {}
+
   if not os.path.isdir( startDir ):
     return S_ERROR( 'Startup Directory does not exit: %s' % startDir )
   componentList = os.listdir( startDir )
@@ -1027,28 +1049,16 @@ def getSetupComponents():
       rfile = open( runFile, 'r' )
       body = rfile.read()
       rfile.close()
-      if body.find( 'dirac-service' ) != -1:
-        system, service = component.split( '_' )[0:2]
-        if not services.has_key( system ):
-          services[system] = []
-        services[system].append( service )
-      elif body.find( 'dirac-agent' ) != -1:
-        system, agent = component.split( '_' )[0:2]
-        if not agents.has_key( system ):
-          agents[system] = []
-        agents[system].append( agent )
-      elif body.find( 'dirac-executor' ) != -1:
-        system, executor = component.split( '_' )[0:2]
-        if not executors.has_key( system ):
-          executors[system] = []
-        executors[system].append( executor )
+
+      for cType in componentTypes:
+        if body.find( 'dirac-%s' % ( cType ) ) != -1:
+          system, compT = component.split( '_' )[0:2]
+          if not resultDict[ resultIndexes[ cType ] ].has_key( system ):
+            resultDict[ resultIndexes[ cType ] ][system] = []
+          resultDict[ resultIndexes[ cType ] ][system].append( compT )
     except IOError:
       pass
 
-  resultDict = {}
-  resultDict['Services'] = services
-  resultDict['Agents'] = agents
-  resultDict['Executors'] = executors
   return S_OK( resultDict )
 
 def getStartupComponentStatus( componentTupleList ):
@@ -1158,8 +1168,13 @@ def getOverallStatus( extensions ):
   runitDict = result['Value']
 
   # Collect the info now
-  resultDict = {'Services':{}, 'Agents':{}, 'Executors':{} }
-  for compType in ['Services', 'Agents', 'Executors' ]:
+  resultDict = {}
+  resultIndexes = {}
+  for cType in componentTypes:
+    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    resultDict[ resultIndexes[ cType ] ] = {}
+
+  for compType in resultIndexes.values():
     if softDict.has_key( 'Services' ):
       for system in softDict[compType]:
         resultDict[compType][system] = {}
@@ -1251,11 +1266,9 @@ def checkComponentSoftware( componentType, system, component, extensions ):
   if not result['OK']:
     return result
 
-  if componentType == 'service':
-    softDict = result['Value']['Services']
-  elif componentType == 'agent':
-    softDict = result['Value']['Agents']
-  else:
+  try:
+    softDict = result[ 'Value' ][ _getSectionName( componentType )[ 'Value' ] ]
+  except KeyError, e:
     return S_ERROR( 'Unknown component type %s' % componentType )
 
   if system in softDict and component in softDict[system]:
@@ -1632,6 +1645,15 @@ def setupSite( scriptCfg, cfg = None ):
       runsvctrlComponent( system, executor, 't' )
 
   return S_OK()
+
+def _getSectionName( compType ):
+  """
+  Returns the section name for a component in the CS
+  For instance, the section for service is Services,
+  whereas the section for agent is Agents
+  """
+  return S_OK( '%ss' % ( compType.title() ) )
+
 
 def _createRunitLog( runitCompDir ):
   controlDir = os.path.join( runitCompDir, 'control' )
