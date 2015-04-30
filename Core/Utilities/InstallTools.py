@@ -211,8 +211,6 @@ def loadDiracCfg( verbose = False ):
   if verbose and monitoringClient:
     gLogger.notice( 'Client configured for Component Monitoring' )
 
-  componentTypes = [ 'service', 'agent', 'executor' ]
-
 # FIXME: we probably need a better way to do this
 mysqlRootPwd = ''
 mysqlPassword = ''
@@ -932,11 +930,10 @@ def getSoftwareComponents( extensions ):
         agentDir = os.path.join( rootPath, extension, sys, 'Agent' )
         agentList = os.listdir( agentDir )
         for agent in agentList:
-          if agent[-3:] == ".py":
+          if os.path.splitext( agent )[1] == ".py":
             agentFile = os.path.join( agentDir, agent )
-            afile = open( agentFile, 'r' )
-            body = afile.read()
-            afile.close()
+            with open( agentFile, 'r' ) as afile:
+              body = afile.read()
             if body.find( 'AgentModule' ) != -1 or body.find( 'OptimizerModule' ) != -1:
               if not agents.has_key( system ):
                 agents[system] = []
@@ -947,7 +944,7 @@ def getSoftwareComponents( extensions ):
         serviceDir = os.path.join( rootPath, extension, sys, 'Service' )
         serviceList = os.listdir( serviceDir )
         for service in serviceList:
-          if service.find( 'Handler' ) != -1 and service[-3:] == '.py':
+          if service.find( 'Handler' ) != -1 and os.path.splitext( service )[1] == '.py':
             if not services.has_key( system ):
               services[system] = []
             if system == 'Configuration' and service == 'ConfigurationHandler.py':
@@ -959,11 +956,10 @@ def getSoftwareComponents( extensions ):
         executorDir = os.path.join( rootPath, extension, sys, 'Executor' )
         executorList = os.listdir( executorDir )
         for executor in executorList:
-          if executor[-3:] == ".py":
+          if os.path.splitext( executor )[1] == ".py":
             executorFile = os.path.join( executorDir, executor )
-            afile = open( executorFile, 'r' )
-            body = afile.read()
-            afile.close()
+            with open( executorFile, 'r' ) as afile:
+              body = afile.read()
             if body.find( 'OptimizerExecutor' ) != -1:
               if not executors.has_key( system ):
                 executors[system] = []
@@ -977,11 +973,7 @@ def getSoftwareComponents( extensions ):
           remainDir = os.path.join( rootPath, extension, sys, cType.title() )
           remainList = os.listdir( remainDir )
           for remainder in remainList:
-            if remainder[-3:] == ".py":
-              remainFile = os.path.join( remainDir, remainder )
-              afile = open( remainFile, 'r' )
-              body = afile.read()
-              afile.close()
+            if os.path.splitext( remainder )[1] == ".py":
               if not remainders[ cType ].has_key( system ):
                 remainders[ cType ][system] = []
               remainders[ cType ][system].append( remainder.replace( '.py', '' ) )
