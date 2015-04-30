@@ -834,7 +834,7 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-    log = self.log.getSubLogger( "req_%s/%s/monitor/%s" % ( request.RequestID, request.requestName, ftsJob.FTSGUID ) )
+    log = self.log.getSubLogger( "req_%s/%s/monitor/%s" % ( request.RequestID, request.RequestName, ftsJob.FTSGUID ) )
     log.info( "FTSJob '%s'@'%s'" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
