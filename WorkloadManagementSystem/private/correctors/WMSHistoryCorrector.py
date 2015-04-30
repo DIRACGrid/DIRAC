@@ -5,10 +5,12 @@ __RCSID__ = "$Id$"
 
 import datetime
 import time as nativetime
+
+from DIRAC import gLogger, S_OK, S_ERROR
+
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
 from DIRAC.Core.Utilities import Time
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-from DIRAC  import gLogger, S_OK
 from DIRAC.Core.Security import CS
 
 class WMSHistoryCorrector( BaseCorrector ):
@@ -180,8 +182,10 @@ class WMSHistoryCorrector( BaseCorrector ):
         correctedShare = entitiesExpectedShare[ entity ] * entityCorrectionFactor
         correctedEntityShare[ entity ] = correctedShare
         self.__log.verbose( "Final correction factor for entity %s is %.3f\n Final share is %.3f" % ( entity,
-                                                                                                    entityCorrectionFactor,
-                                                                                                    correctedShare ) )
-    self.__log.verbose( "Initial shares:\n  %s" % "\n  ".join( [ "%s : %.2f" % ( en, entitiesExpectedShare[ en ] ) for en in entitiesExpectedShare ] ) )
-    self.__log.verbose( "Corrected shares:\n  %s" % "\n  ".join( [ "%s : %.2f" % ( en, correctedEntityShare[ en ] ) for en in correctedEntityShare ] ) )
+                                                                                                      entityCorrectionFactor,
+                                                                                                      correctedShare ) )
+    self.__log.verbose( "Initial shares:\n  %s" % "\n  ".join( [ "%s : %.2f" % ( en, entitiesExpectedShare[ en ] ) \
+                                                                for en in entitiesExpectedShare ] ) )
+    self.__log.verbose( "Corrected shares:\n  %s" % "\n  ".join( [ "%s : %.2f" % ( en, correctedEntityShare[ en ] ) \
+                                                                  for en in correctedEntityShare ] ) )
     return correctedEntityShare
