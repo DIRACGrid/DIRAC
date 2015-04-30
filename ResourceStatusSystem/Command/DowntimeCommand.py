@@ -76,12 +76,13 @@ class DowntimeCommand( Command ):
     if len(uniformResult) == 0:
       return S_OK( None ) 
     
+    resQuery = None
     for dt in uniformResult:
       if dt[ 'EndDate' ] < currentDate:
         resQuery = self.rmClient.deleteDowntimeCache ( 
                                downtimeID = dt[ 'DowntimeID' ]
                                )
-    return resQuery
+    return S_OK( resQuery )
 
 
   def _prepareCommand( self ):
@@ -108,7 +109,7 @@ class DowntimeCommand( Command ):
     elementType = self.args[ 'elementType' ]
 
     if not element in [ 'Site', 'Resource' ]:
-      return S_ERROR( 'element is not Site nor Resource' )
+      return S_ERROR( 'element is neither Site nor Resource' )
 
     hours = None
     if 'hours' in self.args:
@@ -213,10 +214,7 @@ class DowntimeCommand( Command ):
         dt[ 'Name' ] = downDic[ 'SITENAME' ]
       else:
         return S_ERROR( "SITENAME or HOSTNAME are missing" )
-      
-      if not dt[ 'Name' ] in elementNames:
-        #it is not a site/resource we are interested to monitor
-        continue      
+         
       
       if gocdbServiceType and 'SERVICE_TYPE' in downDic.keys():
         gocdbST = gocdbServiceType.lower()
@@ -264,46 +262,57 @@ class DowntimeCommand( Command ):
       return result
 
     uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
-    #sorting for convenient manipulation
-    uniformResult.sort(key=itemgetter('Name','Severity','StartDate'))
 
-    # We return only one downtime, if its ongoing at targetDate
-    currentDate = datetime.utcnow()
-    if hours is not None:
-      futureDate = currentDate + timedelta( hours = hours )
+    #'targetDate' can be either now or some 'hours' later in the future
+    targetDate = datetime.utcnow()
       
-    result = []
     #dtOverlapping is a buffer to assure only one dt is returned 
-    #when there are overlapping outage/warning dt for same resource/site
-    #fon top of the buffer we put the most recent outages 
+    #when there are overlapping outage/warning dt for same element
+    #on top of the buffer we put the most recent outages 
     #while at the bottom the most recent warnings,
     #assumption: uniformResult list is already ordered by resource/site name, severity, startdate
     dtOverlapping = [] 
+
+    if hours is not None:
+      #IN THE FUTURE
+      targetDate = targetDate + timedelta( hours = hours )
+      #sorting by 'StartDate' b/c if we look for DTs in the future
+      #then we are interested in the earliest DTs
+      uniformResult.sort(key=itemgetter('Name','Severity','StartDate'))
     
-    for dt in uniformResult:
-      # If hours defined, we want ongoing dt and dt starting before futureDate
-      if hours is not None:
-        if (dt[ 'StartDate' ] > currentDate) and (dt[ 'StartDate' ] < futureDate):
-          result.append( dt )
-      else:
-        # if overlapping DTs for the same resource/site, then get just the most recent Outage
-        if ( dt[ 'StartDate' ] < currentDate ) and ( dt[ 'EndDate' ] > currentDate ):
+      for dt in uniformResult:
+        if ( dt[ 'StartDate' ] < targetDate ) and ( dt[ 'EndDate' ] > targetDate ):
+          #the list is already ordered in a way that outages come first over warnings
+          #and the earliest outages are on top of other outages and warnings
+          #while the earliest warnings are on top of the other warnings
+          #so what ever comes first in the list is also what we are looking for
+          dtOverlapping = [dt]
+          break
+    else:
+      #IN THE PRESENT
+      #sorting by 'EndDate' b/c if we look for DTs in the present
+      #then we are interested in those DTs that last longer
+      uniformResult.sort(key=itemgetter('Name','Severity','EndDate'))
+    
+      for dt in uniformResult:
+        if ( dt[ 'StartDate' ] < targetDate ) and ( dt[ 'EndDate' ] > targetDate ):
           #if outage we put it on top of the overlapping buffer
-          #i.e. the most recent outage is top the most
+          #i.e. the latest ending outage is on top
           if dt['Severity'].upper() == 'OUTAGE':
             dtOverlapping = [dt] + dtOverlapping
           #if warning we put it at the bottom of the overlapping buffer
-          #i.e. the most recent warning is bottom the most
+          #i.e. the latest ending warning is at the bottom
           elif  dt['Severity'].upper() == 'WARNING':
             dtOverlapping.append(dt)
-        
+    
+    result = None
     if len(dtOverlapping) > 0:
       dtTop = dtOverlapping[0]
       dtBottom = dtOverlapping[-1]
       if dtTop['Severity'].upper() == 'OUTAGE':
-        result.append(dtTop)
+        result = dtTop
       else:
-        result.append( dtBottom )
+        result = dtBottom
 
     return S_OK( result )
 
