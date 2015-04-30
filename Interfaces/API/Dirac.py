@@ -1435,34 +1435,39 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getPhysicalFileAccessURL( self, pfn, storageElement, printOutput = False ):
-    """Allows to retrieve an access URL for an PFN  given a valid DIRAC SE
-       name.  The SE is contacted directly for this information.
+  def getAccessURL( self, lfns, storageElement, protocol = False, printOutput = False ):
+    """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
+       name.  Contacts the file catalog and contacts the site SRM endpoint behind
+       the scenes.
 
        Example Usage:
 
-       >>> print dirac.getPhysicalFileAccessURL('srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN_M-DST')
-       {'OK': True, 'Value':{'Failed': {},
-       'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
+       >>> print dirac.getAccessURL('/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN-RAW')
+       {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
-       :param pfn: Physical File Name (PFN)
-       :type pfn: string or list
+       :param lfn: Logical File Name (LFN)
+       :type lfn: string or list
        :param storageElement: DIRAC SE name e.g. CERN-RAW
        :type storageElement: string
        :param printOutput: Optional flag to print result
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( pfn, 'PFN' )
-    if not ret['OK']:
-      return ret
-    pfn = ret['Value']
+    if type( lfns ) == type( " " ):
+      lfns = lfns.replace( 'LFN:', '' ).split( ',' )
+    elif type( lfns ) == type( [] ):
+      lfns = [lfn.replace( 'LFN:', '' ) for lfn in lfns]
+    else:
+      return self._errorReport( 'Expected single string or list of strings as argument' )
 
-    result = StorageElement( storageElement ).getAccessUrl( pfn )
+    dm = DataManager()
+    result = dm.getReplicaAccessUrl( lfns, storageElement, protocol = protocol )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
-    if printOutput:
-      print self.pPrint.pformat( result['Value'] )
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
