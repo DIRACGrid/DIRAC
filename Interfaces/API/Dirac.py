@@ -1426,7 +1426,7 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def getAccessURL( self, lfns, storageElement, protocol = False, printOutput = False ):
+  def getAccessURL( self, lfns, storageElement, printOutput = False ):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
        name.  Contacts the file catalog and contacts the site SRM endpoint behind
        the scenes.
@@ -1452,7 +1452,7 @@ class Dirac( API ):
       return self._errorReport( 'Expected single string or list of strings as argument' )
 
     dm = DataManager()
-    result = dm.getReplicaAccessUrl( lfns, storageElement, protocol = protocol )
+    result = dm.getReplicaAccessUrl( lfns, storageElement )
     if not result['OK']:
       return self._errorReport( 'Problem during getAccessURL call', result['Message'] )
     if not printOutput:
