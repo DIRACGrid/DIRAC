@@ -9,7 +9,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTSServers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTS3Servers
 import fts3.rest.client.easy as fts3
 import json
 
@@ -59,27 +59,36 @@ class FTSStorageBanAction( BaseAction ):
 					
 		return self._banStorageElement( storageElement )
 	
+	
 	def _banStorageElement( self, storageElement ):
-		#endpoint = 'https://fts3-pilot.cern.ch:8446'
-		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
 		
-		#TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
-		proxyPath = getProxyInfo()
-		if not proxyPath.get('OK'):
-			return S_ERROR("Proxy not found!")
-		proxyPath = proxyPath.get('Value').get('path')
+		endpoints = getFTS3Servers()[ 'Value' ]
 		
-		context = fts3.Context(endpoint, proxyPath)
+		blacklist = {}
+		for endpoint in endpoints:
+			#endpoint = 'https://fts3-pilot.cern.ch:8446'
+			
+			#TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
+			proxyPath = getProxyInfo()
+			if not proxyPath.get('OK'):
+				return S_ERROR("Proxy not found!")
+			
+			try:
+				proxyPath = proxyPath.get('Value').get('path')
+			except Exception as e:
+				return S_ERROR(e.message)			
+			
+			context = fts3.Context(endpoint, proxyPath)
+			timeout = 3600  #or...?
+			status = 'wait' #or...?
+			allow_submit = False #or...?
+			
+			#TODO: ban_se returns the list of jobIDs interrupted by the banning
+			pausedJobIDs = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
+			
+			blacklist[endpoint] = json.loads(context.get("ban/se"))
 		
-		timeout = 3600  #or...?
-		status = 'wait' #or...?
-		allow_submit = False #or...?
-		
-		#TODO: ban_se returns the list of jobIDs interrupted by the banning
-		pausedJobIDs = fts3.ban_se(context, storageElement, status, timeout, allow_submit)
-		
-		return S_OK( json.loads(context.get("ban/se")) )
-								
-									
+		return S_OK( blacklist )
+							
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -9,7 +9,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTSServers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTS3Servers
 import fts3.rest.client.easy as fts3
 import json
 
@@ -58,26 +58,33 @@ class FTSStorageUnbanAction( BaseAction ):
 					
 		return self._unbanStorageElement( storageElement )		
 
-	def _unbanStorageElement( self, storageElement ):
 
-#		from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-#		diracAdmin = DiracAdmin()
-#		address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
+	def _unbanStorageElement( self, storageElement ):
+				
+		endpoints = getFTS3Servers()[ 'Value' ]
 		
-		#endpoint = 'https://fts3-pilot.cern.ch:8446'
-		endpoint = getFTSServers("FTS3")[ 'Value' ][0]
-		
-		#TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
-		proxyPath = getProxyInfo()
-		if not proxyPath.get('OK'):
-			return S_ERROR("Proxy not found!")
-		proxyPath = proxyPath.get('Value').get('path')	
+		blacklist = {}
+		for endpoint in endpoints:
+			#endpoint = 'https://fts3-pilot.cern.ch:8446'
 			
-		context = fts3.Context(endpoint, proxyPath)
-		
-		fts3.unban_se(context, storageElement)
+			#TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
+			proxyPath = getProxyInfo()
+			if not proxyPath.get('OK'):
+				return S_ERROR("Proxy not found!")
 			
-		return S_OK( json.loads(context.get("ban/se")) )
+			try:
+				proxyPath = proxyPath.get('Value').get('path')
+			except Exception as e:
+				return S_ERROR(e.message)			
+			
+			context = fts3.Context(endpoint, proxyPath)
+			
+			fts3.unban_se(context, storageElement)
+			
+			blacklist[endpoint] = json.loads(context.get("ban/se"))
+		
+		return S_OK( blacklist )
+
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

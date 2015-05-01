@@ -138,8 +138,8 @@ class DowntimeCommand( Command ):
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
       
-    elif elementType == 'FTS':
-      gocdbServiceType = elementType
+    elif elementType == 'FTS' or elementType == 'FTS3':
+      gocdbServiceType = 'FTS'
       try:
         #WARNING: this method presupposes that the server is an FTS3 type
         elementName  = getGOCFTSName(elementName)
