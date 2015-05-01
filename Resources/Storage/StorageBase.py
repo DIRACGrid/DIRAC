@@ -221,10 +221,6 @@ class StorageBase( object ):
     :param self: self reference
     :param str fileName: path on storage
     """
-    if fileName.startswith( '/' ):
-      # Assume full path is given, e.g. LFN
-      return self.getURL( fileName )
-    
     urlDict = dict( self.protocolParameters )
     if not fileName.startswith( '/' ):
       # Relative path is given
