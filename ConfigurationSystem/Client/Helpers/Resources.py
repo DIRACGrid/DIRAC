@@ -67,7 +67,6 @@ def getFTS2ServersForSites( self, siteList = None ):
 
 def getFTS3Servers():
   """ get FTSServers for sites
-
   :param list siteList: list of sites
   """
 
@@ -80,6 +79,7 @@ def getFTS3Servers():
     ftsServers.append( gConfig.getValue( cfgPath( csPath, name ) ) )
 
   return S_OK( ftsServers )
+
 
 def getSiteTier( site ):
   """
