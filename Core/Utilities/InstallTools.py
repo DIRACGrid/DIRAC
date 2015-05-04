@@ -2,6 +2,7 @@
 # File :    InstallTools.py
 # Author :  Ricardo Graciani
 ########################################################################
+from _mysql import result
 
 """
 Collection of Tools for installation of DIRAC components:
@@ -618,7 +619,10 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   if not compInstance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
-  sectionName = _getSectionName ( componentType )[ 'Value' ]
+  result = _getSectionName( componentType )
+  if not result[ 'OK' ]:
+    return result
+  sectionName = result[ 'Value' ]
 
   # Check if the component CS options exist
   addOptions = True
@@ -673,7 +677,11 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   """
   Add some extra configuration to the local component cfg
   """
-  sectionName = _getSectionName ( componentType )[ 'Value' ]
+  result = _getSectionName( componentType )
+  if not result[ 'OK' ]:
+    return result
+  sectionName = result[ 'Value' ]
+
   if not cfg:
     return S_OK()
   system = systemName.replace( 'System', '' )
@@ -701,7 +709,10 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   """
   Get the CFG object of the component configuration
   """
-  sectionName = _getSectionName ( componentType )[ 'Value' ]
+  result = _getSectionName( componentType )
+  if not result[ 'OK' ]:
+    return result
+  sectionName = result[ 'Value' ]
 
   componentModule = component
   if "Module" in specialOptions:
@@ -915,7 +926,10 @@ def getSoftwareComponents( extensions ):
   resultIndexes = {}
   # Components other than services, agents and executors
   for cType in remainingTypes:
-    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    result = _getSectionName( cType )
+    if not result[ 'OK' ]:
+      return result
+    resultIndexes[ cType ] = result[ 'Value' ]
     resultDict[ resultIndexes[ cType ] ] = {}
     remainders[ cType ] = {}
 
@@ -996,7 +1010,10 @@ def getInstalledComponents():
   resultDict = {}
   resultIndexes = {}
   for cType in componentTypes:
-    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    result = _getSectionName( cType )
+    if not result[ 'OK' ]:
+      return result
+    resultIndexes[ cType ] = result[ 'Value' ]
     resultDict[ resultIndexes[ cType ] ] = {}
 
   systemList = os.listdir( runitDir )
@@ -1029,7 +1046,10 @@ def getSetupComponents():
   resultDict = {}
   resultIndexes = {}
   for cType in componentTypes:
-    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    result = _getSectionName( cType )
+    if not result[ 'OK' ]:
+      return result
+    resultIndexes[ cType ] = result[ 'Value' ]
     resultDict[ resultIndexes[ cType ] ] = {}
 
   if not os.path.isdir( startDir ):
@@ -1163,7 +1183,10 @@ def getOverallStatus( extensions ):
   resultDict = {}
   resultIndexes = {}
   for cType in componentTypes:
-    resultIndexes[ cType ] = _getSectionName( cType )[ 'Value' ]
+    result = _getSectionName( cType )
+    if not result[ 'OK' ]:
+      return result
+    resultIndexes[ cType ] = result[ 'Value' ]
     resultDict[ resultIndexes[ cType ] ] = {}
 
   for compType in resultIndexes.values():
@@ -1257,9 +1280,14 @@ def checkComponentSoftware( componentType, system, component, extensions ):
   result = getSoftwareComponents( extensions )
   if not result['OK']:
     return result
+  softComp = result[ 'Value' ]
+
+  result = _getSectionName( componentType )
+  if not result[ 'OK' ]:
+    return result
 
   try:
-    softDict = result[ 'Value' ][ _getSectionName( componentType )[ 'Value' ] ]
+    softDict = softComp[ result[ 'Value' ] ]
   except KeyError, e:
     return S_ERROR( 'Unknown component type %s' % componentType )
 
