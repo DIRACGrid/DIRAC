@@ -103,7 +103,7 @@ def loadDiracCfg( verbose = False ):
   global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
   global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
   global monitoringClient
-  global componentTypes
+  global COMPONENT_TYPES
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -240,7 +240,7 @@ mysqlPort = ''
 mysqlRootUser = ''
 mysqlSmallMem = ''
 mysqlLargeMem = ''
-componentTypes = [ 'service', 'agent', 'executor' ]
+COMPONENT_TYPES = [ 'service', 'agent', 'executor' ]
 loadDiracCfg()
 
 def getInfo( extensions ):
@@ -922,7 +922,7 @@ def getSoftwareComponents( extensions ):
 
   resultDict = {}
 
-  remainingTypes = [ cType for cType in componentTypes if cType not in [ 'service', 'agent', 'executor' ] ]
+  remainingTypes = [ cType for cType in COMPONENT_TYPES if cType not in [ 'service', 'agent', 'executor' ] ]
   resultIndexes = {}
   # Components other than services, agents and executors
   for cType in remainingTypes:
@@ -1009,7 +1009,7 @@ def getInstalledComponents():
 
   resultDict = {}
   resultIndexes = {}
-  for cType in componentTypes:
+  for cType in COMPONENT_TYPES:
     result = _getSectionName( cType )
     if not result[ 'OK' ]:
       return result
@@ -1027,7 +1027,7 @@ def getInstalledComponents():
         body = rfile.read()
         rfile.close()
 
-        for cType in componentTypes:
+        for cType in COMPONENT_TYPES:
           if body.find( 'dirac-%s' % ( cType ) ) != -1:
             if not resultDict[ resultIndexes[ cType ] ].has_key( system ):
               resultDict[ resultIndexes[ cType ] ][system] = []
@@ -1045,7 +1045,7 @@ def getSetupComponents():
 
   resultDict = {}
   resultIndexes = {}
-  for cType in componentTypes:
+  for cType in COMPONENT_TYPES:
     result = _getSectionName( cType )
     if not result[ 'OK' ]:
       return result
@@ -1062,7 +1062,7 @@ def getSetupComponents():
       body = rfile.read()
       rfile.close()
 
-      for cType in componentTypes:
+      for cType in COMPONENT_TYPES:
         if body.find( 'dirac-%s' % ( cType ) ) != -1:
           system, compT = component.split( '_' )[0:2]
           if not resultDict[ resultIndexes[ cType ] ].has_key( system ):
@@ -1182,7 +1182,7 @@ def getOverallStatus( extensions ):
   # Collect the info now
   resultDict = {}
   resultIndexes = {}
-  for cType in componentTypes:
+  for cType in COMPONENT_TYPES:
     result = _getSectionName( cType )
     if not result[ 'OK' ]:
       return result
