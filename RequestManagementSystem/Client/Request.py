@@ -26,7 +26,7 @@ __RCSID__ = "$Id$"
 # # imports
 import datetime
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -534,47 +534,42 @@ class Request( Record ):
     repAndRegList = []
     removeRepList = []
     i = 0
-    while True:
-      if i >= len( self.__operations__ ) - 1:
-        break
-      op1 = self.__operations__[i]
-      op2 = self.__operations__[i + 1]
-      # print i, getattr( op1, 'Type' ), getattr( op2, 'Type' )
-      optFound = False
-      if getattr( op1, 'Type' ) == 'ReplicateAndRegister' and \
-         getattr( op2, 'Type' ) == 'RemoveReplica':
-        fileSetA = set( list( f.LFN for f in op1 ) )
-        fileSetB = set( list( f.LFN for f in op2 ) )
-        if fileSetA == fileSetB:
-          # Source is useless if failover
-          if 'FAILOVER' in op1.SourceSE:
-            op1.SourceSE = ''
-          repAndRegList.append( ( op1.TargetSE, op1 ) )
-          removeRepList.append( ( op2.TargetSE, op2 ) )
-          del self.__operations__[i]
-          del self.__operations__[i]
-          print 'Found sequence starting at %d' % i
-          optFound = True
-      if not optFound:
+    while i < len( self.__operations__ ):
+      insertNow = True
+      if i < len( self.__operations__ ) - 1:
+        op1 = self.__operations__[i]
+        op2 = self.__operations__[i + 1]
+        if getattr( op1, 'Type' ) == 'ReplicateAndRegister' and \
+           getattr( op2, 'Type' ) == 'RemoveReplica':
+          fileSetA = set( list( f.LFN for f in op1 ) )
+          fileSetB = set( list( f.LFN for f in op2 ) )
+          if fileSetA == fileSetB:
+            # Source is useless if failover
+            if 'FAILOVER' in op1.SourceSE:
+              op1.SourceSE = ''
+            repAndRegList.append( ( op1.TargetSE, op1 ) )
+            removeRepList.append( ( op2.TargetSE, op2 ) )
+            del self.__operations__[i]
+            del self.__operations__[i]
+            # If we are at the end of the request, we must insert the new operations
+            insertNow = ( i == len( self.__operations__ ) )
+      # print i, self.__operations__[i].Type if i < len( self.__operations__ ) else None, len( repAndRegList ), insertNow
+      if insertNow:
         if repAndRegList:
           # We must insert the new operations there
-          # i.e. insert before operation i (if exists)
-          # If some were found, put them, sorted by SE, at the beginning of the request
+          # i.e. insert before operation i (if it exists)
           # Replication first, removeReplica next
-          if not self.isEmpty():
-            insertBefore = self.__operations__[i]
-          else:
-            insertBefore = None
-          print 'Insert new operations before', insertBefore
+          optimized = True
+          insertBefore = self.__operations__[i] if i < len( self.__operations__ ) else None
+          # print 'Insert new operations before', insertBefore
           for op in \
             [op for _targetSE, op in sorted( repAndRegList )] + \
             [op for _targetSE, op in sorted( removeRepList )]:
-            _res = self.insertBefore( op, insertBefore ) if insertBefore != None else self.addOperation( op )
-            optimized = True
+            _res = self.insertBefore( op, insertBefore ) if insertBefore else self.addOperation( op )
+            # Skip the newly inserted operation
+            i += 1
           repAndRegList = []
           removeRepList = []
-          # Skip the 2 newly inserted operations
-          i += 2
         else:
           # Skip current operation
           i += 1
@@ -587,7 +582,7 @@ class Request( Record ):
 
     i = 0
     while i < len( self.__operations__ ):
-      while  ( i + 1 ) < len( self.__operations__ ):
+      while i < len( self.__operations__ ) - 1:
         # Some attributes need to be the same
         attrMismatch = False
         for attr in attrList:
@@ -601,7 +596,7 @@ class Request( Record ):
         # We do not do the merge if there are common files in the operations
         fileSetA = set( list( f.LFN for f in self.__operations__[i] ) )
         fileSetB = set( list( f.LFN for f in self.__operations__[i + 1] ) )
-        if len( fileSetA & fileSetB ):
+        if fileSetA & fileSetB:
           break
 
         # There is a maximum number of files one can add into an operation
