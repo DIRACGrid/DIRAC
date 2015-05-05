@@ -27,7 +27,6 @@ from types import DictType, LongType, ListType, IntType, StringTypes, NoneType
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-from DIRAC.ConfigurationSystem.Client.PathFinder        import getServiceSection
 from DIRAC.Core.Utilities.ThreadScheduler               import gThreadScheduler
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob           import FTSJob
