@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   CREAMComputingElement.py
 # Author : A.T.
 ########################################################################
@@ -9,13 +8,18 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import re
+import tempfile
+import stat
+from types import StringTypes
+
+from DIRAC                                               import S_OK, S_ERROR
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 from DIRAC.Core.Utilities.File                           import makeGuid
-from DIRAC                                               import S_OK, S_ERROR
 
-import os, re, tempfile
-from types import StringTypes
 
 CE_NAME = 'CREAM'
 MANDATORY_PARAMETERS = [ 'Queue' ]
@@ -86,7 +90,7 @@ class CREAMComputingElement( ComputingElement ):
 
     self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
 
     batchIDList = []
     stampDict = {}
@@ -113,7 +117,7 @@ class CREAMComputingElement( ComputingElement ):
       cmd = [ 'glite-ce-delegate-proxy', '-e', '%s' % self.ceName, '%s' % delegationID ]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       if not result['OK']:
-        self.log.error( 'Failed to delegate proxy: %s' % result['Message'] )
+        self.log.error( 'Failed to delegate proxy', result['Message'] )
         return result
       for _i in range( numberOfJobs ):
         jdlName, diracStamp = self.__writeJDL( executableFile )
@@ -239,7 +243,7 @@ class CREAMComputingElement( ComputingElement ):
     idFile.write( '##CREAMJOBS##' )
     for id_ in jobIDList:
       if ":::" in id_:
-        ref, stamp = id_.split( ':::' )
+        ref, _stamp = id_.split( ':::' )
       else:
         ref = id_
       idFile.write( '\n' + ref )

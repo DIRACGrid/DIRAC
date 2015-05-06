@@ -158,12 +158,13 @@ class ProcessMonitor:
 
       # Some debug printout if 0 CPU is determined
       if childCPU == 0:
-        self.log.error( 'Consumed CPU is found to be 0. Contributing processes:' )
+        self.log.error( 'Consumed CPU is found to be 0' )
+        self.log.info( 'Contributing processes:' )
         for pidCheck in pidList:
           if pidCheck not in infoDict:
             info = self.__getProcInfoLinux( pidCheck )
             if info['OK']:
-              self.log.error( '  PID:', info['Value'] )
+              self.log.info( '  PID:', info['Value'] )
 
     return S_OK( { "CPU": childCPU,
                    "Vsize": vsize,

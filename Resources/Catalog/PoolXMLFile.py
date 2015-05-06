@@ -120,7 +120,8 @@ def _getPoolCatalogs( directory = '' ):
             tarFile.extract( member, directory )
             poolCatalogList.append( os.path.join( directory, member.name ) )
         except Exception, x :
-          gLogger.error( 'Could not untar %s with exception %s' % ( fname, str( x ) ) )
+          gLogger.error( 'Could not untar with exception', 
+                         ' %s: %s' % ( fname, str( x ) ) )
       else:
         poolCatalogList.append( fname )
 

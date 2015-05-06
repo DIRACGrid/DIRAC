@@ -3,7 +3,7 @@
 """
 import DIRAC
 from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Resources.Utilities.Utils                          import checkArgumentFormat
+from DIRAC.Resources.Utilities                                import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import breakListIntoChunks
@@ -1742,7 +1742,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_OK()
     totalError = ""
     for link, error in res['Value']['Failed'].items():
-      gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link for %s." % link, error )
+      gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link", 
+                     "for %s: " % ( link, error ) )
       totalError = "%s\n %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 
@@ -1776,7 +1777,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_OK()
     totalError = ""
     for link, error in res['Value']['Failed'].items():
-      gLogger.error( "LcgFileCatalogClient.__removeFilesFromDataset: Failed to remove link %s." % link, error )
+      gLogger.error( "LcgFileCatalogClient.__removeFilesFromDataset: Failed to remove link", 
+                     "%s: %s" % ( link, error ) )
       totalError = "%s %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 

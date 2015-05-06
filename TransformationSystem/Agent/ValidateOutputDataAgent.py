@@ -175,7 +175,7 @@ class ValidateOutputDataAgent( AgentModule ):
     #
     res = self.fc.exists( directories )
     if not res['OK']:
-      gLogger.error( res['Message'] )
+      gLogger.error( 'Failed to check directory existence', res['Message'] )
       return res
     for directory, error in res['Value']['Failed']:
       gLogger.error( 'Failed to determine existance of directory', '%s %s' % ( directory, error ) )
@@ -197,7 +197,7 @@ class ValidateOutputDataAgent( AgentModule ):
     for storageElementName in sorted( self.activeStorages ):
       res = self.integrityClient.storageDirectoryToCatalog( directories, storageElementName )
       if not res['OK']:
-        gLogger.error( res['Message'] )
+        gLogger.error( 'Failed to check integrity SE->Catalog', res['Message'] )
         return res
 
     gLogger.info( "-" * 40 )

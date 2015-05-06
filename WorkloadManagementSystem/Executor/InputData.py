@@ -134,7 +134,7 @@ class InputData( OptimizerExecutor ):
     result = self.__checkReplicas( jobState, replicaDict )
 
     if not result['OK']:
-      self.jobLog.error( result['Message'] )
+      self.jobLog.error( 'Failed to check replicas', result['Message'] )
       return result
     siteCandidates = result[ 'Value' ]
 
@@ -198,7 +198,7 @@ class InputData( OptimizerExecutor ):
       self.jobLog.info( 'Found %s problematic LFN(s):\n%s' % ( len( badLFNs ), errorMsg ) )
       result = jobState.setParameter( self.ex_getProperty( 'optimizerName' ), errorMsg )
       if not result['OK']:
-        self.log.error( result['Message'] )
+        self.log.error( 'Failed to set job parameter', result['Message'] )
       return S_ERROR( 'Input data not available' )
 
     return self.__getSiteCandidates( okReplicas )

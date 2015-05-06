@@ -50,6 +50,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     self.ownerGroup = ''
     self.ownerDN = ''
 
+    self.pluginLocation = ''
+
     # for the threading
     self.transQueue = Queue()
     self.transInQueue = []
@@ -68,6 +70,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
+
+    self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Client.TaskManagerPlugin' )
 
     # Default clients
     self.transClient = TransformationClient()
@@ -231,6 +235,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     """
     threadTransformationClient = TransformationClient()
     threadTaskManager = WorkflowTasks()  # this is for wms tasks, replace it with something else if needed
+    threadTaskManager.pluginLocation = self.pluginLocation
 
     return {'TransformationClient': threadTransformationClient,
             'TaskManager': threadTaskManager}
@@ -252,13 +257,15 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
           self._logWarn( "Got a transf not in transInQueue...?", method = method, transID = transID )
           break
         self.transInThread[transID] = ' [Thread%d] [%s] ' % ( threadID, str( transID ) )
+        clients['TaskManager'].transInThread = self.transInThread
         for operation in operations:
           self._logInfo( "Starting processing operation %s" % operation, method = method, transID = transID )
           startTime = time.time()
           res = getattr( self, operation )( transIDOPBody, clients )
           if not res['OK']:
             self._logError( "Failed to %s: %s" % ( operation, res['Message'] ), method = method, transID = transID )
-          self._logInfo( "Processed operation %s" % operation, method = method, transID = transID )
+          self._logInfo( "Processed operation %s in %.1f seconds" % ( operation, time.time() - startTime if startTime else time.time() ),
+                         method = method, transID = transID )
       except Exception, x:
         self._logException( 'Exception executing operation %s' % operation, lException = x, transID = transID, method = method )
       finally:
@@ -338,7 +345,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     timeStamp = str( datetime.datetime.utcnow() - datetime.timedelta( minutes = 10 ) )
     condDict = {'TransformationID' : transID, 'Status' : ['Assigned']}
     transformationFiles = clients['TransformationClient'].getTransformationFiles( condDict = condDict,
-                                                                  older = timeStamp, timeStamp = 'LastUpdate' )
+                                                                                  older = timeStamp, timeStamp = 'LastUpdate' )
     self._logDebug( "getTransformationFiles(%s) return value: %s" % ( str( condDict ), transformationFiles ),
                    method = method, transID = transID )
     if not transformationFiles['OK']:
@@ -459,7 +466,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       return preparedTransformationTasks
 
     res = self.__actualSubmit( preparedTransformationTasks, clients, transID )
-
+    if not res['OK']:
+      return res
     res = clients['TaskManager'].updateDBAfterTaskSubmission( res['Value'] )
     self._logDebug( "updateDBAfterTaskSubmission return value: %s" % res, method = method, transID = transID )
     if not res['OK']:

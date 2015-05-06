@@ -65,7 +65,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
       if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
         # There have been some errors
         gMonitor.addMark( "RegisterReplicaFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
+#        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
         reason = registerReplica.get( "Message", registerReplica.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, str( reason ) )
@@ -97,7 +97,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
       else:
         # All is OK
         gMonitor.addMark( "RegisterReplicaOK", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
+#        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
         self.log.info( "Replica %s has been registered at %s" % ( lfn, ','.join( catalogs ) if catalogs else "all catalogs" ) )
         opFile.Status = "Done"

@@ -1,16 +1,14 @@
-# $HeadURL$
+"""
+"""
+
 __RCSID__ = "$Id$"
 
 import os
-import os.path
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
 import time
 import threading
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -18,14 +16,17 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 gSynchro = Synchronizer()
 
-class PlotCache:
+class PlotCache( object ):
 
-  def __init__( self, RRDManager ):
-    self.rrdManager = RRDManager
+  def __init__( self, rrdManager = None ):
+    if rrdManager is None:
+      self.rrdManager = RRDManager
+    else:
+      self.rrdManager = rrdManager
     self.plotsLocation = self.rrdManager.getGraphLocation()
-    for file in os.listdir( self.plotsLocation ):
-      if file.find( ".png" ) > 0:
-        os.unlink( "%s/%s" % ( self.plotsLocation, file ) )
+    for plot in os.listdir( self.plotsLocation ):
+      if plot.find( ".png" ) > 0:
+        os.unlink( "%s/%s" % ( self.plotsLocation, plot ) )
     self.cachedPlots = {}
     self.alive = True
     self.graceTime = 60
@@ -33,7 +34,7 @@ class PlotCache:
     self.purgeThread.start()
 
   def __generateName( self, *args, **kwargs ):
-    m = md5.md5()
+    m = hashlib.md5()
     m.update( repr( args ) )
     m.update( repr( kwargs ) )
     return m.hexdigest()
@@ -76,7 +77,7 @@ class PlotCache:
         filePath = "%s/%s" % ( self.plotsLocation, cachedFile )
         os.unlink( filePath )
       except Exception, e:
-        gLogger.error( "Can't delete plot file %s: %s" % ( filePath, str( e ) ) )
+        gLogger.error( "Can't delete plot file", "%s: %s" % ( filePath, str( e ) ) )
       del( self.cachedPlots[ cachedFile ] )
 
   def groupPlot( self, *args ):

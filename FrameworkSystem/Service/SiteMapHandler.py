@@ -77,7 +77,7 @@ class SiteMapData( threading.Thread ):
       result = func( sitesData )
       gLogger.info( "Function %s took %.2f secs" % ( func.__name__, time.time() - start ) )
       if not result[ 'OK' ]:
-        gLogger.error( "Error while executing %s" % func.__name__, result[ 'Message' ] )
+        gLogger.error( "Error while executing function", "%s" % func.__name__, result[ 'Message' ] )
       else:
         sitesData = result[ 'Value' ]
     #We save the data

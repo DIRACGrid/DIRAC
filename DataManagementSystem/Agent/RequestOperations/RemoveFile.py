@@ -69,7 +69,7 @@ class RemoveFile( OperationHandlerBase ):
     self.log.debug( "bulk removal of %s files" % len( toRemoveDict ) )
     bulkRemoval = self.bulkRemoval( toRemoveDict )
     if not bulkRemoval["OK"]:
-      self.log.error( "bulk removal failed: %s" % bulkRemoval["Message"] )
+      self.log.error( "Bulk file removal failed", bulkRemoval["Message"] )
     else:
       gMonitor.addMark( "RemoveFileOK", len( toRemoveDict ) - len( bulkRemoval["Value"] ) )
       toRemoveDict = bulkRemoval["Value"]
@@ -102,7 +102,7 @@ class RemoveFile( OperationHandlerBase ):
     bulkRemoval = self.dm.removeFile( toRemoveDict.keys(), force = True )
     if not bulkRemoval["OK"]:
       error = bulkRemoval["Message"]
-      self.log.error( "unable to remove files: %s" % error )
+      self.log.error( "Bulk file removal failed", error )
       self.operation.Error = error
       for opFile in self.operation:
         opFile.Error = error

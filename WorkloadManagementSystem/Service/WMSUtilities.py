@@ -3,6 +3,7 @@
 ########################################################################
 
 """ A set of utilities used in the WMS services
+    Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
 
 __RCSID__ = "$Id$"
@@ -11,6 +12,8 @@ from tempfile import mkdtemp
 import shutil, os
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
+from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
@@ -38,6 +41,8 @@ def getPilotOutput( proxy, grid, pilotRef, pilotStamp = '' ):
     return getWMSPilotOutput( proxy, grid, pilotRef )
   elif grid == "CREAM":
     return getCREAMPilotOutput( proxy, pilotRef, pilotStamp )
+  elif grid == "ARC":
+    return getARCPilotOutput( proxy, pilotRef )
   else:
     return S_ERROR( 'Non-valid grid type %s' % grid )
 
@@ -69,6 +74,45 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   result['StdOut'] = output
   result['StdErr'] = error
   return result
+
+def getARCPilotOutput( proxy, pilotRef ):
+  tmp_dir = mkdtemp()
+  myce = pilotRef.split(":")[1].strip("/")
+  gridEnv = getGridEnv()
+  mySite = getCESiteMapping()['Value'][myce]
+  workDB = gConfig.getValue(cfgPath('Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'))
+  myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL", workDB)
+  cmd = [ 'arcget' ]
+  cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
+  ret = executeGridCommand( proxy, cmd, gridEnv )
+  if not ret['OK']:
+    shutil.rmtree( tmp_dir )
+    return ret
+  status, output, error = ret['Value']
+  if 'Results stored at:' in output :
+    tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
+    result = S_OK()
+    result['FileList'] = os.listdir( tmp_dir )
+    for filename in result['FileList']:
+      tmpname = os.path.join( tmp_dir, filename )
+      if os.path.exists( tmpname ):
+        myfile = file( tmpname, 'r' )
+        f = myfile.read()
+        myfile.close()
+      else :
+        f = ' '
+      if ".out" in filename:
+        filename = 'StdOut'
+      if ".err" in filename:
+        filename = 'StdErr'
+      result[filename] = f
+    shutil.rmtree( tmp_dir )
+    return result
+  if 'Warning: Job not found in job list' in output:
+    shutil.rmtree( tmp_dir )
+    message = "Pilot not yet visible in ARC dB"
+    return S_ERROR( message )
+  return S_ERROR("Sorry - requested pilot output not yet available")
 
 def getWMSPilotOutput( proxy, grid, pilotRef ):
   """

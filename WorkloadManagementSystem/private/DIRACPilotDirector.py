@@ -150,7 +150,7 @@ class DIRACPilotDirector(PilotDirector):
       availableQueues = []
       # now = Time.dateTime()
       cachedAvailableQueues = self.listMatchCache.get( pilotRequirementsString )
-      if cachedAvailableQueues == False:
+      if cachedAvailableQueues is None:
         availableQueues = self._listQueues( pilotRequirements )
         if availableQueues != False:
           self.listMatchCache.add( pilotRequirementsString, self.listMatchDelay, availableQueues )
@@ -281,7 +281,7 @@ class DIRACPilotDirector(PilotDirector):
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
-import os, tempfile, sys, shutil, base64, bz2
+import os, stat, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
@@ -291,9 +291,9 @@ try:
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
   open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
   open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedInstall)s" ) ) )
-  os.chmod("proxy",0600)
-  os.chmod("%(pilotScript)s",0700)
-  os.chmod("%(installScript)s",0700)
+  os.chmod("proxy", stat.S_IRUSR | stat.S_IWUSR)
+  os.chmod("%(pilotScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+  os.chmod("%(installScript)s", stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
   if "LD_LIBRARY_PATH" not in os.environ:
     os.environ["LD_LIBRARY_PATH"]=""
   os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')

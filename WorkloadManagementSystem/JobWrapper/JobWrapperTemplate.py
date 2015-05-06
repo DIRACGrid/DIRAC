@@ -13,7 +13,7 @@ from DIRAC                                                  import gLogger
 
 import os
 
-os.umask( 022 )
+os.umask( 0o22 )
 
 class JobWrapperError( Exception ):
   def __init__( self, value ):

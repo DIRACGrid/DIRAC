@@ -38,6 +38,7 @@ from DIRAC                                                          import S_OK,
 import DIRAC
 
 import os
+import stat
 import re
 import sys
 import time
@@ -307,7 +308,7 @@ class JobWrapper( object ):
     executable = os.path.abspath( executable )
     if not os.access( executable, os.X_OK ):
       try:
-        os.chmod( executable, 0775 )
+        os.chmod( executable, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH )
       except Exception:
         self.log.warn( 'Failed to change mode to 775 for the executable', executable )
 
@@ -1247,8 +1248,8 @@ class JobWrapper( object ):
             self.jobReport.setJobParameter( 'PendingRequest', digest )
             break
           else:
-            self.log.error( 'Failed to set failover request', '%d: %s. Re-trying...' % ( counter,
-                                                                                         result['Message'] ) )
+            self.log.error( 'Failed to set failover request', 
+                            '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
             del requestClient
             time.sleep( counter ** 3 )
         if not result['OK']:

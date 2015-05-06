@@ -31,13 +31,11 @@ import time
 import threading
 
 ## from DIRAC
-from DIRAC.Core.Base import Script
-Script.parseCommandLine()
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+# from DIRAC.Core.Base import Script
+# Script.parseCommandLine()
+from DIRAC import gLogger
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
-import threading
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
@@ -59,16 +57,12 @@ class CallableClass( object ):
   """ callable class to be executed in task """
 
   def __init__( self, taskID, timeWait, raiseException=False ):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
     self.log = gLogger.getSubLogger( self.__class__.__name__ + "/%s" % taskID )
     self.taskID = taskID
     self.timeWait = timeWait
     self.raiseException = raiseException
     
   def __call__( self ):
-    import time, os
     self.log.always( "pid=%s task=%s will sleep for %s s" % ( os.getpid(), self.taskID, self.timeWait ) )
     time.sleep( self.timeWait )
     if self.raiseException:
@@ -84,9 +78,6 @@ gLock.acquire()
 class LockedCallableClass( object ):
   """ callable and locked class """
   def __init__( self, taskID, timeWait, raiseException=False ):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
     self.log = gLogger.getSubLogger( self.__class__.__name__ + "/%s" % taskID )
     self.taskID = taskID
     self.log.always( "pid=%s task=%s I'm locked" % ( os.getpid(), self.taskID ) )
@@ -98,7 +89,6 @@ class LockedCallableClass( object ):
 
   def __call__( self ):
     self.log.always("If you see this line, miracle had happened!")
-    import time, os
     self.log.always("will sleep for %s" % self.timeWait )
     time.sleep( self.timeWait )
     if self.raiseException:
@@ -113,9 +103,6 @@ class TaskCallbacksTests(unittest.TestCase):
   """
 
   def setUp( self ):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.processPool = ProcessPool( 4, 8, 8 ) 
@@ -182,9 +169,6 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
 
     :param self: self reference
     """
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.processPool = ProcessPool( 4, 8, 8,
@@ -259,9 +243,6 @@ class TaskTimeOutTests( unittest.TestCase ):
 
     :param self: self reference
     """
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.processPool = ProcessPool( 2,
@@ -353,8 +334,8 @@ class TaskTimeOutTests( unittest.TestCase ):
           else:
             continue
       self.log.always("being idle for a while")
-      for i in range(100000):
-        for j in range(1000):
+      for _ in range( 100000 ):
+        for _ in range( 1000 ):
           pass
 
     self.log.always("finalizing...")

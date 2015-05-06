@@ -35,14 +35,14 @@ from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 # # from RMS
-from DIRAC.RequestManagementSystem.private.Record import Record
 # # from Resources
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+import fts3.rest.client.easy as fts3
 
 ########################################################################
-class FTSJob( Record ):
+class FTSJob( object ):
   """
   .. class:: FTSJob
 
@@ -75,7 +75,8 @@ class FTSJob( Record ):
     :param self: self reference
     :param dict fromDict: data dict
     """
-    Record.__init__( self )
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now
@@ -585,6 +586,120 @@ class FTSJob( Record ):
 
     return S_OK()
 
+  def submitFTS3( self, pinTime = False ):
+    """ submit fts job using FTS3 rest API """
+
+    if self.FTSGUID:
+      return S_ERROR( "FTSJob already has been submitted" )
+
+    transfers = []
+
+    for ftsFile in self:
+      trans = fts3.new_transfer( ftsFile.SourceSURL,
+                                ftsFile.TargetSURL,
+                                checksum = ftsFile.Checksum,
+                                filesize = ftsFile.Size )
+      transfers.append( trans )
+
+    source_spacetoken = self.SourceToken if self.SourceToken else None
+    dest_spacetoken = self.TargetToken if self.TargetToken else None
+    copy_pin_lifetime = pinTime if pinTime else None
+    bring_online = 86400 if pinTime else None
+
+    job = fts3.new_job(transfers = transfers, overwrite = True,
+            source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
+            bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
+
+    try:
+      context = fts3.Context( self.FTSServer )
+      self.FTSGUID = fts3.submit( context, job )
+
+    except Exception, e:
+      return S_ERROR( "Error at submission: %s" % e )
+
+
+    self.Status = "Submitted"
+    for ftsFile in self:
+      ftsFile.FTSGUID = self.FTSGUID
+      ftsFile.Status = "Submitted"
+    return S_OK()
+
+  def monitorFTS3( self, full = False ):
+    if not self.FTSGUID:
+      return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
+
+    jobStatusDict = None
+    try:
+      context = fts3.Context( endpoint = self.FTSServer )
+      jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
+    except Exception, e:
+      return S_ERROR( "Error at getting the job status %s" % e )
+
+    self.Status = jobStatusDict['job_state'].capitalize()
+
+    filesInfoList = jobStatusDict['files']
+    statusSummary = {}
+    for fileDict in filesInfoList:
+      file_state = fileDict['file_state'].capitalize()
+      statusSummary[file_state] = statusSummary.get( file_state, 0 ) + 1
+
+    total = len( filesInfoList )
+    completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
+    self.Completeness = 100 * completed / total
+
+    if not full:
+      return S_OK( statusSummary )
+
+
+    for fileDict in filesInfoList:
+      sourceURL = fileDict['source_surl']
+      targetURL = fileDict['dest_surl']
+      fileStatus = fileDict['file_state'].capitalize()
+      reason = fileDict['reason']
+      duration = fileDict['tx_duration']
+      candidateFile = None
+      for ftsFile in self:
+        if ftsFile.SourceSURL == sourceURL and ftsFile.TargetSURL == targetURL :
+          candidateFile = ftsFile
+          break
+      if not candidateFile:
+        continue
+      candidateFile.Status = fileStatus
+      candidateFile.Error = reason
+      candidateFile._duration = duration
+
+#       if candidateFile.Status == "Failed":
+#         for missingSource in self.missingSourceErrors:
+#           if missingSource.match( reason ):
+#             candidateFile.Error = "MissingSource"
+
+    # # register successful files
+    if self.Status in FTSJob.FINALSTATES:
+      return self.finalize()
+
+
+  def monitorFTS( self, ftsVersion, command = "glite-transfer-status", full = False ):
+    """ Wrapper calling the proper method for a given version of FTS"""
+
+    if ftsVersion == "FTS2":
+      return self.monitorFTS2( command = command, full = full )
+    elif ftsVersion == "FTS3":
+      return self.monitorFTS3( full = full )
+    else:
+      return S_ERROR("monitorFTS: unknown FTS version %s"%ftsVersion)
+
+
+  def submitFTS( self, ftsVersion, command = 'glite-transfer-submit', pinTime = False ):
+    """ Wrapper calling the proper method for a given version of FTS"""
+
+    if ftsVersion == "FTS2":
+      return self.submitFTS2( command = command, pinTime = pinTime )
+    elif ftsVersion == "FTS3":
+      return self.submitFTS3( pinTime = pinTime )
+    else:
+      return S_ERROR( "submitFTS: unknown FTS version %s" % ftsVersion )
+
+
   def finalize( self ):
     """ register successfully transferred  files """
 
@@ -596,7 +711,7 @@ class FTSJob( Record ):
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
-      pfn = returnSingleResult( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+      pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = 'srm' ) )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]
@@ -624,9 +739,15 @@ class FTSJob( Record ):
 
     :return: str with SQL fragment
     """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
-                for column, value in self.__data__.items()
-                if value and column not in  ( "FTSJobID", "LastUpdate" ) ]
+    colVals = []
+    for column, value in self.__data__.items():
+      if value and column not in ( "FTSJobID", "LastUpdate" ):
+        colStr = "`%s`" % column
+        if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
+          valStr = "'%s'" % value
+        else:
+          valStr = str( value )
+        colVals.append( ( colStr, valStr ) )
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.FTSJobID:

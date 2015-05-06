@@ -5,6 +5,8 @@
     :synopsis: clean up of finalised transformations
 """
 
+__RCSID__ = "$Id$"
+
 # # imports
 import re
 import ast
@@ -22,12 +24,7 @@ from DIRAC.Resources.Storage.StorageElement                   import StorageElem
 from DIRAC.Core.Utilities.ReturnValues                        import returnSingleResult
 from DIRAC.Resources.Catalog.FileCatalog                      import FileCatalog
 from DIRAC.ConfigurationSystem.Client.ConfigurationData       import gConfigurationData
-
-# FIXME: double client: only ReqClient will survive in the end
-from DIRAC.RequestManagementSystem.Client.RequestClient       import RequestClient
 from DIRAC.RequestManagementSystem.Client.ReqClient           import ReqClient
-
-__RCSID__ = "$Id$"
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -216,9 +213,9 @@ class TransformationCleaningAgent( AgentModule ):
       self.log.info( "No output directories found" )
     directories = sorted( directories )
     return S_OK( directories )
-  # FIXME If a classmethod, should it not have cls instead of self?
+
   @classmethod
-  def _addDirs( self, transID, newDirs, existingDirs ):
+  def _addDirs( cls, transID, newDirs, existingDirs ):
     """ append uniqe :newDirs: list to :existingDirs: list
 
     :param self: self reference
@@ -261,16 +258,7 @@ class TransformationCleaningAgent( AgentModule ):
 
     se = StorageElement( storageElement )
 
-    res = se.getPfnForLfn( [directory] )
-    if not res['OK']:
-      self.log.error( "Failed to get PFN for directory", res['Message'] )
-      return res
-    if directory in res['Value']['Failed']:
-      self.log.verbose( 'Failed to obtain directory PFN from LFN', '%s %s' % ( directory, res['Value']['Failed'][directory] ) )
-      return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
-    storageDirectory = res['Value']['Successful'][directory]
-
-    res = returnSingleResult( se.exists( storageDirectory ) )
+    res = returnSingleResult( se.exists( directory ) )
     if not res['OK']:
       self.log.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -278,7 +266,7 @@ class TransformationCleaningAgent( AgentModule ):
     if not exists:
       self.log.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = returnSingleResult( se.removeDirectory( storageDirectory, recursive = True ) )
+    res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
     if not res['OK']:
       self.log.error( "Failed to remove storage directory", res['Message'] )
       return res
@@ -530,20 +518,11 @@ class TransformationCleaningAgent( AgentModule ):
     return S_OK( externalIDs )
 
   def __removeRequests( self, requestIDs ):
-    """ This will remove requests from the (new) RMS system -
-
-        #FIXME: if the old system is still installed, it won't remove anything!!!
-        (we don't want to risk removing from the new RMS what is instead in the old)
+    """ This will remove requests from the RMS system -
     """
-    # FIXME: checking if the old system is still installed!
-    from DIRAC.ConfigurationSystem.Client import PathFinder
-    if PathFinder.getServiceURL( "RequestManagement/RequestManager" ):
-      self.log.warn( "NOT removing requests!!" )
-      return S_OK()
-
     rIDs = [ int( long( j ) ) for j in requestIDs if long( j ) ]
-    for requestName in rIDs:
-      self.reqClient.deleteRequest( requestName )
+    for reqID in rIDs:
+      self.reqClient.deleteRequest( reqID )
 
     return S_OK()
 
@@ -593,49 +572,24 @@ class TransformationCleaningAgent( AgentModule ):
       return S_OK()
 
     failed = 0
-    # FIXME: double request client: old/new -> only the new will survive sooner or later
-    # this is the old
-    try:
-      res = RequestClient().getRequestForJobs( jobIDs )
-      if not res['OK']:
-        self.log.error( "Failed to get requestID for jobs.", res['Message'] )
-        return res
-      failoverRequests = res['Value']
-      self.log.info( "Found %d jobs with associated failover requests (in the old RMS)" % len( failoverRequests ) )
-      if not failoverRequests:
-        return S_OK()
-      for jobID, requestName in failoverRequests.items():
-        # Put this check just in case, tasks must have associated jobs
-        if jobID == 0 or jobID == '0':
-          continue
-        res = RequestClient().deleteRequest( requestName )
-        if not res['OK']:
-          self.log.error( "Failed to remove request from RequestDB", res['Message'] )
-          failed += 1
-        else:
-          self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
-    except RuntimeError:
-      failoverRequests = {}
-      pass
-
-    # FIXME: and this is the new
-    res = self.reqClient.getRequestNamesForJobs( jobIDs )
+    failoverRequests = {}
+    res = self.reqClient.getRequestIDsForJobs( jobIDs )
     if not res['OK']:
       self.log.error( "Failed to get requestID for jobs.", res['Message'] )
       return res
     failoverRequests.update( res['Value']['Successful'] )
     if not failoverRequests:
       return S_OK()
-    for jobID, requestName in res['Value']['Successful'].items():
+    for jobID, requestID in res['Value']['Successful'].items():
       # Put this check just in case, tasks must have associated jobs
       if jobID == 0 or jobID == '0':
         continue
-      res = self.reqClient.deleteRequest( requestName )
+      res = self.reqClient.deleteRequest( requestID )
       if not res['OK']:
         self.log.error( "Failed to remove request from RequestDB", res['Message'] )
         failed += 1
       else:
-        self.log.verbose( "Removed request %s associated to job %d." % ( requestName, jobID ) )
+        self.log.verbose( "Removed request %s associated to job %d." % ( requestID, jobID ) )
 
 
     if failed:

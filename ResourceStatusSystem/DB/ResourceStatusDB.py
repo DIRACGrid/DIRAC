@@ -70,7 +70,7 @@ class ResourceStatusDB( object ):
                    }
   
   
-  def __init__( self, maxQueueSize = 10, mySQL = None ):
+  def __init__( self, mySQL = None ):
     '''
       Constructor, accepts any DB or mySQL connection, mostly used for testing
       purposes.
@@ -82,7 +82,7 @@ class ResourceStatusDB( object ):
       self.database = mySQL
     else:
       self.database = DB( 'ResourceStatusDB', 
-                          'ResourceStatus/ResourceStatusDB', maxQueueSize )
+                          'ResourceStatus/ResourceStatusDB' )
 
   ## SQL Methods ###############################################################
 

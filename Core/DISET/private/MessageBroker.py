@@ -225,7 +225,7 @@ class MessageBroker:
     #Check message has id and name
     for requiredField in [ 'name' ]:
       if requiredField not in msg:
-        gLogger.error( "Message does not have %s" % requiredField )
+        gLogger.error( "Message does not have required field", requiredField )
         return S_ERROR( "Message does not have %s" % requiredField )
     #Load message
     if 'attrs' in msg:
@@ -260,7 +260,7 @@ class MessageBroker:
     #This is a message response
     for requiredField in ( 'id', 'result' ):
       if requiredField not in msg:
-        gLogger.error( "Message does not have %s" % requiredField )
+        gLogger.error( "Message does not have required field", requiredField )
         return S_ERROR( "Message does not have %s" % requiredField )
     if not isReturnStructure( msg[ 'result' ] ):
       return S_ERROR( "Message response did not return a result structure" )

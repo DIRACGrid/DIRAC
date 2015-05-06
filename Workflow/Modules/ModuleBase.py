@@ -195,7 +195,7 @@ class ModuleBase( object ):
     if not status:
       status = '%s correctly finalized' % str( self.__class__ )
 
-    raise GracefulTermination, status
+    raise GracefulTermination( status )
 
   #############################################################################
 
@@ -334,7 +334,7 @@ class ModuleBase( object ):
           if outputF['stepName'] == previousStep and outputF['outputDataType'].lower() == self.inputDataType.lower():
             stepInputData.append( outputF['outputDataName'] )
         except KeyError:
-          raise RuntimeError, 'Can\'t find output of step %s' % previousStep
+          raise RuntimeError( 'Can\'t find output of step %s' % previousStep )
 
       return stepInputData
 
@@ -545,7 +545,7 @@ class ModuleBase( object ):
     if len( self.request ):
       isValid = RequestValidator().validate( self.request )
       if not isValid['OK']:
-        raise RuntimeError, "Failover request is not valid: %s" % isValid['Message']
+        raise RuntimeError( "Failover request is not valid: %s" % isValid['Message'] )
       else:
         requestJSON = self.request.toJSON()
         if requestJSON['OK']:
@@ -562,9 +562,9 @@ class ModuleBase( object ):
           if result['OK']:
             self.log.info( "Digest of the request: %s" % result['Value'] )
           else:
-            self.log.error( "No digest? That's not sooo important, anyway: %s" % result['Message'] )
+            self.log.error( "No digest? That's not sooo important, anyway:", result['Message'] )
         else:
-          raise RuntimeError, requestJSON['Message']
+          raise RuntimeError( requestJSON['Message'] )
 
   #############################################################################
 

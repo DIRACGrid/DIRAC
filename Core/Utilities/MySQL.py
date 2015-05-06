@@ -150,8 +150,9 @@
 __RCSID__ = "$Id$"
 
 
-from DIRAC                                  import gLogger
-from DIRAC                                  import S_OK, S_ERROR
+from DIRAC                      import gLogger
+from DIRAC                      import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Time  import fromString
 
 # Get rid of the annoying Deprecation warning of the current MySQLdb
 # FIXME: compile a newer MySQLdb version
@@ -160,7 +161,7 @@ with warnings.catch_warnings():
   warnings.simplefilter( 'ignore', DeprecationWarning )
   import MySQLdb
   
-# This is for proper initialization of embeded server, it should only be called once
+# This is for proper initialization of embedded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
 gDebugFile = None
@@ -171,17 +172,6 @@ import threading
 from types import StringTypes, DictType, ListType, TupleType, BooleanType
 
 MAXCONNECTRETRY = 10
-
-def _checkQueueSize( maxQueueSize ):
-  """
-    Helper to check maxQueueSize
-  """
-  if maxQueueSize <= 0:
-    raise Exception( 'MySQL.__init__: maxQueueSize must positive' )
-  try:
-    maxQueueSize - 1
-  except Exception:
-    raise Exception( 'MySQL.__init__: wrong type for maxQueueSize' )
 
 def _checkFields( inFields, inValues ):
   """
@@ -386,7 +376,7 @@ class MySQL:
 
   __connectionPools = {}
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3, debug = False ):
+  def __init__( self, hostName, userName, passwd, dbName, port = 3306, debug = False ):
     """
     set MySQL connection parameters and try to connect
     """
@@ -403,8 +393,6 @@ class MySQL:
     self._threadsafe = MySQLdb.thread_safe()
     self.log.debug( 'thread_safe = %s' % self._threadsafe )
 
-    _checkQueueSize( maxQueueSize )
-
     self.__hostName = str( hostName )
     self.__userName = str( userName )
     self.__passwd = str( passwd )
@@ -418,7 +406,7 @@ class MySQL:
     self.__initialized = True
     result = self._connect()
     if not result[ 'OK' ]:
-      gLogger.error( "Cannot connect to to DB: %s" % result[ 'Message' ] )
+      gLogger.error( "Cannot connect to to DB", " %s" % result[ 'Message' ] )
 
     if debug:
       try:
@@ -450,6 +438,20 @@ class MySQL:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
       return S_ERROR( '%s: (%s)' % ( err, str( e ) ) )
 
+  def __isDateTime( self, dateString ):
+
+    if dateString == 'UTC_TIMESTAMP()':
+      return True
+    try:
+      dtime = dateString.replace( '"', '').replace( "'", "" )
+      dtime = fromString( dtime )
+      if dtime is None:
+        return False
+      else:
+        return True
+    except:
+      return False
+
 
   def __escapeString( self, myString ):
     """
@@ -463,17 +465,29 @@ class MySQL:
       return retDict
     connection = retDict['Value']
 
-    specialValues = ( 'UTC_TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF' )
-
     try:
       myString = str( myString )
     except ValueError:
       return S_ERROR( "Cannot escape value!" )
 
+    timeUnits = [ 'MICROSECOND', 'SECOND', 'MINUTE', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR' ]
+
     try:
-      for sV in specialValues:
-        if myString.find( sV ) == 0:
-          return S_OK( myString )
+      # Check datetime functions first
+      if myString.strip() == 'UTC_TIMESTAMP()':
+        return S_OK( myString )
+
+      for func in [ 'TIMESTAMPDIFF', 'TIMESTAMPADD' ]:
+        if myString.strip().startswith( '%s(' % func ) and myString.strip().endswith( ')' ):
+          args = myString.strip()[:-1].replace( '%s(' % func, '' ).strip().split(',')
+          arg1, arg2, arg3 = [ x.strip() for x in args ]
+          if arg1 in timeUnits:
+            if self.__isDateTime( arg2 ) or arg2.isalnum():
+              if self.__isDateTime( arg3 ) or arg3.isalnum():
+                return S_OK( myString )
+          self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
+          return S_ERROR( '__escape_string: Could not escape string' )
+
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
@@ -758,7 +772,7 @@ class MySQL:
         self.log.debug( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
         createView = self._query( viewQuery )
         if not createView["OK"]:
-          gLogger.error( createView["Message"] )
+          gLogger.error( 'Can not create view', createView["Message"] )
           return createView
     return S_OK()
 
@@ -792,6 +806,7 @@ class MySQL:
           index is the list of fields to be indexed. This indexes will declared
           unique.
         "Engine": use the given DB engine, InnoDB is the default if not present.
+        "Charset": use the given character set. Default is latin1
       force:
         if True, requested tables are DROP if they exist.
         if False, returned with S_ERROR if table exist.
@@ -904,8 +919,13 @@ class MySQL:
         else:
           engine = 'InnoDB'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
-               table, ',\n'.join( cmdList ), engine )
+        if thisTable.has_key( 'Charset' ):
+          charset = thisTable['Charset']
+        else:
+          charset = 'latin1'
+
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( 
+               table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
           return retDict

@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities.Utils            import checkArgumentFormat
+from DIRAC.Resources.Utilities                  import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File                  import getSize
@@ -24,7 +24,7 @@ class XROOTStorage( StorageBase ):
   Xroot interface to StorageElement using pyxrootd
   """
 
-  def __init__( self, storageName, protocol, rootdir, host, port, spaceToken, wspath ):
+  def __init__( self, storageName, parameters ):
     """ c'tor
 
     :param self: self reference
@@ -38,26 +38,26 @@ class XROOTStorage( StorageBase ):
     """
 
     # # init base class
-    StorageBase.__init__( self, storageName, rootdir )
+    StorageBase.__init__( self, storageName, parameters )
     self.log = gLogger.getSubLogger( "XROOTStorage", True )
 #     self.log.setLevel( "DEBUG" )
 
-    self.protocolName = 'XROOT'
-    self.protocol = protocol
-    self.host = host
+    self.pluginName = 'XROOT'
+    self.protocol = self.protocolParameters['Protocol']
+    self.host = self.protocolParameters['Host']
 
-    self.port = port
-    self.wspath = wspath
-    self.spaceToken = spaceToken
+    # Aweful hack to cope for the moment with the inability of RSS to deal with something else than SRM
 
-    # Aweful hack to cope for the moment with the anability of RSS to deal with something else than SRM
+    #self.port = ""
+    #self.wspath = ""
+    #self.spaceToken = ""
 
-    self.port = ""
-    self.wspath = ""
-    self.spaceToken = ""
+    self.protocolParameters['Port'] = 0
+    self.protocolParameters['WSUrl'] = 0
+    self.protocolParameters['SpaceToken'] = 0
 
     # The API instance to be used
-    self.xrootClient = client.FileSystem( host )
+    self.xrootClient = client.FileSystem( self.host )
 
 
   def exists( self, path ):
@@ -1562,105 +1562,3 @@ class XROOTStorage( StorageBase ):
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
-
-
-  #############################################################
-  #
-  # These are the methods for manipulating the client
-  #
-
-##################################################################
-#
-#    ALL INHERITED FROM StorageBase.py
-#
-##################################################################
-#   def isOK( self ):
-#     return self.isok
-#
-#   def changeDirectory( self, newdir ):
-#     """ Change the current directory
-#     """
-#     self.cwd = newdir
-#     return S_OK()
-#
-#   def getCurrentDirectory( self ):
-#     """ Get the current directory
-#     """
-#     return S_OK( self.cwd )
-#
-#   def getName( self ):
-#     """ The name with which the storage was instantiated
-#     """
-#     return S_OK( self.name )
-#
-#   def setParameters( self, parameters ):
-#     """ Set extra storage parameters, non-mandatory method
-#     """
-#     return S_OK()
-##################################################################
-
-
-  def getParameters( self ):
-    """ This gets all the storage specific parameters pass when instantiating the storage
-      :returns Dictionary with keys : StorageName, ProtocolName, Protocol, Host, Path, Port, SpaceToken, WSUrl
-    """
-    parameterDict = {}
-    parameterDict['StorageName'] = self.name
-    parameterDict['ProtocolName'] = self.protocolName
-    parameterDict['Protocol'] = self.protocol
-    parameterDict['Host'] = self.host
-    parameterDict['Path'] = self.rootdir  # I don't know why it's called rootdir in the baseclass and Path here...
-    parameterDict['Port'] = self.port
-    parameterDict['SpaceToken'] = self.spaceToken
-    parameterDict['WSUrl'] = self.wspath
-    return S_OK( parameterDict )
-
-  def getProtocolPfn( self, pfnDict, withPort ):
-    """ Get the PFN for the protocol with or without the port
-      :param self:
-      :param pfnDict: dictionary where the keys/values are the different part of the surl
-      :param bool withPort: include port information
-      :returns S_OK(pfn)
-    """
-
-    pfnDict['Protocol'] = self.protocol
-    pfnDict['Host'] = self.host
-
-    if not (pfnDict['Path'].startswith( self.rootdir ) or pfnDict['Path'].startswith( "/"+self.rootdir )):
-      pfnDict['Path'] = os.path.join( self.rootdir, pfnDict['Path'].strip( '/' ) )
-
-    # These lines should be checked
-    if withPort:
-      pfnDict['Port'] = self.port
-#    pfnDict['WSUrl'] = self.wspath
-    ###################3
-
-    # pfnunparse does not take into account the double // so I have to trick it
-    # The problem is that I cannot take into account the port, which is always empty (it seems..)
-    return S_OK( 'root://%s/%s/%s' % ( self.host, pfnDict['Path'], pfnDict['FileName'] ) )
-
-
-  def getCurrentURL( self, fileName ):
-    """ Create the full URL for the storage using the configuration, self.cwd and the fileName
-        :param fileName : name of the file for which we want the URL
-        :returns full URL
-    """
-    if fileName:
-      if fileName[0] == '/':
-        fileName = fileName.lstrip( '/' )
-    try:
-      fullUrl = "%s://%s/%s/%s" % ( self.protocol, self.host, self.cwd, fileName )
-      fullUrl = fullUrl.rstrip( "/" )
-      return S_OK( fullUrl )
-    except TypeError, error:
-      return S_ERROR( "Failed to create URL %s" % error )
-
-  def getPFNBase( self, withPort = False ):
-    """ This will get the pfn base. This is then appended with the LFN in DIRAC convention.
-
-    :param self: self reference
-    :param bool withPort: flag to include port
-    :returns PFN
-    """
-    return S_OK( { True : 'root://%s:%s/%s' % ( self.host, self.port, self.rootdir ),
-                   False : 'root://%s/%s' % ( self.host, self.rootdir ) }[withPort] )

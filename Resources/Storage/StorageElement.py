@@ -1,27 +1,21 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ This is the StorageElement class.
-
 """
+from types import ListType
 
 __RCSID__ = "$Id$"
 # # custom duty
 import re
-from types import ListType, StringType, StringTypes, DictType
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, gConfig
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult 
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.DictCache import DictCache
-
-
-
-
+from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.Resources.Catalog import FileCatalog
 
 class StorageElementCache( object ):
 
@@ -40,8 +34,6 @@ class StorageElementCache( object ):
 
     return seObj
 
-
-
 class StorageElementItem( object ):
   """
   .. class:: StorageElement
@@ -53,8 +45,8 @@ class StorageElementItem( object ):
   self.name is the resolved name of the StorageElement i.e CERN-tape
   self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
   self.storages is a list of the stub objects created by StorageFactory for the protocols found in the CS.
-  self.localProtocols is a list of the local protocols that were created by StorageFactory
-  self.remoteProtocols is a list of the remote protocols that were created by StorageFactory
+  self.localPlugins is a list of the local protocols that were created by StorageFactory
+  self.remotePlugins is a list of the remote protocols that were created by StorageFactory
   self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
 
 
@@ -121,11 +113,11 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
-  def __init__( self, name, protocols = None, vo = None ):
+  def __init__( self, name, plugins = None, vo = None ):
     """ c'tor
 
     :param str name: SE name
-    :param list protocols: requested protocols
+    :param list plugins: requested storage plugins
     :param vo
     """
 
@@ -139,7 +131,7 @@ class StorageElementItem( object ):
         return
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
-
+    
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
     useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
                 in proxiedProtocols )
@@ -150,10 +142,11 @@ class StorageElementItem( object ):
       useProxy = self.opHelper.getValue( '/Services/StorageElements/%s/UseProxy' % name, False )
 
     self.valid = True
-    if protocols == None:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, protocolList = [] )
+    if plugins == None:
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [] )
     else:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, protocolList = protocols )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins )
+
     if not res['OK']:
       self.valid = False
       self.name = name
@@ -162,16 +155,18 @@ class StorageElementItem( object ):
       factoryDict = res['Value']
       self.name = factoryDict['StorageName']
       self.options = factoryDict['StorageOptions']
-      self.localProtocols = factoryDict['LocalProtocols']
-      self.remoteProtocols = factoryDict['RemoteProtocols']
+      self.localPlugins = factoryDict['LocalPlugins']
+      self.remotePlugins = factoryDict['RemotePlugins']
       self.storages = factoryDict['StorageObjects']
       self.protocolOptions = factoryDict['ProtocolOptions']
       self.turlProtocols = factoryDict['TurlProtocols']
+      for storage in self.storages:
+        storage.setStorageElement( self )
 
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
+    self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
 
     self.readMethods = [ 'getFile',
-                         'getAccessUrl',
                          'getTransportURL',
                          'prestageFile',
                          'prestageFileStatus',
@@ -198,15 +193,13 @@ class StorageElementItem( object ):
                            ]
 
     self.okMethods = [ 'getLocalProtocols',
-                       'getPfnForProtocol',
-                       'getPfnForLfn',
-                       'getPfnPath',
                        'getProtocols',
                        'getRemoteProtocols',
                        'getStorageElementName',
-                       'getStorageElementOption',
                        'getStorageParameters',
                        'isLocalSE' ]
+    
+    self.__fileCatalog = None
 
   def dump( self ):
     """ Dump to the logger a summary of the StorageElement items. """
@@ -221,8 +214,7 @@ class StorageElementItem( object ):
 
     for storage in self.storages:
       outStr = "%s============Protocol %s ============\n" % ( outStr, i )
-      res = storage.getParameters()
-      storageParameters = res['Value']
+      storageParameters = storage.getParameters()
       for key in sorted( storageParameters ):
         outStr = "%s%s: %s\n" % ( outStr, key.ljust( 15 ), storageParameters[key] )
       i = i + 1
@@ -308,11 +300,22 @@ class StorageElementItem( object ):
 
     :param str operation: operation name
     """
-    self.log.verbose( "StorageElement.isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name,
-                                                                                             operation ) )
+    self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for VO %s" % ( self.name,
+                                                                                                            self.vo ) )
+
     if not self.valid:
       self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
+    
+    # Check if the Storage Element is eligible for the user's VO
+    if 'VO' in self.options and not self.vo in self.options['VO']:
+      self.log.debug( "StorageElementisValid: StorageElement is not allowed for VO %s" % self.vo )
+      return S_ERROR( "StorageElement.isValid: StorageElement is not allowed for VO" ) 
+    self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for %s" % ( self.name,
+                                                                                                         operation ) )
+    if ( not operation ) or ( operation in self.okMethods ):
+      return S_OK()
+    
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
     # Determine whether the StorageElement is valid for checking, reading, writing
@@ -363,71 +366,166 @@ class StorageElementItem( object ):
         return S_ERROR( "StorageElement.isValid: Remove access not currently permitted." )
     return S_OK()
 
-  def getProtocols( self ):
-    """ Get the list of all the protocols defined for this Storage Element
+  def getPlugins( self ):
+    """ Get the list of all the plugins defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getProtocols : Obtaining all protocols of %s." % self.name )
+    self.log.verbose( "StorageElement.getPlugins : Obtaining all plugins of %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    allProtocols = self.localProtocols + self.remoteProtocols
-    return S_OK( allProtocols )
+    allPlugins = self.localPlugins + self.remotePlugins
+    return S_OK( allPlugins )
 
-  def getRemoteProtocols( self ):
+  def getRemotePlugins( self ):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name )
+    self.log.verbose( "StorageElement.getRemotePlugins: Obtaining remote protocols for %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    return S_OK( self.remoteProtocols )
+    return S_OK( self.remotePlugins )
 
-  def getLocalProtocols( self ):
+  def getLocalPlugins( self ):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name )
+    self.log.verbose( "StorageElement.getLocalPlugins: Obtaining local protocols for %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
-    return S_OK( self.localProtocols )
+    return S_OK( self.localPlugins )
 
-  def getStorageElementOption( self, option ):
-    """ Get the value for the option supplied from self.options
-        :param option : option we are interested in
+  def getStorageParameters( self, plugin ):
+    """ Get plugin specific options
+      :param plugin : plugin we are interested in
     """
-    self.log.verbose( "StorageElement.getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option,
-                                                                                                 self.name ) )
-    if not self.valid:
-      return S_ERROR( self.errorReason )
-    if option in self.options:
-      optionValue = self.options[option]
-      return S_OK( optionValue )
-    else:
-      errStr = "StorageElement.getStorageElementOption: Option not defined for SE."
-      self.log.debug( errStr, "%s for %s" % ( option, self.name ) )
-      return S_ERROR( errStr )
-
-  def getStorageParameters( self, protocol ):
-    """ Get protocol specific options
-      :param protocol : protocol we are interested in
-    """
-    self.log.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s protocol %s." % ( self.name,
-                                                                                                   protocol ) )
-    res = self.getProtocols()
+    self.log.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s plugin %s." % ( self.name,
+                                                                                                                plugin ) )
+    res = self.getPlugins()
     if not res['OK']:
       return res
-    availableProtocols = res['Value']
-    if not protocol in availableProtocols:
-      errStr = "StorageElement.getStorageParameters: Requested protocol not available for SE."
-      self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
+    availablePlugins = res['Value']
+    if not plugin in availablePlugins:
+      errStr = "StorageElement.getStorageParameters: Requested plugin not available for SE."
+      self.log.debug( errStr, '%s for %s' % ( plugin, self.name ) )
       return S_ERROR( errStr )
     for storage in self.storages:
-      res = storage.getParameters()
-      storageParameters = res['Value']
-      if storageParameters['ProtocolName'] == protocol:
+      storageParameters = storage.getParameters()
+      if storageParameters['PluginName'] == plugin:
         return S_OK( storageParameters )
-    errStr = "StorageElement.getStorageParameters: Requested protocol supported but no object found."
-    self.log.debug( errStr, "%s for %s" % ( protocol, self.name ) )
+    errStr = "StorageElement.getStorageParameters: Requested plugin supported but no object found."
+    self.log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
     return S_ERROR( errStr )
 
-  def isLocalSE( self ):
+  def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
+    """ Negotiate what protocol could be used for a third party transfer
+        between the sourceSE and ourselves. If protocols is given,
+        the chosen protocol has to be among those
+        
+        :param sourceSE : storageElement instance of the sourceSE
+        :param protocols: protocol restriction list
+        
+        :return a list protocols that fits the needs, or None
+
+    """
+
+    # We should actually separate source and destination protocols
+    # For example, an SRM can get as a source an xroot or gsiftp url...
+    # but with the current implementation, we get only srm
+
+    destProtocols = set( [destStorage.protocolParameters['Protocol'] for destStorage in self.storages] )
+    sourceProtocols = set( [sourceStorage.protocolParameters['Protocol'] for sourceStorage in sourceSE.storages] )
+
+    commonProtocols = destProtocols & sourceProtocols
+
+    if protocols:
+      protocols = set( list( protocols ) ) if protocols else set()
+      commonProtocols = commonProtocols & protocols
+
+    return S_OK( list( commonProtocols ) )
+
+  #################################################################################################
+  #
+  # These are the basic get functions for lfn manipulation
+  #
+
+  def __getURLPath( self, url ):
+    """  Get the part of the URL path below the basic storage path.
+         This path must coincide with the LFN of the file in order to be compliant with the DIRAC conventions.
+    """
+    self.log.verbose( "StorageElement.__getURLPath: Getting path from url in %s." % self.name )
+    if not self.valid:
+      return S_ERROR( self.errorReason )
+    res = pfnparse( url )
+    if not res['OK']:
+      return res
+    fullURLPath = '%s/%s' % ( res['Value']['Path'], res['Value']['FileName'] )
+
+    # Check all available storages and check whether the url is for that protocol
+    urlPath = ''
+    for storage in self.storages:
+      res = storage.isNativeURL( url )
+      if res['OK']:
+        if res['Value']:
+          parameters = storage.getParameters()
+          saPath = parameters['Path']
+          if not saPath:
+            # If the sa path doesn't exist then the url path is the entire string
+            urlPath = fullURLPath
+          else:
+            if re.search( saPath, fullURLPath ):
+              # Remove the sa path from the fullURLPath
+              urlPath = fullURLPath.replace( saPath, '' )
+      if urlPath:
+        return S_OK( urlPath )
+    # This should never happen. DANGER!!
+    errStr = "StorageElement.__getURLPath: Failed to get the url path for any of the protocols!!"
+    self.log.debug( errStr )
+    return S_ERROR( errStr )
+
+  def getLFNFromURL( self, urls ):
+    """ Get the LFN from the PFNS .
+        :param lfn : input lfn or lfns (list/dict)
+    """
+    result = checkArgumentFormat( urls )
+    if result['OK']:
+      urlDict = result['Value']
+    else:  
+      errStr = "StorageElement.getLFNFromURL: Supplied urls must be string, list of strings or a dictionary."
+      self.log.debug( errStr )
+      return S_ERROR( errStr )
+
+    retDict = { "Successful" : {}, "Failed" : {} }
+    for url in urlDict:
+      res = self.__getURLPath( url )
+      if res["OK"]:
+        retDict["Successful"][url] = res["Value"]
+      else:
+        retDict["Failed"][url] = res["Message"]
+    return S_OK( retDict )
+
+  ###########################################################################################
+  #
+  # This is the generic wrapper for file operations
+  #
+
+  def getURL( self, lfn, protocol = False, replicaDict = None ):
+    """ execute 'getTransportURL' operation.
+      :param str lfn: string, list or dictionary of lfns
+      :param protocol: if no protocol is specified, we will request self.turlProtocols
+      :param replicaDict: optional results from the File Catalog replica query
+    """
+
+    self.log.verbose( "StorageElement.getURL: Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
+    
+    if not protocol:
+      protocols = self.turlProtocols
+    elif type( protocol ) is ListType:
+      protocols = protocol
+    elif type( protocol ) == type( '' ):
+      protocols = [protocol]
+
+    self.methodName = "getTransportURL"
+    result = self.__executeMethod( lfn, protocols = protocols )    
+    return result
+
+  def __isLocalSE( self ):
     """ Test if the Storage Element is local in the current context
     """
     self.log.verbose( "StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name )
@@ -438,297 +536,58 @@ class StorageElementItem( object ):
       return S_OK( True )
     else:
       return S_OK( False )
+    
+  def __getFileCatalog( self ):
+    
+    if not self.__fileCatalog:
+      self.__fileCatalog = FileCatalog( vo = self.vo )
+    return self.__fileCatalog  
 
-  #################################################################################################
-  #
-  # These are the basic get functions for lfn manipulation
-  #
-
-
-  def __getSinglePfnForProtocol( self, pfn, protocol, withPort = True ):
-    """ Transform the input pfn into a pfn with the given protocol for the Storage Element.
-      :param pfn : input PFN
-      :param protocol : string or list of string of the protocol we want
-      :param withPort : includes the port in the returned pfn
+  def __generateURLDict( self, lfns, storage, replicaDict = {} ):
+    """ Generates a dictionary (url : lfn ), where the url are constructed
+        from the lfn using the constructURLFromLFN method of the storage plugins.
+        :param: lfns : dictionary {lfn:whatever}
+        :returns dictionary {constructed url : lfn}
     """
-    self.log.verbose( "StorageElement.getSinglePfnForProtocol: Getting pfn for given protocols in %s." % self.name )
+    self.log.verbose( "StorageElement.__generateURLDict: generating url dict for %s lfn in %s." % ( len( lfns ), self.name ) )
 
-
-    # This test of the available protocols could actually be done in getPfnForProtocol once for all
-    # but it is safer to put it here in case we decide to call this method internally (which I doubt!)
-    res = self.getProtocols()
-    if not res['OK']:
-      return res
-    if type( protocol ) == StringType:
-      protocols = [protocol]
-    elif type( protocol ) == ListType:
-      protocols = protocol
-    else:
-      errStr = "StorageElement.getSinglePfnForProtocol: Supplied protocol must be string or list of strings."
-      self.log.debug( errStr, "%s %s" % ( protocol, self.name ) )
-      return S_ERROR( errStr )
-    availableProtocols = res['Value']
-    protocolsToTry = []
-    for protocol in protocols:
-      if protocol in availableProtocols:
-        protocolsToTry.append( protocol )
-      else:
-        errStr = "StorageElement.getSinglePfnForProtocol: Requested protocol not available for SE."
-        self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
-    if not protocolsToTry:
-      errStr = "StorageElement.getSinglePfnForProtocol: None of the requested protocols were available for SE."
-      self.log.debug( errStr, '%s for %s' % ( protocol, self.name ) )
-      return S_ERROR( errStr )
-    # Check all available storages for required protocol then contruct the PFN
-    for storage in self.storages:
-      res = storage.getParameters()
-      if res['Value']['ProtocolName'] in protocolsToTry:
-        res = pfnparse( pfn )
-        if res['OK']:
-          res = storage.getProtocolPfn( res['Value'], withPort )
-          if res['OK']:
-            return res
-    errStr = "StorageElement.getSinglePfnForProtocol: Failed to get PFN for requested protocols."
-    self.log.debug( errStr, "%s for %s" % ( protocols, self.name ) )
-    return S_ERROR( errStr )
-
-
-
-  def getPfnForProtocol( self, pfns, protocol = "SRM2", withPort = True ):
-    """ create PFNs strings using protocol :protocol:
-
-    :param self: self reference
-    :param list pfns: list of PFNs
-    :param str protocol: protocol name (default: 'SRM2')
-    :param bool withPort: flag to include port in PFN (default: True)
-    """
-
-    if type( pfns ) in StringTypes:
-      pfnDict = {pfns:False}
-    elif type( pfns ) == ListType:
-      pfnDict = {}
-      for pfn in pfns:
-        pfnDict[pfn] = False
-    elif type( pfns ) == DictType:
-      pfnDict = pfns
-    else:
-      errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-
-
-    res = self.isValid( "getPfnForProtocol" )
-    if not res["OK"]:
-      return res
-    retDict = { "Successful" : {}, "Failed" : {}}
-    for pfn in pfnDict:
-      res = self.__getSinglePfnForProtocol( pfn, protocol, withPort = withPort )
-      if res["OK"]:
-        retDict["Successful"][pfn] = res["Value"]
-      else:
-        retDict["Failed"][pfn] = res["Message"]
-    return S_OK( retDict )
-
-
-  def getPfnPath( self, pfn ):
-    """  Get the part of the PFN path below the basic storage path.
-         This path must coincide with the LFN of the file in order to be compliant with the LHCb conventions.
-    """
-    self.log.verbose( "StorageElement.getPfnPath: Getting path from pfn in %s." % self.name )
-    if not self.valid:
-      return S_ERROR( self.errorReason )
-    res = pfnparse( pfn )
-    if not res['OK']:
-      return res
-    fullPfnPath = '%s/%s' % ( res['Value']['Path'], res['Value']['FileName'] )
-
-    # Check all available storages and check whether the pfn is for that protocol
-    pfnPath = ''
-    for storage in self.storages:
-      res = storage.isPfnForProtocol( pfn )
-      if res['OK']:
-        if res['Value']:
-          res = storage.getParameters()
-          saPath = res['Value']['Path']
-          if not saPath:
-            # If the sa path doesn't exist then the pfn path is the entire string
-            pfnPath = fullPfnPath
-          else:
-            if re.search( saPath, fullPfnPath ):
-              # Remove the sa path from the fullPfnPath
-              pfnPath = fullPfnPath.replace( saPath, '' )
-      if pfnPath:
-        return S_OK( pfnPath )
-    # This should never happen. DANGER!!
-    errStr = "StorageElement.getPfnPath: Failed to get the pfn path for any of the protocols!!"
-    self.log.debug( errStr )
-    return S_ERROR( errStr )
-
-
-
-  def getLfnForPfn( self, pfns ):
-    """ Get the LFN from the PFNS .
-        :param lfn : input lfn or lfns (list/dict)
-    """
-
-    if type( pfns ) in StringTypes:
-      pfnDict = {pfns:False}
-    elif type( pfns ) == ListType:
-      pfnDict = {}
-      for pfn in pfns:
-        pfnDict[pfn] = False
-    elif type( pfns ) == DictType:
-      pfnDict = pfns.copy()
-    else:
-      errStr = "StorageElement.getLfnForPfn: Supplied pfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-
-
-    res = self.isValid( "getPfnPath" )
-    if not res['OK']:
-      self.log.error( "StorageElement.getLfnForPfn: Failed to instantiate StorageElement at %s" % self.name )
-      return res
-    retDict = { "Successful" : {}, "Failed" : {} }
-    for pfn in pfnDict:
-      res = self.getPfnPath( pfn )
-      if res["OK"]:
-        retDict["Successful"][pfn] = res["Value"]
-      else:
-        retDict["Failed"][pfn] = res["Message"]
-    return S_OK( retDict )
-
-
-
-  def __getSinglePfnForLfn( self, lfn ):
-    """ Get the full PFN constructed from the LFN.
-        :param lfn : input lfn or lfns (list/dict)
-    """
-    self.log.debug( "StorageElement.__getSinglePfnForLfn: Getting pfn from lfn in %s." % self.name )
-
-    for storage in self.storages:
-      res = storage.getPFNBase()
-      if res['OK']:
-        fullPath = "%s%s" % ( res['Value'], lfn )
-        return S_OK( fullPath )
-    # This should never happen. DANGER!!
-    errStr = "StorageElement.__getSinglePfnForLfn: Failed to get the full pfn for any of the protocols (%s)!!" % ( self.name )
-    self.log.debug( errStr )
-    return S_ERROR( errStr )
-
-  def getPfnForLfn( self, lfns ):
-    """ get PFNs for supplied LFNs at :storageElementName: SE
-
-    :param self: self reference
-    :param list lfns: list of LFNs
-    :param str stotrageElementName: DIRAC SE name
-    """
-
-    if type( lfns ) in StringTypes:
-      lfnDict = {lfns:False}
-    elif type( lfns ) == ListType:
-      lfnDict = {}
-      for lfn in lfns:
-        lfnDict[lfn] = False
-    elif type( lfns ) == DictType:
-      lfnDict = lfns.copy()
-    else:
-      errStr = "StorageElement.getPfnForLfn: Supplied lfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-
-    if not self.valid:
-      return S_ERROR( self.errorReason )
-
-    retDict = { "Successful" : {}, "Failed" : {} }
-    for lfn in lfnDict:
-      res = self.__getSinglePfnForLfn( lfn )
-      if res["OK"]:
-        retDict["Successful"][lfn] = res["Value"]
-      else:
-        retDict["Failed"][lfn] = res["Message"]
-    return S_OK( retDict )
-
-
-  def getPFNBase( self ):
-    """ Get the base to construct a PFN
-    """
-    self.log.verbose( "StorageElement.getPFNBase: Getting pfn base for %s." % self.name )
-
-    if not self.storages:
-      return S_ERROR( 'No storages defined' )
-    for storage in self.storages:
-      result = storage.getPFNBase()
-      if result['OK']:
-        return result
-
-    return result
-
-  ###########################################################################################
-  #
-  # This is the generic wrapper for file operations
-  #
-
-  def getAccessUrl( self, lfn, protocol = False, singleFile = None ):
-    """ execute 'getTransportURL' operation.
-      :param str lfn: string, list or dictionnary of lfns
-      :param protocol: if no protocol is specified, we will request self.turlProtocols
-    """
-
-    self.log.verbose( "StorageElement.getAccessUrl: Getting accessUrl for lfn in %s." % self.name )
-
-    if not protocol:
-      protocols = self.turlProtocols
-    elif type( protocol ) == type( '' ):
-      protocols = [protocol]
-    elif type( protocol ) == type( [] ):
-      protocols = protocol
-
-
-    argDict = {"protocols" : protocols}
-    if singleFile is not None:
-      argDict["singleFile"] = singleFile
-
-    self.methodName = "getTransportURL"
-    return self.__executeMethod( lfn, **argDict )
-
-
-  def __generatePfnDict( self, lfns, storage ):
-    """ Generates a dictionnary (pfn : lfn ), where the pfn are constructed
-        from the lfn using the getProtocolPfn method of the storage plugins.
-        :param: lfns : dictionnary {lfn:whatever}
-        :returns dictionnary {constructed pfn : lfn}
-    """
-    self.log.verbose( "StorageElement.__generatePfnDict: generating pfn dict for %s lfn in %s." % ( len( lfns ), self.name ) )
-
-    pfnDict = {}  # pfn : lfn
+    urlDict = {}  # url : lfn
     failed = {}  # lfn : string with errors
     for lfn in lfns:
-
-      if ":" in lfn:
-        errStr = "StorageElement.__generatePfnDict: received a pfn as input. It should not happen anymore, please check your code"
-        self.log.verbose( errStr, lfn )
-      res = pfnparse( lfn )  # pfnparse can take an lfn as input, it will just fill the path and filename
-      if not res['OK']:
-        errStr = "StorageElement.__generatePfnDict: Failed to parse supplied LFN."
-        self.log.debug( errStr, "%s: %s" % ( lfn, res['Message'] ) )
-        if lfn not in failed:
-          failed[lfn] = ''
-        failed[lfn] = "%s %s" % ( failed[lfn], errStr )
-      else:
-        res = storage.getProtocolPfn( res['Value'], True )
-        if not res['OK']:
-          errStr = "StorageElement.__generatePfnDict %s." % res['Message']
-          self.log.debug( errStr, 'for %s' % ( lfn ) )
-          if lfn not in failed:
-            failed[lfn] = ''
-          failed[lfn] = "%s %s" % ( failed[lfn], errStr )
+      if self.useCatalogURL:
+        # Is this self.name alias proof?
+        url = replicaDict.get( lfn, {} ).get( self.name, '' )
+        if url:
+          urlDict[url] = lfn
+          continue
         else:
-          pfnDict[res['Value']] = lfn
-    res = S_OK( pfnDict )
-    res['Failed'] = failed
+          fc = self.__getFileCatalog()
+          result = fc.getReplicas()
+          if not result['OK']:
+            failed[lfn] = result['Message']
+          url = result['Value']['Successful'].get( lfn, {} ).get( self.name, '' )
+        
+        if not url:
+          failed[lfn] = 'Failed to get catalog replica'
+        else:
+          # Update the URL according to the current SE description
+          result = returnSingleResult( storage.updateURL( url ) )
+          if not result['OK']:
+            failed[lfn] = result['Message']
+          else:
+            urlDict[result['Value']] = lfn          
+      else:  
+        result = storage.constructURLFromLFN( lfn, withWSUrl = True )
+        if not result['OK']:
+          errStr = "StorageElement.__generateURLDict %s." % result['Message']
+          self.log.debug( errStr, 'for %s' % ( lfn ) )
+          failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if lfn in failed else errStr
+        else:
+          urlDict[result['Value']] = lfn
+          
+    res = S_OK( {'Successful': urlDict, 'Failed' : failed} )
+#     res['Failed'] = failed
     return res
-
 
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
@@ -747,7 +606,7 @@ class StorageElementItem( object ):
     # args should normaly be empty to avoid problem...
     if len( args ):
       self.log.verbose( "StorageElement.__executeMethod: args should be empty!%s" % args )
-      # because there is normaly normaly only one kw argument, I can move it from args to kwargs
+      # because there is normally only one kw argument, I can move it from args to kwargs
       methDefaultArgs = StorageElementItem.__defaultsArguments.get( self.methodName, {} ).keys()
       if len( methDefaultArgs ):
         kwargs[methDefaultArgs[0] ] = args[0]
@@ -772,22 +631,15 @@ class StorageElementItem( object ):
          Setting value %s." % ( argName, self.methodName, methDefaultArgs[argName] ) )
         kwargs[argName] = methDefaultArgs[argName]
 
-
-    if type( lfn ) in StringTypes:
-      lfnDict = {lfn:False}
-    elif type( lfn ) == ListType:
-      lfnDict = {}
-      for url in lfn:
-        lfnDict[url] = False
-    elif type( lfn ) == DictType:
-      lfnDict = lfn.copy()
-    else:
+    res = checkArgumentFormat( lfn )
+    if not res['OK']:
       errStr = "StorageElement.__executeMethod: Supplied lfns must be string, list of strings or a dictionary."
       self.log.debug( errStr )
       return S_ERROR( errStr )
+    lfnDict = res['Value']
 
     self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' operation with %s lfns." % ( self.methodName,
-                                                                                                  len( lfnDict ) ) )
+                                                                                                               len( lfnDict ) ) )
 
     res = self.isValid( operation = self.methodName )
     if not res['OK']:
@@ -798,83 +650,74 @@ class StorageElementItem( object ):
 
     successful = {}
     failed = {}
-    localSE = self.isLocalSE()['Value']
+    localSE = self.__isLocalSE()['Value']
     # Try all of the storages one by one
     for storage in self.storages:
       # Determine whether to use this storage object
-      res = storage.getParameters()
-      useProtocol = True
-      if not res['OK']:
+      storageParameters = storage.getParameters()
+      if not storageParameters:
         self.log.debug( "StorageElement.__executeMethod: Failed to get storage parameters.", "%s %s" % ( self.name,
-                                                                                            res['Message'] ) )
-        useProtocol = False
+                                                                                                         res['Message'] ) )
+        continue
+      pluginName = storageParameters['PluginName']
+      if not lfnDict:
+        self.log.debug( "StorageElement.__executeMethod: No lfns to be attempted for %s protocol." % pluginName )
+        continue
+      if not ( pluginName in self.remotePlugins ) and not localSE and not storage.pluginName == "Proxy":
+        # If the SE is not local then we can't use local protocols
+        self.log.debug( "StorageElement.__executeMethod: Local protocol not appropriate for remote use: %s." % pluginName )
+        continue
+
+      self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol URLs for %s." % ( len( lfnDict ),
+                                                                                                  pluginName ) )
+      replicaDict = kwargs.pop( 'replicaDict', {} )
+      if storage.pluginName != "Proxy":
+        res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
+        urlDict = res['Value']['Successful']  # url : lfn
+        failed.update( res['Value']['Failed'] )
       else:
-        protocolName = res['Value']['ProtocolName']
-        if not lfnDict:
-          useProtocol = False
-          self.log.debug( "StorageElement.__executeMethod: No lfns to be attempted for %s protocol." % protocolName )
-        elif not ( protocolName in self.remoteProtocols ) and not localSE:
-          # If the SE is not local then we can't use local protocols
-          useProtocol = False
-          self.log.debug( "StorageElement.__executeMethod: Local protocol not appropriate for remote use: %s." % protocolName )
-      if useProtocol:
-        self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol PFNs for %s." % ( len( lfnDict ),
-                                                                                       protocolName ) )
-        res = self.__generatePfnDict( lfnDict, storage )
-        pfnDict = res['Value']  # pfn : lfn
-        failed.update( res['Failed'] )
-        if not len( pfnDict ):
-          self.log.verbose( "StorageElement.__executeMethod No pfns generated for protocol %s." % protocolName )
+        urlDict = dict( [ ( lfn, lfn ) for lfn in lfnDict ] )
+      if not len( urlDict ):
+        self.log.verbose( "StorageElement.__executeMethod No urls generated for protocol %s." % pluginName )
+      else:
+        self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' for %s physical files" % ( self.methodName,
+                                                                                                    len( urlDict ) ) )
+        fcn = None
+        if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
+          fcn = getattr( storage, self.methodName )
+        if not fcn:
+          return S_ERROR( "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
+
+        urlsToUse = {}  # url : the value of the lfn dictionary for the lfn of this url
+        for url in urlDict:
+          urlsToUse[url] = lfnDict[urlDict[url]]
+
+        res = fcn( urlsToUse, *args, **kwargs )
+        if not res['OK']:
+          errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName
+          self.log.debug( errStr, '%s with plugin %s: %s' % ( self.name, pluginName, res['Message'] ) )
+          for lfn in urlDict.values():
+            if lfn not in failed:
+              failed[lfn] = ''
+            failed[lfn] = "%s %s" % ( failed[lfn], res['Message'] ) if failed[lfn] else res['Message']
         else:
-          self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' for %s physical files" % ( self.methodName,
-                                                                                                      len( pfnDict ) ) )
-          fcn = None
-          if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
-            fcn = getattr( storage, self.methodName )
-          if not fcn:
-            return S_ERROR( "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
-
-          pfnsToUse = {}  # pfn : the value of the lfn dictionary for the lfn of this pfn
-          for pfn in pfnDict:
-            pfnsToUse[pfn] = lfnDict[pfnDict[pfn]]
-
-          res = fcn( pfnsToUse, *args, **kwargs )
-
-          if not res['OK']:
-            errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName
-            self.log.debug( errStr, '%s for protocol %s: %s' % ( self.name, protocolName, res['Message'] ) )
-            for lfn in pfnDict.values():
+          for url, lfn in urlDict.items():
+            if url not in res['Value']['Successful']:
               if lfn not in failed:
                 failed[lfn] = ''
-              failed[lfn] += " %s" % ( res['Message'] )  # Concatenate! Not '=' :-)
-          else:
-            for pfn, lfn in pfnDict.items():
-              if pfn not in res['Value']['Successful']:
-                if lfn not in failed:
-                  failed[lfn] = ''
-                if pfn in res['Value']['Failed']:
-                  failed[lfn] = "%s %s" % ( failed[lfn], res['Value']['Failed'][pfn] )
-                else:
-                  failed[lfn] = "%s %s" % ( failed[lfn], 'No error returned from plug-in' )
+              if url in res['Value']['Failed']:
+                failed[lfn] = "%s %s" % ( failed[lfn], res['Value']['Failed'][url] ) if failed[lfn] else res['Value']['Failed'][url]
               else:
-                successful[lfn] = res['Value']['Successful'][pfn]
-                if lfn in failed:
-                  failed.pop( lfn )
-                lfnDict.pop( lfn )
+                errStr = 'No error returned from plug-in'
+                failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if failed[lfn] else errStr
+            else:
+              successful[lfn] = res['Value']['Successful'][url]
+              if lfn in failed:
+                failed.pop( lfn )
+              lfnDict.pop( lfn )
 
-
-    # Ensure backward compatibility for singleFile and singleDirectory for the time of a version
-    singleFileOrDir = removedArgs.get( "singleFile", False ) or removedArgs.get( "singleDirectory", False )
-
-    retValue = S_OK( { 'Failed': failed, 'Successful': successful } )
-
-    if singleFileOrDir:
-      self.log.verbose( "StorageElement.__executeMethod : use returnSingleResult for backward compatibility. You should fix your code " )
-      retValue = returnSingleResult( retValue )
-
-    return retValue
-
-
+    return S_OK( { 'Failed': failed, 'Successful': successful } )
+  
 
   def __getattr__( self, name ):
     """ Forwards the equivalent Storage calls to StorageElement.__executeMethod"""
@@ -884,13 +727,8 @@ class StorageElementItem( object ):
     if self.methodName:
       return self.__executeMethod
 
-    raise AttributeError
+    raise AttributeError( "StorageElement does not have a method '%s'" % name )
 
 
 
 StorageElement = StorageElementCache()
-
-
-
-
-

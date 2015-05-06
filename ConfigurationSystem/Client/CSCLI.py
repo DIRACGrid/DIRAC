@@ -190,7 +190,7 @@ class CSCLI( cmd.Cmd ):
       self.rpcClient = RPCClient( self.masterURL )
       self._setStatus()
     except Exception, x:
-      gLogger.error( "Couldn't connect to %s (%s)" % ( self.masterURL, str( x ) ) )
+      gLogger.error( "Couldn't connect to master CS server", "%s (%s)" % ( self.masterURL, str( x ) ) )
       self._setStatus( False )
 
   def do_connect( self, args = '' ):

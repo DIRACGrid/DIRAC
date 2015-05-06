@@ -24,11 +24,11 @@ MAGIC_EPOC_NUMBER = 1270000000
 class JobLoggingDB( DB ):
 
 
-  def __init__( self, maxQueueSize = 10 ):
+  def __init__( self ):
     """ Standard Constructor
     """
 
-    DB.__init__( self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB', maxQueueSize )
+    DB.__init__( self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB' )
     self.gLogger = gLogger
 
 #############################################################################

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   SSHComputingElement.py
 # Author : Dumitru Laurentiu
 ########################################################################
@@ -9,18 +8,17 @@
     It's still under development & debugging,
 """
 
-from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC.Core.Utilities.List                           import breakListIntoChunks
-from DIRAC.Core.Utilities.Pfn                            import pfnparse
-from DIRAC                                               import S_OK, S_ERROR
-from DIRAC                                               import systemCall, rootPath
-from DIRAC                                               import gConfig, gLogger
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC.Resources.Computing.SSHComputingElement       import SSH 
+import os
+import socket
+import stat
+from urlparse import urlparse
 
-import os, sys, time, re, socket, stat, shutil
-import string, shutil, bz2, base64, tempfile, random
+from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import rootPath
+
+from DIRAC.Resources.Computing.SSHComputingElement       import SSHComputingElement
+from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
+
 
 CE_NAME = 'SSHBatch'
 
@@ -62,11 +60,14 @@ class SSHBatchComputingElement( SSHComputingElement ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )    
       
     # Prepare all the hosts  
-    for h in self.ceParameters['SSHHost'].strip().split( ',' ):
-      host = h.strip().split('/')[0]
+    for hPar in self.ceParameters['SSHHost'].strip().split( ',' ):
+      host = hPar.strip().split('/')[0]
       result = self._prepareRemoteHost( host = host )
-      self.log.info( 'Host %s registered for usage' % host )
-      self.sshHost.append( h.strip() )
+      if result['OK']:
+        self.log.info( 'Host %s registered for usage' % host )
+        self.sshHost.append( hPar.strip() )
+      else:
+        self.log.error( 'Failed to initialize host', host  )  
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -105,7 +106,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
       return S_ERROR( "No online node found on queue" )
     ##make it executable
     if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
+      os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
     
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node
@@ -153,10 +154,8 @@ class SSHBatchComputingElement( SSHComputingElement ):
     
     hostDict = {}
     for job in jobIDList:      
-      result = pfnparse( job )
-      if not result['OK']:
-        continue
-      host = result['Value']['Host']
+      
+      host = urlparse( job ).hostname
       hostDict.setdefault(host,[])
       hostDict[host].append( job )
       
@@ -199,10 +198,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
     """
     hostDict = {}
     for job in jobIDList:
-      result = pfnparse( job )
-      if not result['OK']:
-        continue
-      host = result['Value']['Host']
+      host = urlparse( job ).hostname
       hostDict.setdefault(host,[])
       hostDict[host].append( job )
 

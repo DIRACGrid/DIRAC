@@ -12,9 +12,8 @@ from DIRAC.Core.Utilities import Time, List, Network
 class ComponentMonitoringDB( DB ):
 
   def __init__( self, requireVoms = False,
-               useMyProxy = False,
-               maxQueueSize = 10 ):
-    DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB', maxQueueSize )
+               useMyProxy = False ):
+    DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB' )
     random.seed()
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
@@ -103,7 +102,7 @@ class ComponentMonitoringDB( DB ):
     self.log.info( "Trying to register %s" % compLogName )
     result = self._query( "SELECT id FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
     if not result[ 'OK' ]:
-      self.log.error( "Cannot register %s: %s" % ( compLogName, result[ 'Message' ] ) )
+      self.log.error( "Cannot register component", "%s: %s" % ( compLogName, result[ 'Message' ] ) )
       return result
     if len( result[ 'Value' ] ):
       compId = result[ 'Value' ][0][0]

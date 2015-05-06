@@ -68,9 +68,9 @@ class PfnTests( unittest.TestCase ):
       if result["OK"]:
         self.assertEqual( pfnunparse( result["Value"] ), { "OK" : True, "Value" : pfn } )
     self.assertEqual( pfnunparse( None ), 
-                      {'Message': "pfnunparse: wrong type fot pfnDict argument, expected a dict, got <type 'NoneType'>", 'OK': False} )  
+                      {'Message': "pfnunparse: wrong type for pfnDict argument, expected a dict, got <type 'NoneType'>", 'OK': False} )
     self.assertEqual( pfnunparse( "Path" ), 
-                      {'Message': "pfnunparse: wrong type fot pfnDict argument, expected a dict, got <type 'str'>", 'OK': False} )  
+                      {'Message': "pfnunparse: wrong type for pfnDict argument, expected a dict, got <type 'str'>", 'OK': False} )
    
 
 ## test execution

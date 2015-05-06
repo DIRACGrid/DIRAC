@@ -54,7 +54,7 @@ class MappingFileCache:
         gLogger.verbose( "Purging %s" % fileName )
         os.unlink( "%s" % fileName )
       except Exception, e:
-        gLogger.error( "Can't delete file %s: %s" % ( fileName, str(e) ) )
+        gLogger.error( "Can't delete file", " %s: %s" % ( fileName, str(e) ) )
       del( self.__cachedFiles[ fileName ] )
 
   def addToCache( self, fileName, lifeTime = False):

@@ -43,7 +43,18 @@ class SocketInfoFactory:
       return S_ERROR( str( e ) )
 
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    addrs = socket.getaddrinfo(hostAddress[0], hostAddress[1], 0, socket.SOCK_STREAM)
+    errs = []
+    for addr in addrs:
+      res = self.__sockConnect( addr[4], addr[0], timeout, retries )
+      if res[ 'OK' ]:
+        return res
+      else:
+        errs.append( res[ 'Message' ] )
+    return S_ERROR( ", ".join( errs ) )
+
+  def __sockConnect( self, hostAddress, sockType, timeout, retries ):
+    osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )
     if timeout:
       osSocket.settimeout( 5 )
@@ -53,7 +64,7 @@ class SocketInfoFactory:
       if e.args[0] == "timed out":
         osSocket.close()
         if retries:
-          return self.__socketConnect( hostAddress, timeout, retries - 1 )
+          return self.__sockConnect( hostAddress, sockType, timeout, retries - 1 )
         else:
           return S_ERROR( "Can't connect: %s" % str( e ) )
       if e.args[0] not in ( 114, 115 ):
@@ -132,7 +143,7 @@ class SocketInfoFactory:
     return S_OK( socketInfo )
 
   def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     retVal = self.generateServerInfo( kwargs )

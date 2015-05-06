@@ -268,7 +268,7 @@ class RequestHandler( object ):
     try:
       oTypesList = getattr( self, sListName )
     except:
-      gLogger.error( "There's no types info for method export_%s" % method )
+      gLogger.error( "There's no types info for method", "export_%s" % method )
       return S_ERROR( "Handler error for server %s while processing method %s" % ( self.serviceInfoDict[ 'serviceName' ],
                                                                                    method ) )
     try:
@@ -375,7 +375,7 @@ class RequestHandler( object ):
     finally:
       self.__lockManager.unlock( methodName )
     if not isReturnStructure( uReturnValue ):
-      gLogger.error( "Message %s does not return a S_OK/S_ERROR" % msgName )
+      gLogger.error( "Message does not return a S_OK/S_ERROR", msgName )
       uReturnValue = S_ERROR( "Message %s does not return a S_OK/S_ERROR" % msgName )
     self.__logRemoteQueryResponse( uReturnValue, time.time() - startTime )
     return uReturnValue

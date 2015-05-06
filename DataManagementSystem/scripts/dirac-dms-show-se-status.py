@@ -16,6 +16,7 @@ from DIRAC                                            import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.List                        import sortList
 from DIRAC.Core.Utilities.PrettyPrint                 import printTable
+from DIRAC.Core.Security.ProxyInfo                    import getVOfromProxyGroup
 
 storageCFGBase = "/Resources/StorageElements"
 
@@ -39,14 +40,26 @@ if not res[ 'OK' ]:
 fields = ['SE','ReadAccess','WriteAccess','RemoveAccess','CheckAccess']  
 records = []
 
+result = getVOfromProxyGroup()
+if not result['OK']:
+  gLogger.error( 'Failed to determine the user VO' )
+  DIRAC.exit( -1 )
+vo = result['Value']
+
 for se, statusDict in res[ 'Value' ].items():
+
+  # Check if the SE is allowed for the user VO
+  voList = gConfig.getValue( '/Resources/StorageElements/%s/VO' % se, [] )
+  if voList and not vo in voList:
+    continue 
+  
   record = [se]
   for status in fields[1:]:
     value = statusDict.get( status, 'Unknown' )
     record.append( value )
   records.append( record )    
     
-printTable( fields, records, numbering=False ) 
+printTable( fields, records, numbering=False, sortField = 'SE' ) 
 
 DIRAC.exit( 0 )
 

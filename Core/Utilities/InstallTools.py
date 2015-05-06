@@ -54,12 +54,14 @@ If a Master Configuration Server is being installed the following Options can be
 __RCSID__ = "$Id$"
 
 #
+import datetime
 import os, re, glob, stat, time, shutil, socket
 
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
 import DIRAC
 from DIRAC import rootPath
+from DIRAC import gConfig
 from DIRAC import gLogger
 from DIRAC import systemCall
 from DIRAC import S_OK, S_ERROR
@@ -75,6 +77,7 @@ from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRA
                                            NORMAL_USER, TRUSTED_HOST
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -98,6 +101,7 @@ def loadDiracCfg( verbose = False ):
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
   global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
   global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
+  global monitoringClient
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -196,11 +200,15 @@ def loadDiracCfg( verbose = False ):
 
   mysqlSmallMem = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLSmallMem' ), False )
   if verbose and mysqlSmallMem:
-    gLogger.notice( 'Configuring MySQL server for Low Memory uasge' )
+    gLogger.notice( 'Configuring MySQL server for Low Memory usage' )
 
   mysqlLargeMem = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLLargeMem' ), False )
   if verbose and mysqlLargeMem:
-    gLogger.notice( 'Configuring MySQL server for Large Memory uasge' )
+    gLogger.notice( 'Configuring MySQL server for Large Memory usage' )
+
+  monitoringClient = ComponentMonitoringClient()
+  if verbose and monitoringClient:
+    gLogger.notice( 'Client configured for Component Monitoring' )
 
 # FIXME: we probably need a better way to do this
 mysqlRootPwd = ''
@@ -311,6 +319,34 @@ def _addCfgToLocalCS( cfg ):
   else:
     newCfg = cfg
   return newCfg.writeToFile( csFile )
+
+def _removeOptionFromCS( path ):
+  """
+  Delete options from central CS
+  """
+  cfgClient = CSAPI()
+  result = cfgClient.downloadCSData()
+  if not result['OK']:
+    return result
+  result = cfgClient.delOption( path )
+  if not result['OK']:
+    return result
+  result = cfgClient.commit()
+  return result
+
+def _removeSectionFromCS( path ):
+  """
+  Delete setions from central CS
+  """
+  cfgClient = CSAPI()
+  result = cfgClient.downloadCSData()
+  if not result['OK']:
+    return result
+  result = cfgClient.delSection( path )
+  if not result['OK']:
+    return result
+  result = cfgClient.commit()
+  return result
 
 def _getCentralCfg( installCfg ):
   """
@@ -492,6 +528,75 @@ def addOptionToDiracCfg( option, value ):
 
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
+def removeComponentOptionsFromCS( system, component, mySetup = setup ):
+  """
+  Remove the section with Component options from the CS, if possible
+  """
+
+  result = monitoringClient.getInstallations( { 'UnInstallationTime': None, 'Instance': component },
+                                              { 'System': system },
+                                              {}, True )
+  if not result[ 'OK' ]:
+    return result
+  installations = result[ 'Value' ]
+
+  instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
+  if gConfig:
+    compInstance = gConfig.getValue( instanceOption, '' )
+  else:
+    compInstance = localCfg.getOption( instanceOption, '' )
+
+  if len( installations ) == 1:
+    remove = True
+    removeMain = False
+    installation = installations[0]
+    cType = installation[ 'Component' ][ 'Type' ]
+
+    # Is the component a rename of another module?
+    if installation[ 'Instance' ] == installation[ 'Component' ][ 'Module' ]:
+      isRenamed = False
+    else:
+      isRenamed = True
+
+    result = monitoringClient.getInstallations( { 'UnInstallationTime': None },
+                                                  { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
+                                                  {}, True )
+    if not result[ 'OK' ]:
+      return result
+    installations = result[ 'Value' ]
+
+    # If the component is not renamed we keep it in the CS if there are any renamed ones
+    if not isRenamed:
+      if len( installations ) > 1:
+        remove = False
+    # If the component is renamed and is the last one, we remove the entry for the main module as well
+    else:
+      if len( installations ) == 1:
+        removeMain = True
+
+    if remove:
+      result = _removeSectionFromCS( cfgPath( 'Systems', system, compInstance, installation[ 'Component' ][ 'Type' ].title() + 's', component ) )
+      if not result[ 'OK' ]:
+        return result
+
+      if not isRenamed and cType == 'service':
+        result = _removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'URLs', component ) )
+        if not result[ 'OK' ]:
+          return result
+
+    if removeMain:
+      result = _removeSectionFromCS( cfgPath( 'Systems', system, compInstance, installation[ 'Component' ][ 'Type' ].title() + 's', installation[ 'Component' ][ 'Module' ] ) )
+      if not result[ 'OK' ]:
+        return result
+
+      if cType == 'service':
+        result = _removeOptionFromCS( cfgPath( 'Systems', system, compInstance, 'URLs', installation[ 'Component' ][ 'Module' ] ) )
+        if not result[ 'OK' ]:
+          return result
+
+    return S_OK( 'Successfully removed entries from CS' )
+  return S_OK( 'Instances of this component still exist. It won\'t be completely removed' )
+
 def addDefaultOptionsToCS( gConfig, componentType, systemName,
                            component, extensions, mySetup = setup,
                            specialOptions = {}, overwrite = False,
@@ -499,6 +604,9 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   """
   Add the section with the component options to the CS
   """
+  if gConfig:
+    gConfig.forceRefresh()
+
   system = systemName.replace( 'System', '' )
   instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
   if gConfig:
@@ -682,6 +790,32 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, mySetup = setup, overwr
   databaseCfg = result['Value']
   gLogger.notice( 'Adding to CS', '%s/%s' % ( system, dbName ) )
   return _addCfgToCS( databaseCfg )
+
+def removeDatabaseOptionsFromCS( gConfig, system, dbName, mySetup = setup ):
+  """
+  Remove the section with database options from the CS, if possible
+  """
+  global monitoringClient
+
+  result = monitoringClient.installationExists( { 'UnInstallationTime': None },
+                                                { 'System': system, 'Type': 'DB', 'Module': dbName },
+                                                {} )
+  if not result[ 'OK' ]:
+    return result
+  exists = result[ 'Value' ]
+
+  instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
+  if gConfig:
+    compInstance = gConfig.getValue( instanceOption, '' )
+  else:
+    compInstance = localCfg.getOption( instanceOption, '' )
+
+  if not exists:
+    result = _removeSectionFromCS( cfgPath( 'Systems', system, compInstance, 'Databases', dbName ) )
+    if not result[ 'OK' ]:
+      return result
+
+  return S_OK( 'Successfully removed entries from CS' )
 
 def getDatabaseCfg( system, dbName, compInstance ):
   """
@@ -1529,6 +1663,71 @@ exec svlogd .
 
   os.chmod( logRunFile, gDefaultPerms )
 
+def monitorInstallation( componentType, system, component, module = None ):
+  """
+  Register the installation of a component in the ComponentMonitoringDB
+  """
+  global monitoringClient
+
+  if not module:
+    module = component
+
+  cpu = 'Not available'
+  for line in open( '/proc/cpuinfo' ):
+    if line.startswith( 'model name' ):
+      cpu = line.split( ':' )[1][ 0 : 64 ]
+      cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
+
+  hostname = socket.getfqdn()
+  instance = component[ 0 : 32 ]
+
+  result = monitoringClient.installationExists \
+                        ( { 'Instance': instance,
+                            'UnInstallationTime': None },
+                          { 'Type': componentType,
+                            'System': system,
+                            'Module': module },
+                          { 'HostName': hostname,
+                            'CPU': cpu } )
+
+  if not result[ 'OK' ]:
+    return result
+  if result[ 'Value' ]:
+    return S_ERROR \
+    ( 'There is already an installation of ' + component + ' in the database' )
+
+  result = monitoringClient.addInstallation \
+                            ( { 'InstallationTime': datetime.datetime.utcnow(),
+                                'Instance': instance },
+                              { 'Type': componentType,
+                                'System': system,
+                                'Module': module },
+                              { 'HostName': hostname,
+                                'CPU': cpu },
+                              True )
+  return result
+
+def monitorUninstallation( system, component ):
+  """
+  Register the uninstallation of a component in the ComponentMonitoringDB
+  """
+  global monitoringClient
+
+  cpu = 'Not available'
+  for line in open( '/proc/cpuinfo' ):
+    if line.startswith( 'model name' ):
+      cpu = line.split( ':' )[1][0:64]
+      cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
+
+  hostname = socket.getfqdn()
+  instance = component[ 0 : 32 ]
+
+  result = monitoringClient.updateInstallations \
+                        ( { 'Instance': instance, 'UnInstallationTime': None },
+                          { 'System': system },
+                          { 'HostName': hostname, 'CPU': cpu },
+                          { 'UnInstallationTime': datetime.datetime.utcnow() } )
+  return result
 
 def installComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
   """
@@ -1652,6 +1851,19 @@ def setupComponent( componentType, system, component, extensions, componentModul
   resDict = {}
   resDict['ComponentType'] = componentType
   resDict['RunitStatus'] = result['Value']['%s_%s' % ( system, component )]['RunitStatus']
+
+  # Create entry in the static monitoring DB
+  if component == 'ComponentMonitoring':
+    result = monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
+    if not result[ 'OK' ]:
+      return result
+  result = monitorInstallation( componentType,
+                                system,
+                                component,
+                                componentModule )
+  if not result[ 'OK' ]:
+    return result
+
   return S_OK( resDict )
 
 def unsetupComponent( system, component ):
@@ -1666,22 +1878,30 @@ def unsetupComponent( system, component ):
 
   return S_OK()
 
-def uninstallComponent( system, component ):
+def uninstallComponent( system, component, removeLogs ):
   """
   Remove startup and runit directories
   """
-
   result = runsvctrlComponent( system, component, 'd' )
   if not result['OK']:
     pass
 
   result = unsetupComponent( system, component )
 
-  for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
-    try:
-      shutil.rmtree( runitCompDir )
-    except Exception:
-      gLogger.exception()
+  if removeLogs:
+    for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
+      try:
+        shutil.rmtree( runitCompDir )
+      except Exception:
+        gLogger.exception()
+
+  result = removeComponentOptionsFromCS( system, component )
+  if not result [ 'OK' ]:
+    return result
+
+  result = monitorUninstallation( system, component )
+  if not result[ 'OK' ]:
+    return result
 
   return S_OK()
 
@@ -2212,6 +2432,13 @@ def installDatabase( dbName ):
 
   global mysqlRootPwd, mysqlPassword
 
+  # Create entry in the static monitoring DB
+  result = getAvailableDatabases( CSGlobals.getCSExtensions() )
+  if not result[ 'OK' ]:
+    return result
+
+  dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
+
   if not mysqlRootPwd:
     rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )
     return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
@@ -2252,7 +2479,7 @@ def installDatabase( dbName ):
       DIRAC.exit( -1 )
     return result
 
-  perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW"
+  perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,CREATE VIEW, SHOW VIEW,INDEX"
   for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                               mysqlPassword ),
               "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
@@ -2300,7 +2527,34 @@ def installDatabase( dbName ):
       DIRAC.exit( -1 )
     return S_ERROR( error )
 
+  # If everything went well, add the information to the ComponentMonitoring DB
+  # Unless we are installing the monitoringDB
+  if dbName != 'InstalledComponentsDB':
+    result = monitorInstallation( 'DB', dbSystem, dbName )
+    if not result[ 'OK' ]:
+      return result
+
   return S_OK( dbFile.split( '/' )[-4:-2] )
+
+def uninstallDatabase( gConfig, dbName ):
+  """
+  Remove a database from DIRAC
+  """
+  result = getAvailableDatabases( CSGlobals.getCSExtensions() )
+  if not result[ 'OK' ]:
+    return result
+
+  dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
+
+  result = monitorUninstallation( dbSystem, dbName )
+  if not result[ 'OK' ]:
+    return result
+
+  result = removeDatabaseOptionsFromCS( gConfig, dbSystem, dbName )
+  if not result [ 'OK' ]:
+    return result
+
+  return S_OK( 'DB successfully uninstalled' )
 
 def _createMySQLCMDLines( dbFile ):
   """ Creates a list of MYSQL commands to be executed, inspecting the dbFile(s)

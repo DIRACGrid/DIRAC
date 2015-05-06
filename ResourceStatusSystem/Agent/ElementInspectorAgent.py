@@ -203,7 +203,7 @@ class ElementInspectorAgent( AgentModule ):
       
       resEnforce = pep.enforce( element )
       if not resEnforce[ 'OK' ]:
-        self.log.error( resEnforce[ 'Message' ] )
+        self.log.error( 'Failed policy enforcement', resEnforce[ 'Message' ] )
         self.elementsToBeChecked.task_done()
         continue
       

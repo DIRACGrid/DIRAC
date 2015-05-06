@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   BOINCComputingElement.py
 # Author : J.Wu
 ########################################################################
@@ -9,11 +8,15 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import bz2
+import base64
+import tempfile
+
+from urlparse import urlparse
+
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR
-
-import os, bz2, base64,tempfile
-from urlparse import urlparse
 
 CE_NAME = 'BOINC'
 
@@ -56,7 +59,7 @@ class BOINCComputingElement( ComputingElement ):
         logging.basicConfig(format="%(asctime)-15s %(message)s")
         self.BOINCClient = Client(self.wsdl)
       except Exception,x:
-        self.log.error( 'Creation of the soap client failed: %s' % str( x ) )
+        self.log.error( 'Creation of the soap client failed', '%s' % str( x ) )
         pass
 
 
@@ -85,14 +88,20 @@ class BOINCComputingElement( ComputingElement ):
       wrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
 # Wrapper script for executable and proxy
-import os, tempfile, sys, base64, bz2, shutil
+import os
+import tempfile
+import sys
+import base64
+import bz2
+import shutil
+import stat
 try:
   workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
   os.chdir( workingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
   open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
-  os.chmod('proxy',0600)
-  os.chmod('%(executable)s',0700)
+  os.chmod('proxy',stat.S_IRUSR | stat.S_IWUSR)
+  os.chmod('%(executable)s',stat.S_IRWXU)
   os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
 except Exception, x:
   print >> sys.stderr, x
@@ -135,14 +144,15 @@ EOF
 #  print self.BOINCClient
         result = self.BOINCClient.service.submitJob( jobID, wrapperContent,self.ceParameters['Platform'][0], self.ceParameters['MarketPlaceID'] )
       except:
-        self.log.error( 'Could not submit the pilot %s to the BOINC CE %s, communication failed!' % (jobID, self.wsdl ))
+        self.log.error( 'Could not submit the pilot to the BOINC CE', 
+                        'Pilot %s, BOINC CE %s' % (jobID, self.wsdl ))
         break;        
 
       if not result['ok']:
         self.log.warn( 'Didn\'t submit the pilot %s to the BOINC CE %s, the value returned is false!' % (jobID, self.wsdl ))
         break;
 
-      self.log.verbose( 'Submit the pilot %s to the BONIC CE %s' % (jobID, self.wsdl) )
+      self.log.verbose( 'Submit the pilot %s to the BOINC CE %s' % ( jobID, self.wsdl ) )
       diracStamp = "%s_%d" % ( prefix, i  )
       batchIDList.append( jobID )
       stampDict[jobID] = diracStamp
@@ -156,7 +166,7 @@ EOF
 
 #############################################################################
   def getCEStatus( self ):
-    """ Method to get the BONIC CE dynamic jobs information.
+    """ Method to get the BOINC CE dynamic jobs information.
     """
     self.createClient( )
     # Check if the client is ready
@@ -167,12 +177,12 @@ EOF
     try:
       result = self.BOINCClient.service.getDynamicInfo( )
     except:
-      self.log.error( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
+      self.log.error( 'Could not get the BOINC CE dynamic jobs information', self.wsdl )
       return S_ERROR( 'Could not get the BOINC CE %s dynamic jobs information, communication failed!' % self.wsdl )
 
     if not result['ok']:
-      self.log.warn( 'Did not get the BONIC CE %s dynamic jobs information, the value returned is false!' % self.wsdl  )
-      return S_ERROR( 'Did not get the BONIC CE %s dynamic jobs information, the value returned is false!' % self.wsdl )
+      self.log.warn( 'Did not get the BOINC CE %s dynamic jobs information, the value returned is false!' % self.wsdl )
+      return S_ERROR( 'Did not get the BOINC CE %s dynamic jobs information, the value returned is false!' % self.wsdl )
       
      
     self.log.verbose( 'Get the BOINC CE %s dynamic jobs info.' % self.wsdl )
@@ -207,12 +217,12 @@ EOF
     try:  
       result = self.BOINCClient.service.getJobStatus( wsdl_jobIDList )
     except:
-      self.log.error( 'Could not get the status about jobs in the list from the BONIC CE %s, commnication failed!' % self.wsdl )
-      return S_ERROR( 'Could not get the status about jobs in the list from the BONIC CE %s, commnication failed!' % self.wsdl )
+      self.log.error( 'Could not get the status about jobs in the list from the BOINC CE', self.wsdl )
+      return S_ERROR( 'Could not get the status about jobs in the list from the BOINC CE %s, commnication failed!' % self.wsdl )
 
     if not result['ok']:
-      self.log.warn( 'Did not get the status about jobs in the list from the BONIC CE %s, the value returned is false!' % self.wsdl )
-      return S_ERROR( 'Did not get the status about jobs in the list from the BONIC CE %s, the value returned is false!' % self.wsdl )
+      self.log.warn( 'Did not get the status about jobs in the list from the BOINC CE %s, the value returned is false!' % self.wsdl )
+      return S_ERROR( 'Did not get the status about jobs in the list from the BOINC CE %s, the value returned is false!' % self.wsdl )
     self.log.debug( 'Got the status about jobs in list from the BOINC CE %s.' % self.wsdl )
     resultRe = { }
     for jobStatus in result['values'][0]:
@@ -242,13 +252,14 @@ EOF
     try:
       result = self.BOINCClient.service.getJobOutput( tempID )
     except:
-      self.log.error( 'Could not get the outputs of job %s from the BONIC CE %s, commnication failed!' % (jobID, self.wsdl) )
-      return S_ERROR( 'Could not get the outputs of job %s from the BONIC CE %s, commnication failed!' % (jobID, self.wsdl) )
+      self.log.error( 'Could not get the outputs of job from the BOINC CE',
+                      'Job %s, BOINC CE %s' % ( jobID, self.wsdl ) )
+      return S_ERROR( 'Could not get the outputs of job %s from the BOINC CE %s, communication failed!' % ( jobID, self.wsdl ) )
     if not result['ok']:
-      self.log.warn( 'Did not get the outputs of job %s from the BONIC CE %s, the value returned is false!' % (jobID, self.wsdl) )
-      return S_ERROR( 'Did not get the outputs of job %s from the BONIC CE %s, the value returend is false!' % (jobID, self.wsdl) )
+      self.log.warn( 'Did not get the outputs of job %s from the BOINC CE %s, the value returned is false!' % ( jobID, self.wsdl ) )
+      return S_ERROR( 'Did not get the outputs of job %s from the BOINC CE %s, the value returned is false!' % ( jobID, self.wsdl ) )
 
-    self.log.debug( 'Got the outputs of job %s from the BONIC CE %s.' % (jobID, self.wsdl) )
+    self.log.debug( 'Got the outputs of job %s from the BOINC CE %s.' % ( jobID, self.wsdl ) )
 
     strOutfile = base64.decodestring( result['values'][0][0] )
     strErrorfile = base64.decodestring( result['values'][0][1] )
@@ -265,7 +276,7 @@ EOF
       return S_OK( ( strOutfile, strErrorfile ) )
 
 ##############################################################################
-  def _fromFileToStr(self, fileName ):
+  def _fromFileToStr( self, fileName ):
     """ Read a file and return the file content as a string
     """
     strFile = ''
@@ -281,13 +292,13 @@ EOF
           fileHander.close( )
     return strFile
  
- #####################################################################
-  def _fromStrToFile(self, strContent, fileName ):
+#####################################################################
+  def _fromStrToFile( self, strContent, fileName ):
     """ Write a string to a file
     """
     try:
       fileHander = open ( fileName, "w" )
-      strFile = fileHander.write ( strContent ) 
+      _ = fileHander.write ( strContent )
     except:
       self.log.verbose( "To create %s failed!" % fileName )
       pass
@@ -325,7 +336,7 @@ if __name__ == "__main__":
     if not jobStatus['OK']:
       print jobStatus['Message']
     else:
-      for id in jobTestList:
+      for _ in jobTestList:
         print 'The status of the job %s is %s' % (id, jobStatus['Value'][id])
 
   if test_parameter & test_getDynamic:

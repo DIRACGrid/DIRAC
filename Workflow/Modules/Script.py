@@ -2,7 +2,10 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
-import os, sys, re
+import os
+import sys
+import re
+import stat
 import distutils.spawn
 
 from DIRAC.Core.Utilities.Subprocess    import shellCall
@@ -48,7 +51,7 @@ class Script( ModuleBase ):
     """ simple checks
     """
     if not self.executable:
-      raise RuntimeError, 'No executable defined'
+      raise RuntimeError( 'No executable defined' )
 
   def _setCommand( self ):
     """ set the command that will be executed
@@ -57,7 +60,7 @@ class Script( ModuleBase ):
     if os.path.exists( os.path.basename( self.executable ) ):
       self.executable = os.path.basename( self.executable )
       if not os.access( '%s/%s' % ( os.getcwd(), self.executable ), 5 ):
-        os.chmod( '%s/%s' % ( os.getcwd(), self.executable ), 0755 )
+        os.chmod( '%s/%s' % ( os.getcwd(), self.executable ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
       self.command = '%s/%s' % ( os.getcwd(), self.executable )
     elif re.search( '.py$', self.executable ):
       self.command = '%s %s' % ( sys.executable, self.executable )
@@ -80,12 +83,11 @@ class Script( ModuleBase ):
                             bufferLimit = self.bufferLimit )
     if not outputDict['OK']:
       failed = True
-      self.log.error( 'Shell call execution failed:' )
-      self.log.error( outputDict['Message'] )
+      self.log.error( 'Shell call execution failed:', '\n' + str( outputDict['Message'] ) )
     status, stdout, stderr = outputDict['Value'][0:3]
     if status:
       failed = True
-      self.log.error( "Non-zero status %s while executing %s" % ( status, self.command ) )
+      self.log.error( "Non-zero status while executing", "%s: %s" % ( status, self.command ) )
     else:
       self.log.info( "%s execution completed with status %s" % ( self.executable, status ) )
 
@@ -102,7 +104,7 @@ class Script( ModuleBase ):
     self.log.info( "Output written to %s, execution complete." % ( self.applicationLog ) )
 
     if failed:
-      raise RuntimeError, "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status )
+      raise RuntimeError( "'%s' Exited With Status %s" % ( os.path.basename( self.executable ), status ) )
 
 
   def _finalize( self ):

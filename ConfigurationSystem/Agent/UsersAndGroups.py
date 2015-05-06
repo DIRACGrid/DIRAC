@@ -208,10 +208,10 @@ class UsersAndGroups( AgentModule ):
           userName = result[ 'Value' ]
         else:
           self.__adminMsgs[ 'Errors' ].append( "Could not retrieve nickname for DN %s" % user[ 'DN' ] )
-          self.log.error( "Could not get nickname for DN %s" % user[ 'DN' ] )
+          self.log.error( "Could not get nickname for DN", user[ 'DN' ] )
           userName = user[ 'mail' ][:user[ 'mail' ].find( '@' )]
       if not userName:
-        self.log.error( "Empty nickname for DN %s" % user[ 'DN' ] )
+        self.log.error( "Empty nickname for DN", user[ 'DN' ] )
         self.__adminMsgs[ 'Errors' ].append( "Empty nickname for DN %s" % user[ 'DN' ] )
         continue
       self.log.info( " (%02d%%) Found username %s : %s " % ( ( iUPos * 100 / len( usersInVOMS ) ), userName, user[ 'DN' ] ) )
@@ -340,7 +340,7 @@ class UsersAndGroups( AgentModule ):
       result = csapi.modifyUser( user, csUserData, createIfNonExistant = True )
       if not result[ 'OK' ]:
         self.__adminMsgs[ 'Error' ].append( "Cannot modify user %s: %s" % ( user, result[ 'Message' ] ) )
-        self.log.error( "Cannot modify user %s" % user )
+        self.log.error( "Cannot modify user", user )
 
     if usersWithMoreThanOneDN:
       self.__adminMsgs[ 'Info' ].append( "\nUsers with more than one DN:" )

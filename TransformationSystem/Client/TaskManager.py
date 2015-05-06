@@ -4,7 +4,9 @@ __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'TaskManager'
 
-import time, types, os
+import time
+import types
+import os
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -21,14 +23,13 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonito
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
+from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 
-# FIXME: This should disappear!
-from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 
 def _requestName( transID, taskID ):
   return str( transID ).zfill( 8 ) + '_' + str( taskID ).zfill( 8 )
 
-class TaskBase( object ):
+class TaskBase( TransformationAgentsUtilities ):
   ''' The other classes inside here inherits from this one.
   '''
 
@@ -43,6 +44,11 @@ class TaskBase( object ):
       self.log = gLogger.getSubLogger( 'TaskBase' )
     else:
       self.log = logger
+
+    self.pluginLocation = 'DIRAC.TransformationSystem.Client.TaskManagerPlugin'
+
+    self.transInThread = {}
+    self.debug = False
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     return S_ERROR( "Not implemented" )
@@ -81,7 +87,8 @@ class TaskBase( object ):
 
 class RequestTasks( TaskBase ):
 
-  def __init__( self, transClient = None, logger = None, requestClient = None, requestClass = None, ):
+  def __init__( self, transClient = None, logger = None, requestClient = None,
+                requestClass = None, requestValidator = None ):
     """ c'tor
 
         the requestClass is by default Request.
@@ -103,6 +110,12 @@ class RequestTasks( TaskBase ):
       self.requestClass = Request
     else:
       self.requestClass = requestClass
+
+    if not requestValidator:
+      self.requestValidator = RequestValidator()
+    else:
+      self.requestValidator = requestValidator
+
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
@@ -153,7 +166,7 @@ class RequestTasks( TaskBase ):
         oRequest.OwnerDN = ownerDN
         oRequest.OwnerGroup = ownerGroup
 
-      isValid = RequestValidator().validate( oRequest )
+      isValid = self.requestValidator.validate( oRequest )
       if not isValid['OK']:
         return isValid
 
@@ -178,12 +191,12 @@ class RequestTasks( TaskBase ):
         taskDict[taskID]['Success'] = True
         submitted += 1
       else:
-        self.log.error( "Failed to submit task to RMS", res['Message'] )
+        self._logError( "Failed to submit task to RMS", res['Message'] )
         taskDict[taskID]['Success'] = False
         failed += 1
-    self.log.info( 'submitTasks: Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ) )
+    self._logInfo( 'submitTasks: Submitted %d tasks to RMS in %.1f seconds' % ( submitted, time.time() - startTime ) )
     if failed:
-      self.log.warn( 'submitTasks: But at the same time failed to submit %d tasks to RMS.' % ( failed ) )
+      self._logWarn( 'submitTasks: But at the same time failed to submit %d tasks to RMS.' % ( failed ) )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, oRequest ):
@@ -200,11 +213,7 @@ class RequestTasks( TaskBase ):
     for taskDict in taskDicts:
       requestName = _requestName( taskDict['TransformationID'], taskDict['TaskID'] )
 
-      # FIXME: trying to see if it is in the old system
-      reqID = self.__getRequestIDOLDSystem( requestName )
-      # FIXME: and in the new, if it is not in the previous one
-      if not reqID:
-        reqID = self.__getRequestID( requestName )
+      reqID = taskDict['ExternalID']
 
       if reqID:
         requestNameIDs[requestName] = reqID
@@ -212,71 +221,36 @@ class RequestTasks( TaskBase ):
         noTasks.append( requestName )
     return S_OK( {'NoTasks':noTasks, 'TaskNameIDs':requestNameIDs} )
 
-  def __getRequestIDOLDSystem( self, requestName ):
-    """ for the OLD RMS
-    """
-    # FIXME: this should disappear
-    try:
-      res = RequestClient().getRequestInfo( requestName )
-      if res['OK']:
-        return res['Value'][0]
-      else:
-        return 0
-    except RuntimeError:
-      return 0
-
-  def __getRequestID( self, requestName ):
-    """ Getting the info from the new RMS
-    """
-    # FIXME: this should stay
-    res = self.requestClient.getRequestInfo( requestName )
-    if res['OK']:
-      return res['Value'][0]
-    else:
-      return 0
 
   def getSubmittedTaskStatus( self, taskDicts ):
     updateDict = {}
 
     for taskDict in taskDicts:
-      transID = taskDict['TransformationID']
-      taskID = taskDict['TaskID']
       oldStatus = taskDict['ExternalStatus']
-      requestName = _requestName( transID, taskID )
 
-      # FIXME: trying to see if it is in the old system
-      newStatus = self.__getRequestStatusOLDSystem( requestName )
-      # FIXME: and in the new, if it is not in the previous one
+      newStatus = self.__getRequestStatus( taskDict['ExternalID'] )
       if not newStatus['OK']:
-        newStatus = self.__getRequestStatus( requestName )
-
-      if not newStatus['OK']:
-        log = self.log.verbose if 'not exist' in newStatus['Message'] else self.log.warn
-        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s: %s' % ( requestName, newStatus['Message'] ) )
+        log = self._logVerbose if 'not exist' in newStatus['Message'] else self.log.warn
+        log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s' % newStatus['Message'] )
       else:
         newStatus = newStatus['Value']
         if newStatus != oldStatus:
           updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
 
-  def __getRequestStatusOLDSystem( self, requestName ):
-    """ for the OLD RMS
-    """
-    # FIXME: this should disappear
-    try:
-      return RequestClient().getRequestStatus( requestName )
-    except RuntimeError:
-      return S_ERROR( 'RuntimeError' )
-
-  def __getRequestStatus( self, requestName ):
+  def __getRequestStatus( self, requestID ):
     """ Getting the Request status from the new RMS
     """
-    # FIXME: this should stay
-    return self.requestClient.getRequestStatus( requestName )
+    res = self.requestClient.getRequestStatus( requestID )
+    if res['OK']:
+      return res['Value']
+    else:
+      return ''
 
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
     submittedTasks = {}
+    externalIds = {}
     # Don't try and get status of not submitted tasks!
     for fileDict in fileDicts:
       submittedTasks.setdefault( fileDict['TransformationID'], set() ).add( int( fileDict['TaskID'] ) )
@@ -286,6 +260,7 @@ class RequestTasks( TaskBase ):
         return res
       for taskDict in res['Value']:
         taskID = taskDict['TaskID']
+        externalIds[taskID] = taskDict['ExternalID']
         if taskDict['ExternalStatus'] == 'Created':
           submittedTasks[transID].remove( taskID )
 
@@ -293,22 +268,16 @@ class RequestTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = int( fileDict['TaskID'] )
       if taskID in submittedTasks[transID]:
-        requestName = _requestName( transID, taskID )
-        taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
+        requestID = externalIds[taskID]
+        taskFiles.setdefault( requestID, {} )[fileDict['LFN']] = fileDict['Status']
 
     updateDict = {}
-    for requestName in sorted( taskFiles ):
-      lfnDict = taskFiles[requestName]
-
-      # FIXME: trying to see if it is in the old system
-      statusDict = self.__getRequestFileStatusOLDSystem( requestName, lfnDict.keys() )
-      # FIXME: and in the new, if it is not in the previous one
+    for requestID in sorted( taskFiles ):
+      lfnDict = taskFiles[requestID]
+      statusDict = self.__getRequestFileStatus( requestID, lfnDict.keys() )
       if not statusDict['OK']:
-        statusDict = self.__getRequestFileStatus( requestName, lfnDict.keys() )
-
-      if not statusDict['OK']:
-        log = self.log.verbose if 'not exist' in statusDict['Message'] else self.log.warn
-        log( "getSubmittedFileStatus: Failed to get files status for request", '%s: %s' % ( requestName, statusDict['Message'] ) )
+        log = self._logVerbose if 'not exist' in statusDict['Message'] else self.log.warn
+        log( "getSubmittedFileStatus: Failed to get files status for request", '%s' % statusDict['Message'] )
         continue
 
       statusDict = statusDict['Value']
@@ -321,20 +290,14 @@ class RequestTasks( TaskBase ):
           updateDict[lfn] = 'Problematic'
     return S_OK( updateDict )
 
-  def __getRequestFileStatusOLDSystem( self, requestName, lfns ):
-    """ for the OLD RMS
-    """
-    # FIXME: this should disappear
-    try:
-      return RequestClient().getRequestFileStatus( requestName, lfns )
-    except RuntimeError:
-      return S_ERROR( 'RuntimeError' )
-
-  def __getRequestFileStatus( self, requestName, lfns ):
+  def __getRequestFileStatus( self, requestID, lfns ):
     """ Getting the Request status from the new RMS
     """
-    # FIXME: this should stay
-    return self.requestClient.getRequestFileStatus( requestName, lfns )
+    res = self.requestClient.getRequestFileStatus( requestID, lfns )
+    if res['OK']:
+      return res['Value']
+    else:
+      return {}
 
 
 class WorkflowTasks( TaskBase ):
@@ -342,7 +305,7 @@ class WorkflowTasks( TaskBase ):
   """
 
   def __init__( self, transClient = None, logger = None, submissionClient = None, jobMonitoringClient = None,
-                outputDataModule = None, jobClass = None, opsH = None ):
+                outputDataModule = None, jobClass = None, opsH = None, destinationPlugin = None ):
     """ Generates some default objects.
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works:
         VOs can pass in their job class extension, if present
@@ -378,6 +341,12 @@ class WorkflowTasks( TaskBase ):
     else:
       self.outputDataModule = outputDataModule
 
+    if not destinationPlugin:
+      self.destinationPlugin = self.opsH.getValue( 'Transformations/DestinationPlugin', 'BySE' )
+    else:
+      self.destinationPlugin = destinationPlugin
+
+    self.destinationPlugin_o = None
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
@@ -402,34 +371,36 @@ class WorkflowTasks( TaskBase ):
       paramsDict = taskDict[taskNumber]
       site = oJob.workflow.findParameter( 'Site' ).getValue()
       paramsDict['Site'] = site
+      jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
+      paramsDict['JobType'] = jobType
       transID = paramsDict['TransformationID']
-      self.log.verbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
+      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
       oJob.setOwner( owner )
       oJob.setOwnerGroup( ownerGroup )
       oJob.setOwnerDN( ownerDN )
       transGroup = str( transID ).zfill( 8 )
-      self.log.verbose( 'Adding default transformation group of %s' % ( transGroup ) )
+      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ) )
       oJob.setJobGroup( transGroup )
       constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
-      self.log.verbose( 'Setting task name to %s' % constructedName )
+      self._logVerbose( 'Setting task name to %s' % constructedName )
       oJob.setName( constructedName )
       oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
       oJob._setParamValue( 'JOB_ID', str( taskNumber ).zfill( 8 ) )
       inputData = None
 
-      self.log.debug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ) )
+      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ) )
 
       # These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
-        self.log.error( 'Could not get a list a sites' )
+        self._logError( 'Could not get a list a sites' )
         taskDict[taskNumber]['TaskObject'] = ''
         continue
       else:
-        self.log.verbose( 'Setting Site: ', str( sites ) )
+        self._logVerbose( 'Setting Site: ', str( sites ) )
         res = oJob.setDestination( sites )
         if not res['OK']:
-          self.log.error( 'Could not set the site: %s' % res['Message'] )
+          self._logError( 'Could not set the site: %s' % res['Message'] )
           continue
 
       self._handleInputs( oJob, paramsDict )
@@ -445,7 +416,7 @@ class WorkflowTasks( TaskBase ):
                                    'TaskID':taskNumber, 'InputData':inputData},
                                   moduleLocation = self.outputDataModule )
         if not res ['OK']:
-          self.log.error( "Failed to generate output data", res['Message'] )
+          self._logError( "Failed to generate output data", res['Message'] )
           continue
         for name, output in res['Value'].items():
           oJob._addJDLParameter( name, ';'.join( output ) )
@@ -454,7 +425,7 @@ class WorkflowTasks( TaskBase ):
 
   #############################################################################
 
-  def _handleDestination( self, paramsDict, getSitesForSE = None ):
+  def _handleDestination( self, paramsDict ):
     """ Handle Sites and TargetSE in the parameters
     """
 
@@ -466,45 +437,31 @@ class WorkflowTasks( TaskBase ):
     except KeyError:
       pass
 
-    try:
-      seList = ['Unknown']
-      if paramsDict['TargetSE']:
-        seList = fromChar( paramsDict['TargetSE'] )
-    except KeyError:
-      pass
-
-    if not seList or seList == ['Unknown']:
-      return sites
-
-    # from now on we know there is some TargetSE requested
-    if not getSitesForSE:
-      from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-
-    seSites = set()
-    for se in seList:
-      res = getSitesForSE( se )
+    if not self.destinationPlugin_o:
+      res = self.__generatePluginObject( self.destinationPlugin )
       if not res['OK']:
-        self.log.warn( 'Could not get Sites associated to SE', res['Message'] )
-      else:
-        thisSESites = res['Value']
-        if thisSESites:
-          # We make an OR of the possible sites
-          seSites.update( thisSESites )
+        self._logFatal( "Could not generate a destination plugin object" )
+        return res
+      self.destinationPlugin_o = res['Value']
+      self.destinationPlugin_o.setParameters( paramsDict )
+
+    destSites = self.destinationPlugin_o.run()
+    if not destSites:
+      return sites
 
     # Now we need to make the AND with the sites, if defined
     if sites != ['ANY']:
       # Need to get the AND
-      seSites &= set( sites )
+      destSites &= set( sites )
 
-    return list( seSites )
-
+    return list( destSites )
 
   def _handleInputs( self, oJob, paramsDict ):
     """ set job inputs (+ metadata)
     """
     inputData = paramsDict.get( 'InputData' )
     if inputData:
-      self.log.verbose( 'Setting input data to %s' % inputData )
+      self._logVerbose( 'Setting input data to %s' % inputData )
       oJob.setInputData( inputData )
 
   def _handleRest( self, oJob, paramsDict ):
@@ -513,7 +470,7 @@ class WorkflowTasks( TaskBase ):
     for paramName, paramValue in paramsDict.items():
       if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
         if paramValue:
-          self.log.verbose( 'Setting %s to %s' % ( paramName, paramValue ) )
+          self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
           oJob._addJDLParameter( paramName, paramValue )
 
   def _handleHospital( self, oJob ):
@@ -526,6 +483,23 @@ class WorkflowTasks( TaskBase ):
     hospitalCEs = self.opsH.getValue( "Hospital/HospitalCEs", [] )
     if hospitalCEs:
       oJob._addJDLParameter( 'GridCE', hospitalCEs )
+
+
+  def __generatePluginObject( self, plugin ):
+    """ This simply instantiates the TaskManagerPlugin class with the relevant plugin name
+    """
+    try:
+      plugModule = __import__( self.pluginLocation, globals(), locals(), ['TaskManagerPlugin'] )
+    except ImportError, e:
+      self._logException( "Failed to import 'TaskManagerPlugin' %s: %s" % ( plugin, e ) )
+      return S_ERROR()
+    try:
+      plugin_o = getattr( plugModule, 'TaskManagerPlugin' )( '%s' % plugin, operationsHelper = self.opsH )
+      return S_OK( plugin_o )
+    except AttributeError, e:
+      self._logException( "Failed to create %s(): %s." % ( plugin, e ) )
+      return S_ERROR()
+
 
   #############################################################################
 
@@ -555,13 +529,13 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskID]['Success'] = True
         submitted += 1
       else:
-        self.log.error( "Failed to submit task to WMS", res['Message'] )
+        self._logError( "Failed to submit task to WMS", res['Message'] )
         taskDict[taskID]['Success'] = False
         failed += 1
-    self.log.info( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
+    self._logInfo( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
                                                                                             time.time() - startTime ) )
     if failed:
-      self.log.error( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
+      self._logError( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, job ):
@@ -571,12 +545,12 @@ class WorkflowTasks( TaskBase ):
       try:
         oJob = self.jobClass( job )
       except Exception, x:
-        self.log.exception( "Failed to create job object", '', x )
+        self._logException( "Failed to create job object", '', x )
         return S_ERROR( "Failed to create job object" )
     elif isinstance( job, self.jobClass ):
       oJob = job
     else:
-      self.log.error( "No valid job description found" )
+      self._logError( "No valid job description found" )
       return S_ERROR( "No valid job description found" )
     # the WMSClient expects to find the jobDescription.xml file in the local directory to be added to the InputSandbox
     workflowFile = open( "jobDescription.xml", 'w' )
@@ -596,14 +570,14 @@ class WorkflowTasks( TaskBase ):
       requestNames.append( requestName )
     res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
     if not res['OK']:
-      self.log.info( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
+      self._logInfo( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
       return res
     requestNameIDs = {}
     allAccounted = True
     for wmsID in res['Value']:
       res = self.jobMonitoringClient.getJobPrimarySummary( int( wmsID ) )
       if not res['OK']:
-        self.log.warn( "updateTransformationReservedTasks: Failed to get task summary from WMS", res['Message'] )
+        self._logWarn( "updateTransformationReservedTasks: Failed to get task summary from WMS", res['Message'] )
         allAccounted = False
         continue
       jobName = res['Value']['JobName']
@@ -618,7 +592,7 @@ class WorkflowTasks( TaskBase ):
       wmsIDs.append( wmsID )
     res = self.jobMonitoringClient.getJobsStatus( wmsIDs )
     if not res['OK']:
-      self.log.warn( "Failed to get job status from the WMS system" )
+      self._logWarn( "Failed to get job status from the WMS system" )
       return res
     updateDict = {}
     statusDict = res['Value']
@@ -634,11 +608,11 @@ class WorkflowTasks( TaskBase ):
         newStatus = statusDict[wmsID]['Status']
       if oldStatus != newStatus:
         if newStatus == "Removed":
-          self.log.verbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID,
+          self._logVerbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID,
                                                                                                  taskID,
                                                                                                  oldStatus ) )
           newStatus = "Failed"
-        self.log.verbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ) )
+        self._logVerbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ) )
         updateDict.setdefault( newStatus, [] ).append( taskID )
     return S_OK( updateDict )
 
@@ -651,7 +625,7 @@ class WorkflowTasks( TaskBase ):
       taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
     res = self.updateTransformationReservedTasks( fileDicts )
     if not res['OK']:
-      self.log.warn( "Failed to obtain taskIDs for files" )
+      self._logWarn( "Failed to obtain taskIDs for files" )
       return res
     noTasks = res['Value']['NoTasks']
     requestNameIDs = res['Value']['TaskNameIDs']
@@ -662,7 +636,7 @@ class WorkflowTasks( TaskBase ):
           updateDict[lfn] = 'Unused'
     res = self.jobMonitoringClient.getJobsStatus( requestNameIDs.values() )
     if not res['OK']:
-      self.log.warn( "Failed to get job status from the WMS system" )
+      self._logWarn( "Failed to get job status from the WMS system" )
       return res
     statusDict = res['Value']
     for requestName, wmsID in requestNameIDs.items():

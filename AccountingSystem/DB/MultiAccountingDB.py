@@ -6,10 +6,9 @@ from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 
 class MultiAccountingDB( object ):
 
-  def __init__( self, csPath, maxQueueSize = 10, readOnly = False ):
+  def __init__( self, csPath, readOnly = False ):
     self.__csPath = csPath
     self.__readOnly = readOnly
-    self.__maxQueueSize = maxQueueSize
     self.__dbByType = {}
     self.__defaultDB = 'AccountingDB/AccountingDB'
     self.__log = gLogger.getSubLogger( "MultiAccDB" )
@@ -18,7 +17,7 @@ class MultiAccountingDB( object ):
 
   def __generateDBs( self ):
     self.__log.notice( "Creating default AccountingDB..." )
-    self.__allDBs = { self.__defaultDB: AccountingDB( maxQueueSize = self.__maxQueueSize, readOnly = self.__readOnly ) }
+    self.__allDBs = { self.__defaultDB: AccountingDB( readOnly = self.__readOnly ) }
     types = self.__allDBs[ self.__defaultDB ].getRegisteredTypes()
     result = gConfig.getOptionsDict( self.__csPath )
     if not result[ 'OK' ]:
@@ -38,7 +37,7 @@ class MultiAccountingDB( object ):
         if len( fields ) == 1:
           dbName = "Accounting/%s" % dbName
         gLogger.notice( "Creating DB %s" % dbName )
-        self.__allDBs[ dbName ] = AccountingDB( dbName, maxQueueSize = self.__maxQueueSize, readOnly = self.__readOnly )
+        self.__allDBs[ dbName ] = AccountingDB( dbName, readOnly = self.__readOnly )
       self.__dbByType[ acType ] = dbName
 
   def __registerMethods( self ):

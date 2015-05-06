@@ -45,6 +45,9 @@ import re
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from CS
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
 # # from Core
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
@@ -55,7 +58,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
+from DIRAC.DataManagementSystem.private.FTSPlacement import FTSPlacement
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 # # from RMS
@@ -71,6 +74,9 @@ from DIRAC.Resources.Catalog.FileCatalog    import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+
+from DIRAC.ConfigurationSystem.Client.PathFinder        import getServiceSection
+
 
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
@@ -88,10 +94,8 @@ class FTSAgent( AgentModule ):
   Requests and associated FTSJobs (and so FTSFiles) are kept in cache.
 
   """
-  # # fts graph refresh in seconds
-  FTSGRAPH_REFRESH = FTSHistoryView.INTERVAL / 2
-  # # SE R/W access refresh in seconds
-  RW_REFRESH = 600
+  # # fts placement refresh in seconds
+  FTSPLACEMENT_REFRESH = FTSHistoryView.INTERVAL / 2
   # # placeholder for max job per channel
   MAX_ACTIVE_JOBS = 50
   # # min threads
@@ -111,18 +115,20 @@ class FTSAgent( AgentModule ):
 
   # # placeholder for FTS client
   __ftsClient = None
+  # # placeholder for the FTS version
+  __ftsVersion = None
   # # placeholder for request client
   __requestClient = None
   # # placeholder for resources helper
   __resources = None
   # # placeholder for RSS client
   __rssClient = None
-  # # placeholder for FTSGraph
-  __ftsGraph = None
-  # # graph regeneration time delta
-  __ftsGraphValidStamp = None
-  # # r/w access valid stamp
-  __rwAccessValidStamp = None
+  # # placeholder for FTSPlacement
+  __ftsPlacement = None
+
+  # # placement regeneration time delta
+  __ftsPlacementValidStamp = None
+
   # # placeholder for threadPool
   __threadPool = None
   # # update lock
@@ -173,19 +179,19 @@ class FTSAgent( AgentModule ):
     return cls.__seCache
 
   @classmethod
-  def getRequest( cls, reqName ):
+  def getRequest( cls, reqID ):
     """ get Requests systematically and refresh cache """
-    getRequest = cls.requestClient().getRequest( reqName )
+    getRequest = cls.requestClient().getRequest( reqID )
     if not getRequest["OK"]:
-      cls.__reqCache.pop( reqName, None )
+      cls.__reqCache.pop( reqID, None )
       return getRequest
     getRequest = getRequest["Value"]
     if not getRequest:
-      cls.__reqCache.pop( reqName, None )
-      return S_ERROR( "request of name '%s' not found in ReqDB" % reqName )
-    cls.__reqCache[reqName] = getRequest
+      cls.__reqCache.pop( reqID, None )
+      return S_ERROR( "request of id '%s' not found in ReqDB" % reqID )
+    cls.__reqCache[reqID] = getRequest
 
-    return S_OK( cls.__reqCache[reqName] )
+    return S_OK( cls.__reqCache[reqID] )
 
   @classmethod
   def putRequest( cls, request, clearCache = True ):
@@ -197,19 +203,19 @@ class FTSAgent( AgentModule ):
     also finalize request if status == Done
     """
     # # put back request
-    if request.RequestName not in cls.__reqCache:
+    if request.RequestID not in cls.__reqCache:
       return S_OK()
     put = cls.requestClient().putRequest( request )
     if not put["OK"]:
       return put
     # # finalize first if possible
     if request.Status == "Done" and request.JobID:
-      finalizeRequest = cls.requestClient().finalizeRequest( request.RequestName, request.JobID )
+      finalizeRequest = cls.requestClient().finalizeRequest( request.RequestID, request.JobID )
       if not finalizeRequest["OK"]:
         request.Status = "Scheduled"
     # # del request from cache if needed
     if clearCache:
-      cls.__reqCache.pop( request.RequestName, None )
+      cls.__reqCache.pop( request.RequestID, None )
     return S_OK()
 
   @classmethod
@@ -243,42 +249,27 @@ class FTSAgent( AgentModule ):
       self.__threadPool.daemonize()
     return self.__threadPool
 
-  def resetFTSGraph( self ):
-    """ create fts graph """
-    log = gLogger.getSubLogger( "ftsGraph" )
+
+  def resetFTSPlacement( self ):
+    """ create fts Placement """
 
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
-      log.error( "unable to get FTS history:", ftsHistory["Message"] )
+      self.log.error( "unable to get FTS history:", ftsHistory["Message"] )
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
     try:
       self.updateLock().acquire()
-      self.__ftsGraph = FTSGraph( "FTSGraph", ftsHistory, maxActiveJobs = self.MAX_ACTIVE_JOBS )
+      if not self.__ftsPlacement:
+        self.__ftsPlacement = FTSPlacement( csPath = None, ftsHistoryViews = ftsHistory )
+      else:
+        self.__ftsPlacement.refresh( ftsHistoryViews = ftsHistory )
     finally:
       self.updateLock().release()
 
-    log.debug( "FTSSites:", len( self.__ftsGraph.nodes() ) )
-    for i, site in enumerate( self.__ftsGraph.nodes() ):
-      log.debug( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
-    log.debug( "FTSRoutes: %s" % len( self.__ftsGraph.edges() ) )
-    for i, route in enumerate( self.__ftsGraph.edges() ):
-      log.debug( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
-                                                                             route.routeName,
-                                                                             route.ActiveJobs,
-                                                                             route.toNode.MaxActiveJobs ) )
-    # # save graph stamp
-    self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
-
-    # # refresh SE R/W access
-    try:
-      self.updateLock().acquire()
-      self.__ftsGraph.updateRWAccess()
-    finally:
-      self.updateLock().release()
-    # # save rw access stamp
-    self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
+    # # save time stamp
+    self.__ftsPlacementValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
     return S_OK()
 
@@ -291,10 +282,9 @@ class FTSAgent( AgentModule ):
 
     log = self.log.getSubLogger( "initialize" )
 
-    self.FTSGRAPH_REFRESH = self.am_getOption( "FTSGraphValidityPeriod", self.FTSGRAPH_REFRESH )
-    log.info( "FTSGraph validity period       = %s s" % self.FTSGRAPH_REFRESH )
-    self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
-    log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
+    self.FTSPLACEMENT_REFRESH = self.am_getOption( "FTSPlacementValidityPeriod", self.FTSPLACEMENT_REFRESH )
+    log.info( "FTSPlacement validity period       = %s s" % self.FTSPLACEMENT_REFRESH )
+
 
     self.SUBMIT_COMMAND = self.am_getOption( "SubmitCommand", self.SUBMIT_COMMAND )
     log.info( "FTS submit command = %s" % self.SUBMIT_COMMAND )
@@ -319,17 +309,22 @@ class FTSAgent( AgentModule ):
     log.info( "ThreadPool min threads         = ", str( self.MIN_THREADS ) )
     log.info( "ThreadPool max threads         = ", str( self.MAX_THREADS ) )
 
-    log.info( "initialize: creation of FTSGraph..." )
-    createGraph = self.resetFTSGraph()
-    if not createGraph["OK"]:
-      log.error( "initialize: ", createGraph["Message"] )
-      return createGraph
+    self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
+    log.info( "FTSVersion : %s" % self.__ftsVersion )
+    log.info( "initialize: creation of FTSPlacement..." )
+    createPlacement = self.resetFTSPlacement()
+    if not createPlacement["OK"]:
+      log.error( "initialize: %s" % createPlacement["Message"] )
+      return createPlacement
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
     log.info( "will use DataManager proxy" )
+
+    self.registrationProtocols = getRegistrationProtocols()
+
 
     # # gMonitor stuff here
     gMonitor.registerActivity( "RequestsAtt", "Attempted requests executions",
@@ -386,50 +381,41 @@ class FTSAgent( AgentModule ):
   def execute( self ):
     """ one cycle execution """
     log = gLogger.getSubLogger( "execute" )
-    # # reset FTSGraph if expired
+    # # reset FTSPlacement if expired
     now = datetime.datetime.now()
-    if now > self.__ftsGraphValidStamp:
-      log.info( "resetting expired FTS graph..." )
-      resetFTSGraph = self.resetFTSGraph()
-      if not resetFTSGraph["OK"]:
-        log.error( "FTSGraph recreation error: ", resetFTSGraph["Message"] )
-        return resetFTSGraph
-      self.__ftsGraphValidStamp = now + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
-    # # update R/W access in FTSGraph if expired
-    if now > self.__rwAccessValidStamp:
-      log.info( "updating expired R/W access for SEs..." )
-      try:
-        self.updateLock().acquire()
-        self.__ftsGraph.updateRWAccess()
-      finally:
-        self.updateLock().release()
-        self.__rwAccessValidStamp = now + datetime.timedelta( seconds = self.RW_REFRESH )
+    if now > self.__ftsPlacementValidStamp:
+      log.info( "resetting expired FTS placement..." )
+      resetFTSPlacement = self.resetFTSPlacement()
+      if not resetFTSPlacement["OK"]:
+        log.error( "FTSPlacement recreation error: %s" % resetFTSPlacement["Message"] )
+        return resetFTSPlacement
+      self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    requestNames = self.requestClient().getRequestNamesList( [ "Scheduled" ] )
-    if not requestNames["OK"]:
-      log.error( "Unable to read scheduled request names: ", requestNames["Message"] )
-      return requestNames
-    if not requestNames["Value"]:
-      requestNames = self.__reqCache.keys()
+    requestIDs = self.requestClient().getRequestIDsList( [ "Scheduled" ] )
+    if not requestIDs["OK"]:
+      log.error( "unable to read scheduled request ids: %s" % requestIDs["Message"] )
+      return requestIDs
+    if not requestIDs["Value"]:
+      requestIDs = self.__reqCache.keys()
     else:
-      requestNames = [ req[0] for req in requestNames["Value"] ]
-      requestNames = list( set ( requestNames + self.__reqCache.keys() ) )
+      requestIDs = [ req[0] for req in requestIDs["Value"] ]
+      requestIDs = list( set ( requestIDs + self.__reqCache.keys() ) )
 
-    if not requestNames:
-      log.info( "No 'Scheduled' requests to process" )
+    if not requestIDs:
+      log.info( "no 'Scheduled' requests to process" )
       return S_OK()
 
-    log.info( "Found requests to process:", str( len( requestNames ) ) )
-    log.info( " => from internal cache:", str( ( len( self.__reqCache ) ) ) )
-    log.info( " =>   new read from RMS:", str( ( len( requestNames ) - len( self.__reqCache ) ) ) )
+    log.info( "found %s requests to process:" % len( requestIDs ) )
+    log.info( " => from internal cache: %s" % ( len( self.__reqCache ) ) )
+    log.info( " =>   new read from RMS: %s" % ( len( requestIDs ) - len( self.__reqCache ) ) )
 
-    for requestName in requestNames:
-      request = self.getRequest( requestName )
+    for requestID in requestIDs:
+      request = self.getRequest( requestID )
       if not request["OK"]:
-        log.error( "Error getting request", "%s: %s" % ( requestName, request["Message"] ) )
+        log.error( "Error getting request", "%s: %s" % ( requestID, request["Message"] ) )
         continue
       request = request["Value"]
-      sTJId = request.RequestName
+      sTJId = request.RequestID
       while True:
         queue = self.threadPool().generateJobAndQueueIt( self.processRequest,
                                                          args = ( request, ),
@@ -449,7 +435,7 @@ class FTSAgent( AgentModule ):
 
     :param Request request: ReqDB.Request
     """
-    log = self.log.getSubLogger( request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s" % ( request.RequestID, request.RequestName ) )
 
     operation = request.getWaiting()
     if not operation["OK"]:
@@ -474,7 +460,7 @@ class FTSAgent( AgentModule ):
       return ftsJobs
     ftsJobs = [ftsJob for ftsJob in ftsJobs.get( "Value", [] ) if ftsJob.Status not in FTSJob.FINALSTATES]
 
-    # # Use a try: finally: for making sure FTS jobs are put back before returnin
+    # # Use a try: finally: for making sure FTS jobs are put back before returning
     try:
       # # dict keeping info about files to reschedule, submit, fail and register
       ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
@@ -600,7 +586,7 @@ class FTSAgent( AgentModule ):
         log.info( "==> found %s Files to reschedule" % len( toReschedule ) )
         rescheduleFiles = self.__reschedule( request, operation, toReschedule )
         if not rescheduleFiles["OK"]:
-          log.error( rescheduleFiles["Message"] )
+          log.error( 'Failed to reschedule files', rescheduleFiles["Message"] )
 
       # # PHASE SIX - read Waiting ftsFiles and submit new FTSJobs. We get also Failed files to recover them if needed
       ftsFiles = self.ftsClient().getFTSFilesForRequest( request.RequestID, [ "Waiting", "Failed", 'Submitted', 'Canceled' ] )
@@ -632,7 +618,7 @@ class FTSAgent( AgentModule ):
           log.info( "Found %d FTSFiles to submit while request is no longer in Scheduled status (%s)" \
                     % ( len( toSubmit ), request.Status ) )
         else:
-          self.__checkDuplicates( request.RequestName, toSubmit )
+          self.__checkDuplicates( request.RequestID, toSubmit )
           log.info( "==> found %s FTSFiles to submit" % len( toSubmit ) )
           submit = self.__submit( request, operation, toSubmit )
           if not submit["OK"]:
@@ -653,7 +639,7 @@ class FTSAgent( AgentModule ):
       putRequest = self.putRequest( request, clearCache = ( request.Status != "Scheduled" ) )
       if not putRequest["OK"]:
         log.error( "unable to put back request:", putRequest["Message"] )
-     # #  put back jobs in all cases
+      # #  put back jobs in all cases
       if ftsJobs:
         for ftsJob in list( ftsJobs ):
           if not len( ftsJob ):
@@ -667,11 +653,11 @@ class FTSAgent( AgentModule ):
     # This is where one returns from after execution of the finally: block
     return putRequest
 
-  def __checkDuplicates( self, name, toSubmit ):
+  def __checkDuplicates( self, reqID, toSubmit ):
     """ Check in a list of FTSFiles whether there are duplicates
     """
     tupleList = []
-    log = self.log.getSubLogger( "%s/checkDuplicates" % name )
+    log = self.log.getSubLogger( "%s/checkDuplicates" % reqID )
     for ftsFile in list( toSubmit ):
       fTuple = ( ftsFile.LFN, ftsFile.SourceSE, ftsFile.TargetSE )
       if fTuple in tupleList:
@@ -689,7 +675,7 @@ class FTSAgent( AgentModule ):
     :param Operation operation:
     :param list toReschedule: list of FTSFiles
     """
-    log = self.log.getSubLogger( "%s/reschedule" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/reschedule" % ( request.RequestID, request.RequestName ) )
 
     ftsFileIDs = [ftsFile.FileID for ftsFile in toReschedule]
     for opFile in operation:
@@ -755,7 +741,7 @@ class FTSAgent( AgentModule ):
 
     :return: [ FTSJob, FTSJob, ...]
     """
-    log = self.log.getSubLogger( "%s/submit" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/submit" % ( request.RequestID, request.RequestName ) )
 
     bySourceAndTarget = {}
     for ftsFile in toSubmit:
@@ -773,24 +759,16 @@ class FTSAgent( AgentModule ):
 
         log.info( "found %s files to submit from %s to %s" % ( len( ftsFileList ), source, target ) )
 
-        route = self.__ftsGraph.findRoute( source, target )
+        route = self.__ftsPlacement.findRoute( source, target )
         if not route["OK"]:
           log.error( route["Message"] )
           continue
         route = route["Value"]
 
-        sourceRead = route.fromNode.SEs[source]["read"]
-        if not sourceRead:
-          log.warn( "SourceSE %s is banned for reading right now" % source )
-          continue
-
-        targetWrite = route.toNode.SEs[target]["write"]
-        if not targetWrite:
-          log.warn( "TargetSE %s is banned for writing right now" % target )
-          continue
-
-        if route.ActiveJobs > route.toNode.MaxActiveJobs:
-          log.warn( "unable to submit new FTS job, max active jobs reached" )
+        routeValid = self.__ftsPlacement.isRouteValid( route )
+        
+        if not routeValid['OK']:
+          log.error( "Route invalid : %s" % routeValid['Message'] )
           continue
 
         sourceSE = self.getSE( source )
@@ -815,14 +793,14 @@ class FTSAgent( AgentModule ):
           ftsJob.TargetSE = target
           ftsJob.SourceToken = sourceToken["Value"].get( "SpaceToken", "" )
           ftsJob.TargetToken = targetToken["Value"].get( "SpaceToken", "" )
-          ftsJob.FTSServer = route.toNode.FTSServer
+          ftsJob.FTSServer = route.ftsServer
 
           for ftsFile in fileList:
             ftsFile.Attempt += 1
             ftsFile.Error = ""
             ftsJob.addFile( ftsFile )
 
-          submit = ftsJob.submitFTS2( command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
+          submit = ftsJob.submitFTS( self.__ftsVersion, command = self.SUBMIT_COMMAND, pinTime = self.PIN_TIME if seStatus['TapeSE'] else 0 )
           if not submit["OK"]:
             log.error( "unable to submit FTSJob:", submit["Message"] )
             continue
@@ -835,10 +813,12 @@ class FTSAgent( AgentModule ):
             ftsFile.Status = "Submitted"
             ftsFile.Attempt += 1
 
-          # # update graph route
+
+
+          # # update placement route
           try:
             self.updateLock().acquire()
-            route.ActiveJobs += 1
+            self.__ftsPlacement.startTransferOnRoute( route )
           finally:
             self.updateLock().release()
 
@@ -848,19 +828,19 @@ class FTSAgent( AgentModule ):
     return S_OK( ftsJobs )
 
   def __monitorJob( self, request, ftsJob ):
-    """ execute FTSJob.monitorFTS2 for a given :ftsJob:
+    """ execute FTSJob.monitorFTS for a given :ftsJob:
         if ftsJob is in a final state, finalize it
 
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-    log = self.log.getSubLogger( "%s/monitor/%s" % ( request.RequestName, ftsJob.FTSGUID ) )
+    log = self.log.getSubLogger( "req_%s/%s/monitor/%s" % ( request.RequestID, request.RequestName, ftsJob.FTSGUID ) )
     log.info( "FTSJob '%s'@'%s'" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND )
+    monitor = ftsJob.monitorFTS( self.__ftsVersion , command = self.MONITOR_COMMAND )
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
@@ -909,13 +889,16 @@ class FTSAgent( AgentModule ):
     :param Request request: ReqDB.Request instance
     :param FTSJob ftsJob: FTSDB.FTSJob instance
     """
-    log = self.log.getSubLogger( "%s/monitor/%s/finalize" % ( request.RequestName, ftsJob.FTSJobID ) )
+    log = self.log.getSubLogger( "req_%s/%s/monitor/%s/finalize" % ( request.RequestID,
+                                                                     request.RequestName,
+                                                                     ftsJob.FTSJobID ) )
     log.info( "finalizing FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-    monitor = ftsJob.monitorFTS2( command = self.MONITOR_COMMAND, full = True )
+
+    monitor = ftsJob.monitorFTS(self.__ftsVersion, command = self.MONITOR_COMMAND, full = True )
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor
@@ -933,12 +916,12 @@ class FTSAgent( AgentModule ):
     # # send accounting record for this job
     self.__sendAccounting( ftsJob, request.OwnerDN )
 
-    # # update graph - remove this job from graph
-    route = self.__ftsGraph.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
+    # # update placement - remove this job from placement
+    route = self.__ftsPlacement.findRoute( ftsJob.SourceSE, ftsJob.TargetSE )
     if route["OK"]:
       try:
         self.updateLock().acquire()
-        route["Value"].ActiveJobs -= 1
+        self.__ftsPlacement.finishTransferOnRoute( route['Value'] )
       finally:
         self.updateLock().release()
 
@@ -1001,7 +984,7 @@ class FTSAgent( AgentModule ):
     :param Operation transferOp: 'ReplicateAndRegister' operation for this FTSJob
     :param list toRegister: [ FTSDB.FTSFile, ... ] - files that failed to register
     """
-    log = self.log.getSubLogger( "%s/registerFiles" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/registerFiles" % ( request.RequestID, request.RequestName ) )
 
     byTarget = {}
     for ftsFile in toRegister:
@@ -1021,7 +1004,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = returnSingleResult( targetSE.getPfnForProtocol( ftsFile.TargetSURL, protocol = "SRM2", withPort = False ) )
+        pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = self.registrationProtocols ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]
@@ -1071,7 +1054,7 @@ class FTSAgent( AgentModule ):
 
   def __checkReadyReplicas( self, request, operation ):
     """ check ready replicas for transferOperation """
-    log = self.log.getSubLogger( "%s/checkReadyReplicas" % request.RequestName )
+    log = self.log.getSubLogger( "req_%s/%s/checkReadyReplicas" % ( request.RequestID, request.RequestName ) )
 
     targetSESet = set( operation.targetSEList )
 

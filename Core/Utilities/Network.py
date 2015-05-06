@@ -8,6 +8,7 @@
 __RCSID__ = "$Id$"
 
 import socket
+import urlparse
 import struct
 import array
 import os
@@ -44,9 +45,9 @@ def getAllInterfaces():
   maxBytes = max_possible * 32
   mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
   names = array.array( 'B', '\0' * maxBytes )
-  outbytes = struct.unpack( 
+  outbytes = struct.unpack(
                             'iL',
-                            fcntl.ioctl( 
+                            fcntl.ioctl(
                                          mySocket.fileno(),
                                          0x8912, # SIOCGIFCONF
                                          struct.pack( 'iL',
@@ -61,7 +62,7 @@ def getAllInterfaces():
 def getAddressFromInterface( ifName ):
   try:
     mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-    return socket.inet_ntoa( fcntl.ioctl( 
+    return socket.inet_ntoa( fcntl.ioctl(
                                           mySocket.fileno(),
                                           0x8915, # SIOCGIFADDR
                                           struct.pack( '256s', ifName[:15] )
@@ -82,27 +83,13 @@ def getFQDN():
   return sFQDN
 
 def splitURL( url ):
-  protocolEnd = url.find( "://" )
-  if protocolEnd == -1:
-    return S_ERROR( "'%s' URL is malformed" % url )
-  protocol = url[ : protocolEnd ]
-  url = url[ protocolEnd + 3: ]
-  pathStart = url.find( "/" )
-  if pathStart > -1:
-    host = url[ :pathStart ]
-    path = url[ pathStart + 1: ]
-  else:
-    host = url
-    path = "/"
-  if path[-1] == "/":
-    path = path[:-1]
-  portStart = host.find( ":" )
-  if portStart > -1:
-    port = int( host[ portStart + 1: ] )
-    host = host[ :portStart ]
-  else:
-    port = 0
-  return S_OK( ( protocol, host, port, path ) )
+  o = urlparse.urlparse( url )
+  if o.scheme == "":
+    return S_ERROR( "'%s' URL is missing protocol" % url )
+  path = o.path
+  while path[0] == '/':
+    path = path[1:]
+  return S_OK( ( o.scheme, o.hostname or "", o.port or 0, path ) )
 
 def getIPsForHostName( hostName ):
   try:

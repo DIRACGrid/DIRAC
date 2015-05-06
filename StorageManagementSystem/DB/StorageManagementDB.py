@@ -35,8 +35,8 @@ THROTTLING_STEPS = 12
 
 class StorageManagementDB( DB ):
 
-  def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
-    DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB', maxQueueSize )
+  def __init__( self, systemInstance = 'Default' ):
+    DB.__init__( self, 'StorageManagementDB', 'StorageManagement/StorageManagementDB' )
     self.lock = threading.Lock()
     self.TASKPARAMS = ['TaskID', 'Status', 'Source', 'SubmitTime', 'LastUpdate', 'CompleteTime', 'CallBackMethod', 'SourceTaskID']
     self.REPLICAPARAMS = ['ReplicaID', 'Type', 'Status', 'SE', 'LFN', 'PFN', 'Size', 'FileChecksum', 'GUID', 'SubmitTime', 'LastUpdate', 'Reason', 'Links']
@@ -80,7 +80,8 @@ class StorageManagementDB( DB ):
     reqSelect = "SELECT TaskID FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newTaskStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), '__updateTaskStatus', reqSelect, resSelect['Message'] ) )
+      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), '__updateTaskStatus' ), 
+                     "%s. %s" % ( reqSelect, resSelect['Message'] ) )
 
     req = "UPDATE Tasks SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE TaskID IN (%s) AND Status != '%s';" % ( newTaskStatus, intListToString( toUpdate ), newTaskStatus )
     res = self._update( req, connection )
@@ -150,7 +151,8 @@ class StorageManagementDB( DB ):
     reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newReplicaStatus )
     resSelect = self._query( reqSelect, connection )
     if not resSelect['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'updateReplicaStatus', reqSelect, resSelect['Message'] ) )
+      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), 'updateReplicaStatus' ), 
+                     "%s. %s" % ( reqSelect, resSelect['Message'] ) )
 
     req = "UPDATE CacheReplicas SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE ReplicaID IN (%s) AND Status != '%s';" % ( newReplicaStatus, intListToString( toUpdate ), newReplicaStatus )
     res = self._update( req, connection )
@@ -359,7 +361,7 @@ class StorageManagementDB( DB ):
     for taskID, status, source, submitTime, completeTime, callBackMethod, sourceTaskID in res['Value']:
       resDict[sourceTaskID] = {'Status':status, 'Source':source, 'SubmitTime':submitTime, 'CompleteTime':completeTime, 'CallBackMethod':callBackMethod, 'SourceTaskID':sourceTaskID}
     if not resDict:
-      gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task %s did not exist' % taskID )
+      gLogger.error( 'StorageManagementDB.getTaskInfo: The supplied task did not exist', taskID )
       return S_ERROR( 'The supplied task %s did not exist' % taskID )
     return S_OK( resDict )
 
@@ -369,7 +371,8 @@ class StorageManagementDB( DB ):
     req = "SELECT TaskID from Tasks WHERE SourceTaskID=%s;" % int( jobID )
     res = self._query( req )
     if not res['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), '_getTaskIDForJob', req, res['Message'] ) )
+      gLogger.error( "%s.%s_DB: problem retrieving record:" % ( self._caller(), '_getTaskIDForJob' ), 
+                     "%s. %s" % ( req, res['Message'] ) )
       return S_ERROR( 'The supplied JobID does not exist!' )
     taskID = [ row[0] for row in res['Value'] ]
     return S_OK( taskID )

@@ -167,7 +167,7 @@ class AgentModule:
       try:
         self.__codeProperties[ prop[1] ] = getattr( self.__agentModule, prop[0] )
       except Exception:
-        self.log.error( "Missing %s" % prop[0] )
+        self.log.error( "Missing property", prop[0] )
         self.__codeProperties[ prop[1] ] = 'unset'
     self.__codeProperties[ 'DIRACVersion' ] = DIRAC.version
     self.__codeProperties[ 'platform' ] = DIRAC.platform

@@ -34,7 +34,6 @@ def getSiteCEMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
     if not sites['OK']:
@@ -67,7 +66,6 @@ def getCESiteMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
     if not sites['OK']: #gConfig returns S_ERROR for empty sections until version

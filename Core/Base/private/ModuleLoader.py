@@ -57,7 +57,7 @@ class ModuleLoader( object ):
           if not result[ 'OK' ]:
             return result
       #Look what is installed
-      parentModule = False
+      parentModule = None
       for rootModule in getInstalledExtensions():
         if system.find( "System" ) != len( system ) - 6:
           parentImport = "%s.%sSystem.%s" % ( rootModule, system, self.__csSuffix )
@@ -95,7 +95,7 @@ class ModuleLoader( object ):
     while modName and modName[0] == "/":
       modName = modName[1:]
     if modName in self.__modules:
-     return S_OK()
+      return S_OK()
     modList = modName.split( "/" )
     if len( modList ) != 2:
       return S_ERROR( "Can't load %s: Invalid module name" % ( modName ) )

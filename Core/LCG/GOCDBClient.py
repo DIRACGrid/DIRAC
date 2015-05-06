@@ -234,7 +234,7 @@ class GOCDBClient( object ):
       :attr:`entity` : a string. Actual name of the entity.
     """
     if type( granularity ) != str or type( entity ) != str:
-      raise ValueError, "Arguments must be strings."
+      raise ValueError( "Arguments must be strings." )
 
     # GOCDB-PI query
     gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \

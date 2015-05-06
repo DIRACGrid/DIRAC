@@ -1,28 +1,33 @@
 #! /usr/bin/env python
 
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+
+
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Script                     import parseCommandLine
+from DIRAC.Core.Base.Script                     import parseCommandLine, getPositionalArgs
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Core.Utilities.File                  import getSize
 from types                                      import *
 import unittest, time, os, shutil, sys
 
-if len( sys.argv ) < 3:
-  print 'Usage: TestStoragePlugIn.py StorageElement protocol'
+positionalArgs = getPositionalArgs()
+
+if len( positionalArgs ) < 2:
+  print 'Usage: TestStoragePlugIn.py StorageElement plugin'
   sys.exit()
 else:
-  storageElementToTest = sys.argv[1]
-  protocol = sys.argv[2]
+  storageElementToTest = positionalArgs[0]
+  plugin = positionalArgs[1]
 
 class StoragePlugInTestCase( unittest.TestCase ):
   """ Base class for the StoragePlugin test cases
   """
   def setUp( self ):
 
-    factory = StorageFactory()
-    res = factory.getStorages( storageElementToTest, [protocol] )
+    factory = StorageFactory( 'lhcb' )
+    res = factory.getStorages( storageElementToTest, [plugin] )
     self.assert_( res['OK'] )
     storageDetails = res['Value']
     self.storage = storageDetails['StorageObjects'][0]
@@ -97,7 +102,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     # Check the non existant directory operation
     self.assert_( nonExistantDirRes['OK'] )
     self.assert_( nonExistantDirRes['Value']['Failed'].has_key( dummyDir ) )
-    expectedError = 'Directory does not exist'
+    expectedError = 'Path does not exist'
     self.assert_( expectedError in nonExistantDirRes['Value']['Failed'][dummyDir] )
 
   def test_putGetDirectoryMetadata( self ):

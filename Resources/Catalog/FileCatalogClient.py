@@ -7,8 +7,9 @@ __RCSID__ = "$Id$"
 
 from types import ListType, DictType
 import os
-from DIRAC                              import S_OK, S_ERROR
-from DIRAC.Core.Base.Client             import Client
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Base.Client import Client
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 
 class FileCatalogClient(Client):
   """ Client code to the DIRAC File Catalogue
@@ -142,6 +143,25 @@ class FileCatalogClient(Client):
           entryDict[lfn] = detailsDict
     return result      
 
+  def getDirectoryMetadata( self, lfns, rpc='', url='', timeout=120):
+    ''' Get standard directory metadata
+    '''
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
+    result = rpcClient.getDirectoryMetadata( lfns )
+    if not result['OK']:
+      return result
+    # Add some useful fields
+    for path in result['Value']['Successful']:
+      owner = result['Value']['Successful'][path]['Owner']
+      group = result['Value']['Successful'][path]['OwnerGroup']
+      res = getDNForUsername( owner )
+      if result['OK']:
+        result['Value']['Successful'][path]['OwnerDN'] = res['Value'][0]
+      else:
+        result['Value']['Successful'][path]['OwnerDN'] = ''
+      result['Value']['Successful'][path]['OwnerDRole'] = getVOMSAttributeForGroup( group )
+    return result
+
   def removeDirectory(self, lfn, recursive=False, rpc='', url='', timeout=120):
     """ Remove the directory from the File Catalog. The recursive keyword is for the ineterface.
     """
@@ -198,7 +218,7 @@ class FileCatalogClient(Client):
     if not result['OK']:
       return result
     fmeta = result['Value']
-    result = rpcClient.getDirectoryMetadata(directory)
+    result = rpcClient.getDirectoryUserMetadata(directory)
     if not result['OK']:
       return result
     fmeta.update(result['Value'])

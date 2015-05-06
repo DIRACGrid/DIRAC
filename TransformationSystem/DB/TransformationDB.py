@@ -28,7 +28,7 @@ class TransformationDB( DB ):
   """ TransformationDB class
   """
 
-  def __init__( self, dbname = None, dbconfig = None, maxQueueSize = 10, dbIn = None ):
+  def __init__( self, dbname = None, dbconfig = None, dbIn = None ):
     """ The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     """
@@ -39,7 +39,7 @@ class TransformationDB( DB ):
       dbconfig = 'Transformation/TransformationDB'
 
     if not dbIn:
-      DB.__init__( self, dbname, dbconfig, maxQueueSize )
+      DB.__init__( self, dbname, dbconfig )
 
     self.lock = threading.Lock()
     self.filters = ()
@@ -113,7 +113,7 @@ class TransformationDB( DB ):
     self.isTransformationTasksInnoDB = True
     res = self._query( "SELECT Engine FROM INFORMATION_SCHEMA.TABLES WHERE table_name = 'TransformationTasks'" )
     if not res['OK']:
-      raise RuntimeError, res['Message']
+      raise RuntimeError( res['Message'] )
     else:
       engine = res['Value'][0][0]
       if engine.lower() != 'innodb':

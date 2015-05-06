@@ -61,7 +61,7 @@ def extractRequestFromFileId( fileId ):
     #Do nothing, it's already uncompressed
     pass
   else:
-    gLogger.error( "Oops! Stub type '%s' is unknown :P" % compressType )
+    gLogger.error( "Oops! Stub type is unknown", compressType )
     return S_ERROR( "Oops! Stub type '%s' is unknown :P" % compressType )
   plotRequest, stubLength = DEncode.decode( stub )
   if len( stub ) != stubLength:

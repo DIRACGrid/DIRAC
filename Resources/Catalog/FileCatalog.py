@@ -7,7 +7,7 @@ import types, re
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
-from DIRAC.Resources.Utilities.Utils                        import checkArgumentFormat
+from DIRAC.Resources.Utilities                              import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 
 class FileCatalog( object ):
@@ -18,7 +18,7 @@ class FileCatalog( object ):
                 'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
 
   ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata',
-                     'getFileUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
+                     'getDirectoryUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
                      'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
                      'getMetadataSet']
 
@@ -100,7 +100,8 @@ class FileCatalog( object ):
       return res
     fileInfo = res['Value']
     allLfns = fileInfo.keys()
-    parms = parms[1:]
+    parms1 = parms[1:]
+    lfnsFlag = False
     for catalogName, oCatalog, master in self.writeCatalogs:
 
       # Skip if metadata related method on pure File Catalog
@@ -108,32 +109,41 @@ class FileCatalog( object ):
         continue
 
       method = getattr( oCatalog, self.call )
-      res = method( fileInfo, *parms, **kws )
+      if self.call in FileCatalog.write_meta_methods:
+        res = method( *parms, **kws )
+      else:
+        res = method( fileInfo, *parms1, **kws )
 
       if not res['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs
-          gLogger.error( "FileCatalog.w_execute: Failed to execute %s on master catalog %s." % ( self.call, catalogName ), res['Message'] )
+          gLogger.error( "FileCatalog.w_execute: Failed to execute call on master catalog",
+                         "%s on %s: %s" % ( self.call, catalogName, res['Message'] ) )
           return res
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
           failedCatalogs.append( ( catalogName, res['Message'] ) )
       else:
-        for lfn, message in res['Value']['Failed'].items():
-          # Save the error message for the failed operations
-          failed.setdefault( lfn, {} )[catalogName] = message
-          if master:
-            # If this is the master catalog then we should not attempt the operation on other catalogs
-            fileInfo.pop( lfn, None )
-        for lfn, result in res['Value']['Successful'].items():
-          # Save the result return for each file for the successful operations
-          successful.setdefault( lfn, {} )[catalogName] = result
+        if 'Failed' in res['Value']:
+          lfnsFlag = True
+          for lfn, message in res['Value']['Failed'].items():
+            # Save the error message for the failed operations
+            failed.setdefault( lfn, {} )[catalogName] = message
+            if master:
+              # If this is the master catalog then we should not attempt the operation on other catalogs
+              fileInfo.pop( lfn, None )
+          for lfn, result in res['Value']['Successful'].items():
+            # Save the result return for each file for the successful operations
+            successful.setdefault( lfn, {} )[catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
-    for catalogName, errorMessage in failedCatalogs:
-      for lfn in allLfns:
-        failed.setdefault( lfn, {} )[catalogName] = errorMessage
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    if lfnsFlag:
+      for catalogName, errorMessage in failedCatalogs:
+        for lfn in allLfns:
+          failed.setdefault( lfn, {} )[catalogName] = errorMessage
+      resDict = {'Failed':failed, 'Successful':successful}
+      return S_OK( resDict )
+    else:
+      return res
 
   def r_execute( self, *parms, **kws ):
     """ Read method executor.

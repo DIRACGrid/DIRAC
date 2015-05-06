@@ -3,220 +3,21 @@
 
 __RCSID__ = "$Id$"
 
-import stat
 import cmd
 import commands
 import os.path
 import time
 import sys
 from types  import DictType, ListType
-from DIRAC  import gConfig
-from DIRAC.Core.Security import CS
+
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
-
+from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
+from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
-
-class DirectoryListing:
-  
-  def __init__(self):
-    
-    self.entries = []
-  
-  def addFile(self,name,fileDict,repDict,numericid):
-    """ Pretty print of the file ls output
-    """        
-    perm = fileDict['Mode']
-    date = fileDict['ModificationDate']
-    #nlinks = fileDict.get('NumberOfLinks',0)
-    nreplicas = len( repDict )
-    size = fileDict['Size']
-    if fileDict.has_key('Owner'):
-      uname = fileDict['Owner']
-    elif fileDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(fileDict['OwnerDN'])
-      if result['OK']:
-        uname = result['Value']
-      else:
-        uname = 'unknown' 
-    else:
-      uname = 'unknown'
-    if numericid:
-      uname = str(fileDict['UID'])
-    if fileDict.has_key('OwnerGroup'):
-      gname = fileDict['OwnerGroup']
-    elif fileDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
-      if groups: 
-        if len(groups) > 1:
-          gname = groups[0]
-          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
-          if default_group in groups:
-            gname = default_group
-        else:
-          gname = groups[0]
-      else:
-        gname = 'unknown' 
-    else:
-      gname = 'unknown'     
-    if numericid:
-      gname = str(fileDict['GID'])
-    
-    self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
-    
-  def addDirectory(self,name,dirDict,numericid):
-    """ Pretty print of the file ls output
-    """    
-    perm = dirDict['Mode']
-    date = dirDict['ModificationDate']
-    nlinks = 0
-    size = 0
-    if dirDict.has_key('Owner'):
-      uname = dirDict['Owner']
-    elif dirDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(dirDict['OwnerDN'])
-      if result['OK']:
-        uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
-      uname = str(dirDict['UID'])
-    if dirDict.has_key('OwnerGroup'):
-      gname = dirDict['OwnerGroup']
-    elif dirDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
-      if groups:
-        if len(groups) > 1:
-          gname = groups[0]
-          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
-          if default_group in groups:
-            gname = default_group
-        else:
-          gname = groups[0]
-      else:
-        gname = 'unknown'
-    if numericid:
-      gname = str(dirDict['GID'])
-    
-    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )  
-    
-  def addDataset(self,name,datasetDict,numericid):
-    """ Pretty print of the dataset ls output
-    """    
-    perm = datasetDict['Mode']
-    date = datasetDict['ModificationDate']
-    size = datasetDict['TotalSize']
-    if datasetDict.has_key('Owner'):
-      uname = datasetDict['Owner']
-    elif datasetDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(datasetDict['OwnerDN'])
-      if result['OK']:
-        uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
-      uname = str( datasetDict['UID'] )
-      
-    gname = 'unknown'  
-    if datasetDict.has_key('OwnerGroup'):
-      gname = datasetDict['OwnerGroup']
-    if numericid:
-      gname = str( datasetDict ['GID'] )
-    
-    numberOfFiles = datasetDict ['NumberOfFiles']
-        
-    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )   
-    
-  def __getModeString(self,perm):
-    """ Get string representation of the file/directory mode
-    """  
-    
-    pstring = ''
-    if perm & stat.S_IRUSR:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWUSR:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXUSR:
-      pstring += 'x'
-    else:
-      pstring += '-'    
-    if perm & stat.S_IRGRP:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWGRP:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXGRP:
-      pstring += 'x'
-    else:
-      pstring += '-'    
-    if perm & stat.S_IROTH:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWOTH:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXOTH:
-      pstring += 'x'
-    else:
-      pstring += '-'    
-      
-    return pstring  
-  
-  def printListing(self,reverse,timeorder):
-    """
-    """
-    if timeorder:
-      if reverse:
-        self.entries.sort(key=lambda x: x[5]) 
-      else:  
-        self.entries.sort(key=lambda x: x[5],reverse=True) 
-    else:  
-      if reverse:
-        self.entries.sort(key=lambda x: x[6],reverse=True) 
-      else:  
-        self.entries.sort(key=lambda x: x[6]) 
-        
-    # Determine the field widths
-    wList = [0] * 7
-    for d in self.entries:
-      for i in range(7):
-        if len(str(d[i])) > wList[i]:
-          wList[i] = len(str(d[i]))
-        
-    for e in self.entries:
-      print str(e[0]),
-      print str(e[1]).rjust(wList[1]),
-      print str(e[2]).ljust(wList[2]),
-      print str(e[3]).ljust(wList[3]),
-      print str(e[4]).rjust(wList[4]),
-      print str(e[5]).rjust(wList[5]),
-      print str(e[6])
-
-  def addSimpleFile(self,name):
-    """ Add single files to be sorted later"""
-    self.entries.append(name)
-
-  def printOrdered(self):
-    """ print the ordered list"""
-    self.entries.sort()
-    for entry in self.entries:
-      print entry
 
 class FileCatalogClientCLI(cmd.Cmd):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
@@ -1760,11 +1561,11 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(args) >= 2 and (args[1] in self._available_meta_cmd):
       # if the sub command is not in self._meta_cmd_need_lfn
       # Don't need any auto completion
-      if (args[1] in self._meta_cmd_need_lfn):
+      if args[1] in self._meta_cmd_need_lfn:
         # TODO
-        if (len(args) == 2):
+        if len(args) == 2:
           cur_path = ""
-        elif ( len(args) > 2 ):
+        elif len(args) > 2:
           # If the line ends with ' '
           # this means a new parameter begin.
           if line.endswith(' '):
@@ -1849,7 +1650,7 @@ File Catalog Client $Revision: 1.17 $Date:
       dirFlag = not result['Value']['Successful'][path]        
         
     if dirFlag:    
-      result = self.fc.getDirectoryMetadata(path)      
+      result = self.fc.getDirectoryUserMetadata(path)
       if not result['OK']:
         print ("Error: %s" % result['Message']) 
         return
@@ -2037,7 +1838,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage: find [-q] [-D] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
-   
+
     argss = args.split()
     if (len(argss) < 1):
       print self.do_find.__doc__
@@ -2061,7 +1862,11 @@ File Catalog Client $Revision: 1.17 $Date:
       if argss[0][0] == '{':
         metaDict = eval(argss[0])
       else:  
-        metaDict = self.__createQuery(' '.join(argss))
+        result = self.__createQuery(' '.join(argss))
+        if not result['OK']:
+          print "Illegal metaQuery:", ' '.join(argss), result['Message']
+          return
+        metaDict = result['Value']
     else:
       metaDict = {}    
     if verbose: print "Query:",metaDict
@@ -2125,106 +1930,11 @@ File Catalog Client $Revision: 1.17 $Date:
     typeDict = result['Value']['FileMetaFields']
     typeDict.update(result['Value']['DirectoryMetaFields'])
     
-    # Special meta tags    
-    typeDict['SE'] = 'VARCHAR'
-    typeDict['User'] = 'VARCHAR'
-    typeDict['Group'] = 'VARCHAR'
-    typeDict['Path'] = 'VARCHAR'
-  
-    metaDict = {}
-    contMode = False
-    for arg in argss:
-      if not contMode:
-        operation = ''
-        for op in ['>=','<=','>','<','!=','=']:
-          if arg.find(op) != -1:
-            operation = op
-            break
-        if not operation:
-          
-          print "Error: operation is not found in the query"
-          return None
-          
-        name,value = arg.split(operation)
-        if not name in typeDict:
-          print "Error: metadata field %s not defined" % name
-          return None
-        mtype = typeDict[name]
-      else:
-        value += ' ' + arg
-        value = value.replace(contMode,'')
-        contMode = False  
-      
-      if value[0] in ['"', "'"] and value[-1] not in ['"', "'"]:
-        contMode = value[0]
-        continue 
-      
-      if value.find(',') != -1:
-        valueList = [ x.replace("'","").replace('"','') for x in value.split(',') ]
-        mvalue = valueList
-        if mtype[0:3].lower() == 'int':
-          mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
-          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
-        if mtype[0:5].lower() == 'float':
-          mvalue = [ float(x) for x in valueList if not x in ['Missing','Any'] ]
-          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
-        if operation == "=":
-          operation = 'in'
-        if operation == "!=":
-          operation = 'nin'    
-        mvalue = {operation:mvalue}  
-      else:            
-        mvalue = value.replace("'","").replace('"','')
-        if not value in ['Missing','Any']:
-          if mtype[0:3].lower() == 'int':
-            mvalue = int(value)
-          if mtype[0:5].lower() == 'float':
-            mvalue = float(value)               
-        if operation != '=':     
-          mvalue = {operation:mvalue}      
-                                
-      if name in metaDict:
-        if type(metaDict[name]) == DictType:
-          if type(mvalue) == DictType:
-            op,value = mvalue.items()[0]
-            if op in metaDict[name]:
-              if type(metaDict[name][op]) == ListType:
-                if type(value) == ListType:
-                  metaDict[name][op] = uniqueElements(metaDict[name][op] + value)
-                else:
-                  metaDict[name][op] = uniqueElements(metaDict[name][op].append(value))     
-              else:
-                if type(value) == ListType:
-                  metaDict[name][op] = uniqueElements([metaDict[name][op]] + value)
-                else:
-                  metaDict[name][op] = uniqueElements([metaDict[name][op],value])       
-            else:
-              metaDict[name].update(mvalue)
-          else:
-            if type(mvalue) == ListType:
-              metaDict[name].update({'in':mvalue})
-            else:  
-              metaDict[name].update({'=':mvalue})
-        elif type(metaDict[name]) == ListType:   
-          if type(mvalue) == DictType:
-            metaDict[name] = {'in':metaDict[name]}
-            metaDict[name].update(mvalue)
-          elif type(mvalue) == ListType:
-            metaDict[name] = uniqueElements(metaDict[name] + mvalue)
-          else:
-            metaDict[name] = uniqueElements(metaDict[name].append(mvalue))      
-        else:
-          if type(mvalue) == DictType:
-            metaDict[name] = {'=':metaDict[name]}
-            metaDict[name].update(mvalue)
-          elif type(mvalue) == ListType:
-            metaDict[name] = uniqueElements([metaDict[name]] + mvalue)
-          else:
-            metaDict[name] = uniqueElements([metaDict[name],mvalue])          
-      else:            
-        metaDict[name] = mvalue         
-    
-    return metaDict 
+    # Special meta tags
+    typeDict.update( FILE_STANDARD_METAKEYS )
+
+    mq = MetaQuery( typeDict = typeDict )
+    return mq.setMetaQuery( argss )
 
   def do_dataset( self, args ):
     """ A set of dataset manipulation commands
@@ -2274,7 +1984,11 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     datasetName = argss[0]
     metaSelections = ' '.join( argss[1:] )
-    metaDict = self.__createQuery( metaSelections )
+    result = self.__createQuery( metaSelections )
+    if not result['OK']:
+      print "Illegal metaQuery:", metaSelections
+      return
+    metaDict = result['Value']
     datasetName = self.getPath( datasetName )
     
     result = self.fc.addDataset( datasetName, metaDict )
@@ -2486,19 +2200,15 @@ if __name__ == "__main__":
   
   if len(sys.argv) > 2:
     print FileCatalogClientCLI.__doc__
-    sys.exit(2)      
-  elif len(sys.argv) == 2:
-    catype = sys.argv[1]
-    if catype == "LFC":
-      from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
-      cli = FileCatalogClientCLI(LcgFileCatalogProxyClient())
-      print "Starting LFC Proxy FileCatalog client"
-      cli.cmdloop() 
-    elif catype == "DiracFC":
-      from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-      cli = FileCatalogClientCLI(FileCatalogClient())
-      print "Starting ProcDB FileCatalog client"
-      cli.cmdloop()  
-    else:
-      print "Unknown catalog type", catype
+    sys.exit(2)
+
+  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+  catalogs = None
+  if len(sys.argv) == 2:
+    catalogs = [ sys.argv[1] ]
+  fc = FileCatalog( catalogs = catalogs )
+  cli = FileCatalogClientCLI( fc )
+  if catalogs:
+    print "Starting %s file catalog client", catalogs[0]
+  cli.cmdloop()
       

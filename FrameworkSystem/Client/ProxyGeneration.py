@@ -34,7 +34,7 @@ class CLIParams:
       fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
-      gLogger.error( "Can't parse %s time! Is it a HH:MM?" % arg )
+      gLogger.error( "Can't parse time! Is it a HH:MM?", arg )
       return S_ERROR( "Can't parse time argument" )
     return S_OK()
 
@@ -61,7 +61,7 @@ class CLIParams:
     try:
       self.proxyStrength = int( arg )
     except:
-      gLogger.error( "Can't parse %s bits! Is it a number?" % arg )
+      gLogger.error( "Can't parse bits! Is it a number?", '%s' % arg )
       return S_ERROR( "Can't parse strength argument" )
     return S_OK()
 
