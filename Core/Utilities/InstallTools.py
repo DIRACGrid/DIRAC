@@ -2,7 +2,6 @@
 # File :    InstallTools.py
 # Author :  Ricardo Graciani
 ########################################################################
-from _mysql import result
 
 """
 Collection of Tools for installation of DIRAC components:
