@@ -1619,7 +1619,11 @@ def setupSite( scriptCfg, cfg = None ):
     installedDatabases = result['Value']
     for dbName in setupDatabases:
       if dbName not in installedDatabases:
-        extension, system = installDatabase( dbName )['Value']
+        result = installDatabase( dbName )
+        if not result['OK']:
+          gLogger.error( result['Message'] )
+          DIRAC.exit( -1 )
+        extension, system = result['Value']
         gLogger.notice( 'Database %s from %s/%s installed' % ( dbName, extension, system ) )
         result = addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
         if not result['OK']:
