@@ -1,3 +1,8 @@
+[v6r12p37]
+
+*Core
+FIX: InstallTools - force $HOME/.my.cnf to be the only defaults file
+
 [v6r12p36]
 
 *Configuration
