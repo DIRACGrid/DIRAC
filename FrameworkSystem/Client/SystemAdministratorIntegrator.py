@@ -24,7 +24,7 @@ class SystemAdministratorIntegrator:
       self.__hosts = kwargs['hosts']
       del kwargs['hosts']
     else:  
-      result = Registry.getHosts()
+      result = Registry.getTrustedHosts()
       if result['OK']:
         self.__hosts = result['Value']
       else:
