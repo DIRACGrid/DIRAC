@@ -60,7 +60,8 @@ class SandboxStoreHandler( RequestHandler ):
   def __getSandboxPath( self, md5 ):
     """ Generate the sandbox path
     """
-    prefix = self.getCSOption( "SandboxPrefix", "SandBox" )
+    # prefix = self.getCSOption( "SandboxPrefix", "SandBox" )
+    prefix = "SandBox"
     credDict = self.getRemoteCredentials()
     if Properties.JOB_SHARING in credDict[ 'properties' ]:
       idField = credDict[ 'group' ]
