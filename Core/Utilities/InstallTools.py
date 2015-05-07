@@ -1683,7 +1683,7 @@ def _createRunitLog( runitCompDir ):
 
   logConfigFile = os.path.join( logDir, 'config' )
   fd = open( logConfigFile, 'w' )
-  fd.write( 
+  fd.write(
 """s10000000
 n20
 """ )
@@ -1691,7 +1691,7 @@ n20
 
   logRunFile = os.path.join( logDir, 'run' )
   fd = open( logRunFile, 'w' )
-  fd.write( 
+  fd.write(
 """#!/bin/bash
 #
 rcfile=%(bashrc)s
@@ -1810,7 +1810,7 @@ def installComponent( componentType, system, component, extensions, componentMod
 
     runFile = os.path.join( runitCompDir, 'run' )
     fd = open( runFile, 'w' )
-    fd.write( 
+    fd.write(
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -1832,7 +1832,7 @@ exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(co
     if componentType.lower() == 'agent':
       stopFile = os.path.join( runitCompDir, 'control', 't' )
       fd = open( stopFile, 'w' )
-      fd.write( 
+      fd.write(
 """#!/bin/bash
 echo %(controlDir)s/%(system)s/%(component)s/stop_agent
 touch %(controlDir)s/%(system)s/%(component)s/stop_agent
@@ -1976,7 +1976,7 @@ def installPortal():
       _createRunitLog( runitHttpdDir )
       runFile = os.path.join( runitHttpdDir, 'run' )
       fd = open( runFile, 'w' )
-      fd.write( 
+      fd.write(
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -2011,7 +2011,7 @@ exec lighttpdSvc.sh < /dev/null
       _createRunitLog( runitPasterDir )
       runFile = os.path.join( runitPasterDir, 'run' )
       fd = open( runFile, 'w' )
-      fd.write( 
+      fd.write(
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -2163,7 +2163,7 @@ def installNewPortal():
       _createRunitLog( runitWebAppDir )
       runFile = os.path.join( runitWebAppDir, 'run' )
       fd = open( runFile, 'w' )
-      fd.write( 
+      fd.write(
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -2211,8 +2211,8 @@ def fixMySQLScripts( startupScript = mysqlStartupScript ):
         line = 'basedir=%s\n' % os.path.join( rootPath, platform )
       if line.find( 'extra_args=' ) == 0:
         line = 'extra_args="-n"\n'
-      if line.find( '$bindir/mysqld_safe --' ) >= 0 and not ' --no-defaults ' in line:
-        line = line.replace( 'mysqld_safe', 'mysqld_safe --no-defaults' )
+      if line.find( '$bindir/mysqld_safe --' ) >= 0 and not ' --defaults-file' in line:
+        line = line.replace( 'mysqld_safe', 'mysqld_safe --defaults-file=$HOME/.my.cnf' )
       fd.write( line )
     fd.close()
   except Exception:
