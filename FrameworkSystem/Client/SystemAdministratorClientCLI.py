@@ -534,7 +534,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       gLogger.notice( "Database %s from %s/%s installed successfully" % ( database, extension, system ) )
-    elif option in ["service","agent","executor"] :
+    elif option in self.runitComponents:
       if len( argss ) < 2:
         gLogger.notice( self.do_install.__doc__ )
         return
