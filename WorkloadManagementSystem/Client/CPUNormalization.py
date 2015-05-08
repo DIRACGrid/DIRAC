@@ -136,6 +136,8 @@ def getCPUTime( CPUNormalizationFactor ):
   if CPUTime:
     # This is in HS06sseconds
     # We need to convert in real seconds
+    if not CPUNormalizationFactor:
+      CPUNormalizationFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
     CPUTime = CPUTime / int( CPUNormalizationFactor )
   else:
     # now we know that we have to find the CPUTimeLeft by looking in the CS
