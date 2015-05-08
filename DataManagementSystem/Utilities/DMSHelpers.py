@@ -230,5 +230,6 @@ class DMSHelpers():
     sesAtSite = sesAtSite['Value']
     se = set( seList ) & set( sesAtSite )
     if not se:
-      return S_ERROR( 'No SE found at that site' )
+      gLogger.warn( 'No SE found at that site', 'in group %s at %s' % ( seGroup, site ) )
+      return S_OK()
     return S_OK( list( se )[0] )
