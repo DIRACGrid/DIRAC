@@ -211,7 +211,7 @@ class DMSHelpers():
           site = s
           break
     if site is None:
-      return S_ERROR( "Onknown site" )
+      return S_ERROR( "Unknown site" )
     ses = mapping['Value'][self.local].get( site, [] )
     if not ses:
       return S_ERROR( 'No SE at site' )
