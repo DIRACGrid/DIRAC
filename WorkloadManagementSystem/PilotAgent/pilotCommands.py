@@ -337,7 +337,6 @@ class ConfigureBasics( CommandBase ):
   def _getBasicsCFG( self ):
     """  basics (needed!)
     """
-    self.cfg.append( '-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion )
     self.cfg.append( '-S "%s"' % self.pp.setup )
     if self.pp.configServer:
       self.cfg.append( '-C "%s"' % self.pp.configServer )
@@ -349,6 +348,7 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.pp.userGroup )
     if self.pp.userDN:
       self.cfg.append( '-o /AgentJobRequirements/OwnerDN="%s"' % self.pp.userDN )
+    self.cfg.append( '-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion )
 
   def _getSecurityCFG( self ):
     """ Nothing specific by default, but need to know host cert and key location in case they are needed
