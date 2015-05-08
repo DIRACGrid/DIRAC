@@ -383,6 +383,7 @@ class ConfigureSite( CommandBase ):
     self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
     self.cfg.append( '-n "%s"' % self.pp.site )
+    self.cfg.append( '-S "%s"' % self.pp.setup )
 
     if not self.pp.ceName or not self.pp.queueName:
       self.__getCEName()
@@ -620,6 +621,7 @@ class ConfigureArchitecture( CommandBase ):
 
       # real options added here
       localArchitecture = localArchitecture.strip()
+      cfg.append( '-S "%s"' % self.pp.setup )
       cfg.append( '-o /LocalSite/Architecture=%s' % localArchitecture )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
