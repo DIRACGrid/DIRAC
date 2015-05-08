@@ -7,12 +7,12 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 
-__readMethods = ['exists','isFile','getFileSize','getFileMetadata',
+_readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
                'getReplicas','getReplicaStatus','getFileAncestors',
                'getFileDescendents','listDirectory','isDirectory',
                'getDirectoryReplicas','getDirectorySize']
 
-__writeMethods = ['changePathOwner','changePathGroup','changePathMode',
+_writeMethods = ['changePathOwner', 'changePathGroup', 'changePathMode',
                 'addFile','setFileStatus','removeFile','addReplica',
                 'removeReplica','setReplicaStatus','setReplicaHost',
                 'setFileOwner','setFileGroup','setFileMode',
@@ -36,9 +36,9 @@ class SecurityManagerBase( object ):
   def hasAccess(self,opType,paths,credDict):
     
     # Map the method name to Read/Write
-    if opType in __readMethods:
+    if opType in _readMethods:
       opType = 'Read'
-    elif opType in __writeMethods:
+    elif opType in _writeMethods:
       opType = 'Write'
 
     # Check if admin access is granted first

@@ -1,6 +1,7 @@
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getAllGroups, getGroupOption
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager import SecurityManagerBase, __readMethods, __writeMethods
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager import SecurityManagerBase, _readMethods, _writeMethods
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 import os
 
@@ -30,7 +31,6 @@ class VOMSPolicy( SecurityManagerBase ):
 
     self.lastBuild = datetime.datetime.now()
 
-    print 'ET LA ??'
     allGroups = getAllGroups()
     
 
@@ -69,7 +69,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
     vomsGrp = self.__getVomsRole( grpName )
     vomsOtherGrp = self.__getVomsRole( otherGrpName )
-    # The voms group cannot be none
+    # The voms group cannot be None
     return  vomsGrp and vomsOtherGrp and ( vomsGrp == vomsOtherGrp )
 
 
@@ -84,10 +84,25 @@ class VOMSPolicy( SecurityManagerBase ):
 
   def __getFilePermission( self, path, credDict, noExistStrategy = None ):
     """ Checks POSIX permission for a file using the VOMS roles.
+        That is, if the owner group of the file shares the same vomsRole as the requesting user,
+        we check the permission as if the request was done with the real owner group.
+
+        :param path : file path (string)
+        :param credDict : credential of the user
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+        :returns S_OK structure with a dictionary ( Read/Write/Execute : True/False)
     """
 
+
+    if not path:
+      return S_ERROR( 'Empty path' )
+
     # We check what is the group stored in the DB for the given path
-    res = self.db.fileManager.getFileMetadata( path )
+    res = returnSingleResult( self.db.fileManager.getFileMetadata( path ) )
     if not res['OK']:
       # If the error is not due to the directory not existing, we return
       if not self.__isNotExistError( res['Message'] ):
@@ -100,22 +115,40 @@ class VOMSPolicy( SecurityManagerBase ):
         return res
 
       # Finally, follow the strategy
-      return dict.fromkeys( ['Read', 'Write', 'Execute'], noExistStrategy )
+      return S_OK( dict.fromkeys( ['Read', 'Write', 'Execute'], noExistStrategy ) )
 
-    origGrp = 'unknown'
-    res = self.db.ugManager.getGroupName( res['Value']['GID'] )
-    if res['OK']:
-      origGrp = res['Value']
+    #===========================================================================
+    # # This does not seem necessary since we add the OwnerGroup in the query behind the scene
+    # origGrp = 'unknown'
+    # res = self.db.ugManager.getGroupName( res['Value']['GID'] )
+    # if res['OK']:
+    #   origGrp = res['Value']
+    #===========================================================================
+
+    origGrp = res['Value'].get( 'OwnerGroup', 'unknown' )
 
     # If the two group share the same voms role, we do the query like if we were
     # the group stored in the DB
     if self.__shareVomsRole( credDict.get( 'group', 'anon' ), origGrp ):
       credDict = { 'username' : credDict.get( 'username', 'anon' ), 'group' : origGrp}
 
-    return  self.db.fileManager.getPathPermissions( path, credDict )
+    return  returnSingleResult( self.db.fileManager.getPathPermissions( path, credDict ) )
 
 
   def __testPermissionOnFile( self, paths, permission, credDict, noExistStrategy = None ):
+    """ Tests a permission on a list of files
+
+        :param path : list/dict of file paths
+        :param permission : Read/Write/Execute string
+        :param credDict : credential of the user
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+        :returns Successful dictionary with True of False, and Failed.
+    """
+
     successful = {}
     failed = {}
 
@@ -132,7 +165,24 @@ class VOMSPolicy( SecurityManagerBase ):
 
   def __getDirectoryPermission( self, path, credDict, recursive = True, noExistStrategy = None ):
     """ Checks POSIX permission for a directory using the VOMS roles.
+        That is, if the owner group of the directory share the same vomsRole as the requesting user,
+        we check the permission as if the request was done with the real owner group.
+
+        :param path : directory path (string)
+        :param credDict : credential of the user
+        :param recursive : if that directory does not exist, checks the parent one
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+               noExistStrategy makes sense only if recursive is False
+
+        :returns S_OK structure with a dictionary ( Read/Write/Execute : True/False)
     """
+
+    if not path:
+      return S_ERROR( 'Empty path' )
 
     # We check what is the group stored in the DB for the given path
     res = self.db.dtree.getDirectoryParameters( path )
@@ -153,7 +203,7 @@ class VOMSPolicy( SecurityManagerBase ):
                                              recursive = recursive, noExistStrategy = noExistStrategy )
       # From now on, we know we don't run recursive
 
-      # If we have no strategy regarding non existing files, then just return the error
+      # If we have no strategy regarding non existing directories, then just return the error
       if noExistStrategy is None:
         return res
 
@@ -171,29 +221,27 @@ class VOMSPolicy( SecurityManagerBase ):
     return  self.db.dtree.getDirectoryPermissions( path, credDict )
 
 
-#   def __getRecursiveDirectoryPermissions( self, path, credDict ):
-#     """ Get path permissions according to the policy
-#         If the directory does not exist, then we check the parent directory
-#
-#     """
-#
-#     res = self.__getDirectoryPermission( path, credDict )
-#     if res['OK']:
-#       return res
-#
-#     if self.__isNotExistError( res['Message'] ):
-#       if path == '/':
-#         return S_OK( {'Read':True, 'Write':True, 'Execute':True} )
-#
-#       return self.__getRecursiveDirectoryPermissions( os.path.dirname( path ), credDict )
-#
-#     return res
-
-
 
   def __testPermissionOnDirectory( self, paths, permission, credDict, recursive = True, noExistStrategy = None ):
+    """ Tests a permission on a list of directories
+
+        :param path : list/dict of directory paths
+        :param permission : Read/Write/Execute string
+        :param credDict : credential of the user
+        :param recursive : if that directory does not exist, checks the parent one
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+               noExistStrategy makes sense only if recursive is False
+
+        :returns Successful dictionary with True of False, and Failed.
+    """
+
     successful = {}
     failed = {}
+
 
     for dirName in paths:
       res = self.__getDirectoryPermission( dirName, credDict, recursive = recursive, noExistStrategy = noExistStrategy )
@@ -206,14 +254,25 @@ class VOMSPolicy( SecurityManagerBase ):
 
 
   def __testPermissionOnParentDirectory( self, paths, permission, credDict, recursive = True, noExistStrategy = None ):
-    """ For a list of paths, checks whether we have write permissions on the parents
-        directories
+    """ Tests a permission on the parents of a list of directories
+
+        :param path : directory path (string)
+        :param permission : Read/Write/Execute string
+        :param credDict : credential of the user
+        :param recursive : if that directory does not exist, checks the parent one
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+               noExistStrategy makes sense only if recursive is False
+
+        :returns Successful dictionary with True of False, and Failed.
     """
 
-
     parentDirs = {}
-    for dirName in paths:
-      parentDirs.setdefault( os.path.dirname( dirName ), [] ).append( dirName )
+    for path in paths:
+      parentDirs.setdefault( os.path.dirname( path ), [] ).append( path )
 
     res = self.__testPermissionOnDirectory( parentDirs, permission, credDict,
                                             recursive = recursive, noExistStrategy = noExistStrategy )
@@ -227,15 +286,32 @@ class VOMSPolicy( SecurityManagerBase ):
     
     for parentName in parentAllowed:
       isParentAllowed = parentAllowed[parentName]
-      for dirName in parentDirs[parentName]:
-        successful[dirName] = isParentAllowed
+      for path in parentDirs[parentName]:
+        successful[path] = isParentAllowed
 
     return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
 
 
   def __getFileOrDirectoryPermission( self, path, credDict, recursive = False, noExistStrategy = None ):
-    
+    """ Checks POSIX permission for a directory or file using the VOMS roles.
+        That is, if the owner group of the directory or file shares the same vomsRole as the requesting user,
+        we check the permission as if the request was done with the real owner group.
+
+        We first consider the path as a file, and if it does not exist, we consider it as a directory.
+
+        :param path : directory or file path (string)
+        :param credDict : credential of the user
+        :param recursive : if that directory does not exist, checks the parent one
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+               noExistStrategy makes sense only if recursive is False
+
+        :returns S_OK structure with a dictionary ( Read/Write/Execute : True/False)
+    """
     #First consider it as File
     # We want to know whether the file does not exist, so we force noExistStrategy to None
     res = self.__getFilePermission( path, credDict, noExistStrategy = None )
@@ -252,34 +328,47 @@ class VOMSPolicy( SecurityManagerBase ):
     return res
 
 
-  
-  
-  def __policyDefaultModifyDirectory( self, paths, credDict ):
-    """ Test write permission on the directory. If it does not
-        exist, go up the hierarchy
+  def __testPermissionOnFileOrDirectory( self, paths, permission, credDict, recursive = False, noExistStrategy = None ):
+    """ Tests a permission on a list of files or directories.
+
+        :param path : list/dict of directory or files paths
+        :param permission : Read/Write/Execute string
+        :param credDict : credential of the user
+        :param recursive : if that directory does not exist, checks the parent one
+        :param noExistStrategy : If the directory does not exist, we can
+                                 * True : allow the access
+                                 * False : forbid the access
+                                 * None : return the error as is
+
+               noExistStrategy makes sense only if recursive is False
+
+        :returns Successful dictionary with True of False, and Failed.
     """
 
-    return self.__testPermissionOnDirectory( paths, 'Write', credDict,
-                                             recursive = False, noExistStrategy = False )
+    successful = {}
+    failed = {}
+
+    for path in paths:
+      res = self.__getFileOrDirectoryPermission( path, credDict, recursive = recursive, noExistStrategy = noExistStrategy )
+      if not res['OK']:
+        failed[path] = res['Message']
+      else:
+        successful[path] = res['Value'].get( permission, False )
+
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
   
-  def __policyCreateDirectory(self, paths, credDict):
-    """ Tests whether the creation operation on directories
-        is permitted.
-        For that, we need the Write permission on the parent directory
-
-        :param paths : list/dict of path
-        :credDict : credential of the user
-    """
-
-    return self.__testPermissionOnParentDirectory( paths, 'Write', credDict, recursive = True )
+  
 
   def __policyRemoveDirectory( self, paths, credDict ):
     """ Tests whether the remove operation on directories
         is permitted.
         Removal of non existing directory is always allowed.
+        For existing directories, we must have the write permission
+        on the parent
 
         :param paths : list/dict of path
         :credDict : credential of the user
+        :returns Successful with True of False, and Failed.
     """
 
     successful = {}
@@ -291,15 +380,11 @@ class VOMSPolicy( SecurityManagerBase ):
 
     nonExistingDirectories = set( path for path in res['Value']['Successful'] if not res['Value']['Successful'][path] )
 
+    existingDirs = set( paths ) - set( nonExistingDirectories )
     for dirName in nonExistingDirectories:
       successful[dirName] = True
-      try:
-        paths.remove( dirName )
-      except Exception, _e:
-        print _e
-        pass
       
-    res = self.__testPermissionOnParentDirectory( paths, 'Write', credDict, recursive = False )
+    res = self.__testPermissionOnParentDirectory( existingDirs, 'Write', credDict, recursive = False )
     if not res['OK']:
       return res
     
@@ -310,18 +395,146 @@ class VOMSPolicy( SecurityManagerBase ):
 
 
 
+  def __policyRemoveFile( self, paths, credDict ):
+    """ Tests whether the remove operation on files
+        is permitted.
+        Removal of non existing file is always allowed.
+        For existing files, we must have the write permission
+        on the parent
 
-# __readMethods = ['exists','isFile','getFileSize','getFileMetadata',
-#                'getReplicas','getReplicaStatus','getFileAncestors',
-#                'getFileDescendents','listDirectory','isDirectory',
-#                'getDirectoryReplicas','getDirectorySize']
+        :param paths : list/dict of path
+        :credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+
+    successful = {}
+
+    # We allow removal of all the non existing files
+    res = self.db.fileManager.exists( paths )
+    if not res['OK']:
+      return res
+
+    nonExistingFiles = set( path for path in res['Value']['Successful'] if not res['Value']['Successful'][path] )
+
+    existingFiles = set( paths ) - set( nonExistingFiles )
+    for dirName in nonExistingFiles:
+      successful[dirName] = True
+
+    res = self.__testPermissionOnParentDirectory( existingFiles, 'Write', credDict, recursive = False )
+    if not res['OK']:
+      return res
+
+    failed = res['Value']['Failed']
+    successful.update( res['Value']['Successful'] )
+
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
+
+
+
+
+  def __policyListDirectory( self, paths, credDict ):
+    """ Test Read permission on the directory.
+        If the directory does not exist, we do not allow.
+
+        :param paths : list/dict of path
+        :credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+
+    return self.__testPermissionOnDirectory( paths, 'Read', credDict,
+                                                   recursive = True )
+
+
+
+  def __policyReadForFileAndDirectory( self, paths, credDict ):
+    """ Testing the read bit on the parent directory,
+        be it a file or a directory.
+        So it reads permissions from a directory
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+
+    return self.__testPermissionOnParentDirectory( paths, 'Read', credDict,
+                                                   recursive = True )
+    
+  def __policyWriteForFileAndDirectory( self, paths, credDict ):
+    """ Testing the read bit on the parent directory (recursively),
+        be it a file or a directory.
+        So it reads permissions from a directory
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+
+    return self.__testPermissionOnParentDirectory( paths, 'Write', credDict,
+                                                   recursive = True )
+
+    
+  def __policyReadForReplica( self, paths, credDict ):
+    """ Test Read permission on the file associated to the replica.
+        If the file does not exist, we allow.
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+    return self.__testPermissionOnFile( paths, 'Read', credDict,
+                                               noExistStrategy = True )
+
+  def __policyWriteForReplica( self, paths, credDict ):
+    """ Test Write permission on the file associated to the replica.
+        If the file does not exist, we allow.
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+    return self.__testPermissionOnFile( paths, 'Write', credDict,
+                                               noExistStrategy = True )
+
+  def __policyModifyFile( self, paths, credDict ):
+    """ Test Write permission on the file.
+        If the file does not exist, we allow.
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+    return self.__testPermissionOnFile( paths, 'Write', credDict,
+                                               noExistStrategy = True )
+
+
+
+  def __policyChangePathMode( self, paths, credDict ):
+    """ Test Write permission on the directory/file.
+        If the directory/file does not exist, we allow.
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+
+    return self.__testPermissionOnFileOrDirectory( paths, 'Write', credDict,
+                                                   recursive = False, noExistStrategy = True )
+
+
+  def __policyDeny( self, paths, credDict ):
+    """ Denies the access to all the paths given
+
+        :param paths : list/dict of path
+        :param credDict : credential of the user
+        :returns Successful with True of False, and Failed.
+    """
+
+    return S_OK( {'Successful': dict.fromkeys( paths, False ), 'Failed' : {}} )
+
+
 # 
-# __writeMethods = ['changePathOwner','changePathGroup','changePathMode',
-#                 'addFile','setFileStatus','removeFile','addReplica',
-#                 'removeReplica','setReplicaStatus','setReplicaHost',
-#                 'setFileOwner','setFileGroup','setFileMode',
-#                 'addFileAncestors',
-#                 'setMetadata','__removeMetadata']
+# __writeMethods = ['setMetadata','__removeMetadata']
+
 
   def hasAccess( self, opType, paths, credDict ):
 
@@ -329,32 +542,57 @@ class VOMSPolicy( SecurityManagerBase ):
     result = self.hasAdminAccess( credDict )
     if not result['OK']:
       return result
+
     if result['Value']:
-      # We are admins, allow everything
-      permissions = {}
-      for path in paths:
-        permissions[path] = True
-      return S_OK( {'Successful':permissions, 'Failed':{}} )
-
-    successful = {}
+      # We are admin, allow everything
+      return S_OK( {'Successful':dict.fromkeys( paths, True ), 'Failed':{}} )
 
 
-#     if not opType.lower() in ['read', 'write', 'execute']:
-#       return S_ERROR( "Operation type not known" )
+    if opType not in _readMethods + _writeMethods:
+      return S_ERROR( "Operation type not known %s" % opType )
 
 
-    if self.db.globalReadAccess and ( opType in __readMethods ):
-      for path in paths:
-        successful[path] = True
-      resDict = {'Successful':successful, 'Failed':{}}
-      return S_OK( resDict )
+    if self.db.globalReadAccess and ( opType in _readMethods ):
+      return S_OK( {'Successful':dict.fromkeys( paths, True ), 'Failed':{}} )
 
     policyToExecute = None
 
     if opType == 'removeDirectory':
       policyToExecute = self.__policyRemoveDirectory
-    elif opType == 'createDirectory':
-      policyToExecute = self.__policyCreateDirectory
+
+    elif opType in ['createDirectory', 'addFile']:
+      policyToExecute = self.__policyWriteForFileAndDirectory
+
+    elif opType == 'removeFile':
+      policyToExecute = self.__policyRemoveFile
+
+    elif opType in ['addReplica', 'removeReplica', 'setReplicaStatus', 'setReplicaHost']:
+      policyToExecute = self.__policyWriteForReplica
+
+    elif opType == 'listDirectory':
+      policyToExecute = self.__policyListDirectory
+
+    elif opType in ['isDirectory', 'getDirectoryReplicas', 'getDirectorySize',
+                     'isFile', 'getFileSize', 'getFileMetadata', 'exists',
+                     'getFileAncestors', 'getFileDescendents']:
+      policyToExecute = self.__policyReadForFileAndDirectory
+
+    elif opType in ['getReplicas', 'getReplicaStatus']:
+      policyToExecute = self.__policyReadForReplica
+
+
+    elif opType in ['setFileMode', 'addFileAncestors', 'setFileStatus']:
+      policyToExecute = self.__policyModifyFile
+      
+    # Only admin can do that, and if we are here, we are not admin
+    elif opType in ['changePathOwner', 'changePathGroup', 'setFileOwner', 'setFileGroup']:
+      policyToExecute = self.__policyDeny
+
+    elif opType == 'changePathMode':
+      policyToExecute = self.__policyChangePathMode
+
+    if not policyToExecute:
+      return S_ERROR( "No policy matching operation %s" % opType )
 
     res = policyToExecute( paths, credDict )
 
