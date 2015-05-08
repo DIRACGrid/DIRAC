@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ The SystemAdministratorIntegrator is a class integrating access to all the
     SystemAdministrator services configured in the system
 """
@@ -15,7 +11,7 @@ from DIRAC import S_OK
 
 SYSADMIN_PORT = 9162
 
-class SystemAdministratorIntegrator:
+class SystemAdministratorIntegrator( object ):
 
   def __init__( self, **kwargs ):
     """ Constructor  
