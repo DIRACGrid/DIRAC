@@ -15,7 +15,7 @@
 """
 __RCSID__ = "$Id$"
 
-import re, os, sys, time, shutil, types, tempfile, glob, tarfile, urllib
+import re, os, sys, time, shutil, tempfile, glob, tarfile, urllib
 import DIRAC
 
 from DIRAC.Core.Base.API                                 import API
@@ -84,12 +84,12 @@ class Dirac( API ):
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
       prefix = 'LFN'
-    if type( fnList ) in types.StringTypes:
+    if isinstance( fnList, str ):
       otherPrefix = 'LFN:' if prefix == 'PFN' else 'PFN:'
       if otherPrefix in fnList:
         return self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix )
       return S_OK( fnList.replace( '%s:' % prefix, '' ) )
-    elif type( fnList ) == types.ListType:
+    elif isinstance( fnList, list ):
       if single:
         return self._errorReport( 'Expected single %s string' % prefix )
       try:
@@ -101,11 +101,11 @@ class Dirac( API ):
 
   def __checkJobArgument( self, jobID, multiple = False ):
     try:
-      if type( jobID ) in types.StringTypes + ( types.IntType, types.LongType ):
+      if isinstance( jobID, ( str, int, long ) ):
         jobID = int( jobID )
         if multiple:
           jobID = [jobID]
-      elif type( jobID ) in ( types.ListType, types.DictType ):
+      elif isinstance( jobID, ( list, dict ) ):
         if multiple:
           jobID = [int( job ) for job in jobID]
         else:
@@ -261,7 +261,7 @@ class Dirac( API ):
       return S_OK()
     if jobIDs == None:
       jobIDs = []
-    if not type( jobIDs ) == types.ListType:
+    if not isinstance( jobIDs, list ):
       return self._errorReport( 'The jobIDs must be a list of (strings or ints).' )
     self.jobRepo.resetRepository( jobIDs = jobIDs )
     return S_OK()
@@ -298,7 +298,7 @@ class Dirac( API ):
     cleanPath = ''
     jobDescription = ''
 
-    if type( job ) in types.StringTypes:
+    if isinstance( job, ( str, unicode ) ):
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
         jdl = job
@@ -377,7 +377,7 @@ class Dirac( API ):
           self.log.error( 'Job submission failure', result['Message'] )
         elif self.jobRepo:
           jobIDList = result['Value']
-          if type( jobIDList ) != types.ListType:
+          if not isinstance( jobIDList, list ):
             jobIDList = [ jobIDList ]
           for jobID in jobIDList:
             result = self.jobRepo.addJob( jobID, 'Submitted' )
@@ -816,7 +816,7 @@ class Dirac( API ):
     self.log.verbose( parameters )
     inputData = parameters['Value'].get( 'InputData' )
     if inputData:
-      if type( inputData ) == type( " " ):
+      if isinstance( inputData, str ):
         inputData = [inputData]
 
     jobParamsDict = {'Job':parameters['Value']}
@@ -890,7 +890,7 @@ class Dirac( API ):
 
     sandbox = parameters['Value'].get( 'InputSandbox' )
     if sandbox:
-      if type( sandbox ) in types.StringTypes:
+      if isinstance( sandbox, ( str, unicode ) ):
         sandbox = [sandbox]
       for isFile in sandbox:
         if disableCopies:
@@ -935,7 +935,7 @@ class Dirac( API ):
     variableList = parameters['Value'].get( 'ExecutionEnvironment' )
     if variableList:
       self.log.verbose( 'Adding variables to execution environment' )
-      if type( variableList ) == type( " " ):
+      if isinstance( variableList, ( str, unicode ) ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
@@ -983,7 +983,7 @@ class Dirac( API ):
       sandbox = parameters['Value'].get( 'OutputSandbox' )
 
     if sandbox:
-      if type( sandbox ) in types.StringTypes:
+      if isinstance( sandbox, ( str, unicode ) ):
         sandbox = [sandbox]
       for i in sandbox:
         if disableCopies:
@@ -1011,14 +1011,14 @@ class Dirac( API ):
     """Internal callback function to return standard output when running locally.
     """
     if fd:
-      if type( fd ) == types.IntType:
+      if isinstance( fd, ( int, long ) ):
         if fd == 0:
           print >> sys.stdout, message
         elif fd == 1:
           print >> sys.stderr, message
         else:
           print message
-      elif type( fd ) == types.FileType:
+      elif isinstance( fd, file ):
         print >> fd, message
     else:
       print message
@@ -1164,7 +1164,7 @@ class Dirac( API ):
       return ret
     lfns = ret['Value']
 
-    if not type( maxFilesPerJob ) == types.IntType:
+    if not isinstance( maxFilesPerJob, ( int, long ) ):
       try:
         maxFilesPerJob = int( maxFilesPerJob )
       except Exception, x:
@@ -1348,9 +1348,9 @@ class Dirac( API ):
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not type( sourceSE ) in types.StringTypes:
+    if not isinstance( sourceSE, ( str, unicode ) ):
       return self._errorReport( 'Expected string for source SE name' )
-    if not type( localCache ) == type( " " ):
+    if not isinstance( localCache, ( str, unicode ) ):
       return self._errorReport( 'Expected string for path to local cache' )
 
     dm = DataManager()
@@ -1391,7 +1391,7 @@ class Dirac( API ):
     if not sourceSE:
       sourceSE = ''
 
-    if not type( sourceSE ) == type( " " ):
+    if not isinstance( sourceSE, ( str, unicode ) ):
       return self._errorReport( 'Expected string for source SE name' )
 
     dm = DataManager()
@@ -1973,9 +1973,9 @@ class Dirac( API ):
       return S_ERROR( 'No output data files found to download' )
 
     if outputFiles:
-      if type( outputFiles ) == type( " " ):
+      if isinstance( outputFiles, ( str, unicode ) ):
         outputFiles = [os.path.basename( outputFiles )]
-      elif type( outputFiles ) == type( [] ):
+      elif isinstance( outputFiles, list ):
         try:
           outputFiles = [os.path.basename( fname ) for fname in outputFiles]
         except Exception, x:
@@ -2266,7 +2266,7 @@ class Dirac( API ):
     """Internal function.  Writes a python object to a specified file path.
     """
     fopen = open( fileName, 'w' )
-    if not type( pObject ) == type( " " ):
+    if not isinstance( pObject, ( str, unicode ) ):
       fopen.write( '%s\n' % self.pPrint.pformat( pObject ) )
     else:
       fopen.write( pObject )
@@ -2494,7 +2494,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    if not type( system ) == type( " " ) and type( service ) == type( " " ):
+    if not isinstance( system, ( str, unicode ) ) and isinstance( service, ( str, unicode ) ):
       return self._errorReport( 'Expected string for system and service to ping()' )
     result = S_ERROR()
     try:
