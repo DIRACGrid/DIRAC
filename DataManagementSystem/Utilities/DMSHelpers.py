@@ -14,7 +14,7 @@ DOWNLOAD = 3
 
 def resolveSEGroup( seGroupList ):
   seList = []
-  if type( seGroupList ) != type( [] ):
+  if isinstance( seGroupList, basestring ):
     seGroupList = [seGroupList]
   for se in seGroupList:
     seConfig = gConfig.getValue( '/Resources/StorageElementGroups/%s' % se, se )
@@ -217,7 +217,7 @@ class DMSHelpers():
     return S_OK( sorted( ses ) )
 
   def getSEInGroupAtSite( self, seGroup, site ):
-    if type( seGroup ) == type( '' ):
+    if isinstance( seGroup, basestring ):
       seList = gConfig.getValue( '/Resources/StorageElementGroups/%s' % seGroup, [] )
     else:
       seList = list( seGroup )
