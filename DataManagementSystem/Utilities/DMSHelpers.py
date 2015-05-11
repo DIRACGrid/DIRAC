@@ -120,23 +120,18 @@ class DMSHelpers():
 
 
   def isSEFailover( self, storageElement ):
-    self.getSiteSEMapping()
-    if storageElement not in self.storageElementSet:
-      return False
     seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
     return storageElement in resolveSEGroup( seList )
 
-  def isSEForJobs( self, storageElement ):
-    self.getSiteSEMapping()
-    if storageElement not in self.storageElementSet:
-      return False
+  def isSEForJobs( self, storageElement, checkSE = True ):
+    if checkSE:
+      self.getSiteSEMapping()
+      if storageElement not in self.storageElementSet:
+        return False
     seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsNotToBeUsedForJobs', [] ) )
     return storageElement not in resolveSEGroup( seList )
 
   def isSEArchive( self, storageElement ):
-    self.getSiteSEMapping()
-    if storageElement not in self.storageElementSet:
-      return False
     seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
     return storageElement in resolveSEGroup( seList )
 
