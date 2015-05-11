@@ -142,14 +142,16 @@ class DMSHelpers():
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
     if connectionLevel in None:
-      connectionLevel = DOWNLOAD
-    if connectionLevel == LOCAL:
+      connectionLevel = 'DOWNLOAD'
+    if isinstance( connectionLevel, basestring ):
+      connectionLevel = connectionLevel.upper()
+    if connectionLevel == 'LOCAL':
       return self._getLocalSitesForSE( storageElement )
-    if connectionLevel == PROTOCOL:
+    if connectionLevel == 'PROTOCOL':
       return self.getProtocolSitesForSE( storageElement )
-    if connectionLevel == DOWNLOAD:
+    if connectionLevel == 'DOWNLOAD':
       return self.getDownloadSitesForSE( storageElement )
-    return S_ERROR( "Unknown connection level, connectionLevel" )
+    return S_ERROR( "Unknown connection level" )
 
   def getLocalSiteForSE( self, se ):
     sites = self._getLocalSitesForSE( se )
