@@ -2476,6 +2476,8 @@ class Dirac( API ):
 
   #############################################################################
   def ping( self, system, service, printOutput = False ):
+    return self.pingService( system, service, printOutput = printOutput )
+  def pingService( self, system, service, printOutput = False ):
     """The ping function will attempt to return standard information from a system
        service if this is available.  If the ping() command is unsuccessful it could
        indicate a period of service unavailability.
