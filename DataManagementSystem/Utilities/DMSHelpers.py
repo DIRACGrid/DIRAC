@@ -39,9 +39,6 @@ def resolveSEGroup( seGroupList ):
 class DMSHelpers():
 
   def __init__( self ):
-    self.local = LOCAL
-    self.protocol = PROTOCOL
-    self.download = DOWNLOAD
     self.siteSEMapping = {}
     self.storageElementSet = set()
     self.siteSet = set()
@@ -68,7 +65,7 @@ class DMSHelpers():
     # Get a list of sites and their local SEs
     siteSet = set()
     storageElementSet = set()
-    siteSEMapping[self.local] = {}
+    siteSEMapping[LOCAL] = {}
     for grid in gridTypes:
       result = gConfig.getSections( '/Resources/Sites/%s' % grid )
       if not result['OK']:
@@ -79,13 +76,13 @@ class DMSHelpers():
       for site in sites:
         candidateSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, site ), [] )
         if candidateSEs:
-          siteSEMapping[self.local].setdefault( site, set() ).update( candidateSEs )
+          siteSEMapping[LOCAL].setdefault( site, set() ).update( candidateSEs )
           storageElementSet.update( candidateSEs )
         else:
           gLogger.debug( 'No SEs defined for site %s' % site )
 
     # Add Sites from the SiteSEMappingByProtocol in the CS
-    siteSEMapping[self.protocol] = {}
+    siteSEMapping[PROTOCOL] = {}
     cfgLocalSEPath = cfgPath( 'SiteSEMappingByProtocol' )
     result = self.__opsHelper.getOptionsDict( cfgLocalSEPath )
     if result['OK']:
@@ -96,11 +93,11 @@ class DMSHelpers():
         # If a candidate is a site, then all local SEs are eligible
         for candidate in ses & siteSet:
           ses.remove( candidate )
-          ses.update( siteSEMapping[self.local][candidate] )
-        siteSEMapping[self.protocol].setdefault( site, set() ).update( ses )
+          ses.update( siteSEMapping[LOCAL][candidate] )
+        siteSEMapping[PROTOCOL].setdefault( site, set() ).update( ses )
 
     # Add Sites from the SiteSEMappingByDownload in the CS, else SiteLocalSEMapping (old convention)
-    siteSEMapping[self.download] = {}
+    siteSEMapping[DOWNLOAD] = {}
     cfgLocalSEPath = cfgPath( 'SiteSEMappingByDownload' )
     result = self.__opsHelper.getOptionsDict( cfgLocalSEPath )
     if not result['OK']:
@@ -113,8 +110,8 @@ class DMSHelpers():
         ses = set( candidates )
         for candidate in ses & siteSet:
           ses.remove( candidate )
-          ses.update( siteSEMapping[self.local][candidate] )
-        siteSEMapping[ self.download].setdefault( site, set() ).update( ses )
+          ses.update( siteSEMapping[LOCAL][candidate] )
+        siteSEMapping[ DOWNLOAD].setdefault( site, set() ).update( ses )
 
     self.siteSEMapping = siteSEMapping
     self.storageElementSet = storageElementSet
@@ -144,13 +141,13 @@ class DMSHelpers():
     return storageElement in resolveSEGroup( seList )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
-    if not connectionLevel:
-      connectionLevel = self.download
-    if connectionLevel == self.local:
+    if connectionLevel in None:
+      connectionLevel = DOWNLOAD
+    if connectionLevel == LOCAL:
       return self._getLocalSitesForSE( storageElement )
-    if connectionLevel == self.protocol:
+    if connectionLevel == PROTOCOL:
       return self.getProtocolSitesForSE( storageElement )
-    if connectionLevel == self.download:
+    if connectionLevel == DOWNLOAD:
       return self.getDownloadSitesForSE( storageElement )
     return S_ERROR( "Unknown connection level, connectionLevel" )
 
@@ -166,7 +163,7 @@ class DMSHelpers():
       return mapping
     if se not in self.storageElementSet:
       return S_ERROR( 'Non-existing SE' )
-    mapping = mapping['Value'][self.local]
+    mapping = mapping['Value'][LOCAL]
     sites = [site for site in mapping if se in mapping[site]]
     if len( sites ) != 1:
       return S_ERROR( 'SE is at more than one site' )
@@ -178,7 +175,7 @@ class DMSHelpers():
       return mapping
     if se not in self.storageElementSet:
       return S_ERROR( 'Non-existing SE' )
-    mapping = mapping['Value'][self.protocol]
+    mapping = mapping['Value'][PROTOCOL]
     sites = self._getLocalSitesForSE( se )
     if not sites['OK']:
       return sites
@@ -192,7 +189,7 @@ class DMSHelpers():
       return mapping
     if se not in self.storageElementSet:
       return S_ERROR( 'Non-existing SE' )
-    mapping = mapping['Value'][self.download]
+    mapping = mapping['Value'][DOWNLOAD]
     sites = self.getProtocolSitesForSE( se )
     if not sites['OK']:
       return sites
@@ -212,7 +209,7 @@ class DMSHelpers():
           break
     if site is None:
       return S_ERROR( "Unknown site" )
-    ses = mapping['Value'][self.local].get( site, [] )
+    ses = mapping['Value'][LOCAL].get( site, [] )
     if not ses:
       return S_ERROR( 'No SE at site' )
     return S_OK( sorted( ses ) )
