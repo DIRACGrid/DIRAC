@@ -297,7 +297,7 @@ class Dirac( API ):
     cleanPath = ''
     jobDescription = ''
 
-    if isinstance( job, ( str, unicode ) ):
+    if isinstance( job, basestring ):
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
         jdl = job
@@ -889,7 +889,7 @@ class Dirac( API ):
 
     sandbox = parameters['Value'].get( 'InputSandbox' )
     if sandbox:
-      if isinstance( sandbox, ( str, unicode ) ):
+      if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
         if disableCopies:
@@ -934,7 +934,7 @@ class Dirac( API ):
     variableList = parameters['Value'].get( 'ExecutionEnvironment' )
     if variableList:
       self.log.verbose( 'Adding variables to execution environment' )
-      if isinstance( variableList, ( str, unicode ) ):
+      if isinstance( variableList, basestring ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
@@ -982,7 +982,7 @@ class Dirac( API ):
       sandbox = parameters['Value'].get( 'OutputSandbox' )
 
     if sandbox:
-      if isinstance( sandbox, ( str, unicode ) ):
+      if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for i in sandbox:
         if disableCopies:
@@ -1347,9 +1347,9 @@ class Dirac( API ):
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not isinstance( sourceSE, ( str, unicode ) ):
+    if not isinstance( sourceSE, basestring ):
       return self._errorReport( 'Expected string for source SE name' )
-    if not isinstance( localCache, ( str, unicode ) ):
+    if not isinstance( localCache, basestring ):
       return self._errorReport( 'Expected string for path to local cache' )
 
     dm = DataManager()
@@ -1390,7 +1390,7 @@ class Dirac( API ):
     if not sourceSE:
       sourceSE = ''
 
-    if not isinstance( sourceSE, ( str, unicode ) ):
+    if not isinstance( sourceSE, basestring ):
       return self._errorReport( 'Expected string for source SE name' )
 
     dm = DataManager()
@@ -1972,7 +1972,7 @@ class Dirac( API ):
       return S_ERROR( 'No output data files found to download' )
 
     if outputFiles:
-      if isinstance( outputFiles, ( str, unicode ) ):
+      if isinstance( outputFiles, basestring ):
         outputFiles = [os.path.basename( outputFiles )]
       elif isinstance( outputFiles, list ):
         try:
@@ -2265,7 +2265,7 @@ class Dirac( API ):
     """Internal function.  Writes a python object to a specified file path.
     """
     fopen = open( fileName, 'w' )
-    if not isinstance( pObject, ( str, unicode ) ):
+    if not isinstance( pObject, basestring ):
       fopen.write( '%s\n' % self.pPrint.pformat( pObject ) )
     else:
       fopen.write( pObject )
@@ -2465,7 +2465,7 @@ class Dirac( API ):
     stdout = result['Value'].get( 'StandardOutput' )
     if stdout:
       if printOutput:
-        self.log.always( stdout )
+        self.log.notice( stdout )
       else:
         self.log.verbose( stdout )
     else:
@@ -2493,7 +2493,7 @@ class Dirac( API ):
        :type printOutput: Boolean
        :returns: S_OK,S_ERROR
     """
-    if not isinstance( system, ( str, unicode ) ) and isinstance( service, ( str, unicode ) ):
+    if not isinstance( system, basestring ) and isinstance( service, basestring ):
       return self._errorReport( 'Expected string for system and service to ping()' )
     result = S_ERROR()
     try:
