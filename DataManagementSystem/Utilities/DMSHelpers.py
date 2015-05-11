@@ -141,7 +141,7 @@ class DMSHelpers():
     return storageElement in resolveSEGroup( seList )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
-    if connectionLevel in None:
+    if connectionLevel is None:
       connectionLevel = 'DOWNLOAD'
     if isinstance( connectionLevel, basestring ):
       connectionLevel = connectionLevel.upper()
