@@ -42,7 +42,7 @@ class StorageFactory:
   #
 
   def getStorageName( self, initialName ):
-    return self._getConfigStorageName( initialName )
+    return self._getConfigStorageName( initialName, 'Alias' )
 
   def getStorage( self, parameterDict ):
     """ This instantiates a single storage for the details provided and doesn't check the CS.
@@ -84,14 +84,14 @@ class StorageFactory:
       return S_ERROR( 'Mandatory vo parameter is not defined' )
 
     # Get the name of the storage provided
-    res = self._getConfigStorageName( storageName )
+    res = self._getConfigStorageName( storageName, 'Alias' )
     if not res['OK']:
       return res
     storageName = res['Value']
     self.name = storageName
 
     # In case the storage is made from a base SE, get this information
-    res = self._getBaseStorageName( storageName )
+    res = self._getConfigStorageName( storageName, 'BaseSE' )
     if not res['OK']:
       self.valid = False
       return res
@@ -151,10 +151,10 @@ class StorageFactory:
   # Below are internal methods for obtaining section/option/value configuration
   #
 
-  def _getConfigStorageName( self, storageName ):
+  def _getConfigStorageName( self, storageName, referenceType ):
     """
       This gets the name of the storage the configuration service.
-      If the storage is an alias for another the resolution is performed.
+      If the storage is a reference to another SE the resolution is performed.
 
       'storageName' is the storage section to check in the CS
     """
@@ -168,37 +168,10 @@ class StorageFactory:
       errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
       gLogger.error( errStr, configPath )
       return S_ERROR( errStr )
-    if 'Alias' in res['Value']:
-      configPath = cfgPath( self.rootConfigPath, storageName, 'Alias' )
-      aliasName = gConfig.getValue( configPath )
-      result = self._getConfigStorageName( aliasName )
-      if not result['OK']:
-        return result
-      resolvedName = result['Value']
-    else:
-      resolvedName = storageName
-    return S_OK( resolvedName )
-
-  def _getBaseStorageName( self, storageName ):
-    """
-      This gets the name of the base SE in case the SE is defined from a base SE.
-      'storageName' is the storage section to check in the CS
-    """
-    configPath = '%s/%s' % ( self.rootConfigPath, storageName )
-    res = gConfig.getOptions( configPath )
-    if not res['OK']:
-      errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
-      gLogger.error( errStr, res['Message'] )
-      return S_ERROR( errStr )
-    if not res['Value']:
-      errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
-      gLogger.error( errStr, configPath )
-      return S_ERROR( errStr )
-    if 'BaseSE' in res['Value']:
-      configPath = '%s/%s/BaseSE' % ( self.rootConfigPath, storageName )
-      baseName = gConfig.getValue( configPath )
-      # Just in case the base is an alias ;-)
-      result = self._getConfigStorageName( baseName )
+    if referenceType in res['Value']:
+      configPath = cfgPath( self.rootConfigPath, storageName, referenceType )
+      referenceName = gConfig.getValue( configPath )
+      result = self._getConfigStorageName( referenceName, 'Alias' )
       if not result['OK']:
         return result
       resolvedName = result['Value']
