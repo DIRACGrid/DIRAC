@@ -244,7 +244,7 @@ class ReqClient( Client ):
     :param self: self reference
     :param int requestID: id of the request
     """
-    if isinstance( requestID, str ):
+    if isinstance( requestID, basestring ):
       requestID = int( requestID )
     self.log.debug( "getRequestStatus: attempting to get status for '%d' request." % requestID )
     requestStatus = self.requestManager().getRequestStatus( requestID )
