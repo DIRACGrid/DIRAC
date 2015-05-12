@@ -1826,7 +1826,7 @@ def installComponent( componentType, system, component, extensions, componentMod
   section = result[ 'Value' ]
 
   bashVars = ''
-  if compCfg.isSection( 'Systems/%s/%s/%s/%s/BashVariables' % ( system, instance, section, component ) ):
+  if compCfg.isSection( 'Systems/%s/%s/%s/%s/Environment' % ( system, instance, section, component ) ):
     dictionary = compCfg.getAsDict()
     bashSection = dictionary[ 'Systems' ][ system ][ instance ][ section ][ component ][ 'BashVariables' ]
     for var in bashSection:
