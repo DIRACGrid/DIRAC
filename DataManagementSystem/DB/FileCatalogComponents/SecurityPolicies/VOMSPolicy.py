@@ -495,7 +495,7 @@ class VOMSPolicy( SecurityManagerBase ):
     return self.__testPermissionOnFile( paths, 'Write', credDict,
                                                noExistStrategy = True )
 
-  def __policyModifyFile( self, paths, credDict ):
+  def __policyWriteOnFile( self, paths, credDict ):
     """ Test Write permission on the file.
         If the file does not exist, we allow.
 
@@ -566,8 +566,9 @@ class VOMSPolicy( SecurityManagerBase ):
     elif opType == 'removeFile':
       policyToExecute = self.__policyRemoveFile
 
-    elif opType in ['addReplica', 'removeReplica', 'setReplicaStatus', 'setReplicaHost']:
-      policyToExecute = self.__policyWriteForReplica
+    elif opType in ['setFileMode', 'addFileAncestors', 'setFileStatus', 'addReplica',
+                     'removeReplica', 'setReplicaStatus', 'setReplicaHost']:
+      policyToExecute = self.__policyWriteOnFile
 
     elif opType == 'listDirectory':
       policyToExecute = self.__policyListDirectory
@@ -579,10 +580,6 @@ class VOMSPolicy( SecurityManagerBase ):
 
     elif opType in ['getReplicas', 'getReplicaStatus']:
       policyToExecute = self.__policyReadForReplica
-
-
-    elif opType in ['setFileMode', 'addFileAncestors', 'setFileStatus']:
-      policyToExecute = self.__policyModifyFile
       
     # Only admin can do that, and if we are here, we are not admin
     elif opType in ['changePathOwner', 'changePathGroup', 'setFileOwner', 'setFileGroup']:

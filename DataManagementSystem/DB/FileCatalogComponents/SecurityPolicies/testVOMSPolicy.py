@@ -272,6 +272,7 @@ class TestBase(unittest.TestCase):
     """ Test the permissions of a given file catalog method
         against all the existing and non existing files
     """
+
     self.existingRet = self.policy.hasAccess( methodName, fileTree.keys(), self.credDict )
     self.nonExistingRet = self.policy.hasAccess( methodName, nonExistingFiles, self.credDict )
 
@@ -350,12 +351,12 @@ class TestBase(unittest.TestCase):
     self.callForFiles( 'getFileSize' )
     self.compareResult()
 
-#   def test_setFileMode( self ):
-#     """ This is to test the special policy for setting files attributes
-#     """
-#
-#     self.callForFiles( 'setFileMode' )
-#     self.compareResult()
+  def test_setFileOwner( self ):
+    """ This is to test policy for which we need to be admin
+    """
+
+    self.callForFiles( 'setFileOwner' )
+    self.compareResult()
 
 
   def test_getReplicas( self ):
@@ -548,6 +549,19 @@ class TestNonExistingUser( TestBase ):
 
     super( TestNonExistingUser, self ).test_getFileSize()
 
+  def test_setFileOwner( self ):
+    """ Setting fiel owner with (anon, grp_nothing)
+     """
+
+
+    self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, False ),
+                                      'Failed': {}} )
+
+    self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, False ),
+                                      'Failed': {}} )
+
+    super( TestNonExistingUser, self ).test_setFileOwner()
+
   def test_getReplicas( self ):
     """ Checking get replicas with (anon, grp_nothing)
      """
@@ -716,6 +730,19 @@ class TestAdminGrpAnonUser( TestBase ):
 
     super( TestAdminGrpAnonUser, self ).test_getFileSize()
 
+  def test_setFileOwner( self ):
+    """ Setting fiel owner with (anon, grp_admin)
+     """
+
+
+    self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, True ),
+                                      'Failed': {}} )
+
+    self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
+                                      'Failed': {}} )
+
+    super( TestAdminGrpAnonUser, self ).test_setFileOwner()
+
   def test_getReplicas( self ):
     """ Checking get replicas with (anon, grp_admin)
      """
@@ -859,6 +886,19 @@ class TestAdminGrpAdminUser( TestBase ):
                                       'Failed': {}} )
 
     super( TestAdminGrpAdminUser, self ).test_getFileSize()
+
+  def test_setFileOwner( self ):
+    """ Setting fiel owner with (admin, grp_admin)
+     """
+
+
+    self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, True ),
+                                      'Failed': {}} )
+
+    self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
+                                      'Failed': {}} )
+
+    super( TestAdminGrpAdminUser, self ).test_setFileOwner()
 
   def test_getReplicas( self ):
     """ Checking get replicas with (admin, grp_admin)
@@ -1121,6 +1161,18 @@ class TestDataGrpDmUser( TestBase ):
                                       'Failed': {}} )
 
     super( TestDataGrpDmUser, self ).test_getFileSize()
+
+  def test_setFileOwner( self ):
+    """ Setting fiel owner with (dm, grp_data)
+     """
+
+    self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, False ),
+                                      'Failed': {}} )
+
+    self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, False ),
+                                      'Failed': {}} )
+
+    super( TestDataGrpDmUser, self ).test_setFileOwner()
 
   def test_getReplicas( self ):
     """ Checking get replicas with (dm, grp_data)
@@ -1404,6 +1456,18 @@ class TestDataGrpUsr1User( TestBase ):
 
     super( TestDataGrpUsr1User, self ).test_getFileSize()
 
+  def test_setFileOwner( self ):
+    """ Setting fiel owner with (usr1, grp_data)
+     """
+
+    self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, False ),
+                                      'Failed': {}} )
+
+    self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, False ),
+                                      'Failed': {}} )
+
+    super( TestDataGrpUsr1User, self ).test_setFileOwner()
+
   def test_getReplicas( self ):
     """ Checking get replicas with (usr1, grp_data)
      """
@@ -1680,6 +1744,17 @@ class TestUserGrpUsr1User( TestBase ):
 
     super( TestUserGrpUsr1User, self ).test_getFileSize()
 
+  def test_setFileOwner( self ):
+    """ Setting fiel owner with (usr1, grp_user)
+     """
+
+    self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, False ),
+                                      'Failed': {}} )
+
+    self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, False ),
+                                      'Failed': {}} )
+
+    super( TestUserGrpUsr1User, self ).test_setFileOwner()
 
   def test_getReplicas( self ):
     """ Checking get replicas with (usr1, grp_user)
@@ -1736,6 +1811,7 @@ class TestUserGrpUsr1User( TestBase ):
 
 if __name__ == '__main__':
   setupTree()
+
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestNonExistingUser )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestAdminGrpAnonUser ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestAdminGrpAdminUser ) )
