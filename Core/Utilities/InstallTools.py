@@ -1803,6 +1803,29 @@ def installComponent( componentType, system, component, extensions, componentMod
 
   gLogger.notice( 'Installing %s %s/%s' % ( componentType, system, component ) )
 
+  # Retrieve bash variables to be set
+  result = gConfig.getOption( 'DIRAC/Setups/%s/%s' % ( CSGlobals.getSetup(), system ) )
+  if not result[ 'OK' ]:
+    return result
+  instance = result[ 'Value' ]
+
+  result = getComponentCfg( componentType, system, component, instance, extensions )
+  if not result[ 'OK' ]:
+    return result
+  compCfg = result[ 'Value' ]
+
+  result = _getSectionName( componentType )
+  if not result[ 'OK' ]:
+    return result
+  section = result[ 'Value' ]
+
+  bashVars = ''
+  if compCfg.isSection( 'Systems/%s/%s/%s/%s/BashVariables' % ( system, instance, section, component ) ):
+    dictionary = compCfg.getAsDict()
+    bashSection = dictionary[ 'Systems' ][ system ][ instance ][ section ][ component ][ 'BashVariables' ]
+    for var in bashSection:
+      bashVars = '%s\nexport %s=%s' % ( bashVars, var, bashSection[ var ] )
+
   # Now do the actual installation
   try:
     componentCfg = os.path.join( linkedRootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
@@ -1822,9 +1845,11 @@ rcfile=%(bashrc)s
 exec 2>&1
 #
 [ "%(componentType)s" = "agent" ] && renice 20 -p $$
+#%(bashVariables)s
 #
 exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
+       'bashVariables': bashVars,
        'componentType': componentType,
        'system' : system,
        'component': component,
