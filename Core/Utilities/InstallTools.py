@@ -1619,7 +1619,7 @@ def setupSite( scriptCfg, cfg = None ):
     installedDatabases = result['Value']
     for dbName in setupDatabases:
       if dbName not in installedDatabases:
-        result = installDatabase( dbName )
+        result = installDatabase( dbName, monitorFlag = False )
         if not result['OK']:
           gLogger.error( result['Message'] )
           DIRAC.exit( -1 )
@@ -1641,15 +1641,21 @@ def setupSite( scriptCfg, cfg = None ):
 
   # 4.- Then installed requested services
   for system, service in setupServices:
-    setupComponent( 'service', system, service, extensions )
+    result = setupComponent( 'service', system, service, extensions, monitorFlag = False )
+    if not result['OK']:
+      gLogger.error( result['Message'] )
 
   # 5.- Now the agents
   for system, agent in setupAgents:
-    setupComponent( 'agent', system, agent, extensions )
+    result = setupComponent( 'agent', system, agent, extensions, monitorFlag = False )
+    if not result['OK']:
+      gLogger.error( result['Message'] )
 
   # 6.- Now the executors
   for system, executor in setupExecutors:
-    setupComponent( 'executor', system, executor, extensions )
+    result = setupComponent( 'executor', system, executor, extensions, monitorFlag = False )
+    if not result['OK']:
+      gLogger.error( result['Message'] )
 
   # 7.- And finally the Portal
   if setupWeb:
@@ -1885,7 +1891,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_agent
 
   return S_OK( runitCompDir )
 
-def setupComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
+def setupComponent( componentType, system, component, extensions,
+                    componentModule = '', checkModule = True, monitorFlag = True ):
   """
   Install and create link in startup
   """
@@ -1927,12 +1934,14 @@ def setupComponent( componentType, system, component, extensions, componentModul
     result = monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
     if not result[ 'OK' ]:
       return result
-  result = monitorInstallation( componentType,
-                                system,
-                                component,
-                                componentModule )
-  if not result[ 'OK' ]:
-    return result
+
+  if monitorFlag:
+    result = monitorInstallation( componentType,
+                                  system,
+                                  component,
+                                  componentModule )
+    if not result[ 'OK' ]:
+      return result
 
   return S_OK( resDict )
 
@@ -2470,7 +2479,9 @@ def getAvailableDatabases( extensions ):
 
   dbDict = {}
   for extension in extensions + ['']:
-    databases = glob.glob( os.path.join( rootPath, '%sDIRAC' % extension, '*', 'DB', '*.sql' ) )
+    databases = glob.glob( os.path.join( rootPath,
+                                         ('%sDIRAC' % extension).replace( 'DIRACDIRAC', 'DIRAC' ),
+                                         '*', 'DB', '*.sql' ) )
     for dbPath in databases:
       dbName = os.path.basename( dbPath ).replace( '.sql', '' )
       dbDict[dbName] = {}
@@ -2495,7 +2506,7 @@ def getDatabases():
   return S_OK( dbList )
 
 
-def installDatabase( dbName ):
+def installDatabase( dbName, monitorFlag = True ):
   """
   Install requested DB in MySQL server
   """
@@ -2599,7 +2610,7 @@ def installDatabase( dbName ):
 
   # If everything went well, add the information to the ComponentMonitoring DB
   # Unless we are installing the monitoringDB
-  if dbName != 'InstalledComponentsDB':
+  if dbName != 'InstalledComponentsDB' and monitorFlag:
     result = monitorInstallation( 'DB', dbSystem, dbName )
     if not result[ 'OK' ]:
       return result
