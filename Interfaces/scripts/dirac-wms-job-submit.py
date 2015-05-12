@@ -42,7 +42,7 @@ for sw, value in Script.getUnprocessedSwitches():
 
 for jdl in args:
 
-  result = dirac.submit( jdl )
+  result = dirac.submitJob( jdl )
   if result['OK']:
     print 'JobID = %s' % ( result['Value'] )
     if jFile != None:

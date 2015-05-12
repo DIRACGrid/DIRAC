@@ -70,7 +70,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
         reason = registerReplica.get( "Message", registerReplica.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
         errorStr = "failed to register LFN %s: %s" % ( lfn, str( reason ) )
         # FIXME: this is incompatible with the change made in the DM that we ignore failures if successful in at least one catalog
-        if lfn in registerReplica["Value"].get( "Successful", {} ) and type( reason ) == type( {} ):
+        if lfn in registerReplica.get( "Value", {} ).get( "Successful", {} ) and isinstance( reason, dict ):
           # As we managed, let's create a new operation for just the remaining registration
           errorStr += ' - adding registerReplica operations to request'
           for failedCatalog in reason:
@@ -84,7 +84,7 @@ class RegisterReplica( DMSRequestOperationsBase ):
         else:
           opFile.Error = errorStr
           catMaster = True
-          if type( reason ) == type( {} ):
+          if isinstance( reason, dict ):
             from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
             for failedCatalog in reason:
               catMaster = catMaster and FileCatalog()._getCatalogConfigDetails( failedCatalog ).get( 'Value', {} ).get( 'Master', False )
