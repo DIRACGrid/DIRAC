@@ -90,6 +90,13 @@ class StorageFactory:
     storageName = res['Value']
     self.name = storageName
 
+    # In case the storage is made from a base SE, get this information
+    res = self._getBaseStorageName( storageName )
+    if not res['OK']:
+      self.valid = False
+      return res
+    storageName = res['Value']
+
     # Get the options defined in the CS for this storage
     res = self._getConfigStorageOptions( storageName )
     if not res['OK']:
@@ -166,9 +173,34 @@ class StorageFactory:
       aliasName = gConfig.getValue( configPath )
       result = self._getConfigStorageName( aliasName )
       if not result['OK']:
-        errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
-        gLogger.error( errStr, configPath )
-        return S_ERROR( errStr )
+        return result
+      resolvedName = result['Value']
+    else:
+      resolvedName = storageName
+    return S_OK( resolvedName )
+
+  def _getBaseStorageName( self, storageName ):
+    """
+      This gets the name of the base SE in case the SE is defined from a base SE.
+      'storageName' is the storage section to check in the CS
+    """
+    configPath = '%s/%s' % ( self.rootConfigPath, storageName )
+    res = gConfig.getOptions( configPath )
+    if not res['OK']:
+      errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
+      gLogger.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    if not res['Value']:
+      errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
+      gLogger.error( errStr, configPath )
+      return S_ERROR( errStr )
+    if 'BaseSE' in res['Value']:
+      configPath = '%s/%s/BaseSE' % ( self.rootConfigPath, storageName )
+      baseName = gConfig.getValue( configPath )
+      # Just in case the base is an alias ;-)
+      result = self._getConfigStorageName( baseName )
+      if not result['OK']:
+        return result
       resolvedName = result['Value']
     else:
       resolvedName = storageName
@@ -261,7 +293,7 @@ class StorageFactory:
       if result['OK']:
         voPath = result['Value'].get( self.vo, '' )
       if voPath:
-        protocolDict['Path'] = voPath  
+        protocolDict['Path'] = voPath
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.

@@ -449,8 +449,9 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
 
   ftsClient = None
   try:
-    from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
-    ftsClient = FTSClient()
+    if request.RequestID:
+      from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+      ftsClient = FTSClient()
   except Exception, e:
     gLogger.debug( "Could not instantiate FtsClient", e )
 
@@ -495,7 +496,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   if prStr:
     prStr += ' - '
   prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
-  if op.Type == 'ForwardDISET':
+  if op.Type == 'ForwardDISET' and op.Arguments:
     from DIRAC.Core.Utilities import DEncode
     decode, _length = DEncode.decode( op.Arguments )
     if verbose:

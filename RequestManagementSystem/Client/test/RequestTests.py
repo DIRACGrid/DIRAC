@@ -31,6 +31,88 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 # # SUT
 from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest
+
+def optimizeRequest( req, printOutput = None ):
+  from DIRAC import gLogger
+  if printOutput:
+    if type( printOutput ) == type( '' ):
+      gLogger.always( 'Request %s:' % printOutput )
+    printRequest( req )
+    gLogger.always( '=========== Optimized ===============' )
+  res = req.optimize()
+  if printOutput:
+    printRequest( req )
+    gLogger.always( '' )
+  return res
+
+def createRequest( reqType ):
+  r = Request()
+
+  # Simple failover
+  op1 = Operation()
+  f = File()
+  f.LFN = '/This/is/an/LFN'
+  op1.addFile( f )
+  op1.Type = 'ReplicateAndRegister'
+  op1.SourceSE = 'CERN-FAILOVER'
+  op1.TargetSE = 'CERN-BUFFER'
+  r.addOperation( op1 )
+  op2 = Operation()
+  op2.addFile( f )
+  op2.Type = 'RemoveReplica'
+  op2.TargetSE = 'CERN-FAILOVER'
+  r.addOperation( op2 )
+  if reqType == 0:
+    return r
+
+  # two files for Failover
+  f1 = File()
+  f1.LFN = '/This/is/a/second/LFN'
+  op3 = Operation()
+  op3.addFile( f1 )
+  op3.Type = 'ReplicateAndRegister'
+  op3.SourceSE = 'CERN-FAILOVER'
+  op3.TargetSE = 'CERN-BUFFER'
+  r.addOperation( op3 )
+  op3 = Operation()
+  op3.addFile( f1 )
+  op3.Type = 'RemoveReplica'
+  op3.TargetSE = 'CERN-FAILOVER'
+  r.addOperation( op3 )
+  if reqType == 1:
+    return r
+
+  op = Operation()
+  op.Type = 'ForwardDiset'
+  if reqType == 2:
+    r.addOperation( op )
+    return r
+
+  r.insertBefore( op, r[0] )
+  if reqType == 3:
+    return r
+
+  op4 = Operation()
+  op4.Type = 'ForwardDiset'
+  r.addOperation( op4 )
+  if reqType == 4:
+    return r
+
+  # 2 different FAILOVER SEs: removal not optimized
+  r[1].SourceSE = 'RAL-FAILOVER'
+  r[2].SourceSE = 'RAL-FAILOVER'
+  if reqType == 5:
+    return r
+
+  # 2 different destinations, same FAILOVER: replication not optimized
+  r[3].SourceSE = 'RAL-FAILOVER'
+  r[4].SourceSE = 'RAL-FAILOVER'
+  r[3].TargetSE = 'RAL-BUFFER'
+  if reqType == 6:
+    return r
+
+  print 'This should not happen, reqType =', reqType
 
 ########################################################################
 class RequestTests( unittest.TestCase ):
@@ -319,7 +401,97 @@ class RequestTests( unittest.TestCase ):
     del r[0]
     self.assertEqual( len( r ), 4, "__delitem__ failed" )
 
+    r.RequestID = 1
+    del r[0]
+    self.assertEqual( r.cleanUpSQL(), None, "cleanUpSQL failed after __delitem__ (no opId)" )
 
+    r[0].OperationID = 1
+    del r[0]
+    clean = r.cleanUpSQL()
+    self.assertEqual( clean,
+                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1);\n',
+                       'DELETE FROM `File` WHERE `OperationID`=1;\n'],
+                      "cleanUpSQL failed after __delitem__ (opId set)\n%s" % clean )
+
+    r[0].OperationID = 2
+    r[0] = Operation()
+    clean = r.cleanUpSQL()
+    self.assertEqual( clean,
+                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1,2);\n',
+                      'DELETE FROM `File` WHERE `OperationID`=1;\n', 'DELETE FROM `File` WHERE `OperationID`=2;\n'],
+                      "cleanUpSQL failed after __setitem_ (opId set):\n%s" % clean )
+
+    json = r.toJSON()
+    self.assertEqual( "__dirty" in json["Value"], True, "__dirty missing in json" )
+
+
+  def test08Optimize( self ):
+    title = {
+             0: 'Simple Failover',
+             1: 'Double Failover',
+             2: 'Double Failover + ForwardDiset',
+             3: 'ForwardDiset + Double Failover',
+             4: 'ForwardDiset + Double Failover + ForwardDiset',
+             5: 'ForwardDiset + Double Failover (# Failover SE) + ForwardDiset',
+             6: 'ForwardDiset + Double Failover (# Destination SE) + ForwardDiset'
+    }
+    debug = False
+    if debug != False:
+      print ''
+    for reqType in title:
+      r = createRequest( reqType )
+      res = optimizeRequest( r, printOutput = title[reqType] if debug == reqType else False )
+      self.assertEqual( res['OK'], True )
+      self.assertEqual( res['Value'], True )
+      if reqType in ( 0, 1 ):
+        self.assertEqual( len( r ), 2, 'Wrong number of operations: %d' % len( r ) )
+        self.assertEqual( r[0].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[1].Type, 'RemoveReplica' )
+      if reqType == 1:
+        self.assertEqual( len( r[0] ), 2, 'Wrong number of files: %d' % len( r[0] ) )
+        self.assertEqual( len( r[1] ), 2, 'Wrong number of files: %d' % len( r[1] ) )
+      elif reqType == 2:
+        self.assertEqual( len( r ), 3, 'Wrong number of operations: %d' % len( r ) )
+        self.assertEqual( r[0].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[1].Type, 'RemoveReplica' )
+        self.assertEqual( r[2].Type, 'ForwardDiset' )
+        self.assertEqual( len( r[0] ), 2, 'Wrong number of files: %d' % len( r[0] ) )
+        self.assertEqual( len( r[1] ), 2, 'Wrong number of files: %d' % len( r[1] ) )
+      elif reqType == 3:
+        self.assertEqual( len( r ), 3, 'Wrong number of operations: %d' % len( r ) )
+        self.assertEqual( r[1].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[2].Type, 'RemoveReplica' )
+        self.assertEqual( r[0].Type, 'ForwardDiset' )
+        self.assertEqual( len( r[1] ), 2, 'Wrong number of files: %d' % len( r[0] ) )
+        self.assertEqual( len( r[2] ), 2, 'Wrong number of files: %d' % len( r[1] ) )
+      elif reqType == 4:
+        self.assertEqual( len( r ), 4, 'Wrong number of operations: %d' % len( r ) )
+        self.assertEqual( r[1].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[2].Type, 'RemoveReplica' )
+        self.assertEqual( r[0].Type, 'ForwardDiset' )
+        self.assertEqual( r[3].Type, 'ForwardDiset' )
+        self.assertEqual( len( r[1] ), 2, 'Wrong number of files: %d' % len( r[0] ) )
+        self.assertEqual( len( r[2] ), 2, 'Wrong number of files: %d' % len( r[1] ) )
+      elif reqType == 5:
+        self.assertEqual( len( r ), 5, 'Wrong number of operations: %d' % len( r ) )
+        self.assertEqual( r[1].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[2].Type, 'RemoveReplica' )
+        self.assertEqual( r[3].Type, 'RemoveReplica' )
+        self.assertEqual( r[0].Type, 'ForwardDiset' )
+        self.assertEqual( r[4].Type, 'ForwardDiset' )
+        self.assertEqual( len( r[1] ), 2, 'Wrong number of files: %d' % len( r[0] ) )
+        self.assertEqual( len( r[2] ), 1, 'Wrong number of files: %d' % len( r[1] ) )
+        self.assertEqual( len( r[3] ), 1, 'Wrong number of files: %d' % len( r[1] ) )
+      elif reqType == 6:
+        self.assertEqual( len( r ), 5, 'Wrong number of operations: %d' % len( r ) )
+        self.assertEqual( r[1].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[2].Type, 'ReplicateAndRegister' )
+        self.assertEqual( r[3].Type, 'RemoveReplica' )
+        self.assertEqual( r[0].Type, 'ForwardDiset' )
+        self.assertEqual( r[4].Type, 'ForwardDiset' )
+        self.assertEqual( len( r[1] ), 1, 'Wrong number of files: %d' % len( r[0] ) )
+        self.assertEqual( len( r[2] ), 1, 'Wrong number of files: %d' % len( r[1] ) )
+        self.assertEqual( len( r[3] ), 2, 'Wrong number of files: %d' % len( r[1] ) )
 
 # # test execution
 if __name__ == "__main__":

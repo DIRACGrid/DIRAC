@@ -61,6 +61,17 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p38]
+
+*DMS
+CHANGE: DataManager - enhanced real SE name resolution
+
+*RMS
+FIX: Request - fixed bug in the optimization of requests with failover operations
+
+*Resources
+CHANGE: StorageFactory - allow for BaseSE option in the SE definition
+
 [v6r12p37]
 
 *Core
