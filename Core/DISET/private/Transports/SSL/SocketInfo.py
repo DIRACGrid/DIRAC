@@ -24,8 +24,6 @@ class SocketInfo:
   def __init__( self, infoDict, sslContext = None ):
     self.__retry = 0
     self.infoDict = infoDict
-    #HACK:DISABLE CRLS!!!!!
-    self.infoDict[ 'IgnoreCRLs' ] = True
     if sslContext:
       self.sslContext = sslContext
     else:
