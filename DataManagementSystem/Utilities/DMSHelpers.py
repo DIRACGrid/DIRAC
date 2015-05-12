@@ -36,7 +36,7 @@ def resolveSEGroup( seGroupList ):
   return seList
 
 
-class DMSHelpers():
+class DMSHelpers( object ):
 
   def __init__( self ):
     self.siteSEMapping = {}
@@ -136,6 +136,8 @@ class DMSHelpers():
     return storageElement in resolveSEGroup( seList )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
+    if isinstance( connectionLevel, ( int, long ) ):
+      connectionLevel = {LOCAL:'LOCAL', DOWNLOAD:'DOWNLOAD', PROTOTOL:'PROTOCOL'}.get( connectionLevel )
     if connectionLevel is None:
       connectionLevel = 'DOWNLOAD'
     if isinstance( connectionLevel, basestring ):
