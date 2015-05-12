@@ -137,7 +137,7 @@ class DMSHelpers( object ):
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
     if isinstance( connectionLevel, ( int, long ) ):
-      connectionLevel = {LOCAL:'LOCAL', DOWNLOAD:'DOWNLOAD', PROTOTOL:'PROTOCOL'}.get( connectionLevel )
+      connectionLevel = {LOCAL:'LOCAL', DOWNLOAD:'DOWNLOAD', PROTOCOL:'PROTOCOL'}.get( connectionLevel )
     if connectionLevel is None:
       connectionLevel = 'DOWNLOAD'
     if isinstance( connectionLevel, basestring ):
