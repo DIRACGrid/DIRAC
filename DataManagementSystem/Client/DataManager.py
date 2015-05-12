@@ -582,6 +582,37 @@ class DataManager( object ):
       return res
     return S_OK( lfn )
 
+  def __getSERealName( self, storageName ):
+    """ get the base name of an SE possibly defined as an alias"""
+    rootConfigPath = '/Resources/StorageElements'
+    configPath = '%s/%s' % ( rootConfigPath, storageName )
+    res = gConfig.getOptions( configPath )
+    if not res['OK']:
+      errStr = "Failed to get storage options"
+      return S_ERROR( errStr )
+    if not res['Value']:
+      errStr = "Supplied storage doesn't exist."
+      return S_ERROR( errStr )
+    if 'Alias' in res['Value']:
+      configPath += '/Alias'
+      aliasName = gConfig.getValue( configPath )
+      result = self.__getSERealName( aliasName )
+      if not result['OK']:
+        return result
+      resolvedName = result['Value']
+    else:
+      resolvedName = storageName
+    return S_OK( resolvedName )
+
+  def __isSEInList( self, seName, seList ):
+    """ Check whether an SE is in a list of SEs... All could be aliases """
+    seSet = set()
+    for se in seList:
+      res = self.__getSERealName( se )
+      if res['OK']:
+        seSet.add( res['Value'] )
+    return self.__getSERealName( seName ).get( 'Value' ) in seSet
+
   def __replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE.
 
@@ -607,11 +638,11 @@ class DataManager( object ):
       return res
     destStorageElement = res['Value']['DestStorage']
     lfnReplicas = res['Value']['Replicas']
-    destSE = res['Value']['DestSE']
+    destSEName = res['Value']['DestSE']
     catalogueSize = res['Value']['CatalogueSize']
     ###########################################################
     # If the LFN already exists at the destination we have nothing to do
-    if destSE in lfnReplicas:
+    if self.__isSEInList( destSEName, lfnReplicas ):
       self.log.debug( "__replicate: LFN is already registered at %s." % destSE )
       return S_OK()
     ###########################################################
@@ -640,14 +671,14 @@ class DataManager( object ):
     for sourceSE, sourcePfn in replicaPreference:
       if sourcePfn == destPfn:
         continue
-      res = isSameSiteSE( sourceSE, destSE )
+      res = isSameSiteSE( sourceSE, destSEName )
       if res['OK'] and res['Value']:
         localReplicas.append( ( sourceSE, sourcePfn ) )
       else:
         otherReplicas.append( ( sourceSE, sourcePfn ) )
     replicaPreference = localReplicas + otherReplicas
     for sourceSE, sourcePfn in replicaPreference:
-      self.log.debug( "__replicate: Attempting replication from %s to %s." % ( sourceSE, destSE ) )
+      self.log.debug( "__replicate: Attempting replication from %s to %s." % ( sourceSE, destSEName ) )
       fileDict = {destPfn:sourcePfn}
       if sourcePfn == destPfn:
         continue
@@ -671,7 +702,7 @@ class DataManager( object ):
 
       if res['OK']:
         self.log.debug( "__replicate: Replication successful." )
-        resDict = {'DestSE':destSE, 'DestPfn':destPfn}
+        resDict = {'DestSE':destSEName, 'DestPfn':destPfn}
         return S_OK( resDict )
       else:
         errStr = "__replicate: Replication failed."
@@ -938,7 +969,7 @@ class DataManager( object ):
         for lfn, pfn in replicaTuple:
           failed[lfn] = errStr
       else:
-        storageElementName = destStorageElement.getStorageElementName()['Value']
+        # storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
           res = returnSingleResult( destStorageElement.getPfnForProtocol( pfn, protocol = self.registrationProtocol, withPort = False ) )
           if not res['OK']:

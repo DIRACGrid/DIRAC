@@ -28,10 +28,6 @@ class RequestPreparationAgent( AgentModule ):
     return S_OK()
 
   def execute( self ):
-    res = self.prepareNewReplicas()
-    return res
-
-  def prepareNewReplicas( self ):
     """ This is the first logical task to be executed and manages the New->Waiting transition of the Replicas
     """
     res = self.__getNewReplicas()
@@ -45,19 +41,19 @@ class RequestPreparationAgent( AgentModule ):
     replicaIDs = res['Value']['ReplicaIDs']
     gLogger.info( "RequestPreparation.prepareNewReplicas: Obtained %s New replicas for preparation." % len( replicaIDs ) )
 
-    # Check that the files exist in the FileCatalog
-    res = self.__getExistingFiles( replicas.keys() )
+    # Check if the files exist in the FileCatalog
+    res = self.__getExistingFiles( replicas )
     if not res['OK']:
       return res
     exist = res['Value']['Exist']
     terminal = res['Value']['Missing']
     failed = res['Value']['Failed']
     if not exist:
-      gLogger.error( 'RequestPreparation.prepareNewReplicas: Failed determine existance of any files' )
+      gLogger.error( 'RequestPreparation.prepareNewReplicas: Failed to determine the existence of any file' )
       return S_OK()
     terminalReplicaIDs = {}
     for lfn, reason in terminal.items():
-      for _se, replicaID in replicas[lfn].items():
+      for replicaID in replicas[lfn].values():
         terminalReplicaIDs[replicaID] = reason
       replicas.pop( lfn )
     gLogger.info( "RequestPreparation.prepareNewReplicas: %s files exist in the FileCatalog." % len( exist ) )
@@ -143,31 +139,28 @@ class RequestPreparationAgent( AgentModule ):
     for replicaID, info in res['Value'].items():
       lfn = info['LFN']
       storageElement = info['SE']
-      if not replicas.has_key( lfn ):
-        replicas[lfn] = {}
-      replicas[lfn][storageElement] = replicaID
+      replicas.setdefault( lfn, {} )[storageElement] = replicaID
       replicaIDs[replicaID] = ( lfn, storageElement )
     return S_OK( {'Replicas':replicas, 'ReplicaIDs':replicaIDs} )
 
   def __getExistingFiles( self, lfns ):
     """ This checks that the files exist in the FileCatalog. """
-    filesExist = []
-    missing = {}
-    res = self.fileCatalog.exists( lfns )
+    res = self.fileCatalog.exists( list( set( lfns ) ) )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getExistingFiles: Failed to determine whether files exist.", res['Message'] )
       return res
     failed = res['Value']['Failed']
-    for lfn, exists in res['Value']['Successful'].items():
-      if exists:
-        filesExist.append( lfn )
-      else:
-        missing[lfn] = 'LFN not registered in the FileCatalog'
+    success = res['Value']['Successful']
+    exist = [lfn for lfn, exists in success.items() if exists]
+    missing = list( set( success ) - set( exist ) )
     if missing:
-      for lfn, reason in missing.items():
-        gLogger.warn( "RequestPreparation.__getExistingFiles: %s" % reason, lfn )
-      self.__reportProblematicFiles( missing.keys(), 'LFN-LFC-DoesntExist' )
-    return S_OK( {'Exist':filesExist, 'Missing':missing, 'Failed':failed} )
+      reason = 'LFN not registered in the FC'
+      gLogger.warn( "RequestPreparation.__getExistingFiles: %s" % reason, '\n'.join( [''] + missing ) )
+      self.__reportProblematicFiles( missing, 'LFN-LFC-DoesntExist' )
+      missing = dict.fromkeys( missing, reason )
+    else:
+      missing = {}
+    return S_OK( {'Exist':exist, 'Missing':missing, 'Failed':failed} )
 
   def __getFileSize( self, lfns ):
     """ This obtains the file size from the FileCatalog. """
