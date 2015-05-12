@@ -10,8 +10,10 @@
 """
 __RCSID__ = "$Id$"
 # # imports
-from types import DictType, IntType, LongType, ListType, StringTypes
 import json
+import datetime
+import math
+from types import DictType, IntType, LongType, ListType, StringTypes
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -19,8 +21,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
-import datetime
-import math
 
 class ReqManagerHandler( RequestHandler ):
   """

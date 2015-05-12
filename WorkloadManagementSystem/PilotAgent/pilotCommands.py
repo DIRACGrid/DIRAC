@@ -337,7 +337,6 @@ class ConfigureBasics( CommandBase ):
   def _getBasicsCFG( self ):
     """  basics (needed!)
     """
-    self.cfg.append( '-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion )
     self.cfg.append( '-S "%s"' % self.pp.setup )
     if self.pp.configServer:
       self.cfg.append( '-C "%s"' % self.pp.configServer )
@@ -349,6 +348,7 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % self.pp.userGroup )
     if self.pp.userDN:
       self.cfg.append( '-o /AgentJobRequirements/OwnerDN="%s"' % self.pp.userDN )
+    self.cfg.append( '-o /LocalSite/ReleaseVersion=%s' % self.pp.releaseVersion )
 
   def _getSecurityCFG( self ):
     """ Nothing specific by default, but need to know host cert and key location in case they are needed
@@ -383,6 +383,7 @@ class ConfigureSite( CommandBase ):
     self.cfg.append( '-o /LocalSite/GridMiddleware=%s' % self.pp.flavour )
 
     self.cfg.append( '-n "%s"' % self.pp.site )
+    self.cfg.append( '-S "%s"' % self.pp.setup )
 
     if not self.pp.ceName or not self.pp.queueName:
       self.__getCEName()
@@ -620,6 +621,7 @@ class ConfigureArchitecture( CommandBase ):
 
       # real options added here
       localArchitecture = localArchitecture.strip()
+      cfg.append( '-S "%s"' % self.pp.setup )
       cfg.append( '-o /LocalSite/Architecture=%s' % localArchitecture )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
