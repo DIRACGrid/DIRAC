@@ -138,9 +138,8 @@ def getCPUTime( CPUNormalizationFactor ):
     # We need to convert in real seconds
     if not CPUNormalizationFactor:  # if CPUNormalizationFactor passed in is 0, try get it from the local cfg
       CPUNormalizationFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
-      # if CPUNormalizationFactor is not even in the local cfg, it's a problem, and yes the next line will raise an exception
-    if int( CPUNormalizationFactor ):
-      CPUTime = CPUTime / int( CPUNormalizationFactor )
+    # if CPUNormalizationFactor is not even in the local cfg, it's a problem, and yes the next line will raise an exception
+    CPUTime = CPUTime / int( CPUNormalizationFactor )
   else:
     # now we know that we have to find the CPUTimeLeft by looking in the CS
     gridCE = gConfig.getValue( '/LocalSite/GridCE' )
