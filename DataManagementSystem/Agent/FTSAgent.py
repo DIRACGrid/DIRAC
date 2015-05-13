@@ -1004,7 +1004,7 @@ class FTSAgent( AgentModule ):
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
-        pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = self.registrationProtocols ) )
+        pfn = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = self.registrationProtocols ) )
         if not pfn["OK"]:
           continue
         opFile.PFN = pfn["Value"]
