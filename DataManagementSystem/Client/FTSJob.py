@@ -525,6 +525,7 @@ class FTSJob( object ):
 
     # The order of informations is not the same for glite- and fts- !!!
     # In order: new fts-, old fts-, glite-
+    realJob = len( self ) != 0
     iExptr = None
     for iExptr, exptr in enumerate( ( 
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
@@ -550,12 +551,21 @@ class FTSJob( object ):
       else:
         return S_ERROR( 'Error monitoring job (implement match %d)' % iExptr )
       candidateFile = None
-      for ftsFile in self:
-        if ftsFile.SourceSURL == sourceURL:
-          candidateFile = ftsFile
-          break
-      if not candidateFile:
-        continue
+
+      if not realJob:
+        # This is used by the CLI monitoring of jobs in case no file was specified
+        candidateFile = FTSFile()
+        candidateFile.LFN = overlap( sourceURL, targetURL )
+        candidateFile.SourceSURL = sourceURL
+        candidateFile.Size = 0
+        self +=candidateFile
+      else:
+        for ftsFile in self:
+          if ftsFile.SourceSURL == sourceURL:
+            candidateFile = ftsFile
+            break
+        if not candidateFile:
+          continue
       # Can be uppercase for FTS3
       if not candidateFile.TargetSURL:
         candidateFile.TargetSURL = targetURL
@@ -765,3 +775,16 @@ class FTSJob( object ):
       digest["FTSFiles"].append( fileJSON["Value"] )
     return S_OK( digest )
 
+def overlap( s1, s2 ):
+  """ Method returning the common end of 2 strings """
+  s = ''
+  while s1 and s2:
+      c1 = s1[-1]
+      c2 = s2[-1]
+      if c1 == c2:
+          s = c1 + s
+      else:
+          break
+      s1 = s1[:-1]
+      s2 = s2[:-1]
+  return s

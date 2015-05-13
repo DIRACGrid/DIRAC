@@ -228,7 +228,7 @@ class RequestTasks( TaskBase ):
     for taskDict in taskDicts:
       oldStatus = taskDict['ExternalStatus']
 
-      newStatus = self.__getRequestStatus( taskDict['ExternalID'] )
+      newStatus = self.requestClient.getRequestStatus( taskDict['ExternalID'] )
       if not newStatus['OK']:
         log = self._logVerbose if 'not exist' in newStatus['Message'] else self.log.warn
         log( "getSubmittedTaskStatus: Failed to get requestID for request", '%s' % newStatus['Message'] )
@@ -237,15 +237,6 @@ class RequestTasks( TaskBase ):
         if newStatus != oldStatus:
           updateDict.setdefault( newStatus, [] ).append( taskDict['TaskID'] )
     return S_OK( updateDict )
-
-  def __getRequestStatus( self, requestID ):
-    """ Getting the Request status from the new RMS
-    """
-    res = self.requestClient.getRequestStatus( requestID )
-    if res['OK']:
-      return res['Value']
-    else:
-      return ''
 
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
@@ -274,7 +265,7 @@ class RequestTasks( TaskBase ):
     updateDict = {}
     for requestID in sorted( taskFiles ):
       lfnDict = taskFiles[requestID]
-      statusDict = self.__getRequestFileStatus( requestID, lfnDict.keys() )
+      statusDict = self.requestClient.getRequestFileStatus( requestID, lfnDict.keys() )
       if not statusDict['OK']:
         log = self._logVerbose if 'not exist' in statusDict['Message'] else self.log.warn
         log( "getSubmittedFileStatus: Failed to get files status for request", '%s' % statusDict['Message'] )
@@ -290,14 +281,6 @@ class RequestTasks( TaskBase ):
           updateDict[lfn] = 'Problematic'
     return S_OK( updateDict )
 
-  def __getRequestFileStatus( self, requestID, lfns ):
-    """ Getting the Request status from the new RMS
-    """
-    res = self.requestClient.getRequestFileStatus( requestID, lfns )
-    if res['OK']:
-      return res['Value']
-    else:
-      return {}
 
 
 class WorkflowTasks( TaskBase ):

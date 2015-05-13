@@ -25,7 +25,7 @@ Usage:
 Script.registerSwitch( "r" , "AllowRead" , "     Allow only reading from the storage element" )
 Script.registerSwitch( "w" , "AllowWrite", "     Allow only writing to the storage element" )
 Script.registerSwitch( "k" , "AllowCheck", "     Allow only check access to the storage element" )
-Script.registerSwitch( "k" , "AllowRemove", "    Allow only remove access to the storage element" )
+Script.registerSwitch( "v" , "AllowRemove", "    Allow only remove access to the storage element" )
 Script.registerSwitch( "m" , "Mute"      , "     Do not send email" )
 Script.registerSwitch( "S:", "Site="     , "     Allow all SEs associated to site" )
 
@@ -54,14 +54,14 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-#from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+# from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
-#csAPI = CSAPI()
+# csAPI = CSAPI()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
@@ -123,7 +123,7 @@ for se, seOptions in res[ 'Value' ].items():
     if 'ARCHIVE' in se:
       gLogger.notice( '%s is not supposed to change Read status to Active' % se )
       resR[ 'OK' ] = True
-    else:  
+    else:
 
       resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Active', reason, userName )
       if not resR['OK']:
@@ -228,4 +228,4 @@ else:
 DIRAC.exit( 0 )
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -585,8 +585,38 @@ class DataManager( object ):
       return res
     return S_OK( lfn )
 
+  def __getSERealName( self, storageName ):
+    """ get the base name of an SE possibly defined as an alias"""
+    rootConfigPath = '/Resources/StorageElements'
+    configPath = '%s/%s' % ( rootConfigPath, storageName )
+    res = gConfig.getOptions( configPath )
+    if not res['OK']:
+      errStr = "Failed to get storage options"
+      return S_ERROR( errStr )
+    if not res['Value']:
+      errStr = "Supplied storage doesn't exist."
+      return S_ERROR( errStr )
+    if 'Alias' in res['Value']:
+      configPath += '/Alias'
+      aliasName = gConfig.getValue( configPath )
+      result = self.__getSERealName( aliasName )
+      if not result['OK']:
+        return result
+      resolvedName = result['Value']
+    else:
+      resolvedName = storageName
+    return S_OK( resolvedName )
 
-  def __replicate( self, lfn, destSEName, sourceSEName = None, destPath = None, localCache = None ):
+  def __isSEInList( self, seName, seList ):
+    """ Check whether an SE is in a list of SEs... All could be aliases """
+    seSet = set()
+    for se in seList:
+      res = self.__getSERealName( se )
+      if res['OK']:
+        seSet.add( res['Value'] )
+    return self.__getSERealName( seName ).get( 'Value' ) in seSet
+
+  def __replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE.
 
         'lfn' is the LFN to be replicated
@@ -643,7 +673,6 @@ class DataManager( object ):
     log.debug( "Successfully obtained replicas for LFN." )
     lfnReplicas = res['Value']
 
-
     ###########################################################
     # If the file catalog size is zero fail the transfer
     log.debug( "Attempting to obtain size for %s." % lfn )
@@ -666,7 +695,7 @@ class DataManager( object ):
 
     ###########################################################
     # If the LFN already exists at the destination we have nothing to do
-    if destSEName in lfnReplicas:
+    if self.__isSEInList( destSEName, lfnReplicas ):
       log.debug( "__replicate: LFN is already registered at %s." % destSEName )
       return S_OK()
 
@@ -733,7 +762,6 @@ class DataManager( object ):
         log.debug( "could not get fileSize on %s" % candidateSEName, res['Message'] )
         continue
       seFileSize = res['Value']
-
       
       if seFileSize != catalogSize:
         log.debug( "Catalog size and physical file size mismatch.", "%s %s" % ( catalogSize, seFileSize ) )

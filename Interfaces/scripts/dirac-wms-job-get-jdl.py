@@ -25,15 +25,19 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == 'Original' or switch[0] == 'O':
     original = True
 
+for switch in Script.getUnprocessedSwitches():
+  if switch[0] == 'Original':
+    original = True
+
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                              import Dirac
+from DIRAC.Interfaces.API.Dirac                              import Dirac, parseArguments
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
-for job in args:
+for job in parseArguments( args ):
 
   result = dirac.getJobJDL( job, original = original, printOutput = True )
   if not result['OK']:

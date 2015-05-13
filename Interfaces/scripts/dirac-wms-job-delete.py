@@ -26,13 +26,11 @@ args = Script.getPositionalArgs()
 import os.path
 
 if __name__ == "__main__":
-  
-  from DIRAC.Interfaces.API.Dirac import Dirac
+
+  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
   dirac = Dirac()
-  exitCode = 0
-  errorList = []
-  
+
   jobs = []
   for sw, value in Script.getUnprocessedSwitches():
     if sw.lower() in ( 'f', 'file' ):
@@ -40,9 +38,9 @@ if __name__ == "__main__":
         jFile = open( value )
         jobs += jFile.read().split()
         jFile.close()
-    elif sw.lower() in ( 'g', 'jobgroup' ):    
-      group = value    
-      jobDate = toString( date() - 30*day )
+    elif sw.lower() in ( 'g', 'jobgroup' ):
+      group = value
+      jobDate = toString( date() - 30 * day )
       result = dirac.selectJobs( jobGroup = value, date = jobDate )
       if not result['OK']:
         if not "No jobs selected" in result['Message']:
@@ -50,25 +48,21 @@ if __name__ == "__main__":
           DIRAC.exit( -1 )
       else:
         jobs += result['Value']
-  
-  for arg in args:
-    jobs.append(arg)
-  
+
+  for arg in parseArguments( args ):
+    jobs.append( arg )
+
   if not jobs:
     print "Warning: no jobs selected"
     Script.showHelp()
     DIRAC.exit( 0 )
-  
-  for job in jobs:
-  
-    result = dirac.delete( job )
-    if result['OK']:
-      print 'Deleted job %s' % ( result['Value'][0] )
-    else:
-      errorList.append( ( job, result['Message'] ) )
-      exitCode = 2
-  
-  for error in errorList:
-    print "ERROR %s: %s" % error
-  
+
+  result = dirac.deleteJob( jobs )
+  if result['OK']:
+    print 'Deleted jobs %s' % ','.join( [str( j ) for j in result['Value'] ] )
+    exitCode = 0
+  else:
+    print result['Message']
+    exitCode = 2
+
   DIRAC.exit( exitCode )

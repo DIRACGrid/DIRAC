@@ -1,4 +1,4 @@
-[v6r13-pre28]
+[v6r13-pre29]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -6,6 +6,14 @@ CHANGE: Separating fixed and variable parts of error log messages for multiple s
 *Core
 FIX: MySQL.py - treat in detailed way datetime functions in __escapeString()
 FIX: DictCache.get() returns now None instead of False if no or expired value
+NEW: InstallTools - allow to define environment variables to be added to the component
+     runit run script
+NEW: Changes to make the DISET protocol IP V6 ready
+CHANGE: BaseClient - retry service call on another instance in case of failure
+CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport layer
+CHANGE: SocketInfo - retry 3 times in case of handshaking error
+CHANGE: MySQL - possibility to specify charset in the table definition
+FIX: dirac-install, dirac-distribution - removed obsoleted defaults     
 
 *Configuration
 NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
@@ -15,13 +23,9 @@ NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifyi
 FIX: NotificationDB - escape fields for sorting in getNotifications()
 NEW: Database, Service, Client, commands for tracking the installed DIRAC components
 
-*Core
-NEW: Changes to make the DISET protocol IP V6 ready
-CHANGE: BaseClient - retry service call on another instance in case of failure
-CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport layer
-CHANGE: SocketInfo - retry 3 times in case of handshaking error
-CHANGE: MySQL - possibility to specify charset in the table definition
-FIX: dirac-install, dirac-distribution - removed obsoleted defaults
+*Interfaces
+CHANGE: Dirac - changed method names, keeping backward compatibility
+CHANGE: multiple commands updated to use the new Dirac API method names
 
 *DMS
 NEW: Native use of the FTS3 services
@@ -33,6 +37,7 @@ CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
 CHANGE: FileCatalog - replace getDirectoryMetadata by getDirectoryUserMetadata
 NEW: FileCatalog - added new getDirectoryMetadata() interface to get standard directory metadata
 NEW: FileCatalog - possibility to find files by standard metadata
+NEW: DMSHelpers class
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
@@ -55,6 +60,17 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p38]
+
+*DMS
+CHANGE: DataManager - enhanced real SE name resolution
+
+*RMS
+FIX: Request - fixed bug in the optimization of requests with failover operations
+
+*Resources
+CHANGE: StorageFactory - allow for BaseSE option in the SE definition
 
 [v6r12p37]
 

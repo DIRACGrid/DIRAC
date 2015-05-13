@@ -24,7 +24,7 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                              import Dirac
+from DIRAC.Interfaces.API.Dirac                              import Dirac, parseArguments
 dirac = Dirac()
 exitCode = 0
 errorList = []
@@ -34,7 +34,7 @@ for sw, v in Script.getUnprocessedSwitches():
   if sw in ( 'D', 'Dir' ):
     outputDir = v
 
-for job in args:
+for job in parseArguments( args ):
 
   result = dirac.getInputSandbox( job, outputDir = outputDir )
   if result['OK']:

@@ -37,4 +37,8 @@ if __name__ == "__main__":
   if not res['OK']:
     gLogger.error( "Could not add shifter", ": " + res['Message'] )
     DIRACExit( 1 )
+  res = csAPI.commit()
+  if not res['OK']:
+    gLogger.error( "Could not add shifter", ": " + res['Message'] )
+    DIRACExit( 1 )
   gLogger.notice( "Added shifter %s as user %s with group %s" % (shifterRole, userName, diracGroup) )

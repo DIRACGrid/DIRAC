@@ -242,13 +242,15 @@ class ReqClient( Client ):
     """ Get the request status given a request id.
 
     :param self: self reference
-    :param str requestID: id of the request
+    :param int requestID: id of the request
     """
-    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestID )
+    if isinstance( requestID, basestring ):
+      requestID = int( requestID )
+    self.log.debug( "getRequestStatus: attempting to get status for '%d' request." % requestID )
     requestStatus = self.requestManager().getRequestStatus( requestID )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for request",
-                      "request: '%s' %s" % ( requestID, requestStatus["Message"] ) )
+                      "request: '%d' %s" % ( requestID, requestStatus["Message"] ) )
     return requestStatus
 
 #   def getRequestName( self, requestID ):
@@ -259,7 +261,7 @@ class ReqClient( Client ):
     """ The the request info given a request id.
 
     :param self: self reference
-    :param str requestID: request nid
+    :param int requestID: request nid
     """
     self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestID )
     requestInfo = self.requestManager().getRequestInfo( int( requestID ) )
@@ -447,8 +449,9 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
 
   ftsClient = None
   try:
-    from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
-    ftsClient = FTSClient()
+    if request.RequestID:
+      from DIRAC.DataManagementSystem.Client.FTSClient                                  import FTSClient
+      ftsClient = FTSClient()
   except Exception, e:
     gLogger.debug( "Could not instantiate FtsClient", e )
 
@@ -493,7 +496,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
   if prStr:
     prStr += ' - '
   prStr += 'Created %s, Updated %s' % ( op.CreationTime, op.LastUpdate )
-  if op.Type == 'ForwardDISET':
+  if op.Type == 'ForwardDISET' and op.Arguments:
     from DIRAC.Core.Utilities import DEncode
     decode, _length = DEncode.decode( op.Arguments )
     if verbose:

@@ -42,7 +42,7 @@ class StorageFactory:
   #
 
   def getStorageName( self, initialName ):
-    return self._getConfigStorageName( initialName )
+    return self._getConfigStorageName( initialName, 'Alias' )
 
   def getStorage( self, parameterDict ):
     """ This instantiates a single storage for the details provided and doesn't check the CS.
@@ -84,11 +84,18 @@ class StorageFactory:
       return S_ERROR( 'Mandatory vo parameter is not defined' )
 
     # Get the name of the storage provided
-    res = self._getConfigStorageName( storageName )
+    res = self._getConfigStorageName( storageName, 'Alias' )
     if not res['OK']:
       return res
     storageName = res['Value']
     self.name = storageName
+
+    # In case the storage is made from a base SE, get this information
+    res = self._getConfigStorageName( storageName, 'BaseSE' )
+    if not res['OK']:
+      self.valid = False
+      return res
+    storageName = res['Value']
 
     # Get the options defined in the CS for this storage
     res = self._getConfigStorageOptions( storageName )
@@ -144,10 +151,10 @@ class StorageFactory:
   # Below are internal methods for obtaining section/option/value configuration
   #
 
-  def _getConfigStorageName( self, storageName ):
+  def _getConfigStorageName( self, storageName, referenceType ):
     """
       This gets the name of the storage the configuration service.
-      If the storage is an alias for another the resolution is performed.
+      If the storage is a reference to another SE the resolution is performed.
 
       'storageName' is the storage section to check in the CS
     """
@@ -161,14 +168,12 @@ class StorageFactory:
       errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
       gLogger.error( errStr, configPath )
       return S_ERROR( errStr )
-    if 'Alias' in res['Value']:
-      configPath = cfgPath( self.rootConfigPath, storageName, 'Alias' )
-      aliasName = gConfig.getValue( configPath )
-      result = self._getConfigStorageName( aliasName )
+    if referenceType in res['Value']:
+      configPath = cfgPath( self.rootConfigPath, storageName, referenceType )
+      referenceName = gConfig.getValue( configPath )
+      result = self._getConfigStorageName( referenceName, 'Alias' )
       if not result['OK']:
-        errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
-        gLogger.error( errStr, configPath )
-        return S_ERROR( errStr )
+        return result
       resolvedName = result['Value']
     else:
       resolvedName = storageName
@@ -261,7 +266,7 @@ class StorageFactory:
       if result['OK']:
         voPath = result['Value'].get( self.vo, '' )
       if voPath:
-        protocolDict['Path'] = voPath  
+        protocolDict['Path'] = voPath
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
