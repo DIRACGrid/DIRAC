@@ -712,6 +712,7 @@ class FTSJob( object ):
       register = self._fc.addReplica( toRegisterDict )
       self._regTime += time.time() - startTime
       if not register["OK"]:
+        self._log.error( 'Error registering replica', register['Message'] )
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
         return register
