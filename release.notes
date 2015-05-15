@@ -1,3 +1,8 @@
+[v6r11p33]
+
+*Configuration
+FIX: Resources - avoid white spaces in OSCompatibility
+
 [v6r11p32]
 
 *Core
