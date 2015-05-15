@@ -10,7 +10,7 @@ from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 _readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
                'getReplicas','getReplicaStatus','getFileAncestors',
                'getFileDescendents','listDirectory','isDirectory',
-               'getDirectoryReplicas','getDirectorySize']
+               'getDirectoryReplicas', 'getDirectorySize', 'getDirectoryMetadata']
 
 _writeMethods = ['changePathOwner', 'changePathGroup', 'changePathMode',
                 'addFile','setFileStatus','removeFile','addReplica',

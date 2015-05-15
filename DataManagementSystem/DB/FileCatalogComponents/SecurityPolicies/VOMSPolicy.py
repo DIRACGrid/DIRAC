@@ -579,7 +579,7 @@ class VOMSPolicy( SecurityManagerBase ):
     elif opType == 'listDirectory':
       policyToExecute = self.__policyListDirectory
 
-    elif opType in ['isDirectory', 'getDirectoryReplicas', 'getDirectorySize',
+    elif opType in ['isDirectory', 'getDirectoryReplicas', 'getDirectoryMetadata', 'getDirectorySize',
                      'isFile', 'getFileSize', 'getFileMetadata', 'exists',
                      'getFileAncestors', 'getFileDescendents']:
       policyToExecute = self.__policyReadForFileAndDirectory

@@ -976,7 +976,7 @@ class FileCatalogDB( DB ):
     :param dict credDict: credentials
     :return: Successful/Failed dict.
     '''
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'getDirectoryMetadata', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
