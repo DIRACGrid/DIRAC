@@ -211,26 +211,30 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.exists( res['Value']['Successful'] )
-    if not res['OK']:
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
-    notExist = []
-    for lfn in res['Value']['Successful'].keys():
-      if not successful[lfn]:
-        notExist.append( lfn )
-        successful.pop( lfn )
-    if notExist:
-      res = self.dtree.exists( notExist )
+    successful = {}
+    if res['Value']['Successful']:
+      res = self.fileManager.exists( res['Value']['Successful'] )
       if not res['OK']:
         return res
       failed.update( res['Value']['Failed'] )
-      successful.update( res['Value']['Successful'] )
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+      successful = res['Value']['Successful']
 
-  def getPathPermissions( self, lfns, credDict ):
-    """ Get permissions for the given user/group to manipulate the given lfns
+      notExist = []
+      for lfn in res['Value']['Successful'].keys():
+        if not successful[lfn]:
+          notExist.append( lfn )
+          successful.pop( lfn )
+      if notExist:
+        res = self.dtree.exists( notExist )
+        if not res['OK']:
+          return res
+        failed.update( res['Value']['Failed'] )
+        successful.update( res['Value']['Successful'] )
+
+    return S_OK( {'Successful':successful,'Failed':failed} )
+  
+  def getPathPermissions(self, lfns, credDict):
+    """ Get permissions for the given user/group to manipulate the given lfns 
     """
     res = checkArgumentFormat( lfns )
     if not res['OK']:
@@ -251,11 +255,14 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathOwner( res['Value']['Successful'], credDict, recursive )
-    if not res['OK']:
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
+    successful = dict()
+    if res['Value']['Successful']:
+      res = self.fileManager.changePathOwner( res['Value']['Successful'], credDict, recursive )
+      if not res['OK']:
+        return res
+      failed.update( res['Value']['Failed'] )
+      successful = res['Value']['Successful']
+
     return S_OK({'Successful':successful,'Failed':failed}) 
   
   def changePathGroup(self, lfns, credDict, recursive=False):
@@ -265,12 +272,18 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
     res = self.fileManager.changePathGroup( res['Value']['Successful'], credDict, recursive )
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+
+    return S_OK({'Successful':successful,'Failed':failed}) 
 
   def changePathMode( self, lfns, credDict, recursive = False ):
     """ Change the mode of the given list of paths
@@ -279,7 +292,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathMode( res['Value']['Successful'], credDict, recursive )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)    
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -304,7 +322,11 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.addFile( res['Value']['Successful'], credDict )
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.addFile(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -324,6 +346,11 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
     res = self.fileManager.setFileStatus( res['Value']['Successful'], credDict )
     if not res['OK']:
       return res
@@ -344,7 +371,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.removeFile( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.removeFile(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -365,7 +397,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.addReplica( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.addReplica(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -386,7 +423,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.removeReplica( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.removeReplica(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -406,7 +448,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setReplicaStatus( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setReplicaStatus(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -418,7 +465,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setReplicaHost( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setReplicaHost(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -438,7 +490,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setFileOwner( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setFileOwner(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -458,7 +515,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setFileGroup( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setFileGroup(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -478,7 +540,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setFileMode( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setFileMode(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -492,7 +559,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.addFileAncestors( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.addFileAncestors(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -518,7 +590,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.isFile( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.isFile(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -538,7 +615,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileSize( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileSize(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -558,7 +640,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileMetadata( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileMetadata(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -580,7 +667,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getReplicas( res['Value']['Successful'], allStatus = allStatus )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getReplicas(res['Value']['Successful'],allStatus=allStatus)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -600,7 +692,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getReplicaStatus( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getReplicaStatus(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -612,7 +709,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileAncestors( res['Value']['Successful'], depths )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileAncestors(res['Value']['Successful'],depths)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -624,7 +726,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileDescendents( res['Value']['Successful'], depths )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileDescendents(res['Value']['Successful'],depths)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -694,7 +801,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.createDirectory( res['Value']['Successful'], credDict )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.createDirectory(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -713,18 +825,22 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    successful = res['Value']['Successful']
-    if successful:
-      res = self.dtree.removeDirectory( res['Value']['Successful'], credDict )
-      if not res['OK']:
-        return res
-      failed.update( res['Value']['Failed'] )
-      successful = res['Value']['Successful']
-      if not successful:
-        return S_OK( {'Successful':successful, 'Failed':failed} )
-    else:
-      return S_OK( {'Successful':successful, 'Failed':failed} )
 
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+
+
+    res = self.dtree.removeDirectory( res['Value']['Successful'], credDict )
+    if not res['OK']:
+      return res
+    failed.update( res['Value']['Failed'] )
+    successful = res['Value']['Successful']
+    if not successful:
+      return S_OK( {'Successful':successful,'Failed':failed} )
+
+    
     # Remove the directory metadata now
     dirIdList = [ successful[p]['DirID'] for p in successful if 'DirID' in successful[p] ]
     result = self.dmeta.removeMetadataForDirectory( dirIdList, credDict )
@@ -756,7 +872,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.listDirectory( res['Value']['Successful'], verbose = verbose )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.listDirectory(res['Value']['Successful'],verbose=verbose)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -777,7 +898,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.isDirectory( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.isDirectory(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -789,7 +915,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryReplicas( res['Value']['Successful'], allStatus )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'],allStatus)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -812,7 +943,12 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize( res['Value']['Successful'], longOutput, fromFiles )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput,fromFiles)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
