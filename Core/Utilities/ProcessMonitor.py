@@ -1,5 +1,4 @@
 ########################################################################
-# $Id$
 # File :   ProcessMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -16,7 +15,7 @@ __RCSID__ = "$Id$"
 
 import os, re, platform
 
-class ProcessMonitor:
+class ProcessMonitor( object ):
 
   #############################################################################
   def __init__( self ):

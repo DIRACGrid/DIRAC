@@ -344,10 +344,9 @@ class JobWrapper( object ):
 
     self.__setJobParam( 'PayloadPID', payloadPID )
 
-    watchdogFactory = WatchdogFactory()
-    watchdogInstance = watchdogFactory.getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
+    watchdogInstance = WatchdogFactory().getWatchdog( self.currentPID, exeThread, spObject, jobCPUTime, jobMemory )
     if not watchdogInstance['OK']:
-      self.log.warn( watchdogInstance['Message'] )
+      self.log.error( 'Could not create Watchdog instance', watchdogInstance['Message'] )
       return S_ERROR( 'Could not create Watchdog instance' )
 
     self.log.verbose( 'WatchdogInstance %s' % ( watchdogInstance ) )
