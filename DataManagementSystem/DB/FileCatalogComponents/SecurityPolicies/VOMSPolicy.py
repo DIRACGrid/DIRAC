@@ -216,7 +216,7 @@ class VOMSPolicy( SecurityManagerBase ):
         return res
 
       # Finally, follow the strategy
-      return dict.fromkeys( ['Read', 'Write', 'Execute'], noExistStrategy )
+      return S_OK( dict.fromkeys( ['Read', 'Write', 'Execute'], noExistStrategy ) )
 
     # The directory exists.
     origGrp = res['Value']['OwnerGroup']
