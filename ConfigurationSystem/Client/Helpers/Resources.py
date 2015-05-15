@@ -202,6 +202,8 @@ def getCompatiblePlatforms( originalPlatforms ):
   else:
     platforms = list( originalPlatforms )
 
+  platforms = list( platform.replace( ' ', '' ) for platform in platforms )
+
   result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
   if not ( result['OK'] and result['Value'] ):
     return S_ERROR( "OS compatibility info not found" )
