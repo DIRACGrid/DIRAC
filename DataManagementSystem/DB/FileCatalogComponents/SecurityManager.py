@@ -34,7 +34,6 @@ class SecurityManagerBase( object ):
     return S_ERROR( 'The getPathPermissions method must be implemented in the inheriting class' )
 
   def hasAccess(self,opType,paths,credDict):
-    
     # Map the method name to Read/Write
     if opType in _readMethods:
       opType = 'Read'
@@ -208,8 +207,14 @@ class DirectorySecurityManagerWithDelete( DirectorySecurityManager ):
     # The other SecurityManager do not support the Delete operation,
     # and it is transformed in Write
     # so we keep the original one
-    self.opType = opType.lower()
 
+    if opType in ['removeFile', 'removeReplica', 'removeDirectory']:
+      self.opType = 'Delete'
+    elif opType in _readMethods:
+      self.opType = 'Read'
+    elif opType in _writeMethods:
+      self.opType = 'Write'
+      
     res = super( DirectorySecurityManagerWithDelete, self ).hasAccess( opType, paths, credDict )
 
     # We reinitialize self.opType in case someone would call getPathPermissions directly
@@ -222,7 +227,7 @@ class DirectorySecurityManagerWithDelete( DirectorySecurityManager ):
     """
 
     # If we are testing in anything else than a Delete, just return the parent methods
-    if hasattr( self, 'opType' ) and self.opType != 'delete':
+    if hasattr( self, 'opType' ) and self.opType.lower() != 'delete':
       return super( DirectorySecurityManagerWithDelete, self ).getPathPermissions( paths, credDict )
 
     # If the object (file or dir) does not exist, we grant the permission
@@ -277,10 +282,13 @@ class PolicyBasedSecurityManager( SecurityManagerBase ):
 
   def __init__( self, database = False ):
     super( PolicyBasedSecurityManager, self ).__init__( database )
+
     from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
     from DIRAC import gConfig
     from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-    serviceSection = getServiceSection( 'FileCatalog' )
+
+    serviceSection = getServiceSection( 'DataManagement/FileCatalog' )
+
     pluginPath = gConfig.getValue( cfgPath( serviceSection, 'SecurityPolicy' ) )
 
     if not pluginPath:
@@ -288,6 +296,7 @@ class PolicyBasedSecurityManager( SecurityManagerBase ):
 
     pluginCls = self.__loadPlugin( pluginPath )
     self.policyObj = pluginCls( database = database )
+
 
   @staticmethod
   def __loadPlugin( pluginPath ):
@@ -325,9 +334,12 @@ class PolicyBasedSecurityManager( SecurityManagerBase ):
       raise TypeError( "Security policy '%s' isn't inherited from SecurityManagerBase class" % pluginName )
 
     return pluginClassObj
-  
-    def hasAccess( self, opType, paths, credDict ):
-      return self.policyObj.hasAccess( opType, paths, credDict )
+
+  def hasAccess( self, opType, paths, credDict ):
+    return self.policyObj.hasAccess( opType, paths, credDict )
+
+  def getPathPermissions( self, paths, credDict ):
+    return self.policyObj.getPathPermissions( paths, credDict )
   
   
   
