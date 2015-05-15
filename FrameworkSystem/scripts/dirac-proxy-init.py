@@ -151,6 +151,7 @@ class ProxyInit:
     upParams = ProxyUpload.CLIParams()
     upParams.onTheFly = True
     upParams.proxyLifeTime = issuerCert.getRemainingSecs()[ 'Value' ] - 300
+    upParams.rfcIfPossible = self.__piParams.rfc
     upParams.diracGroup = userGroup
     for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
       setattr( upParams, k , getattr( self.__piParams, k ) )
@@ -167,7 +168,7 @@ class ProxyInit:
     result = ProxyInfo.getProxyInfoAsString( self.__proxyGenerated )
     if not result['OK']:
       gLogger.error( 'Failed to get the new proxy info: %s' % result['Message'] )
-    else:  
+    else:
       gLogger.notice( "Proxy generated:" )
       gLogger.notice( result[ 'Value' ] )
     if self.__uploadedInfo:
