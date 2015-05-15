@@ -1,3 +1,12 @@
+[v6r14-pre1]
+
+*Core
+NEW: CSGlobals - includes Extensions class to consistently check the returned
+     list of extensions with proper namse
+NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
+NEW: ProxyInfo - VOMS proxy information without using voms commands
+NEW: LocalConfiguration - option to print out license information      
+
 [v6r13-pre29]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
