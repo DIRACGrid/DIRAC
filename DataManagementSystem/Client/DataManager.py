@@ -616,7 +616,7 @@ class DataManager( object ):
         seSet.add( res['Value'] )
     return self.__getSERealName( seName ).get( 'Value' ) in seSet
 
-  def __replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
+  def __replicate( self, lfn, destSEName, sourceSEName = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE.
 
         'lfn' is the LFN to be replicated
