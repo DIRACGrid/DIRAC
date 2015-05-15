@@ -83,8 +83,6 @@ class VOMSPolicy( SecurityManagerBase ):
 
     return False
     
-    # return ( ( 'not found' in errorMsg ) or ( 'No such file or directory' in errorMsg ) )
-
 
 
 
