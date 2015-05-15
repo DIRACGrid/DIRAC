@@ -76,7 +76,14 @@ class VOMSPolicy( SecurityManagerBase ):
 
   def __isNotExistError( self, errorMsg ):
     """ Returns true if the errorMsg means that the file/directory does not exist """
-    return ( ( 'not found' in errorMsg ) or ( 'No such file or directory' in errorMsg ) )
+    
+    for possibleMsg in ['not exist', 'not found', 'No such file or directory']:
+      if possibleMsg in errorMsg:
+        return True
+
+    return False
+    
+    # return ( ( 'not found' in errorMsg ) or ( 'No such file or directory' in errorMsg ) )
 
 
 
@@ -188,6 +195,7 @@ class VOMSPolicy( SecurityManagerBase ):
     res = self.db.dtree.getDirectoryParameters( path )
     if not res['OK']:
       # If the error is not due to the directory not existing, we return
+
       if not self.__isNotExistError( res['Message'] ):
         return res
 
@@ -276,6 +284,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
     res = self.__testPermissionOnDirectory( parentDirs, permission, credDict,
                                             recursive = recursive, noExistStrategy = noExistStrategy )
+
     if not res['OK']:
       return res
     
@@ -537,7 +546,6 @@ class VOMSPolicy( SecurityManagerBase ):
 
 
   def hasAccess( self, opType, paths, credDict ):
-
     # Check if admin access is granted first
     result = self.hasAdminAccess( credDict )
     if not result['OK']:
