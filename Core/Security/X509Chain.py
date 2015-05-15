@@ -10,10 +10,14 @@ import os
 import stat
 import tempfile
 import hashlib
+import random
+import binascii
 from GSI import crypto
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC import S_OK, S_ERROR
+
+random.seed()
 
 class X509Chain:
 
@@ -23,6 +27,7 @@ class X509Chain:
     self.__isProxy = False
     self.__firstProxyStep = 0
     self.__isLimitedProxy = True
+    self.__isRFC = False
     self.__hash = False
     if certList:
       self.__loadedChain = True
@@ -60,14 +65,14 @@ class X509Chain:
       return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str( e ) ) )
     return self.loadChainFromString( pemData )
 
-  def loadChainFromString( self, pemData ):
+  def loadChainFromString( self, data, dataFormat = crypto.FILETYPE_PEM ):
     """
     Load a x509 cert from a string containing the pem data
     Return : S_OK / S_ERROR
     """
     self.__loadedChain = False
     try:
-      self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
+      self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, data )
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str( e ) )
     if not self.__certList:
@@ -144,7 +149,7 @@ class X509Chain:
       return retVal
     return self.loadKeyFromString( pemData )
 
-  def __getProxyExtensionList( self, diracGroup = False ):
+  def __getProxyExtensionList( self, diracGroup = False, rfc = False, rfcLimited = False ):
     """
     Get the list of extensions for a proxy
     """
@@ -153,6 +158,14 @@ class X509Chain:
                                           'critical, digitalSignature, keyEncipherment, dataEncipherment' ) )
     if diracGroup and type( diracGroup ) in self.__validExtensionValueTypes:
       extList.append( crypto.X509Extension( 'diracGroup', diracGroup ) )
+    if rfc or rfcLimited:
+      blob = [ [ "1.3.6.1.5.5.7.21.1" ] ] if not rfcLimited else [ [ "1.3.6.1.4.1.3536.1.1.1.9" ] ]
+      asn1Obj = crypto.ASN1( blob )
+      asn1Obj[0][0].convert_to_object()
+      asn1dump = binascii.hexlify( asn1Obj.dump() )
+      extval = "critical,DER:" + ":".join( asn1dump[i:i+2] for i in range( 0,len(asn1dump),2) )
+      ext = crypto.X509Extension( "proxyCertInfo", extval )
+      extList.append( ext )
     return extList
 
   def getCertInChain( self, certPos = 0 ):
@@ -198,7 +211,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( len( self.__certList ) )
 
-  def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False ):
+  def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False, proxyKey = False ):
     """
     Generate a proxy and get it as a string
       Args:
@@ -212,36 +225,50 @@ class X509Chain:
     if not self.__loadedPKey:
       return S_ERROR( "No pkey loaded" )
 
+    if self.__isProxy:
+      rfc = self.isRFC().get( 'Value', False )
+
     issuerCert = self.__certList[0]
 
-    proxyKey = crypto.PKey()
-    proxyKey.generate_key( crypto.TYPE_RSA, strength )
+    if not proxyKey:
+      proxyKey = crypto.PKey()
+      proxyKey.generate_key( crypto.TYPE_RSA, strength )
 
     proxyCert = crypto.X509()
-    cloneSubject = issuerCert.get_subject().clone()
-    if limited:
-      cloneSubject.insert_entry( "CN", "limited proxy" )
-    else:
-      cloneSubject.insert_entry( "CN", "proxy" )
-    proxyCert.set_subject( cloneSubject )
 
-    proxyCert.set_serial_number( issuerCert.get_serial_number() )
+
+    if rfc:
+      proxyCert.set_serial_number( str( int( random.random()*10**10 ) ) )
+      cloneSubject = issuerCert.get_subject().clone()
+      cloneSubject.insert_entry( "CN", str( int( random.random()*10**10 ) ) )
+      proxyCert.set_subject( cloneSubject )
+      proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ) )
+    else:
+      proxyCert.set_serial_number( issuerCert.get_serial_number() )
+      cloneSubject = issuerCert.get_subject().clone()
+      if limited:
+        cloneSubject.insert_entry( "CN", "limited proxy" )
+      else:
+        cloneSubject.insert_entry( "CN", "proxy" )
+      proxyCert.set_subject( cloneSubject )
+      proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
+
     proxyCert.set_issuer( issuerCert.get_subject() )
     proxyCert.set_version( issuerCert.get_version() )
     proxyCert.set_pubkey( proxyKey )
-    proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     proxyCert.gmtime_adj_notBefore( -900 )
     proxyCert.gmtime_adj_notAfter( lifeTime )
-    proxyCert.sign( self.__keyObj, 'sha1' )
+    proxyCert.sign( self.__keyObj, 'sha256' )
 
     proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
                                crypto.dump_privatekey( crypto.FILETYPE_PEM, proxyKey ) )
     for i in range( len( self.__certList ) ):
       proxyString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
 
+
     return S_OK( proxyString )
 
-  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False ):
+  def generateProxyToFile( self, filePath, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False ):
     """
     Generate a proxy and put it into a file
       Args:
@@ -251,7 +278,7 @@ class X509Chain:
         - strength : length in bits of the pair
         - limited : Create a limited proxy
     """
-    retVal = self.generateProxyToString( lifeTime, diracGroup, strength, limited )
+    retVal = self.generateProxyToString( lifeTime, diracGroup, strength, limited, rfc )
     if not retVal[ 'OK' ]:
       return retVal
     try:
@@ -315,10 +342,26 @@ class X509Chain:
         return S_OK( True )
     return S_OK( False )
 
+  def getVOMSData( self ):
+    """
+    Check wether this chain is a proxy
+    """
+    retVal = self.isProxy()
+    if not retVal[ 'OK' ] or not retVal[ 'Value' ]:
+      return retVal
+    for i in range( len( self.__certList ) ):
+      cert = self.getCertInChain( i )[ 'Value' ]
+      res = cert.getVOMSData()
+      if res[ 'OK' ]:
+        return res
+    return S_ERROR( "No VOMS data" )
+
+
   def __checkProxyness( self ):
     self.__hash = False
     self.__firstProxyStep = len( self.__certList ) - 2 # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
+    self.__isRFC = None
     self.__isLimitedProxy = False
     prevDNMatch = 2
     #If less than 2 steps in the chain is no proxy
@@ -363,14 +406,29 @@ class X509Chain:
     proxySubject = self.__certList[ certStep ].get_subject().clone()
     psEntries = proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
-    if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limited proxy' ):
+    limited = False
+    if lastEntry[0] != 'CN':
       return 0
+    if lastEntry[1] not in ( 'proxy', 'limited proxy' ):
+      extList = self.__certList[ certStep ].get_extensions()
+      for ext in extList:
+        if ext.get_sn() == "proxyCertInfo":
+          contraint = [ line.split(":")[1].strip() for line in ext.get_value().split("\n") if line.split(":")[0] == "Path Length Constraint" ]
+          if len( contraint ) == 0:
+            return 0
+          if self.__isRFC == None:
+            self.__isRFC = True
+          if contraint[0] == "1.3.6.1.4.1.3536.1.1.1.9":
+            limited = True
+    else:
+      if self.__isRFC == None:
+         self.__isRFC = False
+      if lastEntry[1] == "limited proxy":
+        limited = True
     proxySubject.remove_entry( psEntries - 1 )
     if not issuerSubject.one_line() == proxySubject.one_line():
       return 0
-    if lastEntry[1] == "limited proxy":
-      return 2
-    return 1
+    return 1 if not limited else 2
 
   def __checkIssuer( self, certStep, issuerStep ):
     """
@@ -433,7 +491,7 @@ class X509Chain:
     x509 = self.getCertInChain( 0 )[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
-  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False ):
+  def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False, rfc = False ):
     """
     Generate a x509 chain from a request
     return S_OK( string ) / S_ERROR
@@ -446,43 +504,8 @@ class X509Chain:
       req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load request data: %s" % str( e ) )
-
-    issuerCert = self.__certList[0]
-
-    reqSubj = req.get_subject()
-    newSubj = issuerCert.get_subject().clone()
-
-    isLimited = False
-    lastEntry = newSubj.get_entry( newSubj.num_entries() - 1 )
-    if lastEntry[0] == "CN" and lastEntry[1] == "limited proxy":
-      isLimited = True
-    for entryTuple in reqSubj.get_components():
-      if isLimited  and entryTuple[0] == "CN" and entryTuple[1] == "proxy":
-        return S_ERROR( "Request is for a full proxy and chain is a limited one" )
-      if entryTuple[0] == "CN" and entryTuple[1] == "limited proxy":
-        isLimited = True
-      newSubj.insert_entry( entryTuple[0], entryTuple[1] )
-
-    if requireLimited and not isLimited:
-      return S_ERROR( "Only limited proxies are allowed to be delegated but request was for a full one" )
-
-
-    childCert = crypto.X509()
-    childCert.set_subject( newSubj )
-    childCert.set_issuer( issuerCert.get_subject() )
-    childCert.set_serial_number( issuerCert.get_serial_number() )
-    childCert.set_version( issuerCert.get_version() )
-    childCert.set_pubkey( req.get_pubkey() )
-    childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
-    childCert.gmtime_adj_notBefore( -900 )
-    childCert.gmtime_adj_notAfter( int( lifetime ) )
-    childCert.sign( self.__keyObj, 'md5' )
-
-    childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )
-    for i in range( len( self.__certList ) ):
-      childString += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
-
-    return S_OK( childString )
+    limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
+    return self.generateProxyToString( lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey() )
 
   def getRemainingSecs( self ):
     """
@@ -534,6 +557,11 @@ class X509Chain:
       return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str( e ) ) )
     return S_OK( filename )
 
+  def isRFC( self ):
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    return S_OK( self.__isRFC )
+
   def dumpChainToString( self ):
     """
     Dump only cert chain to string
@@ -579,6 +607,7 @@ class X509Chain:
                  'validGroup' : False }
     if self.__isProxy:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
+      credDict[ 'rfc' ] = self.__isRFC
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
       if not retVal[ 'OK' ]:
         return S_OK( credDict )

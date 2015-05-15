@@ -28,6 +28,7 @@ class CLIParams:
   userPasswd = ""
   checkClock = True
   embedDefaultGroup = True
+  rfc = False
 
   def setProxyLifeTime( self, arg ):
     try:
@@ -37,6 +38,10 @@ class CLIParams:
       gLogger.error( "Can't parse time! Is it a HH:MM?", arg )
       return S_ERROR( "Can't parse time argument" )
     return S_OK()
+
+  def setRFC( self, arg ):
+      self.rfc = True
+      return S_OK()
 
   def setProxyRemainingSecs( self, arg ):
     self.proxyLifeTime = int( arg )
@@ -121,6 +126,7 @@ class CLIParams:
     Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
+    Script.registerSwitch( "r", "rfc", "Create an RFC proxy", self.setRFC )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -195,7 +201,8 @@ def generateProxy( params ):
     retVal = chain.generateProxyToFile( proxyLoc,
                                         params.proxyLifeTime,
                                         strength = params.proxyStrength,
-                                        limited = params.limitedProxy )
+                                        limited = params.limitedProxy,
+                                        rfc = params.rfc )
 
     gLogger.info( "Contacting CS..." )
     retVal = Script.enableCS()
@@ -203,8 +210,8 @@ def generateProxy( params ):
       gLogger.warn( retVal[ 'Message' ] )
       if 'Unauthorized query' in retVal[ 'Message' ]:
         # add hint for users
-        return S_ERROR( "Can't contact DIRAC CS: %s (User possibly not registered with dirac server) " 
-                        % retVal[ 'Message' ] ) 
+        return S_ERROR( "Can't contact DIRAC CS: %s (User possibly not registered with dirac server) "
+                        % retVal[ 'Message' ] )
       return S_ERROR( "Can't contact DIRAC CS: %s" % retVal[ 'Message' ] )
     userDN = chain.getCertInChain( -1 )['Value'].getSubjectDN()['Value']
     if not params.diracGroup:
@@ -249,7 +256,8 @@ def generateProxy( params ):
                                       params.proxyLifeTime,
                                       params.diracGroup,
                                       strength = params.proxyStrength,
-                                      limited = params.limitedProxy )
+                                      limited = params.limitedProxy,
+                                      rfc = params.rfc )
 
   if not retVal[ 'OK' ]:
     gLogger.warn( retVal[ 'Message' ] )
