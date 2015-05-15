@@ -242,6 +242,20 @@ class FileCatalogDB( DB ):
     lfns = res['Value']
 
     return self.securityManager.getPathPermissions( lfns.keys(), credDict )
+  
+
+  def hasAccess( self, opType, paths, credDict ):
+    """ Get permissions for the given user/group to execute the given operation
+        on the given paths
+
+        returns Successful dict with True/False
+    """
+    res = checkArgumentFormat( paths )
+    if not res['OK']:
+      return res
+    paths = res['Value']
+
+    return self.securityManager.hasAccess( opType, paths, credDict )
 
   ########################################################################
   #
