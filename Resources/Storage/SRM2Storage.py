@@ -1572,7 +1572,7 @@ class SRM2Storage( StorageBase ):
               if 'subpaths' in result:
                 results = result['subpaths']
                 tempStep = step - 1
-              elif re.search( result['surl'], url ):
+              elif re.search( re.escape( result['surl'] ), url ):
                 results = []
           allResults.extend( results )
           if len( results ) < tempStep:
