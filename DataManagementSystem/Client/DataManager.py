@@ -190,7 +190,7 @@ class DataManager( object ):
     allFiles = {}
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = returnSingleResult( self.fc.listDirectory( currentDir ) )
+      res = returnSingleResult( self.fc.listDirectory( currentDir, verbose = True ) )
       activeDirs.remove( currentDir )
 
       if not res['OK']:
