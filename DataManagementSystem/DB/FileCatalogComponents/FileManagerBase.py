@@ -709,7 +709,7 @@ class FileManagerBase( object ):
   def _setFileOwner( self, fileID, owner, connection = False ):
     """ Set the file owner """
     connection = self._getConnection( connection )
-    if type( owner ) in StringTypes:
+    if isinstance( owner, basestring ):
       result = self.db.ugManager.findUser( owner )
       if not result['OK']:
         return result
@@ -719,7 +719,7 @@ class FileManagerBase( object ):
   def _setFileGroup( self, fileID, group, connection = False ):
     """ Set the file group """
     connection = self._getConnection( connection )
-    if type( group ) in StringTypes:
+    if isinstance( group, basestring ):
       result = self.db.ugManager.findGroup( group )
       if not result['OK']:
         return result
@@ -1371,67 +1371,3 @@ class FileManagerBase( object ):
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
-
-  def changePathOwner( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryOwner,
-                                    self.setFileOwner, recursive )
-
-  def changePathGroup( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryGroup,
-                                    self.setFileGroup, recursive )
-
-  def changePathMode( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryMode,
-                                    self.setFileMode, recursive )
-
-  def _changePathFunction( self, paths, credDict, change_function_directory, change_function_file, recursive = False ):
-    """ A generic function to change Owner, Group or Mode for the given paths """
-    result = self.db.ugManager.getUserAndGroupID( credDict )
-    if not result['OK']:
-      return result
-    uid, gid = result['Value']
-
-    dirList = []
-    result = self.db.isDirectory( paths, credDict )
-    if not result['OK']:
-      return result
-    for p in result['Value']['Successful']:
-      if result['Value']['Successful'][p]:
-        dirList.append( p )
-    fileList = []
-    if len( dirList ) < len( paths ):
-      result = self.isFile( paths )
-      if not result['OK']:
-        return result
-      fileList = result['Value']['Successful'].keys()
-
-    successful = {}
-    failed = {}
-
-    dirArgs = {}
-    fileArgs = {}
-
-    for path in paths:
-      if ( not path in dirList ) and ( not path in fileList ):
-        failed[path] = 'Path not found'
-      if path in dirList:
-        dirArgs[path] = paths[path]
-      elif path in fileList:
-        fileArgs[path] = paths[path]
-    if dirArgs:
-      result = change_function_directory( dirArgs, uid, gid )
-      if not result['OK']:
-        return result
-      successful.update( result['Value']['Successful'] )
-      failed.update( result['Value']['Failed'] )
-    if fileArgs:
-      result = change_function_file( fileArgs, uid, gid )
-      if not result['OK']:
-        return result
-      successful.update( result['Value']['Successful'] )
-      failed.update( result['Value']['Failed'] )
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-  
