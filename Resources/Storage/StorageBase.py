@@ -310,7 +310,8 @@ class StorageBase( object ):
     # 2. VO name must not appear as any subdirectory or file name
     lfnSplitList = lfn.split( '/' )
     voLFN = lfnSplitList[1]
-    if ( voLFN != self.se.vo and voLFN != "SandBox" ) or self.se.vo in lfnSplitList[2:]:
+    # TODO comparison to Sandbox below is for backward compatibility, should be removed in the next release
+    if ( voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox" ) or self.se.vo in lfnSplitList[2:]:
       
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
     
