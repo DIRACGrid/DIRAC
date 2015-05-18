@@ -262,61 +262,92 @@ class FileCatalogDB( DB ):
   #  Path based read methods
   #
 
-  def changePathOwner( self, lfns, credDict, recursive = False ):
-    """ Change the owner of the given list of paths
-    """
-    res = self._checkPathPermissions( 'changePathOwner', lfns, credDict )
+  def changePathOwner( self, paths, credDict, recursive = False ):
+    """ Bulk method to change Owner for the given paths """
+    res = self._checkPathPermissions( 'Write', paths, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    successful = dict()
-    if res['Value']['Successful']:
-      res = self.fileManager.changePathOwner( res['Value']['Successful'], credDict, recursive )
-      if not res['OK']:
-        return res
-      failed.update( res['Value']['Failed'] )
-      successful = res['Value']['Successful']
+    result = self._changePathFunction( res['Value']['Successful'], credDict,
+                                       self.db.dtree.changeDirectoryOwner,
+                                       self.fileManager.setFileOwner,
+                                       recursive = recursive )
+    failed.update( result['Value']['Failed'] )
+    successful = result['Value']['Successful']
+    return S_OK( { 'Successful':successful, 'Failed':failed } )
 
-    return S_OK({'Successful':successful,'Failed':failed}) 
-  
-  def changePathGroup(self, lfns, credDict, recursive=False):
-    """ Change the group of the given list of paths
-    """
-    res = self._checkPathPermissions( 'changePathGroup', lfns, credDict )
+  def changePathGroup( self, paths, credDict, recursive = False ):
+    """ Bulk method to change Owner for the given paths """
+    res = self._checkPathPermissions( 'Write', paths, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+    result = self._changePathFunction( res['Value']['Successful'], credDict,
+                                       self.db.dtree.changeDirectoryGroup,
+                                       self.fileManager.setFileGroup,
+                                       recursive = recursive )
+    failed.update( result['Value']['Failed'] )
+    successful = result['Value']['Successful']
+    return S_OK( { 'Successful':successful, 'Failed':failed } )
 
-    # if no successful, just return
-    if not res['Value']['Successful']:
-      return S_OK( {'Successful':{}, 'Failed':failed} )
-
-    res = self.fileManager.changePathGroup( res['Value']['Successful'], credDict, recursive )
-    if not res['OK']:
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
-
-    return S_OK({'Successful':successful,'Failed':failed}) 
-
-  def changePathMode( self, lfns, credDict, recursive = False ):
-    """ Change the mode of the given list of paths
-    """
-    res = self._checkPathPermissions( 'changePathMode', lfns, credDict )
+  def changePathMode( self, paths, credDict, recursive = False ):
+    """ Bulk method to change Owner for the given paths """
+    res = self._checkPathPermissions( 'Write', paths, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+    result = self._changePathFunction( res['Value']['Successful'], credDict,
+                                       self.db.dtree.changeDirectoryMode,
+                                       self.fileManager.setFileMode,
+                                       recursive = recursive )
+    failed.update( result['Value']['Failed'] )
+    successful = result['Value']['Successful']
+    return S_OK( { 'Successful':successful, 'Failed':failed } )
 
-    # if no successful, just return
-    if not res['Value']['Successful']:
-      return S_OK( {'Successful':{}, 'Failed':failed} )
+  def _changePathFunction( self, paths, credDict, change_function_directory,
+                           change_function_file, recursive = False ):
+    """ A generic function to change Owner, Group or Mode for the given paths """
+    dirList = []
+    result = self.db.isDirectory( paths, credDict )
+    if not result['OK']:
+      return result
+    for p in result['Value']['Successful']:
+      if result['Value']['Successful'][p]:
+        dirList.append( p )
+    fileList = []
+    if len( dirList ) < len( paths ):
+      result = self.isFile( paths )
+      if not result['OK']:
+        return result
+      fileList = result['Value']['Successful'].keys()
 
-    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)    
-    if not res['OK']:
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
+    successful = {}
+    failed = {}
+
+    dirArgs = {}
+    fileArgs = {}
+
+    for path in paths:
+      if ( not path in dirList ) and ( not path in fileList ):
+        failed[path] = 'Path not found'
+      if path in dirList:
+        dirArgs[path] = paths[path]
+      elif path in fileList:
+        fileArgs[path] = paths[path]
+    if dirArgs:
+      result = change_function_directory( dirArgs, recursive = recursive )
+      if not result['OK']:
+        return result
+      successful.update( result['Value']['Successful'] )
+      failed.update( result['Value']['Failed'] )
+    if fileArgs:
+      result = change_function_file( fileArgs )
+      if not result['OK']:
+        return result
+      successful.update( result['Value']['Successful'] )
+      failed.update( result['Value']['Failed'] )
     return S_OK( {'Successful':successful, 'Failed':failed} )
+
 
   ########################################################################
   #
