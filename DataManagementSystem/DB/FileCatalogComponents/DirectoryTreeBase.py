@@ -5,7 +5,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import checkArgumentFormat
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import checkArgumentFormat, getIDSelectString
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 import time, threading, os
 from types import StringTypes, ListType
@@ -337,11 +337,17 @@ class DirectoryTreeBase:
   def _setDirectoryParameter( self, path, pname, pvalue ):
     """ Set a numerical directory parameter
     """
-    result = self.__getDirID( path )
-    if not result['OK']:
-      return result
-    dirID = result['Value']
-    req = "UPDATE FC_DirectoryInfo SET %s=%d WHERE DirID=%d" % ( pname, pvalue, dirID )
+    result = getIDSelectString( path )
+    if not result['OK'] and isinstance( path, basestring ):
+      result = self.__getDirID( path )
+      if not result['OK']:
+        return result
+      result = getIDSelectString( path )
+      if not result['OK']:
+        return result
+
+    dirIDString = result['Value']
+    req = "UPDATE FC_DirectoryInfo SET %s=%d WHERE DirID IN ( %s )" % ( pname, pvalue, dirIDString )
     result = self.db._update( req )
     return result
 
@@ -351,6 +357,25 @@ class DirectoryTreeBase:
     """
     return self._setDirectoryParameter( path, 'UID', uid )
 
+  def setDirectoryOwner( self, path, owner ):
+    """ Set the directory owner
+        :param path: can be string path int ID, tuple or list of IDs, SELECT string of IDs
+        :return S_OK/S_ERROR
+    """
+    return self._setDirectoryOwner( path, owner )
+
+  def _setDirectoryOwner( self, path, owner ):
+    """ Set the directory owner
+        :param path: can be string path int ID, tuple or list of IDs, SELECT string of IDs
+        :return S_OK/S_ERROR
+    """
+    if isinstance( owner, basestring ):
+      result = self.db.ugManager.findUser( owner )
+      if not result['OK']:
+        return result
+      owner = result['Value']
+    return self._setDirectoryParameter( path, 'UID', owner )
+
 #####################################################################
   def _setDirectoryGid( self, path, gid ):
     """ Set the directory group
@@ -358,32 +383,9 @@ class DirectoryTreeBase:
     return self._setDirectoryParameter( path, 'GID', gid )
 
 #####################################################################
-  def setDirectoryOwner( self, path, owner ):
-    """ Set the directory owner
-    """
-
-    result = self.__getDirID( path )
-    if not result['OK']:
-      return result
-    dirID = result['Value']
-    result = self.db.ugManager.findUser( owner )
-    uid = result['Value']
-    result = self._setDirectoryUid( dirID, uid )
-    return result
-
-#####################################################################
-  def changeDirectoryOwner( self, paths, s_uid = 0, s_gid = 0 ):
+  def changeDirectoryOwner( self, paths, recursive = False ):
     """ Bulk setting of the directory owner
     """
-    result = self.db.ugManager.findUser( s_uid )
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.db.ugManager.findGroup( s_gid )
-    if not result['OK']:
-      return result
-    gid = result['Value']
-
     result = checkArgumentFormat( paths )
     if not result['OK']:
       return result
@@ -394,8 +396,33 @@ class DirectoryTreeBase:
       result = self.setDirectoryOwner( path, owner )
       if not result['OK']:
         failed[path] = result['Message']
-      else:
-        successful[path] = True
+        continue
+      if recursive:
+        result = self.__getDirID( path )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        dirID = result['Value']
+        result = self.getSubdirectoriesByID( dirID, requestString = True )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+
+        subDirQuery = result['Value']
+        fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
+
+        result = self.db.ugManager.findUser( owner )
+        uid = result['Value']
+
+        result = self._setDirectoryOwner( subDirQuery, uid )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        result = self.db.fileManager._setFileOwner( fileQuery, uid )
+        if not result['OK']:
+          failed[path] = result['Message']
+        else:
+          successful[path] = True
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
@@ -414,30 +441,44 @@ class DirectoryTreeBase:
     return result
 
 #####################################################################
-  def changeDirectoryGroup( self, paths, s_uid = 0, s_gid = 0 ):
+  def changeDirectoryGroup( self, paths, recursive = False ):
     """ Bulk setting of the directory owner
     """
-    result = self.db.ugManager.findUser( s_uid )
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.db.ugManager.findGroup( s_gid )
-    if not result['OK']:
-      return result
-    gid = result['Value']
-
     result = checkArgumentFormat( paths )
     if not result['OK']:
       return result
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, group in arguments.items():
+    for path, dict in arguments.items():
+      group = dict['Group']
       result = self.setDirectoryGroup( path, group )
       if not result['OK']:
         failed[path] = result['Message']
-      else:
-        successful[path] = True
+        continue
+      if recursive:
+        result = self.__getDirID( path )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        dirID = result['Value']
+        result = self.getSubdirectoriesByID( dirID, requestString = True )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+
+        subDirQuery = result['Value']
+        fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
+
+        result = self._setDirectoryGroup( subDirQuery, group )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        result = self.db.fileManager._setFileGroup( fileQuery, group )
+        if not result['OK']:
+          failed[path] = result['Message']
+        else:
+          successful[path] = True
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
@@ -448,36 +489,50 @@ class DirectoryTreeBase:
     return self._setDirectoryParameter( path, 'Mode', mode )
 
 #####################################################################
-  def changeDirectoryMode( self, paths, s_uid = 0, s_gid = 0 ):
+  def changeDirectoryMode( self, paths, recursive = False ):
     """ Bulk setting of the directory owner
     """
-    result = self.db.ugManager.findUser( s_uid )
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.db.ugManager.findGroup( s_gid )
-    if not result['OK']:
-      return result
-    gid = result['Value']
-
     result = checkArgumentFormat( paths )
     if not result['OK']:
       return result
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, mode in arguments.items():
+    for path, dict in arguments.items():
+      mode = dict['Mode']
       result = self.setDirectoryMode( path, mode )
       if not result['OK']:
         failed[path] = result['Message']
-      else:
-        successful[path] = True
+        continue
+      if recursive:
+        result = self.__getDirID( path )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        dirID = result['Value']
+        result = self.getSubdirectoriesByID( dirID, requestString = True )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+
+        subDirQuery = result['Value']
+        fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
+
+        result = self.setDirectoryMode( subDirQuery, mode )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        result = self.db.fileManager._setFileMode( fileQuery, mode )
+        if not result['OK']:
+          failed[path] = result['Message']
+        else:
+          successful[path] = True
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   #####################################################################
   def setDirectoryStatus( self, path, status ):
-    """ set the directory mask
+    """ set the directory status
     """
     return self._setDirectoryParameter( path, 'Status', status )
 
@@ -580,14 +635,17 @@ class DirectoryTreeBase:
     return result
 
 
-  def getFilesInDirectory( self, dirID, credDict ):
+  def getFilesInDirectory( self, dirID, credDict, requestString = False ):
     """ Get file IDs for the given directory
     """
-    dirs = dirID
-    if type( dirID ) != ListType:
-      dirs = [dirID]
+    result = getIDSelectString( dirID )
+    if not result['OK']:
+      return result
+    dirListString = result['Value']
 
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+    if requestString:
+      req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % dirListString
+      return S_OK( req )
 
     req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
     result = self.db._query( req )
