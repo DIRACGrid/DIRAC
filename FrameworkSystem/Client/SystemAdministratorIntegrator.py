@@ -20,11 +20,20 @@ class SystemAdministratorIntegrator( object ):
       self.__hosts = kwargs['hosts']
       del kwargs['hosts']
     else:  
-      result = Registry.getTrustedHosts()
+      result = Registry.getHosts()
       if result['OK']:
         self.__hosts = result['Value']
       else:
         self.__hosts = []
+
+    # Ping the hosts to remove those that don't have a SystemAdministrator service
+    sysAdminHosts = []
+    for host in self.__hosts:
+      client = SystemAdministratorClient( host )
+      result = client.ping()
+      if result[ 'OK' ]:
+        sysAdminHosts.append( host )
+    self.__hosts = sysAdminHosts
       
     self.__kwargs = dict( kwargs )  
     self.__pool = ThreadPool( len( self.__hosts ) )  

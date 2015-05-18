@@ -169,19 +169,6 @@ def getHostOption( hostName, optName, defaultValue = "" ):
 def getHosts():
   return gConfig.getSections( '%s/Hosts' % gBaseRegistrySection )
 
-def getTrustedHosts():
-  trustedHosts = []
-  result = gConfig.getSections( '%s/Hosts' % gBaseRegistrySection )
-  if not result[ 'OK' ]:
-    return result
-  hosts = result[ 'Value' ]
-
-  for host in hosts:
-    properties = gConfig.getValue( 'Registry/Hosts/%s/Properties' % host )
-    if properties and 'TrustedHost' in properties.split( ', ' ):
-        trustedHosts.append( host )
-  return S_OK( trustedHosts )
-
 def getVOOption( voName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/VO/%s/%s" % ( gBaseRegistrySection, voName, optName ), defaultValue )
 
