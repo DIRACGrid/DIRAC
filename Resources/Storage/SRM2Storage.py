@@ -1089,6 +1089,10 @@ class SRM2Storage( StorageBase ):
 
     self.log.debug( "SRM2Storage.listDirectory: Attempting to list %s directories." % len( urls ) )
 
+    # The gfal method returns an url, while we want to return an LFN to the user
+    urlStart = self.getURLBase( withWSUrl = True )['Value']
+
+
     res = self.isDirectory( urls )
     if not res['OK']:
       return res
@@ -1128,10 +1132,13 @@ class SRM2Storage( StorageBase ):
                 self.log.error( "File found with status 22", subPathDict )
               elif subPathDict['status'] == 0:
                 statDict = self.__parse_file_metadata( subPathDict )
+
+                # Replace the URL with an LFN
+                subPathLFN = subPathSURL.replace( urlStart, '' )
                 if statDict['File']:
-                  subPathFiles[subPathSURL] = statDict
+                  subPathFiles[subPathLFN] = statDict
                 elif statDict['Directory']:
-                  subPathDirs[subPathSURL] = statDict
+                  subPathDirs[subPathLFN] = statDict
           # Keep the infomation about this path's subpaths
           successful[pathSURL]['SubDirs'] = subPathDirs
           successful[pathSURL]['Files'] = subPathFiles
@@ -1144,6 +1151,7 @@ class SRM2Storage( StorageBase ):
         errStr = "SRM2Storage.listDirectory: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
+
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def putDirectory( self, path ):
