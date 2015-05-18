@@ -47,6 +47,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 # # from Core
 from DIRAC.Core.Utilities.LockRing import LockRing
@@ -380,6 +381,11 @@ class FTSAgent( AgentModule ):
 
   def execute( self ):
     """ one cycle execution """
+
+    # Don't use the server certificate otherwise the DFC wont let us write
+    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+
+
     log = gLogger.getSubLogger( "execute" )
     # # reset FTSPlacement if expired
     now = datetime.datetime.now()
