@@ -8,6 +8,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import
 from DIRAC.Core.Utilities.List                                            import stringListToString, \
                                                                                  intListToString, \
                                                                                  breakListIntoChunks
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities        import getIDSelectString
 
 DEBUG = 0
 
@@ -617,20 +618,23 @@ class FileManager( FileManagerBase ):
 
   def _setFileParameter( self, fileID, paramName, paramValue, connection = False ):
     connection = self._getConnection(connection)
-    if type(fileID) not in [TupleType,ListType]:
-      fileID = [fileID]
+
+    result = getIDSelectString( fileID )
+    if not result['OK']:
+      return result
+    fileIDString = result['Value']
       
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
-      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % ( paramName, paramValue, intListToString( fileID ) )
+      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % ( paramName, paramValue, fileIDString )
       result = self.db._update(req,connection)
       if not result['OK']:
         return result
-      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % intListToString( fileID )
+      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % fileIDString
     else:  
       req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % ( paramName, paramValue,
-                                                                                                       intListToString( fileID ) )
-    return self.db._update(req,connection)
+                                                                                                        fileIDString )
+    return self.db._update( req, connection )
     
   def __getRepIDForReplica( self, fileID, seID, connection = False ):
     connection = self._getConnection(connection)
@@ -655,7 +659,8 @@ class FileManager( FileManagerBase ):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], allStatus = False, connection = False ):
+  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'],
+                        allStatus = False, connection = False ):
     """ Get replicas for the given list of files specified by their fileIDs
     """
     fields = list(fields_input)
@@ -670,22 +675,22 @@ class FileManager( FileManagerBase ):
       repIDDict = {}  
       if fields:  
         req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % \
-              (intListToString(fields),intListToString(fileIDDict.keys()))
-        res = self.db._query(req,connection)
+              ( intListToString( fields ), intListToString( fileIDDict.keys() ) )
+        res = self.db._query( req, connection )
         if not res['OK']:
           return res
         for tuple_ in res['Value']:
           repID = tuple_[0]
-          repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
+          repIDDict[repID] = dict( zip( fields, tuple_[1:] ) )
           statusID = fileIDDict[repID][2]
-          res = self._getIntStatus(statusID,connection=connection)
+          res = self._getIntStatus( statusID, connection = connection )
           if not res['OK']:
             continue
           repIDDict[repID]['Status'] = res['Value']
       else:
         for repID in fileIDDict:
           statusID = fileIDDict[repID][2]
-          res = self._getIntStatus(statusID,connection=connection)
+          res = self._getIntStatus( statusID, connection = connection )
           if not res['OK']:
             continue
           repIDDict[repID] = {'Status' : res['Value'] }  
