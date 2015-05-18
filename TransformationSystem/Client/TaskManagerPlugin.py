@@ -106,16 +106,18 @@ class TaskManagerPlugin( PluginBase ):
     destSites = set( res['Value'] )
 
     # 2. get JobTypeMapping "Exclude" value (and add autoAddedSites)
+    gLogger.debug( "Getting JobTypeMapping 'Exclude' value (and add autoAddedSites)" )
     jobType = self.params['JobType']
     if not jobType:
       raise RuntimeError( "No jobType specified" )
     excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, '' )
+    gLogger.debug( "Excluded sites for %s jobs: %s" % ( jobType, excludedSites ) )
     excludedSites = excludedSites + ',' + ','.join( fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
       pass
-    elif excludedSites == 'ALL' or 'ALL' in excludedSites:
+    elif excludedSites == 'ALL' or 'ALL,' in excludedSites:
       destSites = set()
     else:
       destSites = destSites.difference( set( fromChar( excludedSites ) ) )
@@ -127,6 +129,7 @@ class TaskManagerPlugin( PluginBase ):
       allowed = {}
     else:
       allowed = res['Value']
+      gLogger.debug( "Allowed sites for %s jobs: %s" % ( jobType, ','.join( allowed ) ) )
       for site in allowed:
         allowed[site] = fromChar( allowed[site] )
 
@@ -148,4 +151,5 @@ class TaskManagerPlugin( PluginBase ):
         else:
           destSites.add( destSite )
 
+    gLogger.debug( "Computed list of destination sites for %s jobs: %s" % ( jobType, ','.join( destSites ) ) )
     return destSites
