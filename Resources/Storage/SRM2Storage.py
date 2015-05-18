@@ -1579,9 +1579,9 @@ class SRM2Storage( StorageBase ):
             allObtained = True
 
 
-          for urlDict in allResults:
-            if 'surl' in urlDict:
-              urlDict['surl'] = self.__convertRandomSRMOutputIntoAFullURL( urlDict['surl'] )['Value']
+      for urlDict in allResults:
+        if 'surl' in urlDict:
+          urlDict['surl'] = self.__convertRandomSRMOutputIntoAFullURL( urlDict['surl'] )['Value']
 
       successful.append( { 'surl' : url, 'status' : 0, 'subpaths' : allResults } )
     # gDataStoreClient.commit()
