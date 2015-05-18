@@ -10,6 +10,7 @@ Do the initial installation of a DIRAC Web portal
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Utilities import InstallTools
+from DIRAC import S_OK
 #
 InstallTools.exitOnError = True
 #
