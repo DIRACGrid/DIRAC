@@ -20,10 +20,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 class ReqClient( Client ):
-  """
-  .. class:: ReqClient
-
-  ReqClient is a class manipulating and operation on Requests.
+  """ReqClient is a class manipulating and operation on Requests.
 
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
@@ -77,13 +74,14 @@ class ReqClient( Client ):
     return self.__requestValidator
 
   def putRequest( self, request, useFailoverProxy = True, retryMainService = 0 ):
-    """ put request to RequestManager
+    """Put request to RequestManager
 
-    :param self: self reference
-    :param Request request: Request instance
-    :param useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
-    :param retryMainService : Amount of time we retry on the main ReqHandler in case of failures.
+      :param self: self reference
+      :param Request.Request request: Request instance
+      :param bool useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
+      :param int retryMainService: Amount of time we retry on the main ReqHandler in case of failures
 
+      :return S_OK/S_ERROR
     """
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
@@ -131,12 +129,12 @@ class ReqClient( Client ):
     return errorsDict
 
   def getRequest( self, requestID = 0 ):
-    """ get request from RequestDB
+    """Get request from RequestDB
 
-    :param self: self reference
-    :param requestID : ID of the request. If 0, choice is made for you
+      :param self: self reference
+      :param int requestID: ID of the request. If 0, choice is made for you
 
-    :return: S_OK( Request instance ) or S_OK() or S_ERROR
+      :return S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestID )

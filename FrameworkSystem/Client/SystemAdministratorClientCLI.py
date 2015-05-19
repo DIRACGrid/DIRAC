@@ -529,7 +529,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDatabaseOptionsToCS( gConfig, system, database, hostSetup )
+      result = InstallTools.addDatabaseOptionsToCS( gConfig, system, database, hostSetup, overwrite = True )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return

@@ -33,15 +33,13 @@ from sqlalchemy.ext.hybrid import hybrid_property
 class File( object ):
 
   """
-  .. class:: File
-
    A bag object holding Operation file attributes.
 
-  :param Operation _parent: reference to parent Operation
+  :param Operation.Operation _parent: reference to parent Operation
   :param dict __data__: attrs dict
 
 
-    It is managed by SQLAlchemy, so the OperationID, FileID should never be set by hand
+  It is managed by SQLAlchemy, so the OperationID, FileID should never be set by hand
   (except when constructed from JSON of course...)
   In principle, the _parent attribute could be totally managed by SQLAlchemy. However, it is
   set only when inserted into the DB, this is why I manually set it in the Operation

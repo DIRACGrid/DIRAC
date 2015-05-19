@@ -55,33 +55,37 @@ class DowntimeCommand( Command ):
     return resQuery
   
   
-  def _cleanCommand( self, element, elementName):
+  def _cleanCommand( self, element, elementNames):
     '''
       Clear Cache from expired DT.
     '''
     
-    #reading all the cache entries
-    result = self.rmClient.selectDowntimeCache( 
+    resQuery = []
+    
+    for elementName in elementNames:
+      #reading all the cache entries
+      result = self.rmClient.selectDowntimeCache( 
                                element = element,
                                name = elementName
                                )
 
-    if not result[ 'OK' ]:
-      return result
+      if not result[ 'OK' ]:
+        return result
 
-    uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
+      uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
     
-    currentDate = datetime.utcnow()
+      currentDate = datetime.utcnow()
     
-    if len(uniformResult) == 0:
-      return S_OK( None ) 
+      if len(uniformResult) == 0:
+        return S_OK( None ) 
     
-    resQuery = None
-    for dt in uniformResult:
-      if dt[ 'EndDate' ] < currentDate:
-        resQuery = self.rmClient.deleteDowntimeCache ( 
+      for dt in uniformResult:
+        if dt[ 'EndDate' ] < currentDate:
+          result = self.rmClient.deleteDowntimeCache ( 
                                downtimeID = dt[ 'DowntimeID' ]
                                )
+          resQuery.append(result)
+          
     return S_OK( resQuery )
 
 
@@ -163,9 +167,15 @@ class DowntimeCommand( Command ):
 
     if masterParams is not None:
       element, elementNames = masterParams
+      #translate DIRAC CS elementNames into GOCDB elementNames
+      translatedElementNames = []
+      for e in elementNames:
+        translatedElementNames.append(CSHelpers.getSEHost( e ))
+      elementNames = translatedElementNames
       hours = None
       elementName = None
       gocdbServiceType = None
+
     else:
       params = self._prepareCommand()
       if not params[ 'OK' ]:
@@ -179,11 +189,11 @@ class DowntimeCommand( Command ):
       startDate = datetime.utcnow() + timedelta( hours = hours )
 
     try:
-      results = self.gClient.getStatus( element, elementName, startDate )
+      results = self.gClient.getStatus( element, elementNames, startDate )
     except urllib2.URLError:
       try:
         #Let's give it a second chance..
-        results = self.gClient.getStatus( element, elementName, startDate )
+        results = self.gClient.getStatus( element, elementNames, startDate )
       except urllib2.URLError, e:
         return S_ERROR( e )
 
@@ -196,7 +206,7 @@ class DowntimeCommand( Command ):
     
     
     #cleaning the Cache
-    cleanRes = self._cleanCommand(element, elementName)
+    cleanRes = self._cleanCommand(element, elementNames)
     if not cleanRes[ 'OK' ]:
       return cleanRes
     
@@ -216,13 +226,13 @@ class DowntimeCommand( Command ):
         return S_ERROR( "SITENAME or HOSTNAME are missing" )
          
       
-      if gocdbServiceType and 'SERVICE_TYPE' in downDic.keys():
-        gocdbST = gocdbServiceType.lower()
-        csST = downDic[ 'SERVICE_TYPE' ].lower()
-        if gocdbST != csST:
-          return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )
-        else:
-          dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+      if 'SERVICE_TYPE' in downDic.keys():
+        dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
+        if gocdbServiceType:
+          gocdbST = gocdbServiceType.lower()
+          csST = downDic[ 'SERVICE_TYPE' ].lower()
+          if gocdbST != csST:
+            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )          
       else:
         #WARNING: do we want None as default value?
         dt[ 'GOCDBServiceType' ] = None
@@ -296,11 +306,11 @@ class DowntimeCommand( Command ):
     
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < targetDate ) and ( dt[ 'EndDate' ] > targetDate ):
-          #if outage we put it on top of the overlapping buffer
+          #if outage, we put it on top of the overlapping buffer
           #i.e. the latest ending outage is on top
           if dt['Severity'].upper() == 'OUTAGE':
             dtOverlapping = [dt] + dtOverlapping
-          #if warning we put it at the bottom of the overlapping buffer
+          #if warning, we put it at the bottom of the overlapping buffer
           #i.e. the latest ending warning is at the bottom
           elif  dt['Severity'].upper() == 'WARNING':
             dtOverlapping.append(dt)

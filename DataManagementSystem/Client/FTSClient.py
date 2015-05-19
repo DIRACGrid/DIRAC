@@ -142,7 +142,7 @@ class FTSClient( Client ):
   def putFTSJob( self, ftsJob ):
     """ put FTSJob into FTSDB
 
-    :param FTSJob ftsJob: FTSJob instance
+    :param FTSJob.FTSJob ftsJob: FTSJob instance
     """
     ftsJobJSON = ftsJob.toJSON()
     if not ftsJobJSON['OK']:
