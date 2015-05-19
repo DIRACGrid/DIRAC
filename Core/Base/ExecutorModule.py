@@ -1,13 +1,17 @@
-import sys, time, threading, os
-from DIRAC import gLogger
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
+""" Executor Module
+
+    Just provides a number of functions used by all executors
+"""
+
+import os
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 
 class ExecutorModule( object ):
+  """ All executors should inherit from this module
+  """
 
   @classmethod
   def _ex_initialize( cls, exeName, loadName ):

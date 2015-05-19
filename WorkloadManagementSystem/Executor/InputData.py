@@ -1,21 +1,17 @@
-########################################################################
-# $HeadURL$
-# File :    InputDataAgent.py
-########################################################################
 """
-  The Input Data Agent queries the file catalog for specified job input data and adds the
-  relevant information to the job optimizer parameters to be used during the
-  scheduling decision.
+  The InputData Optimizer Executor queries the file catalog for specified job input data and adds the
+  relevant information to the job optimizer parameters to be used during the scheduling decision.
 """
 __RCSID__ = "$Id$"
 
 import time
 import pprint
+from DIRAC                                                           import S_OK, S_ERROR
+
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
 from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
-from DIRAC                                                           import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 
 
