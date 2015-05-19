@@ -77,7 +77,7 @@ class ReqClient( Client ):
     """Put request to RequestManager
 
       :param self: self reference
-      :param Request request: Request instance
+      :param Request.Request request: Request instance
       :param bool useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
       :param int retryMainService: Amount of time we retry on the main ReqHandler in case of failures
 
