@@ -39,7 +39,7 @@ class File( object ):
   :param dict __data__: attrs dict
 
 
-    It is managed by SQLAlchemy, so the OperationID, FileID should never be set by hand
+  It is managed by SQLAlchemy, so the OperationID, FileID should never be set by hand
   (except when constructed from JSON of course...)
   In principle, the _parent attribute could be totally managed by SQLAlchemy. However, it is
   set only when inserted into the DB, this is why I manually set it in the Operation
