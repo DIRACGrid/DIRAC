@@ -3,6 +3,8 @@
     Just provides a number of functions used by all executors
 """
 
+__RCSID__ = "$Id$"
+
 import os
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
