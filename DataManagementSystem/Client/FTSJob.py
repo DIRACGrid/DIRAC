@@ -4,15 +4,9 @@
 # Date: 2013/04/02 13:41:20
 ########################################################################
 """
-:mod: FTSJob
-
-.. module: FTSJob
-
-:synopsis: class representing FTS job
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-class representing single FTS request
+FTSJob class representing single FTS request
 """
 
 __RCSID__ = "$Id $"
@@ -44,8 +38,6 @@ import fts3.rest.client.easy as fts3
 ########################################################################
 class FTSJob( object ):
   """
-  .. class:: FTSJob
-
   class describing one FTS job
   """
 

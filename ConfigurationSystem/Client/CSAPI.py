@@ -230,12 +230,14 @@ class CSAPI( object ):
   def addUser( self, username, properties ):
     """
     Add a user to the cs
-      - username
-      - properties is a dict with keys:
+      :param str username: group name
+      :param dict properties: dictionary describing user properties:
+
         - DN
         - groups
         - <extra params>
-    Returns True/False
+
+      :return True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -266,12 +268,14 @@ class CSAPI( object ):
   def modifyUser( self, username, properties, createIfNonExistant = False ):
     """
     Modify a user
-      - username
-      - properties is a dict with keys:
+      :param str username: group name
+      :param dict properties: dictionary describing user properties:
+
         - DN
         - Groups
         - <extra params>
-    Returns True/False
+
+      :return True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -323,12 +327,14 @@ class CSAPI( object ):
   def addGroup( self, groupname, properties ):
     """
     Add a group to the cs
-      - groupname
-      - properties is a dict with keys:
+      :param str groupname: group name
+      :param dict properties: dictionary describing group properties:
+
         - Users
         - Properties
         - <extra params>
-    Returns True/False
+
+      :return True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -345,12 +351,14 @@ class CSAPI( object ):
   def modifyGroup( self, groupname, properties, createIfNonExistant = False ):
     """
     Modify a user
-      - groupname
-      - properties is a dict with keys:
+      :param str groupname: group name
+      :param dict properties: dictionary describing group properties:
+
         - Users
         - Properties
         - <extra params>
-    Returns True/False
+
+      :return True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -378,12 +386,14 @@ class CSAPI( object ):
   def addHost( self, hostname, properties ):
     """
     Add a host to the cs
-      - hostname
-      - properties is a dict with keys:
+      :param str hostname: hostname name
+      :param dict properties: dictionary describing host properties:
+
         - DN
         - Properties
         - <extra params>
-    Returns True/False
+
+      :return True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -503,13 +513,15 @@ class CSAPI( object ):
 
   def modifyHost( self, hostname, properties, createIfNonExistant = False ):
     """
-    Modify a user
-      - hostname
-      - properties is a dict with keys:
+    Modify a host
+      :param str hostname: hostname name
+      :param dict properties: dictionary describing host properties:
+
         - DN
         - Properties
         - <extra params>
-    Returns True/False
+
+      :return True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized

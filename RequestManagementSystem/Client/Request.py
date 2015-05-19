@@ -36,8 +36,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 ########################################################################
 class Request( object ):
   """
-  .. class:: Request
-
   :param int RequestID: requestID
   :param str Name: request' name
   :param str OwnerDN: request's owner DN
@@ -50,7 +48,7 @@ class Request( object ):
   :param datetime.datetime LastUpdate: UTC datetime
   :param datetime.datetime NotBefore: UTC datetime
   :param str Status: request's status
-  :param TypedList operations: list of operations
+  :param TypedList.TypedList operations: list of operations
 
   It is managed by SQLAlchemy, so the RequestID should never be set by hand (except when constructed from
   JSON of course...)
@@ -180,7 +178,7 @@ class Request( object ):
     """ in operator
 
     :param self: self reference
-    :param Operation subRequest: a subRequest
+    :param Operation.Operation subRequest: a subRequest
     """
     return bool( operation in self.__operations__ )
 
@@ -188,7 +186,7 @@ class Request( object ):
     """ += operator for subRequest
 
     :param self: self reference
-    :param Operation operation: sub-request to add
+    :param Operation.Operation operation: sub-request to add
     """
     if operation not in self:
       self.__operations__.append( operation )
@@ -200,8 +198,8 @@ class Request( object ):
     """ insert :newOperation: just before :existingOperation:
 
     :param self: self reference
-    :param Operation newOperation: Operation to be inserted
-    :param Operation existingOperation: previous Operation sibling
+    :param Operation.Operation newOperation: Operation to be inserted
+    :param Operation.Operation existingOperation: previous Operation sibling
     """
     if existingOperation not in self:
       return S_ERROR( "%s is not in" % existingOperation )
@@ -215,8 +213,8 @@ class Request( object ):
     """ insert :newOperation: just after :existingOperation:
 
     :param self: self reference
-    :param Operation newOperation: Operation to be inserted
-    :param Operation existingOperation: next Operation sibling
+    :param Operation.Operation newOperation: Operation to be inserted
+    :param Operation.Operation existingOperation: next Operation sibling
     """
     if existingOperation not in self:
       return S_ERROR( "%s is not in" % existingOperation )
@@ -230,7 +228,7 @@ class Request( object ):
     """ add :operation: to list of Operations
 
     :param self: self reference
-    :param Operation operation: Operation to be inserted
+    :param Operation.Operation operation: Operation to be inserted
     """
     if operation in self:
       return S_ERROR( "This operation is already in!!!" )
