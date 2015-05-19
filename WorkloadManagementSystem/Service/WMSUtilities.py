@@ -76,19 +76,21 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   return result
 
 def getARCPilotOutput( proxy, pilotRef ):
+  try :
+    import arc
+  except :
+    return S_ERROR( "ARC api not available. Sorry." )
   tmp_dir = mkdtemp()
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
-  mySite = getCESiteMapping()['Value'][myce]
-  workDB = gConfig.getValue(cfgPath('Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'))
-  myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL", workDB)
-  cmd = [ 'arcget' ]
-  cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
-  ret = executeGridCommand( proxy, cmd, gridEnv )
-  if not ret['OK']:
-    shutil.rmtree( tmp_dir )
-    return ret
-  status, output, error = ret['Value']
+  usercfg = arc.UserConfig()
+  usercfg.CredentialString(proxy)
+  job = arc.Job()
+  job.jobID = pilotRef
+  job.JobStatusURL = arc.URL(cfgPath("ldap://", myce, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
+  job.JobManagementURL = arc.URL(cfgPath("gsiftp://", myce, ":2811/jobs/"))
+  job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+  job.Retrieve(usercfg, arc.URL(tmp_dir), False) 
   if 'Results stored at:' in output :
     tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
     result = S_OK()

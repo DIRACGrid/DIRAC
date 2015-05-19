@@ -4,6 +4,7 @@
 ########################################################################
 
 """ ARC Computing Element 
+    Using the ARC API now
 """
 
 __RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
@@ -18,6 +19,7 @@ from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 
+import arc # Has to work if this module is called
 CE_NAME = 'ARC'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
@@ -41,6 +43,21 @@ class ARCComputingElement( ComputingElement ):
       self.ceHost = self.ceParameters['Host']
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
+    # Used in getJobStatus
+    self.mapStates = { 'ACCEPTED' : 'Scheduled',
+                       'PREPARING' : 'Scheduled',
+                       'SUBMITTING' : 'Scheduled',
+                       'QUEUING' : 'Scheduled',
+                       'HOLD' : 'Scheduled',
+                       'UNDEFINED' : 'Unknown',
+                       'RUNNING' : 'Running',
+                       'FINISHING' : 'Running',
+                       'DELETED' : 'Killed',
+                       'KILLED' : 'Killed',
+                       'FAILED' : 'Failed',
+                       'FINISHED' : 'Done',
+                       'OTHER' : 'Done'
+      }
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -91,27 +108,38 @@ class ARCComputingElement( ComputingElement ):
     batchIDList = []
     stampDict = {}
 
+    # Do not need to loop over these ... the pilot proxy is the same for everyone
+    usercfg = arc.UserConfig()
+    usercfg.CredentialString(proxy)
+    endpoint = arc.Endpoint(cfgPath("gsiftp://", self.ceHost, ":2811/jobs"), arc.Endpoint.JOBSUBMIT,
+                            "org.nordugrid.gridftpjob")
+
     i = 0
     while i < numberOfJobs:
       i += 1
+      # The basic job description
+      job = arc.Job()
+      jobdescs = arc.JobDescriptionList()
+      # Get the job into the ARC way
       xrslName, diracStamp = self.__writeXRSL( executableFile )
-      cmd = ['arcsub', '-j', self.ceParameters['JobListFile'],
-             '-c', '%s' % self.ceHost, '%s' % xrslName ]
-      result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+      if not arc.JobDescription_Parse(xrslName, jobdescs):
+        logger.msg(arc.ERROR, "Invalid job description")
+        sys.exit(1) 
+      # Submit the job
+      jobs = arc.JobList() # filled by the submit process
+      submitter = arc.Submitter(usercfg)
+      result = submitter.Submit(endpoint, jobdescs, jobs)
+      # Remove clutter
       os.unlink( xrslName )
-      if not result['OK']:
-        break
-      if result['Value'][0] != 0:
-        break
-      pilotJobReference = result['Value'][1].strip()
-      if pilotJobReference and pilotJobReference.startswith('Job submitted with jobid:'):
-        pilotJobReference = pilotJobReference.replace('Job submitted with jobid:','').strip()
+      # Save info or else ...
+      if ( result == arc.SubmissionStatus.NONE ) :
+        # Job successfully submitted
+        pilotJobReference = jobs[0].JobID
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
-      else:
-        break    
+      else :
+        break
 
-    #os.unlink( executableFile )
     if batchIDList:
       result = S_OK( batchIDList )
       result['PilotStampDict'] = stampDict
@@ -133,7 +161,7 @@ class ARCComputingElement( ComputingElement ):
     for job in jobList:
       jobListFile.write( job+'\n' )  
       
-    cmd = ['arckill','-c',self.ceHost,'-i',name]
+    cmd = ['arckill', '-c', self.ceHost, '-i', name]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     os.unlink( name )
     if not result['OK']:
@@ -147,88 +175,22 @@ class ARCComputingElement( ComputingElement ):
   def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
-    cmd = ['arcstat', '-c', self.ceHost, '-j', self.ceParameters['JobListFile'] ]
-    result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-    resultDict = {}
-    if not result['OK']:
-      return result
 
-    if result['Value'][0]==1 and result['Value'][1]=="No jobs\n":
-      result = S_OK()
-      result['RunningJobs'] = 0
-      result['WaitingJobs'] = 0
-      result['SubmittedJobs'] = 0
-      return result
+    usercfg = arc.UserConfig()
+    usercfg.CredentialString(self.proxy)
 
-    if result['Value'][0]:
-      if result['Value'][2]:
-        return S_ERROR(result['Value'][2])
-      else:
-        return S_ERROR('Error while interrogating CE status')
-    if result['Value'][1]:
-      resultDict = self.__parseJobStatus( result['Value'][1] )
-
-    running = 0
-    waiting = 0
-    for ref in resultDict:
-      status = resultDict[ref]
-      if status == 'Scheduled':
-        waiting += 1
-      if status == 'Running':
-        running += 1
+    endpoints = [arc.Endpoint( cfgPath("ldap://", self.ceHost, "/MDS-Vo-name=local,o=grid"),
+                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+    retriever = arc.ComputingServiceRetriever(usercfg, endpoints)
+    retriever.wait()
+    targets = retriever.GetExecutionTargets()
+    ceStats = targets[0].ComputingShare
 
     result = S_OK()
-    result['RunningJobs'] = running
-    result['WaitingJobs'] = waiting
+    result['RunningJobs'] = ceStats.RunningJobs
+    result['WaitingJobs'] = ceStats.WaitingJobs
     result['SubmittedJobs'] = 0
     return result
-
-  def __parseJobStatus( self, commandOutput ):
-    """ 
-    """
-    resultDict = {}
-    lines = commandOutput.split('\n')
-    
-    ln = 0
-    while ln < len( lines ):
-      if lines[ln].startswith( 'Job:' ):
-        jobRef = lines[ln].split()[1]
-        ln += 1
-        line = lines[ln].strip()
-        stateARC = ''
-        if line.startswith( 'State' ):
-          stateARC = line.replace( 'State:','' ).strip()
-          line = lines[ln+1].strip()
-          exitCode = None 
-          if line.startswith( 'Exit Code' ):
-            line = line.replace( 'Exit Code:','' ).strip()
-            exitCode = int( line )
-         
-          # Evaluate state now
-          if stateARC in ['Accepted','Preparing','Submitting','Queuing','Hold']:
-            resultDict[jobRef] = "Scheduled"
-          elif stateARC in ['Running','Finishing']:
-            resultDict[jobRef] = "Running"
-          elif stateARC in ['Killed','Deleted']:
-            resultDict[jobRef] = "Killed"
-          elif stateARC in ['Finished','Other']:
-            if exitCode is not None:
-              if exitCode == 0:
-                resultDict[jobRef] = "Done" 
-              else:
-                resultDict[jobRef] = "Failed"
-            else:
-              resultDict[jobRef] = "Failed"
-          elif stateARC in ['Failed']:
-            resultDict[jobRef] = "Failed"
-          else:
-            self.log.warn( "Unknown state %s for job %s" % ( stateARC, jobRef ) )
-      elif lines[ln].startswith( "WARNING: Job information not found:" ):
-        jobRef = lines[ln].replace( 'WARNING: Job information not found:', '' ).strip()
-        resultDict[jobRef] = "Scheduled"
-      ln += 1
-          
-    return resultDict                       
 
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
@@ -242,7 +204,7 @@ class ARCComputingElement( ComputingElement ):
     if type( jobIDList ) in StringTypes:
       jobTmpList = [ jobIDList ]
 
-
+    # Not sure if this is needed but assume it is ....
     jobList = []
     for j in jobTmpList:
       if ":::" in j:
@@ -251,30 +213,29 @@ class ARCComputingElement( ComputingElement ):
         job = j
       jobList.append( job )
       jobListFile.write( job+'\n' )  
-      
-    cmd = ['arcstat','-c',self.ceHost,'-i',name,'-j',self.ceParameters['JobListFile']]
-    result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-    os.unlink( name )
-    
+
+    usercfg = arc.UserConfig()
+    usercfg.CredentialString(self.proxy)
     resultDict = {}
-    if not result['OK']:
-      self.log.error( 'Failed to get job status', result['Message'] )
-      return result
-    if result['Value'][0]:
-      if result['Value'][2]:
-        return S_ERROR(result['Value'][2])
-      else:
-        return S_ERROR('Error while interrogating job statuses')
-    if result['Value'][1]:
-      resultDict = self.__parseJobStatus( result['Value'][1] )
-     
+    for job in jobList:
+      job = arc.Job()
+      job.JobID = job
+      job.JobStatusURL = arc.URL(cfgPath("ldap://", self.ceHost, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
+      job.JobManagementURL = arc.URL(cfgPath("gsiftp://", self.ceHost, ":2811/jobs/"))
+      job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+      job.PrepareHandler(usercfg)
+      job.Update()
+      arcState = job.State.GetSpecificState()
+      resultDict[job] = self.mapStates[arcState]
+      # If done - is it really done? Check the exit code
+      if (self.mapStates[arcState] == "Done") :
+        exitCode = job.ExitCode
+        if ( exitCode != 0 ) :
+          resultDict[job] == "Failed"
+      
     if not resultDict:
       return  S_ERROR('No job statuses returned')
 
-    # If CE does not know about a job, set the status to Unknown
-    for job in jobList:
-      if not resultDict.has_key( job ):
-        resultDict[job] = 'Unknown'
     return S_OK( resultDict )
 
   def getJobOutput( self, jobID, localDir = None ):
@@ -290,7 +251,15 @@ class ARCComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    arcID = os.path.basename(pilotRef)
+    usercfg = arc.UserConfig()
+    usercfg.CredentialString(self.proxy)
+    job = arc.Job()
+    job.jobID = os.path.basename(pilotRef)
+    job.JobStatusURL = arc.URL(cfgPath("ldap://", self.ceHost, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
+    job.JobManagementURL = arc.URL(cfgPath("gsiftp://", self.ceHost, ":2811/jobs/"))
+    job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+
+    # arcID = os.path.basename(pilotRef)
     if "WorkingDirectory" in self.ceParameters:    
       workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], arcID )
     else:
@@ -298,8 +267,9 @@ class ARCComputingElement( ComputingElement ):
     outFileName = os.path.join( workingDirectory, '%s.out' % stamp )
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
 
-    cmd = ['arcget', '-j', self.ceParameters['JobListFile'], pilotRef ]
-    result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+    job.Retrieve(usercfg, arc.URL("./"), False) 
+    #cmd = ['arcget', '-j', self.ceParameters['JobListFile'], pilotRef ]
+    #result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     output = ''
     if result['OK']:
       if not result['Value'][0]:
