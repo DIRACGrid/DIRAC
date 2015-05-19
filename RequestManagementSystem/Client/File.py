@@ -33,11 +33,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 class File( object ):
 
   """
-  .. class:: File
-
    A bag object holding Operation file attributes.
 
-  :param Operation _parent: reference to parent Operation
+  :param Operation.Operation _parent: reference to parent Operation
   :param dict __data__: attrs dict
 
 

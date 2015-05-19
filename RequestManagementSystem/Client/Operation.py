@@ -31,8 +31,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 ########################################################################
 class Operation( object ):
   """
-  .. class:: Operation
-
   :param long OperationID: OperationID as read from DB backend
   :param long RequestID: parent RequestID
   :param str Status: execution status
@@ -42,7 +40,7 @@ class Operation( object ):
   :param str TargetSE: target SE names as comma separated list
   :param str Catalog: catalog to use as comma separated list
   :param str Error: error string if any
-  :param Request parent: parent Request instance
+  :param Request.Request parent: parent Request instance
 
 
   It is managed by SQLAlchemy, so the RequestID, OperationID should never be set by hand

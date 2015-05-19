@@ -20,10 +20,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 class ReqClient( Client ):
-  """
-  .. class:: ReqClient
-
-  ReqClient is a class manipulating and operation on Requests.
+  """ReqClient is a class manipulating and operation on Requests.
 
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
@@ -80,7 +77,7 @@ class ReqClient( Client ):
     """ put request to RequestManager
 
     :param self: self reference
-    :param Request request: Request instance
+    :param Request.Request request: Request instance
     :param useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
     :param retryMainService : Amount of time we retry on the main ReqHandler in case of failures.
 
