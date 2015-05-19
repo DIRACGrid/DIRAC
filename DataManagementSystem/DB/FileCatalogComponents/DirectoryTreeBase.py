@@ -444,14 +444,17 @@ class DirectoryTreeBase:
   def changeDirectoryGroup( self, paths, recursive = False ):
     """ Bulk setting of the directory owner
     """
+    return changeDirectoryAttribute( paths,
+                                     self.setDirectoryGroup,
+                                     self.db.fileManager._setFileMode,
+                                     recursive = recursive )
     result = checkArgumentFormat( paths )
     if not result['OK']:
       return result
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      group = dict['Group']
+    for path, group in arguments.items():
       result = self.setDirectoryGroup( path, group )
       if not result['OK']:
         failed[path] = result['Message']
@@ -492,15 +495,26 @@ class DirectoryTreeBase:
   def changeDirectoryMode( self, paths, recursive = False ):
     """ Bulk setting of the directory owner
     """
+    return changeDirectoryAttribute( paths,
+                                     self.setDirectoryMode,
+                                     self.db.fileManager._setFileMode,
+                                     recursive = recursive )
+
+#####################################################################
+  def changeDirectoryAttribute( self, paths,
+                                directoryFunction,
+                                fileFunction,
+                                recursive = False ):
+    """ Bulk setting of the directory owner
+    """
     result = checkArgumentFormat( paths )
     if not result['OK']:
       return result
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      mode = dict['Mode']
-      result = self.setDirectoryMode( path, mode )
+    for path, attribute in arguments.items():
+      result = directoryFunction( path, attribute )
       if not result['OK']:
         failed[path] = result['Message']
         continue
@@ -518,11 +532,11 @@ class DirectoryTreeBase:
         subDirQuery = result['Value']
         fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
 
-        result = self.setDirectoryMode( subDirQuery, mode )
+        result = directoryFunction( subDirQuery, attribute )
         if not result['OK']:
           failed[path] = result['Message']
           continue
-        result = self.db.fileManager._setFileMode( fileQuery, mode )
+        result = fileFunction( fileQuery, attribute )
         if not result['OK']:
           failed[path] = result['Message']
         else:
