@@ -23,7 +23,8 @@ def _parseSingleElement( element, attributes = None ):
       if attrName not in attributes:
         continue
     try:
-      attrValue = str( child.childNodes[0].nodeValue )
+      nodeValue = child.childNodes[0].nodeValue
+      attrValue = nodeValue.encode('utf-8')
     except IndexError:
       continue
     handler[attrName] = attrValue
