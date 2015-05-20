@@ -109,7 +109,7 @@ class ReqProxyHandler( RequestHandler ):
           requestString = "".join( open( cachedFile, "r" ).readlines() )
           cachedRequest = eval( requestString )
           cachedName = cachedRequest.get( "RequestName", "***UNKNOWN***" )
-          setRequest = cls.requestManager().putRequest( cachedRequest )
+          setRequest = cls.requestManager().putRequest( requestString )
           if not setRequest["OK"]:
             gLogger.error( "sweeper: unable to set request %s @ ReqManager: %s" % ( cachedName,
                                                                                     setRequest["Message"] ) )
