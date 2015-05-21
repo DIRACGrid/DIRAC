@@ -87,7 +87,7 @@ class CSAPI( object ):
       return self.__initialized
     self.__rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
     self.__csMod = Modificator( self.__rpcClient, "%s - %s" % ( self.__userGroup, self.__userDN ) )
-    retVal = {'OK':True, 'Value':None} #self.downloadCSData()
+    retVal = self.downloadCSData()
     if not retVal[ 'OK' ]:
       self.__initialized = S_ERROR( "Can not download the remote cfg. Is everything initialized?" )
       return self.__initialized

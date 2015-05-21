@@ -20,9 +20,14 @@ class VOBOXAvailabilityCommand( Command ):
     '''  
       The Command pings a service on a vobox, it needs a service URL to ping it.
       
-      :params:
-        :attr:`ce`: Computing Element    
-        :attr:`host`: BDII server
+      It returns a dict with the following:
+      { 
+        'serviceUpTime' : <serviceUpTime>,
+        'machineUpTime' : <machineUpTime>,
+        'site'          : <site>,
+        'system'        : <system>,
+        'service'       : <service>
+      }
        
     '''
     
