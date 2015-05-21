@@ -35,7 +35,9 @@ def resolveSEGroup( seGroupList ):
 
   return seList
 
-def __getConnectionIndex( connectionLevel ):
+def __getConnectionIndex( connectionLevel, default = None ):
+  if connectionLevel is None:
+    connectionLevel = default
   if isinstance( connectionLevel, ( int, long ) ):
     return connectionLevel
   if isinstance( connectionLevel, basestring ):
@@ -150,10 +152,7 @@ class DMSHelpers( object ):
     return storageElement in resolveSEGroup( seList )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
-    if connectionLevel is None:
-      connectionIndex = DOWNLOAD
-    else:
-      connectionIndex = __getConnectionIndex( connectionLevel )
+    connectionIndex = __getConnectionIndex( connectionLevel, default = DOWNLOAD )
     if connectionIndex == LOCAL:
       return self._getLocalSitesForSE( storageElement )
     if connectionIndex == PROTOCOL:
@@ -209,10 +208,7 @@ class DMSHelpers( object ):
     return S_OK( sorted( sites ) )
 
   def getSEsForSite( self, site, connectionLevel = None ):
-    if connectionLevel is None:
-      connectionIndex = DOWNLOAD
-    else:
-      connectionIndex = __getConnectionIndex( connectionLevel )
+    connectionIndex = __getConnectionIndex( connectionLevel, default = DOWNLOAD )
     if connectionIndex is None:
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
@@ -252,10 +248,7 @@ class DMSHelpers( object ):
     return S_OK( site1 == site2 )
 
   def getSEsAtCountry( self, country, connectionLevel = None ):
-    if connectionLevel is None:
-      connectionIndex = DOWNLOAD
-    else:
-      connectionIndex = __getConnectionIndex( connectionLevel )
+    connectionIndex = __getConnectionIndex( connectionLevel, default = DOWNLOAD )
     if connectionIndex is None:
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
