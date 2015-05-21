@@ -6,7 +6,7 @@ from DIRAC                                                      import S_OK, S_E
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
-from lsm._common import params_to_string
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getVOs
 
 __RCSID__ = '$Id:  $'
 
@@ -35,7 +35,7 @@ class CEAvailabilityCommand( Command ):
     '''
     
     ## INPUT PARAMETERS
-    vo = 'lhcb'
+    vo = getVOs()['Value'].pop()
     
     if 'ce' not in self.args:
       return S_ERROR( "No computing element 'ce' has been specified!" )
