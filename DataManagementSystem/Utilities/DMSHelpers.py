@@ -48,7 +48,6 @@ class DMSHelpers( object ):
   def getSiteSEMapping( self ):
     """ Returns a dictionary of all sites and their localSEs as a list, e.g.
         {'LCG.CERN.ch':['CERN-RAW','CERN-RDST',...]}
-        If gridName is specified, result is restricted to that Grid type.
     """
     if self.siteSEMapping:
       return S_OK( self.siteSEMapping )
@@ -89,7 +88,7 @@ class DMSHelpers( object ):
       sites = result['Value']
       for site in sites:
         candidates = self.__opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-        ses = set( candidates )
+        ses = set( resolveSEGroup( candidates ) )
         # If a candidate is a site, then all local SEs are eligible
         for candidate in ses & siteSet:
           ses.remove( candidate )
@@ -107,17 +106,25 @@ class DMSHelpers( object ):
       sites = result['Value']
       for site in sites:
         candidates = self.__opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-        ses = set( candidates )
+        ses = set( resolveSEGroup( candidates ) )
+        # If a candidate is a site, then all local SEs are eligible
         for candidate in ses & siteSet:
           ses.remove( candidate )
           ses.update( siteSEMapping[LOCAL][candidate] )
-        siteSEMapping[ DOWNLOAD].setdefault( site, set() ).update( ses )
+        siteSEMapping[DOWNLOAD].setdefault( site, set() ).update( ses )
 
     self.siteSEMapping = siteSEMapping
     self.storageElementSet = storageElementSet
     self.siteSet = siteSet
     return S_OK( siteSEMapping )
 
+  def getSites( self ):
+    self.getSiteSEMapping()
+    return sorted( self.siteSet )
+
+  def getStorageElements( self ):
+    self.getSiteSEMapping()
+    return sorted( self.storageElementSet )
 
   def isSEFailover( self, storageElement ):
     seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
@@ -136,17 +143,15 @@ class DMSHelpers( object ):
     return storageElement in resolveSEGroup( seList )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
-    if isinstance( connectionLevel, ( int, long ) ):
-      connectionLevel = {LOCAL:'LOCAL', DOWNLOAD:'DOWNLOAD', PROTOCOL:'PROTOCOL'}.get( connectionLevel )
     if connectionLevel is None:
-      connectionLevel = 'DOWNLOAD'
-    if isinstance( connectionLevel, basestring ):
-      connectionLevel = connectionLevel.upper()
-    if connectionLevel == 'LOCAL':
+      connectionIndex = DOWNLOAD
+    else:
+      connectionIndex = self.__getConnectionIndex( connectionLevel )
+    if connectionIndex == LOCAL:
       return self._getLocalSitesForSE( storageElement )
-    if connectionLevel == 'PROTOCOL':
+    if connectionIndex == PROTOCOL:
       return self.getProtocolSitesForSE( storageElement )
-    if connectionLevel == 'DOWNLOAD':
+    if connectionIndex == DOWNLOAD:
       return self.getDownloadSitesForSE( storageElement )
     return S_ERROR( "Unknown connection level" )
 
@@ -196,22 +201,69 @@ class DMSHelpers( object ):
     sites.update( [site for site in mapping if se in mapping[site]] )
     return S_OK( sorted( sites ) )
 
-  def getSEsAtSite( self, site ):
+  def getSEsForSite( self, site, connectionLevel = None ):
+    if connectionLevel is None:
+      connectionIndex = DOWNLOAD
+    else:
+      connectionIndex = self.__getConnectionIndex( connectionLevel )
+    if connectionIndex is None:
+      return S_ERROR( "Unknown connection level" )
+    if not self.siteSet:
+      self.getSiteSEMapping()
+    if site not in self.siteSet:
+      siteList = [s for s in self.siteSet if '.%s.' % site in s]
+    else:
+      siteList = [site]
+    if not siteList:
+      return S_ERROR( "Unknown site" )
+    return self._getSEsForSItes( siteList, connectionIndex = connectionIndex )
+
+  def __getConnectionIndex( self, connectionLevel ):
+    if isinstance( connectionLevel, ( int, long ) ):
+      return connectionLevel
+    if isinstance( connectionLevel, basestring ):
+      connectionLevel = connectionLevel.upper()
+    return {'LOCAL':LOCAL, 'PROTOCOL':PROTOCOL, 'DOWNLOAD':DOWNLOAD}.get( connectionLevel )
+
+  def _getSEsForSItes( self, siteList, connectionIndex ):
     mapping = self.getSiteSEMapping()
     if not mapping['OK']:
       return mapping
-    if site not in self.siteSet:
-      site = None
-      for s in self.siteSet:
-        if '.%s.' in s:
-          site = s
-          break
-    if site is None:
-      return S_ERROR( "Unknown site" )
-    ses = mapping['Value'][LOCAL].get( site, [] )
+    ses = []
+    for index in range( 1, connectionIndex + 1 ):
+      for site in siteList:
+        ses += mapping['Value'][index].get( site, [] )
     if not ses:
-      return S_ERROR( 'No SE at site' )
+      return S_ERROR( 'No SE found' )
     return S_OK( sorted( ses ) )
+
+  def getSEsAtSite( self, site ):
+    return self.getSEsForSite( site, connectionLevel = LOCAL )
+
+  def isSameSiteSE( self, se1, se2 ):
+    res = self.getLocalSiteForSE( se1 )
+    if not res['OK']:
+      return res
+    site1 = res['Value']
+    res = self.getLocalSiteForSE( se2 )
+    if not res['OK']:
+      return res
+    site2 = res['Value']
+    return S_OK( site1 == site2 )
+
+  def getSEsAtCountry( self, country, connectionLevel = None ):
+    if connectionLevel is None:
+      connectionIndex = DOWNLOAD
+    else:
+      connectionIndex = self.__getConnectionIndex( connectionLevel )
+    if connectionIndex is None:
+      return S_ERROR( "Unknown connection level" )
+    if not self.siteSet:
+      self.getSiteSEMapping()
+    siteList = [site for site in self.siteSet if site.split( '.' )[2].lower() == country.lower()]
+    if not siteList:
+      return S_ERROR( "No SEs found in country" )
+    return self._getSEsForSItes( siteList, connectionIndex )
 
   def getSEInGroupAtSite( self, seGroup, site ):
     if isinstance( seGroup, basestring ):
