@@ -9,14 +9,11 @@ This module consists of DataManager and related classes.
 
 """
 
-
 # # RSCID
 __RCSID__ = "$Id$"
 # # imports
 from datetime import datetime, timedelta
-import fnmatch
-import os
-import time
+import fnmatch, os, time
 from types import StringTypes, ListType, DictType, StringType, TupleType
 # # from DIRAC
 import DIRAC
@@ -28,7 +25,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import randomize
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
@@ -64,6 +61,12 @@ class DataManager( object ):
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
+    self.dmsHelper = None
+
+  def __dmsHelper( self ):
+    if self.dmsHelper is None:
+      self.dmsHelper = DMSHelpers()
+    return self.dmsHelper
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -73,7 +76,7 @@ class DataManager( object ):
   def __verifyWritePermission( self, path ):
     """  Check if we have write permission to the given file (if exists) or its directory
     """
-    if type( path ) in StringTypes:
+    if isinstance( path, basestring ):
       paths = [ path ]
     else:
       paths = path
@@ -97,7 +100,7 @@ class DataManager( object ):
   def cleanLogicalDirectory( self, lfnDir ):
     """ Clean the logical directory from the catalog and storage
     """
-    if type( lfnDir ) in StringTypes:
+    if isinstance( lfnDir, basestring ):
       lfnDir = [ lfnDir ]
     retDict = { "Successful" : {}, "Failed" : {} }
     for folder in lfnDir:
@@ -210,7 +213,7 @@ class DataManager( object ):
     :param self: self reference
     :param mixed directory: list of directories or one directory
     """
-    if type( directory ) in StringTypes:
+    if isinstance( directory, basestring ):
       directories = [directory]
     else:
       directories = directory
@@ -230,7 +233,7 @@ class DataManager( object ):
     :param int days: ctime days
     :param str wildcard: pattern to match
     """
-    if type( directory ) in StringTypes:
+    if isinstance( directory, basestring ):
       directories = [directory]
     else:
       directories = directory
@@ -285,9 +288,9 @@ class DataManager( object ):
 
         'lfn' is the logical file name for the desired file
     """
-    if type( lfn ) == ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "getFile: Supplied lfn must be string or list of strings."
@@ -373,10 +376,10 @@ class DataManager( object ):
   def _getSEProximity( self, ses ):
     """ get SE proximity """
     siteName = DIRAC.siteName()
-    localSEs = [se for se in getSEsForSite( siteName )['Value'] if se in ses]
+    localSEs = [se for se in self.__dmsHelper().getSEsAtSite( siteName )['Value'] if se in ses]
     countrySEs = []
     countryCode = str( siteName ).split( '.' )[-1]
-    res = getSEsForCountry( countryCode )
+    res = self.__dmsHelper().getSEsAtCountry( countryCode )
     if res['OK']:
       countrySEs = [se for se in res['Value'] if se in ses and se not in localSEs]
     sortedSEs = randomize( localSEs ) + randomize( countrySEs )
@@ -701,7 +704,7 @@ class DataManager( object ):
 
     ###########################################################
     # If the source is specified, check that it is in the replicas
-    
+
     if sourceSEName:
       log.debug( "Determining whether source Storage Element specified is sane." )
 
@@ -716,11 +719,11 @@ class DataManager( object ):
     # we consider them all
 
     possibleSourceSEs = [sourceSEName] if sourceSEName else  lfnReplicas.keys()
-    
+
     # We sort the possibileSourceSEs with the SEs that are on the same site than the destination first
     # reverse = True because True > False
     possibleSourceSEs = sorted( possibleSourceSEs,
-                                key = lambda x : isSameSiteSE( x, destSEName ).get( 'Value', False ),
+                                key = lambda x : self.__dmsHelper().isSameSiteSE( x, destSEName ).get( 'Value', False ),
                                 reverse = True )
 
     # In case we manage to find SEs that would work as a source, but we can't negotiate a protocol
@@ -745,7 +748,7 @@ class DataManager( object ):
       else:
         log.debug( "%s is available for use." % candidateSEName )
 
-      
+
       candidateSE = StorageElement( candidateSEName, vo = self.vo )
 
       # Check that the SE is valid
@@ -762,7 +765,7 @@ class DataManager( object ):
         log.debug( "could not get fileSize on %s" % candidateSEName, res['Message'] )
         continue
       seFileSize = res['Value']
-      
+
       if seFileSize != catalogSize:
         log.debug( "Catalog size and physical file size mismatch.", "%s %s" % ( catalogSize, seFileSize ) )
         continue
@@ -775,7 +778,7 @@ class DataManager( object ):
       if not res['OK']:
         log.debug( "Error negotiating replication protocol", res['Message'] )
         continue
-      
+
 
       replicationProtocol = res['Value']
 
@@ -795,7 +798,7 @@ class DataManager( object ):
         continue
 
       sourceURL = res['Value']
-        
+
       res = returnSingleResult( destStorageElement.getURL( destPath, protocol = replicationProtocol ) )
       if not res['OK']:
         log.debug( "Cannot get destURL", res['Message'] )
@@ -812,21 +815,21 @@ class DataManager( object ):
       if not res['OK']:
         log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
         continue
-      
-      
+
+
       log.debug( "Replication successful.", res['Value'] )
-      
-      res = returnSingleResult( destStorageElement.getURL(destPath,  protocol = self.registrationProtocol))
+
+      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
       if not res['OK']:
         log.debug( 'Error getting the registration URL', res['Message'] )
         # it's maybe pointless to try the other candidateSEs...
         continue
-      
+
       registrationURL = res['Value']
-      
+
       return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
 
-      
+
 
     # If we are here, that means that we could not make a third party transfer.
     # Check if we have some sane SEs from which we could do a get/put
@@ -880,9 +883,9 @@ class DataManager( object ):
     :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum )
     :param str catalog: catalog name
     """
-    if type( fileTuple ) == ListType:
+    if isinstance( fileTuple, list ):
       fileTuples = fileTuple
-    elif type( fileTuple ) == TupleType:
+    elif isinstance( fileTuple, tuple ):
       fileTuples = [fileTuple]
     else:
       errStr = "registerFile: Supplied file info must be tuple of list of tuples."
@@ -926,9 +929,9 @@ class DataManager( object ):
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
     """
-    if type( replicaTuple ) == ListType:
+    if isinstance( replicaTuple, list ):
       replicaTuples = replicaTuple
-    elif type( replicaTuple ) == TupleType:
+    elif isinstance( replicaTuple, tuple ):
       replicaTuples = [ replicaTuple ]
     else:
       errStr = "registerReplica: Supplied file info must be tuple of list of tuples."
@@ -1001,9 +1004,9 @@ class DataManager( object ):
     """
     if force == None:
       force = self.ignoreMissingInFC
-    if type( lfn ) == ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "removeFile: Supplied lfns must be string or list of strings."
@@ -1106,9 +1109,9 @@ class DataManager( object ):
        'storageElementName' is the storage where the file is to be removed
        'lfn' is the file to be removed
     """
-    if type( lfn ) == ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "removeReplica: Supplied lfns must be string or list of strings."
@@ -1148,7 +1151,7 @@ class DataManager( object ):
       else:
         lfnsToRemove.append( lfn )
     if not lfnsToRemove:
-      return S_OK( { 'Successful' : successful, 'Failed' : failed } )    
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
     res = self.__removeReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
     if not res['OK']:
       return res
@@ -1170,7 +1173,7 @@ class DataManager( object ):
     failed = {}
     successful = {}
     replicaDict = replicaDict if replicaDict else {}
-    
+
     lfnsToRemove = []
 
     for lfn in lfns:
@@ -1221,9 +1224,9 @@ class DataManager( object ):
 
     # Remove replica from the file catalog 'lfn' are the file
     # to be removed 'storageElementName' is the storage where the file is to be removed
-    if type( lfn ) == ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "removeReplicaFromCatalog: Supplied lfns must be string or list of strings."
@@ -1263,9 +1266,9 @@ class DataManager( object ):
 
        'replicaTuple' is a tuple containing the replica to be removed and is of the form ( lfn, pfn, se )
     """
-    if type( replicaTuple ) == ListType:
+    if isinstance( replicaTuple, list ):
       replicaTuples = replicaTuple
-    elif type( replicaTuple ) == TupleType:
+    elif isinstance( replicaTuple, tuple ):
       replicaTuples = [replicaTuple]
     else:
       errStr = "removeCatalogPhysicalFileNames: Supplied info must be tuple or list of tuples."
@@ -1274,7 +1277,7 @@ class DataManager( object ):
     return self.__removeCatalogReplica( replicaTuples )
 
   def __removeCatalogReplica( self, replicaTuples ):
-    """ remove replica form catalogue 
+    """ remove replica form catalogue
         :param replicaTuples : list of (lfn, catalogPFN, se)
     """
     oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuples ) )
@@ -1325,9 +1328,9 @@ class DataManager( object ):
        'lfn' are the files to be removed
        'storageElementName' is the storage where the file is to be removed
     """
-    if type( lfn ) == ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "removePhysicalReplica: Supplied lfns must be string or list of strings."
@@ -1496,25 +1499,24 @@ class DataManager( object ):
     """ Check a replica dictionary for active replicas
     """
 
-    if type( replicaDict ) != DictType:
+    if not isinstance( replicaDict, dict ):
       return S_ERROR( 'Wrong argument type %s, expected a dictionary' % type( replicaDict ) )
 
     for key in [ 'Successful', 'Failed' ]:
-      if not key in replicaDict:
+      if key not in replicaDict:
         return S_ERROR( 'Missing key "%s" in replica dictionary' % key )
-      if type( replicaDict[key] ) != DictType:
+      if not isinstance( replicaDict[key], dict ):
         return S_ERROR( 'Wrong argument type %s, expected a dictionary' % type( replicaDict[key] ) )
 
     seReadStatus = {}
     for lfn, replicas in replicaDict['Successful'].items():
-      if type( replicas ) != DictType:
+      if not isinstance( replicas, dict ):
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
         # Fix the caching
         readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
-
         if not readStatus:
           replicas.pop( se )
 
