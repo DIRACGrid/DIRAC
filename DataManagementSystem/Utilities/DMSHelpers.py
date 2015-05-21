@@ -35,6 +35,13 @@ def resolveSEGroup( seGroupList ):
 
   return seList
 
+def __getConnectionIndex( connectionLevel ):
+  if isinstance( connectionLevel, ( int, long ) ):
+    return connectionLevel
+  if isinstance( connectionLevel, basestring ):
+    connectionLevel = connectionLevel.upper()
+  return {'LOCAL':LOCAL, 'PROTOCOL':PROTOCOL, 'DOWNLOAD':DOWNLOAD}.get( connectionLevel )
+
 
 class DMSHelpers( object ):
 
@@ -146,7 +153,7 @@ class DMSHelpers( object ):
     if connectionLevel is None:
       connectionIndex = DOWNLOAD
     else:
-      connectionIndex = self.__getConnectionIndex( connectionLevel )
+      connectionIndex = __getConnectionIndex( connectionLevel )
     if connectionIndex == LOCAL:
       return self._getLocalSitesForSE( storageElement )
     if connectionIndex == PROTOCOL:
@@ -205,7 +212,7 @@ class DMSHelpers( object ):
     if connectionLevel is None:
       connectionIndex = DOWNLOAD
     else:
-      connectionIndex = self.__getConnectionIndex( connectionLevel )
+      connectionIndex = __getConnectionIndex( connectionLevel )
     if connectionIndex is None:
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
@@ -217,13 +224,6 @@ class DMSHelpers( object ):
     if not siteList:
       return S_ERROR( "Unknown site" )
     return self._getSEsForSItes( siteList, connectionIndex = connectionIndex )
-
-  def __getConnectionIndex( self, connectionLevel ):
-    if isinstance( connectionLevel, ( int, long ) ):
-      return connectionLevel
-    if isinstance( connectionLevel, basestring ):
-      connectionLevel = connectionLevel.upper()
-    return {'LOCAL':LOCAL, 'PROTOCOL':PROTOCOL, 'DOWNLOAD':DOWNLOAD}.get( connectionLevel )
 
   def _getSEsForSItes( self, siteList, connectionIndex ):
     mapping = self.getSiteSEMapping()
@@ -255,7 +255,7 @@ class DMSHelpers( object ):
     if connectionLevel is None:
       connectionIndex = DOWNLOAD
     else:
-      connectionIndex = self.__getConnectionIndex( connectionLevel )
+      connectionIndex = __getConnectionIndex( connectionLevel )
     if connectionIndex is None:
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
