@@ -1026,7 +1026,7 @@ class DirectoryTreeBase:
   PRIMARY KEY (`DirID`,`SEID`),
   KEY `DirID` (`DirID`),
   KEY `SEID` (`SEID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
 """
     result = self.db._update( req )
     if not result['OK']:
