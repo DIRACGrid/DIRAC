@@ -18,6 +18,16 @@ class CEAvailabilityPolicy( PolicyBase ):
       It returns Active status if CE is in 'Production'. 
       Banned if the CE is different from 'Production'.
       
+      commandResult is a dictionary like:
+        {'OK': True,
+        'Value': {
+          'Reason': "All queues in 'Production'",
+          'Status': 'Production',
+          'cccreamceli05.in2p3.fr:8443/cream-sge-long': 'Production',
+          'cccreamceli05.in2p3.fr:8443/cream-sge-verylong': 'Production'
+          }
+        }
+      
       Otherwise, it returns error.
     '''
 
@@ -31,14 +41,14 @@ class CEAvailabilityPolicy( PolicyBase ):
       result[ 'Reason' ] = commandResult[ 'Message' ]
       return S_OK( result )
     
-    result = commandResult[ 'Value' ]
+    commandResult = commandResult[ 'Value' ]
 
-    if result['Status'] == 'Production':
+    if commandResult['Status'] == 'Production':
       result[ 'Status' ] = 'Active'
     else:
       result[ 'Status' ] = 'Banned'
     
-    result[ 'Reason' ] = result['Reason']
+    result[ 'Reason' ] = commandResult['Reason']
 
     return S_OK( result )
 
