@@ -499,7 +499,7 @@ class FileMetadata:
         to directories in dirList
     """
     # 1.- classify Metadata keys
-    storageElement = None
+    storageElements = None
     standardMetaDict = {}
     userMetaDict = {}
     leftJoinTables = []
