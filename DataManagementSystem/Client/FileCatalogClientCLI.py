@@ -1878,7 +1878,6 @@ File Catalog Client $Revision: 1.17 $Date:
 
     if result['Value']:
 
-      listToPrint = None
       if dirsOnly:
         listToPrint = set( "/".join(fullpath.split("/")[:-1]) for fullpath in result['Value'] )
       else:
@@ -2160,7 +2159,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     _option = argss[0]
     start = time.time()
-    result = self.fc.rebuildDirectoryUsage()
+    result = self.fc.rebuildDirectoryUsage( timeout = 300 )
     if not result['OK']:
       print "Error:", result['Message']
       return 
