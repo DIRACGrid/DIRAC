@@ -354,8 +354,10 @@ class FileMetadata:
         if not result['OK']:
           return result
         eValue = result['Value']
-        if '*' in eValue:
-          queryList.append( ( 'LIKE', eValue.replace( '*', '%%' ) ) )
+        if '*' in eValue or '?' in eValue:
+          eValue = eValue.replace( '*', '%%' )
+          eValue = eValue.replace( '?', '_' )
+          queryList.append( ( 'LIKE', eValue ) )
         else:
           queryList.append( ( '=', eValue ) )
       else:
