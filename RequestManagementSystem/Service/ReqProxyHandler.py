@@ -28,16 +28,17 @@ __RCSID__ = "$Id$"
 
 # # imports
 import os
-from types import DictType
+from types import  StringTypes
 try:
   from hashlib import md5
 except ImportError:
   from md5 import md5
+
+import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 def initializeReqProxyHandler( serviceInfo ):
@@ -106,15 +107,15 @@ class ReqProxyHandler( RequestHandler ):
       for cachedFile in cachedRequests:
         # # break if something went wrong last time
         try:
-          requestString = "".join( open( cachedFile, "r" ).readlines() )
-          cachedRequest = eval( requestString )
+          requestJSON = "".join( open( cachedFile, "r" ).readlines() )
+          cachedRequest = json.loads( requestJSON )
           cachedName = cachedRequest.get( "RequestName", "***UNKNOWN***" )
-          setRequest = cls.requestManager().putRequest( cachedRequest )
-          if not setRequest["OK"]:
+          putRequest = cls.requestManager().putRequest( requestJSON )
+          if not putRequest["OK"]:
             gLogger.error( "sweeper: unable to set request %s @ ReqManager: %s" % ( cachedName,
-                                                                                    setRequest["Message"] ) )
+                                                                                    putRequest["Message"] ) )
             continue
-          gLogger.info( "sweeper: successfully set request '%s' @ ReqManager" % cachedName )
+          gLogger.info( "sweeper: successfully put request '%s' @ ReqManager" % cachedName )
           os.unlink( cachedFile )
         except Exception, error:
           gLogger.exception( "sweeper: hit by exception %s" % str( error ) )
@@ -129,9 +130,9 @@ class ReqProxyHandler( RequestHandler ):
     :param str requestJSON:  request serialized to JSON format
     """
     try:
-      requestFile = os.path.join( self.cacheDir(), md5( str( requestJSON ) ).hexdigest() )
+      requestFile = os.path.join( self.cacheDir(), md5( requestJSON ).hexdigest() )
       request = open( requestFile, "w+" )
-      request.write( str( requestJSON ) )
+      request.write( requestJSON )
       request.close()
       return S_OK( requestFile )
     except OSError, error:
@@ -150,19 +151,20 @@ class ReqProxyHandler( RequestHandler ):
       return S_ERROR( err )
     return S_OK( cachedRequests )
 
-  types_putRequest = [ DictType ]
+  types_putRequest = [ StringTypes ]
   def export_putRequest( self, requestJSON ):
     """ forward request from local RequestDB to central RequestManager
 
     :param self: self reference
     :param str requestType: request type
     """
-    requestName = requestJSON.get( "RequestName", "***UNKNOWN***" )
-    gLogger.info( "setRequest: got request '%s'" % requestName )
+    requestDict = json.loads( requestJSON )
+    requestName = requestDict.get( "RequestID", requestDict.get( 'RequestName', "***UNKNOWN***" ) )
+    gLogger.info( "putRequest: got request '%s'" % requestName )
 
-    forwardable = self.__forwardable( requestJSON )
+    forwardable = self.__forwardable( requestDict )
     if not forwardable["OK"]:
-      gLogger.warn( "setRequest: %s" % forwardable["Message"] )
+      gLogger.warn( "putRequest: %s" % forwardable["Message"] )
 
 
     setRequest = self.requestManager().putRequest( requestJSON )
@@ -181,7 +183,7 @@ class ReqProxyHandler( RequestHandler ):
     return S_OK( { "set" : True, "saved" : False } )
 
   @staticmethod
-  def __forwardable( requestJSON ):
+  def __forwardable( requestDict ):
     """ check if request if forwardable
 
     The sub-request of type transfer:putAndRegister, removal:physicalRemoval and removal:reTransfer are
@@ -189,7 +191,7 @@ class ReqProxyHandler( RequestHandler ):
 
     :param str requestJSON: serialized request
     """
-    operations = requestJSON.get( "Operations", [] )
+    operations = requestDict.get( "Operations", [] )
     for operationDict in operations:
       if operationDict.get( "Type", "" ) in ( "PutAndRegister", "PhysicalRemoval", "ReTransfer" ):
         return S_ERROR( "found operation '%s' that cannot be forwarded" % operationDict.get( "Type", "" ) )
