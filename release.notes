@@ -1,4 +1,4 @@
-[v6r13-pre32]
+[v6r13-pre33]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -37,7 +37,9 @@ CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
 CHANGE: FileCatalog - replace getDirectoryMetadata by getDirectoryUserMetadata
 NEW: FileCatalog - added new getDirectoryMetadata() interface to get standard directory metadata
 NEW: FileCatalog - possibility to find files by standard metadata
+NEW: FileCatalog - possibility to use wildcards in the metadata values for queries
 NEW: DMSHelpers class
+NEW: dirac-dms-find-lfns command
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
