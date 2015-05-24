@@ -1744,8 +1744,7 @@ def monitorInstallation( componentType, system, component, module = None ):
   if not result[ 'OK' ]:
     return result
   if result[ 'Value' ]:
-    return S_ERROR \
-    ( 'There is already an installation of ' + component + ' in the database' )
+    return S_OK( 'Monitoring of %s is already enabled' % component )
 
   result = monitoringClient.addInstallation \
                             ( { 'InstallationTime': datetime.datetime.utcnow(),
@@ -1933,7 +1932,7 @@ def setupComponent( componentType, system, component, extensions,
   if component == 'ComponentMonitoring':
     result = monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
     if not result[ 'OK' ]:
-      return result
+      gLogger.warn( 'Failed to enable InstalledComponentsDB monitoring' )
 
   if monitorFlag:
     result = monitorInstallation( componentType,
@@ -1941,7 +1940,7 @@ def setupComponent( componentType, system, component, extensions,
                                   component,
                                   componentModule )
     if not result[ 'OK' ]:
-      return result
+      gLogger.warn( 'Failed to enable %s monitoring' % component )
 
   return S_OK( resDict )
 
@@ -2613,7 +2612,7 @@ def installDatabase( dbName, monitorFlag = True ):
   if dbName != 'InstalledComponentsDB' and monitorFlag:
     result = monitorInstallation( 'DB', dbSystem, dbName )
     if not result[ 'OK' ]:
-      return result
+      gLogger.warn( 'Failed to enable %s monitoring' % dbName )
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
 
