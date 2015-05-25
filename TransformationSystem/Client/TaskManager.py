@@ -428,8 +428,8 @@ class WorkflowTasks( TaskBase ):
         self._logFatal( "Could not generate a destination plugin object" )
         return res
       destinationPlugin_o = res['Value']
-      destinationPlugin_o.setParameters( paramsDict )
 
+    destinationPlugin_o.setParameters( paramsDict )
     destSites = destinationPlugin_o.run()
     if not destSites:
       return sites
