@@ -14,7 +14,6 @@ __RCSID__ = "$Id$"
 # # imports
 from datetime import datetime, timedelta
 import fnmatch, os, time
-from types import StringTypes, ListType, DictType, StringType, TupleType
 # # from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
@@ -33,13 +32,48 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
+def _isOlderThan( stringTime, days ):
+  timeDelta = timedelta( days = days )
+  maxCTime = datetime.utcnow() - timeDelta
+  # st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
+  # cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
+  cTimeStruct = stringTime
+  if cTimeStruct < maxCTime:
+    return True
+  return False
+
+def _initialiseAccountingObject( operation, se, files ):
+  """ create accouting record """
+  accountingDict = {}
+  accountingDict['OperationType'] = operation
+  result = getProxyInfo()
+  if not result['OK']:
+    userName = 'system'
+  else:
+    userName = result['Value'].get( 'username', 'unknown' )
+  accountingDict['User'] = userName
+  accountingDict['Protocol'] = 'DataManager'
+  accountingDict['RegistrationTime'] = 0.0
+  accountingDict['RegistrationOK'] = 0
+  accountingDict['RegistrationTotal'] = 0
+  accountingDict['Destination'] = se
+  accountingDict['TransferTotal'] = files
+  accountingDict['TransferOK'] = files
+  accountingDict['TransferSize'] = files
+  accountingDict['TransferTime'] = 0.0
+  accountingDict['FinalStatus'] = 'Successful'
+  accountingDict['Source'] = DIRAC.siteName()
+  oDataOperation = DataOperation()
+  oDataOperation.setValuesFromDict( accountingDict )
+  return oDataOperation
+
 class DataManager( object ):
   """
   .. class:: DataManager
 
   A DataManager is taking all the actions that impact or require the FileCatalog and the StorageElement together
   """
-  def __init__( self, catalogs = [], masterCatalogOnly = False, vo = False ):
+  def __init__( self, catalogs = None, masterCatalogOnly = False, vo = False ):
     """ c'tor
 
     :param self: self reference
@@ -52,6 +86,8 @@ class DataManager( object ):
     self.log = gLogger.getSubLogger( self.__class__.__name__, True )
     self.vo = vo
 
+    if catalogs is None:
+      catalogs = []
     catalogsToUse = FileCatalog( vo = self.vo ).getMasterCatalogNames()['Value'] if masterCatalogOnly else catalogs
 
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
@@ -250,28 +286,18 @@ class DataManager( object ):
         files = dirContents['Files']
         self.log.debug( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
         for subdir in subdirs:
-          if ( not days ) or self.__isOlderThan( subdirs[subdir]['CreationDate'], days ):
+          if ( not days ) or _isOlderThan( subdirs[subdir]['CreationDate'], days ):
             if subdir[0] != '/':
               subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
         for fileName in files:
           fileInfo = files[fileName]
           fileInfo = fileInfo.get( 'Metadata', fileInfo )
-          if ( not days ) or not fileInfo.get( 'CreationDate' ) or self.__isOlderThan( fileInfo['CreationDate'], days ):
+          if ( not days ) or not fileInfo.get( 'CreationDate' ) or _isOlderThan( fileInfo['CreationDate'], days ):
             if wildcard == '*' or fnmatch.fnmatch( fileName, wildcard ):
               fileName = fileInfo.get( 'LFN', fileName )
               allFiles.append( fileName )
     return S_OK( allFiles )
-
-  def __isOlderThan( self, stringTime, days ):
-    timeDelta = timedelta( days = days )
-    maxCTime = datetime.utcnow() - timeDelta
-    # st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
-    # cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
-    cTimeStruct = stringTime
-    if cTimeStruct < maxCTime:
-      return True
-    return False
 
   ##########################################################################
   #
@@ -326,7 +352,7 @@ class DataManager( object ):
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
-      oDataOperation = self.__initialiseAccountingObject( 'getFile', storageElementName, 1 )
+      oDataOperation = _initialiseAccountingObject( 'getFile', storageElementName, 1 )
       oDataOperation.setStartTime()
       startTime = time.time()
 
@@ -348,7 +374,7 @@ class DataManager( object ):
         localFile = os.path.realpath( os.path.join( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
 
-        if ( metadata['Size'] != res['Value'] ):
+        if metadata['Size'] != res['Value']:
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
 
@@ -456,7 +482,7 @@ class DataManager( object ):
     failed = {}
     ##########################################################
     #  Perform the put here.
-    oDataOperation = self.__initialiseAccountingObject( 'putAndRegister', diracSE, 1 )
+    oDataOperation = _initialiseAccountingObject( 'putAndRegister', diracSE, 1 )
     oDataOperation.setStartTime()
     oDataOperation.setValueByKey( 'TransferSize', size )
     startTime = time.time()
@@ -723,7 +749,7 @@ class DataManager( object ):
 
     # In case we manage to find SEs that would work as a source, but we can't negotiate a protocol
     # we will do a get and put using one of this sane SE
-    possibleSEsForIntermediateTransfer = []
+    possibleIntermediateSEs = []
 
     # Take into account the destination path
     if destPath:
@@ -778,7 +804,7 @@ class DataManager( object ):
       replicationProtocol = res['Value']
 
       if not replicationProtocol:
-        possibleSEsForIntermediateTransfer.append( candidateSE )
+        possibleIntermediateSEs.append( candidateSE )
         log.debug( "No protocol suitable for replication found" )
         continue
 
@@ -832,9 +858,9 @@ class DataManager( object ):
     localDir = os.path.realpath( localCache if localCache else '.' )
     localFile = os.path.join( localDir, os.path.basename( lfn ) )
 
-    log.debug( "Will try intermediate transfer from %s sources" % len( possibleSEsForIntermediateTransfer ) )
+    log.debug( "Will try intermediate transfer from %s sources" % len( possibleIntermediateSEs ) )
 
-    for candidateSE in possibleSEsForIntermediateTransfer:
+    for candidateSE in possibleIntermediateSEs:
 
       res = returnSingleResult( candidateSE.getFile( lfn, localPath = localDir ) )
       if not res['OK']:
@@ -892,9 +918,6 @@ class DataManager( object ):
       errStr = "registerFile: Completely failed to register files."
       self.log.debug( errStr, res['Message'] )
       return res
-    # Remove Failed LFNs if they are in success
-    success = res['Value']['Successful']
-    failed = res['Value']['Failed']
     return res
 
   def __registerFile( self, fileTuples, catalog ):
@@ -938,9 +961,6 @@ class DataManager( object ):
       errStr = "registerReplica: Completely failed to register replicas."
       self.log.debug( errStr, res['Message'] )
       return res
-    # Remove Failed LFNs if they are in success
-    success = res['Value']['Successful']
-    failed = res['Value']['Failed']
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):
@@ -1069,7 +1089,7 @@ class DataManager( object ):
     storageElementDict = {}
     # # sorted and reversed
     for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
-      for se, pfn in repDict.items():
+      for se, _pfn in repDict.items():
         storageElementDict.setdefault( se, [] ).append( lfn )
     failed = {}
     successful = {}
@@ -1275,7 +1295,7 @@ class DataManager( object ):
     """ remove replica form catalogue
         :param replicaTuples : list of (lfn, catalogPFN, se)
     """
-    oDataOperation = self.__initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuples ) )
+    oDataOperation = _initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuples ) )
     oDataOperation.setStartTime()
     start = time.time()
     # HACK!
@@ -1386,9 +1406,9 @@ class DataManager( object ):
       errStr = "__removePhysicalReplica: The storage element is not currently valid."
       self.log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
       return S_ERROR( errStr )
-    oDataOperation = self.__initialiseAccountingObject( 'removePhysicalReplica',
-                                                        storageElementName,
-                                                        len( lfnsToRemove ) )
+    oDataOperation = _initialiseAccountingObject( 'removePhysicalReplica',
+                                                  storageElementName,
+                                                  len( lfnsToRemove ) )
     oDataOperation.setStartTime()
     start = time.time()
     ret = storageElement.getFileSize( lfnsToRemove, replicaDict = replicaDict )
@@ -1537,31 +1557,6 @@ class DataManager( object ):
       seStatus[ 'Write' ] = False
 
     return S_OK( seStatus )
-
-  def __initialiseAccountingObject( self, operation, se, files ):
-    """ create accouting record """
-    accountingDict = {}
-    accountingDict['OperationType'] = operation
-    result = getProxyInfo()
-    if not result['OK']:
-      userName = 'system'
-    else:
-      userName = result['Value'].get( 'username', 'unknown' )
-    accountingDict['User'] = userName
-    accountingDict['Protocol'] = 'DataManager'
-    accountingDict['RegistrationTime'] = 0.0
-    accountingDict['RegistrationOK'] = 0
-    accountingDict['RegistrationTotal'] = 0
-    accountingDict['Destination'] = se
-    accountingDict['TransferTotal'] = files
-    accountingDict['TransferOK'] = files
-    accountingDict['TransferSize'] = files
-    accountingDict['TransferTime'] = 0.0
-    accountingDict['FinalStatus'] = 'Successful'
-    accountingDict['Source'] = DIRAC.siteName()
-    oDataOperation = DataOperation()
-    oDataOperation.setValuesFromDict( accountingDict )
-    return oDataOperation
 
 ##########################################
   #
