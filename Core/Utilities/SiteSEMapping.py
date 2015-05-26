@@ -8,7 +8,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, siteGridName
 
 
 #############################################################################
@@ -25,7 +25,7 @@ def getSiteSEMapping( gridName = '', withSiteLocalSEMapping = False ):
   else:
     mapping = result['Value'][1]
   if gridName:
-    mapping = dict( ( site, mapping[site] ) for site in mapping if site.split( '.' )[0] == gridName )
+    mapping = dict( ( site, mapping[site] ) for site in mapping if siteGridName( site ) == gridName )
   return S_OK( mapping )
 
 
@@ -55,7 +55,7 @@ def getSitesForSE( storageElement, gridName = '', withSiteLocalSEMapping = False
   if not result['OK'] or not gridName:
     return result
 
-  return S_OK( [site for site in result['Value'] if site.split( '.' )[0] == gridName] )
+  return S_OK( [site for site in result['Value'] if siteGridName( site ) == gridName] )
 
 
 #############################################################################
