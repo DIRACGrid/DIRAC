@@ -25,9 +25,7 @@ def getSiteSEMapping( gridName = '', withSiteLocalSEMapping = False ):
   else:
     mapping = result['Value'][1]
   if gridName:
-    for site in mapping.keys():
-      if site.split( '.' )[0] != gridName:
-        del mapping[site]
+    mapping = dict( ( site, mapping[site] ) for site in mapping if site.split( '.' )[0] == gridName )
   return S_OK( mapping )
 
 
@@ -64,7 +62,10 @@ def getSitesForSE( storageElement, gridName = '', withSiteLocalSEMapping = False
 def getSEsForSite( siteName, withSiteLocalSEMapping = False ):
   """ Given a DIRAC site name this method returns a list of corresponding SEs.
   """
-  return DMSHelpers().getSEsForSite( siteName, connectionLevel = 'DOWNLOAD' if withSiteLocalSEMapping else 'LOCAL' )
+  result = DMSHelpers().getSEsForSite( siteName, connectionLevel = 'DOWNLOAD' if withSiteLocalSEMapping else 'LOCAL' )
+  if not result['OK']:
+    return S_OK( [] )
+  return result
 
 #############################################################################
 def isSameSiteSE( se1, se2 ):

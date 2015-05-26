@@ -9,8 +9,8 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 # from Core.Utilities import SitesDIRACGOCDBmapping
 
 LOCAL = 1
-PROTOCOL = 2
-DOWNLOAD = 3
+PROTOCOL = LOCAL + 1
+DOWNLOAD = PROTOCOL + 1
 
 def resolveSEGroup( seGroupList ):
   seList = []
@@ -226,7 +226,7 @@ class DMSHelpers( object ):
     if not mapping['OK']:
       return mapping
     ses = []
-    for index in range( 1, connectionIndex + 1 ):
+    for index in range( LOCAL, connectionIndex + 1 ):
       for site in siteList:
         ses += mapping['Value'][index].get( site, [] )
     if not ses:
