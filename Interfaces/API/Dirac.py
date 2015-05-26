@@ -83,7 +83,7 @@ class Dirac( API ):
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
       prefix = 'LFN'
-    if isinstance( fnList, str ):
+    if isinstance( fnList, basestring ):
       otherPrefix = 'LFN:' if prefix == 'PFN' else 'PFN:'
       if otherPrefix in fnList:
         return self._errorReport( 'Expected %s string, not %s' ) % ( prefix, otherPrefix )
@@ -1292,7 +1292,7 @@ class Dirac( API ):
        :type printOutput: boolean
        :returns: S_OK,S_ERROR
     """
-    ret = self.__checkFileArgument( lfn, 'LFN', single = True )
+    ret = self.__checkFileArgument( lfn, 'LFN' )
     if not ret['OK']:
       return ret
     lfn = ret['Value']
