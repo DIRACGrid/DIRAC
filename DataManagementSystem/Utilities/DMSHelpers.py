@@ -35,6 +35,18 @@ def resolveSEGroup( seGroupList ):
 
   return seList
 
+def siteGridName( site ):
+  """ Returns the Grid name for a site"""
+  if not isinstance( site, basestring ):
+    return None
+  return site.split( '.' )[0]
+
+def siteCountryName( site ):
+  """ Returns the Grid name for a site"""
+  if not isinstance( site, basestring ):
+    return None
+  return site.split( '.' )[-1].lower()
+
 def _getConnectionIndex( connectionLevel, default = None ):
   if connectionLevel is None:
     connectionLevel = default
@@ -253,7 +265,7 @@ class DMSHelpers( object ):
       return S_ERROR( "Unknown connection level" )
     if not self.siteSet:
       self.getSiteSEMapping()
-    siteList = [site for site in self.siteSet if site.split( '.' )[2].lower() == country.lower()]
+    siteList = [site for site in self.siteSet if siteCountryName( site ) == country.lower()]
     if not siteList:
       return S_ERROR( "No SEs found in country" )
     return self._getSEsForSItes( siteList, connectionIndex )
