@@ -61,12 +61,7 @@ class DataManager( object ):
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
-    self.dmsHelper = None
-
-  def __dmsHelper( self ):
-    if self.dmsHelper is None:
-      self.dmsHelper = DMSHelpers()
-    return self.dmsHelper
+    self.dmsHelper = DMSHelpers()
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -376,10 +371,10 @@ class DataManager( object ):
   def _getSEProximity( self, ses ):
     """ get SE proximity """
     siteName = DIRAC.siteName()
-    localSEs = [se for se in self.__dmsHelper().getSEsAtSite( siteName )['Value'] if se in ses]
+    localSEs = [se for se in self.dmsHelper.getSEsAtSite( siteName )['Value'] if se in ses]
     countrySEs = []
     countryCode = str( siteName ).split( '.' )[-1]
-    res = self.__dmsHelper().getSEsAtCountry( countryCode )
+    res = self.dmsHelper.getSEsAtCountry( countryCode )
     if res['OK']:
       countrySEs = [se for se in res['Value'] if se in ses and se not in localSEs]
     sortedSEs = randomize( localSEs ) + randomize( countrySEs )
@@ -723,7 +718,7 @@ class DataManager( object ):
     # We sort the possibileSourceSEs with the SEs that are on the same site than the destination first
     # reverse = True because True > False
     possibleSourceSEs = sorted( possibleSourceSEs,
-                                key = lambda x : self.__dmsHelper().isSameSiteSE( x, destSEName ).get( 'Value', False ),
+                                key = lambda x : self.dmsHelper.isSameSiteSE( x, destSEName ).get( 'Value', False ),
                                 reverse = True )
 
     # In case we manage to find SEs that would work as a source, but we can't negotiate a protocol
