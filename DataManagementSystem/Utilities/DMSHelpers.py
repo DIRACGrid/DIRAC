@@ -37,15 +37,19 @@ def resolveSEGroup( seGroupList ):
 
 def siteGridName( site ):
   """ Returns the Grid name for a site"""
+  if not isinstance( site, basestring ):
+    return None
   siteSplit = site.split( '.' )
-  if not isinstance( site, basestring ) or len( siteSplit ) < 3:
+  if len( siteSplit ) < 3:
     return None
   return siteSplit[0]
 
 def siteCountryName( site ):
   """ Returns the Grid name for a site"""
+  if not isinstance( site, basestring ):
+    return None
   siteSplit = site.split( '.' )
-  if not isinstance( site, basestring ) or len( siteSplit ) < 3:
+  if len( siteSplit ) < 3:
     return None
   return site.split( '.' )[-1].lower()
 
