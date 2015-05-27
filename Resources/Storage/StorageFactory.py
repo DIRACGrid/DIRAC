@@ -264,7 +264,7 @@ class StorageFactory:
     # This is a temporary for backward compatibility
     if "ProtocolName" in protocolDict and not protocolDict['PluginName']:
       protocolDict['PluginName'] = protocolDict['ProtocolName']
-    protocolDict.pop( 'ProtocolName' )
+    protocolDict.pop( 'ProtocolName', None )
 
     # Evaluate the base path taking into account possible VO specific setting
     if self.vo:
