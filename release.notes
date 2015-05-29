@@ -1,3 +1,8 @@
+[v6r12p41]
+
+*WMS
+CHANGE: dirac-wms-job-submit - "-r" switch to enable job repo
+
 [v6r12p40]
 
 *DMS
