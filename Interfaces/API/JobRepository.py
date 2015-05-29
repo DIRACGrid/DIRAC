@@ -12,10 +12,10 @@ class JobRepository( object ):
   def __init__( self, repository = None ):
     self.location = repository
     if not self.location:
-      if os.environ.has_key( 'HOME' ):
-        self.location = '%s/.dirac.repo.cfg' % os.environ['HOME']
+      if "HOME" in os.environ:
+        self.location = '%s/.dirac.repo.rep' % os.environ['HOME']
       else:
-        self.location = '%s/.dirac.repo.cfg' % os.getcwd()
+        self.location = '%s/.dirac.repo.rep' % os.getcwd()
     self.repo = CFG()
     if os.path.exists( self.location ):
       self.repo.loadFromFile( self.location )

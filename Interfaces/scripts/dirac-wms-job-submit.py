@@ -30,10 +30,13 @@ if len( args ) < 1:
 from DIRAC.Interfaces.API.Dirac                              import Dirac
 unprocessed_switches = Script.getUnprocessedSwitches()
 use_repo = False
+repo_name = ""
 for sw, value in unprocessed_switches:
   if sw.lower() in ["r", "usejobrepo"]:
     use_repo = True
-dirac = Dirac(use_repo)
+    repo_name = value
+    repo_name = repo_name.replace(".cfg", ".repo")
+dirac = Dirac(use_repo, repo_name)
 exitCode = 0
 errorList = []
 
