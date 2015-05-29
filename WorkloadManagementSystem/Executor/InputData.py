@@ -11,7 +11,8 @@ from DIRAC                                                           import S_OK
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
-from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSHelpers
+# from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
 
@@ -36,6 +37,7 @@ class InputData( OptimizerExecutor ):
     cls.__SEToSiteMap = {}
     cls.__lastCacheUpdate = 0
     cls.__cacheLifeTime = 600
+    cls.__connectionLevel = 'LOCAL'
 
     return S_OK()
 
@@ -71,6 +73,7 @@ class InputData( OptimizerExecutor ):
         - for production jobs this can be skipped,
           since the logic is already applied by the transformation system, via the TaskManagerPlugins
     """
+    # Are we executing this optimizer or not?
     result = jobState.getAttribute( "JobType" )
     if not result['OK']:
       return S_ERROR( "Could not retrieve job type" )
@@ -266,7 +269,7 @@ class InputData( OptimizerExecutor ):
       self.__lastCacheUpdate = now
 
     if seName not in self.__SEToSiteMap:
-      result = getSitesForSE( seName )
+      result = DMSHelpers().getSitesForSE( seName, self.__connectionLevel )
       if not result['OK']:
         return result
       self.__SEToSiteMap[ seName ] = list( result['Value'] )
