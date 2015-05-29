@@ -35,6 +35,12 @@ class StorageFactory:
         self.vo = result['Value']
       else:
         RuntimeError( "Can not get the current VO context" )
+    self.remotePlugins = []
+    self.localPlugins = []
+    self.name = ''
+    self.options = {}
+    self.protocolDetails = []
+    self.storages = []
 
   ###########################################################################################
   #
@@ -60,7 +66,7 @@ class StorageFactory:
       pluginName = parameterDict['PluginName']
     # Temporary fix for backward compatibility
     elif parameterDict.has_key( 'ProtocolName' ):
-      pluginName = parameterDict['ProtocolName']  
+      pluginName = parameterDict['ProtocolName']
     else:
       errStr = "StorageFactory.getStorage: PluginName must be supplied"
       gLogger.error( errStr )
@@ -68,18 +74,14 @@ class StorageFactory:
 
     return self.__generateStorageObject( storageName, pluginName, parameterDict )
 
-  def getStorages( self, storageName, pluginList = [] ):
+  def getStorages( self, storageName, pluginList = None ):
     """ Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
 
         'storageName' is the DIRAC SE name i.e. 'CERN-RAW'
         'pluginList' is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
     """
-    self.remotePlugins = []
-    self.localPlugins = []
-    self.name = ''
-    self.options = {}
-    self.protocolDetails = []
-    self.storages = []
+    if pluginList is None:
+      pluginList = []
     if not self.vo:
       return S_ERROR( 'Mandatory vo parameter is not defined' )
 
@@ -93,7 +95,6 @@ class StorageFactory:
     # In case the storage is made from a base SE, get this information
     res = self._getConfigStorageName( storageName, 'BaseSE' )
     if not res['OK']:
-      self.valid = False
       return res
     storageName = res['Value']
 
@@ -114,9 +115,8 @@ class StorageFactory:
     requestedProtocolDetails = []
     turlProtocols = []
     # Generate the protocol specific plug-ins
-    self.storages = []
     for protocolDict in self.protocolDetails:
-      pluginName = protocolDict.get( 'PluginName' ) 
+      pluginName = protocolDict.get( 'PluginName' )
       if pluginList and pluginName not in pluginList:
         continue
       protocol = protocolDict['Protocol']
@@ -253,13 +253,13 @@ class StorageFactory:
       configPath = cfgPath( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
-        
+
     # This is a temporary for backward compatibility
-    if "ProtocolName" in protocolDict and not protocolDict['PluginName']:  
+    if "ProtocolName" in protocolDict and not protocolDict['PluginName']:
       protocolDict['PluginName'] = protocolDict['ProtocolName']
-    protocolDict.pop( 'ProtocolName' )  
-        
-    # Evaluate the base path taking into account possible VO specific setting 
+    protocolDict.pop( 'ProtocolName', None )
+
+    # Evaluate the base path taking into account possible VO specific setting
     if self.vo:
       result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )
       voPath = ''
@@ -283,7 +283,7 @@ class StorageFactory:
       errStr = "StorageFactory.__getProtocolDetails: 'PluginName' option is not defined."
       gLogger.error( errStr, "%s: %s" % ( storageName, protocolSection ) )
       return S_ERROR( errStr )
-    
+
     return S_OK( protocolDict )
 
   ###########################################################################################
