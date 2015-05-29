@@ -10,7 +10,7 @@ NEW: LocalConfiguration - option to print out license information
 *WMS
 FIX: Watchdog - review for style and pylint
 
-[v6r13-pre33]
+[v6r13-pre34]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -74,6 +74,11 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p41]
+
+*WMS
+CHANGE: dirac-wms-job-submit - "-r" switch to enable job repo
 
 [v6r12p40]
 
