@@ -210,9 +210,8 @@ class GlobusComputingElement( ComputingElement ):
 
     return 'Unknown'
 
-  def getJobOutput( self, jobID, localDir = None ):
-    """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
+  def getJobOutput( self, jobID, _localDir = None ):
+    """ Get the specified job standard output and error files. The output is returned
         as strings. 
     """
 
