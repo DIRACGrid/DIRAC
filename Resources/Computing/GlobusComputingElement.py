@@ -7,6 +7,9 @@
 
    Allows direct submission to Globus Computing Elements with a SiteDirector Agent
 
+   Needs the globus grid middleware. On needs open ports GLOBUS_TCP_PORT_RANGE
+   to be set or open ports 20000 to 25000 (needs to be confirmed)
+
 """
 
 __RCSID__ = "$Id$"
