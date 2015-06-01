@@ -23,7 +23,8 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 
 
-import os, tempfile
+import os
+import tempfile
 
 CE_NAME = 'Globus'
 MANDATORY_PARAMETERS = [ 'Queue' ]
