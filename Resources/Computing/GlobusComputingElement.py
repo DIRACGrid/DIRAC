@@ -49,12 +49,6 @@ class GlobusComputingElement( ComputingElement ):
     self.proxyRenewal = 0
 
   #############################################################################
-  def _addCEConfigDefaults( self ):
-    """Method to make sure all necessary Configuration Parameters are defined
-    """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults( self )
-
   def __writeRSL( self, executableFile ):
     """ Create the RSL for submission
 
