@@ -6,13 +6,12 @@ __RCSID__ = "$Id$"
 
 import time
 import pprint
-from DIRAC                                                           import S_OK, S_ERROR
 
+from DIRAC                                                           import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSHelpers
-# from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
 
@@ -37,7 +36,12 @@ class InputData( OptimizerExecutor ):
     cls.__SEToSiteMap = {}
     cls.__lastCacheUpdate = 0
     cls.__cacheLifeTime = 600
-    cls.__connectionLevel = 'LOCAL'
+
+    # Note: this is a default, that right now is generically the default for user jobs, at least for main DIRAC users
+    # (since this now doesn't run for production jobs)
+    # But this should probably be replaced by what the job actually request.
+    # The problem is that the InputDataPolicy is not easy to get (a JDL parameter).
+    cls.__connectionLevel = 'PROTOCOL'
 
     return S_OK()
 
