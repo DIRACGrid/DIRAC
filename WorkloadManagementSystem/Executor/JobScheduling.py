@@ -41,6 +41,7 @@ class JobScheduling( OptimizerExecutor ):
     """ Initialization of the optimizer.
     """
     cls.__jobDB = JobDB()
+    return S_OK()
 
   def optimizeJob( self, jid, jobState ):
     """ 1. Banned sites are removed from the destination list.
@@ -112,7 +113,7 @@ class JobScheduling( OptimizerExecutor ):
     # Production jobs are sent to TQ, but first we have to verify if staging is necessary
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
-      _filesOnline, stageLFNs = getFilesToStage()
+      _filesOnline, stageLFNs = getFilesToStage( inputData )
       if stageLFNs:
         if not self.__checkStageAllowed( jobState ):
           return S_ERROR( "Stage not allowed" )

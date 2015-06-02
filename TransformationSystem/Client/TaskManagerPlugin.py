@@ -137,7 +137,7 @@ class TaskManagerPlugin( PluginBase ):
     autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
     if autoAddedSites:
       for autoAddedSite in autoAddedSites:
-        allowed.setdefault( autoAddedSite, autoAddedSite )
+        allowed.setdefault( autoAddedSite, [autoAddedSite] )
         if autoAddedSite not in allowed:
           allowed[autoAddedSite] = [autoAddedSite]
         else:
