@@ -41,7 +41,8 @@ class InputData( OptimizerExecutor ):
     # (since this now doesn't run for production jobs)
     # But this should probably be replaced by what the job actually request.
     # The problem is that the InputDataPolicy is not easy to get (a JDL parameter).
-    cls.__connectionLevel = 'PROTOCOL'
+    # This may be used but clear how now
+    # cls.__connectionLevel = 'PROTOCOL'
 
     return S_OK()
 
@@ -77,7 +78,7 @@ class InputData( OptimizerExecutor ):
         - for production jobs this can be skipped,
           since the logic is already applied by the transformation system, via the TaskManagerPlugins
     """
-    # Are we executing this optimizer or not?
+    # Is it a production job?
     result = jobState.getAttribute( "JobType" )
     if not result['OK']:
       return S_ERROR( "Could not retrieve job type" )
@@ -86,6 +87,7 @@ class InputData( OptimizerExecutor ):
       self.jobLog.info( "Skipping optimizer, since this is a Production job" )
       return self.setNextOptimizer()
 
+    # Is there input data or not?
     result = jobState.getInputData()
     if not result[ 'OK' ]:
       self.jobLog.error( "Cannot retrieve input data: %s" % result[ 'Message' ] )
@@ -93,14 +95,16 @@ class InputData( OptimizerExecutor ):
     if not result[ 'Value' ]:
       self.jobLog.notice( "No input data. Skipping." )
       return self.setNextOptimizer()
+
+    # From now on we know that it is a user job with input data
     inputData = result[ 'Value' ]
 
-    #Check if we already executed this Optimizer and the input data is resolved
+    # Check if we already executed this Optimizer and the input data is resolved
     result = self.retrieveOptimizerParam( self.ex_getProperty( 'optimizerName' ) )
     if result['OK'] and result['Value']:
       self.jobLog.info( "InputData optimizer ran already" )
     else:
-      self.jobLog.info( 'Processing input data' )
+      self.jobLog.info( "Processing input data" )
       result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
         self.jobLog.warn( result['Message'] )
@@ -111,7 +115,7 @@ class InputData( OptimizerExecutor ):
   #############################################################################
 
   def _resolveInputData( self, jobState, inputData ):
-    """This method checks the file catalog for replica information.
+    """ This method checks the file catalog for replica information.
     """
     lfns = []
     for lfn in inputData:
@@ -143,7 +147,7 @@ class InputData( OptimizerExecutor ):
     result = self.__checkReplicas( jobState, replicaDict )
 
     if not result['OK']:
-      self.jobLog.error( 'Failed to check replicas', result['Message'] )
+      self.jobLog.error( "Failed to check replicas", result['Message'] )
       return result
     siteCandidates = result[ 'Value' ]
 
@@ -273,7 +277,7 @@ class InputData( OptimizerExecutor ):
       self.__lastCacheUpdate = now
 
     if seName not in self.__SEToSiteMap:
-      result = DMSHelpers().getSitesForSE( seName, self.__connectionLevel )
+      result = DMSHelpers().getSitesForSE( seName )
       if not result['OK']:
         return result
       self.__SEToSiteMap[ seName ] = list( result['Value'] )

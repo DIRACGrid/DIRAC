@@ -1,4 +1,4 @@
-"""   The Job Scheduling Agent takes the information gained from all previous
+"""   The Job Scheduling Executor takes the information gained from all previous
       optimizers and makes a scheduling decision for the jobs.  Subsequent to this
       jobs are added into a Task Queue by the next optimizer and pilot agents can
       be submitted.
@@ -18,6 +18,7 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageMan
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
 from DIRAC.ConfigurationSystem.Client.Helpers                  import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
 from DIRAC.Core.Security                                       import Properties
 
 
@@ -70,6 +71,12 @@ class JobScheduling( OptimizerExecutor ):
       return result
     userSites, userBannedSites = result[ 'Value' ]
 
+    # Get job type
+    result = jobState.getAttribute( "JobType" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve job type" )
+    jobType = result[ 'Value' ]
+
     #Get active and banned sites from DIRAC
     result = self.__jobDB.getSiteMask( 'Active' )
     if not result[ 'OK' ]:
@@ -82,10 +89,6 @@ class JobScheduling( OptimizerExecutor ):
 
     #If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
-      result = jobState.getAttribute( "JobType" )
-      if not result[ 'OK' ]:
-        return S_ERROR( "Could not retrieve job type" )
-      jobType = result[ 'Value' ]
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
         sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
         if not sites:
@@ -102,22 +105,30 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( 'Failed to get input data from JobDB' )
 
     if not result['Value']:
-      #No input data? Generate requirements and next
+      # No input data? Just send to TQ
       return self.__sendToTQ( jobState, userSites, userBannedSites )
 
-    inputData = result[ 'Value' ]
 
     self.jobLog.verbose( 'Has an input data requirement' )
+    inputData = result[ 'Value' ]
+
+    # check if InputData executor had to be executed, otherwise just send to TQ
+    if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
+      self.jobLog.info( "Production job: sending to TQ" )
+      return self.__sendToTQ( jobState, userSites, userBannedSites )
+
+
     idAgent = self.ex_getOption( 'InputDataAgent', 'InputData' )
     result = self.retrieveOptimizerParam( idAgent )
     if not result['OK']:
       self.jobLog.error( "Could not retrieve input data info: %s" % result[ 'Message' ] )
-      return S_ERROR( "File Catalog Access Failure" )
+      return S_ERROR( "InputData optimizer skipped" )
     opData = result[ 'Value' ]
+
     if 'SiteCandidates' not in opData:
       return S_ERROR( "No possible site candidates" )
 
-    #Filter input data sites with user requirement
+    # Filter input data sites with user requirement
     siteCandidates = list( opData[ 'SiteCandidates' ] )
     self.jobLog.info( "Site candidates are %s" % siteCandidates )
 
@@ -129,7 +140,7 @@ class JobScheduling( OptimizerExecutor ):
     for site in siteCandidates:
       idSites[ site ] = opData[ 'SiteCandidates' ][ site ]
 
-    #Check if sites have correct count of disk+tape replicas
+    # Check if sites have correct count of disk+tape replicas
     numData = len( inputData )
     errorSites = set()
     for site in idSites:
@@ -202,7 +213,6 @@ class JobScheduling( OptimizerExecutor ):
       self.freezeTask( delay )
     else:
       self.freezeTask( self.ex_getOption( "HoldTime", 300 ) )
-    jid = jobState.jid
     self.jobLog.info( "On hold -> %s" % holdMsg )
     return jobState.setAppStatus( holdMsg, source = self.ex_optimizerName() )
 
@@ -227,9 +237,10 @@ class JobScheduling( OptimizerExecutor ):
     sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
 
     if len( sites ) == 1:
-      self.jobLog.info( 'Single chosen site %s specified' % ( sites[0] ) )
+      self.jobLog.info( "Single chosen site %s specified" % ( sites[0] ) )
 
     if sites:
+      self.jobLog.info( "Multiple sites requested: %s" ','.join( sites ) )
       sites = self.__applySiteFilter( sites, banned = bannedSites )
       if not sites:
         return S_ERROR( "Impossible site requirement" )
@@ -303,7 +314,7 @@ class JobScheduling( OptimizerExecutor ):
         maxOnDisk = nDisk
         bestSites = [ site ]
       elif nDisk == maxOnDisk:
-       bestSites.append( site )
+        bestSites.append( site )
 
     #If there are selected sites, those are disk only sites
     if diskSites:
@@ -350,7 +361,6 @@ class JobScheduling( OptimizerExecutor ):
       #Check SEs
       seStage = []
       for seName in replicas:
-        surl = replicas[ seName ]
         if seName in diskSEs:
           #This lfn is in disk. Skip it
           seStage = []
@@ -376,7 +386,7 @@ class JobScheduling( OptimizerExecutor ):
     for lfn in lfnToStage:
       found = False
       #2.- Traverse the SEs
-      for stageCount, seName in sortedSEs:
+      for _stageCount, seName in sortedSEs:
         if lfn in stageLFNs[ seName ]:
           #3.- If first time found, just mark as found. Next time delete the replica from the request
           if found:
@@ -520,6 +530,3 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( "Cannot get OwnerGroup" )
     group = result[ 'Value' ]
     return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
-
-
-
