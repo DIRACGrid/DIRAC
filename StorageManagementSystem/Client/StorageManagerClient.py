@@ -4,8 +4,8 @@ __RCSID__ = "$Id$"
 
 import random
 
+from DIRAC import S_OK, S_ERROR 
 from DIRAC.Core.Base.Client import Client
-
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
@@ -22,6 +22,8 @@ def getFilesToStage( lfnList ):
   seObjectsDict = dict()
   seToLFNs = dict()
   
+  if lfnListReplicas['Value']['Failed']:
+    return S_ERROR( "Failures in getting replicas" )
   for lfn, ld in lfnListReplicas['Value']['Successful'].iteritems():
     for se, _ in ld.iteritems():
       seObjectsDict.setdefault( se, StorageElement( se ) )
@@ -34,6 +36,8 @@ def getFilesToStage( lfnList ):
     if not fileMetadata['OK']:
       return fileMetadata
 
+    if fileMetadata['Value']['Failed']:
+      return S_ERROR( "Failures in getting file metadata" )
     # is there at least one online?
     for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
       if mDict['Cached']:
@@ -48,7 +52,7 @@ def getFilesToStage( lfnList ):
     se = ses[0]
     offlineLFNsDict[se] = offlineLFN
   
-  return list(onlineLFNs), offlineLFNsDict
+  return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict} )
 
 
 class StorageManagerClient( Client ):

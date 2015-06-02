@@ -40,6 +40,7 @@ class JobScheduling( OptimizerExecutor ):
   def initializeOptimizer( cls ):
     """ Initialization of the optimizer.
     """
+    cls.ex_setOption( 'shifterProxy', 'DataManager' )
     cls.__jobDB = JobDB()
     return S_OK()
 
@@ -49,6 +50,7 @@ class JobScheduling( OptimizerExecutor ):
         3. Production jobs are sent directly to TQ
         4. Check if staging is necessary
     """
+    self.ex_setOption( 'shifterProxy', 'DataManager' )
     #Reschedule delay
     result = jobState.getAttributes( [ 'RescheduleCounter', 'RescheduleTime', 'ApplicationStatus' ] )
     if not result[ 'OK' ]:
@@ -113,7 +115,10 @@ class JobScheduling( OptimizerExecutor ):
     # Production jobs are sent to TQ, but first we have to verify if staging is necessary
     if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
       self.jobLog.info( "Production job: sending to TQ, but first checking if staging is requested" )
-      _filesOnline, stageLFNs = getFilesToStage( inputData )
+      res = getFilesToStage( inputData )
+      if not res['OK']:
+        return self.__holdJob( jobState, res['Message'] )
+      stageLFNs = res['Value']['offlineLFNs']
       if stageLFNs:
         if not self.__checkStageAllowed( jobState ):
           return S_ERROR( "Stage not allowed" )
