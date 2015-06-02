@@ -1,28 +1,32 @@
 """   The Job Scheduling Executor takes the information gained from all previous
-      optimizers and makes a scheduling decision for the jobs.  Subsequent to this
-      jobs are added into a Task Queue by the next optimizer and pilot agents can
-      be submitted.
+      optimizers and makes a scheduling decision for the jobs.
+
+      Subsequent to this jobs are added into a Task Queue and pilot agents can be submitted.
 
       All issues preventing the successful resolution of a site candidate are discovered
-      here where all information is available.  This Agent will fail affected jobs
-      meaningfully.
+      here where all information is available.
+
+      This Executor will fail affected jobs meaningfully.
 
 """
 __RCSID__ = "$Id: $"
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.Time import fromString, toEpoch
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Resources.Storage.StorageElement                    import StorageElement
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
-from DIRAC.ConfigurationSystem.Client.Helpers                  import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations       import Operations
-from DIRAC.Core.Security                                       import Properties
-
-
 import random
+
+from DIRAC import S_OK, S_ERROR
+
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
+from DIRAC.Core.Utilities.Time                                      import fromString, toEpoch
+from DIRAC.Core.Security                                            import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources             import getSiteTier
+from DIRAC.ConfigurationSystem.Client.Helpers                       import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient      import StorageManagerClient
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.WorkloadManagementSystem.DB.JobDB                        import JobDB
+
+
 
 class JobScheduling( OptimizerExecutor ):
   """
@@ -34,21 +38,15 @@ class JobScheduling( OptimizerExecutor ):
 
   @classmethod
   def initializeOptimizer( cls ):
-    """ Initialization of the Agent.
+    """ Initialization of the optimizer.
     """
-    try:
-      from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-    except ImportError, excp :
-      return S_ERROR( "Could not import JobDB: %s" % str( excp ) )
-
-    try:
-      cls.__jobDB = JobDB()
-    except RuntimeError:
-      return S_ERROR( "Cannot connect to JobDB" )
-    return S_OK()
-
+    cls.__jobDB = JobDB()
 
   def optimizeJob( self, jid, jobState ):
+    """ 1. Banned sites are removed from the destination list.
+        2. Production jobs are sent directly to TQ
+        3. Check if staging is necessary
+    """
     #Reschedule delay
     result = jobState.getAttributes( [ 'RescheduleCounter', 'RescheduleTime', 'ApplicationStatus' ] )
     if not result[ 'OK' ]:
@@ -97,8 +95,12 @@ class JobScheduling( OptimizerExecutor ):
           else:
             return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
 
-    #Get the Input data
-    # Third, check if there is input data
+    # Production jobs are sent to TQ
+    if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
+      self.jobLog.info( "Production job: sending to TQ" )
+      return self.__sendToTQ( jobState, userSites, userBannedSites )
+
+    # Check if there is input data, for staging purposes
     result = jobState.getInputData()
     if not result['OK']:
       self.jobLog.error( "Cannot get input data %s" % ( result['Message'] ) )
@@ -108,21 +110,16 @@ class JobScheduling( OptimizerExecutor ):
       # No input data? Just send to TQ
       return self.__sendToTQ( jobState, userSites, userBannedSites )
 
-
-    self.jobLog.verbose( 'Has an input data requirement' )
+    # from now on we know it's a user job with input data
+    self.jobLog.verbose( "Has an input data requirement" )
     inputData = result[ 'Value' ]
-
-    # check if InputData executor had to be executed, otherwise just send to TQ
-    if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
-      self.jobLog.info( "Production job: sending to TQ" )
-      return self.__sendToTQ( jobState, userSites, userBannedSites )
 
 
     idAgent = self.ex_getOption( 'InputDataAgent', 'InputData' )
     result = self.retrieveOptimizerParam( idAgent )
     if not result['OK']:
-      self.jobLog.error( "Could not retrieve input data info: %s" % result[ 'Message' ] )
-      return S_ERROR( "InputData optimizer skipped" )
+      self.jobLog.error( "Could not retrieve input data info", result[ 'Message' ] )
+      return S_ERROR( "Could not retrieve input data info" )
     opData = result[ 'Value' ]
 
     if 'SiteCandidates' not in opData:
