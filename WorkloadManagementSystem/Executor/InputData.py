@@ -20,7 +20,7 @@ class InputData( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
       - initializeOptimizer() before each execution cycle
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
   """
 
   @classmethod

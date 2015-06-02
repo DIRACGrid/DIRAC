@@ -27,7 +27,7 @@ import random
 class JobScheduling( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
       and it can provide:
       - initializeOptimizer() before each execution cycle
   """
