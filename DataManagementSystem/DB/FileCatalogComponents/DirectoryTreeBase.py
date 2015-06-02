@@ -390,8 +390,7 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      owner = dict['Owner']
+    for path, owner in arguments.items():
       result = self.setDirectoryOwner( path, owner )
       if not result['OK']:
         failed[path] = result['Message']
@@ -433,8 +432,7 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      group = dict['Group']
+    for path, group in arguments.items():
       result = self.setDirectoryGroup( path, group )
       if not result['OK']:
         failed[path] = result['Message']
@@ -468,8 +466,7 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path, dict in arguments.items():
-      mode = dict['Mode']
+    for path, mode in arguments.items():
       result = self.setDirectoryMode( path, mode )
       if not result['OK']:
         failed[path] = result['Message']
@@ -1026,7 +1023,7 @@ class DirectoryTreeBase:
   PRIMARY KEY (`DirID`,`SEID`),
   KEY `DirID` (`DirID`),
   KEY `SEID` (`SEID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
 """
     result = self.db._update( req )
     if not result['OK']:

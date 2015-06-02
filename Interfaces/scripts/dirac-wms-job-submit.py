@@ -20,6 +20,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  JDL:      Path to JDL file' ] ) )
 
 Script.registerSwitch( "f:", "File=", "Writes job ids to file <value>" )
+Script.registerSwitch( "r:", "UseJobRepo=", "Use the job repository")
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
@@ -27,12 +28,20 @@ if len( args ) < 1:
   Script.showHelp()
 
 from DIRAC.Interfaces.API.Dirac                              import Dirac
-dirac = Dirac()
+unprocessed_switches = Script.getUnprocessedSwitches()
+use_repo = False
+repo_name = ""
+for sw, value in unprocessed_switches:
+  if sw.lower() in ["r", "usejobrepo"]:
+    use_repo = True
+    repo_name = value
+    repo_name = repo_name.replace(".cfg", ".repo")
+dirac = Dirac(use_repo, repo_name)
 exitCode = 0
 errorList = []
 
 jFile = None
-for sw, value in Script.getUnprocessedSwitches():
+for sw, value in unprocessed_switches:
   if sw.lower() in ( 'f', 'file' ):
     if os.path.isfile( value ):
       print 'Appending job ids to existing logfile: %s' %value

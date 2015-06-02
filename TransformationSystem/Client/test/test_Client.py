@@ -18,48 +18,56 @@ from DIRAC.TransformationSystem.Client.TaskManagerPlugin      import TaskManager
 class opsHelperFakeUser( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return 'CERN, IN2P3'
-    return 'PAK, Ferrara, Bologna, Paris'
+      return ['CERN', 'IN2P3']
+    return ['PAK', 'Ferrara', 'Bologna', 'Paris']
   def getOptionsDict( self, foo = '' ):
     return {'OK': True, 'Value': {'Paris': 'IN2P3'}}
 
 class opsHelperFakeUser2( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return ''
-    return 'PAK, Ferrara, Bologna, Paris, CERN, IN2P3'
+      return []
+    return ['PAK', 'Ferrara', 'Bologna', 'Paris', 'CERN', 'IN2P3']
   def getOptionsDict( self, foo = '' ):
     return {'OK': True, 'Value': {'Paris': 'IN2P3', 'CERN': 'CERN', 'IN2P3':'IN2P3'}}
 
 class opsHelperFakeDataReco( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return 'CERN, IN2P3'
-    return 'PAK, Ferrara, CERN, IN2P3'
+      return ['CERN', 'IN2P3']
+    return ['PAK', 'Ferrara', 'CERN', 'IN2P3']
   def getOptionsDict(self, foo = ''):
     return {'OK': True, 'Value': {'Ferrara': 'CERN', 'IN2P3': 'IN2P3, CERN'}}
 
 class opsHelperFakeMerge( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return 'CERN, IN2P3'
-    return 'ALL'
+      return ['CERN', 'IN2P3']
+    return ['ALL']
   def getOptionsDict( self, foo = '' ):
     return {'OK': False, 'Message': 'JobTypeMapping/MCSimulation/Allow in Operations does not exist'}
 
 class opsHelperFakeMerge2( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return ''
-    return 'ALL'
+      return []
+    return ['ALL']
   def getOptionsDict( self, foo = '' ):
     return {'OK': True, 'Value': {'CERN': 'CERN', 'IN2P3': 'IN2P3'}}
+
+class opsHelperFakeMerge3( object ):
+  def getValue( self, foo = '', bar = '' ):
+    if foo == 'JobTypeMapping/AutoAddedSites':
+      return ['CERN', 'IN2P3']
+    return ['ALL']
+  def getOptionsDict( self, foo = '' ):
+    return {'OK': True, 'Value': {'Paris': 'CERN'}}
 
 class opsHelperFakeMC( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
-      return 'CERN, IN2P3'
-    return ''
+      return ['CERN', 'IN2P3']
+    return []
   def getOptionsDict( self, foo = '' ):
     return {'OK': False, 'Message': 'JobTypeMapping/MCSimulation/Allow in Operations does not exist'}
 
@@ -307,6 +315,17 @@ class TaskManagerPluginSuccess(ClientsTestCase):
     p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'Merge'}
     res = p_o.run()
     self.assertEqual( res, set( ['CERN'] ) )
+
+    p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'Merge'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['IN2P3'] ) )
+
+    # "Merge" case - 3
+    p_o = TaskManagerPlugin( 'ByJobType', operationsHelper = opsHelperFakeMerge3() )
+
+    p_o.params = {'Site':'', 'TargetSE':'CERN-DST', 'JobType':'Merge'}
+    res = p_o.run()
+    self.assertEqual( res, set( ['Paris', 'CERN'] ) )
 
     p_o.params = {'Site':'', 'TargetSE':'IN2P3-DST', 'JobType':'Merge'}
     res = p_o.run()

@@ -83,18 +83,10 @@ class ReqManagerHandler( RequestHandler ):
     """
     requestDict = json.loads( requestJSON )
     requestName = requestDict.get( "RequestID", requestDict.get( 'RequestName', "***UNKNOWN***" ) )
-    requestID = requestDict.get( "RequestID", 0 )
     request = Request( requestDict )
     optimized = request.optimize()
     if optimized.get( "Value", False ):
-      if request.RequestID == 0 and requestID != 0:
-        # A new request has been created, delete the old one
-        delete = cls.__requestDB.deleteRequest( request.RequestName )
-        if not delete['OK']:
-          return delete
-        gLogger.debug( "putRequest: request was optimized and removed for a new insertion" )
-      else:
-        gLogger.debug( "putRequest: request was optimized" )
+      gLogger.debug( "putRequest: request was optimized" )
     else:
       gLogger.debug( "putRequest: request unchanged", optimized.get( "Message", "Nothing could be optimized" ) )
 

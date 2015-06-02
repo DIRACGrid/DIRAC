@@ -1,29 +1,30 @@
 """ This helper looks in the /Operations section of the CS, considering its specific nature:
     the /Operations section is designed in a way that each configuration can be specific to a Setup, while maintaining a default.
 
-    So, for example, given the following /Operations section:
-    Operations/
-        Default/
-            someSection/
-                someOption = someValue
-                aSecondOption = aSecondValue
-        Production/
-            someSection/
-                someOption = someValueInProduction
-                aSecondOption = aSecondValueInProduction
-        Certification/
-            someSection/
-                someOption = someValueInCertification
+    So, for example, given the following /Operations section::
 
-    The following calls would give different results based on the setup:
+      Operations/
+          Default/
+              someSection/
+                  someOption = someValue
+                  aSecondOption = aSecondValue
+          Production/
+              someSection/
+                  someOption = someValueInProduction
+                  aSecondOption = aSecondValueInProduction
+          Certification/
+              someSection/
+                  someOption = someValueInCertification
 
-    Operations().getValue('someSection/someOption')
-      -> someValueInProduction if we are in 'Production' setup
-      -> someValueInCertification if we are in 'Certification' setup
+    The following calls would give different results based on the setup::
 
-    Operations().getValue('someSection/aSecondOption')
-      -> aSecondValueInProduction if we are in 'Production' setup
-      -> aSecondValue if we are in 'Certification' setup     <- looking in Default since there's no Certification/someSection/aSecondOption
+      Operations().getValue('someSection/someOption')
+        - someValueInProduction if we are in 'Production' setup
+        - someValueInCertification if we are in 'Certification' setup
+
+      Operations().getValue('someSection/aSecondOption')
+        - aSecondValueInProduction if we are in 'Production' setup
+        - aSecondValue if we are in 'Certification' setup     <- looking in Default since there's no Certification/someSection/aSecondOption
 
 """
 
@@ -178,10 +179,10 @@ class Operations( object ):
     """
     Generate the CS path for an option:
     
-    - if vo is not defined, the helper's vo will be used for multi VO installations
-    - if setup evaluates False (except None) -> The helpers setup will  be used
-    - if setup is defined -> whatever is defined will be used as setup
-    - if setup is None -> Defaults will be used
+      - if vo is not defined, the helper's vo will be used for multi VO installations
+      - if setup evaluates False (except None) -> The helpers setup will  be used
+      - if setup is defined -> whatever is defined will be used as setup
+      - if setup is None -> Defaults will be used
     
     :param option: path with respect to the Operations standard path  
     :type option: string

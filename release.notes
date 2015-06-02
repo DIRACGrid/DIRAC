@@ -1,4 +1,4 @@
-[v6r13-pre29]
+[v6r13-pre34]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -37,7 +37,9 @@ CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities
 CHANGE: FileCatalog - replace getDirectoryMetadata by getDirectoryUserMetadata
 NEW: FileCatalog - added new getDirectoryMetadata() interface to get standard directory metadata
 NEW: FileCatalog - possibility to find files by standard metadata
+NEW: FileCatalog - possibility to use wildcards in the metadata values for queries
 NEW: DMSHelpers class
+NEW: dirac-dms-find-lfns command
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
@@ -60,6 +62,20 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p41]
+
+*WMS
+CHANGE: dirac-wms-job-submit - "-r" switch to enable job repo
+
+[v6r12p40]
+
+*DMS
+FIX: DirectoryTreeBase.py - set database engine to InnoDB 
+
+[v6r12p39]
+
+FIX: imported fixes from rel-v6r11
 
 [v6r12p38]
 
@@ -532,6 +548,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p33]
+
+*Configuration
+FIX: Resources - avoid white spaces in OSCompatibility
 
 [v6r11p32]
 

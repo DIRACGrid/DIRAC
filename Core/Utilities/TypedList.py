@@ -6,16 +6,9 @@
 ########################################################################
 
 """
-:mod: TypedList 
- 
-.. module: TypedList
-
-
-:synopsis: typed list
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-typed list
+Typed list
 """
 
 __RCSID__ = "$Id $"
@@ -42,9 +35,7 @@ class TDeque( deque ):
     deque.__init__( self, iterable )
     
 class TypedList( list ):
-  """ 
-  .. class:: TypedList
-
+  """
   A list-like class holding only objects of specified type(s).
   """   
   def __init__( self, iterable=None, allowedTypes=None ):

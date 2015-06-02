@@ -106,19 +106,22 @@ class TaskManagerPlugin( PluginBase ):
     destSites = set( res['Value'] )
 
     # 2. get JobTypeMapping "Exclude" value (and add autoAddedSites)
+    gLogger.debug( "Getting JobTypeMapping 'Exclude' value (and add autoAddedSites)" )
     jobType = self.params['JobType']
     if not jobType:
       raise RuntimeError( "No jobType specified" )
-    excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, '' )
-    excludedSites = excludedSites + ',' + ','.join( fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) ) )
+    excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] )
+    gLogger.debug( "Explicitly excluded sites for %s jobs: %s" % ( jobType, ','.join( excludedSites ) ) )
+    excludedSites += self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
+    gLogger.debug( "Full list of excluded sites for %s jobs: %s" % ( jobType, ','.join( excludedSites ) ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
       pass
-    elif excludedSites == 'ALL' or 'ALL' in excludedSites:
+    elif 'ALL' in excludedSites:
       destSites = set()
     else:
-      destSites = destSites.difference( set( fromChar( excludedSites ) ) )
+      destSites = destSites.difference( set( excludedSites ) )
 
     # 4. get JobTypeMapping "Allow" section
     res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/Allow' % jobType )
@@ -127,11 +130,12 @@ class TaskManagerPlugin( PluginBase ):
       allowed = {}
     else:
       allowed = res['Value']
+      gLogger.debug( "Allowed sites for %s jobs: %s" % ( jobType, ','.join( allowed ) ) )
       for site in allowed:
         allowed[site] = fromChar( allowed[site] )
 
     # 5. add autoAddedSites, if requested
-    autoAddedSites = fromChar( self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', '' ) )
+    autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
     if autoAddedSites:
       for autoAddedSite in autoAddedSites:
         if autoAddedSite not in allowed:
@@ -148,4 +152,5 @@ class TaskManagerPlugin( PluginBase ):
         else:
           destSites.add( destSite )
 
+    gLogger.debug( "Computed list of destination sites for %s jobs: %s" % ( jobType, ','.join( destSites ) ) )
     return destSites

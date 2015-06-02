@@ -4,15 +4,9 @@
 # Date: 2013/04/02 13:41:20
 ########################################################################
 """
-:mod: FTSJob
-
-.. module: FTSJob
-
-:synopsis: class representing FTS job
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-class representing single FTS request
+FTSJob class representing single FTS request
 """
 
 __RCSID__ = "$Id $"
@@ -44,8 +38,6 @@ import fts3.rest.client.easy as fts3
 ########################################################################
 class FTSJob( object ):
   """
-  .. class:: FTSJob
-
   class describing one FTS job
   """
 
@@ -711,7 +703,7 @@ class FTSJob( object ):
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
-      pfn = returnSingleResult( targetSE.getURL( ftsFile.TargetSURL, protocol = 'srm' ) )
+      pfn = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]
@@ -722,6 +714,7 @@ class FTSJob( object ):
       register = self._fc.addReplica( toRegisterDict )
       self._regTime += time.time() - startTime
       if not register["OK"]:
+        self._log.error( 'Error registering replica', register['Message'] )
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
         return register

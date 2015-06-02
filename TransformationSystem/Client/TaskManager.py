@@ -420,15 +420,17 @@ class WorkflowTasks( TaskBase ):
     except KeyError:
       pass
 
-    if not self.destinationPlugin_o:
+    if self.destinationPlugin_o:
+      destinationPlugin_o = self.destinationPlugin_o
+    else:
       res = self.__generatePluginObject( self.destinationPlugin )
       if not res['OK']:
         self._logFatal( "Could not generate a destination plugin object" )
         return res
-      self.destinationPlugin_o = res['Value']
-      self.destinationPlugin_o.setParameters( paramsDict )
+      destinationPlugin_o = res['Value']
 
-    destSites = self.destinationPlugin_o.run()
+    destinationPlugin_o.setParameters( paramsDict )
+    destSites = destinationPlugin_o.run()
     if not destSites:
       return sites
 
