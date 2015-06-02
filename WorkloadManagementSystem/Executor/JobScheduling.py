@@ -50,7 +50,6 @@ class JobScheduling( OptimizerExecutor ):
         3. Production jobs are sent directly to TQ
         4. Check if staging is necessary
     """
-    self.ex_setOption( 'shifterProxy', 'DataManager' )
     #Reschedule delay
     result = jobState.getAttributes( [ 'RescheduleCounter', 'RescheduleTime', 'ApplicationStatus' ] )
     if not result[ 'OK' ]:
