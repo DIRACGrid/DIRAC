@@ -1,4 +1,4 @@
-[v6r13-pre34]
+[v6r13-pre35]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -43,6 +43,7 @@ NEW: dirac-dms-find-lfns command
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
+CHANGE: JobScheduling executor uses the job owner proxy to evaluate which files to stage
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
