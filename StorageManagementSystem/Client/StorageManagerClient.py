@@ -43,14 +43,14 @@ def getFilesToStage( lfnList ):
       if mDict['Cached']:
         onlineLFNs.add( lfn )
 
-  offlineLFNs = set( lfnList ) - set( onlineLFNs )
+  offlineLFNs = set( lfnList ).difference( onlineLFNs )
   
   offlineLFNsDict = {}
   for offlineLFN in offlineLFNs:
     ses = lfnListReplicas['Value']['Successful'][offlineLFN].keys()
     random.shuffle( ses )
     se = ses[0]
-    offlineLFNsDict[se] = offlineLFN
+    offlineLFNsDict.setdefault( se, list() ).append( offlineLFN )
   
   return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict} )
 
