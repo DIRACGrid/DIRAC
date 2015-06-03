@@ -10,7 +10,7 @@ NEW: LocalConfiguration - option to print out license information
 *WMS
 FIX: Watchdog - review for style and pylint
 
-[v6r13-pre34]
+[v6r13-pre35]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -55,6 +55,7 @@ NEW: dirac-dms-find-lfns command
 
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
+CHANGE: JobScheduling executor uses the job owner proxy to evaluate which files to stage
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
@@ -74,6 +75,10 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p42]
+
+FIX: added fixes from v6r11p34 patch release
 
 [v6r12p41]
 
@@ -560,6 +565,11 @@ NEW: WorkflowTaskAgent is now multi-threaded
 NEW: Better use of threads in Transformation Agents
 CHANGE: TransformationDB - modified such that the body in a transformation can be updated
 FIX: TransformationCleaningAgent - removed non-ASCII characters in a comment
+
+[v6r11p34]
+
+*Resources
+NEW: GlobusComputingElement class
 
 [v6r11p33]
 

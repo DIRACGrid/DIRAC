@@ -6,20 +6,21 @@ __RCSID__ = "$Id$"
 
 import time
 import pprint
-from DIRAC                                                           import S_OK, S_ERROR
 
+from DIRAC                                                           import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
-from DIRAC.Core.Utilities.SiteSEMapping                              import getSitesForSE
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSHelpers
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
 
 
 class InputData( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
       - initializeOptimizer() before each execution cycle
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
   """
 
   @classmethod
@@ -35,6 +36,13 @@ class InputData( OptimizerExecutor ):
     cls.__SEToSiteMap = {}
     cls.__lastCacheUpdate = 0
     cls.__cacheLifeTime = 600
+
+    # Note: this is a default, that right now is generically the default for user jobs, at least for main DIRAC users
+    # (since this now doesn't run for production jobs)
+    # But this should probably be replaced by what the job actually request.
+    # The problem is that the InputDataPolicy is not easy to get (a JDL parameter).
+    # This may be used but clear how now
+    # cls.__connectionLevel = 'PROTOCOL'
 
     return S_OK()
 
@@ -63,6 +71,23 @@ class InputData( OptimizerExecutor ):
       return self.__fcDict[vo]   
 
   def optimizeJob( self, jid, jobState ):
+    """ This is the method that needs to be implemented by each and every Executor
+
+        This optimizer will run if and only if it is needed:
+        - it will run only if there are input files
+        - for production jobs this can be skipped,
+          since the logic is already applied by the transformation system, via the TaskManagerPlugins
+    """
+    # Is it a production job?
+    result = jobState.getAttribute( "JobType" )
+    if not result['OK']:
+      return S_ERROR( "Could not retrieve job type" )
+    jobType = result['Value']
+    if jobType in Operations().getValue( 'Transformations/DataProcessing', [] ):
+      self.jobLog.info( "Skipping optimizer, since this is a Production job" )
+      return self.setNextOptimizer()
+
+    # Is there input data or not?
     result = jobState.getInputData()
     if not result[ 'OK' ]:
       self.jobLog.error( "Cannot retrieve input data: %s" % result[ 'Message' ] )
@@ -70,35 +95,27 @@ class InputData( OptimizerExecutor ):
     if not result[ 'Value' ]:
       self.jobLog.notice( "No input data. Skipping." )
       return self.setNextOptimizer()
+
+    # From now on we know that it is a user job with input data
     inputData = result[ 'Value' ]
 
-    #Check if we already executed this Optimizer and the input data is resolved
+    # Check if we already executed this Optimizer and the input data is resolved
     result = self.retrieveOptimizerParam( self.ex_getProperty( 'optimizerName' ) )
     if result['OK'] and result['Value']:
-      self.jobLog.info( "Retrieving stored info" )
-      resolvedData = result['Value']
+      self.jobLog.info( "InputData optimizer ran already" )
     else:
-      self.jobLog.info( 'Processing input data' )
-      result = self.__resolveInputData( jobState, inputData )
+      self.jobLog.info( "Processing input data" )
+      result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
         self.jobLog.warn( result['Message'] )
         return result
-      resolvedData = result['Value']
-
-#    #Now check if banned SE's might prevent jobs to be scheduled
-#    result = self.__checkActiveSEs( jobState, resolvedData['Value']['Value'] )
-#    if not result['OK']:
-#      # if after checking SE's input data can not be resolved any more
-#      # then keep the job in the same status and update the application status
-#      self.freezeTask( 600 )
-#      return jobState.setAppStatus( result['Message'] )
 
     return self.setNextOptimizer()
 
   #############################################################################
-  # FIXME: this one in practice it is unused right now...
-  def __resolveInputData( self, jobState, inputData ):
-    """This method checks the file catalog for replica information.
+
+  def _resolveInputData( self, jobState, inputData ):
+    """ This method checks the file catalog for replica information.
     """
     lfns = []
     for lfn in inputData:
@@ -125,12 +142,12 @@ class InputData( OptimizerExecutor ):
 
     replicaDict = result['Value']
 
-    print "REPLICA DICT", replicaDict
+    self.jobLog.verbose( "REPLICA DICT: %s" % replicaDict )
 
     result = self.__checkReplicas( jobState, replicaDict )
 
     if not result['OK']:
-      self.jobLog.error( 'Failed to check replicas', result['Message'] )
+      self.jobLog.error( "Failed to check replicas", result['Message'] )
       return result
     siteCandidates = result[ 'Value' ]
 
@@ -260,7 +277,7 @@ class InputData( OptimizerExecutor ):
       self.__lastCacheUpdate = now
 
     if seName not in self.__SEToSiteMap:
-      result = getSitesForSE( seName )
+      result = DMSHelpers().getSitesForSE( seName )
       if not result['OK']:
         return result
       self.__SEToSiteMap[ seName ] = list( result['Value'] )

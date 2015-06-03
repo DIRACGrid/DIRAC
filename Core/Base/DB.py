@@ -19,7 +19,7 @@ class DB( MySQL ):
 
     result = getDBParameters( fullname )
     if not result['OK'] :
-      raise Exception( 'Cannot get database parameters: %s' % result['Message'] )
+      raise RuntimeError( 'Cannot get database parameters: %s' % result['Message'] )
 
     dbParameters = result[ 'Value' ]
     self.dbHost = dbParameters[ 'Host' ]

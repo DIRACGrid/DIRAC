@@ -111,9 +111,9 @@ class TaskManagerPlugin( PluginBase ):
     if not jobType:
       raise RuntimeError( "No jobType specified" )
     excludedSites = self.opsH.getValue( 'JobTypeMapping/%s/Exclude' % jobType, [] )
-    gLogger.debug( "Explicitly excluded sites for %s jobs: %s" % ( jobType, ','.join( excludedSites ) ) )
+    gLogger.debug( "Explicitly excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
     excludedSites += self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
-    gLogger.debug( "Full list of excluded sites for %s jobs: %s" % ( jobType, ','.join( excludedSites ) ) )
+    gLogger.debug( "Full list of excluded sites for %s task: %s" % ( jobType, ','.join( excludedSites ) ) )
 
     # 3. removing sites in Exclude
     if not excludedSites:
@@ -130,7 +130,6 @@ class TaskManagerPlugin( PluginBase ):
       allowed = {}
     else:
       allowed = res['Value']
-      gLogger.debug( "Allowed sites for %s jobs: %s" % ( jobType, ','.join( allowed ) ) )
       for site in allowed:
         allowed[site] = fromChar( allowed[site] )
 
@@ -138,8 +137,12 @@ class TaskManagerPlugin( PluginBase ):
     autoAddedSites = self.opsH.getValue( 'JobTypeMapping/AutoAddedSites', [] )
     if autoAddedSites:
       for autoAddedSite in autoAddedSites:
+        allowed.setdefault( autoAddedSite, [autoAddedSite] )
         if autoAddedSite not in allowed:
           allowed[autoAddedSite] = [autoAddedSite]
+        else:
+          allowed[autoAddedSite] = [autoAddedSite] + allowed[autoAddedSite]
+    gLogger.debug( "Allowed sites for %s task: %s" % ( jobType, ','.join( allowed ) ) )
 
     # 6. Allowing sites that should be allowed
     taskSiteDestination = self._BySE()
@@ -152,5 +155,7 @@ class TaskManagerPlugin( PluginBase ):
         else:
           destSites.add( destSite )
 
-    gLogger.debug( "Computed list of destination sites for %s jobs: %s" % ( jobType, ','.join( destSites ) ) )
+    gLogger.verbose( "Computed list of destination sites for %s task with TargetSE %s: %s" % ( jobType,
+                                                                                               self.params['TargetSE'],
+                                                                                               ','.join( destSites ) ) )
     return destSites
