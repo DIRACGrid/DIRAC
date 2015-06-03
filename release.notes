@@ -44,6 +44,8 @@ NEW: dirac-dms-find-lfns command
 *WMS
 NEW: SiteDirector - support for the MaxRAM queue description parameter
 CHANGE: JobScheduling executor uses the job owner proxy to evaluate which files to stage
+FIX: DownloadInputData - localFile was not defined properly
+FIX: DownloadInputData - could not find cached files (missing [lfn])
 
 *RMS
 CHANGE: Removed files from the previous generation RMS
