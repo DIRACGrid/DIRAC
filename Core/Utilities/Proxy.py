@@ -94,7 +94,7 @@ def executeWithUserProxy( fcn ):
 
       # Restore the default host certificate usage if necessary
       if useServerCertificate:
-          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+        gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
       if originalUserProxy:
         os.environ['X509_USER_PROXY'] = originalUserProxy
       else:
