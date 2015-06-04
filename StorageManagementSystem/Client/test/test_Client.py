@@ -2,7 +2,6 @@
 """
 
 import unittest
-import types
 import importlib
 
 from mock import MagicMock
