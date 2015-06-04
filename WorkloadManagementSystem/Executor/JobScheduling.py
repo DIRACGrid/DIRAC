@@ -122,6 +122,7 @@ class JobScheduling( OptimizerExecutor ):
         if not self.__checkStageAllowed( jobState ):
           return S_ERROR( "Stage not allowed" )
         self.__requestStaging( jobState, stageLFNs )
+        return S_OK()
       else:
         return self.__sendToTQ( jobState, userSites, userBannedSites )
 
