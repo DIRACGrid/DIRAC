@@ -229,7 +229,7 @@ class StorageBase( object ):
     if not result['OK']:
       return result
     cwdUrl = result['Value']
-    fullUrl = '%s/%s' % ( cwdUrl, fileName )
+    fullUrl = '%s%s' % ( cwdUrl, fileName )
     return S_OK( fullUrl )
     
   def getName( self ):

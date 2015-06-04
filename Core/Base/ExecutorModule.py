@@ -36,6 +36,9 @@ class ExecutorModule( object ):
                                                        *exeName.split( "/" ) )
     cls.__defaults[ 'ReconnectRetries' ] = 10
     cls.__defaults[ 'ReconnectSleep' ] = 5
+    cls.__defaults[ 'shifterProxy' ] = ''
+    cls.__defaults[ 'shifterProxyLocation' ] = os.path.join( cls.__defaults[ 'WorkDirectory' ],
+                                                             '.shifterCred' )
     cls.__properties[ 'shifterProxy' ] = ''
     cls.__properties[ 'shifterProxyLocation' ] = os.path.join( cls.__defaults[ 'WorkDirectory' ],
                                                                '.shifterCred' )
@@ -51,7 +54,7 @@ class ExecutorModule( object ):
       gLogger.exception( "Exception while initializing %s" % loadName )
       return S_ERROR( "Exception while initializing: %s" % str( excp ) )
     if not isReturnStructure( result ):
-      return S_ERROR( "Executor %s does not resturn an S_OK/S_ERROR after initialization" % loadName )
+      return S_ERROR( "Executor %s does not return an S_OK/S_ERROR after initialization" % loadName )
     return result
 
 
@@ -128,6 +131,7 @@ class ExecutorModule( object ):
     return result
 
   def _ex_processTask( self, taskId, taskStub ):
+    self.__properties[ 'shifterProxy' ] = self.ex_getOption( 'shifterProxy' )
     self.__freezeTime = 0
     self.__fastTrackEnabled = True
     self.log.verbose( "Task %s: Received" % str( taskId ) )

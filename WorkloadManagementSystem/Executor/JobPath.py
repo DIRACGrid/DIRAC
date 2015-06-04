@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-# File :    JobPathAgent.py
-########################################################################
 """
   The Job Path Agent determines the chain of Optimizing Agents that must
   work on the job prior to the scheduling decision.
@@ -12,15 +8,16 @@
 
 """
 __RCSID__ = "$Id$"
+
 import types
+
 from DIRAC import S_OK, S_ERROR, List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 
 class JobPath( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
-      - checkJob() - the main method called for each job
+      - optimizeJob() - the main method called for each job
       and it can provide:
       - initializeOptimizer() before each execution cycle
   """

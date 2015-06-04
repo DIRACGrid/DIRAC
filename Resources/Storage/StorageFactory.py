@@ -80,6 +80,12 @@ class StorageFactory:
         'storageName' is the DIRAC SE name i.e. 'CERN-RAW'
         'pluginList' is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
     """
+    self.remotePlugins = []
+    self.localPlugins = []
+    self.name = ''
+    self.options = {}
+    self.protocolDetails = []
+    self.storages = []
     if pluginList is None:
       pluginList = []
     if not self.vo:
