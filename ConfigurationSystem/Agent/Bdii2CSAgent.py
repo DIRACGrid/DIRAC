@@ -26,7 +26,7 @@ class Bdii2CSAgent( AgentModule ):
   addressTo = ''
   addressFrom = ''
   voName = ''
-  subject = "CE2CSAgent"
+  subject = "Bdii2CSAgent"
   alternativeBDIIs = []
 
   def initialize( self ):
@@ -44,7 +44,7 @@ class Bdii2CSAgent( AgentModule ):
       self.log.info( "MailFrom", self.addressFrom )
     if self.alternativeBDIIs :
       self.log.info( "AlternativeBDII URLs:", self.alternativeBDIIs )
-    self.subject = "CE2CSAgent"
+    self.subject = "Bdii2CSAgent"
     
     self.processCEs = self.am_getOption( 'ProcessCEs', True )
     self.processSEs = self.am_getOption( 'ProcessSEs', False )
