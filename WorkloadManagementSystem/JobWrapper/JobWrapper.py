@@ -46,7 +46,6 @@ import shutil
 import threading
 import tarfile
 import glob
-import types
 import urllib
 
 EXECUTION_RESULT = {}
@@ -183,11 +182,11 @@ class JobWrapper( object ):
     self.jobGroup = self.jobArgs.get( 'JobGroup', self.jobGroup )
     self.jobType = self.jobArgs.get( 'JobType', self.jobType )
     dataParam = self.jobArgs.get( 'InputData', [] )
-    if dataParam and not type( dataParam ) == types.ListType:
+    if dataParam and not isinstance( dataParam, list ):
       dataParam = [dataParam]
     self.inputDataFiles = len( dataParam )
     dataParam = self.jobArgs.get( 'OutputData', [] )
-    if dataParam and not type( dataParam ) == types.ListType:
+    if dataParam and not isinstance( dataParam, list ):
       dataParam = [dataParam]
     self.outputDataFiles = len( dataParam )
     self.processingType = self.jobArgs.get( 'ProcessingType', self.processingType )
@@ -245,9 +244,9 @@ class JobWrapper( object ):
   def __dictAsInfoString( self, dData, infoString = '', currentBase = "" ):
     for key in dData:
       value = dData[ key ]
-      if type( value ) == types.DictType:
+      if isinstance( value, dict ):
         infoString = self.__dictAsInfoString( value, infoString, "%s/%s" % ( currentBase, key ) )
-      elif type( value ) in ( types.ListType, types.TupleType ):
+      elif isinstance( value, ( list, tuple ) ):
         if len( value ) and value[0] == '[':
           infoString += "%s/%s = %s\n" % ( currentBase, key, " ".join( value ) )
         else:
@@ -315,7 +314,7 @@ class JobWrapper( object ):
     if 'ExecutionEnvironment' in self.jobArgs:
       self.log.verbose( 'Adding variables to execution environment' )
       variableList = self.jobArgs['ExecutionEnvironment']
-      if type( variableList ) == type( " " ):
+      if isinstance( variableList, str ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
@@ -512,7 +511,7 @@ class JobWrapper( object ):
       self.log.error( msg )
       return S_ERROR( msg )
     else:
-      if type( inputData ) in types.StringTypes:
+      if isinstance( inputData, str ):
         inputData = [inputData]
       lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
       self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( lfns ) )
@@ -527,7 +526,7 @@ class JobWrapper( object ):
     if not localSEList:
       self.log.warn( "Job has input data requirement but no site LocalSE defined" )
     else:
-      if type( localSEList ) in types.StringTypes:
+      if isinstance( localSEList, str ):
         localSEList = List.fromChar( localSEList )
       self.log.info( "Site has the following local SEs: %s" % ', '.join( localSEList ) )
 
@@ -574,7 +573,7 @@ class JobWrapper( object ):
     for lfn, mdata in resolvedData['Value']['Successful'].items():
       if 'Size' in mdata:
         lfnSize = mdata['Size']
-        if not type( lfnSize ) == type( long( 1 ) ):
+        if not isinstance( lfnSize, long ):
           try:
             lfnSize = long( lfnSize )
           except Exception, x:
@@ -693,12 +692,12 @@ class JobWrapper( object ):
 
     # first iteration of this, no checking of wildcards or oversize sandbox files etc.
     outputSandbox = self.jobArgs.get( 'OutputSandbox', [] )
-    if type( outputSandbox ) == type( '' ):
+    if isinstance( outputSandbox, str ):
       outputSandbox = [ outputSandbox ]
     if outputSandbox:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
     outputData = self.jobArgs.get( 'OutputData', '' )
-    if type( outputData ) == type( '' ):
+    if isinstance( outputData, str ):
       outputData = outputData.split( ';' )
     if outputData:
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
@@ -759,11 +758,11 @@ class JobWrapper( object ):
       # Do not upload outputdata if the job has failed.
       # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
       outputSE = self.jobArgs.get( 'OutputSE', self.defaultOutputSE )
-      if type( outputSE ) in types.StringTypes:
+      if isinstance( outputSE, str ):
         outputSE = [outputSE]
 
       outputPath = self.jobArgs.get( 'OutputPath', self.defaultOutputPath )
-      if type( outputPath ) not in types.StringTypes:
+      if isinstance( outputPath, str ):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
@@ -1005,7 +1004,7 @@ class JobWrapper( object ):
     registeredISB = []
     lfns = []
     self.__report( 'Running', 'Downloading InputSandbox' )
-    if type( inputSandbox ) not in ( types.TupleType, types.ListType ):
+    if not isinstance( inputSandbox, ( list, tuple ) ):
       inputSandbox = [ inputSandbox ]
     for isb in inputSandbox:
       if isb.find( "LFN:" ) == 0 or isb.find( "lfn:" ) == 0:
@@ -1175,7 +1174,7 @@ class JobWrapper( object ):
     if 'JobName' in self.jobArgs:
       # To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      if type( jobName ) == type( ' ' ) and jobName:
+      if isinstance( jobName, str ) and jobName:
         jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '"', '' )
         jobName = jobName.replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
         requestName = '%s_%s' % ( jobName, requestName )
