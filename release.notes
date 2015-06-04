@@ -1,4 +1,4 @@
-[v6r13-pre35]
+[v6r13-pre36]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -14,6 +14,7 @@ CHANGE: InnerRPCClient - retry 3 times in case of exception in the transport lay
 CHANGE: SocketInfo - retry 3 times in case of handshaking error
 CHANGE: MySQL - possibility to specify charset in the table definition
 FIX: dirac-install, dirac-distribution - removed obsoleted defaults     
+NEW: Proxy utility module with executeWithUserProxy decorator function
 
 *Configuration
 NEW: CSAPI,dirac-admin-add-shifter - function, and script, for adding or modifying a 
