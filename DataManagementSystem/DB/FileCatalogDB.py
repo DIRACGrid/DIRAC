@@ -659,7 +659,9 @@ class FileCatalogDB( DB ):
     if not res['Value']['Successful']:
       return S_OK( {'Successful':{}, 'Failed':failed} )
 
-    res = self.fileManager.getFileMetadata(res['Value']['Successful'])
+
+    res = self.fileManager.getFileMetadata( res['Value']['Successful'] )
+
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
