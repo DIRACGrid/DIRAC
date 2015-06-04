@@ -5,10 +5,12 @@ __RCSID__ = "$Id$"
 import random
 
 from DIRAC import S_OK, S_ERROR 
-from DIRAC.Core.Base.Client import Client
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Base.Client                         import Client
+from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
+from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
+from DIRAC.Resources.Storage.StorageElement         import StorageElement
 
+@executeWithUserProxy
 def getFilesToStage( lfnList ):
   """ Utility that returns out of a list of LFNs those files that are offline,
       and those for which at least one copy is online
