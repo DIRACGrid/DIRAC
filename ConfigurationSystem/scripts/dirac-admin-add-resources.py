@@ -313,10 +313,10 @@ def checkUnusedSEs():
         changeSet.add( ( seSection, 'VO', ','.join( seVOs ) ) )
         accessSection = cfgPath( seSection, 'AccessProtocol.1' )
         changeSet.add( ( accessSection, 'Protocol', 'srm' ) )
-        changeSet.add( ( accessSection, 'ProtocolName', 'SRM2' ) )
+        changeSet.add( ( accessSection, 'PluginName', 'SRM2' ) )
         endPoint = srmDict.get( 'GlueServiceEndpoint', '' )
         host = urlparse( endPoint ).hostname
-        port = result['Value']['Port']
+        port = urlparse( endPoint ).port
         changeSet.add( ( accessSection, 'Host', host ) ) 
         changeSet.add( ( accessSection, 'Port', port ) ) 
         changeSet.add( ( accessSection, 'Access', 'remote' ) )
