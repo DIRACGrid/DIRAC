@@ -111,9 +111,8 @@ class JobWrapper( object ):
     self.dm = DataManager()
     self.fc = FileCatalog()
     self.log.verbose( '===========================================================================' )
-    self.log.verbose( 'SVN version %s' % ( __RCSID__ ) )
+    self.log.verbose( 'Version %s' % ( __RCSID__ ) )
     self.log.verbose( self.diracVersion )
-    self.log.verbose( 'Developer tag: 2' )
     self.currentPID = os.getpid()
     self.log.verbose( 'Job Wrapper started under PID: %s' % self.currentPID )
     # Define a new process group for the job wrapper
@@ -506,58 +505,55 @@ class JobWrapper( object ):
     """
     self.__report( 'Running', 'Input Data Resolution', sendFlag = True )
 
+    # What is this input data? - and exit if there's no input
+    inputData = self.jobArgs['InputData']
+    if not inputData:
+      msg = "Job Wrapper cannot resolve local replicas of input data with null job input data parameter "
+      self.log.error( msg )
+      return S_ERROR( msg )
+    else:
+      if type( inputData ) in types.StringTypes:
+        inputData = [inputData]
+      lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
+      self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( lfns ) )
+
+
+    # Does this site have local SEs? - not failing if it doesn't
     if 'LocalSE' in self.ceArgs:
       localSEList = self.ceArgs[ 'LocalSE']
     else:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', [] )
-      if not localSEList:
-        msg = 'Job has input data requirement but no site LocalSE defined'
-        self.log.warn( msg )
-        return S_ERROR( msg )
 
-    inputData = self.jobArgs['InputData']
-    self.log.verbose( 'Input Data is: \n%s' % ( inputData ) )
-    if type( inputData ) in types.StringTypes:
-      inputData = [inputData]
-
-    if type( localSEList ) in types.StringTypes:
-      localSEList = List.fromChar( localSEList )
-
-    msg = 'Job Wrapper cannot resolve local replicas of input data with null '
-    if not inputData:
-      msg += 'job input data parameter '
-      self.log.warn( msg )
-      return S_ERROR( msg )
     if not localSEList:
-      msg += 'site localSEList list'
-      self.log.warn( msg )
-#      return S_ERROR( msg )
+      self.log.warn( "Job has input data requirement but no site LocalSE defined" )
+    else:
+      if type( localSEList ) in types.StringTypes:
+        localSEList = List.fromChar( localSEList )
+      self.log.info( "Site has the following local SEs: %s" % ', '.join( localSEList ) )
 
+    # How to get this data?
     if 'InputDataModule' not in self.jobArgs:
-      msg = 'Job has no input data resolution module specified'
-      self.log.warn( msg )
-      # Use the default one
+      self.log.warn( "Job has no input data resolution module specified, using the default one" )
       inputDataPolicy = 'DIRAC.WorkloadManagementSystem.Client.InputDataResolution'
     else:
       inputDataPolicy = self.jobArgs['InputDataModule']
 
-    self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( inputData ) )
-    self.log.verbose( 'Job input data resolution policy module is %s' % ( inputDataPolicy ) )
-    self.log.info( 'Site has the following local SEs: %s' % ', '.join( localSEList ) )
-    lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
+    self.log.verbose( "Job input data resolution policy module is %s" % ( inputDataPolicy ) )
 
+
+    # Now doing the real stuff
     optReplicas = {}
     if self.optArgs:
       optDict = None
       try:
         optDict = eval( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
-        self.log.info( 'Found optimizer catalogue result' )
+        self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
       except Exception, x:
         optDict = None
         self.log.warn( str( x ) )
-        self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalogue directly' )
+        self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
     resolvedData = {}
     result = self.__checkFileCatalog( lfns, optReplicas )
@@ -591,6 +587,7 @@ class JobWrapper( object ):
     argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':lfns, 'Job':self.jobArgs}
     self.log.info( argumentsDict )
     moduleFactory = ModuleFactory()
+    self.log.verbose( "Now starting execution of input data policy module" )
     moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
     if not moduleInstance['OK']:
       return moduleInstance
@@ -673,13 +670,13 @@ class JobWrapper( object ):
     timing = time.time() - start
     self.log.info( 'GUID Lookup Time: %.2f seconds ' % ( timing ) )
     if not guidDict['OK']:
-      self.log.warn( 'Failed to retrieve GUIDs from file catalogue' )
+      self.log.warn( 'Failed to retrieve GUIDs from file catalog' )
       self.log.warn( guidDict['Message'] )
       return guidDict
 
     failed = guidDict['Value']['Failed']
     if failed:
-      self.log.warn( 'Could not retrieve GUIDs from catalogue for the following files' )
+      self.log.warn( 'Could not retrieve GUIDs from catalog for the following files' )
       self.log.warn( failed )
       return S_ERROR( 'Missing GUIDs' )
 
