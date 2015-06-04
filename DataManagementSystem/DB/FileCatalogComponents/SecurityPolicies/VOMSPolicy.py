@@ -20,7 +20,7 @@ class VOMSPolicy( SecurityManagerBase ):
     self.vomsRoles = {}
     # dirac group : voms role it has
     self.diracGroups = {}
-    
+
     # Lifetime of the info in the two dictionaries
     self.CACHE_TIME = datetime.timedelta(seconds = 600)
     self.__buildRolesAndGroups()
@@ -107,7 +107,7 @@ class VOMSPolicy( SecurityManagerBase ):
       return S_ERROR( 'Empty path' )
 
     # We check what is the group stored in the DB for the given path
-    res = returnSingleResult( self.db.fileManager.getFileMetadata( path ) )
+    res = returnSingleResult( self.db.fileManager.getFileMetadata( [path] ) )
     if not res['OK']:
       # If the error is not due to the directory not existing, we return
       if not self.__isNotExistError( res['Message'] ):
@@ -137,7 +137,7 @@ class VOMSPolicy( SecurityManagerBase ):
     if self.__shareVomsRole( credDict.get( 'group', 'anon' ), origGrp ):
       credDict = { 'username' : credDict.get( 'username', 'anon' ), 'group' : origGrp}
 
-    return  returnSingleResult( self.db.fileManager.getPathPermissions( path, credDict ) )
+    return  returnSingleResult( self.db.fileManager.getPathPermissions( [path], credDict ) )
 
 
   def __testPermissionOnFile( self, paths, permission, credDict, noExistStrategy = None ):
@@ -539,11 +539,19 @@ class VOMSPolicy( SecurityManagerBase ):
     return S_OK( {'Successful': dict.fromkeys( paths, False ), 'Failed' : {}} )
 
 
-# 
+#
 # __writeMethods = ['setMetadata','__removeMetadata']
 
 
   def hasAccess( self, opType, paths, credDict ):
+    """ Checks whether a given operation on given paths is permitted
+        :param opType : name of the operation (the FileCatalog methods in fact...)
+        :param paths: list/dictionary of path on which we want to apply the operation
+        :param credDict : credential of the users (with at least username, group and properties)
+
+        :returns Successful dict with True or False, and Failed dict. In fact, it is not neccesarily
+                a boolean, rather an int (binary operation results)
+    """
     # Check if admin access is granted first
     result = self.hasAdminAccess( credDict )
     if not result['OK']:
