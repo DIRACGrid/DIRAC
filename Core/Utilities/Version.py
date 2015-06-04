@@ -1,14 +1,15 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR
+import DIRAC
+
+from DIRAC import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
 def getCurrentVersion():
   """ Get a string corresponding to the current version of the DIRAC package and all the installed
       extension packages
   """
-  import DIRAC
+
   version = 'DIRAC ' + DIRAC.version
 
   for ext in getCSExtensions():
@@ -29,7 +30,6 @@ def getVersion():
       extension packages
   """
 
-  import DIRAC
   vDict = {'Extensions':{}}
   vDict['DIRAC'] = DIRAC.version
 

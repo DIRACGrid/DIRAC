@@ -5,14 +5,22 @@ __RCSID__ = "$Id$"
 import random
 
 from DIRAC import S_OK, S_ERROR 
-from DIRAC.Core.Base.Client import Client
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Base.Client                         import Client
+from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
+from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
+from DIRAC.Resources.Storage.StorageElement         import StorageElement
 
+@executeWithUserProxy
 def getFilesToStage( lfnList ):
   """ Utility that returns out of a list of LFNs those files that are offline,
       and those for which at least one copy is online
   """
+  onlineLFNs = set()
+  offlineLFNsDict = {}
+
+  if not lfnList:
+    return S_OK( {'onlineLFNs':list( onlineLFNs ), 'offlineLFNs': offlineLFNsDict} )
+  
   dm = DataManager()
 
   lfnListReplicas = dm.getActiveReplicas( lfnList )
@@ -29,8 +37,6 @@ def getFilesToStage( lfnList ):
       seObjectsDict.setdefault( se, StorageElement( se ) )
       seToLFNs.setdefault( se, list() ).append( lfn )
 
-  onlineLFNs = set()
-
   for se, lfnsInSEList in seToLFNs.iteritems():
     fileMetadata = seObjectsDict[se].getFileMetadata( lfnsInSEList )
     if not fileMetadata['OK']:
@@ -45,7 +51,7 @@ def getFilesToStage( lfnList ):
 
   offlineLFNs = set( lfnList ).difference( onlineLFNs )
   
-  offlineLFNsDict = {}
+
   for offlineLFN in offlineLFNs:
     ses = lfnListReplicas['Value']['Successful'][offlineLFN].keys()
     random.shuffle( ses )
@@ -56,6 +62,8 @@ def getFilesToStage( lfnList ):
 
 
 class StorageManagerClient( Client ):
+  """ This is the client to the StorageManager service, so even if it is not seen, it exposes all its RPC calls
+  """
 
   def __init__( self, **kwargs ):
     Client.__init__( self, **kwargs )

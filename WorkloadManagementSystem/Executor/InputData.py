@@ -14,6 +14,7 @@ from DIRAC.Resources.Catalog.FileCatalog                             import File
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSHelpers
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
+from DIRAC.Core.Utilities.Proxy                                      import executeWithUserProxy
 
 
 class InputData( OptimizerExecutor ):
@@ -25,11 +26,13 @@ class InputData( OptimizerExecutor ):
 
   @classmethod
   def initializeOptimizer( cls ):
-    """Initialize specific parameters for JobSanityAgent.
+    """Initialize specific parameters for InputData executor.
     """
     cls.failedMinorStatus = cls.ex_getOption( '/FailedJobStatus', 'Input Data Not Available' )
-    #this will ignore failover SE files
+    # this will ignore failover SE files
     cls.checkFileMetadata = cls.ex_getOption( 'CheckFileMetadata', True )
+    # flag to require Input Data lookup with a user proxy
+    cls.checkWithUserProxy = cls.ex_getOption( 'CheckWithUserProxy', False )
 
     cls.__dataManDict = {}
     cls.__fcDict = {}
@@ -105,7 +108,18 @@ class InputData( OptimizerExecutor ):
       self.jobLog.info( "InputData optimizer ran already" )
     else:
       self.jobLog.info( "Processing input data" )
-      result = self._resolveInputData( jobState, inputData )
+      if self.checkWithUserProxy:
+        result = jobState.getAttribute( "Owner" )
+        if not result['OK']:
+          return S_ERROR( "Could not retrieve job owner" )
+        userName = result['Value']
+        result = jobState.getAttribute( "OwnerGroup" )
+        if not result['OK']:
+          return S_ERROR( "Could not retrieve job owner group" )
+        userGroup = result['Value']
+        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup )
+      else:
+        result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
         self.jobLog.warn( result['Message'] )
         return result
@@ -114,6 +128,7 @@ class InputData( OptimizerExecutor ):
 
   #############################################################################
 
+  @executeWithUserProxy
   def _resolveInputData( self, jobState, inputData ):
     """ This method checks the file catalog for replica information.
     """
