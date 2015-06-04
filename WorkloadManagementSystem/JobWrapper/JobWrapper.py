@@ -46,7 +46,6 @@ import shutil
 import threading
 import tarfile
 import glob
-import types
 import urllib
 
 EXECUTION_RESULT = {}
@@ -111,9 +110,8 @@ class JobWrapper( object ):
     self.dm = DataManager()
     self.fc = FileCatalog()
     self.log.verbose( '===========================================================================' )
-    self.log.verbose( 'SVN version %s' % ( __RCSID__ ) )
+    self.log.verbose( 'Version %s' % ( __RCSID__ ) )
     self.log.verbose( self.diracVersion )
-    self.log.verbose( 'Developer tag: 2' )
     self.currentPID = os.getpid()
     self.log.verbose( 'Job Wrapper started under PID: %s' % self.currentPID )
     # Define a new process group for the job wrapper
@@ -184,11 +182,11 @@ class JobWrapper( object ):
     self.jobGroup = self.jobArgs.get( 'JobGroup', self.jobGroup )
     self.jobType = self.jobArgs.get( 'JobType', self.jobType )
     dataParam = self.jobArgs.get( 'InputData', [] )
-    if dataParam and not type( dataParam ) == types.ListType:
+    if dataParam and not isinstance( dataParam, list ):
       dataParam = [dataParam]
     self.inputDataFiles = len( dataParam )
     dataParam = self.jobArgs.get( 'OutputData', [] )
-    if dataParam and not type( dataParam ) == types.ListType:
+    if dataParam and not isinstance( dataParam, list ):
       dataParam = [dataParam]
     self.outputDataFiles = len( dataParam )
     self.processingType = self.jobArgs.get( 'ProcessingType', self.processingType )
@@ -246,9 +244,9 @@ class JobWrapper( object ):
   def __dictAsInfoString( self, dData, infoString = '', currentBase = "" ):
     for key in dData:
       value = dData[ key ]
-      if type( value ) == types.DictType:
+      if isinstance( value, dict ):
         infoString = self.__dictAsInfoString( value, infoString, "%s/%s" % ( currentBase, key ) )
-      elif type( value ) in ( types.ListType, types.TupleType ):
+      elif isinstance( value, ( list, tuple ) ):
         if len( value ) and value[0] == '[':
           infoString += "%s/%s = %s\n" % ( currentBase, key, " ".join( value ) )
         else:
@@ -316,7 +314,7 @@ class JobWrapper( object ):
     if 'ExecutionEnvironment' in self.jobArgs:
       self.log.verbose( 'Adding variables to execution environment' )
       variableList = self.jobArgs['ExecutionEnvironment']
-      if type( variableList ) == type( " " ):
+      if isinstance( variableList, basestring ):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split( '=' )[0]
@@ -506,58 +504,55 @@ class JobWrapper( object ):
     """
     self.__report( 'Running', 'Input Data Resolution', sendFlag = True )
 
+    # What is this input data? - and exit if there's no input
+    inputData = self.jobArgs['InputData']
+    if not inputData:
+      msg = "Job Wrapper cannot resolve local replicas of input data with null job input data parameter "
+      self.log.error( msg )
+      return S_ERROR( msg )
+    else:
+      if isinstance( inputData, basestring ):
+        inputData = [inputData]
+      lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
+      self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( lfns ) )
+
+
+    # Does this site have local SEs? - not failing if it doesn't
     if 'LocalSE' in self.ceArgs:
       localSEList = self.ceArgs[ 'LocalSE']
     else:
       localSEList = gConfig.getValue( '/LocalSite/LocalSE', [] )
-      if not localSEList:
-        msg = 'Job has input data requirement but no site LocalSE defined'
-        self.log.warn( msg )
-        return S_ERROR( msg )
 
-    inputData = self.jobArgs['InputData']
-    self.log.verbose( 'Input Data is: \n%s' % ( inputData ) )
-    if type( inputData ) in types.StringTypes:
-      inputData = [inputData]
-
-    if type( localSEList ) in types.StringTypes:
-      localSEList = List.fromChar( localSEList )
-
-    msg = 'Job Wrapper cannot resolve local replicas of input data with null '
-    if not inputData:
-      msg += 'job input data parameter '
-      self.log.warn( msg )
-      return S_ERROR( msg )
     if not localSEList:
-      msg += 'site localSEList list'
-      self.log.warn( msg )
-#      return S_ERROR( msg )
+      self.log.warn( "Job has input data requirement but no site LocalSE defined" )
+    else:
+      if isinstance( localSEList, basestring ):
+        localSEList = List.fromChar( localSEList )
+      self.log.info( "Site has the following local SEs: %s" % ', '.join( localSEList ) )
 
+    # How to get this data?
     if 'InputDataModule' not in self.jobArgs:
-      msg = 'Job has no input data resolution module specified'
-      self.log.warn( msg )
-      # Use the default one
+      self.log.warn( "Job has no input data resolution module specified, using the default one" )
       inputDataPolicy = 'DIRAC.WorkloadManagementSystem.Client.InputDataResolution'
     else:
       inputDataPolicy = self.jobArgs['InputDataModule']
 
-    self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( inputData ) )
-    self.log.verbose( 'Job input data resolution policy module is %s' % ( inputDataPolicy ) )
-    self.log.info( 'Site has the following local SEs: %s' % ', '.join( localSEList ) )
-    lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
+    self.log.verbose( "Job input data resolution policy module is %s" % ( inputDataPolicy ) )
 
+
+    # Now doing the real stuff
     optReplicas = {}
     if self.optArgs:
       optDict = None
       try:
         optDict = eval( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
-        self.log.info( 'Found optimizer catalogue result' )
+        self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
       except Exception, x:
         optDict = None
         self.log.warn( str( x ) )
-        self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalogue directly' )
+        self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
     resolvedData = {}
     result = self.__checkFileCatalog( lfns, optReplicas )
@@ -578,7 +573,7 @@ class JobWrapper( object ):
     for lfn, mdata in resolvedData['Value']['Successful'].items():
       if 'Size' in mdata:
         lfnSize = mdata['Size']
-        if not type( lfnSize ) == type( long( 1 ) ):
+        if not isinstance( lfnSize, long ):
           try:
             lfnSize = long( lfnSize )
           except Exception, x:
@@ -591,6 +586,7 @@ class JobWrapper( object ):
     argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':lfns, 'Job':self.jobArgs}
     self.log.info( argumentsDict )
     moduleFactory = ModuleFactory()
+    self.log.verbose( "Now starting execution of input data policy module" )
     moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
     if not moduleInstance['OK']:
       return moduleInstance
@@ -673,13 +669,13 @@ class JobWrapper( object ):
     timing = time.time() - start
     self.log.info( 'GUID Lookup Time: %.2f seconds ' % ( timing ) )
     if not guidDict['OK']:
-      self.log.warn( 'Failed to retrieve GUIDs from file catalogue' )
+      self.log.warn( 'Failed to retrieve GUIDs from file catalog' )
       self.log.warn( guidDict['Message'] )
       return guidDict
 
     failed = guidDict['Value']['Failed']
     if failed:
-      self.log.warn( 'Could not retrieve GUIDs from catalogue for the following files' )
+      self.log.warn( 'Could not retrieve GUIDs from catalog for the following files' )
       self.log.warn( failed )
       return S_ERROR( 'Missing GUIDs' )
 
@@ -696,12 +692,12 @@ class JobWrapper( object ):
 
     # first iteration of this, no checking of wildcards or oversize sandbox files etc.
     outputSandbox = self.jobArgs.get( 'OutputSandbox', [] )
-    if type( outputSandbox ) == type( '' ):
+    if isinstance( outputSandbox, basestring ):
       outputSandbox = [ outputSandbox ]
     if outputSandbox:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
     outputData = self.jobArgs.get( 'OutputData', '' )
-    if type( outputData ) == type( '' ):
+    if isinstance( outputData, basestring ):
       outputData = outputData.split( ';' )
     if outputData:
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
@@ -762,11 +758,11 @@ class JobWrapper( object ):
       # Do not upload outputdata if the job has failed.
       # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
       outputSE = self.jobArgs.get( 'OutputSE', self.defaultOutputSE )
-      if type( outputSE ) in types.StringTypes:
+      if isinstance( outputSE, basestring ):
         outputSE = [outputSE]
 
       outputPath = self.jobArgs.get( 'OutputPath', self.defaultOutputPath )
-      if type( outputPath ) not in types.StringTypes:
+      if isinstance( outputPath, basestring ):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
@@ -1008,7 +1004,7 @@ class JobWrapper( object ):
     registeredISB = []
     lfns = []
     self.__report( 'Running', 'Downloading InputSandbox' )
-    if type( inputSandbox ) not in ( types.TupleType, types.ListType ):
+    if not isinstance( inputSandbox, ( list, tuple ) ):
       inputSandbox = [ inputSandbox ]
     for isb in inputSandbox:
       if isb.find( "LFN:" ) == 0 or isb.find( "lfn:" ) == 0:
@@ -1178,7 +1174,7 @@ class JobWrapper( object ):
     if 'JobName' in self.jobArgs:
       # To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      if type( jobName ) == type( ' ' ) and jobName:
+      if isinstance( jobName, basestring ) and jobName:
         jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '"', '' )
         jobName = jobName.replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
         requestName = '%s_%s' % ( jobName, requestName )

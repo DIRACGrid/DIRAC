@@ -21,7 +21,8 @@ __RCSID__ = "$Id $"
 # @date 2013/03/13 12:42:54
 # @brief Definition of RequestTask class.
 # # imports
-import os, time
+import os
+import time
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -41,7 +42,7 @@ class RequestTask( object ):
   request's processing task
   """
 
-  def __init__( self, requestJSON, handlersDict, csPath, agentName, standalone = False ):
+  def __init__( self, requestJSON, handlersDict, csPath, agentName, standalone = False, requestClient = None ):
     """c'tor
 
     :param self: self reference
@@ -80,7 +81,10 @@ class RequestTask( object ):
     gMonitor.registerActivity( "RequestOK", "Requests done",
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
 
-    self.requestClient = ReqClient()
+    if requestClient is None:
+      self.requestClient = ReqClient()
+    else:
+      self.requestClient = requestClient
 
   def __setupManagerProxies( self ):
     """ setup grid proxy for all defined managers """

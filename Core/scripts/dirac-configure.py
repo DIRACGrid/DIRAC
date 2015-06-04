@@ -410,10 +410,8 @@ if ceName or siteName:
         localSE = getSEsForSite( siteName )
         if localSE['OK'] and localSE['Value']:
           localSE = ','.join( localSE['Value'] )
-        else:
-          localSE = 'None'
-        DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
-        Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
+          DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
+          Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
 
 if gatewayServer:
