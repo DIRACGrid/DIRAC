@@ -424,7 +424,10 @@ class SSHComputingElement( ComputingElement ):
       try:
         output = urllib.unquote( output ) 
         result = json.loads( output )
-        return S_OK( result )
+        if isinstance( result, basestring ) and result.startswith( 'Exception:' ):
+          return S_ERROR( result )
+        else:
+          return S_OK( result )
       except:
         return S_ERROR( 'Invalid return structure from job submission' )
     else:
@@ -484,7 +487,10 @@ class SSHComputingElement( ComputingElement ):
     else:
       batchIDs = result['Jobs']
       if batchIDs:
-        jobIDs = [ '%s%s://%s/%s' % ( self.ceType.lower(), self.batchSystem.lower(), host, _id ) for _id in batchIDs ]
+        ceHost = host
+        if host is None:
+          ceHost = self.ceName
+        jobIDs = [ '%s%s://%s/%s' % ( self.ceType.lower(), self.batchSystem.lower(), ceHost, _id ) for _id in batchIDs ]
       else:
         return S_ERROR( 'No jobs IDs returned' )      
 
