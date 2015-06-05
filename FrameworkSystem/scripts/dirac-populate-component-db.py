@@ -21,6 +21,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
   import ComponentMonitoringClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 global excludedHosts
 excludedHosts = []
@@ -43,15 +44,25 @@ args = Script.getPositionalArgs()
 
 componentType = ''
 
+result = getProxyInfo()
+if not result[ 'OK' ]:
+  gLogger.error( result[ 'Message' ] )
+  DIRACexit( -1 )
+
+# If the user is not a ServiceAdministrator the script will not work
+if not 'ServiceAdministrator' in result['Value']['groupProperties']:
+  gLogger.error( 'ServiceAdministrator property missing' )
+  DIRACexit( -1 )
+
 # Retrieve information from all the hosts
 client = SystemAdministratorIntegrator()
 resultAll = client.getOverallStatus()
 
+notificationClient = NotificationClient()
 for host in resultAll[ 'Value' ]:
-  if not resultAll[ 'Value' ][ host ][ 'OK' ]:
+  if not host in excludedHosts and not resultAll[ 'Value' ][ host ][ 'OK' ]:
     # If the host cannot be contacted, exclude it and send message
     excludedHosts.append( host )
-    notificationClient = NotificationClient()
 
     result = notificationClient.sendMail( Operations().getValue( 'EMail/Production', [] ), 'Unreachable host', '\ndirac-populate-component-db: Could not fill the database with the components from unreachable host %s\n' % host )
     if not result[ 'OK' ]:
