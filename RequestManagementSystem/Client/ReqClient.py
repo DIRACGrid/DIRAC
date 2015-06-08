@@ -190,7 +190,7 @@ class ReqClient( Client ):
     self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestID )
     deleteRequest = self.requestManager().deleteRequest( requestID )
     if not deleteRequest["OK"]:
-      self.log.error( "deleteRequest: unable to delete request", 
+      self.log.error( "deleteRequest: unable to delete request",
                       "'%s' request: %s" % ( requestID, deleteRequest["Message"] ) )
     return deleteRequest
 
@@ -400,10 +400,7 @@ class ReqClient( Client ):
           printOperation( ( i, op ), onlyFailed = True )
         for f in op:
           if f.Status == 'Failed':
-            if 'Max attempts limit reached' in f.Error:
-              f.Attempt = 1
-            else:
-              f.Attempt += 1
+            f.Attempt = 1
             f.Error = ''
             f.Status = 'Waiting'
         if op.Status == 'Failed':

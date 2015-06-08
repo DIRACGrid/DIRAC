@@ -114,8 +114,8 @@ class DMSHelpers( object ):
     if result['OK']:
       sites = result['Value']
       for site in sites:
-        candidates = self.__opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-        ses = set( resolveSEGroup( candidates ) )
+        candidates = set( self.__opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] ) )
+        ses = set( resolveSEGroup( candidates - siteSet ) ) | ( candidates & siteSet )
         # If a candidate is a site, then all local SEs are eligible
         for candidate in ses & siteSet:
           ses.remove( candidate )
@@ -132,8 +132,8 @@ class DMSHelpers( object ):
     if result['OK']:
       sites = result['Value']
       for site in sites:
-        candidates = self.__opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-        ses = set( resolveSEGroup( candidates ) )
+        candidates = set( self.__opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] ) )
+        ses = set( resolveSEGroup( candidates - siteSet ) ) | ( candidates & siteSet )
         # If a candidate is a site, then all local SEs are eligible
         for candidate in ses & siteSet:
           ses.remove( candidate )

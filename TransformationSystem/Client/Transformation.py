@@ -87,16 +87,20 @@ class Transformation( API ):
   def setSourceSE( self, seList ):
     return self.__setSE( 'SourceSE', seList )
 
-  def __setSE( self, se, seList ):
-    if type( seList ) in types.StringTypes:
+  def __setSE( self, seParam, seList ):
+    if isinstance( seList, basestring ):
       try:
         seList = eval( seList )
       except:
-        seList = seList.replace( ',', ' ' ).split()
+        seList = seList.split( ',' )
+    elif isinstance( seList, ( list, dict, tuple ) ):
+      seList = list( seList )
+    else:
+      return S_ERROR( "Bad argument type" )
     res = self.__checkSEs( seList )
     if not res['OK']:
       return res
-    self.item_called = se
+    self.item_called = seParam
     return self.__setParam( seList )
 
   def __getattr__( self, name ):
@@ -122,19 +126,17 @@ class Transformation( API ):
   def __setParam( self, value ):
     change = False
     if self.item_called in self.paramTypes:
-      oldValue = self.paramValues[self.item_called]
-      if oldValue != value:
+      if self.paramValues[self.item_called] != value:
         if type( value ) in self.paramTypes[self.item_called]:
           change = True
         else:
           raise TypeError( "%s %s %s expected one of %s" % ( self.item_called, value, type( value ),
                                                              self.paramTypes[self.item_called] ) )
-    if not self.item_called in self.paramTypes.keys():
-      if not self.paramValues.has_key( self.item_called ):
+    else:
+      if self.item_called not in self.paramValues:
         change = True
       else:
-        oldValue = self.paramValues[self.item_called]
-        if oldValue != value:
+        if self.paramValues[self.item_called] != value:
           change = True
     if not change:
       gLogger.verbose( "No change of parameter %s required" % self.item_called )
@@ -417,12 +419,10 @@ class Transformation( API ):
     res = gConfig.getSections( '/Resources/StorageElements' )
     if not res['OK']:
       return self._errorReport( res, 'Failed to get possible StorageElements' )
-    missing = []
-    for se in seList:
-      if not se in res['Value']:
-        gLogger.error( "StorageElement %s is not known" % se )
-        missing.append( se )
+    missing = set( seList ) - set( res['Value'] )
     if missing:
+      for se in missing:
+        gLogger.error( "StorageElement %s is not known" % se )
       return S_ERROR( "%d StorageElements not known" % len( missing ) )
     return S_OK()
 
