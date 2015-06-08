@@ -1251,7 +1251,7 @@ class DataManager( object ):
 
     # Remove replica from the file catalog 'lfn' are the file
     # to be removed 'storageElementName' is the storage where the file is to be removed
-    if isinstance( lfn, list ) or isinstance( lfn, dict ) or isinstance( lfn, set ):
+    if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = list( lfn )
     else:
       lfns = [lfn]
@@ -1298,7 +1298,7 @@ class DataManager( object ):
 
        'replicaTuple' is a tuple containing the replica to be removed and is of the form ( lfn, pfn, se )
     """
-    if isinstance( replicaTuple, list ) or isinstance( replicaTuple, dict ) or isinstance( replicaTuple, set ):
+    if isinstance( replicaTuple, ( list, dict, set, tuple ) ):
       replicaTuples = list( replicaTuple )
     else:
       replicaTuples = [replicaTuple]
