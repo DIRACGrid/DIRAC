@@ -21,7 +21,6 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
   import ComponentMonitoringClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 global excludedHosts
 excludedHosts = []
@@ -43,16 +42,6 @@ Script.parseCommandLine( ignoreErrors = False )
 args = Script.getPositionalArgs()
 
 componentType = ''
-
-result = getProxyInfo()
-if not result[ 'OK' ]:
-  gLogger.error( result[ 'Message' ] )
-  DIRACexit( -1 )
-
-# If the user is not a ServiceAdministrator the script will not work
-if not 'ServiceAdministrator' in result['Value']['groupProperties']:
-  gLogger.error( 'ServiceAdministrator property missing' )
-  DIRACexit( -1 )
 
 # Retrieve information from all the hosts
 client = SystemAdministratorIntegrator()
