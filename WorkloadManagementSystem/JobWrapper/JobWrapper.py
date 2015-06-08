@@ -47,6 +47,7 @@ import threading
 import tarfile
 import glob
 import urllib
+import json
 
 EXECUTION_RESULT = {}
 
@@ -814,7 +815,7 @@ class JobWrapper( object ):
 
   #############################################################################
   def __transferOutputDataFiles( self, outputData, outputSE, outputPath ):
-    """Performs the upload and registration in the LFC
+    """ Performs the upload and registration in the File Catalog(s)
     """
     self.log.verbose( 'Uploading output data files' )
     self.__report( 'Completed', 'Uploading Output Data' )
@@ -1218,10 +1219,9 @@ class JobWrapper( object ):
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()
     for rfname in rfiles:
-      rfile = open( rfname, 'r' )
-      reqString = rfile.read()
-      rfile.close()
-      requestStored = Request( eval( reqString ) )
+      rFile = open( rfname, 'r' )
+      requestStored = Request( json.load( rFile ) )
+      rFile.close()
       for storedOperation in requestStored:
         request.addOperation( storedOperation )
 

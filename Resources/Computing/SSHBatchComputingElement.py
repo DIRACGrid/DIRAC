@@ -35,6 +35,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
 
   def _reset( self ):
 
+    self.user = self.ceParameters['SSHUser']
     self.queue = self.ceParameters['Queue']
     self.sshScript = os.path.join( rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", "sshce" )
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
@@ -59,7 +60,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
     if not self.workArea.startswith( '/' ):
       self.workArea = os.path.join( self.sharedArea, self.workArea )    
       
-    # Prepare all the hosts  
+    # Prepare all the hosts
     for hPar in self.ceParameters['SSHHost'].strip().split( ',' ):
       host = hPar.strip().split('/')[0]
       result = self._prepareRemoteHost( host = host )

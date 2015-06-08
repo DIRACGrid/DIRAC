@@ -23,7 +23,10 @@ if __name__ == "__main__":
   batchSystem = inputDict.pop('BatchSystem')
   batch = locals()[batchSystem]()
 
-  result = getattr( batch, method )( **inputDict )
+  try:
+    result = getattr( batch, method )( **inputDict )
+  except Exception, x:
+    result = 'Exception: %s' % str( x )
 
   resultJson = urllib.quote( json.dumps( result ) )
   print "============= Start output ==============="

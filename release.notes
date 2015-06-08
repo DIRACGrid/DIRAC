@@ -10,7 +10,7 @@ NEW: LocalConfiguration - option to print out license information
 *WMS
 FIX: Watchdog - review for style and pylint
 
-[v6r13-pre36]
+[v6r13-pre37]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -44,6 +44,7 @@ CHANGE: multiple commands updated to use the new Dirac API method names
 NEW: Native use of the FTS3 services
 CHANGE: Removed the use of current DataLogging service
 CHANGE: DataManager - changes to manage URLs inside StorageElement objects only
+FIX: DataManager - define SEGroup as accessible at a site
 CHANGE: DirectoryListing - extracted from FileCatalogClientCLI as an independent utility
 CHANGE: MetaQuery - extracted from FileCatalogClientCLI as an independent utility
 CHANGE: FileCatalogClientCLI uses external DirectoryListing, MetaQuery utilities

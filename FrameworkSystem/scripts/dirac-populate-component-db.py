@@ -47,11 +47,11 @@ componentType = ''
 client = SystemAdministratorIntegrator()
 resultAll = client.getOverallStatus()
 
+notificationClient = NotificationClient()
 for host in resultAll[ 'Value' ]:
-  if not resultAll[ 'Value' ][ host ][ 'OK' ]:
+  if not host in excludedHosts and not resultAll[ 'Value' ][ host ][ 'OK' ]:
     # If the host cannot be contacted, exclude it and send message
     excludedHosts.append( host )
-    notificationClient = NotificationClient()
 
     result = notificationClient.sendMail( Operations().getValue( 'EMail/Production', [] ), 'Unreachable host', '\ndirac-populate-component-db: Could not fill the database with the components from unreachable host %s\n' % host )
     if not result[ 'OK' ]:
