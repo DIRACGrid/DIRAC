@@ -173,9 +173,9 @@ class DownloadInputData:
           continue
 
         self.log.info( 'Preliminary checks OK, download %s from %s:' % ( lfn, seName ) )
-        result = self.__downloadFromSE( lfn, seName, reps, guid )
+        result = self._downloadFromSE( lfn, seName, reps, guid )
         if not result['OK']:
-          self.log.error( 'Download from %s failed:' % seName, result['Message'] )
+          self.log.error( "Download failed", "Tried downloading from SE %s: %s" % ( seName, result['Message'] ) )
       else:
         result = {'OK':False}
 
@@ -184,9 +184,9 @@ class DownloadInputData:
         # Check the other SEs
         if reps:
           self.log.info( 'Trying to download from any SE' )
-          result = self.__downloadFromBestSE( lfn, reps, guid )
+          result = self._downloadFromBestSE( lfn, reps, guid )
           if not result['OK']:
-            self.log.error( 'Download from any SE failed', result['Message'] )
+            self.log.error( "Download from best SE failed", "Tried downloading %s: %s" % ( lfn, result['Message'] ) )
             failedReplicas.add( lfn )
         else:
           failedReplicas.add( lfn )
@@ -248,7 +248,7 @@ class DownloadInputData:
       return self.inputDataDirectory
 
   #############################################################################
-  def __downloadFromBestSE( self, lfn, reps, guid ):
+  def _downloadFromBestSE( self, lfn, reps, guid ):
     """ Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
     """
@@ -257,6 +257,7 @@ class DownloadInputData:
     tapeSEs = set()
     for seName in reps:
       seStatus = StorageElement( seName ).getStatus()['Value']
+      # FIXME: This is simply terrible - this notion of "DiskSE" vs "TapeSE" should NOT be used here!
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( seName )
       elif seStatus['Read'] and seStatus['TapeSE']:
@@ -265,24 +266,28 @@ class DownloadInputData:
     for seName in list( diskSEs ) + list( tapeSEs ):
       if seName in diskSEs or _isCached( lfn, seName ):
         # On disk or cached from tape
-        result = self.__downloadFromSE( lfn, seName, reps, guid )
-        if result['OK'] and lfn in result['Value']['Successful']:
+        result = self._downloadFromSE( lfn, seName, reps, guid )
+        if result['OK']:
           return result
-    return S_ERROR( 'Unable to download the file from any SE' )
+        else:
+          self.log.error( "Download failed", "Tried downloading %s from SE %s: %s" % ( lfn, seName, result['Message'] ) )
+
+    return S_ERROR( "Unable to download the file from any SE" )
 
   #############################################################################
-  def __downloadFromSE( self, lfn, seName, reps, guid ):
+  def _downloadFromSE( self, lfn, seName, reps, guid ):
     """ Download a local copy from the specified Storage Element.
     """
-    self.log.verbose( "Attempting to download file from %s:" % seName, lfn )
     if not lfn:
-      return S_ERROR( 'Assume file is not at this site' )
+      return S_ERROR( "LFN not specified: assume file is not at this site" )
+
+    self.log.verbose( "Attempting to download file %s from %s:" % ( lfn, seName ) )
 
     downloadDir = self.__getDownloadDir()
     fileName = os.path.basename( lfn )
     for localFile in ( os.path.join( os.getcwd(), fileName ), os.path.join( downloadDir, fileName ) ):
       if os.path.exists( localFile ):
-        self.log.info( 'File %s already exists locally as %s' % ( fileName, localFile ) )
+        self.log.info( "File %s already exists locally as %s" % ( fileName, localFile ) )
         fileDict = { 'turl':'LocalData',
                      'protocol':'LocalData',
                      'se':seName,
@@ -294,15 +299,23 @@ class DownloadInputData:
     localFile = os.path.join( downloadDir, fileName )
     result = StorageElement( seName ).getFile( lfn, localPath = downloadDir )
     if not result['OK']:
-      self.log.warn( 'Problem getting %s at %s:\n%s' % ( lfn, seName, result['Message'] ) )
+      self.log.warn( 'Problem getting %s from %s:\n%s' % ( lfn, seName, result['Message'] ) )
       return result
     if lfn in result['Value']['Failed']:
-      self.log.warn( 'Problem getting %s at %s:\n%s' % ( lfn, seName, result['Value']['Failed'][lfn] ) )
+      self.log.warn( 'Problem getting %s from %s:\n%s' % ( lfn, seName, result['Value']['Failed'][lfn] ) )
       return S_ERROR( result['Value']['Failed'][lfn] )
+    if lfn not in result['Value']['Successful']:
+      self.log.warn( "%s got from %s not in Failed nor Successful???\n" % ( lfn, seName ) )
+      return S_ERROR( "Return from StorageElement.getFile() incomplete" )
 
     if os.path.exists( localFile ):
-      self.log.verbose( 'File successfully downloaded locally to %s' % ( localFile ) )
-      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':seName, 'pfn':reps[seName], 'guid':guid, 'path':localFile}
+      self.log.verbose( "File %s successfully downloaded locally to %s" % ( lfn, localFile ) )
+      fileDict = {'turl':'Downloaded',
+                  'protocol':'Downloaded',
+                  'se':seName,
+                  'pfn':reps[seName],
+                  'guid':guid,
+                  'path':localFile}
       return S_OK( fileDict )
     else:
       self.log.warn( 'File does not exist in local directory after download' )
