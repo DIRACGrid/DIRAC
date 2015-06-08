@@ -909,7 +909,7 @@ class DataManager( object ):
     else:
       fileTuples = [fileTuple]
     for fileTuple in fileTuples:
-      if not isinstance( fileTyple, tuple ):
+      if not isinstance( fileTuple, tuple ):
         errStr = "registerFile: Supplied file info must be tuple of list of tuples."
         self.log.debug( errStr )
         return S_ERROR( errStr )
@@ -955,7 +955,7 @@ class DataManager( object ):
     else:
       replicaTuples = [replicaTuple]
     for replicaTuple in replicaTuples:
-      if not isinstance( fileTyple, tuple ):
+      if not isinstance( replicaTuple, tuple ):
         errStr = "registerFile: Supplied file info must be tuple of list of tuples."
         self.log.debug( errStr )
         return S_ERROR( errStr )
@@ -1303,7 +1303,7 @@ class DataManager( object ):
     else:
       replicaTuples = [replicaTuple]
     for replicaTuple in replicaTuples:
-      if not isinstance( fileTyple, tuple ):
+      if not isinstance( replicaTuple, tuple ):
         errStr = "registerFile: Supplied file info must be tuple of list of tuples."
         self.log.debug( errStr )
         return S_ERROR( errStr )
