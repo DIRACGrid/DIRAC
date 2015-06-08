@@ -1304,7 +1304,7 @@ class DataManager( object ):
       replicaTuples = [replicaTuple]
     for replicaTuple in replicaTuples:
       if not isinstance( replicaTuple, tuple ):
-        errStr = "registerFile: Supplied file info must be tuple of list of tuples."
+        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
         self.log.debug( errStr )
         return S_ERROR( errStr )
     if not replicaTuples:
