@@ -335,8 +335,8 @@ class SSHComputingElement( ComputingElement ):
       return result
     status, output, _error = result['Value']
     if status == -1:
-      self.log.warn( 'TImeout while creating directories' )
-      return S_ERROR( 'TImeout while creating directories' )
+      self.log.warn( 'Timeout while creating directories' )
+      return S_ERROR( 'Timeout while creating directories' )
     if "cannot" in output:
       self.log.warn( 'Failed to create directories: %s' % output )
       return S_ERROR( 'Failed to create directories: %s' % output )
@@ -424,7 +424,10 @@ class SSHComputingElement( ComputingElement ):
       try:
         output = urllib.unquote( output ) 
         result = json.loads( output )
-        return S_OK( result )
+        if isinstance( result, basestring ) and result.startswith( 'Exception:' ):
+          return S_ERROR( result )
+        else:
+          return S_OK( result )
       except:
         return S_ERROR( 'Invalid return structure from job submission' )
     else:
@@ -484,7 +487,10 @@ class SSHComputingElement( ComputingElement ):
     else:
       batchIDs = result['Jobs']
       if batchIDs:
-        jobIDs = [ '%s%s://%s/%s' % ( self.ceType.lower(), self.batchSystem.lower(), self.ceName, _id ) for _id in batchIDs ]
+        ceHost = host
+        if host is None:
+          ceHost = self.ceName
+        jobIDs = [ '%s%s://%s/%s' % ( self.ceType.lower(), self.batchSystem.lower(), ceHost, _id ) for _id in batchIDs ]
       else:
         return S_ERROR( 'No jobs IDs returned' )      
 
@@ -526,7 +532,6 @@ class SSHComputingElement( ComputingElement ):
   def _getHostStatus( self, host = None ):
     """ Get jobs running at a given host
     """
-    
     resultCommand = self.__executeHostCommand( 'getCEStatus', {}, host = host )
     if not resultCommand['OK']:
       return resultCommand
@@ -645,15 +650,16 @@ class SSHComputingElement( ComputingElement ):
       localOutputFile = 'Memory'
       localErrorFile = 'Memory'
 
-    ssh = SSH( parameters = self.ceParameters )
+    host = urlparse( jobID ).hostname
+    ssh = SSH( parameters = self.ceParameters, host = host )
     result = ssh.scpCall( 30, localOutputFile, outputFile, upload = False )
     if not result['OK']:
       return result
     output = result['Value']
     if localDir:
       output = localOutputFile
-    
-    result = ssh.scpCall( 30, localErrorFile, errorFile, upload = False )    
+
+    result = ssh.scpCall( 30, localErrorFile, errorFile, upload = False )
     if not result['OK']:
       return result
     error = result['Value']

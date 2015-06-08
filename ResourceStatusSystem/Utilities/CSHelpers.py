@@ -249,7 +249,7 @@ def getFTS():
 
 
     
-  return ftsEndpoints
+  return S_OK( ftsEndpoints )
 
 
 def getFTS2():
