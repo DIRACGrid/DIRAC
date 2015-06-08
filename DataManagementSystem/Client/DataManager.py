@@ -904,13 +904,13 @@ class DataManager( object ):
     :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum )
     :param str catalog: catalog name
     """
-    if isinstance( fileTuple, list ) or isinstance( fileTuple, dict ) or isinstance( fileTuple, set ):
+    if isinstance( fileTuple, ( list, dict, set, tuple ) ):
       fileTuples = list( fileTuple )
     else:
       fileTuples = [fileTuple]
     for fileTuple in fileTuples:
       if not isinstance( fileTuple, tuple ):
-        errStr = "registerFile: Supplied file info must be tuple of list of tuples."
+        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
         self.log.debug( errStr )
         return S_ERROR( errStr )
     if not fileTuples:
@@ -950,13 +950,13 @@ class DataManager( object ):
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
     """
-    if isinstance( replicaTuple, list ) or isinstance( replicaTuple, dict ) or isinstance( replicaTuple, set ):
+    if isinstance( replicaTuple, ( list, dict, set, tuple ) ):
       replicaTuples = list( replicaTuple )
     else:
       replicaTuples = [replicaTuple]
     for replicaTuple in replicaTuples:
       if not isinstance( replicaTuple, tuple ):
-        errStr = "registerFile: Supplied file info must be tuple of list of tuples."
+        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
         self.log.debug( errStr )
         return S_ERROR( errStr )
     if not replicaTuples:
@@ -1025,7 +1025,7 @@ class DataManager( object ):
     """
     if force == None:
       force = self.ignoreMissingInFC
-    if isinstance( lfn, list ) or isinstance( lfn, dict ) or isinstance( lfn, set ):
+    if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = list( lfn )
     else:
       lfns = [lfn]
@@ -1133,7 +1133,7 @@ class DataManager( object ):
        'storageElementName' is the storage where the file is to be removed
        'lfn' is the file to be removed
     """
-    if isinstance( lfn, list ) or isinstance( lfn, dict ) or isinstance( lfn, set ):
+    if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = list( lfn )
     else:
       lfns = [lfn]
