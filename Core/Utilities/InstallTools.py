@@ -97,7 +97,7 @@ def loadDiracCfg( verbose = False ):
   Read again defaults from dirac.cfg
   """
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
-  global basePath, instancePath, runitDir, startDir
+  global basePath, instancePath, runitDir, startDir, controlDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
   global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode
   global mysqlSmallMem, mysqlLargeMem, mysqlPort, mysqlRootUser
@@ -140,6 +140,11 @@ def loadDiracCfg( verbose = False ):
   startDir = localCfg.getOption( cfgInstallPath( 'StartupDir' ), startDir )
   if verbose:
     gLogger.notice( 'Using Startup Dir at', startDir )
+
+  controlDir = os.path.join( instancePath, 'control' )
+  controlDir = localCfg.getOption( cfgInstallPath( 'ControlDir' ), controlDir )
+  if verbose:
+    gLogger.notice( 'Using Control Dir at', controlDir )
 
   # Now some MySQL default values
   db = {}
