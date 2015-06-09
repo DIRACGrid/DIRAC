@@ -388,7 +388,8 @@ class SRM2Storage( StorageBase ):
         elif urlDict['status'] == 1:
           self.log.debug( "prestageFile: File found to be already staged.", pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
-        elif urlDict['status'] == 22:
+        # It can be 11 or 22 depending on the srm-ifce version...
+        elif urlDict['status'] in ( 11, 22 ):
           self.log.debug( "prestageFile: Stage request for file %s queued.", pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:

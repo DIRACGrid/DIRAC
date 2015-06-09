@@ -450,7 +450,6 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
   except Exception, e:
     gLogger.debug( "Could not instantiate FtsClient", e )
 
-
   if full:
     output = ''
     prettyPrint( request.toJSON()['Value'] )
@@ -459,7 +458,7 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
     if not status:
       status = request.Status
     gLogger.always( "Request name='%s' ID=%s Status='%s'%s%s%s" % ( request.RequestName,
-                                                                     request.RequestID,
+                                                                     request.RequestID if hasattr( request, 'RequestID' ) else '(not set yet)',
                                                                      request.Status, " ('%s' in DB)" % status if status != request.Status else '',
                                                                      ( " Error='%s'" % request.Error ) if request.Error and request.Error.strip() else "" ,
                                                                      ( " Job=%s" % request.JobID ) if request.JobID else "" ) )
@@ -500,7 +499,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
       prStr += '\n      Arguments:\n' + output.strip( '\n' )
     else:
       prStr += '\n      Service: %s' % decode[0][0]
-  gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID,
+  gLogger.always( "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s" % ( i, op.Type, op.OperationID if hasattr( op, 'OperationID' ) else '(not set yet)',
                                                                                        op.Order, op.Status,
                                                                                        ( " Error='%s'" % op.Error ) if op.Error and op.Error.strip() else "",
                                                                                        ( " Catalog=%s" % op.Catalog ) if op.Catalog else "" ) )
@@ -512,7 +511,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
 
 def printFile( indexFile ):
   j, f = indexFile
-  gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID, f.LFN, f.Status,
+  gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s" % ( j + 1, f.FileID if hasattr( f, 'FileID' ) else '(not set yet)', f.LFN, f.Status,
                                                                        ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
                                                                        ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else "" ) )
 

@@ -401,28 +401,7 @@ class RequestTests( unittest.TestCase ):
     del r[0]
     self.assertEqual( len( r ), 4, "__delitem__ failed" )
 
-    r.RequestID = 1
-    del r[0]
-    self.assertEqual( r.cleanUpSQL(), None, "cleanUpSQL failed after __delitem__ (no opId)" )
 
-    r[0].OperationID = 1
-    del r[0]
-    clean = r.cleanUpSQL()
-    self.assertEqual( clean,
-                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1);\n',
-                       'DELETE FROM `File` WHERE `OperationID`=1;\n'],
-                      "cleanUpSQL failed after __delitem__ (opId set)\n%s" % clean )
-
-    r[0].OperationID = 2
-    r[0] = Operation()
-    clean = r.cleanUpSQL()
-    self.assertEqual( clean,
-                      ['DELETE FROM `Operation` WHERE `RequestID`=1 AND `OperationID` IN (1,2);\n',
-                      'DELETE FROM `File` WHERE `OperationID`=1;\n', 'DELETE FROM `File` WHERE `OperationID`=2;\n'],
-                      "cleanUpSQL failed after __setitem_ (opId set):\n%s" % clean )
-
-    json = r.toJSON()
-    self.assertEqual( "__dirty" in json["Value"], True, "__dirty missing in json" )
 
 
   def test08Optimize( self ):
@@ -440,7 +419,7 @@ class RequestTests( unittest.TestCase ):
       print ''
     for reqType in title:
       r = createRequest( reqType )
-      res = optimizeRequest( r, printOutput = title[reqType] if debug == reqType else False )
+      res = optimizeRequest( r, printOutput = title[reqType] if ( debug == reqType and debug is not False ) else False )
       self.assertEqual( res['OK'], True )
       self.assertEqual( res['Value'], True )
       if reqType in ( 0, 1 ):
