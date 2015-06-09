@@ -1,4 +1,4 @@
-[v6r13-pre38]
+[v6r13]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
@@ -55,6 +55,8 @@ CHANGE: RMS refactored based on SQLAlchemy
 NEW: ReqClient - added options to putRequest(): useFailoverProxy and retryMainServer
 CHANGE: DMSRequestOperationsBase - delay execution or cancel request based on SE statuses 
         from RSS/CS
+FIX: Fixes to make use of RequestID as a unique identifier. RequestName can be used in
+     commands in case of its uniqueness        
 
 *Resources
 NEW: Computing - BatchSystem classes introduced to be used both in Local and SSH Computing Elements
