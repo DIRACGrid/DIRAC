@@ -360,7 +360,7 @@ class RequestTask( object ):
       if self.request.JobID:
         attempts = 0
         while True:
-          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestName, self.request.JobID )
+          finalizeRequest = self.requestClient.finalizeRequest( self.request.RequestID, self.request.JobID )
           if not finalizeRequest["OK"]:
             if not attempts:
               self.log.error( "unable to finalize request %s: %s, will retry" % ( self.request.RequestName,

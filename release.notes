@@ -10,7 +10,7 @@ NEW: LocalConfiguration - option to print out license information
 *WMS
 FIX: Watchdog - review for style and pylint
 
-[v6r13-pre37]
+[v6r13-pre38]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
         to allow SystemLogging to work
