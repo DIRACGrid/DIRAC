@@ -29,7 +29,15 @@ if __name__ == "__main__":
     DIRAC.exit( 1 )
 
   for requestID in requests:
-    reqID = int( requestID.strip() )
+    requestID = requestID.strip()
+    try:
+      reqID = int( requestID )
+    except ValueError:
+      reqID = reqClient.getRequestIDForName( requestID )
+      if not reqID['OK']:
+        gLogger.always( reqID['Message'] )
+        continue
+      reqID = reqID['Value']
     res = reqClient.cancelRequest( reqID )
     if res['OK']:
       DIRAC.gLogger.always( "Request %s canceled" % reqID )
