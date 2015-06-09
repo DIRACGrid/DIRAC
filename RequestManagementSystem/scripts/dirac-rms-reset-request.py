@@ -47,8 +47,20 @@ if __name__ == "__main__":
   if not jobs:
     args = Script.getPositionalArgs()
 
+    requests = list()
     if len( args ) == 1:
-      requests = args[0].split( ',' )
+      requestsSplit = args[0].split( ',' )
+      for reqID in requestsSplit:
+        try:
+          requestID = int( reqID )
+        except ValueError:
+          requestID = reqClient.getRequestIDForName( reqID )
+          if not requestID['OK']:
+            gLogger.always( requestID['Message'] )
+            continue
+          requestID = requestID['Value']
+        requests.append( requestID )
+
   else:
     res = reqClient.getRequestIDsForJobs( jobs )
     if not res['OK']:
