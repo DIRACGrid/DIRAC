@@ -450,7 +450,7 @@ class Request( object ):
 
     # If the RequestID is not the default one (0), it probably means
     # the Request is already in the DB, so we don't touch anything
-    if self.RequestID:
+    if hasattr( self, 'RequestID' ) and self.RequestID:
       return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
     # Set to True if the request could be optimized
     optimized = False

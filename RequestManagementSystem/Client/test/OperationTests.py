@@ -149,27 +149,30 @@ class OperationTests( unittest.TestCase ):
     self.assertEqual( op.Status, "Queued", "2. wrong status %s" % op.Status )
 
     op.addFile( File( {"Status": "Scheduled" } ) )
-    self.assertEqual( op.Status, "Queued", "3. wrong status %s" % op.Status )
+    self.assertEqual( op.Status, "Scheduled", "3. wrong status %s" % op.Status )
 
     op.addFile( File( {"Status": "Done" } ) )
-    self.assertEqual( op.Status, "Queued", "4. wrong status %s" % op.Status )
+    self.assertEqual( op.Status, "Scheduled", "4. wrong status %s" % op.Status )
 
     op.addFile( File( { "Status": "Failed" } ) )
-    self.assertEqual( op.Status, "Queued", "5. wrong status %s" % op.Status )
+    self.assertEqual( op.Status, "Scheduled", "5. wrong status %s" % op.Status )
 
     op[3].Status = "Scheduled"
-    self.assertEqual( op.Status, "Queued", "6. wrong status %s" % op.Status )
+    self.assertEqual( op.Status, "Scheduled", "6. wrong status %s" % op.Status )
 
     op[0].Status = "Scheduled"
     self.assertEqual( op.Status, "Scheduled", "7. wrong status %s" % op.Status )
 
     op[0].Status = "Waiting"
-    self.assertEqual( op.Status, "Queued", "8. wrong status %s" % op.Status )
+    self.assertEqual( op.Status, "Scheduled", "8. wrong status %s" % op.Status )
 
     for f in op:
       f.Status = "Done"
     self.assertEqual( op.Status, "Done", "9. wrong status %s" % op.Status )
 
+    for f in op:
+      f.Status = "Failed"
+    self.assertEqual( op.Status, "Failed", "9. wrong status %s" % op.Status )
 
   def test05List( self ):
     """ getitem, setitem, delitem and dirty """
