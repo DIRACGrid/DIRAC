@@ -904,9 +904,9 @@ class DataManager( object ):
     :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum )
     :param str catalog: catalog name
     """
-    if isinstance( fileTuple, ( list, dict, set, tuple ) ):
-      fileTuples = list( fileTuple )
-    else:
+    if isinstance( fileTuple, ( list, set ) ):
+      fileTuples = fileTuple
+    elif isinstance( fileTuple, tuple ):
       fileTuples = [fileTuple]
     for fileTuple in fileTuples:
       if not isinstance( fileTuple, tuple ):
@@ -950,10 +950,10 @@ class DataManager( object ):
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
     """
-    if isinstance( replicaTuple, ( list, dict, set, tuple ) ):
-      replicaTuples = list( replicaTuple )
-    else:
-      replicaTuples = [replicaTuple]
+    if isinstance( replicaTuple, ( list, set ) ):
+      replicaTuples = replicaTuple
+    elif isinstance( replicaTuple, tuple ):
+      replicaTuples = [ replicaTuple ]
     for replicaTuple in replicaTuples:
       if not isinstance( replicaTuple, tuple ):
         errStr = "registerFile: Supplied file info must be tuple or list of tuples."

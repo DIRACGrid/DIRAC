@@ -46,7 +46,7 @@ class ComputingElementFactory( object ):
     objectLoader = ObjectLoader.ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Computing.%s' % subClassName, subClassName )
     if not result['OK']:
-      gLogger.error( 'Failed to load catalog object: %s' % result['Message'] )
+      gLogger.error( 'Failed to load object', '%s: %s' % ( subClassName, result['Message'] ) )
       return result
 
     ceClass = result['Value']
