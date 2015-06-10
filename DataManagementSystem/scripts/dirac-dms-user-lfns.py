@@ -11,13 +11,13 @@ from DIRAC.Core.Base import Script
 days = 0
 months = 0
 years = 0
-wildcard = '*'
+wildcard = None
 baseDir = ''
 emptyDirsFlag = False
 Script.registerSwitch( "D:", "Days=", "Match files older than number of days [%s]" % days )
 Script.registerSwitch( "M:", "Months=", "Match files older than number of months [%s]" % months )
 Script.registerSwitch( "Y:", "Years=", "Match files older than number of years [%s]" % years )
-Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [%s]" % wildcard )
+Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [All]" )
 Script.registerSwitch( "b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])" )
 Script.registerSwitch( "e", "EmptyDirs", "Create a list of empty directories" )
 
@@ -58,9 +58,9 @@ def isOlderThan( cTimeStruct, days ):
     return True
   return False
 
-verbose = False
+withMetadata = False
 if days or months or years:
-  verbose = True
+  withMetadata = True
 totalDays = 0
 if years:
   totalDays += 365 * years
@@ -84,7 +84,7 @@ if not baseDir:
     Script.showHelp()
   baseDir = '/%s/user/%s/%s' % ( vo, username[0], username )
 
-baseDir = baseDir.rstrip('/')
+baseDir = baseDir.rstrip( '/' )
 
 gLogger.info( 'Will search for files in %s' % baseDir )
 activeDirs = [baseDir]
@@ -92,31 +92,33 @@ activeDirs = [baseDir]
 allFiles = []
 emptyDirs = []
 while len( activeDirs ) > 0:
-  currentDir = activeDirs[0]
-  res = fc.listDirectory( currentDir, verbose )
-  activeDirs.remove( currentDir )
+  currentDir = activeDirs.pop()
+  res = fc.listDirectory( currentDir, withMetadata )
   if not res['OK']:
     gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
-  elif res['Value']['Failed'].has_key( currentDir ):
+  elif currentDir in res['Value']['Failed']:
     gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Value']['Failed'][currentDir] ) )
   else:
     dirContents = res['Value']['Successful'][currentDir]
     subdirs = dirContents['SubDirs']
-    empty = True
-    for subdir, metadata in subdirs.items():
-      if ( not verbose ) or isOlderThan( metadata['CreationDate'], totalDays ):
-        activeDirs.append( subdir )
-      empty = False
-    for filename, fileInfo in dirContents['Files'].items():
-      metadata = fileInfo['MetaData']
-      if ( not verbose ) or isOlderThan( metadata['CreationDate'], totalDays ):
-        if fnmatch.fnmatch( filename, wildcard ):
-          allFiles.append( filename )
-      empty = False
-    files = dirContents['Files'].keys()
-    gLogger.notice( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
-    if empty:
+    files = dirContents['Files']
+    if not subdirs and not files:
       emptyDirs.append( currentDir )
+      gLogger.notice( '%s: empty directory' % currentDir )
+    else:
+      for subdir in sorted( subdirs, reverse = True ):
+        if ( not withMetadata ) or isOlderThan( subdirs[subdir]['CreationDate'], totalDays ):
+          activeDirs.append( subdir )
+      for filename in sorted( files ):
+        fileOK = False
+        if ( not withMetadata ) or isOlderThan( files[filename]['MetaData']['CreationDate'], totalDays ):
+          if wildcard is None or fnmatch.fnmatch( filename, wildcard ):
+            fileOK = True
+        if not fileOK:
+          files.pop( filename )
+      allFiles += sorted( files )
+
+      gLogger.notice( "%s: %d files%s, %d sub-directories" % ( currentDir, len( files ), ' matching' if withMetadata or wildcard else '', len( subdirs ) ) )
 
 outputFileName = '%s.lfns' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
 outputFile = open( outputFileName, 'w' )
