@@ -25,6 +25,9 @@ class SystemAdministratorIntegrator( object ):
         self.__hosts = result['Value']
       else:
         self.__hosts = []
+      # Excluded hosts
+      if 'exclude' in kwargs:
+        self.__hosts = list ( set( self.__hosts ) - set( kwargs[ 'exclude' ] ) )
 
     # Ping the hosts to remove those that don't have a SystemAdministrator service
     sysAdminHosts = []
