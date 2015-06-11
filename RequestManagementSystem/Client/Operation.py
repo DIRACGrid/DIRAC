@@ -201,12 +201,12 @@ class Operation( object ):
   @property
   def sourceSEList( self ):
     """ helper property returning source SEs as a list"""
-    return self.SourceSE.split( "," )
+    return self.SourceSE.split( "," ) if self.SourceSE else ['']
 
   @property
   def targetSEList( self ):
     """ helper property returning target SEs as a list"""
-    return self.TargetSE.split( "," )
+    return self.TargetSE.split( "," ) if self.TargetSE else ['']
 
   @hybrid_property
   def Catalog( self ):
@@ -230,7 +230,7 @@ class Operation( object ):
   @property
   def catalogList( self ):
     """ helper property returning catalogs as list """
-    return self._Catalog.split( "," )
+    return self._Catalog.split( "," ) if self._Catalog else ['']
 
   @hybrid_property
   def Status( self ):
