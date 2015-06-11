@@ -24,6 +24,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 from types import NoneType
 
@@ -85,6 +86,8 @@ class Request( object ):
     self.RequestName = None
     self.OwnerGroup = None
     self.SourceComponent = None
+    
+    self.dmsHelper = DMSHelpers())
 
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
@@ -469,7 +472,7 @@ class Request( object ):
           fileSetB = set( list( f.LFN for f in op2 ) )
           if fileSetA == fileSetB:
             # Source is useless if failover
-            if isinstance( op1.sourceSE, basestring ) and 'FAILOVER' in op1.SourceSE:
+            if self.dmsHelper.isSEFailover(op1.sourceSE):
               op1.SourceSE = ''
             repAndRegList.append( ( op1.TargetSE, op1 ) )
             removeRepList.append( ( op2.TargetSE, op2 ) )
