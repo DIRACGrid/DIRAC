@@ -469,7 +469,7 @@ class Request( object ):
           fileSetB = set( list( f.LFN for f in op2 ) )
           if fileSetA == fileSetB:
             # Source is useless if failover
-            if 'FAILOVER' in op1.SourceSE:
+            if isinstance( op1.sourceSE, basestring ) and 'FAILOVER' in op1.SourceSE:
               op1.SourceSE = ''
             repAndRegList.append( ( op1.TargetSE, op1 ) )
             removeRepList.append( ( op2.TargetSE, op2 ) )
