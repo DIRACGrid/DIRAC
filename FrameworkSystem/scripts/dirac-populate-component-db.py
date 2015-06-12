@@ -44,12 +44,12 @@ args = Script.getPositionalArgs()
 componentType = ''
 
 # Retrieve information from all the hosts
-client = SystemAdministratorIntegrator()
+client = SystemAdministratorIntegrator( exclude = excludedHosts )
 resultAll = client.getOverallStatus()
 
 notificationClient = NotificationClient()
 for host in resultAll[ 'Value' ]:
-  if not host in excludedHosts and not resultAll[ 'Value' ][ host ][ 'OK' ]:
+  if not resultAll[ 'Value' ][ host ][ 'OK' ]:
     # If the host cannot be contacted, exclude it and send message
     excludedHosts.append( host )
 
