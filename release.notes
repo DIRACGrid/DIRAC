@@ -1,3 +1,19 @@
+[v6r13p1]
+
+*Framework
+CHANGE: SystemAdminstratorIntegrator - can take a list of hosts to exclude from contacting
+
+*DMS
+FIX: DataManager - fix in __getFile() in resolving local SEs
+FIX: dirac-dms-user-lfns - sort result, simplify logic
+
+*RMS
+FIX: Request - Use DMSHelper to resolve the Failovers SEs
+FIX: Operation - treat the case where the SourceSE is None
+
+*WMS
+FIX: WMSAdministratorHandler - return per DN dictionary from getPilotStatistics 
+
 [v6r13]
 
 CHANGE: Separating fixed and variable parts of error log messages for multiple systems 
