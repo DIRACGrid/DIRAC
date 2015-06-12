@@ -42,7 +42,7 @@ class SRM2Storage( StorageBase ):
     """
     StorageBase.__init__( self, storageName, parameters )
     self.spaceToken = self.protocolParameters['SpaceToken']
-    
+
     self.log = gLogger.getSubLogger( "SRM2Storage", True )
 
     self.isok = True
@@ -327,10 +327,10 @@ class SRM2Storage( StorageBase ):
           successful[url] = url
         else:
           failed[url] = 'getTransportURL: Failed to obtain turls.'
-      
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
-
+    # FIXME: we should test here if the SE is banned as we cannot get the URL
+    # Here we must go out to the SRM service
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )
     if not resDict["OK"]:
