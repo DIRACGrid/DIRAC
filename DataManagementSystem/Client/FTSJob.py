@@ -736,7 +736,7 @@ class FTSJob( object ):
       failedFiles = register.get( "Failed", {} )
       errorReason = {}
       for lfn, reason in failedFiles.items():
-        errorReason.setdefault( reason, [] ).append( lfn )
+        errorReason.setdefault( str( reason ), [] ).append( lfn )
       for reason in errorReason:
         self._log.error( 'Error registering %d replicas' % len( errorReason[reason] ), reason )
       for ftsFile in toRegister:
