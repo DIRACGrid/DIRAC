@@ -485,7 +485,7 @@ class FTSAgent( AgentModule ):
         log.info( "monitoring of FTSJobs completed" )
         for key, ftsFiles in ftsFilesDict.items():
           if ftsFiles:
-            log.debug( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
+            log.verbose( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
       # # PHASE ONE - check ready replicas
       missingReplicas = self.__checkReadyReplicas( request, operation )
@@ -772,7 +772,7 @@ class FTSAgent( AgentModule ):
         route = route["Value"]
 
         routeValid = self.__ftsPlacement.isRouteValid( route )
-        
+
         if not routeValid['OK']:
           log.error( "Route invalid : %s" % routeValid['Message'] )
           continue
@@ -852,6 +852,7 @@ class FTSAgent( AgentModule ):
       log.error( monitor["Message"] )
       if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"] or \
          'was not found' in monitor['Message'] or\
+         "Not found" in monitor['Message'] or\
          'Unknown transfer state' in monitor['Message']:
         log.error( "FTSJob not known (expired on server?): delete it" )
         for ftsFile in ftsJob:
@@ -904,7 +905,7 @@ class FTSAgent( AgentModule ):
     ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
 
-    monitor = ftsJob.monitorFTS(self.__ftsVersion, command = self.MONITOR_COMMAND, full = True )
+    monitor = ftsJob.monitorFTS( self.__ftsVersion, command = self.MONITOR_COMMAND, full = True )
     if not monitor["OK"]:
       log.error( monitor["Message"] )
       return monitor

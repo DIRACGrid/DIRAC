@@ -47,8 +47,8 @@ class FTSJob( object ):
   TRANSSTATES = ( "Active", "Hold" )
   # # failed states
   FAILEDSTATES = ( "Canceled", "Failed" )
-  # # finished
-  FINALSTATES = ( "Finished", "FinishedDirty", "Failed", "Canceled" )
+  # # finished (careful, must be capitalized)
+  FINALSTATES = ( "Finished", "Finisheddirty", "FinishedDirty", "Failed", "Canceled" )
 
 
   # # missing source regexp patterns
@@ -83,21 +83,19 @@ class FTSJob( object ):
 
     self._fc = FileCatalog()
 
-    self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
-
     self._states = tuple( set( self.INITSTATES + self.TRANSSTATES + self.FAILEDSTATES + self.FINALSTATES ) )
 
     fromDict = fromDict if fromDict else {}
     for ftsFileDict in fromDict.get( "FTSFiles", [] ):
       self +=FTSFile( ftsFileDict )
-    if "FTSFiles" in fromDict: del fromDict["FTSFiles"]
+    if "FTSFiles" in fromDict:
+      del fromDict["FTSFiles"]
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown FTSJob attribute '%s'" % key )
       if value:
         setattr( self, key, value )
-
-
+    self._log = gLogger.getSubLogger( "req_%s/FTSJob-%s" % ( self.RequestID, self.FTSGUID ) , True )
 
   @staticmethod
   def tableDesc():
@@ -598,7 +596,7 @@ class FTSJob( object ):
     copy_pin_lifetime = pinTime if pinTime else None
     bring_online = 86400 if pinTime else None
 
-    job = fts3.new_job(transfers = transfers, overwrite = True,
+    job = fts3.new_job( transfers = transfers, overwrite = True,
             source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
             bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
 
@@ -611,6 +609,7 @@ class FTSJob( object ):
 
 
     self.Status = "Submitted"
+    self._log = gLogger.getSubLogger( "req_%s/FTSJob-%s" % ( self.RequestID, self.FTSGUID ) , True )
     for ftsFile in self:
       ftsFile.FTSGUID = self.FTSGUID
       ftsFile.Status = "Submitted"
@@ -625,7 +624,7 @@ class FTSJob( object ):
       context = fts3.Context( endpoint = self.FTSServer )
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
     except Exception, e:
-      return S_ERROR( "Error at getting the job status %s" % e )
+      return S_ERROR( "Error getting the job status %s" % e )
 
     self.Status = jobStatusDict['job_state'].capitalize()
 
@@ -642,7 +641,7 @@ class FTSJob( object ):
     if not full:
       return S_OK( statusSummary )
 
-
+    ftsFilesPrinted = False
     for fileDict in filesInfoList:
       sourceURL = fileDict['source_surl']
       targetURL = fileDict['dest_surl']
@@ -654,11 +653,18 @@ class FTSJob( object ):
         if ftsFile.SourceSURL == sourceURL and ftsFile.TargetSURL == targetURL :
           candidateFile = ftsFile
           break
-      if not candidateFile:
-        continue
-      candidateFile.Status = fileStatus
-      candidateFile.Error = reason
-      candidateFile._duration = duration
+      if candidateFile is None:
+        self._log.warn( 'FTSFile not found', 'Source: %s, Target: %s' % ( sourceURL, targetURL ) )
+        if not ftsFilesPrinted:
+          ftsFilesPrinted = True
+          if not len( self ):
+            self._log.warn( 'Monitored FTS job is empty!' )
+          else:
+            self._log.warn( 'All FTS files are:', '\n' + '\n'.join( ['Source: %s, Target: %s' % ( ftsFile.SourceSURL, ftsFile.TargetSURL ) for ftsFile in self] ) )
+      else:
+        candidateFile.Status = fileStatus
+        candidateFile.Error = reason
+        candidateFile._duration = duration
 
 #       if candidateFile.Status == "Failed":
 #         for missingSource in self.missingSourceErrors:
@@ -668,6 +674,7 @@ class FTSJob( object ):
     # # register successful files
     if self.Status in FTSJob.FINALSTATES:
       return self.finalize()
+    return S_OK()
 
 
   def monitorFTS( self, ftsVersion, command = "glite-transfer-status", full = False ):
@@ -678,7 +685,7 @@ class FTSJob( object ):
     elif ftsVersion == "FTS3":
       return self.monitorFTS3( full = full )
     else:
-      return S_ERROR("monitorFTS: unknown FTS version %s"%ftsVersion)
+      return S_ERROR( "monitorFTS: unknown FTS version %s" % ftsVersion )
 
 
   def submitFTS( self, ftsVersion, command = 'glite-transfer-submit', pinTime = False ):
@@ -698,16 +705,20 @@ class FTSJob( object ):
     if self.Status not in FTSJob.FINALSTATES:
       return S_OK()
 
+    if not len( self ):
+      return S_ERROR( "Empty job in finalize" )
+
     startTime = time.time()
     targetSE = StorageElement( self.TargetSE )
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
     for ftsFile in toRegister:
       pfn = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
-      if not pfn["OK"]:
-        continue
-      pfn = pfn["Value"]
-      toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
+      if pfn["OK"]:
+        pfn = pfn["Value"]
+        toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
+      else:
+        self._log.error( "Error getting SRM URL", pfn['Message'] )
 
     if toRegisterDict:
       self._regTotal += len( toRegisterDict )
@@ -720,10 +731,21 @@ class FTSJob( object ):
         return register
       register = register["Value"]
       self._regSuccess += len( register.get( 'Successful', {} ) )
+      if self._regSuccess:
+        self._log.info( 'Successfully registered %d replicas' % self._regSuccess )
       failedFiles = register.get( "Failed", {} )
+      errorReason = {}
+      for lfn, reason in failedFiles.items():
+        errorReason.setdefault( reason, [] ).append( lfn )
+      for reason in errorReason:
+        self._log.error( 'Error registering %d replicas' % len( errorReason[reason] ), reason )
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
+    else:
+      statuses = set( [ftsFile.Status for ftsFile in self] )
+      self._log.warn( "No replicas to register for FTSJob (%s) - Files status: '%s'" % \
+                      ( self.Status, ','.join( sorted( statuses ) ) ) )
 
     return S_OK()
 
