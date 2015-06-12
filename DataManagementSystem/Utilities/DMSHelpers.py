@@ -155,7 +155,8 @@ class DMSHelpers( object ):
 
   def isSEFailover( self, storageElement ):
     seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForFailover', [] ) )
-    return storageElement in resolveSEGroup( seList )
+    # FIXME: remove string test at some point
+    return storageElement in resolveSEGroup( seList ) or ( not seList and isinstance( storageElement, basestring ) and 'FAILOVER' in storageElement.upper() )
 
   def isSEForJobs( self, storageElement, checkSE = True ):
     if checkSE:
@@ -167,7 +168,8 @@ class DMSHelpers( object ):
 
   def isSEArchive( self, storageElement ):
     seList = resolveSEGroup( self.__opsHelper.getValue( 'DataManagement/SEsUsedForArchive', [] ) )
-    return storageElement in resolveSEGroup( seList )
+    # FIXME: remove string test at some point
+    return storageElement in resolveSEGroup( seList ) or ( not seList and isinstance( storageElement, basestring ) and 'ARCHIVE' in storageElement.upper() )
 
   def getSitesForSE( self, storageElement, connectionLevel = None ):
     connectionIndex = _getConnectionIndex( connectionLevel, default = DOWNLOAD )

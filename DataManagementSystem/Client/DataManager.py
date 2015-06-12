@@ -397,7 +397,7 @@ class DataManager( object ):
   def _getSEProximity( self, ses ):
     """ get SE proximity """
     siteName = DIRAC.siteName()
-    localSEs = [se for se in self.dmsHelper.getSEsAtSite( siteName )['Value'] if se in ses]
+    localSEs = [se for se in self.dmsHelper.getSEsAtSite( siteName ).get( 'Value', [] ) if se in ses]
     countrySEs = []
     countryCode = str( siteName ).split( '.' )[-1]
     res = self.dmsHelper.getSEsAtCountry( countryCode )
