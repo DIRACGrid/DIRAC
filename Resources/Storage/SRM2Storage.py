@@ -111,16 +111,6 @@ class SRM2Storage( StorageBase ):
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
 
-    # Get SE status if needed
-    from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-    res = ResourceStatus().getStorageElementStatus( storageName )
-    if not res[ 'OK' ]:
-      errStr = "SRM2Storage__init__: Failed to get storage status"
-      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
-      self.seStatus = {}
-    else:
-      self.seStatus = res['Value'][storageName]
-
   def __importExternals( self ):
     """ import lcg_util and gfalthr or gfal
 
@@ -339,7 +329,7 @@ class SRM2Storage( StorageBase ):
           failed[url] = 'getTransportURL: Failed to obtain turls.'
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
-    readAccess = self.seStatus.get( 'ReadAccess' )
+    readAccess = self.se.getStatus().get( 'Value', {} ).get( 'Read' )
     if not readAccess or readAccess not in ( 'Active', 'Degraded' ):
       return S_ERROR( "SRM2Storage.getTransportURL: Read access not currently permitted." )
 
