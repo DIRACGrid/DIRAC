@@ -69,7 +69,7 @@ class SRM2Storage( StorageBase ):
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '' )
     # enum gfal_cksm_type, all in lcg_util
     # 	GFAL_CKSM_NONE = 0,
     # 	GFAL_CKSM_CRC32,
@@ -110,6 +110,16 @@ class SRM2Storage( StorageBase ):
 
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 )  # 0.5 MB/s ???
+
+    # Get SE status if needed
+    from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+    res = ResourceStatus().getStorageElementStatus( storageName )
+    if not res[ 'OK' ]:
+      errStr = "SRM2Storage__init__: Failed to get storage status"
+      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
+      self.seStatus = {}
+    else:
+      self.seStatus = res['Value'][storageName]
 
   def __importExternals( self ):
     """ import lcg_util and gfalthr or gfal
@@ -329,7 +339,10 @@ class SRM2Storage( StorageBase ):
           failed[url] = 'getTransportURL: Failed to obtain turls.'
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
-    # FIXME: we should test here if the SE is banned as we cannot get the URL
+    readAccess = self.seStatus.get( 'ReadAccess' )
+    if not readAccess or readAccess not in ( 'Active', 'Degraded' ):
+      return S_ERROR( "SRM2Storage.getTransportURL: Read access not currently permitted." )
+
     # Here we must go out to the SRM service
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )
