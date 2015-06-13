@@ -166,8 +166,8 @@ class StorageElementItem( object ):
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
     self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
 
+    #                         'getTransportURL',
     self.readMethods = [ 'getFile',
-                         'getTransportURL',
                          'prestageFile',
                          'prestageFileStatus',
                          'getDirectory']
