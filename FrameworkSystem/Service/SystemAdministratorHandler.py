@@ -236,11 +236,14 @@ class SystemAdministratorHandler( RequestHandler ):
     # Check if there are extensions
     extensionList = getCSExtensions()
     if extensionList:
+      if "WebApp" in extensionList:
+        extensionList.remove("WebApp")
       cmdList += ['-e', ','.join( extensionList )]
 
     webPortal = gConfig.getValue( '/LocalInstallation/WebApp', False ) # this is the new portal
     if webPortal:
-      extensionList.append( 'WebAppDIRAC' )
+      if "WebAppDIRAC" not in extensionList:
+        extensionList.append( 'WebAppDIRAC' )
 
     if extensionList:
       cmdList += ['-e', ','.join( extensionList )]
