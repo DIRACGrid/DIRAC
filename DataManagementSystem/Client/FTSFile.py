@@ -3,7 +3,7 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 09:28:29
 ########################################################################
-""" 
+"""
 :mod: FTSFile
 
 .. module: FTSFile
@@ -37,7 +37,7 @@ class FTSFile( object ):
   class representing a single file in the FTS job
   """
   # # all FTS states
-  ALL_STATES = ( "Submitted", "Ready", "Active", "Failed", "Finished", "Staging", "Canceled", 'Started' )
+  ALL_STATES = ( "Submitted", "Ready", "Active", "Failed", "Finished", "Staging", "Canceled", 'Started', 'Waiting' )
   # # final FTS states
   FINAL_STATES = ( "Canceled" "Failed", "Finished" )
   # # successful states
