@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 import sys
 from datetime import datetime
 from DIRAC import exit as DIRACexit
-from DIRAC import S_OK, gLogger
+from DIRAC import S_OK, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.Core.Base import Script
@@ -43,6 +43,9 @@ args = Script.getPositionalArgs()
 
 componentType = ''
 
+# Get my setup
+mySetup = gConfig.getValue( 'DIRAC/Setup' )
+
 # Retrieve information from all the hosts
 client = SystemAdministratorIntegrator( exclude = excludedHosts )
 resultAll = client.getOverallStatus()
@@ -68,6 +71,10 @@ resultInfo = client.getInfo()
 if not resultInfo[ 'OK' ]:
   gLogger.error( resultInfo[ 'Message' ] )
   DIRACexit( -1 )
+resultMySQL = client.getMySQLStatus()
+if not resultMySQL[ 'OK' ]:
+  gLogger.error( resultMySQL[ 'Message' ] )
+  DIRACexit( -1 )
 resultAllDB = client.getDatabases()
 if not resultAllDB[ 'OK' ]:
   gLogger.error( resultAllDB[ 'Message' ] )
@@ -77,26 +84,38 @@ if not resultAvailableDB[ 'OK' ]:
   gLogger.error( resultAvailableDB[ 'Message' ] )
   DIRACexit( -1 )
 
-
 records = []
 finalSet = list( set( resultAll[ 'Value' ] ) - set( excludedHosts ) )
 for host in finalSet:
+  hasMySQL = True
   result = resultAll[ 'Value' ][ host ]
   hostResult = resultHosts[ 'Value' ][ host ]
+  infoResult = resultInfo[ 'Value' ][ host ]
+  mySQLResult = resultMySQL[ 'Value' ][ host ]
   allDBResult = resultAllDB[ 'Value' ][ host ]
   availableDBResult = resultAvailableDB[ 'Value' ][ host ]
 
   if not result[ 'OK' ]:
     gLogger.error( 'Host %s: %s' % ( host, result[ 'Message' ] ) )
     continue
-  elif not hostResult[ 'OK' ]:
+  if not hostResult[ 'OK' ]:
     gLogger.error( 'Host %s: %s' % ( host, hostResult[ 'Message' ] ) )
     continue
-  elif not allDBResult[ 'OK' ]:
-    gLogger.error( 'Host %s: %s' % ( host, allDBResult[ 'Message' ] ) )
+  if not infoResult[ 'OK' ]:
+    gLogger.error( 'Host %s: %s' % ( host, infoResult[ 'Message' ] ) )
     continue
-  elif not availableDBResult[ 'OK' ]:
-    gLogger.error( 'Host %s: %s' % ( host, availableDBResult[ 'Message' ] ) )
+  if mySQLResult[ 'OK' ]:
+    if not allDBResult[ 'OK' ]:
+      gLogger.error( 'Host %s: %s' % ( host, allDBResult[ 'Message' ] ) )
+      continue
+    if not availableDBResult[ 'OK' ]:
+      gLogger.error( 'Host %s: %s' % ( host, availableDBResult[ 'Message' ] ) )
+      continue
+  else:
+    hasMySQL = False
+
+  setup = infoResult[ 'Value' ][ 'Setup' ]
+  if setup != mySetup:
     continue
 
   cpu = hostResult[ 'Value' ][ 'CPUModel' ].strip()
@@ -130,31 +149,30 @@ for host in finalSet:
   # Databases
   csClient = CSAPI()
   cfg = csClient.getCurrentCFG()[ 'Value' ]
-  setup = getSetup()
 
-  allDB = allDBResult[ 'Value' ]
-  availableDB = availableDBResult[ 'Value' ]
+  if hasMySQL:
+    allDB = allDBResult[ 'Value' ]
+    availableDB = availableDBResult[ 'Value' ]
 
-  for db in allDB:
-    # Check for DIRAC only databases
-    if db in availableDB.keys() and db != 'InstalledComponentsDB':
-      # Check for 'installed' databases
-      isSection = cfg.isSection \
-                    ( 'Systems/' + availableDB[ db ][ 'System' ] + '/' +
-                      cfg.getOption( 'DIRAC/Setups/' + setup + '/' +
-                      availableDB[ db ][ 'System' ] ) + '/Databases/' + db +
-                     '/' )
-      if isSection:
-        record = { 'Installation': {}, 'Component': {}, 'Host': {} }
-        record[ 'Component' ][ 'System' ] = availableDB[ db ][ 'System' ]
-        record[ 'Component' ][ 'Module' ] = db
-        record[ 'Component' ][ 'Type' ] = 'DB'
-        record[ 'Host' ][ 'HostName' ] = host
-        record[ 'Host' ][ 'CPU' ] = cpu
-        record[ 'Installation' ][ 'Instance' ] = db
-        record[ 'Installation' ][ 'InstallationTime' ] = datetime.utcnow()
-        records.append( record )
-
+    for db in allDB:
+      # Check for DIRAC only databases
+      if db in availableDB.keys() and db != 'InstalledComponentsDB':
+        # Check for 'installed' databases
+        isSection = cfg.isSection \
+                      ( 'Systems/' + availableDB[ db ][ 'System' ] + '/' +
+                        cfg.getOption( 'DIRAC/Setups/' + setup + '/' +
+                        availableDB[ db ][ 'System' ] ) + '/Databases/' + db +
+                       '/' )
+        if isSection:
+          record = { 'Installation': {}, 'Component': {}, 'Host': {} }
+          record[ 'Component' ][ 'System' ] = availableDB[ db ][ 'System' ]
+          record[ 'Component' ][ 'Module' ] = db
+          record[ 'Component' ][ 'Type' ] = 'DB'
+          record[ 'Host' ][ 'HostName' ] = host
+          record[ 'Host' ][ 'CPU' ] = cpu
+          record[ 'Installation' ][ 'Instance' ] = db
+          record[ 'Installation' ][ 'InstallationTime' ] = datetime.utcnow()
+          records.append( record )
 
 monitoringClient = ComponentMonitoringClient()
 
