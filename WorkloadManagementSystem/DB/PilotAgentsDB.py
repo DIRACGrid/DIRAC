@@ -51,16 +51,16 @@ class PilotAgentsDB( DB ):
 
     DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB' )
     self.lock = threading.Lock()
-    
+
     self.__initializeConnection('WorkloadManagement/PilotAgentsDB')
     resp = self.__initializeDB()
     if not resp['OK']:
       raise Exception("Couldn't create tables: " + resp['Message'])
-  
+
 ##########################################################################################
   def __initializeConnection(self, dbPath):
-      
-      self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' 
+
+      self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s'
                                    %( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
                                    pool_recycle = 3600, echo_pool = True )
       self.sqlalchemySession = scoped_session( sessionmaker( bind = self.engine ) )
@@ -68,9 +68,9 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def __initializeDB( self ):
-    
+
     tablesInDB = self.inspector.get_table_names()
-    
+
     if not 'PilotsUUIDtoID' in tablesInDB:
       try:
         PilotsUUIDtoID.__table__.create( self.engine )
@@ -79,7 +79,7 @@ class PilotAgentsDB( DB ):
     else:
       gLogger.debug("Table PilotsUUIDtoID exists")
       return S_OK()
-    
+
     if not 'PilotsLogging' in tablesInDB:
       try:
         PilotsLogging.__table__.create( self.engine )
@@ -90,33 +90,33 @@ class PilotAgentsDB( DB ):
 
 ##########################################################################################
   def addPilotsLogging(self, pilotUUID, status, minorStatus, timeStamp, source):
-    "Add new pilot logging entry"
-    
+    """Add new pilot logging entry"""
+
     session = self.sqlalchemySession()
     logging = PilotsLogging(pilotUUID, status, minorStatus, timeStamp, source)
-    
+
     try:
       session.add(logging)
     except Exception, e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to add PilotsLogging: " + e.message)
-    
+
     try:
       session.commit()
     except Exception, e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsLogging: " + e.message)
-    
+
     return S_OK()
 
 ##########################################################################################
   def getPilotsLogging(self, pilotID):
-    "Gel list of logging entries for pilot"
-    
+    """Get list of logging entries for pilot"""
+
     session = self.sqlalchemySession()
-    
+
     pilotLogging = []
     for pl in session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).order_by(PilotsLogging.timeStamp).all():
       entry = {}
@@ -127,36 +127,36 @@ class PilotAgentsDB( DB ):
       entry['TimeStamp'] = time.mktime(pl.timeStamp.timetuple())
       entry['Source'] = pl.source
       pilotLogging.append(entry)
-      
+
     return S_OK(pilotLogging)
 ##########################################################################################
   def deletePilotsLogging(self, pilotID):
-    "Delete all logging entries for pilot"
-    
+    """Delete all logging entries for pilot"""
+
     session = self.sqlalchemySession()
-    
+
     #session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete(synchronize_session = 'fetch')
     session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete()
-    
+
     try:
       session.commit()
     except Exception, e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit: " + e.message)
-    
+
     return S_OK()
 
 ##########################################################################################
   def addPilotsUUID(self, pilotUUID):
-    "Add new pilot UUID to UUID ID mapping, not knowing ID yet"
-    
+    """Add new pilot UUID to UUID ID mapping, not knowing ID yet"""
+
     session = self.sqlalchemySession()
-    
+
     resp = session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotUUID == pilotUUID).count()
     if resp > 0:
       return S_OK()
-    
+
     uuid2id = PilotsUUIDtoID(pilotUUID)
     try:
       session.add(uuid2id)
@@ -164,22 +164,22 @@ class PilotAgentsDB( DB ):
       session.rollback()
       session.close()
       return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
-    
+
     try:
       session.commit()
     except Exception, e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
-    
+
     return S_OK()
-  
+
 ##########################################################################################
   def setPilotsUUIDtoIDMapping(self, pilotUUID, pilotID):
-    "Assign pilot ID to UUID"
-    
+    """Assign pilot ID to UUID"""
+
     session = self.sqlalchemySession()
-    
+
     mapping = session.query(PilotsUUIDtoID).get(pilotUUID)
     mapping.pilotID = pilotID
     try:
@@ -188,15 +188,15 @@ class PilotAgentsDB( DB ):
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsUUIDtoID mapping: " + e.message)
-    
+
     return S_OK()
 
 ##########################################################################################
   def addPilotsUUIDtoIDmapping(self, pilotUUID, pilotID):
-    "Add new pilot UUID to ID mapping"
-    
+    """Add new pilot UUID to ID mapping"""
+
     session = self.sqlalchemySession()
-    
+
     uuid2id = PilotsUUIDtoID(pilotUUID, pilotID)
     try:
       session.add(uuid2id)
@@ -204,14 +204,14 @@ class PilotAgentsDB( DB ):
       session.rollback()
       session.close()
       return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
-    
+
     try:
       session.commit()
     except Exception, e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
-    
+
     return S_OK()
 
 ##########################################################################################
