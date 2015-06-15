@@ -53,11 +53,10 @@ class FTSJob( object ):
 
   # # missing source regexp patterns
   missingSourceErrors = [
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed" ),
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory" ),
-    re.compile( r"SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed" ),
-    re.compile( r"SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist" ),
-    re.compile( r"TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500"\
+    re.compile( r".*INVALID_PATH\] Failed" ),
+    re.compile( r".*INVALID_PATH\] No such file or directory" ),
+    re.compile( r".*INVALID_PATH\] The requested file either does not exist" ),
+    re.compile( r".*INVALID_PATH\] the server sent an error response: 500 500"\
                " Command failed. : open error: No such file or directory" ),
     re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
 
@@ -666,10 +665,10 @@ class FTSJob( object ):
         candidateFile.Error = reason
         candidateFile._duration = duration
 
-#       if candidateFile.Status == "Failed":
-#         for missingSource in self.missingSourceErrors:
-#           if missingSource.match( reason ):
-#             candidateFile.Error = "MissingSource"
+        if candidateFile.Status == "Failed":
+          for missingSource in self.missingSourceErrors:
+            if missingSource.match( reason ):
+              candidateFile.Error = "MissingSource"
 
     # # register successful files
     if self.Status in FTSJob.FINALSTATES:
