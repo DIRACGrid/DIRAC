@@ -14,7 +14,7 @@ FIX: Watchdog - review for style and pylint
 
 *Framework
 FIX: SystemAdministratorHandler - install WebAppDIRAC extension only in case
-     of We b Portal installation
+     of Web Portal installation
 CHANGE: dirac-populate-component-db - check the setup of the hosts to register 
         into the DB only installations from the same setup; check the MySQL installation
         before retrieving the database information      
