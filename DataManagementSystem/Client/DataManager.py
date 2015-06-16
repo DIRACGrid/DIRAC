@@ -505,7 +505,7 @@ class DataManager( object ):
     ###########################################################
     # Perform the registration here
     destinationSE = storageElement.getStorageElementName()['Value']
-    res = returnSingleResult( storageElement.getURL( lfn ) )
+    res = returnSingleResult( storageElement.getURL( lfn, protocol = self.registrationProtocol ) )
     if not res['OK']:
       errStr = "putAndRegister: Failed to generate destination PFN."
       self.log.debug( errStr, res['Message'] )
