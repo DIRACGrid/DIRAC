@@ -167,7 +167,7 @@ class Request( object ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
         rStatus = "Done"
-        self._Error = ''
+        self.Error = ''
     self.Status = rStatus
 
   def getWaiting( self ):
