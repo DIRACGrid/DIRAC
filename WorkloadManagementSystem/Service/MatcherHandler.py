@@ -1,53 +1,36 @@
-########################################################################
-# $Id$
-########################################################################
-"""
-Matcher class. It matches Agent Site capabilities to job requirements.
-It also provides an XMLRPC interface to the Matcher
+""" Matcher class. It matches Agent Site capabilities to job requirements.
 
+    It also provides an XMLRPC interface to the Matcher
 """
 
 __RCSID__ = "$Id$"
 
-import time
-from   types import StringType, DictType, StringTypes
-import threading
+from types import StringType, DictType, StringTypes
+
+from DIRAC                                             import gLogger, S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers          import Registry, Operations
-from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
-from DIRAC                                             import gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB   import PilotAgentsDB
-from DIRAC.FrameworkSystem.Client.MonitoringClient     import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
-from DIRAC.Core.Security                               import Properties
 from DIRAC.Core.Utilities.DictCache                    import DictCache
+from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 
-DEBUG = 0
+from DIRAC.FrameworkSystem.Client.MonitoringClient     import gMonitor
 
-gMutex = threading.Semaphore()
-gTaskQueues = {}
+from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+
 gJobDB = False
-gJobLoggingDB = False
 gTaskQueueDB = False
-gPilotAgentsDB = False
 
 def initializeMatcherHandler( serviceInfo ):
   """  Matcher Service initialization
   """
 
   global gJobDB
-  global gJobLoggingDB
   global gTaskQueueDB
-  global gPilotAgentsDB
 
   gJobDB = JobDB()
-  gJobLoggingDB = JobLoggingDB()
   gTaskQueueDB = TaskQueueDB()
-  gPilotAgentsDB = PilotAgentsDB()
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
@@ -74,7 +57,7 @@ def sendNumTaskQueues():
     gLogger.error( "Cannot get the number of task queues", result[ 'Message' ] )
 
 
-class Limiter:
+class Limiter( object ):
 
   __csDictCache = DictCache()
   __condCache = DictCache()
@@ -292,6 +275,8 @@ class Limiter:
 #
 #####
 
+
+
 class MatcherHandler( RequestHandler ):
 
   __opsCache = {}
@@ -309,229 +294,6 @@ class MatcherHandler( RequestHandler ):
     if cKey not in MatcherHandler.__opsCache:
       MatcherHandler.__opsCache[ cKey ] = Operations.Operations( vo = vo, setup = setup )
     return MatcherHandler.__opsCache[ cKey ]
-
-  def __processResourceDescription( self, resourceDescription ):
-    # Check and form the resource description dictionary
-    resourceDict = {}
-    if type( resourceDescription ) in StringTypes:
-      classAdAgent = ClassAd( resourceDescription )
-      if not classAdAgent.isOK():
-        return S_ERROR( 'Illegal Resource JDL' )
-      gLogger.verbose( classAdAgent.asJDL() )
-
-      for name in gTaskQueueDB.getSingleValueTQDefFields():
-        if classAdAgent.lookupAttribute( name ):
-          if name == 'CPUTime':
-            resourceDict[name] = classAdAgent.getAttributeInt( name )
-          else:
-            resourceDict[name] = classAdAgent.getAttributeString( name )
-
-      for name in gTaskQueueDB.getMultiValueMatchFields():
-        if classAdAgent.lookupAttribute( name ):
-          if name == 'SubmitPool':
-            resourceDict[name] = classAdAgent.getListFromExpression( name )      
-          else:
-            resourceDict[name] = classAdAgent.getAttributeString( name )
-
-      # Check if a JobID is requested
-      if classAdAgent.lookupAttribute( 'JobID' ):
-        resourceDict['JobID'] = classAdAgent.getAttributeInt( 'JobID' )
-
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
-        if classAdAgent.lookupAttribute( k ):
-          resourceDict[ k ] = classAdAgent.getAttributeString( k )
-          
-    else:
-      for name in gTaskQueueDB.getSingleValueTQDefFields():
-        if resourceDescription.has_key( name ):
-          resourceDict[name] = resourceDescription[name]
-
-      for name in gTaskQueueDB.getMultiValueMatchFields():
-        if resourceDescription.has_key( name ):
-          resourceDict[name] = resourceDescription[name]
-
-      if resourceDescription.has_key( 'JobID' ):
-        resourceDict['JobID'] = resourceDescription['JobID']
-
-      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
-                 'PilotReference', 'PilotInfoReportedFlag', 'PilotBenchmark' ):
-        if k in resourceDescription:
-          resourceDict[ k ] = resourceDescription[ k ]
-
-    return resourceDict
-
-  def selectJob( self, resourceDescription ):
-    """ Main job selection function to find the highest priority job
-        matching the resource capacity
-    """
-
-    startTime = time.time()
-    resourceDict = self.__processResourceDescription( resourceDescription )
-
-    credDict = self.getRemoteCredentials()
-    #Check credentials if not generic pilot
-    if Properties.GENERIC_PILOT in credDict[ 'properties' ]:
-      #You can only match groups in the same VO
-      vo = Registry.getVOForGroup( credDict[ 'group' ] )
-      result = Registry.getGroupsForVO( vo )
-      if result[ 'OK' ]:
-        resourceDict[ 'OwnerGroup' ] = result[ 'Value' ]
-    else:
-      #If it's a private pilot, the DN has to be the same
-      if Properties.PILOT in credDict[ 'properties' ]:
-        gLogger.notice( "Setting the resource DN to the credentials DN" )
-        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-      #If it's a job sharing. The group has to be the same and just check that the DN (if any)
-      # belongs to the same group
-      elif Properties.JOB_SHARING in credDict[ 'properties' ]:
-        resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
-        gLogger.notice( "Setting the resource group to the credentials group" )
-        if 'OwnerDN'  in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
-          ownerDN = resourceDict[ 'OwnerDN' ]
-          result = Registry.getGroupsForDN( resourceDict[ 'OwnerDN' ] )
-          if not result[ 'OK' ] or credDict[ 'group' ] not in result[ 'Value' ]:
-            #DN is not in the same group! bad boy.
-            gLogger.notice( "You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN )
-            resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-      #Nothing special, group and DN have to be the same
-      else:
-        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-        resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
-
-    # Check the pilot DIRAC version
-    if self.__opsHelper.getValue( "Pilot/CheckVersion", True ):
-      if 'ReleaseVersion' not in resourceDict:
-        if not 'DIRACVersion' in resourceDict:
-          return S_ERROR( 'Version check requested and not provided by Pilot' )
-        else:
-          pilotVersion = resourceDict['DIRACVersion']
-      else:
-        pilotVersion = resourceDict['ReleaseVersion']
-
-      validVersions = self.__opsHelper.getValue( "Pilot/Version", [] )
-      if validVersions and pilotVersion not in validVersions:
-        return S_ERROR( 'Pilot version does not match the production version %s not in ( %s )' % \
-                       ( pilotVersion, ",".join( validVersions ) ) )
-      #Check project if requested
-      validProject = self.__opsHelper.getValue( "Pilot/Project", "" )
-      if validProject:
-        if 'ReleaseProject' not in resourceDict:
-          return S_ERROR( "Version check requested but expected project %s not received" % validProject )
-        if resourceDict[ 'ReleaseProject' ] != validProject:
-          return S_ERROR( "Version check requested but expected project %s != received %s" % ( validProject,
-                                                                                               resourceDict[ 'ReleaseProject' ] ) )
-
-    # Update pilot information
-    pilotInfoReported = resourceDict.get( 'PilotInfoReportedFlag', False )
-    pilotReference = resourceDict.get( 'PilotReference', '' )
-    if pilotReference and not pilotInfoReported:
-      gridCE = resourceDict.get( 'GridCE', 'Unknown' )
-      site = resourceDict.get( 'Site', 'Unknown' )
-      benchmark = benchmark = resourceDict.get( 'PilotBenchmark', 0.0 )
-      gLogger.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,gridCE,site,benchmark) )
-      result = gPilotAgentsDB.setPilotStatus( pilotReference, status = 'Running',
-                                              gridSite = site,
-                                              destination = gridCE,
-                                              benchmark = benchmark )
-      if result['OK']:
-        pilotInfoReported = True                                        
-    
-    #Check the site mask
-    if not 'Site' in resourceDict:
-      return S_ERROR( 'Missing Site Name in Resource JDL' )
-
-    # Get common site mask and check the agent site
-    result = gJobDB.getSiteMask( siteState = 'Active' )
-    if not result['OK']:
-      return S_ERROR( 'Internal error: can not get site mask' )
-    maskList = result['Value']
-
-    siteName = resourceDict['Site']
-    if siteName not in maskList:
-      
-      # if 'GridCE' not in resourceDict:
-      #  return S_ERROR( 'Site not in mask and GridCE not specified' )
-      # Even if the site is banned, if it defines a CE, it must be able to check it
-      # del resourceDict['Site']
-      
-      # Banned site can only take Test jobs 
-      resourceDict['JobType'] = 'Test'
-
-    resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
-
-    gLogger.verbose( "Resource description:" )
-    for key in resourceDict:
-      gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
-
-    negativeCond = self.__limiter.getNegativeCondForSite( siteName )
-    result = gTaskQueueDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
-
-    if DEBUG:
-      print result
-
-    if not result['OK']:
-      return result
-    result = result['Value']
-    if not result['matchFound']:
-      return S_ERROR( 'No match found' )
-
-    jobID = result['jobId']
-    resAtt = gJobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup', 'Status'] )
-    if not resAtt['OK']:
-      return S_ERROR( 'Could not retrieve job attributes' )
-    if not resAtt['Value']:
-      return S_ERROR( 'No attributes returned for job' )
-    if not resAtt['Value']['Status'] == 'Waiting':
-      gLogger.error( 'Job matched by the TQ is not in Waiting state', str( jobID ) )
-      result = gTaskQueueDB.deleteJob( jobID )
-      if not result[ 'OK' ]:
-        return result
-      return S_ERROR( "Job %s is not in Waiting state" % str( jobID ) )
-
-    attNames = ['Status','MinorStatus','ApplicationStatus','Site']
-    attValues = ['Matched','Assigned','Unknown',siteName]
-    result = gJobDB.setJobAttributes( jobID, attNames, attValues )
-    # result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
-    result = gJobLoggingDB.addLoggingRecord( jobID,
-                                             status = 'Matched',
-                                             minor = 'Assigned',
-                                             source = 'Matcher' )
-
-    result = gJobDB.getJobJDL( jobID )
-    if not result['OK']:
-      return S_ERROR( 'Failed to get the job JDL' )
-
-    resultDict = {}
-    resultDict['JDL'] = result['Value']
-    resultDict['JobID'] = jobID
-
-    matchTime = time.time() - startTime
-    gLogger.info( "Match time: [%s]" % str( matchTime ) )
-    gMonitor.addMark( "matchTime", matchTime )
-
-    # Get some extra stuff into the response returned
-    resOpt = gJobDB.getJobOptParameters( jobID )
-    if resOpt['OK']:
-      for key, value in resOpt['Value'].items():
-        resultDict[key] = value
-    resAtt = gJobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup'] )
-    if not resAtt['OK']:
-      return S_ERROR( 'Could not retrieve job attributes' )
-    if not resAtt['Value']:
-      return S_ERROR( 'No attributes returned for job' )
-
-    if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
-      self.__limiter.updateDelayCounters( siteName, jobID )
-
-    # Report pilot-job association
-    if pilotReference:
-      result = gPilotAgentsDB.setCurrentJobID( pilotReference, jobID )
-      result = gPilotAgentsDB.setJobForPilot( jobID, pilotReference, updateStatus=False )
-
-    resultDict['DN'] = resAtt['Value']['OwnerDN']
-    resultDict['Group'] = resAtt['Value']['OwnerGroup']
-    resultDict['PilotInfoReportedFlag'] = pilotInfoReported
-    return S_OK( resultDict )
 
 ##############################################################################
   types_requestJob = [ [StringType, DictType] ]
