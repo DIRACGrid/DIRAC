@@ -87,6 +87,9 @@ else:
     if not result['OK']:
       print "ERROR:", result['Message']
       DIRACexit( 1 )
-    else:
-      print "Successfully completed the installation of executor %s in %s system" % ( executor, system )
-      DIRACexit()
+    result = InstallTools.monitorInstallation( 'executor', system, executor, module )
+    if not result['OK']:
+      print "ERROR:", result['Message']
+      DIRACexit( 1 )
+    print "Successfully completed the installation of executor %s in %s system" % ( executor, system )
+    DIRACexit()

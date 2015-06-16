@@ -1550,6 +1550,7 @@ def setupSite( scriptCfg, cfg = None ):
       centralCfg = _getCentralCfg( localCfg )
     _addCfgToLocalCS( centralCfg )
     setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
+    monitorInstallation( 'service', 'Configuration', 'Server' )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
 
     while ['Configuration', 'Server'] in setupServices:
@@ -1719,7 +1720,7 @@ exec svlogd .
 
   os.chmod( logRunFile, gDefaultPerms )
 
-def monitorInstallation( componentType, system, component, module = None ):
+def monitorInstallation( componentType, system, component, module = None, cpu = None, hostname = None ):
   """
   Register the installation of a component in the ComponentMonitoringDB
   """
@@ -1728,13 +1729,15 @@ def monitorInstallation( componentType, system, component, module = None ):
   if not module:
     module = component
 
-  cpu = 'Not available'
-  for line in open( '/proc/cpuinfo' ):
-    if line.startswith( 'model name' ):
-      cpu = line.split( ':' )[1][ 0 : 64 ]
-      cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
+  if not cpu:
+    cpu = 'Not available'
+    for line in open( '/proc/cpuinfo' ):
+      if line.startswith( 'model name' ):
+        cpu = line.split( ':' )[1][ 0 : 64 ]
+        cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
 
-  hostname = socket.getfqdn()
+  if not hostname:
+    hostname = socket.getfqdn()
   instance = component[ 0 : 32 ]
 
   result = monitoringClient.installationExists \
@@ -1762,19 +1765,21 @@ def monitorInstallation( componentType, system, component, module = None ):
                               True )
   return result
 
-def monitorUninstallation( system, component ):
+def monitorUninstallation( system, component, cpu = None, hostname = None ):
   """
   Register the uninstallation of a component in the ComponentMonitoringDB
   """
   global monitoringClient
 
-  cpu = 'Not available'
-  for line in open( '/proc/cpuinfo' ):
-    if line.startswith( 'model name' ):
-      cpu = line.split( ':' )[1][0:64]
-      cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
+  if not cpu:
+    cpu = 'Not available'
+    for line in open( '/proc/cpuinfo' ):
+      if line.startswith( 'model name' ):
+        cpu = line.split( ':' )[1][0:64]
+        cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
 
-  hostname = socket.getfqdn()
+  if not hostname:
+    hostname = socket.getfqdn()
   instance = component[ 0 : 32 ]
 
   result = monitoringClient.updateInstallations \
@@ -1933,20 +1938,6 @@ def setupComponent( componentType, system, component, extensions,
   resDict['ComponentType'] = componentType
   resDict['RunitStatus'] = result['Value']['%s_%s' % ( system, component )]['RunitStatus']
 
-  # Create entry in the static monitoring DB
-  if component == 'ComponentMonitoring':
-    result = monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
-    if not result[ 'OK' ]:
-      gLogger.warn( 'Failed to enable InstalledComponentsDB monitoring' )
-
-  if monitorFlag:
-    result = monitorInstallation( componentType,
-                                  system,
-                                  component,
-                                  componentModule )
-    if not result[ 'OK' ]:
-      gLogger.warn( 'Failed to enable %s monitoring' % component )
-
   return S_OK( resDict )
 
 def unsetupComponent( system, component ):
@@ -1980,10 +1971,6 @@ def uninstallComponent( system, component, removeLogs ):
 
   result = removeComponentOptionsFromCS( system, component )
   if not result [ 'OK' ]:
-    return result
-
-  result = monitorUninstallation( system, component )
-  if not result[ 'OK' ]:
     return result
 
   return S_OK()
@@ -2613,13 +2600,6 @@ def installDatabase( dbName, monitorFlag = True ):
       DIRAC.exit( -1 )
     return S_ERROR( error )
 
-  # If everything went well, add the information to the ComponentMonitoring DB
-  # Unless we are installing the monitoringDB
-  if dbName != 'InstalledComponentsDB' and monitorFlag:
-    result = monitorInstallation( 'DB', dbSystem, dbName )
-    if not result[ 'OK' ]:
-      gLogger.warn( 'Failed to enable %s monitoring' % dbName )
-
   return S_OK( dbFile.split( '/' )[-4:-2] )
 
 def uninstallDatabase( gConfig, dbName ):
@@ -2631,10 +2611,6 @@ def uninstallDatabase( gConfig, dbName ):
     return result
 
   dbSystem = result[ 'Value' ][ dbName ][ 'System' ]
-
-  result = monitorUninstallation( dbSystem, dbName )
-  if not result[ 'OK' ]:
-    return result
 
   result = removeDatabaseOptionsFromCS( gConfig, dbSystem, dbName )
   if not result [ 'OK' ]:
@@ -2772,6 +2748,9 @@ def configureLocalDirector( ceNameList = '' ):
   if ceNameList:
     result = setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
     if not result['OK']:
+      return result
+    result = monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
+    if not result[ 'OK' ]:
       return result
     # Now write a local Configuration for the Director
 

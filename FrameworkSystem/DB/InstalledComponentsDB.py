@@ -12,7 +12,8 @@ from sqlalchemy import MetaData, \
                         Integer, \
                         String, \
                         DateTime, \
-                        create_engine
+                        create_engine, \
+                        text
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, \
@@ -347,7 +348,7 @@ class InstalledComponentsDB( object ):
       else:
         sql = '%s %s %s' % ( actualKey, comparison, matchFields[ key ] )
 
-      filteredTemp = filtered.filter( sql )
+      filteredTemp = filtered.filter( text( sql ) )
       try:
         session.execute( filteredTemp )
         session.commit()
@@ -579,9 +580,9 @@ class InstalledComponentsDB( object ):
 
     try:
       query = session.query( Component )\
-                          .filter( Component.system == component.system )\
-                          .filter( Component.module == component.module )\
-                          .filter( Component.cType == component.cType )
+                          .filter( text( Component.system == component.system ) )\
+                          .filter( text( Component.module == component.module ) )\
+                          .filter( text( Component.cType == component.cType ) )
     except Exception, e:
       session.rollback()
       session.close()
@@ -762,8 +763,8 @@ class InstalledComponentsDB( object ):
 
     try:
       query = session.query( Host )\
-                          .filter( Host.hostName == host.hostName )\
-                          .filter( Host.cpu == host.cpu )
+                          .filter( text( Host.hostName == host.hostName ) )\
+                          .filter( text( Host.cpu == host.cpu ) )
     except Exception, e:
       session.rollback()
       session.close()

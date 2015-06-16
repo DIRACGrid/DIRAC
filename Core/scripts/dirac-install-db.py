@@ -36,3 +36,8 @@ for db in args:
   else:
     extension, system = result['Value']
     InstallTools.addDatabaseOptionsToCS( gConfig, system, db, overwrite = True )
+
+    if db != 'InstalledComponentsDB':
+      result = InstallTools.monitorInstallation( 'DB', system, db )
+      if not result[ 'OK' ]:
+        print "ERROR: failed to register installation in database: %s" % result[ 'Message' ]

@@ -88,6 +88,14 @@ else:
     if not result['OK']:
       print "ERROR:", result['Message']
       DIRACexit( 1 )
-    else:
-      print "Successfully completed the installation of service %s in %s system" % ( service, system )
-      DIRACexit()
+    if service == 'ComponentMonitoring':
+        result = InstallTools.monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
+        if not result['OK']:
+          print "ERROR:", result['Message']
+          DIRACexit( 1 )
+    result = InstallTools.monitorInstallation( 'service', system, service, module )
+    if not result['OK']:
+      print "ERROR:", result['Message']
+      DIRACexit( 1 )
+    print "Successfully completed the installation of service %s in %s system" % ( service, system )
+    DIRACexit()

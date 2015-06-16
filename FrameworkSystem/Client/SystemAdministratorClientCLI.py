@@ -2,6 +2,7 @@
 ########################################################################
 # $HeadURL$
 """ File Catalog Client Command Line Interface. """
+from mock import self
 
 __RCSID__ = "$Id$"
 
@@ -523,6 +524,22 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       extension, system = result['Value']
+
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+
+      result = InstallTools.monitorInstallation( 'DB', system.replace( 'System', '' ), database, cpu = cpu, hostname = hostname )
+      if not result['OK']:
+        self.__errMsg( result['Message'] )
+        return
       # result = client.addDatabaseOptionsToCS( system, database )
       InstallTools.mysqlHost = self.host
       result = client.getInfo()
@@ -590,6 +607,24 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       compType = result['Value']['ComponentType']
       runit = result['Value']['RunitStatus']
       gLogger.notice( "%s %s_%s is installed, runit status: %s" % ( compType, system, component, runit ) )
+
+      # And register it in the database
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      if component == 'ComponentMonitoring':
+        result = InstallTools.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
+        if not result['OK']:
+          self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+          return
+      result = InstallTools.monitorInstallation( option, system, component, module, cpu = cpu, hostname = hostname )
+      if not result['OK']:
+        self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+        return
     else:
       gLogger.notice( "Unknown option:", option )
 
@@ -617,6 +652,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result[ 'Message' ] )
       else:
         gLogger.notice( "Successfully uninstalled %s" % ( component ) )
+
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      result = client.getAvailableDatabases()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      system = result[ 'Value' ][ component ][ 'System' ]
+      result = InstallTools.monitorUninstallation( system , component, hostname = hostname, cpu = cpu )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
     else:
       if option == '-f':
         force = True
@@ -659,6 +711,17 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result[ 'Message' ] )
       else:
         gLogger.notice( "Successfully uninstalled %s/%s" % ( system, component ) )
+
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      result = InstallTools.monitorUninstallation( system, component, hostname = hostname, cpu = cpu )
+      if not result[ 'OK' ]:
+        return result
 
   def do_start( self, args ):
     """ Start services or agents or database server
