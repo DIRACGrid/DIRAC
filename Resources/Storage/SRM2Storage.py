@@ -42,7 +42,7 @@ class SRM2Storage( StorageBase ):
     """
     StorageBase.__init__( self, storageName, parameters )
     self.spaceToken = self.protocolParameters['SpaceToken']
-    
+
     self.log = gLogger.getSubLogger( "SRM2Storage", True )
 
     self.isok = True
@@ -69,7 +69,7 @@ class SRM2Storage( StorageBase ):
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
+    checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '' )
     # enum gfal_cksm_type, all in lcg_util
     # 	GFAL_CKSM_NONE = 0,
     # 	GFAL_CKSM_CRC32,
@@ -77,18 +77,15 @@ class SRM2Storage( StorageBase ):
     # 	GFAL_CKSM_MD5,
     # 	GFAL_CKSM_SHA1
     # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2,
+    self.checksumTypes = { "CRC32" : 1, "ADLER32" : 2,
                            "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
+
+    self.checksumType = self.checksumTypes.get( checksumType.upper(), 0 )
     if self.checksumType:
-      if str( self.checksumType ).upper() in self.checksumTypes:
-        gLogger.debug( "SRM2Storage: will use %s checksum check" % self.checksumType )
-        self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
-      else:
-        gLogger.warn( "SRM2Storage: unknown checksum type %s, checksum check disabled" )
-        # # GFAL_CKSM_NONE
-        self.checksumType = 0
+      gLogger.debug( "SRM2Storage: will use %s checksum check" % self.checksumType )
+    elif checksumType:
+      gLogger.warn( "SRM2Storage: unknown checksum, check disabled", checksumType )
     else:
-      self.checksumType = 0
       self.log.debug( "SRM2Storage: will use no checksum" )
 
     # setting some variables for use with lcg_utils
@@ -327,10 +324,13 @@ class SRM2Storage( StorageBase ):
           successful[url] = url
         else:
           failed[url] = 'getTransportURL: Failed to obtain turls.'
-      
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
+    readAccess = self.se.getStatus().get( 'Value', {} ).get( 'Read' )
+    if not readAccess or readAccess not in ( 'Active', 'Degraded' ):
+      return S_ERROR( "SRM2Storage.getTransportURL: Read access not currently permitted." )
 
+    # Here we must go out to the SRM service
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )
     if not resDict["OK"]:

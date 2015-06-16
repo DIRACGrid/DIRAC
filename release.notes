@@ -1,3 +1,25 @@
+[v6r13p2]
+
+*Framework
+FIX: SystemAdministratorHandler - install WebAppDIRAC extension only in case
+     of We b Portal installation
+CHANGE: dirac-populate-component-db - check the setup of the hosts to register 
+        into the DB only installations from the same setup; check the MySQL installation
+        before retrieving the database information      
+
+*DMS
+FIX: FTSAgent - fix in parsing the server result
+FIX: FTSFile - added Waiting status
+FIX: FTSJob - updated regexps for the "missing source" reports from the server;
+     more logging message 
+
+*Resources
+FIX: SRM2Storage - fix in treating the checksum type 
+FIX: StorageElement - removed getTransportURL from read methods
+
+*RMS
+FIX: Request - typo in the optimize() method
+
 [v6r13p1]
 
 *Framework
