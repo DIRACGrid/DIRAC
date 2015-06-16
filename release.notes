@@ -2,7 +2,7 @@
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
-     list of extensions with proper namse
+     list of extensions with proper names 
 NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
 NEW: LocalConfiguration - option to print out license information      
