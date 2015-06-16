@@ -536,10 +536,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result[ 'Message' ] )
         return
 
-      result = InstallTools.monitorInstallation( 'DB', system.replace( 'System', '' ), database, cpu = cpu, hostname = hostname )
-      if not result['OK']:
-        self.__errMsg( result['Message'] )
-        return
+      if database != 'InstalledComponentsDB':
+        result = InstallTools.monitorInstallation( 'DB', system.replace( 'System', '' ), database, cpu = cpu, hostname = hostname )
+        if not result['OK']:
+          self.__errMsg( result['Message'] )
+          return
       # result = client.addDatabaseOptionsToCS( system, database )
       InstallTools.mysqlHost = self.host
       result = client.getInfo()
