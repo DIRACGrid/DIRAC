@@ -1,3 +1,9 @@
+[v6r13p3]
+
+*DMS
+FIX: DataManager - in putAndRegister() specify explicitly registration protocol
+     to ensure the file URL available right after the transfer
+
 [v6r13p2]
 
 *Framework
