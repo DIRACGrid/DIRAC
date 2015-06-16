@@ -3,6 +3,9 @@
 *DMS
 FIX: DataManager - in putAndRegister() specify explicitly registration protocol
      to ensure the file URL available right after the transfer
+     
+*Resources
+FIX: SRM2Storage - use the proper se.getStatus() interface ( not the one of the RSS )     
 
 [v6r13p2]
 
