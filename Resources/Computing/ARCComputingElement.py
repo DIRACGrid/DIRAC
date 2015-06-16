@@ -14,14 +14,25 @@ import stat
 import tempfile
 from types import StringTypes
 
+import arc # Has to work if this module is called
 from DIRAC                                               import S_OK, S_ERROR
-
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
+from DIRAC.ConfigurationSystem.Client.Helpers.Path       import cfgPath
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import theARCJob
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Core.Utilities.DictCache                      import DictCache
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 
-import arc # Has to work if this module is called
+import sys
+logstdout = arc.LogStream(sys.stdout)
+logstdout.setFormat(arc.ShortFormat)
+arc.Logger_getRootLogger().addDestination(logstdout)
+arc.Logger_getRootLogger().setThreshold(arc.VERBOSE)
+
 CE_NAME = 'ARC'
-MANDATORY_PARAMETERS = [ 'Queue' ]
+MANDATORY_PARAMETERS = [ 'Queue' ] #Probably not mandatory for ARC CEs
 
 class ARCComputingElement( ComputingElement ):
 
@@ -44,19 +55,19 @@ class ARCComputingElement( ComputingElement ):
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
     # Used in getJobStatus
-    self.mapStates = { 'ACCEPTED' : 'Scheduled',
-                       'PREPARING' : 'Scheduled',
-                       'SUBMITTING' : 'Scheduled',
-                       'QUEUING' : 'Scheduled',
-                       'HOLD' : 'Scheduled',
-                       'UNDEFINED' : 'Unknown',
-                       'RUNNING' : 'Running',
-                       'FINISHING' : 'Running',
-                       'DELETED' : 'Killed',
-                       'KILLED' : 'Killed',
-                       'FAILED' : 'Failed',
-                       'FINISHED' : 'Done',
-                       'OTHER' : 'Done'
+    self.mapStates = { 'Accepted'   : 'Scheduled',
+                       'Preparing'  : 'Scheduled',
+                       'Submitting' : 'Scheduled',
+                       'Queuing'    : 'Scheduled',
+                       'Hold'       : 'Scheduled',
+                       'Undefined'  : 'Unknown',
+                       'Running'    : 'Running',
+                       'Finishing'  : 'Running',
+                       'Deleted' : 'Killed',
+                       'Killed'  : 'Killed',
+                       'Failed'  : 'Failed',
+                       'Finished': 'Done',
+                       'Other'   : 'Done'
       }
 
   #############################################################################
@@ -66,6 +77,22 @@ class ARCComputingElement( ComputingElement ):
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
 
+  def _doTheProxyBit( self ):
+    """ Set the environment variable X509_USER_PROXY and let the ARC CE pick it up from there.
+    """
+    result = findGenericPilotCredentials( vo = self.ceParameters['VO'] )
+    if not result[ 'OK' ]:
+      os.environ['X509_USER_PROXY'] = ''
+      return
+    self.pilotDN, self.pilotGroup = result[ 'Value' ]
+    self.pilotProxy = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup )['Value']
+    try :
+      ret = gProxyManager.dumpProxyToFile( self.pilotProxy )
+      os.environ['X509_USER_PROXY'] = ret['Value']
+    except AttributeError :
+      ret = getProxyInfo()
+      os.environ['X509_USER_PROXY'] = ret['Value']['path']
+    
   def __writeXRSL( self, executableFile ):
     """ Create the JDL for submission
     """
@@ -73,7 +100,7 @@ class ARCComputingElement( ComputingElement ):
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, name = tempfile.mkstemp( suffix = '.xrsl', prefix = 'ARC_', dir = workingDirectory )
     diracStamp = os.path.basename( name ).replace( '.xrsl', '' ).replace( 'ARC_', '' )
-    xrslFile = os.fdopen( fd, 'w' )
+    #xrslFile = os.fdopen( fd, 'w' )
 
     xrsl = """
 &(executable="%(executable)s")
@@ -87,9 +114,10 @@ class ARCComputingElement( ComputingElement ):
             'diracStamp':diracStamp
            }
 
-    xrslFile.write( xrsl )
-    xrslFile.close()
-    return name, diracStamp
+    #xrslFile.write( xrsl.strip() )
+    #xrslFile.close()
+    #return name, diracStamp
+    return xrsl, diracStamp
 
   def _reset( self ):
     self.queue = self.ceParameters['Queue']
@@ -101,6 +129,7 @@ class ARCComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
+    self._doTheProxyBit()
     self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
@@ -108,43 +137,44 @@ class ARCComputingElement( ComputingElement ):
     batchIDList = []
     stampDict = {}
 
-    # Do not need to loop over these ... the pilot proxy is the same for everyone
     usercfg = arc.UserConfig()
-    usercfg.CredentialString(proxy)
-    endpoint = arc.Endpoint(cfgPath("gsiftp://", self.ceHost, ":2811/jobs"), arc.Endpoint.JOBSUBMIT,
+    endpoint = arc.Endpoint( self.ceHost + ":2811/jobs", arc.Endpoint.JOBSUBMIT,
                             "org.nordugrid.gridftpjob")
 
     i = 0
-    while i < numberOfJobs:
-      i += 1
+    for __i in range(numberOfJobs):
+#    while i < numberOfJobs:
+#      i += 1
       # The basic job description
       job = arc.Job()
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
-      xrslName, diracStamp = self.__writeXRSL( executableFile )
-      if not arc.JobDescription_Parse(xrslName, jobdescs):
-        logger.msg(arc.ERROR, "Invalid job description")
-        sys.exit(1) 
+      # xrslName, diracStamp = self.__writeXRSL( executableFile )
+      xrslString, diracStamp = self.__writeXRSL( executableFile )
+      # if not arc.JobDescription_ParseFromFile(xrslName, jobdescs):
+      if not arc.JobDescription_Parse(xrslString, jobdescs):
+        self.log.error("Invalid job description")
+        break
       # Submit the job
       jobs = arc.JobList() # filled by the submit process
       submitter = arc.Submitter(usercfg)
       result = submitter.Submit(endpoint, jobdescs, jobs)
       # Remove clutter
-      os.unlink( xrslName )
+      # os.unlink( xrslName )
       # Save info or else ...
-      if ( result == arc.SubmissionStatus.NONE ) :
+      if ( result == arc.SubmissionStatus.NONE ):
         # Job successfully submitted
         pilotJobReference = jobs[0].JobID
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
-      else :
+      else:
         break
 
     if batchIDList:
       result = S_OK( batchIDList )
       result['PilotStampDict'] = stampDict
     else:
-      result = S_ERROR('No pilot references obtained from the glite job submission')  
+      result = S_ERROR('No pilot references obtained from the ARC job submission')
     return result
 
   def killJob( self, jobIDList ):
@@ -176,10 +206,10 @@ class ARCComputingElement( ComputingElement ):
     """ Method to return information on running and pending jobs.
     """
 
+    self._doTheProxyBit()
     usercfg = arc.UserConfig()
-    usercfg.CredentialString(self.proxy)
 
-    endpoints = [arc.Endpoint( cfgPath("ldap://", self.ceHost, "/MDS-Vo-name=local,o=grid"),
+    endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
                                arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
     retriever = arc.ComputingServiceRetriever(usercfg, endpoints)
     retriever.wait()
@@ -196,6 +226,7 @@ class ARCComputingElement( ComputingElement ):
     """ Get the status information for the given list of jobs
     """
 
+    self._doTheProxyBit()
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, name = tempfile.mkstemp( suffix = '.list', prefix = 'StatJobs_', dir = workingDirectory )
     jobListFile = os.fdopen( fd, 'w' )
@@ -214,25 +245,21 @@ class ARCComputingElement( ComputingElement ):
       jobList.append( job )
       jobListFile.write( job+'\n' )  
 
-    usercfg = arc.UserConfig()
-    usercfg.CredentialString(self.proxy)
     resultDict = {}
-    for job in jobList:
-      job = arc.Job()
-      job.JobID = job
-      job.JobStatusURL = arc.URL(cfgPath("ldap://", self.ceHost, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
-      job.JobManagementURL = arc.URL(cfgPath("gsiftp://", self.ceHost, ":2811/jobs/"))
-      job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
-      job.PrepareHandler(usercfg)
+    for jobID in jobList:
+      job = theARCJob(self.ceHost, jobID)
       job.Update()
-      arcState = job.State.GetSpecificState()
-      resultDict[job] = self.mapStates[arcState]
+      arcState = job.State.GetGeneralState()
+      if ( arcState ): # Meaning arcState is filled. Is this good python?
+        resultDict[jobID] = self.mapStates[arcState]
+      else:
+        resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
-      if (self.mapStates[arcState] == "Done") :
-        exitCode = job.ExitCode
-        if ( exitCode != 0 ) :
-          resultDict[job] == "Failed"
-      
+      if (resultDict[jobID] == "Done"):
+        exitCode = jobID.ExitCode
+        if ( exitCode != 0 ):
+          resultDict[jobID] == "Failed"
+
     if not resultDict:
       return  S_ERROR('No job statuses returned')
 
@@ -243,6 +270,7 @@ class ARCComputingElement( ComputingElement ):
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
     """
+    self._doTheProxyBit()
     if jobID.find( ':::' ) != -1:
       pilotRef, stamp = jobID.split( ':::' )
     else:
@@ -251,39 +279,28 @@ class ARCComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    usercfg = arc.UserConfig()
-    usercfg.CredentialString(self.proxy)
-    job = arc.Job()
-    job.jobID = os.path.basename(pilotRef)
-    job.JobStatusURL = arc.URL(cfgPath("ldap://", self.ceHost, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
-    job.JobManagementURL = arc.URL(cfgPath("gsiftp://", self.ceHost, ":2811/jobs/"))
-    job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+    job = theARCJob(self.ceHost, pilotRef)
 
-    # arcID = os.path.basename(pilotRef)
-    if "WorkingDirectory" in self.ceParameters:    
+    arcID = os.path.basename(pilotRef)
+    if "WorkingDirectory" in self.ceParameters:
       workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], arcID )
     else:
       workingDirectory = arcID  
     outFileName = os.path.join( workingDirectory, '%s.out' % stamp )
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
 
-    job.Retrieve(usercfg, arc.URL("./"), False) 
-    #cmd = ['arcget', '-j', self.ceParameters['JobListFile'], pilotRef ]
-    #result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+    usercfg = arc.UserConfig()
+    isItOkay = job.Retrieve(usercfg, arc.URL(workingDirectory), False) 
     output = ''
-    if result['OK']:
-      if not result['Value'][0]:
-        outFile = open( outFileName, 'r' )
-        output = outFile.read()
-        outFile.close()
-        os.unlink( outFileName )
-        errFile = open( errFileName, 'r' )
-        error = errFile.read()
-        errFile.close()
-        os.unlink( errFileName )
-      else:
-        error = '\n'.join( result['Value'][1:] )
-        return S_ERROR( error )  
+    if ( isItOkay ):
+      outFile = open( outFileName, 'r' )
+      output = outFile.read()
+      outFile.close()
+      os.unlink( outFileName )
+      errFile = open( errFileName, 'r' )
+      error = errFile.read()
+      errFile.close()
+      os.unlink( errFileName )
     else:
       return S_ERROR( 'Failed to retrieve output for %s' % jobID )
 

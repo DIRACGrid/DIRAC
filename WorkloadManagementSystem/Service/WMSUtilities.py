@@ -10,10 +10,12 @@ __RCSID__ = "$Id$"
 
 from tempfile import mkdtemp
 import shutil, os
+import types
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+import arc
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
@@ -75,21 +77,29 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   result['StdErr'] = error
   return result
 
+def theARCJob(theCE, theArcID):
+  # Create an ARC Job with all the needed / possible parameters defined.
+  j = arc.Job()
+  j.JobID = theArcID
+  statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (theCE, theArcID)
+  j.JobStatusURL = arc.URL(statURL)
+  j.JobStatusInterfaceName = "org.nordugrid.ldapng"
+  mangURL = "gsiftp://%s:2811/jobs/" %(theCE)
+  j.JobManagementURL       = arc.URL(mangURL)
+#  j.JobManagementURL       = arc.URL("https://" + theCE)
+  j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+  j.ServiceInformationURL      = j.JobManagementURL
+  j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+  userCfg = arc.UserConfig()
+  #userCfg.CredentialString(proxy)
+  j.PrepareHandler(userCfg)
+  return j
+
 def getARCPilotOutput( proxy, pilotRef ):
-  try :
-    import arc
-  except :
-    return S_ERROR( "ARC api not available. Sorry." )
   tmp_dir = mkdtemp()
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
-  usercfg = arc.UserConfig()
-  usercfg.CredentialString(proxy)
-  job = arc.Job()
-  job.jobID = pilotRef
-  job.JobStatusURL = arc.URL(cfgPath("ldap://", myce, ":2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=", job.JobID, ")"))
-  job.JobManagementURL = arc.URL(cfgPath("gsiftp://", myce, ":2811/jobs/"))
-  job.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+  job = theARCJob(myce, pilotRef, proxy)
   job.Retrieve(usercfg, arc.URL(tmp_dir), False) 
   if 'Results stored at:' in output :
     tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
@@ -112,7 +122,7 @@ def getARCPilotOutput( proxy, pilotRef ):
     return result
   if 'Warning: Job not found in job list' in output:
     shutil.rmtree( tmp_dir )
-    message = "Pilot not yet visible in ARC dB"
+    message = "Pilot not yet visible in the ARC dB of the CE %s" % (myce)
     return S_ERROR( message )
   return S_ERROR("Sorry - requested pilot output not yet available")
 
