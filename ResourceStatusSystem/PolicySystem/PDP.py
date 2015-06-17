@@ -44,6 +44,8 @@ class PDP( object ):
     # RSS State Machine, used to calculate most penalizing state while merging them
     self.rssMachine = RSSMachine( 'Unknown' )
 
+    self.log = gLogger.getSubLogger( 'PDP' )
+
 
   def setup( self, decisionParams = None ):
     """ method that sanitizes the decisionParams and ensures that at least it has
@@ -83,11 +85,14 @@ class PDP( object ):
 
     if decisionParams is not None:
       standardParamsDict.update( decisionParams )
+      if standardParamsDict['element'] is not None:
+        self.log = gLogger.getSubLogger( 'PDP/%s' % standardParamsDict['element'] )
+        if standardParamsDict['name'] is not None:
+          self.log = gLogger.getSubLogger( 'PDP/%s/%s' % ( standardParamsDict['element'], standardParamsDict['name'] ) )
+          self.log.verbose( "Setup - statusType: %s, status: %s" % ( standardParamsDict['statusType'],
+                                                                     standardParamsDict['status'] ) )
 
     self.decisionParams = standardParamsDict
-
-
-
 
   def takeDecision( self ):
     """ main PDP method which does all the work. If firstly finds all the policies
@@ -123,6 +128,8 @@ class PDP( object ):
 
     """
 
+    self.log.verbose( "Taking decision" )
+
     # Policies..................................................................
 
     # Get policies that match self.decisionParams
@@ -130,18 +137,21 @@ class PDP( object ):
     if not policiesThatApply[ 'OK' ]:
       return policiesThatApply
     policiesThatApply = policiesThatApply[ 'Value' ]
+    self.log.verbose( "Policies that apply: %s" % ','.join( policiesThatApply ) )
 
     # Evaluate policies
     singlePolicyResults = self._runPolicies( policiesThatApply )
     if not singlePolicyResults[ 'OK' ]:
       return singlePolicyResults
     singlePolicyResults = singlePolicyResults[ 'Value' ]
+    self.log.verbose( "Single policy results: %s" % singlePolicyResults )
 
     # Combine policies and get most penalizing status ( see RSSMachine )
     policyCombinedResults = self._combineSinglePolicyResults( singlePolicyResults )
     if not policyCombinedResults[ 'OK' ]:
       return policyCombinedResults
     policyCombinedResults = policyCombinedResults[ 'Value' ]
+    self.log.verbose( "Combined policy result: %s" % policyCombinedResults )
 
 
     # Actions...................................................................
@@ -152,6 +162,7 @@ class PDP( object ):
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]
+    self.log.verbose( "Policy actions that apply: %s" % ','.join( policyActionsThatApply ) )
 
     policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
 
@@ -201,7 +212,7 @@ class PDP( object ):
         # We should never enter this line ! Just in case there are policies
         # missconfigured !
         _msg = 'runPolicies no OK: %s' % policyInvocationResult
-        gLogger.error( _msg )
+        self.log.error( _msg )
         return S_ERROR( _msg )
 
       policyInvocationResult = policyInvocationResult[ 'Value' ]
@@ -209,17 +220,17 @@ class PDP( object ):
       # Sanity Checks ( they should never happen ! )
       if not 'Status' in policyInvocationResult:
         _msg = 'runPolicies (no Status): %s' % policyInvocationResult
-        gLogger.error( _msg )
+        self.log.error( _msg )
         return S_ERROR( _msg )
 
       if not policyInvocationResult[ 'Status' ] in validStatus:
         _msg = 'runPolicies ( not valid status ) %s' % policyInvocationResult[ 'Status' ]
-        gLogger.error( _msg )
+        self.log.error( _msg )
         return S_ERROR( _msg )
 
       if not 'Reason' in policyInvocationResult:
         _msg = 'runPolicies (no Reason): %s' % policyInvocationResult
-        gLogger.error( _msg )
+        self.log.error( _msg )
         return S_ERROR( _msg )
 
       policyInvocationResults.append( policyInvocationResult )
