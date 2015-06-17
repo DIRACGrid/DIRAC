@@ -167,7 +167,7 @@ class Request( object ):
       # # All operations Done -> Done
       elif opStatus == "Done" and self.__waiting == None:
         rStatus = "Done"
-        self._Error = ''
+        self.Error = ''
     self.Status = rStatus
 
   def getWaiting( self ):
@@ -342,7 +342,7 @@ class Request( object ):
 
 
   @hybrid_property
-  def LastUpdate( self ):
+  def LastUpdate( self ): # pylint: disable=E0202
     """ last update getter """
     return self._LastUpdate
 
@@ -356,7 +356,7 @@ class Request( object ):
     self._LastUpdate = value
 
   @hybrid_property
-  def Status( self ):
+  def Status( self ): # pylint: disable=E0202
     """ status getter """
     self._notify()
     return self._Status
