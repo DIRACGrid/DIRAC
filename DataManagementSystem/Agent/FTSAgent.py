@@ -134,8 +134,6 @@ class FTSAgent( AgentModule ):
   __threadPool = None
   # # update lock
   __updateLock = None
-  # # se cache
-  __seCache = dict()
   # # request cache
   __reqCache = dict()
 
@@ -167,17 +165,6 @@ class FTSAgent( AgentModule ):
     if not cls.__rssClient:
       cls.__rssClient = ResourceStatus()
     return cls.__rssClient
-
-  @classmethod
-  def getSE( cls, seName ):
-    """ keep SEs in cache """
-    if seName not in cls.__seCache:
-      cls.__seCache[seName] = StorageElement( seName )
-    return cls.__seCache[seName]
-
-  @classmethod
-  def getSECache( cls ):
-    return cls.__seCache
 
   @classmethod
   def getRequest( cls, reqID ):
@@ -777,14 +764,14 @@ class FTSAgent( AgentModule ):
           log.error( "Route invalid : %s" % routeValid['Message'] )
           continue
 
-        sourceSE = self.getSE( source )
+        sourceSE = StorageElement( source )
         sourceToken = sourceSE.getStorageParameters( "SRM2" )
         if not sourceToken["OK"]:
           log.error( "unable to get sourceSE '%s' parameters: %s" % ( source, sourceToken["Message"] ) )
           continue
         seStatus = sourceSE.getStatus()['Value']
 
-        targetSE = self.getSE( target )
+        targetSE = StorageElement( target )
         targetToken = targetSE.getStorageParameters( "SRM2" )
         if not targetToken["OK"]:
           log.error( "unable to get targetSE '%s' parameters: %s" % ( target, targetToken["Message"] ) )
@@ -1007,7 +994,7 @@ class FTSAgent( AgentModule ):
       registerOperation.Type = "RegisterReplica"
       registerOperation.Status = "Waiting"
       registerOperation.TargetSE = target
-      targetSE = self.getSE( target )
+      targetSE = StorageElement( target )
       for ftsFile in ftsFileList:
         opFile = File()
         opFile.LFN = ftsFile.LFN
@@ -1110,4 +1097,4 @@ class FTSAgent( AgentModule ):
   def __filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
     from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
-    return filterReplicas( opFile, logger = self.log, dataManager = self.dataManager, seCache = self.getSECache() )
+    return filterReplicas( opFile, logger = self.log, dataManager = self.dataManager )
