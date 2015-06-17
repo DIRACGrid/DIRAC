@@ -3,72 +3,72 @@
   PDP ( PolicyDecisionPoint ) is the back-end for the PolicySystem. It discovers
   the policies, finds the best match, evaluates them, merges their results taking
   the most penalizing one, computes the set of actions to be triggered and returns
-  all the information to the PEP which will enforce the actions.  
+  all the information to the PEP which will enforce the actions.
 
 """
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR 
+from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 
-__RCSID__  = '$Id: $'
+__RCSID__ = '$Id: $'
 
 class PDP( object ):
   """ PDP ( Policy Decision Point )
   """
 
   def __init__( self, clients = None ):
-    """ Constructor. 
-    
+    """ Constructor.
+
     examples:
       >>> pdp  = PDP( None )
       >>> pdp1 = PDP( {} )
       >>> pdp2 = PDP( { 'Client1' : Client1Object } )
-      
+
     :Parameters:
       **clients** - [ None, `dict` ]
         dictionary with Clients to be used in the Commands. If None, the Commands
         will create their own clients.
-         
+
     """
 
     # decission parameters used to match policies and actions
-    self.decisionParams  = {}
+    self.decisionParams = {}
 
     # Helpers to discover policies and RSS metadata in CS
-    self.iGetter         = InfoGetter()    
-    self.pCaller         = PolicyCaller( clients )
-  
+    self.iGetter = InfoGetter()
+    self.pCaller = PolicyCaller( clients )
+
     # RSS State Machine, used to calculate most penalizing state while merging them
-    self.rssMachine      = RSSMachine( 'Unknown' )
+    self.rssMachine = RSSMachine( 'Unknown' )
 
 
   def setup( self, decisionParams = None ):
     """ method that sanitizes the decisionParams and ensures that at least it has
     the keys in `standardParamsDict`. This will be relevant while doing the matching
-    with the RSS Policies configuration in the CS. 
-    There is one key-value pair, `active` which is added on this method. This allows 
-    policies to be de-activated from the CS, changing their active matchParam to 
+    with the RSS Policies configuration in the CS.
+    There is one key-value pair, `active` which is added on this method. This allows
+    policies to be de-activated from the CS, changing their active matchParam to
     something else than `Active`.
-    
+
     examples:
       >>> pdp.setup( None )
       >>> self.decisionParams
           { 'element' : None, 'name' : None, ... }
       >>> pdp.setup( { 'element' : 'AnElement' } )
       >>> self.decisionParams
-          { 'element' : 'AnElement', 'name' : None, ... }    
+          { 'element' : 'AnElement', 'name' : None, ... }
       >>> pdp.setup( { 'NonStandardKey' : 'Something' } )
       >>> self.decisionParams
-          { 'NonStandardKey' : 'Something', 'element' : None,... }    
-    
+          { 'NonStandardKey' : 'Something', 'element' : None,... }
+
     :Parameters:
       **decisionParams** - [ None, `dict` ]
         dictionary with the parameters to be matched with the RSS Policies configuration
         in the CS.
-    
+
     """
 
     standardParamsDict = {'element'     : None,
@@ -82,14 +82,13 @@ class PDP( object ):
                           'active'      : 'Active'}
 
     if decisionParams is not None:
-      for key in standardParamsDict:
-        try:
-          standardParamsDict[ key ] = decisionParams[ key ]
-        except KeyError:
-          pass
-    self.decisionParams = standardParamsDict  
-        
-        
+      standardParamsDict.update( decisionParams )
+
+    self.decisionParams = standardParamsDict
+
+
+
+
   def takeDecision( self ):
     """ main PDP method which does all the work. If firstly finds all the policies
     defined in the CS that match <self.decisionParams> and runs them. Once it has
@@ -97,12 +96,12 @@ class PDP( object ):
     using a similar approach to the one used to discover the policies, but also
     taking into account the single policy results and their combined result, finds
     the actions to be triggered and returns.
-    
+
     examples:
       >>> pdp.takeDecision()[ 'Value' ].keys()
           [ 'singlePolicyResults', 'policyCombinedResult', 'decisionParams' ]
       >>> pdp.takeDecision()[ 'Value' ][ 'singlePolicyResults' ]
-          [ { 'Status' : 'Active', 
+          [ { 'Status' : 'Active',
               'Reason' : 'blah',
               'Policy' : { 'name'        : 'AlwaysActiveForResource',
                            'type'        : 'AlwaysActive',
@@ -111,34 +110,34 @@ class PDP( object ):
                            'command'     : None,
                            'args'        : {}
                          }
-            }, ... ]    
+            }, ... ]
       >>> pdp.takeDecision()[ 'Value' ][ 'policyCombinedResult' ]
           { 'Status'       : 'Active',
             'Reason'       : 'blah ###',
             'PolicyAction' : [ ( 'policyActionName1', 'policyActionType1' ), ... ]
           }
-    
-    :return: S_OK( { 'singlePolicyResults'  : `list`, 
-                     'policyCombinedResult' : `dict`, 
+
+    :return: S_OK( { 'singlePolicyResults'  : `list`,
+                     'policyCombinedResult' : `dict`,
                      'decisionParams'      : `dict` } ) / S_ERROR
-        
+
     """
-    
+
     # Policies..................................................................
-    
+
     # Get policies that match self.decisionParams
     policiesThatApply = self.iGetter.getPoliciesThatApply( self.decisionParams )
     if not policiesThatApply[ 'OK' ]:
       return policiesThatApply
     policiesThatApply = policiesThatApply[ 'Value' ]
-    
+
     # Evaluate policies
-    singlePolicyResults   = self._runPolicies( policiesThatApply )
+    singlePolicyResults = self._runPolicies( policiesThatApply )
     if not singlePolicyResults[ 'OK' ]:
       return singlePolicyResults
-    singlePolicyResults = singlePolicyResults[ 'Value' ]    
-        
-    # Combine policies and get most penalizing status ( see RSSMachine )    
+    singlePolicyResults = singlePolicyResults[ 'Value' ]
+
+    # Combine policies and get most penalizing status ( see RSSMachine )
     policyCombinedResults = self._combineSinglePolicyResults( singlePolicyResults )
     if not policyCombinedResults[ 'OK' ]:
       return policyCombinedResults
@@ -146,14 +145,14 @@ class PDP( object ):
 
 
     # Actions...................................................................
-    
+
     policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decisionParams,
                                                                      singlePolicyResults,
                                                                      policyCombinedResults )
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]
-           
+
     policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
 
     return S_OK( {'singlePolicyResults'  : singlePolicyResults,
@@ -164,7 +163,7 @@ class PDP( object ):
   def _runPolicies( self, policies ):
     """ Given a list of policy dictionaries, loads them making use of the PolicyCaller
     and evaluates them. This method requires to have run setup previously.
-    
+
     examples:
       >>> pdp._runPolicies([])[ 'Value' ]
           []
@@ -173,46 +172,46 @@ class PDP( object ):
                          'args'        : None,
                          'description' : 'This is the AlwaysActive policy',
                          'module'      : 'AlwaysActivePolicy',
-                         'command'     : None }    
+                         'command'     : None }
       >>> pdp._runPolicies([ policyDict, ... ] )[ 'Value' ]
-          [ { 'Status' : 'Active', 'Reason' : 'blah', 'Policy' : policyDict }, ... ]    
-    
+          [ { 'Status' : 'Active', 'Reason' : 'blah', 'Policy' : policyDict }, ... ]
+
     :Parameters:
       **policies** - `list( dict )`
         list of dictionaries containing the policies selected to be run. Check the
         examples to get an idea of how the policy dictionaries look like.
-    
+
     :return: S_OK() / S_ERROR
-    
+
     """
-    
+
     policyInvocationResults = []
-    
+
     # Gets all valid status for RSS to avoid misconfigured policies returning statuses
     # that RSS does not understand.
     validStatus = self.rssMachine.getStates()
-    
+
     for policyDict in policies:
-      
+
       # Load and evaluate policy described in <policyDict> for element described
-      # in <self.decisionParams> 
+      # in <self.decisionParams>
       policyInvocationResult = self.pCaller.policyInvocation( self.decisionParams,
-                                                              policyDict ) 
+                                                              policyDict )
       if not policyInvocationResult[ 'OK' ]:
         # We should never enter this line ! Just in case there are policies
         # missconfigured !
         _msg = 'runPolicies no OK: %s' % policyInvocationResult
         gLogger.error( _msg )
         return S_ERROR( _msg )
-       
+
       policyInvocationResult = policyInvocationResult[ 'Value' ]
-      
+
       # Sanity Checks ( they should never happen ! )
       if not 'Status' in policyInvocationResult:
         _msg = 'runPolicies (no Status): %s' % policyInvocationResult
         gLogger.error( _msg )
         return S_ERROR( _msg )
-        
+
       if not policyInvocationResult[ 'Status' ] in validStatus:
         _msg = 'runPolicies ( not valid status ) %s' % policyInvocationResult[ 'Status' ]
         gLogger.error( _msg )
@@ -222,11 +221,11 @@ class PDP( object ):
         _msg = 'runPolicies (no Reason): %s' % policyInvocationResult
         gLogger.error( _msg )
         return S_ERROR( _msg )
-       
+
       policyInvocationResults.append( policyInvocationResult )
-      
-    return S_OK( policyInvocationResults )   
-    
+
+    return S_OK( policyInvocationResults )
+
 
   def _combineSinglePolicyResults( self, singlePolicyRes ):
     """ method that merges all the policies results into a combined one, which
@@ -234,7 +233,7 @@ class PDP( object ):
     results that returned the same penalizing status. All the rest, are ignored.
     If there are no single policy results, it is returned `Unknown` state. While
     combining policies, the ones containing the option `doNotCombine` are ignored.
-    
+
     examples:
       >>> pdp._combineSingePolicyResults( [] )[ 'Value' ]
           { 'Status' : 'Unknown', 'Reason' : 'No policy ..' }
@@ -246,24 +245,24 @@ class PDP( object ):
       >>> pdp._combineSingePolicyResults( [ { 'Status' : 'Active', 'Reason' : 'blah', 'Policy' : policyDict },
                                             { 'Status' : 'Active', 'Reason' : 'blah 2', 'Policy' : policyDict2 } ] )
           { 'Status' : 'Banned', 'Reason' : 'blah ### blah 2' }
-          
+
     :Parameters:
       **singlePolicyRes** - `list( dict )`
         list with every single policy result to be combined ( see _runPolicy for more details )
-          
+
     :return: S_OK( dict( Status, Reason ) | S_ERROR
-              
+
     """
 
     # Dictionary to be returned
     policyCombined = { 'Status' : 'Unknown',
                        'Reason' : '' }
 
-    # If there are no policyResults, we return Unknown    
-    if not singlePolicyRes:          
+    # If there are no policyResults, we return Unknown
+    if not singlePolicyRes:
       policyCombined[ 'Status' ] = 'Unknown'
-      policyCombined[ 'Reason' ] = 'No policy applies to %(element)s, %(name)s, %(elementType)s' % self.decisionParams 
-      
+      policyCombined[ 'Reason' ] = 'No policy applies to %(element)s, %(name)s, %(elementType)s' % self.decisionParams
+
       return S_OK( policyCombined )
 
     # We set the rssMachine on the current state ( ensures it is a valid one )
@@ -271,53 +270,53 @@ class PDP( object ):
     machineStatus = self.rssMachine.setState( self.decisionParams[ 'status' ] )
     if not machineStatus[ 'OK' ]:
       return machineStatus
-    
+
     # Discard all single policy results which belogs to policies that have set
     # the option `doNotCombine` in the CS
     policiesToCombine = self._findPoliciesToCombine( singlePolicyRes )
-          
+
     # Sort policy results using ther statuses by most restrictive ( lower level first )
     self.rssMachine.orderPolicyResults( policiesToCombine )
-        
+
     # As they have been sorted by most restrictive status, the first one is going
     # to be our candidate new state. Let's ask the RSSMachine if it allows us to
-    # make such transition.    
+    # make such transition.
     candidateState = policiesToCombine[ 0 ][ 'Status' ]
-    nextState      = self.rssMachine.getNextState( candidateState )
-    
+    nextState = self.rssMachine.getNextState( candidateState )
+
     if not nextState[ 'OK' ]:
       return nextState
     nextState = nextState[ 'Value' ]
-    
+
     # If the RssMachine does not accept the candidate, return forcing message
     if candidateState != nextState:
-                
+
       policyCombined[ 'Status' ] = nextState
       policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
       return S_OK( policyCombined )
-    
+
     # If the RssMachine accepts the candidate, just concatenate the reasons
     for policyRes in policiesToCombine:
-      
+
       if policyRes[ 'Status' ] == nextState:
-        policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]  
-        
+        policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]
+
     policyCombined[ 'Status' ] = nextState
-    
-    return S_OK( policyCombined )                             
+
+    return S_OK( policyCombined )
 
 
   def _findPoliciesToCombine( self, singlePolicyRes ):
-    """ method that iterates over the single policy results and checks the CS 
+    """ method that iterates over the single policy results and checks the CS
     configuration of the policies looking for the option 'doNotCombine'. If it is
-    present, that single policy result is discarded. 
-    
+    present, that single policy result is discarded.
+
     :Parameters:
       **singlePolicyRes** - `list( dict )`
-        list with every single policy result to be combined ( see _runPolicy for more details )    
-    
+        list with every single policy result to be combined ( see _runPolicy for more details )
+
     :return: `list( dict )`
-    
+
     """
 
     # Get policies configuration from the CS. We want to exclude the policies that
@@ -326,10 +325,10 @@ class PDP( object ):
     if not policiesConfiguration[ 'OK' ]:
       return policiesConfiguration
     policiesConfiguration = policiesConfiguration[ 'Value' ]
-    
+
     # Function that let's us know if we should combine the result of a single policy
     # or not.
-    def combinePolicy( policyResult ):  
+    def combinePolicy( policyResult ):
       # Extract policy name from the dictionary returned by PolicyCaller
       policyName = policyResult[ 'Policy' ][ 'name' ]
       try:
@@ -339,9 +338,9 @@ class PDP( object ):
         return False
       except KeyError:
         return True
-    
+
     # Make a list of policies of which we want to merge their results
     return [ policyResult for policyResult in singlePolicyRes if combinePolicy( policyResult ) ]
-    
-#...............................................................................
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+
+# ...............................................................................
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
