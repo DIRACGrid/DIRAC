@@ -34,8 +34,8 @@ class PDP( object ):
 
     """
 
-    # decission parameters used to match policies and actions
-    self.decisionParams = {}
+    # decision parameters used to match policies and actions
+    self.decisionParams = None
 
     # Helpers to discover policies and RSS metadata in CS
     self.iGetter = InfoGetter()
@@ -91,8 +91,7 @@ class PDP( object ):
           self.log = gLogger.getSubLogger( 'PDP/%s/%s' % ( standardParamsDict['element'], standardParamsDict['name'] ) )
           self.log.verbose( "Setup - statusType: %s, status: %s" % ( standardParamsDict['statusType'],
                                                                      standardParamsDict['status'] ) )
-
-    self.decisionParams = standardParamsDict
+      self.decisionParams = standardParamsDict
 
   def takeDecision( self ):
     """ main PDP method which does all the work. If firstly finds all the policies
@@ -127,6 +126,10 @@ class PDP( object ):
                      'decisionParams'      : `dict` } ) / S_ERROR
 
     """
+    if self.decisionParams is None:
+      return S_OK( {'singlePolicyResults'  : [],
+                    'policyCombinedResult' : {},
+                    'decisionParams'      : self.decisionParams} )
 
     self.log.verbose( "Taking decision" )
 
@@ -137,7 +140,7 @@ class PDP( object ):
     if not policiesThatApply[ 'OK' ]:
       return policiesThatApply
     policiesThatApply = policiesThatApply[ 'Value' ]
-    self.log.verbose( "Policies that apply: %s" % ','.join( policiesThatApply ) )
+    self.log.verbose( "Policies that apply: %s" % ', '.join( [po['name'] for po in policiesThatApply] ) )
 
     # Evaluate policies
     singlePolicyResults = self._runPolicies( policiesThatApply )
@@ -167,8 +170,8 @@ class PDP( object ):
     policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
 
     return S_OK( {'singlePolicyResults'  : singlePolicyResults,
-                 'policyCombinedResult' : policyCombinedResults,
-                 'decisionParams'      : self.decisionParams} )
+                  'policyCombinedResult' : policyCombinedResults,
+                  'decisionParams'       : self.decisionParams} )
 
 
   def _runPolicies( self, policies ):
