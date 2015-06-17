@@ -28,7 +28,7 @@ class PolicyCaller:
     if clients is not None: 
       self.clients = clients       
 
-  def policyInvocation( self, decissionParams, policyDict ):  
+  def policyInvocation( self, decisionParams, policyDict ):
     '''
     Invokes a policy:
 
@@ -67,7 +67,7 @@ class PolicyCaller:
     
     policy  = getattr( policyModule, pModuleName )() 
     
-    command = self.cCaller.commandInvocation( pCommand, pArgs, decissionParams, self.clients )
+    command = self.cCaller.commandInvocation( pCommand, pArgs, decisionParams, self.clients )
     if not command[ 'OK' ]:
       return command
     command = command[ 'Value' ]

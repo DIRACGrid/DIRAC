@@ -7,7 +7,7 @@
   Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
   module doing all dirty work ( finding policies, running them, merging their
   results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
-  of parameters ( decissionParams ) and enforces the actions that apply ( also
+  of parameters ( decisionParams ) and enforces the actions that apply ( also
   determined by the PDP output ).
   
 """
@@ -89,7 +89,7 @@ class PEP:
     resDecisions = resDecisions[ 'Value' ]
     
     # We take from PDP the decision parameters used to find the policies
-    decisionParams       = resDecisions[ 'decissionParams' ]
+    decisionParams = resDecisions[ 'decisionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
 

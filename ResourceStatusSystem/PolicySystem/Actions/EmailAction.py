@@ -17,10 +17,10 @@ class EmailAction( BaseAction ):
     the policies run.
   '''
   
-  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+  def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
                 clients = None ):
     
-    super( EmailAction, self ).__init__( name, decissionParams, enforcementResult, 
+    super( EmailAction, self ).__init__( name, decisionParams, enforcementResult,
                                          singlePolicyResults, clients )
     self.diracAdmin = DiracAdmin()
 
@@ -32,15 +32,15 @@ class EmailAction( BaseAction ):
     
     # Minor security checks
     
-    element = self.decissionParams[ 'element' ]
+    element = self.decisionParams[ 'element' ]
     if element is None:
       return S_ERROR( 'element should not be None' )
    
-    name = self.decissionParams[ 'name' ] 
+    name = self.decisionParams[ 'name' ]
     if name is None:
       return S_ERROR( 'name should not be None' )
     
-    statusType = self.decissionParams[ 'statusType' ]
+    statusType = self.decisionParams[ 'statusType' ]
     if statusType is None:
       return S_ERROR( 'statusType should not be None' )
     
@@ -52,16 +52,16 @@ class EmailAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
     
-#    if self.decissionParams[ 'status' ] == status:
+#    if self.decisionParams[ 'status' ] == status:
 #      # If status has not changed, we skip
 #      return S_OK()
 
-#    if self.decissionParams[ 'reason' ] == reason:
+#    if self.decisionParams[ 'reason' ] == reason:
 #      # If reason has not changed, we skip
 #      return S_OK()
 
-#    if not set( ( 'Banned', 'Error', 'Unknown' ) ) & set( ( status, self.decissionParams[ 'status' ] ) ):
-#      # if not 'Banned', 'Error', 'Unknown' in ( status, self.decissionParams[ 'status' ] ):
+#    if not set( ( 'Banned', 'Error', 'Unknown' ) ) & set( ( status, self.decisionParams[ 'status' ] ) ):
+#      # if not 'Banned', 'Error', 'Unknown' in ( status, self.decisionParams[ 'status' ] ):
 #      # not really interesting to send an email
 #      return S_OK()
       
@@ -75,7 +75,7 @@ class EmailAction( BaseAction ):
     body += '\n\n'
     body += '*' * 80
     body += '\nORGINAL PARAMETERS\n\n'
-    body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.decissionParams.items() ] )
+    body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.decisionParams.items() ] )
     body += '\n\n'
     body += '*' * 80
     body += '\nPOLICIES RUN\n\n'

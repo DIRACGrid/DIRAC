@@ -103,7 +103,7 @@ class PDP:
     
     examples:
       >>> pdp.takeDecision()[ 'Value' ].keys()
-          [ 'singlePolicyResults', 'policyCombinedResult', 'decissionParams' ]
+          [ 'singlePolicyResults', 'policyCombinedResult', 'decisionParams' ]
       >>> pdp.takeDecision()[ 'Value' ][ 'singlePolicyResults' ]
           [ { 'Status' : 'Active', 
               'Reason' : 'blah',
@@ -123,7 +123,7 @@ class PDP:
     
     :return: S_OK( { 'singlePolicyResults'  : `list`, 
                      'policyCombinedResult' : `dict`, 
-                     'decissionParams'      : `dict` } ) / S_ERROR
+                     'decisionParams'      : `dict` } ) / S_ERROR
         
     """
     
@@ -163,7 +163,7 @@ class PDP:
                 { 
                  'singlePolicyResults'  : singlePolicyResults,
                  'policyCombinedResult' : policyCombinedResults,
-                 'decissionParams'      : self.decisionParams 
+                 'decisionParams'      : self.decisionParams
                  }
                 )
 

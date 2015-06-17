@@ -209,8 +209,8 @@ class ElementInspectorAgent( AgentModule ):
       
       resEnforce = resEnforce[ 'Value' ]  
       
-      oldStatus  = resEnforce[ 'decissionParams' ][ 'status' ]
-      statusType = resEnforce[ 'decissionParams' ][ 'statusType' ]
+      oldStatus = resEnforce[ 'decisionParams' ][ 'status' ]
+      statusType = resEnforce[ 'decisionParams' ][ 'statusType' ]
       newStatus  = resEnforce[ 'policyCombinedResult' ][ 'Status' ]
       reason     = resEnforce[ 'policyCombinedResult' ][ 'Reason' ]
       
