@@ -57,12 +57,13 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
 
   replicas = replicas["Successful"].get( opFile.LFN, {} )
 
-  # FC checksum is more likely better than opFile.Checksum
-  fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
-  fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum', '' )
-  # Replace opFile.Checksum if it doesn't match a valid FC checksum
-  if fcChecksum and ( not opFile.Checksum or not compareAdler( fcChecksum, opFile.Checksum ) ):
-    opFile.Checksum = fcChecksum
+  if not opFile.Checksum:
+    # Set Checksum to FC checksum if not set in the request
+    fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
+    fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum', '' )
+    # Replace opFile.Checksum if it doesn't match a valid FC checksum
+    if fcChecksum:
+      opFile.Checksum = fcChecksum
 
   for repSEName in replicas:
 
