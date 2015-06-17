@@ -87,7 +87,7 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
         # # All checksums are OK
         ret["Valid"].append( repSEName )
       else:
-        log.warn( " %s checksum mismatch, FC: %s @%s: %s" % ( opFile.LFN,
+        log.warn( " %s checksum mismatch, FC: '%s' @%s: '%s'" % ( opFile.LFN,
                                                               opFile.Checksum,
                                                               repSEName,
                                                               seChecksum ) )
