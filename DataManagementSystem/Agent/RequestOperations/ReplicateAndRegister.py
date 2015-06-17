@@ -32,15 +32,13 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement                                       import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                                          import FileCatalog
 
-def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
+def filterReplicas( opFile, logger = None, dataManager = None ):
   """ filter out banned/invalid source SEs """
 
-  if not logger:
+  if logger is None:
     logger = gLogger
-  if not dataManager:
+  if dataManager is None:
     dataManager = DataManager()
-  if not seCache:
-    seCache = {}
 
   log = logger.getSubLogger( "filterReplicas" )
   ret = { "Valid" : [], "NoMetadata" : [], "Bad" : [], 'NoReplicas':[], 'NoPFN':[] }
@@ -59,10 +57,16 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
 
   replicas = replicas["Successful"].get( opFile.LFN, {} )
 
+  # FC checksum is more likely better than opFile.Checksum
+  fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
+  fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum', '' )
+  # Replace opFile.Checksum if it doesn't match a valid FC checksum
+  if fcChecksum and ( not opFile.Checksum or not compareAdler( fcChecksum, opFile.Checksum ) ):
+    opFile.Checksum = fcChecksum
+
   for repSEName in replicas:
 
-    repSE = seCache[repSEName] if repSEName in seCache else \
-            seCache.setdefault( repSEName, StorageElement( repSEName ) )
+    repSE = StorageElement( repSEName )
 
 
     repSEMetadata = repSE.getFileMetadata( opFile.LFN )
@@ -77,22 +81,16 @@ def filterReplicas( opFile, logger = None, dataManager = None, seCache = None ):
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
       seChecksum = repSEMetadata.get( "Checksum" )
-      if opFile.Checksum and seChecksum and not compareAdler( seChecksum, opFile.Checksum ) :
-        # The checksum in the request may be wrong, check with FC
-        fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
-        fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
-        if fcChecksum and fcChecksum != opFile.Checksum and compareAdler( fcChecksum , seChecksum ):
-          opFile.Checksum = fcChecksum
-          ret['Valid'].append( repSEName )
-        else:
-          log.warn( " %s checksum mismatch, request: %s @%s: %s" % ( opFile.LFN,
-                                                                     opFile.Checksum,
-                                                                     repSEName,
-                                                                     seChecksum ) )
-          ret["Bad"].append( repSEName )
-      else:
-        # # if we're here repSE is OK
+      if ( opFile.Checksum and seChecksum and compareAdler( seChecksum, opFile.Checksum ) ) or\
+         ( not opFile.Checksum and not seChecksum ):
+        # # All checksums are OK
         ret["Valid"].append( repSEName )
+      else:
+        log.warn( " %s checksum mismatch, FC: %s @%s: %s" % ( opFile.LFN,
+                                                              opFile.Checksum,
+                                                              repSEName,
+                                                              seChecksum ) )
+        ret["Bad"].append( repSEName )
 
   return S_OK( ret )
 
@@ -132,7 +130,6 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     gMonitor.registerActivity( "FTSScheduleFail", "File schedule failed",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     # # SE cache
-    self.seCache = {}
 
     # Clients
     self.fc = FileCatalog()
@@ -221,7 +218,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
 
   def _filterReplicas( self, opFile ):
     """ filter out banned/invalid source SEs """
-    return filterReplicas( opFile, logger = self.log, dataManager = self.dm, seCache = self.seCache )
+    return filterReplicas( opFile, logger = self.log, dataManager = self.dm )
 
   def ftsTransfer( self ):
     """ replicate and register using FTS """
@@ -270,12 +267,12 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
           self.log.warn( "unable to schedule '%s', couldn't get metadata at %s" % ( opFile.LFN, ','.join( noMetaReplicas ) ) )
           opFile.Error = "Couldn't get metadata"
         elif noReplicas:
-          self.log.error( "Unable to schedule transfer", 
+          self.log.error( "Unable to schedule transfer",
                           "File %s doesn't exist at %s" % ( opFile.LFN, ','.join( noReplicas ) ) )
           opFile.Error = 'No replicas found'
           opFile.Status = 'Failed'
         elif badReplicas:
-          self.log.error( "Unable to schedule transfer", 
+          self.log.error( "Unable to schedule transfer",
                           "File %s, all replicas have a bad checksum at %s" % ( opFile.LFN, ','.join( badReplicas ) ) )
           opFile.Error = 'All replicas have a bad checksum'
           opFile.Status = 'Failed'
