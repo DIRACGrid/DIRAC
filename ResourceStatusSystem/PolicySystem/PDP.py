@@ -1,4 +1,3 @@
-# $HeadURL $
 """ PDP
 
   PDP ( PolicyDecisionPoint ) is the back-end for the PolicySystem. It discovers
@@ -16,7 +15,7 @@ from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 
 __RCSID__  = '$Id: $'
 
-class PDP:
+class PDP( object ):
   """ PDP ( Policy Decision Point )
   """
 
@@ -72,8 +71,7 @@ class PDP:
     
     """
 
-    standardParamsDict = {
-                          'element'     : None,
+    standardParamsDict = {'element'     : None,
                           'name'        : None,
                           'elementType' : None,
                           'statusType'  : None,
@@ -81,8 +79,7 @@ class PDP:
                           'reason'      : None,
                           'tokenOwner'  : None,
                           # Last parameter allows policies to be de-activated
-                          'active'      : 'Active'
-                          }
+                          'active'      : 'Active'}
 
     if decisionParams is not None:
       for key in standardParamsDict:
@@ -159,13 +156,9 @@ class PDP:
            
     policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
 
-    return S_OK( 
-                { 
-                 'singlePolicyResults'  : singlePolicyResults,
+    return S_OK( {'singlePolicyResults'  : singlePolicyResults,
                  'policyCombinedResult' : policyCombinedResults,
-                 'decisionParams'      : self.decisionParams
-                 }
-                )
+                 'decisionParams'      : self.decisionParams} )
 
 
   def _runPolicies( self, policies ):

@@ -12,7 +12,7 @@ from DIRAC.ResourceStatusSystem.Command   import CommandCaller
 
 __RCSID__  = '$Id: $'
 
-class PolicyCaller:
+class PolicyCaller( object ):
   '''
     PolicyCaller loads policies, sets commands and runs them.
   '''

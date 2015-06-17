@@ -1,4 +1,3 @@
-# $HeadURL:  $
 """ PEP
 
   PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
@@ -20,7 +19,7 @@ from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 
 __RCSID__  = '$Id: $'
 
-class PEP:
+class PEP( object ):
   """ PEP ( Policy Enforcement Point )
   """
 
