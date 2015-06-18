@@ -725,8 +725,9 @@ class TransformationDB( DB ):
           if not re.search( '-', status ):
             status = "%s-inherited" % status
             if taskID:
-              taskID = str( int( originalID ) ).zfill( 8 ) + '_' + str( int( taskID ) ).zfill( 8 )
-          req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
+              # Should be readable up to 999,999 tasks: that field is an int(11) in the DB, not a string
+              taskID = 1000000 * int( originalID ) + int( taskID )
+          req = "%s (%d,'%s','%d',%d,'%s','%s',UTC_TIMESTAMP())," % ( req, transID, status, taskID,
                                                                       fileID, targetSE, usedSE )
       if not candidates:
         continue

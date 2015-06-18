@@ -236,6 +236,11 @@ class TransformationClient( Client, FileCatalogueBase ):
           parentStatusFiles.setdefault( 'Moved-%s' % str( prod ), [] ).append( lfn )
           newStatusFiles.setdefault( ( status, parentStatus ), [] ).append( lfn )
           movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
+        elif derivedStatus.endswith( '-inherited' ):
+          # This file is Unused or MaxReset while it was most likely Assigned at the time of derivation
+          parentStatusFiles.setdefault( 'Moved', [] ).append( lfn )
+          newStatusFiles.setdefault( ( status, parentStatus ), [] ).append( lfn )
+          movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
         elif parentDict['Status'] == 'Unused':
           # If the file was Unused already at derivation time, set it NotProcessed
           parentStatusFiles.setdefault( 'NotProcessed', [] ).append( lfn )
