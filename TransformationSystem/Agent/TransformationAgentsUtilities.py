@@ -20,7 +20,7 @@ class TransformationAgentsUtilities( object ):
 
   def __threadForTrans( self, transID ):
     try:
-      return self.transInThread.get( transID, ' [None] [%d] ' % transID ) + AGENT_NAME + '.'
+      return self.transInThread.get( transID, ' [None] [%s] ' % transID ) + AGENT_NAME + '.'
     except NameError:
       return ''
 
