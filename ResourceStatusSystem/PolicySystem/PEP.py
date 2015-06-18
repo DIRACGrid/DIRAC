@@ -39,22 +39,17 @@ class PEP( object ):
         
     """
    
-    if clients is None:
-      clients = {}
-    
-    # PEP uses internally two of the clients: ResourceStatusClient and ResouceManagementClient   
-    if 'ResourceStatusClient' in clients:           
-      self.rsClient = clients[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient()
-    if 'ResourceManagementClient' in clients:             
-      self.rmClient = clients[ 'ResourceManagementClient' ]
-    else: 
-      self.rmClient = ResourceManagementClient()
+    self.clients = dict( clients )
+   
+    # Creating the client in the PEP is a convenience for the PDP, that
+    # uses internally the two TSS clients: ResourceStatusClient and ResouceManagementClient
+    if 'ResourceStatusClient' not in clients:
+      self.clients['ResourceStatusClient'] = ResourceStatusClient()
+    if 'ResourceManagementClient' not in clients:
+      self.clients['ResourceManagementClient'] = ResourceManagementClient()
 
-    self.clients = clients
     # Pass to the PDP the clients that are going to be used on the Commands
-    self.pdp     = PDP( clients )   
+    self.pdp = PDP( self.clients )
 
 
   def enforce( self, decisionParams ):
