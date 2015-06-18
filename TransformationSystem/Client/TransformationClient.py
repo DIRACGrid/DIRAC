@@ -214,7 +214,6 @@ class TransformationClient( Client, FileCatalogueBase ):
       gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error getting files from derived transformation" % prod, res['Message'] )
       return res
     derivedFiles = res['Value']
-    suffix = '-%d' % parentProd
     derivedStatusDict = dict( [( derivedDict['LFN'], derivedDict['Status'] ) for derivedDict in derivedFiles] )
     newStatusFiles = {}
     parentStatusFiles = {}
@@ -224,21 +223,28 @@ class TransformationClient( Client, FileCatalogueBase ):
       derivedStatus = derivedStatusDict.get( lfn )
       if derivedStatus:
         parentStatus = parentDict['Status']
-        if resetUnused and parentStatus == 'MaxReset':
-          status = 'Unused'
-          moveStatus = 'Unused from MaxReset'
-          force = True
-        else:
-          status = parentStatus
-          moveStatus = parentStatus
-        if derivedStatus.endswith( suffix ):
-          # This file is Unused or MaxReset while it was most likely Assigned at the time of derivation
-          parentStatusFiles.setdefault( 'Moved-%s' % str( prod ), [] ).append( lfn )
+        # By default move to the parent status (which is Unused or MaxReset)
+        status = parentStatus
+        moveStatus = parentStatus
+        # For MaxReset, set Unused if requested
+        if parentStatus == 'MaxReset':
+          if resetUnused:
+            status = 'Unused'
+            moveStatus = 'Unused from MaxReset'
+            force = True
+          else:
+            status = 'MaxReset-inherited'
+        if derivedStatus.endswith( '-inherited' ):
+          # This is the general case
           newStatusFiles.setdefault( ( status, parentStatus ), [] ).append( lfn )
           movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
-        elif parentDict['Status'] == 'Unused':
-          # If the file was Unused already at derivation time, set it NotProcessed
+        else:
+          gLogger.warn( 'File found in an unexpected status in derived transformation', '%s: %s' % ( lfn, derivedStatus ) )
+        if parentDict['Status'] == 'Unused':
+          # If the file was Unused, set it NotProcessed in parent
           parentStatusFiles.setdefault( 'NotProcessed', [] ).append( lfn )
+        else:
+          parentStatusFiles.setdefault( 'Moved', [] ).append( lfn )
 
     # Set the status in the parent transformation first
     for status, lfnList in parentStatusFiles.items():
@@ -262,6 +268,23 @@ class TransformationClient( Client, FileCatalogueBase ):
             gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d"
                            % ( prod, oldStatus, len( lfnChunk ), parentProd ),
                            res['Message'] )
+
+    # If files were Assigned or Unused at the time of derivation, try and update them as jobs may have run since then
+    res = self.getTransformationFiles( condDict = {'TransformationID': prod, 'Status': [ 'Assigned-inherited', 'Unused-inherited' ]} )
+    if res['OK']:
+      assignedFiles = res['Value']
+      if assignedFiles:
+        lfns = [lfnDict['LFN'] for lfnDict in assignedFiles]
+        res = self.getTransformationFiles( condDict = { 'TransformationID':parentProd, 'LFN':lfns} )
+        if res['OK']:
+          parentFiles = res['Value']
+          processedLfns = [lfnDict['LFN'] for lfnDict in parentFiles if lfnDict['Status'] == 'Processed']
+          if processedLfns:
+            res = self.setFileStatusForTransformation( prod, 'Processed-inherited', processedLfns )
+            if res['OK']:
+              gLogger.info( "[None] [%d] .moveFilesToDerivedTransformation: set %d files to status %s" % ( prod, len( processedLfns ), 'Processed-inherited' ) )
+    if not res['OK']:
+      gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status for Assigned derived files" % prod, res['Message'] )
 
     return S_OK( ( parentProd, movedFiles ) )
 
