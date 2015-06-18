@@ -268,6 +268,24 @@ class TransformationClient( Client, FileCatalogueBase ):
                            % ( prod, oldStatus, len( lfnChunk ), parentProd ),
                            res['Message'] )
 
+    # If files were Assigned at the time of derivation, try and update them
+    res = self.getTransformationFiles( condDict = {'TransformationID': prod, 'Status': [ 'Assigned-inherited', 'Assigned%s' % suffix ]} )
+    if res['OK']:
+      assignedFiles = res['Value']
+      if assignedFiles:
+        suffix = assignedFiles[0]['Status'].split( '-' )[-1]
+        lfns = [lfnDict['LFN'] for lfnDict in assignedFiles]
+        res = self.getTransformationFiles( condDict = { 'TransformationID':parentProd, 'LFN':lfns} )
+        if res['OK']:
+          parentFiles = res['Value']
+          processedLfns = [lfnDict['LFN'] for lfnDict in parentFiles if lfnDict['Status'] == 'Processed']
+          if processedLfns:
+            res = self.setFileStatusForTransformation( prod, 'Processed-%s' % suffix, processedLfns )
+            if res['OK']:
+              gLogger.info( "[None] [%d] .moveFilesToDerivedTransformation: set %d files to status %s" % ( prod, len( processedLfns ), 'Processed-%s' % suffix ) )
+    if not res['OK']:
+      gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status for Assigned derived files" % prod, res['Message'] )
+
     return S_OK( ( parentProd, movedFiles ) )
 
   def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False ):
