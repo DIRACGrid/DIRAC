@@ -720,7 +720,7 @@ class TransformationDB( DB ):
 
       for ft in fileTuples:
         _lfn, originalID, fileID, status, taskID, targetSE, usedSE, _errorCount, _lastUpdate, _insertTime = ft[:10]
-        if status not in ( 'Unused', 'Removed' ):
+        if status not in ( 'Removed', ):
           candidates = True
           if not re.search( '-', status ):
             status = "%s-inherited" % status
