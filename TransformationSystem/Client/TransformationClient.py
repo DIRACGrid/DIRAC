@@ -217,7 +217,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     derivedStatusDict = dict( [( derivedDict['LFN'], derivedDict['Status'] ) for derivedDict in derivedFiles] )
     newStatusFiles = {}
     parentStatusFiles = {}
-    force = False
+    badStatusFiles = {}
     for parentDict in parentFiles:
       lfn = parentDict['LFN']
       derivedStatus = derivedStatusDict.get( lfn )
@@ -231,7 +231,6 @@ class TransformationClient( Client, FileCatalogueBase ):
           if resetUnused:
             status = 'Unused'
             moveStatus = 'Unused from MaxReset'
-            force = True
           else:
             status = 'MaxReset-inherited'
         if derivedStatus.endswith( '-inherited' ):
@@ -239,13 +238,15 @@ class TransformationClient( Client, FileCatalogueBase ):
           newStatusFiles.setdefault( ( status, parentStatus ), [] ).append( lfn )
           movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
         else:
-          gLogger.warn( 'File found in an unexpected status in derived transformation', '%s: %s' % ( lfn, derivedStatus ) )
+          badStatusFiles[derivedStatus] = badStatusFiles.setdefault( derivedStatus, 0 ) + 1
         if parentDict['Status'] == 'Unused':
           # If the file was Unused, set it NotProcessed in parent
           parentStatusFiles.setdefault( 'NotProcessed', [] ).append( lfn )
         else:
           parentStatusFiles.setdefault( 'Moved', [] ).append( lfn )
 
+    for status, count in badStatusFiles.items():
+      gLogger.warn( '[None] [%d] .moveFilesToDerivedTransformation: Files found in an unexpected status in derived transformation' % prod, '%s: %d' % ( status, count ) )
     # Set the status in the parent transformation first
     for status, lfnList in parentStatusFiles.items():
       for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
@@ -258,7 +259,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     # Set the status in the new transformation
     for ( status, oldStatus ), lfnList in newStatusFiles.items():
       for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
-        res = self.setFileStatusForTransformation( prod, status, lfnChunk, force = force )
+        res = self.setFileStatusForTransformation( prod, status, lfnChunk )
         if not res['OK']:
           gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files; resetting them %s in transformation %d"
                          % ( prod, status, len( lfnChunk ), oldStatus, parentProd ),
