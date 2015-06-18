@@ -1017,17 +1017,7 @@ class DirectoryTreeBase:
     result = self.db._update( req )
     req = "RENAME TABLE FC_DirectoryUsage TO FC_DirectoryUsage_backup"
     result = self.db._update( req )
-    req = """CREATE TABLE `FC_DirectoryUsage` (
-  `DirID` int(11) NOT NULL,
-  `SEID` int(11) NOT NULL,
-  `SESize` bigint(20) NOT NULL,
-  `SEFiles` bigint(20) NOT NULL,
-  `LastUpdate` datetime NOT NULL,
-  PRIMARY KEY (`DirID`,`SEID`),
-  KEY `DirID` (`DirID`),
-  KEY `SEID` (`SEID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
-"""
+    req = "CREATE TABLE `FC_DirectoryUsage` LIKE `FC_DirectoryUsage_backup`"
     result = self.db._update( req )
     if not result['OK']:
       return result
