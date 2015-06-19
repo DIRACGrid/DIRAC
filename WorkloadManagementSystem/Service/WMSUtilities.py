@@ -79,6 +79,7 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
 
 def theARCJob(theCE, theArcID):
   # Create an ARC Job with all the needed / possible parameters defined.
+  # By the time we come here, the environment variable X509_USER_PROXY should already be set
   j = arc.Job()
   j.JobID = theArcID
   statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (theCE, theArcID)
@@ -86,12 +87,10 @@ def theARCJob(theCE, theArcID):
   j.JobStatusInterfaceName = "org.nordugrid.ldapng"
   mangURL = "gsiftp://%s:2811/jobs/" %(theCE)
   j.JobManagementURL       = arc.URL(mangURL)
-#  j.JobManagementURL       = arc.URL("https://" + theCE)
   j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
   j.ServiceInformationURL      = j.JobManagementURL
   j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
   userCfg = arc.UserConfig()
-  #userCfg.CredentialString(proxy)
   j.PrepareHandler(userCfg)
   return j
 
@@ -200,6 +199,8 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
     cmd = [ 'glite-wms-job-logging-info', '-v', '3', '--noint', pilotRef ]
   elif grid == 'CREAM':
     cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]
+  elif grid == 'ARC':
+    return S_ERROR( 'Pilot logging not available for ARC CEs' )
   else:
     return S_ERROR( 'Unknnown GRID %s' % grid )
 
