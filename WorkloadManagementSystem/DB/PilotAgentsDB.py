@@ -35,6 +35,7 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy import create_engine, Table, Column, MetaData, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.exc import SQLAlchemyError
 
 import datetime
 import time
@@ -74,7 +75,7 @@ class PilotAgentsDB( DB ):
     if not 'PilotsUUIDtoID' in tablesInDB:
       try:
         PilotsUUIDtoID.__table__.create( self.engine )
-      except Exception, e:
+      except SQLAlchemyError as e:
         return S_ERROR(e)
     else:
       gLogger.debug("Table PilotsUUIDtoID exists")
@@ -83,7 +84,7 @@ class PilotAgentsDB( DB ):
     if not 'PilotsLogging' in tablesInDB:
       try:
         PilotsLogging.__table__.create( self.engine )
-      except Exception, e:
+      except SQLAlchemyError as e:
         return S_ERROR(e)
     else:
       gLogger.debug("Table PilotsLogging exists")
@@ -97,14 +98,14 @@ class PilotAgentsDB( DB ):
 
     try:
       session.add(logging)
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to add PilotsLogging: " + e.message)
 
     try:
       session.commit()
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsLogging: " + e.message)
@@ -140,7 +141,7 @@ class PilotAgentsDB( DB ):
 
     try:
       session.commit()
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit: " + e.message)
@@ -160,14 +161,14 @@ class PilotAgentsDB( DB ):
     uuid2id = PilotsUUIDtoID(pilotUUID)
     try:
       session.add(uuid2id)
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
 
     try:
       session.commit()
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
@@ -184,7 +185,7 @@ class PilotAgentsDB( DB ):
     mapping.pilotID = pilotID
     try:
       session.commit()
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsUUIDtoID mapping: " + e.message)
@@ -200,14 +201,14 @@ class PilotAgentsDB( DB ):
     uuid2id = PilotsUUIDtoID(pilotUUID, pilotID)
     try:
       session.add(uuid2id)
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to add PilotsUUIDtoID: " + e.message)
 
     try:
       session.commit()
-    except Exception, e:
+    except SQLAlchemyError as e:
       session.rollback()
       session.close()
       return S_ERROR("Failed to commit PilotsUUIDtoID: " + e.message)
