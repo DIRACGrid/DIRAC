@@ -10,10 +10,12 @@ __RCSID__ = "$Id$"
 
 from tempfile import mkdtemp
 import shutil, os
+import types
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+import arc
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
@@ -75,20 +77,29 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   result['StdErr'] = error
   return result
 
+def theARCJob(theCE, theArcID):
+  # Create an ARC Job with all the needed / possible parameters defined.
+  # By the time we come here, the environment variable X509_USER_PROXY should already be set
+  j = arc.Job()
+  j.JobID = theArcID
+  statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (theCE, theArcID)
+  j.JobStatusURL = arc.URL(statURL)
+  j.JobStatusInterfaceName = "org.nordugrid.ldapng"
+  mangURL = "gsiftp://%s:2811/jobs/" %(theCE)
+  j.JobManagementURL       = arc.URL(mangURL)
+  j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+  j.ServiceInformationURL      = j.JobManagementURL
+  j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+  userCfg = arc.UserConfig()
+  j.PrepareHandler(userCfg)
+  return j
+
 def getARCPilotOutput( proxy, pilotRef ):
   tmp_dir = mkdtemp()
   myce = pilotRef.split(":")[1].strip("/")
   gridEnv = getGridEnv()
-  mySite = getCESiteMapping()['Value'][myce]
-  workDB = gConfig.getValue(cfgPath('Resources/Sites/LCG', mySite, 'CEs', myce, 'JobListFile'))
-  myWorkDB = os.path.join("/opt/dirac/runit/WorkloadManagement/SiteDirector-RAL", workDB)
-  cmd = [ 'arcget' ]
-  cmd.extend( ['-k', '-c', myce, '-j', myWorkDB, '-D', tmp_dir, pilotRef] )
-  ret = executeGridCommand( proxy, cmd, gridEnv )
-  if not ret['OK']:
-    shutil.rmtree( tmp_dir )
-    return ret
-  status, output, error = ret['Value']
+  job = theARCJob(myce, pilotRef, proxy)
+  job.Retrieve(usercfg, arc.URL(tmp_dir), False) 
   if 'Results stored at:' in output :
     tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
     result = S_OK()
@@ -110,7 +121,7 @@ def getARCPilotOutput( proxy, pilotRef ):
     return result
   if 'Warning: Job not found in job list' in output:
     shutil.rmtree( tmp_dir )
-    message = "Pilot not yet visible in ARC dB"
+    message = "Pilot not yet visible in the ARC dB of the CE %s" % (myce)
     return S_ERROR( message )
   return S_ERROR("Sorry - requested pilot output not yet available")
 
@@ -188,6 +199,8 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
     cmd = [ 'glite-wms-job-logging-info', '-v', '3', '--noint', pilotRef ]
   elif grid == 'CREAM':
     cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]
+  elif grid == 'ARC':
+    return S_ERROR( 'Pilot logging not available for ARC CEs' )
   else:
     return S_ERROR( 'Unknnown GRID %s' % grid )
 
