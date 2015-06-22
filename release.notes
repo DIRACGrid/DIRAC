@@ -1,3 +1,19 @@
+[v6r13p4]
+
+*RMS
+FIX: Request - minor fix in setting the Request properties, suppressing pylint
+     warnings
+     
+*Resources
+FIX: StorageElement - import FileCatalog class rather than the corresponding module     
+FIX: SLURM - proper formatting commands using %j, %T placeholders
+
+*RSS
+FIX: DowntimeCommand - checking for downtimes including the time to start in hours
+
+*Workflow
+CHANGE: FailoverRequest - assign to properties rather than using setters
+
 [v6r13p3]
 
 *DMS
