@@ -11,7 +11,7 @@
 
 Operation implementation
 """
-# for properties
+# Disable invalid names warning
 # pylint: disable=C0103
 __RCSID__ = "$Id$"
 
