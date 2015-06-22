@@ -7,8 +7,25 @@ NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
 NEW: LocalConfiguration - option to print out license information      
 
+*Resources
+NEW: ARCComputingElement based on the ARC python API
+
+*RSS
+FIX: Improved logging all over the place 
+
+*DMS
+NEW: New FileCatalog SecurityManager with access control based on policies,
+     VOMSPolicy as one of the policy implementations.
+NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC with 
+     Foreign Keys and Stored Procedures by accessing the databases directly     
+
 *WMS
 FIX: Watchdog - review for style and pylint
+CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone 
+        utilities
+
+*Transformation
+NEW: New ported plugins from LHCb, added unit tests
 
 [v6r13p3]
 
