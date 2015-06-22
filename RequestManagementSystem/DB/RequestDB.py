@@ -28,7 +28,6 @@ from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, 
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey,\
                        Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
-from sqlalchemy.engine.reflection import Inspector
 
 
 # Metadata instance that is used to bind the engine, Object and tables

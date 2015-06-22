@@ -10,8 +10,8 @@
 
 request implementation
 """
-# for properties
-# pylint: disable=E0211,W0612,C0103
+# Disable invalid names warning
+# pylint: disable=C0103
 __RCSID__ = "$Id$"
 
 
@@ -27,10 +27,6 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 from types import NoneType
-
-from sqlalchemy.ext.hybrid import hybrid_property
-
-
 
 
 
@@ -284,7 +280,7 @@ class Request( object ):
     """ list of statuses for all operations """
     return [ subReq.Status for subReq in self ]
 
-  @hybrid_property
+  @property
   def CreationTime( self ):
     """ creation time getter """
     return self._CreationTime
@@ -298,7 +294,7 @@ class Request( object ):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._CreationTime = value
 
-  @hybrid_property
+  @property
   def SubmitTime( self ):
     """ request's submission time getter """
     return self._SubmitTime
@@ -314,7 +310,7 @@ class Request( object ):
 
 
 
-  @hybrid_property
+  @property
   def NotBefore( self ):
     """ Getter for NotBefore time"""
     return self._NotBefore
@@ -341,8 +337,8 @@ class Request( object ):
     return S_OK()
 
 
-  @hybrid_property
-  def LastUpdate( self ): # pylint: disable=E0202
+  @property
+  def LastUpdate( self ):
     """ last update getter """
     return self._LastUpdate
 
@@ -355,8 +351,8 @@ class Request( object ):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._LastUpdate = value
 
-  @hybrid_property
-  def Status( self ): # pylint: disable=E0202
+  @property
+  def Status( self ):
     """ status getter """
     self._notify()
     return self._Status
@@ -395,7 +391,7 @@ class Request( object ):
 
     attrNames = ['RequestID', "RequestName", "OwnerDN", "OwnerGroup",
                  "Status", "Error", "DIRACSetup", "SourceComponent",
-                  "JobID", "CreationTime", "SubmitTime", "LastUpdate", "NotBefore"]
+                 "JobID", "CreationTime", "SubmitTime", "LastUpdate", "NotBefore"]
     jsonData = {}
 
     for attrName in attrNames :
@@ -453,8 +449,8 @@ class Request( object ):
 
     # If the RequestID is not the default one (0), it probably means
     # the Request is already in the DB, so we don't touch anything
-    if hasattr( self, 'RequestID' ) and self.RequestID:
-      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % self.RequestID )
+    if hasattr( self, 'RequestID' ) and getattr( self, 'RequestID' ):
+      return S_ERROR( "Cannot optimize because Request seems to be already in the DB (RequestID %s)" % getattr( self, 'RequestID' ) )
     # Set to True if the request could be optimized
     optimized = False
     # Recognise Failover request series
