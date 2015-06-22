@@ -3,15 +3,16 @@
 # File :    TaskQueueAgent.py
 # Author :  Stuart Paterson
 ########################################################################
-"""  The Task Queue Agent acts after Job Scheduling to place the ready jobs
-     into a Task Queue.
+"""  The Task Queue Agent acts after Job Scheduling to place the ready jobs into a Task Queue.
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC                                                 import S_OK, S_ERROR
+
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB, multiValueDefFields
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
+
 
 class TaskQueueAgent( OptimizerModule ):
   """
@@ -60,14 +61,14 @@ class TaskQueueAgent( OptimizerModule ):
     jobReq = classAdJob.get_expression( "JobRequirements" )
     classAdJobReq = ClassAd( jobReq )
     jobReqDict = {}
-    for name in self.taskQueueDB.getSingleValueTQDefFields():
+    for name in self.taskQueueDB._singleValueDefFields:
       if classAdJobReq.lookupAttribute( name ):
         if name == 'CPUTime':
           jobReqDict[name] = classAdJobReq.getAttributeInt( name )
         else:
           jobReqDict[name] = classAdJobReq.getAttributeString( name )
 
-    for name in self.taskQueueDB.getMultiValueTQDefFields():
+    for name in multiValueDefFields:
       if classAdJobReq.lookupAttribute( name ):
         jobReqDict[name] = classAdJobReq.getListFromExpression( name )
 

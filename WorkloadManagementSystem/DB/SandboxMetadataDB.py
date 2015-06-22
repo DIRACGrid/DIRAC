@@ -141,14 +141,6 @@ class SandboxMetadataDB( DB ):
     """
     return self.__accessedSandboxByCond( { 'SBId': sbId } )
 
-  def accessedSandboxByLocation( self, seName, sePFN ):
-    """
-    Update last access time for location
-    """
-    return self.__accessedSandboxByCond( { 'SEName': self._escapeString( seName )[ 'Value' ],
-                                           'SEPFN': self._escapeString( sePFN )[ 'Value' ],
-                                          } )
-
   def __accessedSandboxByCond( self, condDict ):
     sqlCond = [ "%s=%s" % ( key, condDict[ key ] ) for key in condDict ]
     return self._update( "UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join( sqlCond ) )
@@ -320,12 +312,6 @@ class SandboxMetadataDB( DB ):
       if not result[ 'OK' ]:
         return result
     return S_OK()
-
-  def setLocation( self, SBId, location ):
-    """
-    Set the Location for a sandbox
-    """
-    return self._update( "UPDATE `sb_SandBoxes` SET Location='%s' WHERE SBId = %s" % ( location, SBId ) )
 
   def getSandboxId( self, SEName, SEPFN, requesterName, requesterGroup ):
     """

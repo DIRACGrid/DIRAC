@@ -1,3 +1,7 @@
+""" What's this...?
+"""
+
+__RCSID__ = "$Id"
 
 import types
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -6,8 +10,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManife
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
-
-__RCSID__ = "$Id"
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import singleValueDefFields, multiValueDefFields
 
 class JobState( object ):
 
@@ -489,6 +492,19 @@ class JobState( object ):
   def getInputData( self ):
     return JobState.__db.job.getInputData( self.__jid )
 
+  @classmethod
+  def checkInputDataStructure( self, pDict ):
+    if type( pDict ) != types.DictType:
+      return S_ERROR( "Input data has to be a dictionary" )
+    for lfn in pDict:
+      if 'Replicas' not in pDict[ lfn ]:
+        return S_ERROR( "Missing replicas for lfn %s" % lfn )
+        replicas = pDict[ lfn ][ 'Replicas' ]
+        for seName in replicas:
+          if 'SURL' not in replicas or 'Disk' not in replicas:
+            return S_ERROR( "Missing SURL or Disk for %s:%s replica" % ( seName, lfn ) )
+    return S_OK()
+
   right_setInputData = RIGHT_GET_INFO
   @RemoteMethod
   def set_InputData( self, lfnData ):
@@ -514,14 +530,14 @@ class JobState( object ):
     reqCfg = result[ 'Value' ]
 
     jobReqDict = {}
-    for name in JobState.__db.tq.getSingleValueTQDefFields():
+    for name in singleValueDefFields:
       if name in reqCfg:
         if name == 'CPUTime':
           jobReqDict[ name ] = int( reqCfg[ name ] )
         else:
           jobReqDict[ name ] = reqCfg[ name ]
 
-    for name in JobState.__db.tq.getMultiValueTQDefFields():
+    for name in multiValueDefFields:
       if name in reqCfg:
         jobReqDict[ name ] = reqCfg.getOption( name, [] )
 

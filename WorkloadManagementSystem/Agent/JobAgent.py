@@ -172,10 +172,10 @@ class JobAgent( AgentModule ):
     self.matchFailedCount = 0
 
     matcherInfo = jobRequest['Value']
-    jobID = matcherInfo['JobID']
     if not self.pilotInfoReportedFlag:
       # Check the flag after the first access to the Matcher
       self.pilotInfoReportedFlag = matcherInfo.get( 'PilotInfoReportedFlag', False )
+    jobID = matcherInfo['JobID']
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if not matcherInfo.has_key( param ):

@@ -403,16 +403,6 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getUserSummaryWeb = [DictType, ListType, IntType, IntType]
-  def export_getUserSummaryWeb(self, selectDict, sortList, startItem, maxItems):
-    """ Get the summary of the pilot information for a given page in the
-        pilot monitor in a generic format
-    """
-
-    result = jobDB.getUserSummaryWeb(selectDict, sortList, startItem, maxItems)
-    return result
-
-  ##############################################################################
   types_getSiteSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getSiteSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the jobs running on sites in a generic format
