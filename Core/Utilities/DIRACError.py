@@ -159,6 +159,15 @@ class DError( object ):
 
     return 1
 
+  def __getitem__( self, key ):
+    """ Emulate the behavior of S_ERROR
+    """
+    if key == 'OK':
+      return False
+    elif key == 'Message':
+      return "%s" % self
+    raise KeyError( "{0} does not exist".format( key ) )
+
 
 
 def S_ERROR_N( messageString = '' ):
