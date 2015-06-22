@@ -1,17 +1,19 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-import random
 
-from DIRAC                              import gConfig, gLogger, S_OK, S_ERROR
+__RCSID__ = "$Id$"
+
+import re
+import random
+import time
+
+from DIRAC                              import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
+from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities, getFileGroups
 
-__RCSID__ = "$Id$"
 
 class TransformationPlugin( PluginBase ):
   """ A TransformationPlugin object should be instantiated by every transformation.
@@ -25,18 +27,12 @@ class TransformationPlugin( PluginBase ):
 
     self.data = {}
     self.files = False
-    if transClient is None:
-      self.transClient = TransformationClient()
-    else:
-      self.transClient = transClient
-
-    if dataManager is None:
-      self.dm = DataManager()
-    else:
-      self.dm = dataManager
-
-    self.fc = FileCatalog()
-
+    self.startTime = time.time()
+    
+    self.util = PluginUtilities( plugin, transClient, dataManager )
+    
+  def __del__( self ):
+    self.util.logInfo( "Execution finished, timing: %.3f seconds" % ( time.time() - self.startTime ) )
 
   def isOK( self ):
     self.valid = True
@@ -46,25 +42,31 @@ class TransformationPlugin( PluginBase ):
 
   def setInputData( self, data ):
     self.data = data
+    self.util.logDebug( "Set data: %s" % self.data )
 
   def setTransformationFiles( self, files ): #TODO ADDED
     self.files = files
 
   def _Standard( self ):
-    """ Simply group by replica location
+    """ Simply group by replica location (if any)
     """
-    res = self._groupByReplicas()
-    if not res['OK']:
-      return res
-    newTasks = []
-    for _se, lfns in res['Value']:
-      newTasks.append( ( '', lfns ) )
-    return S_OK( newTasks )
+    return self.util.groupByReplicas( self.data, self.params['Status'] )
 
   def _BySize( self ):
     """ Alias for groupBySize
     """
     return self._groupBySize()
+
+  def _groupBySize( self, files = None ):
+    """
+    Generate a task for a given amount of data at a (set of) SE
+    """
+    if not files:
+      files = self.data
+    else:
+      files = dict( zip( files, [self.data[lfn] for lfn in files] ) )
+    return self.util.groupBySize( files, self.params['Status'] )
+
 
   def _Broadcast( self ):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs.
@@ -90,7 +92,7 @@ class TransformationPlugin( PluginBase ):
     status = self.params['Status']
     groupSize = self.params['GroupSize']#Number of files per tasks
 
-    fileGroups = self._getFileGroups( self.data )#groups by SE
+    fileGroups = getFileGroups( self.data )  # groups by SE
     targetSELfns = {}
     for replicaSE, lfns in fileGroups.items():
       ses = replicaSE.split( ',' )
@@ -133,24 +135,24 @@ class TransformationPlugin( PluginBase ):
     if not res['OK']:
       return res
     cpuShares = res['Value']
-    gLogger.info( "Obtained the following target shares (%):" )
+    self.util.logInfo( "Obtained the following target shares (%):" )
     for site in sorted( cpuShares.keys() ):
-      gLogger.info( "%s: %.1f" % ( site.ljust( 15 ), cpuShares[site] ) )
+      self.util.logInfo( "%s: %.1f" % ( site.ljust( 15 ), cpuShares[site] ) )
 
     # Get the existing destinations from the transformationDB
-    res = self._getExistingCounters( requestedSites = cpuShares.keys() )
+    res = self.util.getExistingCounters( requestedSites = cpuShares.keys() )
     if not res['OK']:
-      gLogger.error( "Failed to get existing file share", res['Message'] )
+      self.util.logError( "Failed to get existing file share", res['Message'] )
       return res
     existingCount = res['Value']
     if existingCount:
-      gLogger.info( "Existing site utilization (%):" )
+      self.util.logInfo( "Existing site utilization (%):" )
       normalisedExistingCount = self._normaliseShares( existingCount.copy() )
       for se in sorted( normalisedExistingCount.keys() ):
-        gLogger.info( "%s: %.1f" % ( se.ljust( 15 ), normalisedExistingCount[se] ) )
+        self.util.logInfo( "%s: %.1f" % ( se.ljust( 15 ), normalisedExistingCount[se] ) )
 
     # Group the input files by their existing replicas
-    res = self._groupByReplicas()
+    res = self.util.groupByReplicas( self.data, self.params['Status'] )
     if not res['OK']:
       return res
     replicaGroups = res['Value']
@@ -162,7 +164,7 @@ class TransformationPlugin( PluginBase ):
       # Determine the next site based on requested shares, existing usage and candidate sites
       res = self._getNextSite( existingCount, cpuShares, candidates = self._getSitesForSEs( possibleSEs ) )
       if not res['OK']:
-        gLogger.error( "Failed to get next destination SE", res['Message'] )
+        self.util.logError( "Failed to get next destination SE", res['Message'] )
         continue
       targetSite = res['Value']
       # Resolve the ses for the target site
@@ -195,30 +197,6 @@ class TransformationPlugin( PluginBase ):
     if not shares:
       return S_ERROR( "No non-zero shares defined" )
     return S_OK( shares )
-
-  def _getExistingCounters( self, normalise = False, requestedSites = [] ):
-    res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'],
-                                        {'TransformationID':self.params['TransformationID']} )
-    if not res['OK']:
-      return res
-    usageDict = {}
-    for usedDict, count in res['Value']:
-      usedSE = usedDict['UsedSE']
-      if usedSE != 'Unknown':
-        usageDict[usedSE] = count
-    if requestedSites:
-      siteDict = {}
-      for se, count in usageDict.items():
-        res = getSitesForSE( se, gridName = 'LCG' )
-        if not res['OK']:
-          return res
-        for site in res['Value']:
-          if site in requestedSites:
-            siteDict[site] = count
-      usageDict = siteDict.copy()
-    if normalise:
-      usageDict = self._normaliseShares( usageDict )
-    return S_OK( usageDict )
 
   @classmethod
   def _normaliseShares( self, originalShares ):
@@ -255,74 +233,12 @@ class TransformationPlugin( PluginBase ):
         chosenSite = site
     return S_OK( chosenSite )
 
-  def _groupByReplicas( self ):
-    """ Generates a job based on the location of the input data """
-    if not self.params:
-      return S_ERROR( "TransformationPlugin._Standard: The 'Standard' plug-in requires parameters." )
-    status = self.params['Status']
-    groupSize = self.params['GroupSize']
-    # Group files by SE
-    fileGroups = self._getFileGroups( self.data )
-    # Create tasks based on the group size
-    tasks = []
-    for replicaSE in sorted( fileGroups.keys() ):
-      lfns = fileGroups[replicaSE]
-      tasksLfns = breakListIntoChunks( lfns, groupSize )
-      for taskLfns in tasksLfns:
-        if ( status == 'Flush' ) or ( len( taskLfns ) >= int( groupSize ) ):
-          tasks.append( ( replicaSE, taskLfns ) )
-    return S_OK( tasks )
-
-  def _groupBySize( self ):
-    """ Generate a task for a given amount of data """
-    if not self.params:
-      return S_ERROR( "TransformationPlugin._BySize: The 'BySize' plug-in requires parameters." )
-    status = self.params['Status']
-    requestedSize = float( self.params['GroupSize'] ) * 1000 * 1000 * 1000 # input size in GB converted to bytes
-    maxFiles = self.params.get( 'MaxFiles', 100 )
-    # Group files by SE
-    fileGroups = self._getFileGroups( self.data )
-    # Get the file sizes
-    res = self.fc.getFileSize( self.data )
-    if not res['OK']:
-      return S_ERROR( "Failed to get sizes for files" )
-    if res['Value']['Failed']:
-      return S_ERROR( "Failed to get sizes for all files" )
-    fileSizes = res['Value']['Successful']
-    tasks = []
-    for replicaSE, lfns in fileGroups.items():
-      taskLfns = []
-      taskSize = 0
-      for lfn in lfns:
-        taskSize += fileSizes[lfn]
-        taskLfns.append( lfn )
-        if ( taskSize > requestedSize ) or ( len( taskLfns ) >= maxFiles ):
-          tasks.append( ( replicaSE, taskLfns ) )
-          taskLfns = []
-          taskSize = 0
-      if ( status == 'Flush' ) and taskLfns:
-        tasks.append( ( replicaSE, taskLfns ) )
-    return S_OK( tasks )
-
-  @classmethod
-  def _getFileGroups( cls, fileReplicas ):
-    """ get file groups dictionary { "SE1,SE2,SE3" : [ lfn1, lfn2 ], ... }
-    
-    :param dict fileReplicas: { lfn : [SE1, SE2, SE3], ... }
-    """
-    fileGroups = {}
-    for lfn, replicas in fileReplicas.items():
-      replicaSEs = ",".join( sorted( list( set( replicas ) ) ) )
-      if replicaSEs not in fileGroups:
-        fileGroups[replicaSEs] = []
-      fileGroups[replicaSEs].append( lfn )
-    return fileGroups
 
   @classmethod
   def _getSiteForSE( cls, se ):
     """ Get site name for the given SE
     """
-    result = getSitesForSE( se, gridName = 'LCG' )
+    result = getSitesForSE( se )
     if not result['OK']:
       return result
     if result['Value']:
@@ -335,7 +251,7 @@ class TransformationPlugin( PluginBase ):
     """
     sites = []
     for se in seList:
-      result = getSitesForSE( se, gridName = 'LCG' )
+      result = getSitesForSE( se )
       if result['OK']:
         sites += result['Value']
     return sites

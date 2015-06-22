@@ -4,17 +4,19 @@
 import unittest
 import types
 import importlib
-
-from DIRAC import S_OK
+import itertools
 
 from mock import MagicMock
+from DIRAC import S_OK, gLogger
 
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
 from DIRAC.TransformationSystem.Client.TaskManagerPlugin      import TaskManagerPlugin
+from DIRAC.TransformationSystem.Client.Utilities              import PluginUtilities, getFileGroups
 
+# Fake classes
 class opsHelperFakeUser( object ):
   def getValue( self, foo = '', bar = '' ):
     if foo == 'JobTypeMapping/AutoAddedSites':
@@ -85,6 +87,8 @@ def getSitesForSE( ses ):
   elif ses == ['CERN-DST', 'CSCS-DST'] or ses == 'CERN-DST,CSCS-DST':
     return S_OK( ['CERN', 'CSCS'] )
 
+
+
 #############################################################################
 
 class ClientsTestCase( unittest.TestCase ):
@@ -92,7 +96,6 @@ class ClientsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
 
-    from DIRAC import gLogger
     gLogger.setLevel( 'DEBUG' )
 
     self.mockTransClient = MagicMock()
@@ -126,6 +129,11 @@ class ClientsTestCase( unittest.TestCase ):
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
+    self.fcMock = MagicMock()
+    self.fcMock.getFileSize.return_value = S_OK( {'Failed':[], 'Successful': cachedLFNSize} )
+
+    gLogger.setLevel( 'DEBUG' )
+    
     self.maxDiff = None
 
   def tearDown( self ):
@@ -516,6 +524,161 @@ class TransformationSuccess( ClientsTestCase ):
     self.assertRaises( AttributeError, self.transformation.getSourceSE )
 
 
+#############################################################################
+###### Plugins tests
+#############################################################################
+
+
+# Test data for plugins
+data = {'/this/is/at_1':['SE1'],
+        '/this/is/at_2':['SE2'],
+        '/this/is/at_12':['SE1', 'SE2'],
+        '/this/is/also/at_12':['SE1', 'SE2'],
+        '/this/is/at_123':['SE1', 'SE2', 'SE3'],
+        '/this/is/at_23':['SE2', 'SE3'],
+        '/this/is/at_4':['SE4']}
+
+cachedLFNSize = {'/this/is/at_1':1,
+                 '/this/is/at_2':2,
+                 '/this/is/at_12':12,
+                 '/this/is/also/at_12':12,
+                 '/this/is/at_123':123,
+                 '/this/is/at_23':23,
+                 '/this/is/at_4':4}
+
+
+class PluginsUtilitiesSuccess( ClientsTestCase ):
+
+  def test_getFileGroups( self ):
+
+    res = getFileGroups( data )
+    resExpected = {'SE1':['/this/is/at_1'],
+                   'SE2':['/this/is/at_2'],
+                   'SE1,SE2':sorted( ['/this/is/at_12', '/this/is/also/at_12'] ),
+                   'SE1,SE2,SE3':['/this/is/at_123'],
+                   'SE2,SE3':['/this/is/at_23'],
+                   'SE4':['/this/is/at_4']}
+    for t, tExp in itertools.izip( res.items(), resExpected.items() ):
+      self.assertEqual( t[0], tExp[0] )
+      self.assertEqual( sorted( t[1] ), tExp[1] )
+
+    res = getFileGroups( data, False )
+    resExpected = {'SE1': sorted( ['/this/is/at_1', '/this/is/at_123', '/this/is/at_12', '/this/is/also/at_12'] ),
+                   'SE2': sorted( ['/this/is/at_23', 'this/is/at_2', '/this/is/at_123', '/this/is/at_12', '/this/is/also/at_12'] ),
+                   'SE3': sorted( ['/this/is/at_23', '/this/is/at_123'] ),
+                   'SE4': sorted( ['/this/is/at_4'] )}
+
+    self.assertItemsEqual( res, resExpected )
+    
+  def test_groupByReplicas( self ):
+    
+    pu = PluginUtilities()
+    res = pu.groupByReplicas( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    pu = PluginUtilities()
+    pu.params['GroupSize'] = 2
+    res = pu.groupByReplicas( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 3 )
+    for t in res['Value']:
+      self.assert_( len( t[1] ) <= 2 )
+
+    pu = PluginUtilities()
+    pu.params['GroupSize'] = 2
+    res = pu.groupByReplicas( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 4 )
+
+    pu = PluginUtilities()
+    res = pu.groupByReplicas( data, 'Flush' )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1', sorted( ['/this/is/also/at_12', '/this/is/at_1', '/this/is/at_123', '/this/is/at_12'] ) ),
+                   ( 'SE2', sorted( ['/this/is/at_23', '/this/is/at_2'] ) ),
+                   ( 'SE4', sorted( ['/this/is/at_4'] ) )]
+    for t, tExp in itertools.izip( res['Value'], resExpected ):
+      self.assertEqual( t[0], tExp[0] )
+      self.assertEqual( sorted( t[1] ), tExp[1] )
+
+  def test_groupBySize( self ):
+
+    # no files, nothing happens
+    pu = PluginUtilities( fc = self.fcMock )
+    res = pu.groupBySize( {}, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    # files, cached, nothing happens as too small
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.cachedLFNSize = dict( cachedLFNSize )
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    # files, cached, low GroupSize imposed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.cachedLFNSize = dict( cachedLFNSize )
+    pu.groupSize = 10
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1,SE2', ['/this/is/at_12'] ),
+                   ( 'SE2,SE3', ['/this/is/at_23'] ),
+                   ( 'SE1,SE2,SE3', ['/this/is/at_123'] ),
+                   ( 'SE1,SE2', ['/this/is/also/at_12'] )]
+    for tExp in resExpected:
+      self.assert_( tExp in res['Value'] )
+
+    # files, cached, flushed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.cachedLFNSize = dict( cachedLFNSize )
+    res = pu.groupBySize( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 6 )
+
+    # files, not cached, nothing happens as too small
+    pu = PluginUtilities( fc = self.fcMock )
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+    # files, not cached, flushed
+    pu = PluginUtilities( fc = self.fcMock )
+
+    res = pu.groupBySize( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( len( res['Value'] ) == 6 )
+
+    # files, not cached, low GroupSize imposed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.groupSize = 10
+    res = pu.groupBySize( data, 'Active' )
+    self.assert_( res['OK'] )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1,SE2', ['/this/is/at_12'] ),
+                   ( 'SE2,SE3', ['/this/is/at_23'] ),
+                   ( 'SE1,SE2,SE3', ['/this/is/at_123'] ),
+                   ( 'SE1,SE2', ['/this/is/also/at_12'] )]
+    for tExp in resExpected:
+      self.assert_( tExp in res['Value'] )
+
+    # files, not cached, low GroupSize imposed, Flushed
+    pu = PluginUtilities( fc = self.fcMock )
+    pu.groupSize = 10
+    res = pu.groupBySize( data, 'Flush' )
+    self.assert_( res['OK'] )
+    self.assert_( res['OK'] )
+    resExpected = [( 'SE1,SE2', ['/this/is/at_12'] ),
+                   ( 'SE2,SE3', ['/this/is/at_23'] ),
+                   ( 'SE1,SE2,SE3', ['/this/is/at_123'] ),
+                   ( 'SE1,SE2', ['/this/is/also/at_12'] )]
+    for tExp in resExpected:
+      self.assert_( tExp in res['Value'] )
+
+
+#############################################################################
+#############################################################################
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TaskBaseSuccess ) )
@@ -523,4 +686,5 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( RequestTasksSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PluginsUtilitiesSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
