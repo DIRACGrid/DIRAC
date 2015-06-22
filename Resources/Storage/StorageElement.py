@@ -7,8 +7,8 @@ __RCSID__ = "$Id$"
 import re
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DIRACError, S_ERROR_N as S_ERROR
-from DIRAC.Core.Utilities.ReturnValues import S_OK, returnSingleResult
+from DIRAC import gLogger, gConfig, DError, DIRACError
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -313,7 +313,7 @@ class StorageElementItem( object ):
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
       log.debug( "StorageElement is not allowed for VO", self.vo )
-      return S_ERROR( DError( errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO" ) )
+      return DError( errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO" )
     log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name, operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
@@ -331,7 +331,7 @@ class StorageElementItem( object ):
     # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
       log.debug( "Read, write and check access not permitted." )
-      return S_ERROR( DError( errno.EACCES, "SE.isValid: Read, write and check access not permitted." ) )
+      return DError( errno.EACCES, "SE.isValid: Read, write and check access not permitted." )
 
 
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
@@ -345,27 +345,26 @@ class StorageElementItem( object ):
       operation = 'CheckAccess'
     else:
       log.debug( "The supplied operation is not known.", operation )
-      return S_ERROR( DError( DIRACError.ENOMETH , "SE.isValid: The supplied operation is not known." ) )
+      return DError( DIRACError.ENOMETH , "SE.isValid: The supplied operation is not known." )
     log.debug( "check the operation: %s " % operation )
     # Check if the operation is valid
     if operation == 'CheckAccess':
       if not reading:
         if not checking:
           log.debug( "Check access not currently permitted." )
-          return S_ERROR( DError( errno.EACCES, "SE.isValid: Check access not currently permitted." ))
+          return DError( errno.EACCES, "SE.isValid: Check access not currently permitted." )
     if operation == 'ReadAccess':
       if not reading:
         log.debug( "Read access not currently permitted." )
-        return S_ERROR( DError( errno.EACCES, "SE.isValid: Read access not currently permitted." ))
+        return DError( errno.EACCES, "SE.isValid: Read access not currently permitted." )
     if operation == 'WriteAccess':
       if not writing:
         log.debug( "Write access not currently permitted." )
-        return S_ERROR( DError( errno.EACCES, "SE.isValid: Write access not currently permitted." ))
+        return DError( errno.EACCES, "SE.isValid: Write access not currently permitted." )
     if operation == 'RemoveAccess':
       if not removing:
         log.debug( "Remove access not currently permitted." )
-        return S_ERROR( DError( errno.EACCES, "SE.isValid: Remove access not currently permitted." ))
-
+        return DError( errno.EACCES, "SE.isValid: Remove access not currently permitted." )
     return S_OK()
 
   def getPlugins( self ):
@@ -494,8 +493,7 @@ class StorageElementItem( object ):
     else:
       errStr = "Supplied urls must be string, list of strings or a dictionary."
       self.log.getSubLogger( 'getLFNFromURL' ).debug( errStr )
-      return S_ERROR( DError( errno.EINVAL, errStr ) )
-
+      return DError( errno.EINVAL, errStr )
 
     retDict = { "Successful" : {}, "Failed" : {} }
     for url in urlDict:
@@ -691,9 +689,7 @@ class StorageElementItem( object ):
         if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
           fcn = getattr( storage, self.methodName )
         if not fcn:
-          return S_ERROR( DError( DIRACError.ENOMETH, "SE.__executeMethod: unable to invoke %s, it isn't a member function of storage" ) )
-
-
+          return DError( DIRACError.ENOMETH, "SE.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
         urlsToUse = {}  # url : the value of the lfn dictionary for the lfn of this url
         for url in urlDict:
           urlsToUse[url] = lfnDict[urlDict[url]]

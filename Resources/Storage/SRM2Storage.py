@@ -124,7 +124,7 @@ class SRM2Storage( StorageBase ):
                                                               lcg_util.__file__ ) )
     except ImportError, error:
       gLogger.exception( "__importExternals: Failed to import lcg_util", "", error )
-      return S_ERROR( DError( DIRACError.EIMPERR, error ) )
+      return DError( DIRACError.EIMPERR, error )
     # # and gfalthr
     try:
       import gfalthr as gfal
@@ -139,7 +139,7 @@ class SRM2Storage( StorageBase ):
                                                             gfal.__file__ ) )
       except ImportError, error:
         gLogger.exception( "__importExternals: Failed to import gfal", "", error )
-        return S_ERROR( DError( DIRACError.EIMPERR, error ) )
+        return DError( DIRACError.EIMPERR, error )
     self.lcg_util = lcg_util
     self.gfal = gfal
     return S_OK()
@@ -314,7 +314,7 @@ class SRM2Storage( StorageBase ):
     elif type( protocols ) == ListType:
       listProtocols = protocols
     else:
-      return S_ERROR( DError( errno.EPROTO, "getTransportURL: Must supply desired protocols to this plug-in." ) )
+      return DError( errno.EPROTO, "getTransportURL: Must supply desired protocols to this plug-in." )
 
     if self.protocolParameters['Protocol'] in listProtocols:
       successful = {}
@@ -485,7 +485,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "getFileMetadata: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def isFile( self, path ):
@@ -527,7 +527,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "isFile: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def pinFile( self, path, lifetime = 86400 ):
@@ -641,7 +641,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "SRM2Storage.exists: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getFileSize( self, path ):
@@ -684,7 +684,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "SRM2Storage.getFileSize: Returned element does not contain surl."
         self.log.error( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def putFile( self, path, sourceSize = 0 ):
@@ -734,23 +734,23 @@ class SRM2Storage( StorageBase ):
       src_url = src_file
       srctype = 2
       if not sourceSize:
-        return S_ERROR( DError( errno.EINVAL, "__putFile: For file replication the source file size must be provided." ) )
+        return DError( errno.EINVAL, "__putFile: For file replication the source file size must be provided." )
     else:
       if not os.path.exists( src_file ):
         errStr = "__putFile: The source local file does not exist."
         self.log.error( errStr, src_file )
-        return S_ERROR( DError( errno.ENOENT, errStr ) )
+        return DError( errno.ENOENT, errStr )
       sourceSize = getSize( src_file )
       if sourceSize == -1:
         errStr = "__putFile: Failed to get file size."
         self.log.error( errStr, src_file )
-        return S_ERROR( DError( DIRACError.EFILESIZE, errStr ) )
+        return DError( DIRACError.EFILESIZE, errStr )
       src_url = 'file:%s' % src_file
       srctype = 0
     if sourceSize == 0:
       errStr = "__putFile: Source file is zero size."
       self.log.error( errStr, src_file )
-      return S_ERROR( DError( DIRACError.EFILESIZE, errStr ) )
+      return DError( DIRACError.EFILESIZE, errStr )
     timeout = int( sourceSize / self.MIN_BANDWIDTH + 300 )
     if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
       nbstreams = 4
@@ -844,15 +844,15 @@ class SRM2Storage( StorageBase ):
           for err in errCode:
             msg.append( '%s of type %s' % ( err, type( err ) ) )
           self.log.error( "__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join( msg ) )
-        return S_ERROR( DError( DIRACError.EGFAL, "__lcg_cp_wrapper: Returned errCode was not an integer %s" % msg ) )
+        return DError( DIRACError.EGFAL, "__lcg_cp_wrapper: Returned errCode was not an integer %s" % msg )
       if type( errStr ) not in StringTypes:
         self.log.error( "__lcg_cp_wrapper: Returned errStr was not a string",
                        "%s %s" % ( errCode, type( errStr ) ) )
-        return S_ERROR( DError( DIRACError.EGFAL, "__lcg_cp_wrapper: Returned errStr was not a string" ) )
+        return DError( DIRACError.EGFAL, "__lcg_cp_wrapper: Returned errStr was not a string" )
       return S_OK( ( errCode, errStr ) )
     except Exception, error:
       self.log.exception( "__lcg_cp_wrapper", "", error )
-      return S_ERROR( DError( DIRACError.EGFAL, "__lcg_cp_wrapper:Exception while attempting file upload %s" % error ) )
+      return DError( DIRACError.EGFAL, "__lcg_cp_wrapper:Exception while attempting file upload %s" % error )
 
   def getFile( self, path, localPath = False ):
     """ make a local copy of a storage :path:
@@ -943,7 +943,7 @@ class SRM2Storage( StorageBase ):
     if hasattr( self, method ) and callable( getattr( self, method ) ):
       fcn = getattr( self, method )
     if not fcn:
-      return S_ERROR( DError( DIRACError.ENOMETH, "Unable to invoke %s, it isn't a member funtion of SRM2Storage" % method ) )
+      return DError( DIRACError.ENOMETH, "Unable to invoke %s, it isn't a member funtion of SRM2Storage" % method )
     res = fcn( url )
 
     if not res['OK']:
@@ -1006,7 +1006,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "SRM2Storage.isDirectory: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getDirectoryMetadata( self, path ):
@@ -1054,7 +1054,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "SRM2Storage.getDirectoryMetadata: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getDirectorySize( self, path ):
@@ -1159,7 +1159,7 @@ class SRM2Storage( StorageBase ):
       else:
         errStr = "SRM2Storage.listDirectory: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
-        return S_ERROR( DError( errno.ENOMSG, errStr ) )
+        return DError( errno.ENOMSG, errStr )
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def putDirectory( self, path ):
@@ -1200,7 +1200,7 @@ class SRM2Storage( StorageBase ):
     if not os.path.isdir( src_directory ):
       errStr = "SRM2Storage.__putDir: The supplied directory does not exist."
       self.log.error( errStr, src_directory )
-      return S_ERROR( DError( errno.ENOENT, errStr ) )
+      return DError( errno.ENOENT, errStr )
 
     # Get the local directory contents
     contents = os.listdir( src_directory )
@@ -1279,7 +1279,7 @@ class SRM2Storage( StorageBase ):
     if not res['Value']:
       errStr = "SRM2Storage.__getDir: The supplied source path is not a directory."
       self.log.error( errStr, srcDirectory )
-      return S_ERROR( DError( errno.ENOTDIR, errStr ) )
+      return DError( errno.ENOTDIR, errStr )
 
     # Check the local directory exists and create it if not
     if not os.path.exists( destDirectory ):
@@ -1548,7 +1548,7 @@ class SRM2Storage( StorageBase ):
       protocolsList = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
     if not protocolsList:
-      return S_ERROR( DError( DIRACError.ECONF, "SRM2Storage.getTransportURL: No local protocols defined and no defaults found" ) )
+      return DError( DIRACError.ECONF, "SRM2Storage.getTransportURL: No local protocols defined and no defaults found" )
 
     return S_OK( protocolsList )
 
@@ -2018,7 +2018,7 @@ class SRM2Storage( StorageBase ):
       if not errMessage:
         errMessage = os.strerror( self.gfal.gfal_get_errno() )
       self.log.error( errStr, errMessage )
-      return S_ERROR( DError( self.gfal.gfal_get_errno(), errMessage ) )
+      return DError( self.gfal.gfal_get_errno(), errMessage )
     else:
       self.log.debug( "SRM2Storage.__create_gfal_object: Successfully performed gfal_init." )
       return S_OK( gfalObject )
@@ -2037,7 +2037,7 @@ class SRM2Storage( StorageBase ):
       if not errMessage:
         errMessage = os.strerror( errCode )
       self.log.error( errStr, errMessage )
-      return S_ERROR( DError( errCode, errMessage ) )
+      return DError( errCode, errMessage )
     else:
       self.log.debug( "SRM2Storage.__gfal_set_ids: Successfully performed gfal_set_ids." )
       return S_OK( gfalObject )
@@ -2066,7 +2066,7 @@ class SRM2Storage( StorageBase ):
     if hasattr( self.gfal, method ) and callable( getattr( self.gfal, method ) ):
       fcn = getattr( self.gfal, method )
     if not fcn:
-      return S_ERROR( DError( DIRACError.ENOMETH, "%s is not a member function of gfal" % method ) )
+      return DError( DIRACError.ENOMETH, "%s is not a member function of gfal" % method )
 #       return S_ERROR( "Unable to invoke %s for gfal, it isn't a member function" % method )
 
     # # retry
@@ -2090,7 +2090,7 @@ class SRM2Storage( StorageBase ):
       if not errMessage:
         errMessage = os.strerror( errNo ) if errNo else "UNKNOWN ERROR"
       self.log.error( errStr, errMessage )
-      return S_ERROR( DError( errCode, errMessage ) )
+      return DError( errCode, errMessage )
     self.log.debug( "SRM2Storage.__gfal_exec(%s): Successfully invoked." % method )
     return S_OK( gfalObject )
 

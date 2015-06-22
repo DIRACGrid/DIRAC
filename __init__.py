@@ -120,7 +120,7 @@ from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities import DIRACError
-from DIRAC.Core.Utilities.DIRACError import DError, S_ERROR_N
+from DIRAC.Core.Utilities.DIRACError import DError
 
 #Logger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
