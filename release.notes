@@ -1,3 +1,9 @@
+[v6r12p43]
+
+*DMS:
+FIX: DirectoryTreeBase - avoid double definition of FC_DirectoryUsage table
+     in _rebuildDirectoryUsage()
+
 [v6r12p42]
 
 FIX: added fixes from v6r11p34 patch release
