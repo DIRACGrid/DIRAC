@@ -34,9 +34,9 @@ class FailoverRequest( ModuleBase ):
     if not self._enableModule():
       raise GracefulTermination( "Skipping FailoverRequest module" )
 
-    self.request.setRequestName( 'job_%d_request.xml' % self.jobID )
-    self.request.setJobID( self.jobID )
-    self.request.setSourceComponent( "Job_%d" % self.jobID )
+    self.request.RequestName     = 'job_%d_request.xml' % self.jobID
+    self.request.JobID           = self.jobID
+    self.request.SourceComponent = "Job_%d" % self.jobID
 
   def _execute( self ):
 

@@ -27,6 +27,36 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+[v6r13p4]
+
+*Core
+FIX: VOMSService - treat properly the case when the VOMS service returns no result
+     in attGetUserNickname()
+
+*DMS
+FIX: FTSAgent, ReplicateAndRegister - make sure we use source replicas with correct 
+     checksum 
+
+*RMS
+FIX: Request - minor fix in setting the Request properties, suppressing pylint
+     warnings
+CHANGE: File, Reques, Operation, RequestDB - remove the use of sqlalchemy on 
+        the client side     
+     
+*Resources
+FIX: StorageElement - import FileCatalog class rather than the corresponding module     
+FIX: SLURM - proper formatting commands using %j, %T placeholders
+FIX: SSHComputingElement - return full job references from getJobStatus() 
+
+*RSS
+FIX: DowntimeCommand - checking for downtimes including the time to start in hours
+
+*Workflow
+CHANGE: FailoverRequest - assign to properties rather than using setters
+
+*Transformation
+FIX: TransformationClient(DB,Utilities) - fixes to make derived transformations work
+
 [v6r13p3]
 
 *DMS
@@ -145,6 +175,12 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p43]
+
+*DMS:
+FIX: DirectoryTreeBase - avoid double definition of FC_DirectoryUsage table
+     in _rebuildDirectoryUsage()
 
 [v6r12p42]
 

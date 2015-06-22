@@ -11,8 +11,8 @@
 
 operation file
 """
-# for properties
-# pylint: disable=E0211,W0612,E1101,E0102,C0103
+# Disable invalid names warning
+# pylint: disable=C0103
 
 __RCSID__ = "$Id $"
 
@@ -26,8 +26,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
-
-from sqlalchemy.ext.hybrid import hybrid_property
 
 ########################################################################
 class File( object ):
@@ -46,6 +44,7 @@ class File( object ):
   """
 
 
+  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
 
 
   def __init__( self, fromDict = None ):
@@ -87,7 +86,7 @@ class File( object ):
 
     self.initialLoading = False
 
-  @hybrid_property
+  @property
   def LFN( self ):
     """ LFN prop """
     return self._LFN
@@ -102,7 +101,7 @@ class File( object ):
     self._LFN = value
 
 
-  @hybrid_property
+  @property
   def GUID( self ):
     """ GUID prop """
     return self._GUID
@@ -117,7 +116,7 @@ class File( object ):
         raise ValueError( "'%s' is not a valid GUID!" % str( value ) )
     self._GUID = value
 
-  @hybrid_property
+  @property
   def ChecksumType( self ):
     """ checksum type prop """
     return self._ChecksumType
@@ -136,7 +135,7 @@ class File( object ):
       self._ChecksumType = str( value ).strip().upper()
 
 
-  @hybrid_property
+  @property
   def Status( self ):
     """ status prop """
     if not self._Status:
@@ -172,7 +171,7 @@ class File( object ):
     try:
       jsonStr = json.dumps( self, cls = RMSEncoder )
       return S_OK( jsonStr )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def _getJSONData( self ):
