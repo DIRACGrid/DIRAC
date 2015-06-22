@@ -96,6 +96,12 @@ class VOMSService:
       result = self.__soapClients[ 'Attributes' ].service.listUserAttributes( user )
     except Exception as e:
       return S_ERROR( "Error in function getUserNickname: %s" % str( e ) )
-    if 'listUserAttributesReturn' in dir( result ):
-      return S_OK( result.listUserAttributesReturn[0].value )
-    return S_OK( result[0].value )
+
+    if result != None:
+      if 'listUserAttributesReturn' in dir( result ):
+        return S_OK( result.listUserAttributesReturn[0].value )
+
+      return S_OK( result[0].value )
+    else:
+      return S_ERROR( result )
+
