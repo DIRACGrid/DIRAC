@@ -303,7 +303,7 @@ class WMSAdministratorHandler(RequestHandler):
         gLogger.warn( 'Empty pilot output found for %s' % pilotReference )
 
     gridType = pilotDict['GridType']
-    if gridType in ["LCG","gLite","CREAM"]:
+    if gridType in ["LCG","gLite","CREAM","ARC"]:
       group = getGroupOption(group,'VOMSRole',group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
       if not ret['OK']:
