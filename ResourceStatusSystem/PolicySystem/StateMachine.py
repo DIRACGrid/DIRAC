@@ -1,4 +1,3 @@
-# $HeadURL: $
 """ StateMachine
 
   This module contains the basic blocks to build a state machine ( State and 

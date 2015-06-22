@@ -1,4 +1,3 @@
-# $HeadURL:  $
 """ PEP
 
   PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
@@ -7,7 +6,7 @@
   Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
   module doing all dirty work ( finding policies, running them, merging their
   results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
-  of parameters ( decissionParams ) and enforces the actions that apply ( also
+  of parameters ( decisionParams ) and enforces the actions that apply ( also
   determined by the PDP output ).
   
 """
@@ -20,11 +19,11 @@ from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 
 __RCSID__  = '$Id: $'
 
-class PEP:
+class PEP( object ):
   """ PEP ( Policy Enforcement Point )
   """
 
-  def __init__( self, clients = None ):
+  def __init__( self, clients = dict() ):
     """ Constructor
     
     examples:
@@ -40,22 +39,19 @@ class PEP:
         
     """
    
-    if clients is None:
-      clients = {}
-    
-    # PEP uses internally two of the clients: ResourceStatusClient and ResouceManagementClient   
-    if 'ResourceStatusClient' in clients:           
-      self.rsClient = clients[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient()
-    if 'ResourceManagementClient' in clients:             
-      self.rmClient = clients[ 'ResourceManagementClient' ]
-    else: 
-      self.rmClient = ResourceManagementClient()
+    self.clients = dict( clients )
+   
+    # Creating the client in the PEP is a convenience for the PDP, that
+    # uses internally the two TSS clients: ResourceStatusClient and ResouceManagementClient
+    if 'ResourceStatusClient' not in clients:
+      self.clients['ResourceStatusClient'] = ResourceStatusClient()
+    if 'ResourceManagementClient' not in clients:
+      self.clients['ResourceManagementClient'] = ResourceManagementClient()
 
-    self.clients = clients
     # Pass to the PDP the clients that are going to be used on the Commands
-    self.pdp     = PDP( clients )   
+    self.pdp = PDP( self.clients )
+
+    self.log = gLogger
 
 
   def enforce( self, decisionParams ):
@@ -77,6 +73,29 @@ class PEP:
         dictionary with the parameters that will be used to match policies.
     
     """ 
+    if not decisionParams:
+      self.log.warn( "No decision params...?" )
+      return S_OK()
+
+    standardParamsDict = {'element'     : None,
+                          'name'        : None,
+                          'elementType' : None,
+                          'statusType'  : None,
+                          'status'      : None,
+                          'reason'      : None,
+                          'tokenOwner'  : None,
+                          # Last parameter allows policies to be de-activated
+                          'active'      : 'Active'}
+
+    standardParamsDict.update( decisionParams )
+
+    if standardParamsDict['element'] is not None:
+      self.log = gLogger.getSubLogger( 'PEP/%s' % standardParamsDict['element'] )
+      if standardParamsDict['name'] is not None:
+        self.log = gLogger.getSubLogger( 'PEP/%s/%s' % ( standardParamsDict['element'], standardParamsDict['name'] ) )
+        self.log.verbose( "Enforce - statusType: %s, status: %s" % ( standardParamsDict['statusType'],
+                                                                     standardParamsDict['status'] ) )
+    decisionParams = dict( standardParamsDict )
     
     # Setup PDP with new parameters dictionary
     self.pdp.setup( decisionParams )
@@ -84,12 +103,12 @@ class PEP:
     # Run policies, get decision, get actions to apply
     resDecisions = self.pdp.takeDecision()
     if not resDecisions[ 'OK' ]:
-      gLogger.error( 'PEP: Something went wrong, not enforcing policies for %s' % decisionParams )
+      self.log.error( "Something went wrong, not enforcing policies", '%s' % decisionParams )
       return resDecisions
     resDecisions = resDecisions[ 'Value' ]
     
     # We take from PDP the decision parameters used to find the policies
-    decisionParams       = resDecisions[ 'decissionParams' ]
+    decisionParams = resDecisions[ 'decisionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
 
@@ -99,28 +118,28 @@ class PEP:
     if not isNotUpdated[ 'OK' ]:
       return isNotUpdated
                 
-    for policyActionName, policyActionType in policyCombinedResult[ 'PolicyAction' ]:
+    for policyActionName, policyActionType in policyCombinedResult['PolicyAction']:
       
       try:
         actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyActionType )
       except ImportError:
-        gLogger.error( 'Error importing %s action' % policyActionType )
+        self.log.error( 'Error importing %s action' % policyActionType )
         continue
-      
+
       try:
         action = getattr( actionMod, policyActionType )
       except AttributeError:
-        gLogger.error( 'Error importing %s action class' % policyActionType )
+        self.log.error( 'Error importing %s action class' % policyActionType )
         continue  
               
       actionObj = action( policyActionName, decisionParams, policyCombinedResult,
                           singlePolicyResults, self.clients )
       
-      gLogger.debug( ( policyActionName, policyActionType ) )
+      self.log.debug( ( policyActionName, policyActionType ) )
       
       actionResult = actionObj.run()
       if not actionResult[ 'OK' ]:
-        gLogger.error( actionResult[ 'Message' ] ) 
+        self.log.error( actionResult[ 'Message' ] )
         
     return S_OK( resDecisions )
 
@@ -143,20 +162,21 @@ class PEP:
     """
     
     # Copy original dictionary and get rid of one key we cannot pass as kwarg
-    selectParams = decisionParams.copy()
+    selectParams = dict( decisionParams )
     del selectParams[ 'element' ]
     del selectParams[ 'active' ]
     
     # We expect to have an exact match. If not, then something has changed and
     # we cannot proceed with the actions.    
-    unchangedRow = self.rsClient.selectStatusElement( decisionParams[ 'element' ], 
-                                                      'Status', **selectParams )
+    unchangedRow = self.clients['ResourceManagementClient'].selectStatusElement( decisionParams[ 'element' ],
+                                                                                 'Status', **selectParams )
     if not unchangedRow[ 'OK' ]:
       return unchangedRow
     
     if not unchangedRow[ 'Value' ]:
-      msg = '%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running'
-      return S_ERROR( msg % selectParams )
+      msg = '%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running' % selectParams
+      self.log.error( msg )
+      return S_ERROR( msg )
     
     return S_OK()
 

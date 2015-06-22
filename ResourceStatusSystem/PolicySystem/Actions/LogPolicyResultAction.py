@@ -15,10 +15,10 @@ class LogPolicyResultAction( BaseAction ):
     list singlePolicyResults.
   '''
 
-  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+  def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
                 clients = None ):
     
-    super( LogPolicyResultAction, self ).__init__( name, decissionParams, enforcementResult, 
+    super( LogPolicyResultAction, self ).__init__( name, decisionParams, enforcementResult,
                                                    singlePolicyResults, clients )
 
     if clients is not None and 'ResourceManagementClient' in clients:
@@ -32,15 +32,15 @@ class LogPolicyResultAction( BaseAction ):
       database.
     '''
   
-    element = self.decissionParams[ 'element' ]
+    element = self.decisionParams[ 'element' ]
     if element is None:
       return S_ERROR( 'element should not be None' )
     
-    name = self.decissionParams[ 'name' ] 
+    name = self.decisionParams[ 'name' ]
     if name is None:
       return S_ERROR( 'name should not be None' )
     
-    statusType = self.decissionParams[ 'statusType' ]
+    statusType = self.decisionParams[ 'statusType' ]
     if statusType is None:
       return S_ERROR( 'statusType should not be None' )
     

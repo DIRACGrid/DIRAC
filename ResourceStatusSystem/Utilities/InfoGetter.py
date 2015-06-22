@@ -23,7 +23,7 @@ class InfoGetter:
     self.policies = copy.deepcopy( configModule.POLICIESMETA )
 
   @staticmethod
-  def sanitizeDecissionParams( decissionParams ):
+  def sanitizedecisionParams( decisionParams ):
     '''
       Method that filters the input parameters. If the input parameter keys
       are no present on the "params" tuple, are not taken into account.
@@ -36,61 +36,61 @@ class InfoGetter:
     sanitizedParams = {} 
     
     for key in params:
-      if key in decissionParams:
+      if key in decisionParams:
         
         # We can get rid of this now
         # In CS names are with upper case, capitalize them here
-        # sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]
+        # sanitizedParams[ key[0].upper() + key[1:] ] = decisionParams[ key ]
         
-        sanitizedParams[ key ] = decissionParams[ key ]
+        sanitizedParams[ key ] = decisionParams[ key ]
             
     return sanitizedParams
 
-  def getPoliciesThatApply( self, decissionParams ):
+  def getPoliciesThatApply( self, decisionParams ):
     '''
       Method that sanitizes the input parameters and returns the policies that
       match them.
     '''
 
-    decissionParams = self.sanitizeDecissionParams( decissionParams )    
+    decisionParams = self.sanitizedecisionParams( decisionParams )
     
-    return self.__getPoliciesThatApply(decissionParams)
+    return self.__getPoliciesThatApply( decisionParams )
 
-#  def getPolicyActionsThatApply( self, decissionParams ):
+#  def getPolicyActionsThatApply( self, decisionParams ):
 #    '''
 #      Method that sanitizes the input parameters and returns the policies actions
 #      that match them.
 #    '''
 #
-#    decissionParams = self.sanitizeDecissionParams( decissionParams )    
+#    decisionParams = self.sanitizedecisionParams( decisionParams )
 #    
-#    return self.__getPolicyActionsThatApply( decissionParams )
+#    return self.__getPolicyActionsThatApply( decisionParams )
 
-  def getPolicyActionsThatApply( self, decissionParams, singlePolicyResults,
+  def getPolicyActionsThatApply( self, decisionParams, singlePolicyResults,
                                   policyCombinedResults ):
     '''
       Method that sanitizes the input parameters and returns the policies actions
       that match them.
     '''
 
-    decissionParams = self.sanitizeDecissionParams( decissionParams )    
+    decisionParams = self.sanitizedecisionParams( decisionParams )
     
-    return self.__getPolicyActionsThatApply2( decissionParams, singlePolicyResults,
+    return self.__getPolicyActionsThatApply2( decisionParams, singlePolicyResults,
                                               policyCombinedResults )
 
-#  def getNotificationsThatApply( self, decissionParams, notificationAction ):
+#  def getNotificationsThatApply( self, decisionParams, notificationAction ):
 #    '''
 #      Method that sanitizes the input parameters and returns the users that will
 #      be notified.
 #    '''
 #
-#    decissionParams = self.sanitizeDecissionParams( decissionParams )
+#    decisionParams = self.sanitizedecisionParams( decisionParams )
 #
-#    return self.__getNotificationsThatApply( decissionParams, notificationAction )
+#    return self.__getNotificationsThatApply( decisionParams, notificationAction )
 
   ## Private methods ###########################################################
 
-#  def __getPoliciesThatApply( self, decissionParams ):
+#  def __getPoliciesThatApply( self, decisionParams ):
 #    '''
 #      Method that matches the input dictionary with the policies configuration in
 #      the CS. It returns a list of policy dictionaries that matched.
@@ -106,7 +106,7 @@ class InfoGetter:
 #    
 #    # Get policies that match the given decissionParameters
 #    for policyName, policyConfig in policiesConfig.items():
-#      policyMatch = Utils.configMatch( decissionParams, policyConfig )   
+#      policyMatch = Utils.configMatch( decisionParams, policyConfig )
 #      if policyMatch:
 #        policiesThatApply.append( policyName )
 #        
@@ -125,7 +125,7 @@ class InfoGetter:
 #       
 #    return S_OK( policiesToBeLoaded )
 
-  def __getPoliciesThatApply( self, decissionParams ):
+  def __getPoliciesThatApply( self, decisionParams ):
     '''
       Method that matches the input dictionary with the policies configuration in
       the CS. It returns a list of policy dictionaries that matched.
@@ -168,7 +168,7 @@ class InfoGetter:
       policyConfigParams = {}
       #policyConfigParams = policySetup.get( 'configParams', {} )
       
-      policyMatch = Utils.configMatch( decissionParams, policyMatchParams )   
+      policyMatch = Utils.configMatch( decisionParams, policyMatchParams )
       if policyMatch:
         policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
         
@@ -201,7 +201,7 @@ class InfoGetter:
     return S_OK( policiesToBeLoaded )
 
   @staticmethod
-  def __getPolicyActionsThatApply2( decissionParams, singlePolicyResults,
+  def __getPolicyActionsThatApply2( decisionParams, singlePolicyResults,
                                     policyCombinedResults ):
     '''
       Method that matches the input dictionary with the policy actions 
@@ -235,10 +235,10 @@ class InfoGetter:
         policyActionType = policyActionName
         #continue
       
-      # We get matchParams to be compared against decissionParams
+      # We get matchParams to be compared against decisionParams
       policyActionMatchParams = policyActionConfig.get( 'matchParams', {} )
-      policyMatch = Utils.configMatch( decissionParams, policyActionMatchParams )   
-      #policyMatch = Utils.configMatch( decissionParams, policyActionConfig )
+      policyMatch = Utils.configMatch( decisionParams, policyActionMatchParams )
+      # policyMatch = Utils.configMatch( decisionParams, policyActionConfig )
       if not policyMatch:
         continue
     
@@ -267,7 +267,7 @@ class InfoGetter:
     return S_OK( policyActionsThatApply )
 
   @staticmethod
-  def __getPolicyActionsThatApply( decissionParams ):
+  def __getPolicyActionsThatApply( decisionParams ):
     '''
       Method that matches the input dictionary with the policy actions 
       configuration in the CS. It returns a list of policy actions names that 
@@ -284,14 +284,14 @@ class InfoGetter:
     
     # Get policies that match the given decissionParameters
     for policyActionName, policyActionConfig in policyActionsConfig.items():
-      policyMatch = Utils.configMatch( decissionParams, policyActionConfig )   
+      policyMatch = Utils.configMatch( decisionParams, policyActionConfig )
       if policyMatch:
         policyActionsThatApply.append( policyActionName )
                
     return S_OK( policyActionsThatApply )
 
 #  @staticmethod
-#  def __getNotificationsThatApply( decissionParams, notificationAction ):
+#  def __getNotificationsThatApply( decisionParams, notificationAction ):
 #    '''
 #      Method that matches the input dictionary with the notifications 
 #      configuration in the CS. It returns a list of notification dictionaries that 
@@ -313,7 +313,7 @@ class InfoGetter:
 #    
 #    # Get notifications that match the given decissionParameters
 #    for notificationName, notificationConfig in notificationsConfig.items():
-#      notificationMatch = Utils.configMatch( decissionParams, notificationConfig )   
+#      notificationMatch = Utils.configMatch( decisionParams, notificationConfig )
 #      if notificationMatch:
 #        
 #        notificationConfig[ 'name' ] = notificationName

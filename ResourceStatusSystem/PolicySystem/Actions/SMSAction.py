@@ -15,10 +15,10 @@ class SMSAction( BaseAction ):
     him run to his or her office.
   '''
   
-  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, 
+  def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
                 clients = None ):
     
-    super( SMSAction, self ).__init__( name, decissionParams, enforcementResult, 
+    super( SMSAction, self ).__init__( name, decisionParams, enforcementResult,
                                        singlePolicyResults, clients )
   def run( self ):
     '''
@@ -27,15 +27,15 @@ class SMSAction( BaseAction ):
     '''    
     # Minor security checks
     
-    element = self.decissionParams[ 'element' ]
+    element = self.decisionParams[ 'element' ]
     if element is None:
       return S_ERROR( 'element should not be None' )
    
-    name = self.decissionParams[ 'name' ] 
+    name = self.decisionParams[ 'name' ]
     if name is None:
       return S_ERROR( 'name should not be None' )
     
-    statusType = self.decissionParams[ 'statusType' ]
+    statusType = self.decisionParams[ 'statusType' ]
     if statusType is None:
       return S_ERROR( 'statusType should not be None' )
     
@@ -47,11 +47,11 @@ class SMSAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
     
-    if self.decissionParams[ 'status' ] == status:
+    if self.decisionParams[ 'status' ] == status:
       # If status has not changed, we skip
       return S_OK()
 
-    if self.decissionParams[ 'reason' ] == reason:
+    if self.decisionParams[ 'reason' ] == reason:
       # If reason has not changed, we skip
       return S_OK()
       
@@ -67,7 +67,7 @@ class SMSAction( BaseAction ):
 #    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 #    diracAdmin = DiracAdmin()
 #    
-#    address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
+#    address = InfoGetter().getNotificationsThatApply( self.decisionParams, self.actionName )
 #    if not address[ 'OK' ]:
 #      return address 
 #    address = address[ 'Value' ]

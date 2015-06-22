@@ -1,6 +1,5 @@
-# $HeadURL:  $
-''' Test_RSS_Policy_Configurations
-'''
+""" Test_RSS_Policy_Configurations
+"""
 
 import unittest
 
@@ -13,16 +12,16 @@ __RCSID__ = '$Id:  $'
 class Configurations_TestCase( unittest.TestCase ):
   
   def setUp( self ):
-    '''
+    """
     Setup
-    '''
+    """
         
     self.moduleTested = moduleTested
     
   def tearDown( self ):
-    '''
+    """
     TearDown
-    '''
+    """
     del self.moduleTested
     
 ################################################################################
@@ -31,8 +30,8 @@ class Configurations_TestCase( unittest.TestCase ):
 class Configurations_Success( Configurations_TestCase ):
   
   def test_policiesMeta( self ):
-    ''' tests that the configuration does not have any funny key
-    '''
+    """ tests that the configuration does not have any funny key
+    """
     
     self.assertEqual( True, hasattr( self.moduleTested, 'POLICIESMETA' ) )
     
@@ -41,6 +40,15 @@ class Configurations_Success( Configurations_TestCase ):
     for _policyName, policyMeta in policiesMeta.items():
       
       self.assertEqual( [ 'args', 'command', 'description', 'module' ], policyMeta.keys() )
-    
+
+
+
 ################################################################################
+################################################################################
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( Configurations_TestCase )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( Configurations_Success ) )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
