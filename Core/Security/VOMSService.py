@@ -97,7 +97,7 @@ class VOMSService:
     except Exception as e:
       return S_ERROR( "Error in function getUserNickname: %s" % str( e ) )
 
-    if result != None:
+    if result is not None:
       if 'listUserAttributesReturn' in dir( result ):
         return S_OK( result.listUserAttributesReturn[0].value )
 
