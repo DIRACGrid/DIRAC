@@ -25,6 +25,8 @@ credDict = {'DN': '/DC=ch/DC=cern/OU=computers/CN=volhcb12.cern.ch',
             'properties': [FC_MANAGEMENT],
             'isProxy': False}
 
+isAdmin = False
+
 
 # TESTS WERE DESIGNED WITH THIS CONFIGURATION
 # DATABASE_CONFIG = {  'UserGroupManager'  : 'UserAndGroupManagerDB',
@@ -115,17 +117,24 @@ class SECase ( FileCatalogDBTestCase ):
 
   def test_seOperations( self ):
     """Testing SE related operation"""
+
     # create SE
     ret = self.db.addSE( seName, credDict )
-    self.assert_( ret["OK"], "addSE failed when adding new SE: %s" % ret )
+    if isAdmin:
 
-    seId = ret["Value"]
-    # create it again
-    ret = self.db.addSE( seName, credDict )
-    self.assertEqual( ret["Value"], seId, "addSE failed when adding existing SE: %s" % ret )
+      self.assert_( ret["OK"], "addSE failed when adding new SE: %s" % ret )
+
+      seId = ret["Value"]
+      # create it again
+      ret = self.db.addSE( seName, credDict )
+      self.assertEqual( ret["Value"], seId, "addSE failed when adding existing SE: %s" % ret )
+
+    else:
+      self.assertEqual( ret["OK"], False, "addSE should fail when adding new SE as non admin: %s" % ret )
+
     # remove it
     ret = self.db.deleteSE( seName, credDict )
-    self.assert_( ret["OK"], "deleteE failed %s" % ret )
+    self.assertEqual( ret["OK"], True if isAdmin else False, "deleteE failed %s" % ret )
 
 
 class UserGroupCase( FileCatalogDBTestCase ):
@@ -133,35 +142,54 @@ class UserGroupCase( FileCatalogDBTestCase ):
   def test_userOperations( self ):
     """Testing the user related operations"""
 
+
+    expectedRes = None
+    if isAdmin:
+      print "Running UserTest in admin mode"
+      expectedRes = True
+    else:
+      print "Running UserTest in non admin mode"
+      expectedRes = False
+
     # Add the user
     result = self.db.addUser( testUser, credDict )
-    self.assert_( result['OK'], "AddUser failed when adding new user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddUser failed when adding new user: %s" % result )
     # Add an existing user
     result = self.db.addUser( testUser, credDict )
-    self.assert_( result['OK'], "AddUser failed when adding existing user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddUser failed when adding existing user: %s" % result )
     # Fetch the list of user
     result = self.db.getUsers( credDict )
-    self.assert_( result['OK'], "getUsers failed: %s" % result )
-    # Check if our user is present
-    self.assert_( testUser in result['Value'], "getUsers failed: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "getUsers failed: %s" % result )
+    if isAdmin:
+      # Check if our user is present
+      self.assertEqual( testUser in result['Value'], expectedRes, "getUsers failed: %s" % result )
     # remove the user we created
     result = self.db.deleteUser( testUser, credDict )
-    self.assert_( result['OK'], "deleteUser failed: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "deleteUser failed: %s" % result )
 
 
   def test_groupOperations( self ):
     """Testing the group related operations"""
 
+    expectedRes = None
+    if isAdmin:
+      print "Running UserTest in admin mode"
+      expectedRes = True
+    else:
+      print "Running UserTest in non admin mode"
+      expectedRes = False
+
     # Create new group
     result = self.db.addGroup( testGroup, credDict )
-    self.assert_( result['OK'], "AddGroup failed when adding new user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddGroup failed when adding new user: %s" % result )
     result = self.db.addGroup( testGroup, credDict )
-    self.assert_( result['OK'], "AddGroup failed when adding existing user: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "AddGroup failed when adding existing user: %s" % result )
     result = self.db.getGroups( credDict )
-    self.assert_( result['OK'], "getGroups failed: %s" % result )
-    self.assert_( testGroup in result['Value'] )
+    self.assertEqual( result['OK'], expectedRes, "getGroups failed: %s" % result )
+    if isAdmin:
+      self.assertEqual( testGroup in result['Value'], expectedRes )
     result = self.db.deleteGroup( testGroup, credDict )
-    self.assert_( result['OK'], "deleteGroup failed: %s" % result )
+    self.assertEqual( result['OK'], expectedRes, "deleteGroup failed: %s" % result )
 
 
 
@@ -514,7 +542,11 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
   def test_directoryUsage( self ):
     """Testing DirectoryUsage related operation"""
     # create SE
-    
+
+    # Only admin can run that
+    if not isAdmin:
+      return
+
     d1 = '/sizeTest/d1'
     d2 = '/sizeTest/d2'
     f1 = d1 + '/f1'
@@ -797,6 +829,8 @@ if __name__ == '__main__':
   all_combinations = list( itertools.product( *MANAGER_TO_TEST.values() ) )
   numberOfManager = len( managerTypes )
   
+
+
   for setup in all_combinations:
     print "Running with:"
     print ( "".join( ["\t %s : %s\n" % ( managerTypes[i], setup[i] ) for i in range( numberOfManager )] ) )
@@ -812,8 +846,25 @@ if __name__ == '__main__':
     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DirectoryCase ) )
     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DirectoryUsageCase ) )
 
+
+    # First run with admin privilege:
+    isAdmin = True
+    if FC_MANAGEMENT not in credDict['properties']:
+      credDict['properties'].append( FC_MANAGEMENT )
+    print "Running test with admin privileges"
+
+
+
     testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
+    # Then run without admin privilege:
+    isAdmin = False
+    if FC_MANAGEMENT in credDict['properties']:
+      credDict['properties'].remove( FC_MANAGEMENT )
+    print "Running test without admin privileges"
+
+
+    testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 
 

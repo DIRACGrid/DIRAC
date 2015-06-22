@@ -14,9 +14,9 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.DirectoryCl
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.FileManagerPs           import FileManagerPs
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS, SEManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager, DirectorySecurityManager, FullSecurityManager, DirectorySecurityManagerWithDelete
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS, UserAndGroupManagerDB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager, DirectorySecurityManager, FullSecurityManager, DirectorySecurityManagerWithDelete, PolicyBasedSecurityManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager        import DatasetManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentFormat
 
@@ -206,31 +206,35 @@ class FileCatalogDB( DB ):
   #  Path based read methods
   #
 
-  def exists( self, lfns, credDict ):
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+  def exists(self, lfns, credDict):
+    res = self._checkPathPermissions( 'exists', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.exists( res['Value']['Successful'] )
-    if not res['OK']:
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
-    notExist = []
-    for lfn in res['Value']['Successful'].keys():
-      if not successful[lfn]:
-        notExist.append( lfn )
-        successful.pop( lfn )
-    if notExist:
-      res = self.dtree.exists( notExist )
+    successful = {}
+    if res['Value']['Successful']:
+      res = self.fileManager.exists( res['Value']['Successful'] )
       if not res['OK']:
         return res
       failed.update( res['Value']['Failed'] )
-      successful.update( res['Value']['Successful'] )
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+      successful = res['Value']['Successful']
 
-  def getPathPermissions( self, lfns, credDict ):
-    """ Get permissions for the given user/group to manipulate the given lfns
+      notExist = []
+      for lfn in res['Value']['Successful'].keys():
+        if not successful[lfn]:
+          notExist.append( lfn )
+          successful.pop( lfn )
+      if notExist:
+        res = self.dtree.exists( notExist )
+        if not res['OK']:
+          return res
+        failed.update( res['Value']['Failed'] )
+        successful.update( res['Value']['Successful'] )
+
+    return S_OK( {'Successful':successful,'Failed':failed} )
+  
+  def getPathPermissions(self, lfns, credDict):
+    """ Get permissions for the given user/group to manipulate the given lfns 
     """
     res = checkArgumentFormat( lfns )
     if not res['OK']:
@@ -238,6 +242,20 @@ class FileCatalogDB( DB ):
     lfns = res['Value']
 
     return self.securityManager.getPathPermissions( lfns.keys(), credDict )
+  
+
+  def hasAccess( self, opType, paths, credDict ):
+    """ Get permissions for the given user/group to execute the given operation
+        on the given paths
+
+        returns Successful dict with True/False
+    """
+    res = checkArgumentFormat( paths )
+    if not res['OK']:
+      return res
+    paths = res['Value']
+
+    return self.securityManager.hasAccess( opType, paths, credDict )
 
   ########################################################################
   #
@@ -247,39 +265,53 @@ class FileCatalogDB( DB ):
   def changePathOwner( self, lfns, credDict, recursive = False ):
     """ Change the owner of the given list of paths
     """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'changePathOwner', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathOwner( res['Value']['Successful'], credDict, recursive )
-    if not res['OK']:
-      return res
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    successful = dict()
+    if res['Value']['Successful']:
+      res = self.fileManager.changePathOwner( res['Value']['Successful'], credDict, recursive )
+      if not res['OK']:
+        return res
+      failed.update( res['Value']['Failed'] )
+      successful = res['Value']['Successful']
 
-  def changePathGroup( self, lfns, credDict, recursive = False ):
+    return S_OK({'Successful':successful,'Failed':failed}) 
+  
+  def changePathGroup(self, lfns, credDict, recursive=False):
     """ Change the group of the given list of paths
     """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'changePathGroup', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
     res = self.fileManager.changePathGroup( res['Value']['Successful'], credDict, recursive )
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+
+    return S_OK({'Successful':successful,'Failed':failed}) 
 
   def changePathMode( self, lfns, credDict, recursive = False ):
     """ Change the mode of the given list of paths
     """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'changePathMode', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathMode( res['Value']['Successful'], credDict, recursive )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)    
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -300,11 +332,15 @@ class FileCatalogDB( DB ):
 
       :return Successful/Failed dict.
     """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'addFile', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.addFile( res['Value']['Successful'], credDict )
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.addFile(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -320,10 +356,15 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'setFileStatus', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
     res = self.fileManager.setFileStatus( res['Value']['Successful'], credDict )
     if not res['OK']:
       return res
@@ -340,11 +381,16 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Delete', lfns, credDict )
+    res = self._checkPathPermissions( 'removeFile', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.removeFile( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.removeFile(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -361,11 +407,16 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'addReplica', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.addReplica( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.addReplica(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -382,11 +433,16 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Delete', lfns, credDict )
+    res = self._checkPathPermissions( 'removeReplica', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.removeReplica( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.removeReplica(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -402,23 +458,33 @@ class FileCatalogDB( DB ):
 
       :return Successful/Failed dict.
     """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'setReplicaStatus', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setReplicaStatus( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setReplicaStatus(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setReplicaHost( self, lfns, credDict ):
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+  def setReplicaHost(self, lfns, credDict):
+    res = self._checkPathPermissions( 'setReplicaHost', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setReplicaHost( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setReplicaHost(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -434,11 +500,16 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'setFileOwner', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setFileOwner( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setFileOwner(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -454,11 +525,16 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'setFileGroup', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setFileGroup( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setFileGroup(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -474,11 +550,16 @@ class FileCatalogDB( DB ):
       :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'setFileMode', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.setFileMode( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.setFileMode(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -487,12 +568,17 @@ class FileCatalogDB( DB ):
 
   def addFileAncestors( self, lfns, credDict ):
     """ Add ancestor information for the given LFNs
-    """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    """        
+    res = self._checkPathPermissions( 'addFileAncestors', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.addFileAncestors( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.addFileAncestors(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -514,11 +600,16 @@ class FileCatalogDB( DB ):
                 The values of the successful dict are True or False whether it's a file or not
     """
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'isFile', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.isFile( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.isFile(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -534,11 +625,16 @@ class FileCatalogDB( DB ):
         :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'getFileSize', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileSize( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileSize(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -554,11 +650,18 @@ class FileCatalogDB( DB ):
         :return Successful/Failed dict.
     """
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'getFileMetadata', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+
     res = self.fileManager.getFileMetadata( res['Value']['Successful'] )
+
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -576,11 +679,16 @@ class FileCatalogDB( DB ):
         Successful is indexed on the LFN, and the values are dictionary with the SEName as keys
     """
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'getReplicas', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getReplicas( res['Value']['Successful'], allStatus = allStatus )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getReplicas(res['Value']['Successful'],allStatus=allStatus)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -595,36 +703,51 @@ class FileCatalogDB( DB ):
 
         :return Successful/Failed dict.
     """
-
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    
+    res = self._checkPathPermissions( 'getReplicaStatus', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getReplicaStatus( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getReplicaStatus(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-
-  def getFileAncestors( self, lfns, depths, credDict ):
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    return S_OK( {'Successful':successful,'Failed':failed} )  
+    
+  def getFileAncestors(self, lfns, depths, credDict):
+    res = self._checkPathPermissions( 'getFileAncestors', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileAncestors( res['Value']['Successful'], depths )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileAncestors(res['Value']['Successful'],depths)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-
-  def getFileDescendents( self, lfns, depths, credDict ):
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    return S_OK( {'Successful':successful,'Failed':failed} )        
+    
+  def getFileDescendents(self, lfns, depths, credDict):
+    res = self._checkPathPermissions( 'getFileDescendents', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.getFileDescendents( res['Value']['Successful'], depths )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.fileManager.getFileDescendents(res['Value']['Successful'],depths)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -690,11 +813,16 @@ class FileCatalogDB( DB ):
 
         :return Successful/Failed dict.
     """
-    res = self._checkPathPermissions( 'Write', lfns, credDict )
+    res = self._checkPathPermissions( 'createDirectory', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.createDirectory( res['Value']['Successful'], credDict )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.createDirectory(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -709,22 +837,26 @@ class FileCatalogDB( DB ):
 
         :return Successful/Failed dict.
     """
-    res = self._checkPathPermissions( 'Delete', lfns, credDict )
+    res = self._checkPathPermissions( 'removeDirectory', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    successful = res['Value']['Successful']
-    if successful:
-      res = self.dtree.removeDirectory( res['Value']['Successful'], credDict )
-      if not res['OK']:
-        return res
-      failed.update( res['Value']['Failed'] )
-      successful = res['Value']['Successful']
-      if not successful:
-        return S_OK( {'Successful':successful, 'Failed':failed} )
-    else:
-      return S_OK( {'Successful':successful, 'Failed':failed} )
 
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+
+
+    res = self.dtree.removeDirectory( res['Value']['Successful'], credDict )
+    if not res['OK']:
+      return res
+    failed.update( res['Value']['Failed'] )
+    successful = res['Value']['Successful']
+    if not successful:
+      return S_OK( {'Successful':successful,'Failed':failed} )
+
+    
     # Remove the directory metadata now
     dirIdList = [ successful[p]['DirID'] for p in successful if 'DirID' in successful[p] ]
     result = self.dmeta.removeMetadataForDirectory( dirIdList, credDict )
@@ -752,11 +884,16 @@ class FileCatalogDB( DB ):
         The successful values are dictionaries indexed "Files", "Datasets", "Subdirs" and "Links"
     """
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'listDirectory', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.listDirectory( res['Value']['Successful'], verbose = verbose )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.listDirectory(res['Value']['Successful'],verbose=verbose)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -773,23 +910,33 @@ class FileCatalogDB( DB ):
                 The values of the successful dict are True or False whether it's a dir or not
     """
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'isDirectory', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.isDirectory( res['Value']['Successful'] )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.isDirectory(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def getDirectoryReplicas( self, lfns, allStatus, credDict ):
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+  def getDirectoryReplicas(self,lfns,allStatus,credDict):
+    res = self._checkPathPermissions( 'getDirectoryReplicas', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryReplicas( res['Value']['Successful'], allStatus )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'],allStatus)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -808,11 +955,16 @@ class FileCatalogDB( DB ):
     """
 
 
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'getDirectorySize', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize( res['Value']['Successful'], longOutput, fromFiles )
+
+    # if no successful, just return
+    if not res['Value']['Successful']:
+      return S_OK( {'Successful':{}, 'Failed':failed} )
+
+    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput,fromFiles)
     if not res['OK']:
       return res
     failed.update( res['Value']['Failed'] )
@@ -826,7 +978,7 @@ class FileCatalogDB( DB ):
     :param dict credDict: credentials
     :return: Successful/Failed dict.
     '''
-    res = self._checkPathPermissions( 'Read', lfns, credDict )
+    res = self._checkPathPermissions( 'getDirectoryMetadata', lfns, credDict )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -864,7 +1016,7 @@ class FileCatalogDB( DB ):
   def setMetadata( self, path, metadataDict, credDict ):
     """ Add metadata to the given path
     """
-    res = self._checkPathPermissions( 'Write', path, credDict )
+    res = self._checkPathPermissions( 'setMetadata', path, credDict )
     if not res['OK']:
       return res
     if not res['Value']['Successful']:
@@ -915,7 +1067,7 @@ class FileCatalogDB( DB ):
   def __removeMetadata( self, path, metadata, credDict ):
     """ Remove metadata from the given path
     """
-    res = self._checkPathPermissions( 'Write', path, credDict )
+    res = self._checkPathPermissions( '__removeMetadata', path, credDict )
     if not res['OK']:
       return res
     if not res['Value']['Successful']:
