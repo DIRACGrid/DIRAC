@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import fnmatch, os, time
 # # from DIRAC
 import DIRAC
-from DIRAC import S_OK, S_ERROR_N as S_ERROR, DError, DIRACError, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, DError, DIRACError, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient

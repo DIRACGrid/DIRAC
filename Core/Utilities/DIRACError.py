@@ -170,11 +170,11 @@ class DError( object ):
 
 
 
-def S_ERROR_N( messageString = '' ):
-  """ return value on error confition
-  :param string messageString: error description
-  """
-  return { 'OK' : False, 'Message' :  messageString   }
+# def S_ERROR_N( messageString = '' ):
+#   """ return value on error confition
+#   :param string messageString: error description
+#   """
+#   return { 'OK' : False, 'Message' :  messageString   }
 
 
 
