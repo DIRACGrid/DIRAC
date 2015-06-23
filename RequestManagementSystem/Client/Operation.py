@@ -11,8 +11,8 @@
 
 Operation implementation
 """
-# for properties
-# pylint: disable=E0211,W0612,E1101,E0102,C0103
+# Disable invalid names warning
+# pylint: disable=C0103
 __RCSID__ = "$Id$"
 
 import datetime
@@ -23,8 +23,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
-
-from sqlalchemy.ext.hybrid import hybrid_property
 
 
 
@@ -208,7 +206,7 @@ class Operation( object ):
     """ helper property returning target SEs as a list"""
     return self.TargetSE.split( "," ) if self.TargetSE else ['']
 
-  @hybrid_property
+  @property
   def Catalog( self ):
     """ catalog prop """
     return self._Catalog
@@ -232,7 +230,7 @@ class Operation( object ):
     """ helper property returning catalogs as list """
     return self._Catalog.split( "," ) if self._Catalog else ['']
 
-  @hybrid_property
+  @property
   def Status( self ):
     """ Status prop """
     return self._Status
@@ -256,7 +254,7 @@ class Operation( object ):
     if self._Status == 'Done':
       self.Error = ''
 
-  @hybrid_property
+  @property
   def Order( self ):
     """ order prop """
     if self._parent:
@@ -269,7 +267,7 @@ class Operation( object ):
     self._Order = value
 
 
-  @hybrid_property
+  @property
   def CreationTime( self ):
     """ operation creation time prop """
     return self._CreationTime
@@ -283,7 +281,7 @@ class Operation( object ):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._CreationTime = value
 
-  @hybrid_property
+  @property
   def SubmitTime( self ):
     """ subrequest's submit time prop """
     return self._SubmitTime
@@ -297,7 +295,7 @@ class Operation( object ):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._SubmitTime = value
 
-  @hybrid_property
+  @property
   def LastUpdate( self ):
     """ last update prop """
     return self._LastUpdate
@@ -323,7 +321,7 @@ class Operation( object ):
     try:
       jsonStr = json.dumps( self, cls = RMSEncoder )
       return S_OK( jsonStr )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
 
