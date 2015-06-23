@@ -137,9 +137,15 @@ class Torque( object ):
     waitingJobs, runningJobs = output.split()[:2]
   
     # Final output
-    resultDict['Status'] = 0
-    resultDict["Waiting"] = waitingJobs
-    resultDict["Running"] = runningJobs
+    try:
+      resultDict['Status'] = 0
+      resultDict["Waiting"] = int( waitingJobs )
+      resultDict["Running"] = int( runningJobs )
+    except Exception as e:
+      resultDict['Status'] = -1
+      resultDict['Output'] = output
+      resultDict['Message'] = 'Exception: %s' % str( e )
+
     return resultDict
   
   def killJob( self, **kwargs ):
