@@ -26,11 +26,10 @@ if a give datetime is in the defined interval.
 
 """
 __RCSID__ = "$Id$"
+
 import time as nativetime
 import datetime
 from types import StringTypes
-
-from DIRAC import gLogger
 
 # Some useful constants for time operations
 microsecond = datetime.timedelta( microseconds = 1 )
@@ -47,11 +46,11 @@ def timeThis( method ):
   """
 
   def timed( *args, **kw ):
-    ts = time.time()
+    ts = nativetime.time()
     result = method( *args, **kw )
-    te = time.time()
+    te = nativetime.time()
 
-    gLogger.verbose( "Exec time === ", " function %r arguments len: %d -> %2.2f sec" % ( method.__name__, len( kw ), te - ts ) )
+    print( "Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( method.__name__, len( kw ), te - ts ) )
     return result
 
   return timed

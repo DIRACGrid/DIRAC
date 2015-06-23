@@ -675,6 +675,15 @@ class PluginsUtilitiesSuccess( ClientsTestCase ):
     for tExp in resExpected:
       self.assert_( tExp in res['Value'] )
 
+  def test_closerSEs( self ):
+    existingSEs = ['CERN-ARCHIVE', 'CERN-DST-EOS', 'CERN_MC_M-DST', 'GRIDKA-ARCHIVE', 'IN2P3-DST']
+    targetSEs = ['CERN-DST-EOS', 'RAL-DST', 'PIC-DST', 'CNAF-DST', 'SARA-DST', 'IN2P3-DST', 'GRIDKA-DST']
+
+    pu = PluginUtilities( fc = self.fcMock )
+    res = pu.closerSEs( existingSEs, targetSEs, False )
+    self.assert_( type( res ) == list )
+    self.assert_( len( res ) )
+
 
 #############################################################################
 #############################################################################

@@ -10,6 +10,7 @@ Utilities for Transformation system
 __RCSID__ = "$Id$"
 
 import ast
+import random
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
@@ -18,6 +19,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.Time import timeThis
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -55,12 +57,13 @@ class PluginUtilities( object ):
     self.groupSize = 0
     self.maxFiles = 0
     self.cachedLFNSize = {}
+    self.transString = ''
+    self.debug = debug
+    self.seConfig = {}
     if transInThread is None:
       self.transInThread = {}
     else:
       self.transInThread = transInThread
-    self.transString = ''
-    self.debug = debug
 
     self.log = gLogger.getSubLogger( "%s/PluginUtilities" % plugin )
 
@@ -153,6 +156,40 @@ class PluginUtilities( object ):
 
     return S_OK( tasks )
 
+  def createTasksBySize( self, lfns, replicaSE, fileSizes = None, flush = False ):
+    """
+    Split files in groups according to the size and create tasks for a given SE
+    """
+    tasks = []
+    if fileSizes is None:
+      fileSizes = self.getFileSize( lfns ).get( 'Value' )
+    if fileSizes is None:
+      self.logWarn( 'Error getting file sizes, no tasks created' )
+      return tasks
+    taskLfns = []
+    taskSize = 0
+    if not self.groupSize:
+      self.groupSize = float( self.getPluginParam( 'GroupSize', 1. ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
+    if not self.maxFiles:
+      self.maxFiles = self.getPluginParam( 'MaxFiles', 100 )
+    lfns = sorted( lfns, key = fileSizes.get )
+    for lfn in lfns:
+      size = fileSizes.get( lfn, 0 )
+      if size:
+        if size > self.groupSize:
+          tasks.append( ( replicaSE, [lfn] ) )
+        else:
+          taskSize += size
+          taskLfns.append( lfn )
+          if ( taskSize > self.groupSize ) or ( len( taskLfns ) >= self.maxFiles ):
+            tasks.append( ( replicaSE, taskLfns ) )
+            taskLfns = []
+            taskSize = 0
+    if flush and taskLfns:
+      tasks.append( ( replicaSE, taskLfns ) )
+    return tasks
+
+
   @timeThis
   def groupBySize( self, files, status ):
     """
@@ -168,11 +205,8 @@ class PluginUtilities( object ):
     # Parameters
     if not self.groupSize:
       self.groupSize = float( self.getPluginParam( 'GroupSize', 1 ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
-    if not self.maxFiles:
-      self.maxFiles = self.getPluginParam( 'MaxFiles', 100 )
-    maxFiles = self.maxFiles
     flush = ( status == 'Flush' )
-    self.logVerbose( "groupBySize: %d files, groupSize: %d, maxFiles: %d, flush: %s" % ( len( files ), self.groupSize, maxFiles, flush ) )
+    self.logVerbose( "groupBySize: %d files, groupSize: %d, flush: %s" % ( len( files ), self.groupSize, flush ) )
 
     # Get the file sizes
     res = self._getFileSize( files.keys() )
@@ -187,36 +221,22 @@ class PluginUtilities( object ):
 
       for replicaSE in sorted( seFiles ) if groupSE else sortSEs( seFiles ):
         lfns = seFiles[replicaSE]
+        newTasks = self.createTasksBySize( lfns, replicaSE, fileSizes = fileSizes, flush = flush )
         lfnsInTasks = []
-        taskLfns = []
-        taskSize = 0
-        lfns = sorted( lfns, key = fileSizes.get )
-        for lfn in lfns:
-          size = fileSizes.get( lfn, 0 )
-          if size:
-            if size > self.groupSize:
-              tasks.append( ( replicaSE, [lfn] ) )
-              lfnsInTasks.append( lfn )
-            else:
-              taskSize += size
-              taskLfns.append( lfn )
-              if ( taskSize > self.groupSize ) or ( len( taskLfns ) >= maxFiles ):
-                tasks.append( ( replicaSE, taskLfns ) )
-                lfnsInTasks += taskLfns
-                taskLfns = []
-                taskSize = 0
-        if flush and taskLfns:
-          tasks.append( ( replicaSE, taskLfns ) )
-          lfnsInTasks += taskLfns
-        # Remove files from global list
-        for lfn in lfnsInTasks:
-          files.pop( lfn )
+        for task  in newTasks:
+          lfnsInTasks += task[1]
+        tasks += newTasks
+
+        # Remove the selected files from the size cache
+        self.clearCachedFileSize( lfnsInTasks )
         if not groupSE:
           # Remove files from other SEs
           for se in [se for se in seFiles if se != replicaSE]:
             seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
-        # Remove the selected files from the size cache
-        self.clearCachedFileSize( lfnsInTasks )
+        # Remove files from global list
+        for lfn in lfnsInTasks:
+          files.pop( lfn )
+
       self.logVerbose( "groupBySize: %d tasks created with groupSE %s" % ( len( tasks ) - nTasks, str( groupSE ) ) )
       self.logVerbose( "groupBySize: %d files have not been included in tasks" % len( files ) )
       nTasks = len( tasks )
@@ -348,6 +368,59 @@ class PluginUtilities( object ):
       shares[site] = share
     return shares
 
+  def uniqueSEs( self, ses ):
+    newSEs = []
+    for se in ses:
+      if not self.isSameSEInList( se, newSEs ):
+        newSEs.append( se )
+    return newSEs
+
+  def isSameSE( self, se1, se2 ):
+    if se1 == se2:
+      return True
+    for se in ( se1, se2 ):
+      if se not in self.seConfig:
+        self.seConfig[se] = {}
+        res = StorageElement( se ).getStorageParameters( 'SRM2' )
+        if res['OK']:
+          params = res['Value']
+          for item in ( 'Host', 'Path' ):
+            self.seConfig[se][item] = params[item].replace( 't1d1', 't0d1' )
+        else:
+          self.logError( "Error getting StorageElement parameters for %s" % se, res['Message'] )
+
+    return self.seConfig[se1] == self.seConfig[se2]
+
+  def isSameSEInList( self, se1, seList ):
+    if se1 in seList:
+      return True
+    for se in seList:
+      if self.isSameSE( se1, se ):
+        return True
+    return False
+
+  def closerSEs( self, existingSEs, targetSEs, local = False ):
+    """ Order the targetSEs such that the first ones are closer to existingSEs. Keep all elements in targetSEs
+    """
+    setTarget = set( targetSEs )
+    sameSEs = set( [se1 for se1 in setTarget for se2 in existingSEs if self.isSameSE( se1, se2 )] )
+    targetSEs = setTarget - set( sameSEs )
+    if targetSEs:
+      # Some SEs are left, look for sites
+      existingSites = [self.dmsHelper.getLocalSiteForSE( se ).get( 'Value' ) for se in existingSEs if not self.dmsHelper.isSEArchive( se ) ]
+      existingSites = set( [site for site in existingSites if site] )
+      closeSEs = set( [se for se in targetSEs if self.dmsHelper.getLocalSiteForSE( se ).get( 'Value' ) in existingSites] )
+      # print existingSEs, existingSites, targetSEs, closeSEs
+      otherSEs = targetSEs - closeSEs
+      targetSEs = list( closeSEs )
+      random.shuffle( targetSEs )
+      if not local and otherSEs:
+        otherSEs = list( otherSEs )
+        random.shuffle( otherSEs )
+        targetSEs += otherSEs
+    else:
+      targetSEs = []
+    return ( targetSEs + list( sameSEs ) ) if not local else targetSEs
 
 
 def getFileGroups( fileReplicas, groupSE = True ):
@@ -388,4 +461,30 @@ def sortSEs( ses ):
   diskSEs = [se for se in ses if seSvcClass[se]]
   tapeSEs = [se for se in ses if se not in diskSEs]
   return sorted( diskSEs ) + sorted( tapeSEs )
+
+def sortExistingSEs( lfnSEs, lfns = None ):
+  """ Sort SEs according to the number of files in each (most first)
+  """
+  seFrequency = {}
+  archiveSEs = []
+  if not lfns:
+    lfns = lfnSEs.keys()
+  else:
+    lfns = [lfn for lfn in lfns if lfn in lfnSEs]
+  for lfn in lfns:
+    existingSEs = lfnSEs[lfn]
+    archiveSEs += [s for s in existingSEs if isArchive( s ) and s not in archiveSEs]
+    for se in [s for s in existingSEs if not isFailover( s ) and s not in archiveSEs]:
+      seFrequency[se] = seFrequency.setdefault( se, 0 ) + 1
+  sortedSEs = seFrequency.keys()
+  # sort SEs in reverse order of frequency
+  sortedSEs.sort( key = seFrequency.get, reverse = True )
+  # add the archive SEs at the end
+  return sortedSEs + archiveSEs
+
+def isArchive( se ):
+  return DMSHelpers().isSEArchive( se )
+
+def isFailover( se ):
+  return DMSHelpers().isSEFailover( se )
 
