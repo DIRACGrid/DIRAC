@@ -355,8 +355,8 @@ class PluginUtilities( object ):
     self.logDebug( "Final plugin param %s: '%s'" % ( name, value ) )
     return value
 
-  @classmethod
-  def _normaliseShares( self, originalShares ):
+  @staticmethod
+  def _normaliseShares( originalShares ):
     shares = originalShares.copy()
     total = 0.0
     for site in shares.keys():
