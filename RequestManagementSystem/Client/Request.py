@@ -525,8 +525,17 @@ class Request( object ):
         # There is a maximum number of files one can add into an operation
         try:
           while len( self.__operations__[i + 1] ):
-            self.__operations__[i] += self.__operations__[i + 1][0]
-            del self.__operations__[i + 1][0]
+            fileToMove = self.__operations__[i + 1][0]
+            self.__operations__[i] += fileToMove
+
+            # If the object is mapped to SQLAlchemy object with a relationship
+            # having the delete-orphan option, the fileToMove will have
+            # already disappeared from the original operation. Silly...
+            # If not, we have to remove it manually
+
+            if len( self.__operations__[i + 1] )\
+               and ( self.__operations__[i + 1][0] == fileToMove ):
+              del self.__operations__[i + 1][0]
             optimized = True
           del self.__operations__[i + 1]
         except RuntimeError:
