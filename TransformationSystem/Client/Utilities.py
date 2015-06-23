@@ -9,32 +9,19 @@ Utilities for Transformation system
 
 __RCSID__ = "$Id$"
 
-import time
 import ast
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.Core.Utilities.Time import timeThis
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-
-# Function to be used as a decorator for timing other functions
-def timeThis( method ):
-
-  def timed( *args, **kw ):
-    ts = time.time()
-    result = method( *args, **kw )
-    te = time.time()
-
-    gLogger.verbose( "Exec time === ", " function %r arguments len: %d -> %2.2f sec" % ( method.__name__, len( kw ), te - ts ) )
-    return result
-
-  return timed
 
 class PluginUtilities( object ):
   """
@@ -102,7 +89,6 @@ class PluginUtilities( object ):
     self.params = params
     self.transID = params['TransformationID']
     self.transString = self.transInThread.get( self.transID, ' [NoThread] [%d] ' % self.transID ) + '%s: ' % self.plugin
-
 
 
 
