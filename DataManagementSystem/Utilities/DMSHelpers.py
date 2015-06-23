@@ -79,10 +79,24 @@ class DMSHelpers( object ):
     if self.siteSEMapping:
       return S_OK( self.siteSEMapping )
 
+    # Get the list of SEs and keep a mapping of those using an Alias or a BaseSE
+    storageElements = gConfig.getSections( 'Resources/StorageElements' )
+    if not storageElements['OK']:
+      gLogger.warn( 'Problem retrieving storage elements', storageElements['Message'] )
+      return storageElements
+    storageElements = storageElements['Value']
+    equivalentSEs = {}
+    for se in storageElements:
+      for option in ( 'BaseSE', 'Alias' ):
+        originalSE = gConfig.getValue( 'Resources/StorageElements/%s/%s' % ( se, option ) )
+        if originalSE:
+          equivalentSEs.setdefault( originalSE, [] ).append( se )
+          break
+
     siteSEMapping = {}
     gridTypes = gConfig.getSections( 'Resources/Sites/' )
     if not gridTypes['OK']:
-      gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
+      gLogger.warn( 'Problem retrieving sections in /Resources/Sites', gridTypes['Message'] )
       return gridTypes
 
     gridTypes = gridTypes['Value']
@@ -102,10 +116,10 @@ class DMSHelpers( object ):
       for site in sites:
         candidateSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, site ), [] )
         if candidateSEs:
+          for se in list( candidateSEs ):
+            candidateSEs += equivalentSEs.get( se, [] )
           siteSEMapping[LOCAL].setdefault( site, set() ).update( candidateSEs )
           storageElementSet.update( candidateSEs )
-        else:
-          gLogger.debug( 'No SEs defined for site %s' % site )
 
     # Add Sites from the SiteSEMappingByProtocol in the CS
     siteSEMapping[PROTOCOL] = {}
