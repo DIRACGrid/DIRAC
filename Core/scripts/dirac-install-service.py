@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Utilities import InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 #
 from DIRAC import gConfig, S_OK, S_ERROR
 InstallTools.exitOnError = True
@@ -89,11 +90,11 @@ else:
       print "ERROR:", result['Message']
       DIRACexit( 1 )
     if service == 'ComponentMonitoring':
-        result = InstallTools.monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
+        result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB' )
         if not result['OK']:
           print "ERROR:", result['Message']
           DIRACexit( 1 )
-    result = InstallTools.monitorInstallation( 'service', system, service, module )
+    result = MonitoringUtilities.monitorInstallation( 'service', system, service, module )
     if not result['OK']:
       print "ERROR:", result['Message']
       DIRACexit( 1 )

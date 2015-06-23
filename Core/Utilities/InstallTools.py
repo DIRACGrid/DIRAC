@@ -78,6 +78,7 @@ from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRA
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -1550,7 +1551,7 @@ def setupSite( scriptCfg, cfg = None ):
       centralCfg = _getCentralCfg( localCfg )
     _addCfgToLocalCS( centralCfg )
     setupComponent( 'service', 'Configuration', 'Server', [], checkModule = False )
-    monitorInstallation( 'service', 'Configuration', 'Server' )
+    MonitoringUtilities.monitorInstallation( 'service', 'Configuration', 'Server' )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
 
     while ['Configuration', 'Server'] in setupServices:
@@ -1719,75 +1720,6 @@ exec svlogd .
   fd.close()
 
   os.chmod( logRunFile, gDefaultPerms )
-
-def monitorInstallation( componentType, system, component, module = None, cpu = None, hostname = None ):
-  """
-  Register the installation of a component in the ComponentMonitoringDB
-  """
-  global monitoringClient
-
-  if not module:
-    module = component
-
-  if not cpu:
-    cpu = 'Not available'
-    for line in open( '/proc/cpuinfo' ):
-      if line.startswith( 'model name' ):
-        cpu = line.split( ':' )[1][ 0 : 64 ]
-        cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
-
-  if not hostname:
-    hostname = socket.getfqdn()
-  instance = component[ 0 : 32 ]
-
-  result = monitoringClient.installationExists \
-                        ( { 'Instance': instance,
-                            'UnInstallationTime': None },
-                          { 'Type': componentType,
-                            'System': system,
-                            'Module': module },
-                          { 'HostName': hostname,
-                            'CPU': cpu } )
-
-  if not result[ 'OK' ]:
-    return result
-  if result[ 'Value' ]:
-    return S_OK( 'Monitoring of %s is already enabled' % component )
-
-  result = monitoringClient.addInstallation \
-                            ( { 'InstallationTime': datetime.datetime.utcnow(),
-                                'Instance': instance },
-                              { 'Type': componentType,
-                                'System': system,
-                                'Module': module },
-                              { 'HostName': hostname,
-                                'CPU': cpu },
-                              True )
-  return result
-
-def monitorUninstallation( system, component, cpu = None, hostname = None ):
-  """
-  Register the uninstallation of a component in the ComponentMonitoringDB
-  """
-  global monitoringClient
-
-  if not cpu:
-    cpu = 'Not available'
-    for line in open( '/proc/cpuinfo' ):
-      if line.startswith( 'model name' ):
-        cpu = line.split( ':' )[1][0:64]
-        cpu = cpu.replace( '\n', '' ).lstrip().rstrip()
-
-  if not hostname:
-    hostname = socket.getfqdn()
-  instance = component[ 0 : 32 ]
-
-  result = monitoringClient.updateInstallations \
-                        ( { 'Instance': instance, 'UnInstallationTime': None },
-                          { 'System': system },
-                          { 'HostName': hostname, 'CPU': cpu },
-                          { 'UnInstallationTime': datetime.datetime.utcnow() } )
-  return result
 
 def installComponent( componentType, system, component, extensions, componentModule = '', checkModule = True ):
   """
@@ -2749,7 +2681,7 @@ def configureLocalDirector( ceNameList = '' ):
     result = setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
     if not result['OK']:
       return result
-    result = monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
+    result = MonitoringUtilities.monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
     if not result[ 'OK' ]:
       return result
     # Now write a local Configuration for the Director

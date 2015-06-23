@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -537,7 +538,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
 
       if database != 'InstalledComponentsDB':
-        result = InstallTools.monitorInstallation( 'DB', system.replace( 'System', '' ), database, cpu = cpu, hostname = hostname )
+        result = MonitoringUtilities.monitorInstallation( 'DB', system.replace( 'System', '' ), database, cpu = cpu, hostname = hostname )
         if not result['OK']:
           self.__errMsg( result['Message'] )
           return
@@ -618,11 +619,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         cpu = result[ 'Value' ][ 'CPUModel' ]
       hostname = self.host
       if component == 'ComponentMonitoring':
-        result = InstallTools.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
+        result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
         if not result['OK']:
           self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
           return
-      result = InstallTools.monitorInstallation( option, system, component, module, cpu = cpu, hostname = hostname )
+      result = MonitoringUtilities.monitorInstallation( option, system, component, module, cpu = cpu, hostname = hostname )
       if not result['OK']:
         self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
         return
@@ -666,7 +667,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result[ 'Message' ] )
         return
       system = result[ 'Value' ][ component ][ 'System' ]
-      result = InstallTools.monitorUninstallation( system , component, hostname = hostname, cpu = cpu )
+      result = MonitoringUtilities.monitorUninstallation( system , component, hostname = hostname, cpu = cpu )
       if not result[ 'OK' ]:
         self.__errMsg( result[ 'Message' ] )
         return
@@ -720,7 +721,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       else:
         cpu = result[ 'Value' ][ 'CPUModel' ]
       hostname = self.host
-      result = InstallTools.monitorUninstallation( system, component, hostname = hostname, cpu = cpu )
+      result = MonitoringUtilities.monitorUninstallation( system, component, hostname = hostname, cpu = cpu )
       if not result[ 'OK' ]:
         return result
 
