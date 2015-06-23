@@ -2,7 +2,6 @@
 ########################################################################
 # $HeadURL$
 """ File Catalog Client Command Line Interface. """
-from mock import self
 
 __RCSID__ = "$Id$"
 
