@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import re
 import random
 import time
 
@@ -147,7 +146,7 @@ class TransformationPlugin( PluginBase ):
     existingCount = res['Value']
     if existingCount:
       self.util.logInfo( "Existing site utilization (%):" )
-      normalisedExistingCount = self._normaliseShares( existingCount.copy() )
+      normalisedExistingCount = self.util._normaliseShares( existingCount.copy() )
       for se in sorted( normalisedExistingCount.keys() ):
         self.util.logInfo( "%s: %.1f" % ( se.ljust( 15 ), normalisedExistingCount[se] ) )
 
@@ -193,27 +192,14 @@ class TransformationPlugin( PluginBase ):
     for site, value in shares.items():
       shares[site] = float( value )
     if normalise:
-      shares = self._normaliseShares( shares )
+      shares = self.util._normaliseShares( shares )
     if not shares:
       return S_ERROR( "No non-zero shares defined" )
     return S_OK( shares )
 
-  @classmethod
-  def _normaliseShares( self, originalShares ):
-    shares = originalShares.copy()
-    total = 0.0
-    for site in shares.keys():
-      share = float( shares[site] )
-      shares[site] = share
-      total += share
-    for site in shares.keys():
-      share = 100.0 * ( shares[site] / total )
-      shares[site] = share
-    return shares
-
   def _getNextSite( self, existingCount, cpuShares, candidates = [] ):
     # normalise the shares
-    siteShare = self._normaliseShares( existingCount )
+    siteShare = self.util._normaliseShares( existingCount )
     # then fill the missing share values to 0
     for site in cpuShares.keys():
       if ( not siteShare.has_key( site ) ):

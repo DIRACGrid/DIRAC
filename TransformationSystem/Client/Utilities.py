@@ -349,6 +349,19 @@ class PluginUtilities( object ):
     self.logDebug( "Final plugin param %s: '%s'" % ( name, value ) )
     return value
 
+  @classmethod
+  def _normaliseShares( self, originalShares ):
+    shares = originalShares.copy()
+    total = 0.0
+    for site in shares.keys():
+      share = float( shares[site] )
+      shares[site] = share
+      total += share
+    for site in shares.keys():
+      share = 100.0 * ( shares[site] / total )
+      shares[site] = share
+    return shares
+
 
 
 def getFileGroups( fileReplicas, groupSE = True ):
