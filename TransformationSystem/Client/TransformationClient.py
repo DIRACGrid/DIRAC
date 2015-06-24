@@ -269,6 +269,8 @@ class TransformationClient( Client, FileCatalogueBase ):
             gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d"
                            % ( prod, oldStatus, len( lfnChunk ), parentProd ),
                            res['Message'] )
+        else:
+          gLogger.info( "[None] [%d] .moveFilesToDerivedTransformation: Successfully moved %d files from %s to %s" % ( prod, len( lfnChunk ), oldStatus, status ) )
 
     # If files were Assigned or Unused at the time of derivation, try and update them as jobs may have run since then
     res = self.getTransformationFiles( condDict = {'TransformationID': prod, 'Status': [ 'Assigned-inherited', 'Unused-inherited' ]} )
