@@ -239,7 +239,7 @@ class TransformationClient( Client, FileCatalogueBase ):
           movedFiles[moveStatus] = movedFiles.setdefault( moveStatus, 0 ) + 1
         else:
           badStatusFiles[derivedStatus] = badStatusFiles.setdefault( derivedStatus, 0 ) + 1
-        if parentDict['Status'] == 'Unused':
+        if parentStatus == 'Unused':
           # If the file was Unused, set it NotProcessed in parent
           parentStatusFiles.setdefault( 'NotProcessed', [] ).append( lfn )
         else:
