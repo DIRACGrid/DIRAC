@@ -116,8 +116,7 @@ class DMSHelpers( object ):
       for site in sites:
         candidateSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, site ), [] )
         if candidateSEs:
-          for se in list( candidateSEs ):
-            candidateSEs += equivalentSEs.get( se, [] )
+          candidateSEs += [eqSE for se in candidateSEs for eqSE in equivalentSEs.get( se, [] )]
           siteSEMapping[LOCAL].setdefault( site, set() ).update( candidateSEs )
           storageElementSet.update( candidateSEs )
 
