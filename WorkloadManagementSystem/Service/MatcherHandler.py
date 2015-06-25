@@ -1,6 +1,7 @@
-""" Matcher class. It matches Agent Site capabilities to job requirements.
+""" The Matcher service provides an XMLRPC interface for matching jobs to pilots
 
-    It also provides an XMLRPC interface to the Matcher
+    It uses a Matcher and a Limiter object that encapsulated the matching logic.
+    It connects to JobDB, TaskQueueDB, and PilotAgentsDB.
 """
 
 __RCSID__ = "$Id$"
@@ -16,11 +17,15 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient     import gMonitor
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB   import PilotAgentsDB
+
 from DIRAC.WorkloadManagementSystem.Client.Matcher     import Matcher
 from DIRAC.WorkloadManagementSystem.Client.Limiter     import Limiter
 
 gJobDB = False
 gTaskQueueDB = False
+
 
 def initializeMatcherHandler( serviceInfo ):
   """  Matcher Service initialization
@@ -28,9 +33,13 @@ def initializeMatcherHandler( serviceInfo ):
 
   global gJobDB
   global gTaskQueueDB
+  global jlDB
+  global pilotAgentsDB
 
   gJobDB = JobDB()
   gTaskQueueDB = TaskQueueDB()
+  jlDB = JobLoggingDB()
+  pilotAgentsDB = PilotAgentsDB()
 
   gMonitor.registerActivity( 'matchTime', "Job matching time",
                              'Matching', "secs" , gMonitor.OP_MEAN, 300 )
@@ -59,8 +68,8 @@ def sendNumTaskQueues():
 class MatcherHandler( RequestHandler ):
 
   def initialize( self ):
-    self.matcher = Matcher( jobDB = gJobDB, tqDB = gTaskQueueDB )
-    self.limiter = Limiter()
+    self.matcher = Matcher( pilotAgentsDB = pilotAgentsDB, jobDB = gJobDB, tqDB = gTaskQueueDB, jlDB = jlDB, )
+    self.limiter = Limiter( jobDB = gJobDB )
 
 ##############################################################################
   types_requestJob = [ [StringType, DictType] ]
