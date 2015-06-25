@@ -10,6 +10,7 @@ Create a new DB on the local MySQL server
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 #
 from DIRAC import gConfig
 InstallTools.exitOnError = True
@@ -36,3 +37,8 @@ for db in args:
   else:
     extension, system = result['Value']
     InstallTools.addDatabaseOptionsToCS( gConfig, system, db, overwrite = True )
+
+    if db != 'InstalledComponentsDB':
+      result = MonitoringUtilities.monitorInstallation( 'DB', system, db )
+      if not result[ 'OK' ]:
+        print "ERROR: failed to register installation in database: %s" % result[ 'Message' ]
