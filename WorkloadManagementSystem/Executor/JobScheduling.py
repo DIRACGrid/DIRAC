@@ -262,7 +262,7 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.info( "Single chosen site %s specified" % ( sites[0] ) )
 
     if sites:
-      self.jobLog.info( "Multiple sites requested: %s" ','.join( sites ) )
+      self.jobLog.info( "Multiple sites requested: %s" % ','.join( sites ) )
       sites = self.__applySiteFilter( sites, banned = bannedSites )
       if not sites:
         return S_ERROR( "Impossible site requirement" )
