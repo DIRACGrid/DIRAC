@@ -6,20 +6,17 @@ __RCSID__ = "$Id$"
 
 import os
 import tarfile
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
+import md5
 import tempfile
-import types
 import re
+
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 class SandboxStoreClient( object ):
 
@@ -84,8 +81,8 @@ class SandboxStoreClient( object ):
       if assignTo[ key ] not in self.__validSandboxTypes:
         return S_ERROR( "Invalid sandbox type %s" % assignTo[ key ] )
 
-    if type( fileList ) not in ( types.TupleType, types.ListType ):
-      return S_ERROR( "fileList must be a tuple!" )
+    if not isinstance( fileList, ( list, tuple ) ):
+      return S_ERROR( "fileList must be a list or tuple!" )
 
     for sFile in fileList:
       if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
@@ -224,7 +221,7 @@ class SandboxStoreClient( object ):
     return self.__assignSandboxToEntity( "Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignJobs( self, jobIdList ):
-    if type( jobIdList ) in ( types.IntType, types.LongType ):
+    if isinstance( jobIdList, ( int, long ) ):
       jobIdList = [ jobIdList ]
     entitiesList = []
     for jobId in jobIdList:
@@ -259,7 +256,7 @@ class SandboxStoreClient( object ):
     return self.__assignSandboxToEntity( "Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignPilots( self, pilotIdIdList ):
-    if type( pilotIdIdList ) in ( types.IntType, types.LongType ):
+    if isinstance( pilotIdIdList, ( int, long ) ):
       pilotIdIdList = [ pilotIdIdList ]
     entitiesList = []
     for pilotId in pilotIdIdList:
