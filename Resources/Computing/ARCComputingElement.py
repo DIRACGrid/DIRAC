@@ -74,6 +74,14 @@ class ARCComputingElement( ComputingElement ):
   def __getXRSLExtraString( self ):
     # For the XRSL additional string from configuration - only done at initialisation time
     # If this string changes, the corresponding (ARC) site directors have to be restarted
+    #
+    # Variable = XRSLExtraString
+    # Default value = ''
+    # Locations searched in order :
+    # Top priority    : Resources/Sites/<Grid>/<Site>/CEs/<CE>/XRSLExtraString
+    # Second priority : Resources/Sites/<Grid>/<Site>/XRSLExtraString
+    # Default         : Resources/Computing/CEDefaults/XRSLExtraString
+    #
     self.xrslExtraString = '' # Start with the default value
     result = getSiteForCE(self.ceHost)
     self.site = ''
