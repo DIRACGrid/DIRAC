@@ -238,7 +238,25 @@ class ARCComputingElement( ComputingElement ):
         stampDict[pilotJobReference] = diracStamp
         gLogger.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
-        gLogger.debug("Failed to submit job to CE %s. Some problem (e.g. CE(s) not reachable?). %s" % self.ceHost)
+        message = "Failed to submit job because "
+        if (result == arc.SubmissionStatus.NOT_IMPLEMENTED ):
+          gLogger.warn( "%s feature not implemented on CE? (weird I know - complain to site admins" % message )
+        elif ( result == arc.SubmissionStatus.NO_SERVICES ):
+          gLogger.warn( "%s no services are running on CE? (open GGUS ticket to site admins" % message )
+        elif ( result == arc.SubmissionStatus.ENDPOINT_NOT_QUERIED ):
+          gLogger.warn( "%s endpoint was not even queried. (network ..?)" % message )
+        elif ( result == arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED ):
+          gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
+        elif ( result == arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED ):
+          gLogger.warn( "%s no job description was there (Should not happen, but horses can fly (in a plane))" % message )
+        elif ( result == arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED ):
+          gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
+        elif ( result == arc.SubmissionStatus.AUTHENTICATION_ERROR ):
+          gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
+        elif ( result == arc.SubmissionStatus.ERROR_FROM_ENDPOINT ):
+          gLogger.warn( "%s some error from the CE - ask site admins for more information ..." % message )
+        else:
+          gLogger.warn( "%s I do not know why. Check everything." % message )
         break # Boo hoo *sniff*
 
     if batchIDList:
