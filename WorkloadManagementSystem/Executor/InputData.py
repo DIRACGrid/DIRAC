@@ -159,7 +159,7 @@ class InputData( OptimizerExecutor ):
 
     self.jobLog.verbose( "REPLICA DICT: %s" % replicaDict )
 
-    result = self.__checkReplicas( jobState, replicaDict )
+    result = self.__checkReplicas( jobState, replicaDict, vo )
 
     if not result['OK']:
       self.jobLog.error( "Failed to check replicas", result['Message'] )
@@ -203,7 +203,7 @@ class InputData( OptimizerExecutor ):
     return S_OK( resolvedData )
 
   #############################################################################
-  def __checkReplicas( self, jobState, replicaDict ):
+  def __checkReplicas( self, jobState, replicaDict, vo ):
     """Check that all input lfns have valid replicas and can all be found at least in one single site.
     """
     badLFNs = []
@@ -229,7 +229,7 @@ class InputData( OptimizerExecutor ):
         self.log.error( 'Failed to set job parameter', result['Message'] )
       return S_ERROR( 'Input data not available' )
 
-    return self.__getSiteCandidates( okReplicas )
+    return self.__getSiteCandidates( okReplicas, vo )
 
   #############################################################################
   def __checkActiveSEs( self, jobState, replicaDict ):
@@ -259,7 +259,7 @@ class InputData( OptimizerExecutor ):
 
     activeReplicaDict = result['Value']
 
-    result = self.__checkReplicas( jobState, activeReplicaDict )
+    result = self.__checkReplicas( jobState, activeReplicaDict, vo )
 
     if not result['OK']:
       # due to a banned SE's input data is not available at a single site
@@ -299,7 +299,7 @@ class InputData( OptimizerExecutor ):
     return S_OK( self.__SEToSiteMap[ seName ] )
 
   #############################################################################
-  def __getSiteCandidates( self, okReplicas ):
+  def __getSiteCandidates( self, okReplicas, vo ):
     """This method returns a list of possible site candidates based on the
        job input data requirement.  For each site candidate, the number of files
        on disk and tape is resolved.
@@ -343,7 +343,7 @@ class InputData( OptimizerExecutor ):
             self.jobLog.warn( "Could not get sites for SE %s: %s" % ( seName, result[ 'Message' ] ) )
             continue
           siteList = result[ 'Value' ]
-          seObj = StorageElement( seName )
+          seObj = StorageElement( seName, vo = vo )
           result = seObj.getStatus()
           if not result[ 'OK' ]:
             self.jobLog.error( "Could not retrieve status for SE %s: %s" % ( seName, result[ 'Message' ] ) )

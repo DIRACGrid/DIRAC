@@ -27,6 +27,28 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+[v6r13p5]
+
+*Resources
+BUGFIX: Torque - getCEStatus() must return integer job numbers
+FIX: StorageBase - removed checking the VO name inside the LFN 
+
+*WMS
+FIX: InputData, JobScheduling - StorageElement needs to know its VO
+
+*DMS
+FIX: ReplicateAndRegister - Add checksumType to RMS files when adding 
+     checksum value
+FIX: DataManager - remove unnecessary access to RSS and use SE.getStatus()     
+FIX: DMHelpers - take into account Alias and BaseSE in site-SE relation
+
+*RMS
+FIX: Request - bug fixed in optimize() in File reassignment from one
+     Operation to another  
+
+*Transformation
+FIX: TransformationDB - set derived transformation to Automatic
+
 [v6r13p4]
 
 *Core
