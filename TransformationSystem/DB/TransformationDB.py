@@ -178,25 +178,30 @@ class TransformationDB( DB ):
     if inheritedFrom:
       res = self._getTransformationID( inheritedFrom, connection = connection )
       if not res['OK']:
-        gLogger.error( "Failed to get ID for parent transformation: %s, now deleting" % res['Message'] )
+        gLogger.error( "Failed to get ID for parent transformation, now deleting", res['Message'] )
         return self.deleteTransformation( transID, connection = connection )
       originalID = res['Value']
       # FIXME: this is not the right place to change status information, and in general the whole should not be here
       res = self.setTransformationParameter( originalID, 'Status', 'Completing',
                                              author = authorDN, connection = connection )
       if not res['OK']:
-        gLogger.error( "Failed to update parent transformation status: %s, now deleting" % res['Message'] )
+        gLogger.error( "Failed to update parent transformation status: now deleting", res['Message'] )
+        return self.deleteTransformation( transID, connection = connection )
+      res = self.setTransformationParameter( originalID, 'AgentType', 'Automatic',
+                                             author = authorDN, connection = connection )
+      if not res['OK']:
+        gLogger.error( "Failed to update parent transformation agent type, now deleting", res['Message'] )
         return self.deleteTransformation( transID, connection = connection )
       message = 'Creation of the derived transformation (%d)' % transID
       self.__updateTransformationLogging( originalID, message, authorDN, connection = connection )
       res = self.getTransformationFiles( condDict = {'TransformationID':originalID}, connection = connection )
       if not res['OK']:
-        gLogger.error( "Could not get transformation files: %s, now deleting" % res['Message'] )
+        gLogger.error( "Could not get transformation files, now deleting", res['Message'] )
         return self.deleteTransformation( transID, connection = connection )
       if res['Records']:
         res = self.__insertExistingTransformationFiles( transID, res['Records'], connection = connection )
         if not res['OK']:
-          gLogger.error( "Could not insert files: %s, now deleting" % res['Message'] )
+          gLogger.error( "Could not insert files, now deleting", res['Message'] )
           return self.deleteTransformation( transID, connection = connection )
     if addFiles and fileMask:
       self.__addExistingFiles( transID, connection = connection )

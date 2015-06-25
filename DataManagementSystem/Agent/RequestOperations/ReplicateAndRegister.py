@@ -64,6 +64,7 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     # Replace opFile.Checksum if it doesn't match a valid FC checksum
     if fcChecksum:
       opFile.Checksum = fcChecksum
+      opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
 
   for repSEName in replicas:
 

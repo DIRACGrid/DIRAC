@@ -680,7 +680,7 @@ class DataManager( object ):
     # Check whether the destination storage element is banned
     log.verbose( "Determining whether %s ( destination ) is Write-banned." % destSEName )
 
-    if not self.__SEActive( destSEName ).get( 'Value', {} ).get( 'Write' ):
+    if not destStorageElement.getStatus().get( 'Value', {} ).get( 'Write', False ):
       infoStr = "Supplied destination Storage Element is not currently allowed for Write."
       log.debug( infoStr, destSEName )
       return S_ERROR( infoStr )
@@ -763,7 +763,7 @@ class DataManager( object ):
       log.debug( "Consider %s as a source" % candidateSEName )
 
       # Check that the candidate is active
-      if not self.__SEActive( candidateSEName ).get( 'Value', {} ).get( 'Read' ):
+      if not self.__SEActive( candidateSEName, 'Read' ):
         log.debug( "%s is currently not allowed as a source." % candidateSEName )
         continue
       else:
@@ -1543,40 +1543,20 @@ class DataManager( object ):
       if not isinstance( replicaDict[key], dict ):
         return S_ERROR( 'Wrong argument type %s, expected a dictionary' % type( replicaDict[key] ) )
 
-    seReadStatus = {}
     for lfn, replicas in replicaDict['Successful'].items():
       if not isinstance( replicas, dict ):
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
-        # Fix the caching
-        readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
-        if not readStatus:
+        if not self.__SEActive( se, 'Read' ):
           replicas.pop( se )
 
     return S_OK( replicaDict )
 
-  def __SEActive( self, se ):
-    """ check is SE is active """
-    result = StorageFactory().getStorageName( se )
-    if not result['OK']:
-      return S_ERROR( 'SE not known' )
-    resolvedName = result['Value']
-    for _i in range( 5 ):
-      res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
-      if res['OK']:
-        break
-    if not res[ 'OK' ]:
-      return S_ERROR( 'SE not known' )
-
-    seStatus = { 'Read' : True, 'Write' : True }
-    if res['Value'][resolvedName].get( 'ReadAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
-      seStatus[ 'Read' ] = False
-    if res['Value'][resolvedName].get( 'WriteAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
-      seStatus[ 'Write' ] = False
-
-    return S_OK( seStatus )
+  def __SEActive( self, se, access = 'Read' ):
+    """ check is SE is active for a given access """
+    return StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )
 
 ##########################################
   #
