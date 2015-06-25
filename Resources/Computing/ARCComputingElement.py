@@ -77,6 +77,9 @@ class ARCComputingElement( ComputingElement ):
     #
     # Variable = XRSLExtraString
     # Default value = ''
+    #   If you give a value, I think it should be of the form
+    #          (aaa = "xxx")
+    #   Otherwise the ARC job description parser will have a fit
     # Locations searched in order :
     # Top priority    : Resources/Sites/<Grid>/<Site>/CEs/<CE>/XRSLExtraString
     # Second priority : Resources/Sites/<Grid>/<Site>/XRSLExtraString
@@ -180,7 +183,7 @@ class ARCComputingElement( ComputingElement ):
 (stdout="%(diracStamp)s.out")
 (stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
-"%(xrslExtraString)s"
+%(xrslExtraString)s
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
