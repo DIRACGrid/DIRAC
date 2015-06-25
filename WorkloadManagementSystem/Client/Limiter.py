@@ -159,14 +159,14 @@ class Limiter( object ):
         self.log.error( "Attribute %s does not exist. Check the job limits" % attName )
         continue
       cK = "Running:%s:%s" % ( siteName, attName )
-      data = self.__condCache.get( cK )
+      data = self.condCache.get( cK )
       if not data:
         result = self.jobDB.getCounters( 'Jobs', [ attName ], { 'Site' : siteName, 'Status' : [ 'Running', 'Matched', 'Stalled' ] } )
         if not result[ 'OK' ]:
           return result
         data = result[ 'Value' ]
         data = dict( [ ( k[0][ attName ], k[1] )  for k in data ] )
-        self.__condCache.add( cK, 10, data )
+        self.condCache.add( cK, 10, data )
       for attValue in limitsDict[ attName ]:
         limit = limitsDict[ attName ][ attValue ]
         running = data.get( attValue, 0 )

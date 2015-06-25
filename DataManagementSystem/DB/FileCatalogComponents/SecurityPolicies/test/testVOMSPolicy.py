@@ -2,10 +2,10 @@
 import mock
 import unittest
 import stat
-import VOMSPolicy
+
 from types import ListType
 from DIRAC import S_OK, S_ERROR
-
+import DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy
 
 # This just defines a few groups with their VOMSRole
 diracGrps = {'grp_admin' : None,
@@ -227,7 +227,7 @@ class mock_SecurityManagerBase( object ):
 
 
 # The mock module could not trick the inheritance mechanism, so I do it myself
-VOMSPolicy.VOMSPolicy.__bases__ = ( mock_SecurityManagerBase, )
+DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.VOMSPolicy.__bases__ = ( mock_SecurityManagerBase, )
 
 
 def mock_getAllGroups():
@@ -247,8 +247,8 @@ class TestBase(unittest.TestCase):
   """
 
 
-  @mock.patch( 'VOMSPolicy.getGroupOption', side_effect = mock_getGroupOption )
-  @mock.patch( 'VOMSPolicy.getAllGroups', side_effect = mock_getAllGroups )
+  @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getGroupOption', side_effect = mock_getGroupOption )
+  @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getAllGroups', side_effect = mock_getAllGroups )
   def setUp( self, mk_getAllGroups, mk_getGroupOption ):
     # These two dict have to be defined by the children class and method,
     # and are used to compare against the output of the test
@@ -256,8 +256,8 @@ class TestBase(unittest.TestCase):
     self.expectedNonExistingRet = None
 
     # Policy object
-    self.policy = VOMSPolicy.VOMSPolicy()
-    
+    self.policy = DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.VOMSPolicy()
+    self.credDict = {'username':'anon', 'group':'grp_admin'}
 
   def callForDirectories( self, methodName ):
     """ Test the permissions of a given file catalog method

@@ -126,7 +126,7 @@ class TaskManagerPlugin( PluginBase ):
     # 4. get JobTypeMapping "Allow" section
     res = self.opsH.getOptionsDict( 'JobTypeMapping/%s/Allow' % jobType )
     if not res['OK']:
-      gLogger.warn( "Could not get the list of sites", res['Message'] )
+      gLogger.verbose( res['Message'] )
       allowed = {}
     else:
       allowed = res['Value']

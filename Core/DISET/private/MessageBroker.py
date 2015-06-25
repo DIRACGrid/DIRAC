@@ -1,3 +1,5 @@
+""" Here, we need some documentation...
+"""
 
 import threading
 import select
@@ -5,14 +7,14 @@ import time
 import types
 import socket
 
-from DIRAC import gConfig, gMonitor, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.Utilities.ThreadPool import getGlobalThreadPool
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.private.MessageFactory import MessageFactory, DummyMessage
 
 
-class MessageBroker:
+class MessageBroker( object ):
 
   def __init__( self, name, transportPool = None, threadPool = None ):
     self.__name = name
@@ -64,7 +66,7 @@ class MessageBroker:
     trid = self.__trPool.add( transport )
     try:
       result = self.addTransportId( trid, *args, **kwargs )
-    except Exception, e:
+    except Exception:
       gLogger.exception( "Cannot add transport id" )
       result = S_ERROR( "Cannot add transport id" )
     if not result[ 'OK' ]:
@@ -130,7 +132,7 @@ class MessageBroker:
         self.__trInOutLock.release()
       try:
         try:
-          inList, outList, exList = select.select( [ pos[1] for pos in sIdList ] , [], [], 1 )
+          inList, _outList, _exList = select.select( [ pos[1] for pos in sIdList ] , [], [], 1 )
           if len( inList ) == 0:
             continue
         except socket.error:
@@ -140,7 +142,6 @@ class MessageBroker:
           time.sleep( 0.001 )
           continue
       except:
-        from DIRAC import gLogger
         gLogger.exception( "Exception while selecting persistent connections" )
         continue
       for sock in inList:
@@ -270,7 +271,7 @@ class MessageBroker:
 
   def __sendResponse( self, trid, msgId, msgResult ):
     msgResponse = { 'request' : False, 'id' : msgId, 'result' : msgResult }
-    result = self.__trPool.send( trid, S_OK( msgResponse ) )
+    _result = self.__trPool.send( trid, S_OK( msgResponse ) )
 
   def sendMessage( self, trid, msgObj ):
     if not msgObj.isOK():
@@ -407,7 +408,7 @@ class MessageBroker:
 
     return S_OK()
 
-class MessageSender:
+class MessageSender( object ):
 
   def __init__( self, serviceName, msgBroker ):
     self.__serviceName = serviceName
@@ -425,7 +426,6 @@ class MessageSender:
 gMessageBroker = False
 def getGlobalMessageBroker():
   global gMessageBroker
-  from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
   if not gMessageBroker:
     gMessageBroker = MessageBroker( 'GlobalMessageBroker', transportPool = getGlobalTransportPool() )
   return gMessageBroker

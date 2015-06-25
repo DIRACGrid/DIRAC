@@ -1,10 +1,10 @@
 
 import time
 import threading
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
-class TransportPool:
+class TransportPool( object ):
 
   def __init__( self, logger = False ):
     if logger:
@@ -106,7 +106,7 @@ class TransportPool:
   def send( self, trid, msg ):
     try:
       transport = self.__transports[ trid ][0]
-    except KeyError, ke:
+    except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
     return transport.sendData( msg )
 

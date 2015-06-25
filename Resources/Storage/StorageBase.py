@@ -55,6 +55,7 @@ class StorageBase( object ):
     self.basePath = parameterDict['Path']
     self.cwd = self.basePath
     self.se = None
+    self.isok = True
     
   def setStorageElement( self, se ):
     self.se = se  
