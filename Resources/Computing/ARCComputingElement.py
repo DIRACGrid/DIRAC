@@ -12,17 +12,17 @@ __RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@
 
 import os
 import stat
-import tempfile
+import tempfile # Need it for the Dirac stamp
 from types import StringTypes
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Utilities.Grid                           import executeGridCommand
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo, getVOfromProxyGroup
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import theARCJob
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -41,7 +41,6 @@ class ARCComputingElement( ComputingElement ):
     """ Standard constructor.
     """
     ComputingElement.__init__( self, ceUniqueID )
-
     self.ceType = CE_NAME
     self.submittedJobs = 0
     self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -69,6 +68,50 @@ class ARCComputingElement( ComputingElement ):
                        'Finished': 'Done',
                        'Other'   : 'Done'
       }
+    self.__getXRSLExtraString() # Do this after all other initialisations, in case something barks
+    
+  #############################################################################
+  def __getXRSLExtraString( self ):
+    # For the XRSL additional string from configuration - only done at initialisation time
+    # If this string changes, the corresponding (ARC) site directors have to be restarted
+    self.xrslExtraString = '' # Start with the default value
+    result = getSiteForCE(self.ceHost)
+    self.site = ''
+    if ( result['OK'] ):
+      self.site = result['Value']
+    else :
+      gLogger.error("Unknown Site ...")
+      return
+    # Now we know the site. Get the grid
+    grid = self.site.split(".")[0]
+    # The different possibilities that we have agreed upon
+    xtraVariable = "XRSLExtraString"
+    firstOption = "Resources/Sites/%s/%s/CEs/%s/%s" % (grid, self.site, self.ceHost, xtraVariable)
+    secondOption = "Resources/Sites/%s/%s/%s" % (grid, self.site, xtraVariable)
+    defaultOption = "Resources/Computing/CEDefaults/%s" % xtraVariable
+    # Now go about getting the string in the agreed order
+    gLogger.debug("Trying to get xrslExtra string : first option %s" % firstOption)
+    result = gConfig.getValue(firstOption, defaultValue='')
+    if ( result != '' ):
+      self.xrslExtraString = result
+      gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
+    else:
+      gLogger.debug("Trying to get xrslExtra string : second option %s" % secondOption)
+      result = gConfig.getValue(secondOption, defaultValue='')
+      if ( result != '' ):
+        self.xrslExtraString = result
+        gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
+      else:
+        gLogger.debug("Trying to get xrslExtra string : default option %s" % defaultOption)
+        result = gConfig.getValue(defaultOption, defaultValue='')
+        if ( result != '' ):
+          self.xrslExtraString = result
+          gLogger.debug("Found xrslExtra string : %s" % self.xrslExtraString)
+    if ( self.xrslExtraString == '' ):
+      gLogger.always("No XRSLExtra string found in configuration for %s" % self.ceHost)
+    else :
+      gLogger.always("XRSLExtra string : %s" % self.xrslExtraString)
+      gLogger.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -81,21 +124,38 @@ class ARCComputingElement( ComputingElement ):
   def _doTheProxyBit( self ):
     """ Set the environment variable X509_USER_PROXY and let the ARC CE pick it up from there.
     Unfortunately I cannot trust the proxies that are floating around here. So, explicitly hunt
-    for the pilot proxy which is the only one I care about.
+    for the pilot proxy which is the only one I care about. Also, try to be safe about finding
+    out the VO, given that the self.ceParameters['VO'] is not always filled.
     """
-    result = findGenericPilotCredentials( vo = self.ceParameters['VO'] )
+    vo = ''
+    try: # First get the VO
+      result = getVOfromProxyGroup()
+      if result['OK']:
+        vo = result['Value']
+      else: # A backup solution which may work
+        vo = self.ceParameters['VO']
+    except:
+      gLogger.error("Could not get the VO we are in ...")
+    result = findGenericPilotCredentials( vo ) # Second find out who is the pilot for this vo
     if not result[ 'OK' ]:
       os.environ['X509_USER_PROXY'] = ''
+      gLogger.error("Could not set proxy correctly. You (or maybe I) should worry about this.")
       return
     self.pilotDN, self.pilotGroup = result[ 'Value' ]
-    self.pilotProxy = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup )['Value']
-    try :
+    # Third - get the actual proxy into a temp file and set the environment to point to this file.
+    result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup )
+    if not result[ 'OK' ]:
+      os.environ['X509_USER_PROXY'] = ''
+      gLogger.error("Why did I crash here? Likely Dirac bug (report please) - or try restarting the siteDirector.")
+      return
+    self.pilotProxy = result['Value']
+    try:
       ret = gProxyManager.dumpProxyToFile( self.pilotProxy )
       os.environ['X509_USER_PROXY'] = ret['Value']
-    except AttributeError :
+    except AttributeError:
       ret = getProxyInfo()
       os.environ['X509_USER_PROXY'] = ret['Value']['path']
-    self.log.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
+    gLogger.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
     
   #############################################################################
   def __writeXRSL( self, executableFile ):
@@ -112,10 +172,12 @@ class ARCComputingElement( ComputingElement ):
 (stdout="%(diracStamp)s.out")
 (stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
+"%(xrslExtraString)s"
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
-            'diracStamp':diracStamp
+            'diracStamp':diracStamp,
+            'xrslExtraString':self.xrslExtraString
            }
 
     return xrsl, diracStamp
@@ -132,7 +194,7 @@ class ARCComputingElement( ComputingElement ):
     """
 
     self._doTheProxyBit()
-    self.log.verbose( "Executable file path: %s" % executableFile )
+    gLogger.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
 
@@ -151,7 +213,7 @@ class ARCComputingElement( ComputingElement ):
       # Get the job into the ARC way
       xrslString, diracStamp = self.__writeXRSL( executableFile )
       if not arc.JobDescription_Parse(xrslString, jobdescs):
-        self.log.error("Invalid job description")
+        gLogger.error("Invalid job description")
         break
       # Submit the job
       jobs = arc.JobList() # filled by the submit process
@@ -163,9 +225,9 @@ class ARCComputingElement( ComputingElement ):
         pilotJobReference = jobs[0].JobID
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
-        self.log.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
+        gLogger.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
-        self.log.debug("Failed to submit job to CE %s. Some problem (e.g. CE(s) not reachable?)." % self.ceHost)
+        gLogger.debug("Failed to submit job to CE %s. Some problem (e.g. CE(s) not reachable?). %s" % self.ceHost)
         break # Boo hoo *sniff*
 
     if batchIDList:
@@ -195,10 +257,10 @@ class ARCComputingElement( ComputingElement ):
     result = js.Cancel() # Cancel all jobs at once
 
     if not result:
-      self.log.debug("Failed to kill jobs %s. CE(?) not reachable?" % jobIDList)
+      gLogger.debug("Failed to kill jobs %s. CE(?) not reachable?" % jobIDList)
       return S_ERROR( 'Failed to kill the job(s)' )
-    else :
-      self.log.debug("Killed jobs %s" % jobIDList)
+    else:
+      gLogger.debug("Killed jobs %s" % jobIDList)
 
       
     return S_OK()
@@ -216,8 +278,8 @@ class ARCComputingElement( ComputingElement ):
     retriever.wait() # Takes a bit of time to get and parse the ldap information
     targets = retriever.GetExecutionTargets()
     ceStats = targets[0].ComputingShare
-    self.log.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
-    self.log.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
+    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
 
     result = S_OK()
     result['RunningJobs'] = ceStats.RunningJobs
@@ -251,11 +313,11 @@ class ARCComputingElement( ComputingElement ):
 
     resultDict = {}
     for jobID in jobList:
-      self.log.debug("Retrieving status for job %s" % jobID)
+      gLogger.debug("Retrieving status for job %s" % jobID)
       job = theARCJob(self.ceHost, jobID)
       job.Update()
       arcState = job.State.GetGeneralState()
-      self.log.debug("ARC status for job %s is %s" % (jobID, arcState))
+      gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
       if ( arcState ): # Meaning arcState is filled. Is this good python?
         resultDict[jobID] = self.mapStates[arcState]
       else:
@@ -265,7 +327,7 @@ class ARCComputingElement( ComputingElement ):
         exitCode = jobID.ExitCode
         if ( exitCode != 0 ):
           resultDict[jobID] == "Failed"
-      self.log.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
+      gLogger.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
 
     if not resultDict:
       return  S_ERROR('No job statuses returned')
@@ -290,18 +352,19 @@ class ARCComputingElement( ComputingElement ):
     job = theARCJob(self.ceHost, pilotRef)
 
     arcID = os.path.basename(pilotRef)
-    self.log.debug("Retrieving pilot logs for %s" % pilotRef)
+    gLogger.debug("Retrieving pilot logs for %s" % pilotRef)
     if "WorkingDirectory" in self.ceParameters:
       workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], arcID )
     else:
       workingDirectory = arcID  
     outFileName = os.path.join( workingDirectory, '%s.out' % stamp )
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
-    self.log.debug("Working directory for pilot output %s" % workingDirectory)
+    gLogger.debug("Working directory for pilot output %s" % workingDirectory)
 
     usercfg = arc.UserConfig()
     isItOkay = job.Retrieve(usercfg, arc.URL(workingDirectory), False) 
     output = ''
+    error = ''
     if ( isItOkay ):
       outFile = open( outFileName, 'r' )
       output = outFile.read()
@@ -311,10 +374,14 @@ class ARCComputingElement( ComputingElement ):
       error = errFile.read()
       errFile.close()
       os.unlink( errFileName )
-      self.log.debug("Pilot output = %s" % output)
-      self.log.debug("Pilot error = %s" % error)
+      gLogger.debug("Pilot output = %s" % output)
+      gLogger.debug("Pilot error = %s" % error)
     else:
-      self.log.debug("Could not retrieve pilot output for %s" % pilotRef)
+      job.Update()
+      arcState = job.State.GetGeneralState()
+      if (arcState != "Undefined"):
+        return S_ERROR( 'Failed to retrieve output for %s as job is not finished (maybe not started yet)' % jobID )
+      gLogger.debug("Could not retrieve pilot output for %s - either permission / proxy error or could not connect to CE" % pilotRef)
       return S_ERROR( 'Failed to retrieve output for %s' % jobID )
 
     return S_OK( ( output, error ) )
