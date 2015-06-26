@@ -456,7 +456,6 @@ def getCEConfigDict( ceName ):
 def getResourceDict( ceName = None ):
   """Look into LocalSite for Resource Requirements
   """
-  from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
   ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
   if not ret['OK']:
     resourceDict = {}
@@ -472,7 +471,7 @@ def getResourceDict( ceName = None ):
   # now add some defaults
   resourceDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'None' )
   if not 'CPUTime' in resourceDict:
-    resourceDict['CPUTime'] = maxCPUSegments[-1]
+    resourceDict['CPUTime'] = gConfig.getValue( '/LocalSite/CPUTime' )
 
   return resourceDict
 
