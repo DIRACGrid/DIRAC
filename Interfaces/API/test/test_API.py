@@ -1,5 +1,10 @@
+""" Basic unit tests for API (mostly for Job creation) 
+"""
+
+__RCSID__ = "$Id$"
+
 import unittest
-from mock import Mock
+import StringIO
 
 from DIRAC.Interfaces.API.Job import Job
 
@@ -88,7 +93,7 @@ from DIRAC.Workflow.Modules.Script import Script
 
     self.assertEqual( xml, expected )
 
-
+    self.job._toJDL( jobDescriptionObject = StringIO.StringIO( self.job._toXML() ) )
 
 #############################################################################
 # Test Suite run
