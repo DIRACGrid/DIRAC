@@ -24,6 +24,7 @@ import tempfile
 import glob
 import tarfile
 import urllib
+import StringIO
 
 import DIRAC
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
@@ -342,14 +343,16 @@ class Dirac( API ):
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
 
-      jobDescription = tmpdir + '/jobDescription.xml'
-      fd = os.open( jobDescription, os.O_RDWR | os.O_CREAT )
-      os.write( fd, job._toXML() )
-      os.close( fd )
+#       jobDescription = tmpdir + '/jobDescription.xml'
+#       fd = os.open( jobDescription, os.O_RDWR | os.O_CREAT )
+#       os.write( fd, job._toXML() )
+#       os.close( fd )
+
+      jobDescriptionObject = StringIO.StringIO( job._toXML() )
 
       jdl = tmpdir + '/job.jdl'
       fd = os.open( jdl, os.O_RDWR | os.O_CREAT )
-      os.write( fd, job._toJDL( xmlFile = jobDescription ) )
+      os.write( fd, job._toJDL( jobDescriptionObject = jobDescriptionObject ) )
       os.close( fd )
       cleanPath = tmpdir
 

@@ -4,12 +4,14 @@
 import os
 import unittest
 import importlib
+import StringIO
 
 from mock import MagicMock
 
 from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Client.DownloadInputData import DownloadInputData
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
@@ -100,7 +102,7 @@ class DownloadInputDataSuccess( ClientsTestCase ):
     try: os.remove( '1.txt' )
     except OSError: pass
 
-
+#############################################################################
 
 class MatcherTestCase( ClientsTestCase ):
 
@@ -137,9 +139,26 @@ class MatcherTestCase( ClientsTestCase ):
                    'DIRACVersion': 'v8r0p1',
                    'PilotReference': 'somePilotReference',
                    'PilotBenchmark': 9.5,
-                   'ReleaseProject': 'LHCb'}
+                   'ReleaseProject': 'LHCb',
+                   'Platform': 'x86_64-slc6',
+                   'Site': 'DIRAC.Jenkins.ch',
+                   'GridCE': 'jenkins.cern.ch',
+                   'GridMiddleware': 'DIRAC'}
 
     self.assertEqual( res, resExpected )
+
+#############################################################################
+
+class SandboxStoreTestCaseSuccess( ClientsTestCase ):
+
+    def test_uploadFilesAsSandbox( self ):
+
+      ourSSC = importlib.import_module( 'DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient' )
+      ourSSC.TransferClient = MagicMock()
+      ssc = SandboxStoreClient()
+      fileList = [StringIO.StringIO( 'try' )]
+      res = ssc.uploadFilesAsSandbox( fileList )
+      print res
 
 
 #############################################################################
@@ -150,6 +169,7 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MatcherTestCase ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DownloadInputDataSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SandboxStoreTestCaseSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
