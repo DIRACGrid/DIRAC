@@ -9,6 +9,7 @@ import tarfile
 import hashlib
 import tempfile
 import re
+import StringIO
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
@@ -69,8 +70,13 @@ class SandboxStoreClient( object ):
 
   def uploadFilesAsSandbox( self, fileList, sizeLimit = 0, assignTo = {} ):
     """ Send files in the fileList to a Sandbox service for the given jobID.
-        This is the preferable method to upload sandboxes. fileList can contain
-        both files and directories
+        This is the preferable method to upload sandboxes.
+
+        a fileList item can be:
+          - a string, which is an lfn name
+          - a file name (real), that is supposed to be on disk, in the current directory
+          - a fileObject that should be a StringIO.StringIO type of object
+
         Parameters:
           - assignTo : Dict containing { 'Job:<jobid>' : '<sbType>', ... }
     """
@@ -85,13 +91,19 @@ class SandboxStoreClient( object ):
       return S_ERROR( "fileList must be a list or tuple!" )
 
     for sFile in fileList:
-      if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
-        pass
-      else:
-        if os.path.exists( sFile ):
-          files2Upload.append( sFile )
+      if isinstance( sFile, str ):
+        if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
+          pass
         else:
-          errorFiles.append( sFile )
+          if os.path.exists( sFile ):
+            files2Upload.append( sFile )
+          else:
+            errorFiles.append( sFile )
+      
+      elif isinstance( sFile, StringIO.StringIO ):
+        files2Upload.append( sFile )
+      else:
+        return S_ERROR("Objects of type %s can't be part of InputSandbox" % type( sFile ) )
 
     if errorFiles:
       return S_ERROR( "Failed to locate files: %s" % ", ".join( errorFiles ) )
@@ -104,7 +116,12 @@ class SandboxStoreClient( object ):
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
     for sFile in files2Upload:
-      tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+      if isinstance( sFile, str ):
+        tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+      elif isinstance( sFile, StringIO.StringIO ):
+        tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
+        tarInfo.size = len( sFile.buf )
+        tf.addfile( tarinfo = tarInfo, fileobj = sFile )
     tf.close()
 
     if sizeLimit > 0:

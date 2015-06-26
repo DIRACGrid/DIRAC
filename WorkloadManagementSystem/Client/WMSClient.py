@@ -3,6 +3,7 @@
 """
 
 import os
+import StringIO
 
 from DIRAC                                     import S_OK, S_ERROR, gLogger
 
@@ -47,16 +48,18 @@ class WMSClient( object ):
 
     return inputSandbox
 
-  def __uploadInputSandbox( self, classAdJob ):
+  def __uploadInputSandbox( self, classAdJob, jobDescriptionObject = None ):
     """Checks the validity of the job Input Sandbox.
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
     """
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
 
-    badFiles = []
-    okFiles = []
     realFiles = []
+    badFiles = []
+    diskFiles = []
+    stringIOFiles = []
+
     for isFile in inputSandbox:
       valid = True
       for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):  # in case of parametric input sandbox, there is %s passed, so have to ignore it also
@@ -68,16 +71,29 @@ class WMSClient( object ):
     # If there are no files, skip!
     if not realFiles:
       return S_OK()
+
+    if jobDescriptionObject is not None:
+      if isinstance( jobDescriptionObject, StringIO.StringIO ):
+        stringIOFiles = [isFile]
+      else:
+        return S_ERROR( "jobDescriptionObject is not a StringIO object" )
+
     # Check real files
     for isFile in realFiles:
-      if not os.path.exists( isFile ):
+      if not os.path.exists( isFile ):  # we are passing in real files, we expect them to be on disk
         badFiles.append( isFile )
         gLogger.warn( "inputSandbox file/directory " + isFile + " not found. Keep looking for the others" )
         continue
-      okFiles.append( isFile )
+      diskFiles.append( isFile )
 
-    totalSize = File.getGlobbedTotalSize( okFiles )
+    stringIOFilesSize = len( jobDescriptionObject.buf )
+    gLogger.debug( "Size of the stringIOFiles: " + str( stringIOFilesSize ) )
+    diskFilesSize = File.getGlobbedTotalSize( diskFiles )
+    gLogger.debug( "Size of the diskFiles: " + str( stringIOFilesSize ) )
+    totalSize = diskFilesSize + stringIOFilesSize
     gLogger.verbose( "Total size of the inputSandbox: " + str( totalSize ) )
+
+    okFiles = stringIOFiles + diskFiles
     if badFiles:
       result = S_ERROR( 'Input Sandbox is not valid' )
       result['BadFile'] = badFiles
@@ -95,7 +111,7 @@ class WMSClient( object ):
 
     return S_OK()
 
-  def submitJob( self, jdl ):
+  def submitJob( self, jdl, jobDescriptionObject = None ):
     """ Submit one job specified by its JDL to WMS
     """
 
@@ -116,7 +132,7 @@ class WMSClient( object ):
       return S_ERROR( 'Invalid job JDL' )
 
     # Check the size and the contents of the input sandbox
-    result = self.__uploadInputSandbox( classAdJob )
+    result = self.__uploadInputSandbox( classAdJob, jobDescriptionObject )
     if not result['OK']:
       return result
 
