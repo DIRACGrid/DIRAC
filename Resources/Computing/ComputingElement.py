@@ -456,6 +456,7 @@ def getCEConfigDict( ceName ):
 def getResourceDict( ceName = None ):
   """Look into LocalSite for Resource Requirements
   """
+  # FIXME: this /LocalSite/ResourceDict is probably a relic, no no idea why it's here
   ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
   if not ret['OK']:
     resourceDict = {}
