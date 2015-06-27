@@ -51,6 +51,8 @@ class PluginUtilities( object ):
     else:
       self.fc = fc
 
+    self.dmsHelper = DMSHelpers()
+
     self.plugin = plugin
     self.transID = transID
     self.params = {}
@@ -162,7 +164,7 @@ class PluginUtilities( object ):
     """
     tasks = []
     if fileSizes is None:
-      fileSizes = self.getFileSize( lfns ).get( 'Value' )
+      fileSizes = self._getFileSize( lfns ).get( 'Value' )
     if fileSizes is None:
       self.logWarn( 'Error getting file sizes, no tasks created' )
       return tasks
