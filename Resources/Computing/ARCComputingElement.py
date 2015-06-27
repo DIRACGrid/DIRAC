@@ -19,7 +19,7 @@ import arc # Has to work if this module is called
 from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo, getVOfromProxyGroup
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import theARCJob
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import ARCJob
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
@@ -174,7 +174,7 @@ class ARCComputingElement( ComputingElement ):
     """
 
     workingDirectory = self.ceParameters['WorkingDirectory']
-    fd, name = tempfile.mkstemp( suffix = '.xrsl', prefix = 'ARC_', dir = workingDirectory )
+    _fd, name = tempfile.mkstemp( suffix = '.xrsl', prefix = 'ARC_', dir = workingDirectory )
     diracStamp = os.path.basename( name ).replace( '.xrsl', '' ).replace( 'ARC_', '' )
 
     xrsl = """
@@ -280,7 +280,7 @@ class ARCComputingElement( ComputingElement ):
       jobList = [ jobIDList ]
 
     for jobID in jobList:
-      job = theARCJob(self.ceHost, jobID)
+      job = ARCJob( self.ceHost, jobID )
       js.AddJob(job)
 
     result = js.Cancel() # Cancel all jobs at once
@@ -343,7 +343,7 @@ class ARCComputingElement( ComputingElement ):
     resultDict = {}
     for jobID in jobList:
       gLogger.debug("Retrieving status for job %s" % jobID)
-      job = theARCJob(self.ceHost, jobID)
+      job = ARCJob( self.ceHost, jobID )
       job.Update()
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
@@ -378,7 +378,7 @@ class ARCComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    job = theARCJob(self.ceHost, pilotRef)
+    job = ARCJob( self.ceHost, pilotRef )
 
     arcID = os.path.basename(pilotRef)
     gLogger.debug("Retrieving pilot logs for %s" % pilotRef)
