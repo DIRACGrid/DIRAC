@@ -490,3 +490,7 @@ def isArchive( se ):
 def isFailover( se ):
   return DMSHelpers().isSEFailover( se )
 
+def getActiveSEs( seList, access = 'Write' ):
+  """ Utility function - uses the StorageElement cached status
+  """
+  return [ se for se in seList if StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )]
