@@ -8,11 +8,11 @@ import datetime
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from sqlalchemy import MetaData, \
-                        Column, \
-                        Integer, \
-                        String, \
-                        DateTime, \
-                        create_engine
+                       Column, \
+                       Integer, \
+                       String, \
+                       DateTime, \
+                       create_engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, \
@@ -45,6 +45,7 @@ class Component( Base ):
     self.system = system
     self.module = module
     self.cType = cType
+    self.installationList = []
 
   def fromDict( self, dictionary ):
     """
