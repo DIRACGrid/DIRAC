@@ -144,7 +144,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     """
 
     # create dictionary in case newLFNsStatus is a string - for backward compatibility
-    if type( dictOfNewFilesStatus ) == type( '' ):
+    if isinstance( dictOfNewFilesStatus, basestring ):
       dictOfNewFilesStatus = dict( [( lfn, dictOfNewFilesStatus ) for lfn in lfns ] )
       res = database.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewFilesStatus.keys()} )
       if not res['OK']:

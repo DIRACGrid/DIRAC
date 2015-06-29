@@ -2,8 +2,6 @@
 
 __RCSID__ = "$Id$"
 
-import types
-
 from DIRAC                                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client                                 import Client
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
@@ -305,9 +303,9 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC()
 
     # create dictionary in case newLFNsStatus is a string
-    if type( lfns ) == type( '' ):
+    if isinstance( lfns, basestring ):
       lfns = [lfns]
-    if type( newLFNsStatus ) == type( '' ):
+    if isinstance( newLFNsStatus, basestring ):
       newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
 
     # gets status as of today
@@ -540,13 +538,13 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( resDict )
 
   def __checkArgumentFormat( self, path ):
-    if type( path ) in types.StringTypes:
+    if isinstance( path, basestring ):
       urls = {path:False}
-    elif type( path ) == types.ListType:
+    elif isinstance( path, list ):
       urls = {}
       for url in path:
         urls[url] = False
-    elif type( path ) == types.DictType:
+    elif isinstance( path, dict ):
       urls = path
     else:
       return S_ERROR( "TransformationClient.__checkArgumentFormat: Supplied path is not of the correct format." )

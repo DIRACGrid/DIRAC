@@ -86,7 +86,7 @@ class TransformationPlugin( PluginBase ):
     sourceSEs = eval( self.params['SourceSE'] )
     if targetseParam.count( '[' ):
       targetSEs = eval( targetseParam )
-    elif type(targetseParam)==type([]):
+    elif isinstance( targetseParam, list ):
       targetSEs = targetseParam
     else:
       targetSEs = [targetseParam]
