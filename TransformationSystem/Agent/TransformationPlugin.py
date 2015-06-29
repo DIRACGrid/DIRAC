@@ -10,8 +10,10 @@ from DIRAC                              import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE, getSEsForSite
 from DIRAC.Core.Utilities.List          import breakListIntoChunks
 
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities, getFileGroups
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 
 class TransformationPlugin( PluginBase ):
@@ -28,6 +30,12 @@ class TransformationPlugin( PluginBase ):
     self.files = False
     self.startTime = time.time()
     
+    if transClient is None:
+      transClient = TransformationClient()
+
+    if dataManager is None:
+      dataManager = DataManager()
+
     self.util = PluginUtilities( plugin, transClient, dataManager )
     
   def __del__( self ):
