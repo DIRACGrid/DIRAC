@@ -7,7 +7,7 @@
 """
 
 import re, time, threading, copy
-from types import IntType, LongType, StringTypes, StringType, ListType, TupleType, DictType
+from types import IntType, LongType
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -229,7 +229,7 @@ class TransformationDB( DB ):
       for item in row:
         transDict[self.TRANSPARAMS[count]] = item
         count += 1
-        if type( item ) not in [IntType, LongType]:
+        if not isinstance( item, ( int, long ) ):
           rList.append( str( item ) )
         else:
           rList.append( item )
@@ -263,7 +263,7 @@ class TransformationDB( DB ):
 
   def getTransformationParameters( self, transName, parameters, connection = False ):
     """ Get the requested parameters for a supplied transformation """
-    if type( parameters ) in StringTypes:
+    if isinstance( parameters, basestring ):
       parameters = [parameters]
     extraParams = False
     for param in parameters:
@@ -339,7 +339,7 @@ class TransformationDB( DB ):
       transName = long( transName )
       cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
     except:
-      if type( transName ) not in StringTypes:
+      if not isinstance( transName, basestring ):
         return S_ERROR( "Transformation should ID or name" )
       cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
     res = self._query( cmd, connection )
@@ -453,7 +453,7 @@ class TransformationDB( DB ):
       return S_ERROR( "Failed to parse parameter value" )
     paramValue = res['Value']
     paramType = 'StringType'
-    if type( paramValue ) in [IntType, LongType]:
+    if isinstance( paramValue, ( int, long ) ):
       paramType = 'IntType'
     req = "INSERT INTO AdditionalParameters (%s) VALUES (%s,'%s',%s,'%s');" % ( ', '.join( self.ADDITIONALPARAMETERS ),
                                                                                 transID, paramName,
@@ -534,7 +534,7 @@ class TransformationDB( DB ):
     if condDict or older or newer:
       if condDict.has_key( 'LFN' ):
         lfns = condDict.pop( 'LFN' )
-        if type( lfns ) in StringTypes:
+        if isinstance( lfns, basestring ):
           lfns = [lfns]
         res = self.__getFileIDsForLfns( lfns, connection = connection )
         if not res['OK']:
@@ -574,7 +574,7 @@ class TransformationDB( DB ):
         for item in row:
           fDict[self.TRANSFILEPARAMS[count]] = item
           count += 1
-          if type( item ) not in [IntType, LongType]:
+          if not isinstance( item, ( int, long ) ):
             rList.append( str( item ) )
           else:
             rList.append( item )
@@ -836,7 +836,7 @@ class TransformationDB( DB ):
       for item in row:
         taskDict[self.TASKSPARAMS[count]] = item
         count += 1
-        if type( item ) not in [IntType, LongType]:
+        if not isinstance( item, ( int, long ) ):
           rList.append( str( item ) )
         else:
           rList.append( item )
@@ -948,7 +948,7 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    if type( taskID ) != ListType:
+    if not isinstance( taskID, list ):
       taskIDList = [taskID]
     else:
       taskIDList = list( taskID )
@@ -1024,16 +1024,16 @@ class TransformationDB( DB ):
       if not parameterValue:
         continue
       parameterType = 'String'
-      if type( parameterValue ) in [ListType, TupleType]:
-        if type( parameterValue[0] ) in [IntType, LongType]:
+      if isinstance( parameterValue, ( list, tuple ) ):
+        if isinstance( parameterValue[0], ( int, long ) ):
           parameterType = 'Integer'
           parameterValue = [str( x ) for x in parameterValue]
         parameterValue = ';;;'.join( parameterValue )
       else:
-        if type( parameterValue ) in [IntType, LongType]:
+        if isinstance( parameterValue, ( int, long ) ):
           parameterType = 'Integer'
           parameterValue = str( parameterValue )
-        if type( parameterValue ) == DictType:
+        if isinstance( parameterValue, dict ):
           parameterType = 'Dict'
           parameterValue = str( parameterValue )
       res = self.insertFields( 'TransformationInputDataQuery', ['TransformationID', 'ParameterName',
@@ -1102,7 +1102,7 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    if type( taskID ) != ListType:
+    if not isinstance( taskID, list ):
       taskIDList = [taskID]
     else:
       taskIDList = list( taskID )

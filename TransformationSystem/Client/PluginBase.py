@@ -8,7 +8,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 class PluginBase( object ):
   
-  def __init__( self, plugin, transClient = None, operationsHelper = None ):
+  def __init__( self, plugin, operationsHelper = None ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
     """

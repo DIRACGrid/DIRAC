@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ A set of utilities used in the WMS services
     Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
@@ -10,11 +6,8 @@ __RCSID__ = "$Id$"
 
 from tempfile import mkdtemp
 import shutil, os
-import types
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 import arc
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -77,29 +70,31 @@ def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
   result['StdErr'] = error
   return result
 
-def theARCJob(theCE, theArcID):
-  # Create an ARC Job with all the needed / possible parameters defined.
-  # By the time we come here, the environment variable X509_USER_PROXY should already be set
+def ARCJob( theCE, theArcID ):
+  """ Create an ARC Job with all the needed / possible parameters defined.
+      By the time we come here, the environment variable X509_USER_PROXY should already be set
+  """
   j = arc.Job()
   j.JobID = theArcID
-  statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (theCE, theArcID)
-  j.JobStatusURL = arc.URL(statURL)
+  statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % ( theCE, theArcID )
+  j.JobStatusURL = arc.URL( statURL )
   j.JobStatusInterfaceName = "org.nordugrid.ldapng"
-  mangURL = "gsiftp://%s:2811/jobs/" %(theCE)
-  j.JobManagementURL       = arc.URL(mangURL)
+  mangURL = "gsiftp://%s:2811/jobs/" % ( theCE )
+  j.JobManagementURL = arc.URL( mangURL )
   j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
-  j.ServiceInformationURL      = j.JobManagementURL
+  j.ServiceInformationURL = j.JobManagementURL
   j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
   userCfg = arc.UserConfig()
-  j.PrepareHandler(userCfg)
-  return j
+  j.PrepareHandler( userCfg )
+  return j, userCfg
 
 def getARCPilotOutput( proxy, pilotRef ):
+  """ Getting pilot output from ARC Computing Element
+  """
   tmp_dir = mkdtemp()
-  myce = pilotRef.split(":")[1].strip("/")
-  gridEnv = getGridEnv()
-  job = theARCJob(myce, pilotRef, proxy)
-  job.Retrieve(usercfg, arc.URL(tmp_dir), False) 
+  myce = pilotRef.split( ":" )[1].strip( "/" )
+  job, userCfg = ARCJob( myce, pilotRef )
+  output = job.Retrieve( userCfg, arc.URL( tmp_dir ), False )
   if 'Results stored at:' in output :
     tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
     result = S_OK()
@@ -121,9 +116,9 @@ def getARCPilotOutput( proxy, pilotRef ):
     return result
   if 'Warning: Job not found in job list' in output:
     shutil.rmtree( tmp_dir )
-    message = "Pilot not yet visible in the ARC dB of the CE %s" % (myce)
+    message = "Pilot not yet visible in the ARC dB of the CE %s" % ( myce )
     return S_ERROR( message )
-  return S_ERROR("Sorry - requested pilot output not yet available")
+  return S_ERROR( "Sorry - requested pilot output not yet available" )
 
 def getWMSPilotOutput( proxy, grid, pilotRef ):
   """

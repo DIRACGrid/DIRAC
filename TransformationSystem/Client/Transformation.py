@@ -1,3 +1,6 @@
+""" A generic client for creating transformations
+"""
+
 import types
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

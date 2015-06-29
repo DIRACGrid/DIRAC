@@ -115,7 +115,6 @@ class JobDescription:
     """
     Check Maximum Number of Input Data files allowed
     """
-    initialVal = False
     varName = "InputData"
     if varName not in self.__description:
       return S_OK()
@@ -180,12 +179,14 @@ class JobDescription:
 
   def getOptionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
-    if not cfg:
+    if not cfg or 'value' not in cfg:
       return []
+    cfg = cfg[ 'value' ]
     return cfg.listOptions()
 
   def getSectionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
-    if not cfg:
+    if not cfg or 'value' not in cfg:
       return []
+    cfg = cfg[ 'value' ]
     return cfg.listSections()

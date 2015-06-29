@@ -195,7 +195,7 @@ class TransformationCleaningAgent( AgentModule ):
       if not res['OK']:
         self.log.error( "Failed to obtain transformation directories", res['Message'] )
         return res
-      if type( res['Value'] ) != type( [] ):
+      if not isinstance( res['Value'], list ):
         transDirectories = ast.literal_eval( res['Value'] )
       else:
         transDirectories = res['Value']
