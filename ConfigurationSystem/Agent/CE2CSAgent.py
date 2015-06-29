@@ -1,4 +1,9 @@
-﻿""" Queries BDII for unknown CE.
+﻿"""
+
+!!!Out-dated!!! Moved to Bdii2CSAgent!!!!!! Out-dated!!! Moved to Bdii2CSAgent
+
+
+    Queries BDII for unknown CE.
     Queries BDII for CE information and puts it to CS.
 """
 __RCSID__ = "$Id$"
@@ -14,17 +19,17 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 class CE2CSAgent( AgentModule ):
+  """ !!!Out-dated!!! Moved to Bdii2CSAgent
+  """
 
-  def __init__(self):
-    """ c'tor
-    """
-    self.addressTo = ''
-    self.addressFrom = ''
-    self.voName = ''
-    self.subject = "CE2CSAgent"
-    self.alternativeBDIIs = []
+  addressTo = ''
+  addressFrom = ''
+  voName = ''
+  subject = "CE2CSAgent"
+  alternativeBDIIs = []
 
-    self.csAPI = None
+  csAPI = None
+
 
   def initialize( self ):
 
