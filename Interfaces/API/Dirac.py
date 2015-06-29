@@ -343,11 +343,6 @@ class Dirac( API ):
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
 
-#       jobDescription = tmpdir + '/jobDescription.xml'
-#       fd = os.open( jobDescription, os.O_RDWR | os.O_CREAT )
-#       os.write( fd, job._toXML() )
-#       os.close( fd )
-
       jobDescriptionObject = StringIO.StringIO( job._toXML() )
 
       jdl = tmpdir + '/job.jdl'
