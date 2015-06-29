@@ -1,4 +1,4 @@
-[v6r14-pre2]
+[v6r14-pre3]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
@@ -23,6 +23,7 @@ NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC wi
 FIX: Watchdog - review for style and pylint
 CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone 
         utilities
+        
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
