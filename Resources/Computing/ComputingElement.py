@@ -472,7 +472,8 @@ def getResourceDict( ceName = None ):
   # now add some defaults
   resourceDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'None' )
   if not 'CPUTime' in resourceDict:
-    resourceDict['CPUTime'] = gConfig.getValue( '/LocalSite/CPUTime' )
+    from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
+    resourceDict['CPUTime'] = gConfig.getValue( '/LocalSite/CPUTime', maxCPUSegments[-1] )
 
   return resourceDict
 
