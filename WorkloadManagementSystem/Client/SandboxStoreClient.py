@@ -92,7 +92,7 @@ class SandboxStoreClient( object ):
 
     for sFile in fileList:
       if isinstance( sFile, basestring ):
-        if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
+        if re.search( '^lfn:', sFile, flags = re.IGNORECASE ):
           pass
         else:
           if os.path.exists( sFile ):
