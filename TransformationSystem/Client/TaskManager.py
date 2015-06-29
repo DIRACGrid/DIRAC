@@ -5,7 +5,6 @@ __RCSID__ = "$Id$"
 COMPONENT_NAME = 'TaskManager'
 
 import time
-import os
 import StringIO
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
@@ -153,7 +152,7 @@ class RequestTasks( TaskBase ):
 
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
-        elif isinstance( paramDict['InputData'], str ):
+        elif isinstance( paramDict['InputData'], basestring ):
           files = paramDict['InputData'].split( ';' )
         for lfn in files:
           trFile = File()
