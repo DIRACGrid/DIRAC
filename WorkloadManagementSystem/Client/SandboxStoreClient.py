@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 
 import os
 import tarfile
-import md5
+import hashlib
 import tempfile
 import re
 import StringIO
@@ -131,7 +131,7 @@ class SandboxStoreClient( object ):
         result[ 'SandboxFileName' ] = tmpFilePath
         return result
 
-    oMD5 = md5.md5()
+    oMD5 = hashlib.md5()
     fd = open( tmpFilePath, "rb" )
     bData = fd.read( 10240 )
     while bData:
