@@ -5,7 +5,6 @@ __RCSID__ = "$Id$"
 COMPONENT_NAME = 'TaskManager'
 
 import time
-import os
 import StringIO
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
