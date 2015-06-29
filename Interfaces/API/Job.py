@@ -1018,7 +1018,9 @@ class Job( API ):
       if self.script:
         if os.path.exists( self.script ):
           scriptname = os.path.abspath( self.script )
-          self.log.verbose( 'Found script name %s' % scriptname )
+          self.log.verbose( "Found script name %s" % scriptname )
+        else:
+          self.log.error( "File not found", self.script )
       else:
         if xmlFile:
           self.log.verbose( 'Found XML File %s' % xmlFile )
