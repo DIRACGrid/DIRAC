@@ -476,7 +476,7 @@ class X509Chain:
     childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
     childCert.gmtime_adj_notBefore( -900 )
     childCert.gmtime_adj_notAfter( int( lifetime ) )
-    childCert.sign( self.__keyObj, 'md5' )
+    childCert.sign( self.__keyObj, 'sha1' )
 
     childString = crypto.dump_certificate( crypto.FILETYPE_PEM, childCert )
     for i in range( len( self.__certList ) ):
