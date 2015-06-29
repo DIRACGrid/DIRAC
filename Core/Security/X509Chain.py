@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
 __RCSID__ = "$Id$"
@@ -19,7 +16,7 @@ from DIRAC import S_OK, S_ERROR
 
 random.seed()
 
-class X509Chain:
+class X509Chain( object ):
 
   __validExtensionValueTypes = ( types.StringType, types.UnicodeType )
 
@@ -257,7 +254,7 @@ class X509Chain:
     proxyCert.set_version( issuerCert.get_version() )
     proxyCert.set_pubkey( proxyKey )
     proxyCert.gmtime_adj_notBefore( -900 )
-    proxyCert.gmtime_adj_notAfter( lifeTime )
+    proxyCert.gmtime_adj_notAfter( int( lifeTime ) )
     proxyCert.sign( self.__keyObj, 'sha256' )
 
     proxyString = "%s%s" % ( crypto.dump_certificate( crypto.FILETYPE_PEM, proxyCert ),
@@ -422,7 +419,7 @@ class X509Chain:
             limited = True
     else:
       if self.__isRFC == None:
-         self.__isRFC = False
+        self.__isRFC = False
       if lastEntry[1] == "limited proxy":
         limited = True
     proxySubject.remove_entry( psEntries - 1 )

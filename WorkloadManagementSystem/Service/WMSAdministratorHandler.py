@@ -303,7 +303,7 @@ class WMSAdministratorHandler(RequestHandler):
         gLogger.warn( 'Empty pilot output found for %s' % pilotReference )
 
     gridType = pilotDict['GridType']
-    if gridType in ["LCG","gLite","CREAM"]:
+    if gridType in ["LCG","gLite","CREAM","ARC"]:
       group = getGroupOption(group,'VOMSRole',group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
       if not ret['OK']:
@@ -400,16 +400,6 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     result = pilotDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
-    return result
-
-  ##############################################################################
-  types_getUserSummaryWeb = [DictType, ListType, IntType, IntType]
-  def export_getUserSummaryWeb(self, selectDict, sortList, startItem, maxItems):
-    """ Get the summary of the pilot information for a given page in the
-        pilot monitor in a generic format
-    """
-
-    result = jobDB.getUserSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
   ##############################################################################

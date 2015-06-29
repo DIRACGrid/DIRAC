@@ -22,9 +22,9 @@ class FTSStorageUnbanAction( BaseAction ):
 		Action that sends to the FTS server a unbanning request for a given list of sites.
 	'''
 	
-	def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, clients ):
+	def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults, clients ):
 		
-		super( FTSStorageUnbanAction, self ).__init__( name, decissionParams, enforcementResult, 
+		super( FTSStorageUnbanAction, self ).__init__( name, decisionParams, enforcementResult,
                                          singlePolicyResults, clients )
 
 		
@@ -36,7 +36,7 @@ class FTSStorageUnbanAction( BaseAction ):
 		#	 [ 'EndDate' : <str> ]
 		# } 
 
-		# decissionParams supposed to look like:
+		# decisionParams supposed to look like:
 		# {
 		#	 'element'		 : None,
 		#	 'name'				: None,
@@ -51,8 +51,8 @@ class FTSStorageUnbanAction( BaseAction ):
 		'''
 			Checks it has the parameters it needs and tries to unban the site.
 		'''		
-		storageElement = self.decissionParams[ 'name' ]
-		elementType = self.decissionParams[ 'elementType' ]
+		storageElement = self.decisionParams[ 'name' ]
+		elementType = self.decisionParams[ 'elementType' ]
 		if elementType != 'StorageElement':
 			return S_ERROR( "'elementType' should be 'StorageElement'" )
 					

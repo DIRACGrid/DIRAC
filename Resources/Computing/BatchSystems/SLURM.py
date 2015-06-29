@@ -50,7 +50,7 @@ class SLURM( object ):
     jobIDs = []   
     for _i in range( nJobs ):
       jid = ''
-      cmd = "sbatch -o %s/%j.out --cluster=%s %s %s" % ( outputDir, queue, submitOptions, executable )
+      cmd = "sbatch -o %s/%%j.out --cluster=%s %s %s" % ( outputDir, queue, submitOptions, executable )
       status, output = commands.getstatusoutput( cmd )
 
       if status != 0 or not output:
@@ -147,7 +147,7 @@ class SLURM( object ):
     
     queue = kwargs['Queue']  
   
-    cmd = "squeue --cluster=%s --user=%s --format='%j %T' " % ( queue, user )
+    cmd = "squeue --cluster=%s --user=%s --format='%%j %%T' " % ( queue, user )
     status, output = commands.getstatusoutput( cmd )
     
     if status != 0:
@@ -207,7 +207,7 @@ class SLURM( object ):
     
     queue = kwargs['Queue']  
   
-    cmd = "squeue --cluster=%s --user=%s --format='%j %T' " % ( queue, user )
+    cmd = "squeue --cluster=%s --user=%s --format='%%j %%T' " % ( queue, user )
     status, output = commands.getstatusoutput( cmd )
     
     if status != 0:

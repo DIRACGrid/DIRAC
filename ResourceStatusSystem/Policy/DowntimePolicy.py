@@ -1,6 +1,5 @@
-# $HeadURL:  $
-''' DowntimePolicy module
-'''
+""" DowntimePolicy module
+"""
 
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
@@ -8,32 +7,26 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 __RCSID__ = '$Id:  $'
 
 class DowntimePolicy( PolicyBase ):
-  '''
-    The DowntimePolicy checks for downtimes, scheduled or ongoing, depending on 
-    the command parameters. 
-  '''
+  """ The DowntimePolicy checks for downtimes, scheduled or ongoing, depending on the command parameters.
+  """
 
   @staticmethod
   def _evaluate( commandResult ):
-    '''
-      It returns Active status if there is no downtime announced. 
-      Banned if the element is in OUTAGE.
-      Degraded if it is on WARNING status.
-      
-      Otherwise, it returns error.
-    '''
+    """ It returns Active status if there is no downtime announced.
+          Banned if the element is in OUTAGE.
+          Degraded if it is on WARNING status.
+          Otherwise, it returns error.
+    """
 
-    result = { 
-               'Status' : None,
-               'Reason' : None
-              }
+    result = {'Status' : None,
+              'Reason' : None}
 
-    if not commandResult[ 'OK' ]:
-      result[ 'Status' ] = 'Error'
-      result[ 'Reason' ] = commandResult[ 'Message' ]
+    if not commandResult['OK']:
+      result['Status'] = 'Error'
+      result['Reason'] = commandResult['Message']
       return S_OK( result )
-    
-    status = commandResult[ 'Value' ]
+
+    status = commandResult['Value']
 
     if status is None:
       result[ 'Status' ] = 'Active'
@@ -42,7 +35,7 @@ class DowntimePolicy( PolicyBase ):
 
     elif status[ 'Severity' ] == 'OUTAGE':
       result[ 'Status' ] = 'Banned'
-      
+
     elif status[ 'Severity' ] == 'WARNING':
       result[ 'Status' ] = 'Degraded'
 
@@ -51,10 +44,10 @@ class DowntimePolicy( PolicyBase ):
       result[ 'Status' ] = 'Error'
       result[ 'Reason' ] = _reason
       return S_OK( result )
-      
-    #result[ 'EndDate' ] = status[ 'EndDate' ]
-    result[ 'Reason' ]  = '%s %s' % ( status[ 'DowntimeID' ], status[ 'Description' ] )
+
+    # result[ 'EndDate' ] = status[ 'EndDate' ]
+    result[ 'Reason' ] = '%s %s' % ( status[ 'DowntimeID' ], status[ 'Description' ] )
     return S_OK( result )
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -429,19 +429,27 @@ class ParameterCollection( list ):
     self[:] = []
 
   def remove( self, name_or_ind ):
-    # work for index as well as for the string
+    """ Removes a parameter given its name, or the index (the latter is not suggested), and only if it exists
+
+        If there are 2 parameters with the same name, only the first will be removed
+    """
     if isinstance( name_or_ind, list ) and isinstance( name_or_ind[0], str ):
       for s in name_or_ind:
         par = self.find( s )
         if par == None:
           print "ERROR ParameterCollection.remove() can not find parameter with the name=%s" % ( s )
         else:
-          del self[self.findIndex( s )]
+          index = self.findIndex( s )
+          if index > -1:
+            del self[index]
 
-    elif isinstance( name_or_ind, str ): # we given name
-      del self[self.findIndex( name_or_ind )]
-    elif isinstance( name_or_ind, int ) or isinstance( name_or_ind ): # we given index
-      del self[name_or_ind]
+    elif isinstance( name_or_ind, str ):  # we give a name
+      index = self.findIndex( name_or_ind )
+    elif isinstance( name_or_ind, int ):  # we give the index
+      index = name_or_ind
+      
+    if index > -1:
+      del self[index]
 
   def find( self, name_or_ind ):
     """ Method to find Parameters
@@ -470,6 +478,8 @@ class ParameterCollection( list ):
   def findIndex( self, name ):
     i = 0
     for v in self:
+      print v
+      print v.getName()
       if v.getName() == name:
         return i
       i = i + 1

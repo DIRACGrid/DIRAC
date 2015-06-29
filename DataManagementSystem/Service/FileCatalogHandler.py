@@ -139,6 +139,15 @@ class FileCatalogHandler( RequestHandler ):
     """ Determine the ACL information for a supplied path
     """
     return gFileCatalogDB.getPathPermissions( lfns, self.getRemoteCredentials() )
+  
+  
+  types_hasAccess = [StringTypes, [ ListType, DictType ] + list( StringTypes ) ]
+  def export_hasAccess( self, opType, paths ):
+    """ Determine if the given op can be performed on the paths
+        The OpType is all the operations exported
+    """
+    return gFileCatalogDB.hasAccess( opType, paths, self.getRemoteCredentials() )
+  
 
   ###################################################################
   #

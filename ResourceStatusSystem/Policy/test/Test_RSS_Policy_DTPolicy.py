@@ -1,109 +1,106 @@
-# $HeadURL:  $
-''' Test_RSS_Policy_DTPolicy
-'''
+""" Test_RSS_Policy_DTPolicy
+"""
 
-import mock
+from mock import MagicMock
 import unittest
 
-import DIRAC.ResourceStatusSystem.Policy.DTPolicy as moduleTested
+from DIRAC import gLogger
+import DIRAC.ResourceStatusSystem.Policy.DowntimePolicy as moduleTested
 
 __RCSID__ = '$Id: $'
 
 ################################################################################
 
 class DTPolicy_TestCase( unittest.TestCase ):
-  
+
   def setUp( self ):
-    '''
-    Setup
-    '''
-        
+    """ Setup
+    """
+    gLogger.setLevel( 'DEBUG' )
     self.moduleTested = moduleTested
-    self.testClass    = self.moduleTested.DTPolicy
-    
+    self.testClass = self.moduleTested.DowntimePolicy
+
+    self.DTCommand = MagicMock()
+
   def tearDown( self ):
-    '''
-    TearDown
-    '''
+    """ TearDown
+    """
     del self.testClass
     del self.moduleTested
-        
+
 ################################################################################
 # Tests
 
 class DTPolicy_Success( DTPolicy_TestCase ):
-  
-  def test_instantiate( self ):
-    ''' tests that we can instantiate one object of the tested class
-    '''  
-    
-    policy = self.testClass()
-    self.assertEqual( 'DTPolicy', policy.__class__.__name__ )  
-  
-  def test_evaluate( self ):
-    ''' tests the evaluate method
-    '''
-    
-    policy = self.testClass()
-    res = policy.evaluate()
-    self.assertEqual( False, res[ 'OK' ] )
-    
-    # command mock
-    mock_command = mock.Mock()
-    mock_command.doCommand.return_value = { 'OK' : False, 'Message' : 'Grumpy command' }
-    
-    policy.command = mock_command
-    
-    res = policy.evaluate()
-    self.assertEqual( False, res[ 'OK' ] )
-    self.assertEqual( 'Grumpy command', res[ 'Message' ] )
 
-    # command mock
-    mock_command.doCommand.return_value = { 'OK' : True, 'Value' : None }
-    policy.command = mock_command
-    
+  def test_instantiate( self ):
+    """ tests that we can instantiate one object of the tested class
+    """
+
+    policy = self.testClass()
+    self.assertEqual( 'DowntimePolicy', policy.__class__.__name__ )
+
+  def test_evaluate( self ):
+    """ tests the evaluate method
+    """
+
+    policy = self.testClass()
+
+    # command failing
+    self.DTCommand.doCommand.return_value = { 'OK' : False, 'Message' : 'Grumpy command' }
+    policy.setCommand( self.DTCommand )
     res = policy.evaluate()
-    self.assertEqual( False, res[ 'OK' ] )
-   
-    # command mock
-    mock_command.doCommand.return_value = { 'OK' : True, 'Value' : { 'DT' : None } }
-    policy.command = mock_command
-    
+    self.assert_( res['OK'] )
+    self.assertEqual( 'Grumpy command', res['Value']['Reason'] )
+    self.assertEqual( 'Error', res['Value']['Status'] )
+
+    # command failing /2
+    self.DTCommand.doCommand.return_value = { 'OK' : True, 'Value' : {'Severity': 'XYZ',
+                                                                      'EndDate' : 'Y',
+                                                                      'DowntimeID': '123',
+                                                                      'Description': 'blah' } }
+    self.assertEqual( 'Error', res['Value']['Status'] )
+
     res = policy.evaluate()
-    self.assertEqual( True, res[ 'OK' ] )
+    self.assert_( res[ 'OK' ] )
+    # command result empty
+    self.DTCommand.doCommand.return_value = {'OK': True, 'Value': None}
+    res = policy.evaluate()
+    self.assert_( res[ 'OK' ] )
     self.assertEqual( 'Active', res[ 'Value' ][ 'Status' ] )
     self.assertEqual( 'No DownTime announced', res[ 'Value' ][ 'Reason' ] )
-    #self.assertEqual( False, 'EndDate' in res[ 'Value' ] )
-    
-    # command mock
-    mock_command.doCommand.return_value = { 'OK' : True, 'Value' : { 'DT'      : 'OUTAGE',
-                                                                     'EndDate' : 'Y' } }
-    policy.command = mock_command
-    
+
+    # command result with a DT
+    self.DTCommand.doCommand.return_value = { 'OK' : True, 'Value' : {'Severity':'OUTAGE',
+                                                                      'EndDate':'Y',
+                                                                      'DowntimeID': '123',
+                                                                      'Description': 'blah' }}
+    policy.command = self.DTCommand
+
     res = policy.evaluate()
     self.assertEqual( True, res[ 'OK' ] )
     self.assertEqual( 'Banned', res[ 'Value' ][ 'Status' ] )
-    self.assertEqual( 'DownTime found: OUTAGE', res[ 'Value' ][ 'Reason' ] )
-    #self.assertEqual( 'Y', res[ 'Value' ][ 'EndDate' ] )
+    self.assertEqual( '123 blah', res[ 'Value' ][ 'Reason' ] )
 
     # command mock
-    mock_command.doCommand.return_value = { 'OK' : True, 'Value' : { 'DT'      : 'WARNING',
-                                                                     'EndDate' : 'Y' } }
-    policy.command = mock_command
-    
+    self.DTCommand.doCommand.return_value = { 'OK' : True, 'Value' : {'Severity': 'WARNING',
+                                                                      'EndDate': 'Y',
+                                                                      'DowntimeID': '123',
+                                                                      'Description': 'blah' }}
+    policy.command = self.DTCommand
+
     res = policy.evaluate()
     self.assertEqual( True, res[ 'OK' ] )
-    self.assertEqual( 'Bad', res[ 'Value' ][ 'Status' ] )
-    self.assertEqual( 'DownTime found: WARNING', res[ 'Value' ][ 'Reason' ] )
-    #self.assertEqual( 'Y', res[ 'Value' ][ 'EndDate' ] )
+    self.assertEqual( 'Degraded', res[ 'Value' ][ 'Status' ] )
+    self.assertEqual( '123 blah', res[ 'Value' ][ 'Reason' ] )
 
-    # command mock
-    mock_command.doCommand.return_value = { 'OK' : True, 'Value' : { 'DT'      : 'XYZ',
-                                                                     'EndDate' : 'Y' } }
-    policy.command = mock_command
-    
-    res = policy.evaluate()
-    self.assertEqual( False, res[ 'OK' ] )
-        
+
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+################################################################################
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( DTPolicy_TestCase )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DTPolicy_Success ) )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

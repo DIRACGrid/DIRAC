@@ -262,7 +262,7 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.info( "Single chosen site %s specified" % ( sites[0] ) )
 
     if sites:
-      self.jobLog.info( "Multiple sites requested: %s" ','.join( sites ) )
+      self.jobLog.info( "Multiple sites requested: %s" % ','.join( sites ) )
       sites = self.__applySiteFilter( sites, banned = bannedSites )
       if not sites:
         return S_ERROR( "Impossible site requirement" )
@@ -356,8 +356,13 @@ class JobScheduling( OptimizerExecutor ):
 
     tapeSEs = []
     diskSEs = []
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption( 'VirtualOrganization' )
     for seName in siteSEs:
-      se = StorageElement( seName )
+      se = StorageElement( seName, vo = vo )
       result = se.getStatus()
       if not result[ 'OK' ]:
         self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )
@@ -460,6 +465,11 @@ class JobScheduling( OptimizerExecutor ):
     siteCandidates = opData[ 'SiteCandidates' ]
 
     seStatus = {}
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption( 'VirtualOrganization' )
     for siteName in siteCandidates:
       if siteName == stageSite:
         continue
@@ -473,7 +483,7 @@ class JobScheduling( OptimizerExecutor ):
       for seName in closeSEs:
         #If we don't have the SE status get it and store it
         if seName not in seStatus:
-          seObj = StorageElement( seName )
+          seObj = StorageElement( seName, vo = vo )
           result = seObj.getStatus()
           if not result['OK' ]:
             self.jobLog.error( "Cannot retrieve SE %s status: %s" % ( seName, result[ 'Message' ] ) )

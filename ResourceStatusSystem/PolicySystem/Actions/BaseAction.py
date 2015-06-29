@@ -14,7 +14,7 @@ class BaseAction( object ):
     Base class for all actions. It defines a constructor an a run main method.
   '''
   
-  def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, clients ):
+  def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults, clients ):
 
     # enforcementResult supposed to look like:
     # { 
@@ -24,7 +24,7 @@ class BaseAction( object ):
     #   [ 'EndDate' : <str> ]
     # } 
 
-    # decissionParams supposed to look like:
+    # decisionParams supposed to look like:
     # {
     #   'element'     : None,
     #   'name'        : None,
@@ -36,7 +36,7 @@ class BaseAction( object ):
     # }
 
     self.actionName          = name # 'BaseAction'
-    self.decissionParams     = decissionParams
+    self.decisionParams = decisionParams
     self.enforcementResult   = enforcementResult
     self.singlePolicyResults = singlePolicyResults
     self.clients             = clients

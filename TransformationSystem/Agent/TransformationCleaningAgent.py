@@ -227,7 +227,7 @@ class TransformationCleaningAgent( AgentModule ):
       transStr = str( transID ).zfill( 8 )
       if re.search( transStr, str( folder ) ):
         if not folder in existingDirs:
-          existingDirs.append( folder )
+          existingDirs.append( folder.rstrip( '/' ) )
     return existingDirs
 
   #############################################################################

@@ -12,7 +12,7 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 __RCSID__ = '$Id: $'
 
-def commandInvocation( commandTuple, pArgs = None, decissionParams = None, clients = None ):
+def commandInvocation( commandTuple, pArgs = None, decisionParams = None, clients = None ):
   '''
   Returns a command object, given commandTuple
 
@@ -26,8 +26,8 @@ def commandInvocation( commandTuple, pArgs = None, decissionParams = None, clien
   
   # decission params can be a dictionary passed with all the element parameters
   # used mostly by the PDP to inject all relevant information  
-  if decissionParams is None:
-    decissionParams = {}
+  if decisionParams is None:
+    decisionParams = {}
       
   # arguments hardcoded on Configurations.py for the policy
   if pArgs is None:
@@ -44,7 +44,7 @@ def commandInvocation( commandTuple, pArgs = None, decissionParams = None, clien
     return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
     
   # We merge decision parameters and policy arguments.
-  newArgs = copy.deepcopy( decissionParams )
+  newArgs = copy.deepcopy( decisionParams )
   newArgs.update( pArgs )
       
   commandObject = getattr( commandModule, cClass )( newArgs, clients ) 

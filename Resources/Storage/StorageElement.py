@@ -16,7 +16,7 @@ from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
-from DIRAC.Resources.Catalog import FileCatalog
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 class StorageElementCache( object ):
 

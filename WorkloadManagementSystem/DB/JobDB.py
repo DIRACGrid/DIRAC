@@ -69,8 +69,7 @@ JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecT
                            'ISandboxReadyFlag', 'OSandboxReadyFlag', 'RetrievedFlag', 'AccountedFlag' ]
 
 JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
-                           'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime'
-                          ]
+                           'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime']
 
 #############################################################################
 class JobDB( DB ):
@@ -96,22 +95,6 @@ class JobDB( DB ):
 
     self.log.info( "MaxReschedule:  %s" % self.maxRescheduling )
     self.log.info( "==================================================" )
-
-    if DEBUG:
-      result = self.dumpParameters()
-
-  def dumpParameters( self ):
-    """  Dump the JobDB connection parameters to the stdout
-    """
-
-    print "=================================================="
-    print "User:     ", self.dbUser
-    print "Host:     ", self.dbHost
-    print "Password  ", self.dbPass
-    print "DBName    ", self.dbName
-    print "=================================================="
-
-    return S_OK()
 
   def __getAttributeNames( self ):
     """ get Name of Job Attributes defined in DB
@@ -1851,110 +1834,6 @@ class JobDB( DB ):
     finalDict['TotalRecords'] = len( records )
     finalDict['Extras'] = countryCounts
 
-    return S_OK( finalDict )
-
-#################################################################################
-  def getUserSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
-    """ Get the summary of user jobs in a standard form for the Web portal.
-        Pagination and global sorting is supported.
-    """
-
-    paramNames = ['Owner', 'OwnerDN', 'OwnerGroup']
-    paramNames += JOB_STATES
-    paramNames += ['TotalJobs']
-
-    # Sort out records as requested
-    sortItem = -1
-    sortOrder = "ASC"
-    if sortList:
-      item = sortList[0][0]  # only one item for the moment
-      sortItem = paramNames.index( item )
-      sortOrder = sortList[0][1]
-
-    last_update = None
-    if selectDict.has_key( 'LastUpdateTime' ):
-      last_update = selectDict['LastUpdateTime']
-      del selectDict['LastUpdateTime']
-    if selectDict.has_key( 'Owner' ):
-      username = selectDict['Owner']
-      del selectDict['Owner']
-      result = getDNForUsername( username )
-      if result['OK']:
-        selectDict['OwnerDN'] = result['Value']
-      else:
-        return S_ERROR( 'Unknown user %s' % username )
-
-    result = self.getCounters( 'Jobs', ['OwnerDN', 'OwnerGroup', 'Status'],
-                              selectDict, newer = last_update,
-                              timeStamp = 'LastUpdateTime' )
-    last_day = Time.dateTime() - Time.day
-    resultDay = self.getCounters( 'Jobs', ['OwnerDN', 'OwnerGroup', 'Status'],
-                                 selectDict, newer = last_day,
-                                 timeStamp = 'EndExecTime' )
-
-    # Sort out different counters
-    resultDict = {}
-    for attDict, count in result['Value']:
-      owner = attDict['OwnerDN']
-      group = attDict['OwnerGroup']
-      status = attDict['Status']
-
-      if not resultDict.has_key( owner ):
-        resultDict[owner] = {}
-      if not resultDict[owner].has_key( group ):
-        resultDict[owner][group] = {}
-        for state in JOB_STATES:
-          resultDict[owner][group][state] = 0
-
-      resultDict[owner][group][status] = count
-    for attDict, count in resultDay['Value']:
-      owner = attDict['OwnerDN']
-      group = attDict['OwnerGroup']
-      status = attDict['Status']
-      if status in JOB_FINAL_STATES:
-        resultDict[owner][group][status] = count
-
-    # Collect records now
-    records = []
-    totalUser = {}
-    for owner in resultDict:
-      totalUser[owner] = 0
-      for group in resultDict[owner]:
-        result = getUsernameForDN( owner )
-        if result['OK']:
-          username = result['Value']
-        else:
-          username = 'Unknown'
-        rList = [username, owner, group]
-        count = 0
-        for state in JOB_STATES:
-          s_count = resultDict[owner][group][state]
-          rList.append( s_count )
-          count += s_count
-        rList.append( count )
-        records.append( rList )
-        totalUser[owner] += count
-
-    # Sort out records
-    if sortItem != -1 :
-      if sortOrder.lower() == "asc":
-        records.sort( key = operator.itemgetter( sortItem ) )
-      else:
-        records.sort( key = operator.itemgetter( sortItem ), reverse = True )
-
-    # Collect the final result
-    finalDict = {}
-    finalDict['ParameterNames'] = paramNames
-    # Return all the records if maxItems == 0 or the specified number otherwise
-    if maxItems:
-      if startItem + maxItems > len( records ):
-        finalDict['Records'] = records[startItem:]
-      else:
-        finalDict['Records'] = records[startItem:startItem + maxItems]
-    else:
-      finalDict['Records'] = records
-
-    finalDict['TotalRecords'] = len( records )
     return S_OK( finalDict )
 
 #####################################################################################

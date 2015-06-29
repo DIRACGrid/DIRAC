@@ -104,20 +104,21 @@ class DataManager( object ):
     """
     self.accountingClient = client
 
-  def __verifyWritePermission( self, path ):
-    """  Check if we have write permission to the given file (if exists) or its directory
+  def __hasAccess(self, opType, path):
+    """  Check if we have permission to execute given operation on the given file (if exists) or its directory
     """
     if isinstance( path, basestring ):
       paths = [ path ]
     else:
       paths = path
 
-    res = self.fc.getPathPermissions( paths )
+    res = self.fc.hasAccess( opType, paths )
     if not res['OK']:
       return res
-    result = {'Successful':[], 'Failed':[]}
+    result = {'Successful':list(), 'Failed':list()}
     for path in paths:
-      if res['Value']['Successful'].get( path, {} ).get( 'Write', False ):
+      isAllowed = res['Value']['Successful'].get( path, False )
+      if isAllowed:
         result['Successful'].append( path )
       else:
         result['Failed'].append( path )
@@ -150,7 +151,7 @@ class DataManager( object ):
     :param self: self reference
     :param str folder: directory name
     """
-    res = self.__verifyWritePermission( folder )
+    res = self.__hasAccess( 'removeDirectory', folder )
     if not res['OK']:
       return res
     if folder not in res['Value']['Successful']:
@@ -420,12 +421,11 @@ class DataManager( object ):
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
-#     ancestors = ancestors if ancestors else list(
-    folder = os.path.dirname( lfn )
-    res = self.__verifyWritePermission( folder )
+
+    res = self.__hasAccess( 'addFile', lfn )
     if not res['OK']:
       return res
-    if folder not in res['Value']['Successful']:
+    if lfn not in res['Value']['Successful']:
       errStr = "putAndRegister: Write access not permitted for this credential."
       self.log.debug( errStr, lfn )
       return S_ERROR( errStr )
@@ -658,7 +658,7 @@ class DataManager( object ):
 
     ###########################################################
     # Check that we have write permissions to this directory.
-    res = self.__verifyWritePermission( lfn )
+    res = self.__hasAccess( 'addReplica', lfn )
     if not res['OK']:
       return res
     if lfn not in res['Value']['Successful']:
@@ -684,7 +684,7 @@ class DataManager( object ):
     # Check whether the destination storage element is banned
     log.verbose( "Determining whether %s ( destination ) is Write-banned." % destSEName )
 
-    if not self.__SEActive( destSEName ).get( 'Value', {} ).get( 'Write' ):
+    if not destStorageElement.getStatus().get( 'Value', {} ).get( 'Write', False ):
       infoStr = "Supplied destination Storage Element is not currently allowed for Write."
       log.debug( infoStr, destSEName )
       return S_ERROR( infoStr )
@@ -767,7 +767,7 @@ class DataManager( object ):
       log.debug( "Consider %s as a source" % candidateSEName )
 
       # Check that the candidate is active
-      if not self.__SEActive( candidateSEName ).get( 'Value', {} ).get( 'Read' ):
+      if not self.__SEActive( candidateSEName, 'Read' ):
         log.debug( "%s is currently not allowed as a source." % candidateSEName )
         continue
       else:
@@ -1055,20 +1055,18 @@ class DataManager( object ):
       failed = dict.fromkeys( [lfn for lfn in success if not success[lfn] ], 'No such file or directory' )
     # Check that we have write permissions to this directory and to the file.
     if lfns:
-      dir4lfns = {}
-      for lfn in lfns:
-        dir4lfns.setdefault( os.path.dirname( lfn ), [] ).append( lfn )
-      res = self.__verifyWritePermission( dir4lfns.keys() )
+      res = self.__hasAccess( 'removeFile', lfns )
       if not res['OK']:
         return res
       if res['Value']['Failed']:
         errStr = "removeFile: Write access not permitted for this credential."
         self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
-        failed.update( dict.fromkeys( [lfn for dirName in res['Value']['Failed'] for lfn in dir4lfns[dirName]], errStr ) )
-        lfns = list( set( [lfn for dirName in res['Value']['Successful'] for lfn in dir4lfns[dirName] ] ) )
+        failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
 
+      lfns = res['Value']['Successful']
+    
       if lfns:
-        self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
+        self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalog. Get replicas first" % len( lfns ) )
         res = self.fc.getReplicas( lfns, True )
         if not res['OK']:
           errStr = "DataManager.removeFile: Completely failed to get replicas for lfns."
@@ -1151,7 +1149,7 @@ class DataManager( object ):
     if not lfns:
       return S_OK( {'Successful':successful, 'Failed':failed} )
     # Check that we have write permissions to this file.
-    res = self.__verifyWritePermission( lfns )
+    res = self.__hasAccess( 'removeReplica', lfns )
     if not res['OK']:
       return res
     if res['Value']['Failed']:
@@ -1208,7 +1206,7 @@ class DataManager( object ):
     lfnsToRemove = []
 
     for lfn in lfns:
-      res = self.__verifyWritePermission( lfn )
+      res = self.__hasAccess( 'removeReplica', lfn )
       if not res['OK']:
         return res
       if lfn not in res['Value']['Successful']:
@@ -1361,58 +1359,59 @@ class DataManager( object ):
     gDataStoreClient.addRegister( oDataOperation )
     return res
 
-  def removePhysicalReplicaLegacy( self, storageElementName, lfn ):
-    """ Remove replica from Storage Element.
 
-       'lfn' are the files to be removed
-       'storageElementName' is the storage where the file is to be removed
-    """
-    if isinstance( lfn, list ):
-      lfns = lfn
-    elif isinstance( lfn, basestring ):
-      lfns = [lfn]
-    else:
-      errStr = "removePhysicalReplica: Supplied lfns must be string or list of strings."
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
-    successful = {}
-    failed = {}
-    # Check that we have write permissions to this directory.
-    res = self.__verifyWritePermission( lfns )
-    if not res['OK']:
-      return res
-    if res['Value']['Failed']:
-      errStr = "removePhysicalReplica: Write access not permitted for this credential."
-      self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
-      failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
-      lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
-    self.log.debug( "removePhysicalReplica: Attempting to remove %s lfns at %s." % ( len( lfns ),
-                                                                                       storageElementName ) )
-    self.log.debug( "removePhysicalReplica: Attempting to resolve replicas." )
-    res = self.getReplicas( lfns )
-    if not res['OK']:
-      errStr = "removePhysicalReplica: Completely failed to get replicas for lfns."
-      self.log.debug( errStr, res['Message'] )
-      return res
-    failed.update( res['Value']['Failed'] )
-    replicaDict = res['Value']['Successful']
-    successful = {}
-    lfnsToRemove = []
-    for lfn, repDict in replicaDict.items():
-      if storageElementName not in repDict:
-        # The file doesn't exist at the storage element so don't have to remove it
-        successful[lfn] = True
-      else:
-        lfnsToRemove.append( lfn )
-    self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( lfnsToRemove ),
-                                                                                       storageElementName ) )
-    res = self.__removePhysicalReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
-    for lfn, error in res['Value']['Failed'].items():
-      failed[lfn] = error
-    for lfn in res['Value']['Successful']:
-      successful[lfn] = True
-    resDict = { 'Successful' : successful, 'Failed' : failed }
-    return S_OK( resDict )
+#   def removePhysicalReplicaLegacy( self, storageElementName, lfn ):
+#     """ Remove replica from Storage Element.
+#
+#        'lfn' are the files to be removed
+#        'storageElementName' is the storage where the file is to be removed
+#     """
+#     if type( lfn ) == ListType:
+#       lfns = lfn
+#     elif type( lfn ) == StringType:
+#       lfns = [lfn]
+#     else:
+#       errStr = "removePhysicalReplica: Supplied lfns must be string or list of strings."
+#       self.log.debug( errStr )
+#       return S_ERROR( errStr )
+#     successful = {}
+#     failed = {}
+#     # Check that we have write permissions to this directory.
+#     res = self.__hasAccess( 'removeReplica', lfns )
+#     if not res['OK']:
+#       return res
+#     if res['Value']['Failed']:
+#       errStr = "removePhysicalReplica: Write access not permitted for this credential."
+#       self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
+#       failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
+#       lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
+#     self.log.debug( "removePhysicalReplica: Attempting to remove %s lfns at %s." % ( len( lfns ),
+#                                                                                        storageElementName ) )
+#     self.log.debug( "removePhysicalReplica: Attempting to resolve replicas." )
+#     res = self.getReplicas( lfns )
+#     if not res['OK']:
+#       errStr = "removePhysicalReplica: Completely failed to get replicas for lfns."
+#       self.log.debug( errStr, res['Message'] )
+#       return res
+#     failed.update( res['Value']['Failed'] )
+#     replicaDict = res['Value']['Successful']
+#     successful = {}
+#     lfnsToRemove = []
+#     for lfn, repDict in replicaDict.items():
+#       if storageElementName not in repDict:
+#         # The file doesn't exist at the storage element so don't have to remove it
+#         successful[lfn] = True
+#       else:
+#         lfnsToRemove.append( lfn )
+#     self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( lfnsToRemove ),
+#                                                                                        storageElementName ) )
+#     res = self.__removePhysicalReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
+#     for lfn, error in res['Value']['Failed'].items():
+#       failed[lfn] = error
+#     for lfn in res['Value']['Successful']:
+#       successful[lfn] = True
+#     resDict = { 'Successful' : successful, 'Failed' : failed }
+#     return S_OK( resDict )
 
 
   def __removePhysicalReplica( self, storageElementName, lfnsToRemove, replicaDict = None ):
@@ -1547,40 +1546,20 @@ class DataManager( object ):
       if not isinstance( replicaDict[key], dict ):
         return S_ERROR( 'Wrong argument type %s, expected a dictionary' % type( replicaDict[key] ) )
 
-    seReadStatus = {}
     for lfn, replicas in replicaDict['Successful'].items():
       if not isinstance( replicas, dict ):
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
       for se in replicas.keys():
-        # Fix the caching
-        readStatus = seReadStatus[se] if se in seReadStatus else seReadStatus.setdefault( se, self.__SEActive( se ).get( 'Value', {} ).get( 'Read', False ) )
-        if not readStatus:
+        if not self.__SEActive( se, 'Read' ):
           replicas.pop( se )
 
     return S_OK( replicaDict )
 
-  def __SEActive( self, se ):
-    """ check is SE is active """
-    result = StorageFactory().getStorageName( se )
-    if not result['OK']:
-      return S_ERROR( 'SE not known' )
-    resolvedName = result['Value']
-    for _i in range( 5 ):
-      res = self.resourceStatus.getStorageElementStatus( resolvedName, default = None )
-      if res['OK']:
-        break
-    if not res[ 'OK' ]:
-      return S_ERROR( 'SE not known' )
-
-    seStatus = { 'Read' : True, 'Write' : True }
-    if res['Value'][resolvedName].get( 'ReadAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
-      seStatus[ 'Read' ] = False
-    if res['Value'][resolvedName].get( 'WriteAccess', 'Active' ) not in ( 'Active', 'Degraded' ):
-      seStatus[ 'Write' ] = False
-
-    return S_OK( seStatus )
+  def __SEActive( self, se, access = 'Read' ):
+    """ check is SE is active for a given access """
+    return StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )
 
 ##########################################
   #

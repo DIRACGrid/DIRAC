@@ -55,6 +55,7 @@ class StorageBase( object ):
     self.basePath = parameterDict['Path']
     self.cwd = self.basePath
     self.se = None
+    self.isok = True
     
   def setStorageElement( self, se ):
     self.se = se  
@@ -311,7 +312,7 @@ class StorageBase( object ):
     lfnSplitList = lfn.split( '/' )
     voLFN = lfnSplitList[1]
     # TODO comparison to Sandbox below is for backward compatibility, should be removed in the next release
-    if ( voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox" ) or self.se.vo in lfnSplitList[2:]:
+    if ( voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox" ):
       
       return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
     

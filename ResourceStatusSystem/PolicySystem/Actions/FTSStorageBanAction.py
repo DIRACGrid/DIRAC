@@ -22,9 +22,9 @@ class FTSStorageBanAction( BaseAction ):
 		Action that sends to the FTS server a banning request for a given list of sites.
 	'''
 	
-	def __init__( self, name, decissionParams, enforcementResult, singlePolicyResults, clients ):
+	def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults, clients ):
 		
-		super( FTSStorageBanAction, self ).__init__( name, decissionParams, enforcementResult, 
+		super( FTSStorageBanAction, self ).__init__( name, decisionParams, enforcementResult,
                                          singlePolicyResults, clients )
 
 		
@@ -36,7 +36,7 @@ class FTSStorageBanAction( BaseAction ):
 		#	 [ 'EndDate' : <str> ]
 		# } 
 
-		# decissionParams supposed to look like:
+		# decisionParams supposed to look like:
 		# {
 		#	 'element'		 : None,
 		#	 'name'				: None,
@@ -52,8 +52,8 @@ class FTSStorageBanAction( BaseAction ):
 			Checks it has the parameters it needs and tries to ban the site
 		'''		
 		# Minor security checks
-		storageElement = self.decissionParams[ 'name' ]
-		elementType = self.decissionParams[ 'elementType' ]
+		storageElement = self.decisionParams[ 'name' ]
+		elementType = self.decisionParams[ 'elementType' ]
 		if elementType != 'StorageElement':
 			return S_ERROR( "'elementType' should be 'StorageElement'" )
 					

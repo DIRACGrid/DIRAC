@@ -1,4 +1,3 @@
-# $HeadURL$
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -27,6 +26,7 @@ if a give datetime is in the defined interval.
 
 """
 __RCSID__ = "$Id$"
+
 import time as nativetime
 import datetime
 from types import StringTypes
@@ -40,6 +40,21 @@ day = datetime.timedelta( days = 1 )
 week = datetime.timedelta( days = 7 )
 
 dt = datetime.datetime( 2000, 1, 1 )
+
+def timeThis( method ):
+  """ Function to be used as a decorator for timing other functions/methods
+  """
+
+  def timed( *args, **kw ):
+    ts = nativetime.time()
+    result = method( *args, **kw )
+    te = nativetime.time()
+
+    print( "Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( method.__name__, len( kw ), te - ts ) )
+    return result
+
+  return timed
+
 
 def dateTime():
   """

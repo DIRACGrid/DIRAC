@@ -16,6 +16,14 @@ import os, re, types, time
 lfc = None
 importedLFC = None
 
+_readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
+           'getReplicas', 'getReplicaStatus', 'listDirectory', 'isDirectory',
+           'getDirectoryReplicas', 'getDirectorySize']
+
+_writeMethods = ['addFile', 'removeFile', 'addReplica',
+            'removeReplica', 'setReplicaStatus', 'setReplicaHost',
+            'createDirectory', 'removeDirectory']
+
 ####################################################################
 #
 # These are some functions used by all methods in the class
@@ -327,6 +335,32 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       else:
         resDict[ p ] = False
     return S_OK( resDict )
+  
+  
+  def hasAccess(self, opType, paths):
+
+    res = checkArgumentFormat( paths )
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+
+    if opType in _readMethods:
+      opType = 'Read'
+    elif opType in _writeMethods:
+      opType = 'Write'
+
+    res = self.getPathPermissions( lfns )
+    
+    if not res['OK']:
+      return res
+
+    perms = res['Value']
+    failed = perms['Failed']
+    successful = dict( ( path, perms['Successful'][path].get( opType, False ) ) for path in perms['Successful'] )
+
+    return S_OK( {'Successful': successful, 'Failed' : failed} )
+
+
 
   def getPathPermissions( self, path ):
     """ Determine the VOMs based ACL information for a supplied path

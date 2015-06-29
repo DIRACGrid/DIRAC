@@ -167,12 +167,7 @@ class DowntimeCommand( Command ):
 
     if masterParams is not None:
       element, elementNames = masterParams
-      #translate DIRAC CS elementNames into GOCDB elementNames
-      translatedElementNames = []
-      for e in elementNames:
-        translatedElementNames.append(CSHelpers.getSEHost( e ))
-      elementNames = translatedElementNames
-      hours = None
+      hours = 120
       elementName = None
       gocdbServiceType = None
 
@@ -184,16 +179,12 @@ class DowntimeCommand( Command ):
       elementNames = [ elementName ]
 
     #WARNING: checking all the DT that are ongoing or starting in given <hours> from now
-    startDate = None 
-    if hours is not None:
-      startDate = datetime.utcnow() + timedelta( hours = hours )
-
     try:
-      results = self.gClient.getStatus( element, elementNames, startDate )
+      results = self.gClient.getStatus( element, name = elementNames, startingInHours = hours )
     except urllib2.URLError:
       try:
         #Let's give it a second chance..
-        results = self.gClient.getStatus( element, elementNames, startDate )
+        results = self.gClient.getStatus( element, name = elementNames, startingInHours = hours )
       except urllib2.URLError, e:
         return S_ERROR( e )
 

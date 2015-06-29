@@ -588,7 +588,8 @@ class SSHComputingElement( ComputingElement ):
       if result['Status'] != 0:
         return S_ERROR( 'Failed to get job status: %s' % result['Message'] )
       
-      resultDict.update( result['Jobs'] )
+      for stamp in result['Jobs']:
+        resultDict[jobDict[stamp]] = result['Jobs'][stamp]
     
     return S_OK( resultDict )
 

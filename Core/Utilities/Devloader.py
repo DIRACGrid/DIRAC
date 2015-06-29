@@ -1,3 +1,5 @@
+""" Here, we need some documentation...
+"""
 
 import sys
 import os
@@ -31,8 +33,8 @@ class Devloader( object ):
     return self.__enabled
 
   def watchFile( self, fp ):
-    if os.path.isfile( fd ):
-      self.__watchedFiles.append( fd )
+    if os.path.isfile( fp ):
+      self.__watchedFiles.append( fp )
       return True
     return False
 
@@ -76,7 +78,7 @@ class Devloader( object ):
             path = path[:-1]
         self.__checkFile( path )
       for path in self.__watchedFiles:
-         self.__checkFile( path )
+        self.__checkFile( path )
 
   def __checkFile( self, path ):
     try:

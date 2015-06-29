@@ -1,4 +1,4 @@
-[v6r14-pre1]
+[v6r14-pre2]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
@@ -7,8 +7,77 @@ NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
 NEW: LocalConfiguration - option to print out license information      
 
+*Resources
+NEW: ARCComputingElement based on the ARC python API
+
+*RSS
+FIX: Improved logging all over the place 
+
+*DMS
+NEW: New FileCatalog SecurityManager with access control based on policies,
+     VOMSPolicy as one of the policy implementations.
+NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC with 
+     Foreign Keys and Stored Procedures by accessing the databases directly     
+
 *WMS
 FIX: Watchdog - review for style and pylint
+CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone 
+        utilities
+
+*Transformation
+NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p5]
+
+*Resources
+BUGFIX: Torque - getCEStatus() must return integer job numbers
+FIX: StorageBase - removed checking the VO name inside the LFN 
+
+*WMS
+FIX: InputData, JobScheduling - StorageElement needs to know its VO
+
+*DMS
+FIX: ReplicateAndRegister - Add checksumType to RMS files when adding 
+     checksum value
+FIX: DataManager - remove unnecessary access to RSS and use SE.getStatus()     
+FIX: DMHelpers - take into account Alias and BaseSE in site-SE relation
+
+*RMS
+FIX: Request - bug fixed in optimize() in File reassignment from one
+     Operation to another  
+
+*Transformation
+FIX: TransformationDB - set derived transformation to Automatic
+
+[v6r13p4]
+
+*Core
+FIX: VOMSService - treat properly the case when the VOMS service returns no result
+     in attGetUserNickname()
+
+*DMS
+FIX: FTSAgent, ReplicateAndRegister - make sure we use source replicas with correct 
+     checksum 
+
+*RMS
+FIX: Request - minor fix in setting the Request properties, suppressing pylint
+     warnings
+CHANGE: File, Reques, Operation, RequestDB - remove the use of sqlalchemy on 
+        the client side     
+     
+*Resources
+FIX: StorageElement - import FileCatalog class rather than the corresponding module     
+FIX: SLURM - proper formatting commands using %j, %T placeholders
+FIX: SSHComputingElement - return full job references from getJobStatus() 
+
+*RSS
+FIX: DowntimeCommand - checking for downtimes including the time to start in hours
+
+*Workflow
+CHANGE: FailoverRequest - assign to properties rather than using setters
+
+*Transformation
+FIX: TransformationClient(DB,Utilities) - fixes to make derived transformations work
 
 [v6r13p3]
 
@@ -128,6 +197,12 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p43]
+
+*DMS:
+FIX: DirectoryTreeBase - avoid double definition of FC_DirectoryUsage table
+     in _rebuildDirectoryUsage()
 
 [v6r12p42]
 
