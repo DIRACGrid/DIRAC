@@ -702,8 +702,8 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
     # FIXME: this is artificial
     self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
-    self.inProcessOpts.append( '-o MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
-    self.inProcessOpts.append( '-o CPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
+    self.inProcessOpts.append( '-o /LocalSite/MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
+    self.inProcessOpts.append( '-o /LocalSite/CPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
     self.inProcessOpts.append( '-o MaxRunningJobs=%s' % 1 )
     # To prevent a wayward agent picking up and failing many jobs.
     self.inProcessOpts.append( '-o MaxTotalJobs=%s' % 10 )

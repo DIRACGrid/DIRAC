@@ -28,6 +28,18 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+[v6r13p6]
+
+*Core
+FIX: X509Chain - use SHA1 signature encryption in all tha cases
+
+*Resources
+FIX: ComputingElement - take CPUTime from its configuration defined in the 
+     pilot parameters
+
+*WMS
+FIX: SiteDirector - correctly configure jobExecDir and httpProxy Queue parameters
+
 [v6r13p5]
 
 *Resources

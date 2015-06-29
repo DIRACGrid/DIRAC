@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -523,6 +524,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       extension, system = result['Value']
+
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+
+      if database != 'InstalledComponentsDB':
+        result = MonitoringUtilities.monitorInstallation( 'DB', system.replace( 'System', '' ), database, cpu = cpu, hostname = hostname )
+        if not result['OK']:
+          self.__errMsg( result['Message'] )
+          return
       # result = client.addDatabaseOptionsToCS( system, database )
       InstallTools.mysqlHost = self.host
       result = client.getInfo()
@@ -590,6 +608,24 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       compType = result['Value']['ComponentType']
       runit = result['Value']['RunitStatus']
       gLogger.notice( "%s %s_%s is installed, runit status: %s" % ( compType, system, component, runit ) )
+
+      # And register it in the database
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      if component == 'ComponentMonitoring':
+        result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
+        if not result['OK']:
+          self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+          return
+      result = MonitoringUtilities.monitorInstallation( option, system, component, module, cpu = cpu, hostname = hostname )
+      if not result['OK']:
+        self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+        return
     else:
       gLogger.notice( "Unknown option:", option )
 
@@ -617,6 +653,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result[ 'Message' ] )
       else:
         gLogger.notice( "Successfully uninstalled %s" % ( component ) )
+
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      result = client.getAvailableDatabases()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      system = result[ 'Value' ][ component ][ 'System' ]
+      result = MonitoringUtilities.monitorUninstallation( system , component, hostname = hostname, cpu = cpu )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
     else:
       if option == '-f':
         force = True
@@ -659,6 +712,17 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result[ 'Message' ] )
       else:
         gLogger.notice( "Successfully uninstalled %s/%s" % ( system, component ) )
+
+      result = client.getHostInfo()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      else:
+        cpu = result[ 'Value' ][ 'CPUModel' ]
+      hostname = self.host
+      result = MonitoringUtilities.monitorUninstallation( system, component, hostname = hostname, cpu = cpu )
+      if not result[ 'OK' ]:
+        return result
 
   def do_start( self, args ):
     """ Start services or agents or database server

@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Utilities import InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 #
 from DIRAC import gConfig, S_OK, S_ERROR
 InstallTools.exitOnError = True
@@ -87,6 +88,9 @@ else:
     if not result['OK']:
       print "ERROR:", result['Message']
       DIRACexit( 1 )
-    else:
-      print "Successfully completed the installation of executor %s in %s system" % ( executor, system )
-      DIRACexit()
+    result = MonitoringUtilities.monitorInstallation( 'executor', system, executor, module )
+    if not result['OK']:
+      print "ERROR:", result['Message']
+      DIRACexit( 1 )
+    print "Successfully completed the installation of executor %s in %s system" % ( executor, system )
+    DIRACexit()

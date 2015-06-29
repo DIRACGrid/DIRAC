@@ -525,8 +525,8 @@ class SiteDirector( AgentModule ):
         jobExecDir = ''
         if ceType == 'CREAM':
           jobExecDir = '.'
-        jobExecDir = self.queueDict[queue].get( 'JobExecDir', jobExecDir )
-        httpProxy = self.queueDict[queue].get( 'HttpProxy', '' )
+        jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )          
+        httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )          
 
         result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
