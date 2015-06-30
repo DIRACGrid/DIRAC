@@ -350,7 +350,7 @@ class DataManager( object ):
     if not res['OK']:
       return res
     errTuple = ( "No SE", "found" )
-    errToReturn = None
+    errToReturn = S_ERROR()
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
@@ -365,7 +365,7 @@ class DataManager( object ):
 
       if not res['OK']:
         errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
-        errToReturn = res['Message']
+        errToReturn = res
         oDataOperation.setValueByKey( 'TransferOK', 0 )
         oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
         oDataOperation.setEndTime()
@@ -397,7 +397,7 @@ class DataManager( object ):
     gDataStoreClient.addRegister( oDataOperation )
     self.log.verbose( "getFile: Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
-    return S_ERROR( errToReturn )
+    return errToReturn
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """

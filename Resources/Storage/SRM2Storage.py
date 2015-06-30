@@ -798,7 +798,7 @@ class SRM2Storage( StorageBase ):
       self.log.debug( "__putFile: Removed remote file remnant %s." % dest_url )
     else:
       self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
-    return S_ERROR( errObj )
+    return  errObj
 
   def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams,
                         timeout, src_spacetokendesc, dest_spacetokendesc ):
@@ -2089,7 +2089,7 @@ class SRM2Storage( StorageBase ):
     if numberOfResults <= 0:
       errObj = DError( DIRACError.EGFAL, "SRM2Storage.__get_results: Did not obtain results with gfal_get_results." )
       self.log.error( errObj )
-      return S_ERROR( errObj )
+      return errObj
     else:
       self.log.debug( "SRM2Storage.__get_results: Retrieved %s results from gfal_get_results." % numberOfResults )
       for result in listOfResults:
