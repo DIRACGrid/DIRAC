@@ -35,17 +35,18 @@ class CEAvailabilityCommand( Command ):
     '''
     
     ## INPUT PARAMETERS
-    vo = getVOs()['Value'].pop()
+    vos = getVOs()
+    if vos[ 'OK' ]:
+      vo = vos['Value'].pop()
+    else:
+      return S_ERROR( "No appropriate VO was found! %s" % vos['Message'] )
     
     if 'ce' not in self.args:
       return S_ERROR( "No computing element 'ce' has been specified!" )
     else:
-      ce = self.args['ce'] #'cccreamceli05.in2p3.fr'
+      ce = self.args['ce']
     
-    if 'host' in self.args:
-      host = self.args['host']
-    else:
-      host = None
+    host = self.args.get('host')
 
     #getting BDII info
     diracAdmin = DiracAdmin()
