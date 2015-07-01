@@ -265,7 +265,7 @@ class TransformationDB( DB ):
     transParams = res['Value']
     paramDict = {}
     for reqParam in parameters:
-      if not reqParam in transParams:
+      if reqParam not in transParams:
         return S_ERROR( "Parameter %s not defined for transformation" % reqParam )
       paramDict[reqParam] = transParams[reqParam]
     if len( paramDict ) == 1:
