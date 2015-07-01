@@ -2,13 +2,34 @@
 
 __RCSID__ = "$Id$"
 
-import types
-
 from DIRAC                                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client                                 import Client
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase              import FileCatalogueBase
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
+
+def _checkArgumentFormat( path ):
+  if isinstance( path, basestring ):
+    urls = {path:False}
+  elif isinstance( path, list ):
+    urls = {}
+    for url in path:
+      urls[url] = False
+  elif isinstance( path, dict ):
+    urls = path
+  else:
+    return S_ERROR( "TransformationClient.__checkArgumentFormat: Supplied path is not of the correct format." )
+  return S_OK( urls )
+
+def _returnOK( lfn ):
+  res = _checkArgumentFormat( lfn )
+  if not res['OK']:
+    return res
+  successful = {}
+  for lfn in res['Value']:
+    successful[lfn] = True
+  resDict = {'Successful':successful, 'Failed':{}}
+  return S_OK( resDict )
 
 class TransformationClient( Client, FileCatalogueBase ):
 
@@ -90,13 +111,17 @@ class TransformationClient( Client, FileCatalogueBase ):
                                         agentType, fileMask, transformationGroup, groupSize, inheritedFrom,
                                         body, maxTasks, eventsPerTask, addFiles )
 
-  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate',
+  def getTransformations( self, condDict = None, older = None, newer = None, timeStamp = None,
                           orderAttribute = None, limit = 100, extraParams = False ):
     """ gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()
 
     transformations = []
+    if condDict is None:
+      condDict = {}
+    if timeStamp is None:
+      timeStamp = 'CreationDate'
     # getting transformations - incrementally
     offsetToApply = 0
     while True:
@@ -117,7 +142,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     rpcClient = self._getRPC()
     return rpcClient.getTransformation( transName, extraParams )
 
-  def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
+  def getTransformationFiles( self, condDict = None, older = None, newer = None, timeStamp = None,
                               orderAttribute = None, limit = None,
                               timeout = 1800,
                               offset = 0, maxfiles = None ):
@@ -126,6 +151,10 @@ class TransformationClient( Client, FileCatalogueBase ):
     """
     rpcClient = self._getRPC( timeout = timeout )
     transformationFiles = []
+    if condDict is None:
+      condDict = {}
+    if timeStamp is None:
+      timeStamp = 'LastUpdate'
     # getting transformationFiles - incrementally
     offsetToApply = offset
     retries = 5
@@ -155,13 +184,17 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( transformationFiles )
 
 
-  def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
+  def getTransformationTasks( self, condDict = None, older = None, newer = None, timeStamp = None,
                               orderAttribute = None, limit = 10000, inputVector = False ):
     """ gets all the transformation tasks for a transformation, incrementally.
         "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()
     transformationTasks = []
+    if condDict is None:
+      condDict = {}
+    if timeStamp is None:
+      timeStamp = 'CreationTime'
     # getting transformationFiles - incrementally
     offsetToApply = 0
     while True:
@@ -291,7 +324,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     return S_OK( ( parentProd, movedFiles ) )
 
-  def setFileStatusForTransformation( self, transName, newLFNsStatus = {}, lfns = [], force = False ):
+  def setFileStatusForTransformation( self, transName, newLFNsStatus = None, lfns = None, force = False ):
     """ Sets the file status for LFNs of a transformation
 
         For backward compatibility purposes, the status and LFNs can be passed in 2 ways:
@@ -303,11 +336,15 @@ class TransformationClient( Client, FileCatalogueBase ):
 
     """
     rpcClient = self._getRPC()
+    if newLFNsStatus is None:
+      newLFNsStatus = {}
+    if lfns is None:
+      lfns = []
 
     # create dictionary in case newLFNsStatus is a string
-    if type( lfns ) == type( '' ):
+    if isinstance( lfns, basestring ):
       lfns = [lfns]
-    if type( newLFNsStatus ) == type( '' ):
+    if isinstance( newLFNsStatus, basestring ):
       newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
 
     # gets status as of today
@@ -327,7 +364,7 @@ class TransformationClient( Client, FileCatalogueBase ):
 
       if newStatuses:  # if there's something to update
         # must do it for the file IDs...
-        newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses.keys()] )
+        newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses] )
         res = rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
         if not res['OK']:
           return res
@@ -346,27 +383,24 @@ class TransformationClient( Client, FileCatalogueBase ):
     """
     newStatuses = {}
 
-    for lfn in dictOfProposedLFNsStatus.keys():
-      if lfn not in tsFilesAsDict.keys():
-        continue
-      else:
-        newStatus = dictOfProposedLFNsStatus[lfn]
-        # Apply optional corrections
-        if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
-          if not force:
-            newStatus = 'Processed'
-        elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
+    for lfn in set( dictOfProposedLFNsStatus ) - set( tsFilesAsDict ):
+      newStatus = dictOfProposedLFNsStatus[lfn]
+      # Apply optional corrections
+      if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
+        if not force:
+          newStatus = 'Processed'
+      elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
+        if not force:
+          newStatus = 'MaxReset'
+      elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
+        errorCount = tsFilesAsDict[lfn][1]
+        # every 10 retries (by default)
+        if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ):
           if not force:
             newStatus = 'MaxReset'
-        elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
-          errorCount = tsFilesAsDict[lfn][1]
-          # every 10 retries (by default)
-          if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ):
-            if not force:
-              newStatus = 'MaxReset'
 
-        if tsFilesAsDict[lfn][0].lower() != newStatus:
-          newStatuses[lfn] = newStatus
+      if tsFilesAsDict[lfn][0].lower() != newStatus:
+        newStatuses[lfn] = newStatus
 
     return newStatuses
 
@@ -427,7 +461,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.addDirectory( path, force )
 
   def getReplicas( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
@@ -435,7 +469,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.getReplicas( lfns )
 
   def addFile( self, lfn, force = False ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
@@ -443,7 +477,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.addFile( lfndicts, force )
 
   def addReplica( self, lfn, force = False ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
@@ -451,7 +485,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.addReplica( lfndicts, force )
 
   def removeFile( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
@@ -469,7 +503,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( resDict )
 
   def removeReplica( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
@@ -481,7 +515,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     localdicts = {}
     for lfn, info in lfndicts.items():
       localdicts.update( { lfn : info } )
-      if len( localdicts.keys() ) % 100 == 0:
+      if len( localdicts ) % 100 == 0:
         listOfDicts.append( localdicts )
         localdicts = {}
     for fDict in listOfDicts:
@@ -494,7 +528,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( resDict )
 
   def getReplicaStatus( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
@@ -502,7 +536,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.getReplicaStatus( lfndict )
 
   def setReplicaStatus( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
@@ -510,7 +544,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.setReplicaStatus( lfndict )
 
   def setReplicaHost( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
+    res = _checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
@@ -518,36 +552,13 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.setReplicaHost( lfndict )
 
   def removeDirectory( self, lfn ):
-    return self.__returnOK( lfn )
+    return _returnOK( lfn )
 
   def createDirectory( self, lfn, ):
-    return self.__returnOK( lfn )
+    return _returnOK( lfn )
 
   def createLink( self, lfn ):
-    return self.__returnOK( lfn )
+    return _returnOK( lfn )
 
   def removeLink( self, lfn ):
-    return self.__returnOK( lfn )
-
-  def __returnOK( self, lfn ):
-    res = self.__checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    successful = {}
-    for lfn in res['Value'].keys():
-      successful[lfn] = True
-    resDict = {'Successful':successful, 'Failed':{}}
-    return S_OK( resDict )
-
-  def __checkArgumentFormat( self, path ):
-    if type( path ) in types.StringTypes:
-      urls = {path:False}
-    elif type( path ) == types.ListType:
-      urls = {}
-      for url in path:
-        urls[url] = False
-    elif type( path ) == types.DictType:
-      urls = path
-    else:
-      return S_ERROR( "TransformationClient.__checkArgumentFormat: Supplied path is not of the correct format." )
-    return S_OK( urls )
+    return _returnOK( lfn )
