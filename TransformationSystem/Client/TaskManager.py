@@ -5,7 +5,6 @@ __RCSID__ = "$Id$"
 COMPONENT_NAME = 'TaskManager'
 
 import time
-import types
 import os
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
@@ -151,9 +150,9 @@ class RequestTasks( TaskBase ):
         transfer.Type = requestOperation
         transfer.TargetSE = paramDict['TargetSE']
 
-        if type( paramDict['InputData'] ) == type( [] ):
+        if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
-        elif type( paramDict['InputData'] ) == type( '' ):
+        elif isinstance( paramDict['InputData'], basestring ):
           files = paramDict['InputData'].split( ';' )
         for lfn in files:
           trFile = File()
@@ -526,7 +525,7 @@ class WorkflowTasks( TaskBase ):
   def submitTaskToExternal( self, job ):
     """ Submits a single job to the WMS.
     """
-    if type( job ) in types.StringTypes:
+    if isinstance( job, basestring ):
       try:
         oJob = self.jobClass( job )
       except Exception, x:

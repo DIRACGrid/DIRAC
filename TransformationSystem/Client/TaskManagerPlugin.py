@@ -27,9 +27,9 @@ class TaskManagerPlugin( PluginBase ):
     try:
       seList = ['Unknown']
       if self.params['TargetSE']:
-        if type( self.params['TargetSE'] ) == type( '' ):
+        if isinstance( self.params['TargetSE'], basestring ):
           seList = fromChar( self.params['TargetSE'] )
-        elif type( self.params['TargetSE'] ) == type( [] ):
+        elif isinstance( self.params['TargetSE'], list ):
           seList = self.params['TargetSE']
     except KeyError:
       pass
