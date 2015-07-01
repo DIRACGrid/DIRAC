@@ -31,12 +31,6 @@ class VOMS( BaseSecurity ):
 
     #Get a list of known VOMS attributes
     validVOMSAttrs = []
-    result = gConfig.getOptions( "/Registry/VOMS/Mapping" )
-    if result[ 'OK' ]:
-      for group in result[ 'Value' ]:
-        vA = gConfig.getValue( "/Registry/VOMS/Mapping/%s" % group, "" )
-        if vA and vA not in validVOMSAttrs:
-          validVOMSAttrs.append( vA )
     result = gConfig.getSections( "/Registry/Groups" )
     if result[ 'OK' ]:
       for group in result[ 'Value' ]:
@@ -50,7 +44,7 @@ class VOMS( BaseSecurity ):
     nickName = ''
     for line in vomsInfoOutput:
       fields = List.fromChar( line, ":" )
-      key = fields[0]
+      key = fields[0].strip()
       value = " ".join( fields[1:] )
       if key == "VO":
         voName = value
@@ -137,7 +131,8 @@ class VOMS( BaseSecurity ):
         lines.append( "issuer : %s" % data[ 'issuer' ] )
         for fqan in data[ 'fqan' ]:
           lines.append( "attribute : %s" % fqan )
-        lines.append( "attribute : %s" % data[ 'attribute' ] )
+        if 'attribute' in data:
+          lines.append( "attribute : %s" % data[ 'attribute' ] )
         now = Time.dateTime()
         left = ( data[ 'notAfter' ] - now ).total_seconds()
         h = int( left / 3600 )
