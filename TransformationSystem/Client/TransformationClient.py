@@ -7,22 +7,10 @@ from DIRAC.Core.Base.Client                                 import Client
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase              import FileCatalogueBase
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-
-def _checkArgumentFormat( path ):
-  if isinstance( path, basestring ):
-    urls = {path:False}
-  elif isinstance( path, list ):
-    urls = {}
-    for url in path:
-      urls[url] = False
-  elif isinstance( path, dict ):
-    urls = path
-  else:
-    return S_ERROR( "TransformationClient.__checkArgumentFormat: Supplied path is not of the correct format." )
-  return S_OK( urls )
+from DIRAC.Resources.Utilities                              import checkArgumentFormat
 
 def _returnOK( lfn ):
-  res = _checkArgumentFormat( lfn )
+  res = checkArgumentFormat( lfn )
   if not res['OK']:
     return res
   successful = {}
@@ -461,7 +449,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.addDirectory( path, force )
 
   def getReplicas( self, lfn ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
@@ -469,7 +457,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.getReplicas( lfns )
 
   def addFile( self, lfn, force = False ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
@@ -477,7 +465,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.addFile( lfndicts, force )
 
   def addReplica( self, lfn, force = False ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
@@ -485,7 +473,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.addReplica( lfndicts, force )
 
   def removeFile( self, lfn ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
@@ -503,7 +491,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( resDict )
 
   def removeReplica( self, lfn ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndicts = res['Value']
@@ -528,7 +516,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return S_OK( resDict )
 
   def getReplicaStatus( self, lfn ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
@@ -536,7 +524,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.getReplicaStatus( lfndict )
 
   def setReplicaStatus( self, lfn ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
@@ -544,7 +532,7 @@ class TransformationClient( Client, FileCatalogueBase ):
     return rpcClient.setReplicaStatus( lfndict )
 
   def setReplicaHost( self, lfn ):
-    res = _checkArgumentFormat( lfn )
+    res = checkArgumentFormat( lfn )
     if not res['OK']:
       return res
     lfndict = res['Value']
