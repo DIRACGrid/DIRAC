@@ -174,7 +174,7 @@ class SocketInfo:
               continue
             except Exception, e:
               if fileName.find( ".r0" ) == len( fileName ) - 2:
-                gLogger.exception( "LOADING %s ,Exception:" % ( filePath , e ) )
+                gLogger.exception( "LOADING %s ,Exception: %s" % ( filePath , str(e) ) )
 
         gLogger.debug( "Loaded %s CAs [%s CRLs]" % ( casFound, crlsFound ) )
         SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ],
