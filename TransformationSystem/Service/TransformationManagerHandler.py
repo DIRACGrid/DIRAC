@@ -654,7 +654,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
                                                ['Problematic'] )
     # Add specific information for each selected transformation
     for trans in transList:
-      transDict = dict( zip( paramNames, trans ) )
+      transDict = dict( zip( resultDict['ParameterNames'], trans ) )
 
       # Update the status counters
       status = transDict['Status']
