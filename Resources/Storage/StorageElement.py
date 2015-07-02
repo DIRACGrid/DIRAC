@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import re
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DIRACError
+from DIRAC import gLogger, gConfig, DError, DErrno
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -346,7 +346,7 @@ class StorageElementItem( object ):
       operation = 'CheckAccess'
     else:
       self.log.debug( "StorageElement.isValid: The supplied operation is not known.", operation )
-      return DError( DIRACError.ENOMETH , "StorageElement.isValid: The supplied operation is not known." )
+      return DError( DErrno.ENOMETH , "StorageElement.isValid: The supplied operation is not known." )
     self.log.debug( "in isValid check the operation: %s " % operation )
     # Check if the operation is valid
     if operation == 'CheckAccess':
@@ -689,7 +689,7 @@ class StorageElementItem( object ):
         if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
           fcn = getattr( storage, self.methodName )
         if not fcn:
-          return DError( DIRACError.ENOMETH, "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
+          return DError( DErrno.ENOMETH, "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
 
         urlsToUse = {}  # url : the value of the lfn dictionary for the lfn of this url
         for url in urlDict:
