@@ -1,7 +1,7 @@
-""" :mod: DIRACError
+""" :mod: DErrno
     ==========================
 
-    .. module: DIRACError
+    .. module: DErrno
     :synopsis: Error list and utilities for handling errors in DIRAC
 
 
@@ -10,7 +10,7 @@
 
     It also contains utilities to manipulate these errors.
 
-    Finaly, it contains a DIRACError class that contains an error number
+    Finaly, it contains a DErrno class that contains an error number
     as well as a low level error message. It behaves like a string for
     compatibility reasons
 """
@@ -52,7 +52,7 @@ dStrError = { ERRX : "A human readable error message for ERRX",
               EBADCKS : "Bad checksum", }
 
 
-# In case the error is returned as a string, and not as a DIRACError object, 
+# In case the error is returned as a string, and not as a DErrno object, 
 # these strings are used to test the error. 
 compatErrorString = {
                      # ERRX : ['not found', 'X'],
@@ -170,14 +170,6 @@ class DError( object ):
 
 
 
-# def S_ERROR_N( messageString = '' ):
-#   """ return value on error confition
-#   :param string messageString: error description
-#   """
-#   return { 'OK' : False, 'Message' :  messageString   }
-
-
-
 def cmpError( inErr, candidate ):
   """ This function compares an error (in its old form (a string...) or new (DError instance))
       with a candidate error code.
@@ -192,11 +184,11 @@ def cmpError( inErr, candidate ):
       If it is a String, we use compatErrorString and strerror to check the error string
   """
 
-  if type( inErr ) == str :  # old style
+  if isinstance( inErr, basestring ) :  # old style
     # Create a DError object to represent the candidate
     derr = DError( candidate )
     return inErr == derr
-  elif type( inErr ) == int:
+  elif isinstance( inErr, int ):
     return inErr == candidate
   elif isinstance( inErr, DError ):
     return inErr.errno == candidate
