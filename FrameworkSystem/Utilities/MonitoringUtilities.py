@@ -5,6 +5,8 @@ Utilities for ComponentMonitoring features
 import datetime
 from DIRAC import gConfig
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 
 def monitorInstallation( componentType, system, component, module = None, cpu = None, hostname = None ):
   """
@@ -14,6 +16,25 @@ def monitorInstallation( componentType, system, component, module = None, cpu = 
 
   if not module:
     module = component
+
+  # Retrieve user installing the component
+  result = getProxyInfo()
+  if not result[ 'OK' ]:
+    return result
+  chain = result[ 'Value' ][ 'chain' ]
+  result = chain.getCertInChain( -1 )
+  if not result[ 'OK' ]:
+    return result
+  result = result[ 'Value' ].getSubjectDN()
+  if not result[ 'OK' ]:
+    return result
+  userDN = result['Value']
+  result = getUsernameForDN( userDN )
+  if not result[ 'OK' ]:
+    return result
+  user = result[ 'Value' ]
+  if not user:
+    user = 'unknown'
 
   if not cpu:
     cpu = 'Not available'
@@ -42,6 +63,7 @@ def monitorInstallation( componentType, system, component, module = None, cpu = 
 
   result = monitoringClient.addInstallation \
                             ( { 'InstallationTime': datetime.datetime.utcnow(),
+                                'InstalledBy': user,
                                 'Instance': instance },
                               { 'Type': componentType,
                                 'System': system,
@@ -56,6 +78,23 @@ def monitorUninstallation( system, component, cpu = None, hostname = None ):
   Register the uninstallation of a component in the ComponentMonitoringDB
   """
   monitoringClient = ComponentMonitoringClient()
+
+  # Retrieve user uninstalling the component
+  result = getProxyInfo()
+  if not result[ 'OK' ]:
+    return result
+  chain = result[ 'Value' ][ 'chain' ]
+  result = chain.getCertInChain( -1 )
+  if not result[ 'OK' ]:
+    return result
+  result = result[ 'Value' ].getSubjectDN()
+  if not result[ 'OK' ]:
+    return result
+  userDN = result['Value']
+  result = getUsernameForDN( userDN )
+  if not result[ 'OK' ]:
+    return result
+  user = result[ 'Value' ]
 
   if not cpu:
     cpu = 'Not available'
@@ -72,5 +111,6 @@ def monitorUninstallation( system, component, cpu = None, hostname = None ):
                         ( { 'Instance': instance, 'UnInstallationTime': None },
                           { 'System': system },
                           { 'HostName': hostname, 'CPU': cpu },
-                          { 'UnInstallationTime': datetime.datetime.utcnow() } )
+                          { 'UnInstallationTime': datetime.datetime.utcnow(),
+                            'UnInstalledBy': user } )
   return result

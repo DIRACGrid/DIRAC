@@ -173,15 +173,21 @@ class InstalledComponent( Base ):
                               primary_key = True )
   unInstallationTime = Column( 'UnInstallationTime',
                                 DateTime )
+  installedBy = Column( 'InstalledBy', String( 32 ) )
+  unInstalledBy = Column( 'UnInstalledBy', String( 32 ) )
   installationComponent = relationship( 'Component',
                                         backref = 'installationList' )
 
   def __init__( self, instance = null(),
                       installationTime = null(),
-                      unInstallationTime = null() ):
+                      unInstallationTime = null(),
+                      installedBy = null(),
+                      unInstalledBy = null() ):
     self.instance = instance
     self.installationTime = installationTime
     self.unInstallationTime = unInstallationTime
+    self.installedBy = installedBy
+    self.unInstalledBy = unInstalledBy
 
   def fromDict( self, dictionary ):
     """
@@ -197,6 +203,10 @@ class InstalledComponent( Base ):
                                             self.installationTime )
     self.unInstallationTime = dictionary.get( 'UnInstallationTime',
                                               self.unInstallationTime )
+    self.installedBy = dictionary.get( 'InstalledBy',
+                                              self.installedBy )
+    self.unInstalledBy = dictionary.get( 'UnInstalledBy',
+                                              self.unInstalledBy )
 
     return S_OK( 'Successfully read from dictionary' )
 
@@ -212,7 +222,9 @@ class InstalledComponent( Base ):
     dictionary = {
                   'Instance': self.instance,
                   'InstallationTime': self.installationTime,
-                  'UnInstallationTime': self.unInstallationTime
+                  'UnInstallationTime': self.unInstallationTime,
+                  'InstalledBy': self.installedBy,
+                  'UnInstalledBy': self.unInstalledBy
                   }
 
     if includeComponents:

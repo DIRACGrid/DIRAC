@@ -50,6 +50,29 @@ mySetup = gConfig.getValue( 'DIRAC/Setup' )
 client = SystemAdministratorIntegrator( exclude = excludedHosts )
 resultAll = client.getOverallStatus()
 
+# Retrieve user installing the component
+result = getProxyInfo()
+if not result[ 'OK' ]:
+  user = 'unknown'
+else:
+  chain = result[ 'Value' ][ 'chain' ]
+  result = chain.getCertInChain( -1 )
+  if not result[ 'OK' ]:
+    user = 'unknown'
+  else:
+    result = result[ 'Value' ].getSubjectDN()
+    if not result[ 'OK' ]:
+      user = 'unknown'
+    else:
+      userDN = result['Value']
+      result = getUsernameForDN( userDN )
+      if not result[ 'OK' ]:
+        user = 'unknown'
+      else:
+        user = result[ 'Value' ]
+        if not user:
+          user = 'unknown'
+
 notificationClient = NotificationClient()
 for host in resultAll[ 'Value' ]:
   if not resultAll[ 'Value' ][ host ][ 'OK' ]:
@@ -144,6 +167,7 @@ for host in finalSet:
             record[ 'Host' ][ 'CPU' ] = cpu
             record[ 'Installation' ][ 'Instance' ] = component
             record[ 'Installation' ][ 'InstallationTime' ] = datetime.utcnow()
+            record[ 'Installation' ][ 'InstalledBy' ] = user
             records.append( record )
 
   # Databases
@@ -172,6 +196,7 @@ for host in finalSet:
           record[ 'Host' ][ 'CPU' ] = cpu
           record[ 'Installation' ][ 'Instance' ] = db
           record[ 'Installation' ][ 'InstallationTime' ] = datetime.utcnow()
+          record[ 'Installation' ][ 'InstalledBy' ] = user
           records.append( record )
 
 monitoringClient = ComponentMonitoringClient()
