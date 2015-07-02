@@ -674,7 +674,22 @@ class ConfigureCPURequirements( CommandBase ):
 
     # HS06s = seconds * HS06
     self.pp.jobCPUReq = float( cpuTime ) * float( cpuNormalizationFactor )
-    self.log.info( "Queue length is %f" % self.pp.jobCPUReq )
+    self.log.info( "Queue length (which is also set as CPUTimeLeft) is %f" % self.pp.jobCPUReq )
+
+    # now setting this value in local file
+    cfg = ['-FDMH']
+    if self.pp.useServerCertificate:
+      cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      cfg.append( '-O %s' % self.pp.localConfigFile )  # our target file for pilots
+      cfg.append( self.pp.localConfigFile )  # this file is also input
+    cfg.append( '-o /LocalSite/CPUTimeLeft=%s' % str( int( self.pp.jobCPUReq ) ) )  # the only real option
+
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+    if retCode:
+      self.log.error( "Failed to update CFG file for CPUTimeLeft" )
+      sys.exit( 1 )
 
 
 class LaunchAgent( CommandBase ):
