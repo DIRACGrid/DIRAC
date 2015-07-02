@@ -3,7 +3,6 @@
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getVOs
