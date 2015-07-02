@@ -623,11 +623,12 @@ class TransformationManagerHandlerBase( RequestHandler ):
     nTrans = len( trList )
     resultDict['TotalRecords'] = nTrans
     # Create the ParameterNames entry
+    # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
+    resultDict['ParameterNames'] = list( res['ParameterNames'] )
     # Add the job states to the ParameterNames entry
     taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
                       'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
-    # As this list is a reference to the list in the DB, we cannot extend it, therefore cannot use += nor .extend()
-    resultDict['ParameterNames'] = resultDict['ParameterNames'] + ['Jobs_' + x for x in taskStateNames]
+    resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry
     fileStateNames = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
                       'ApplicationCrash', 'MaxReset']
