@@ -763,6 +763,9 @@ class SRM2Storage( StorageBase ):
         if urlDict['status'] == 0:
           self.log.debug( "SRM2Storage.exists: Path exists: %s" % pathSURL )
           successful[pathSURL] = True
+        elif urlDict['status'] == 22:
+          self.log.debug( "SRM2Storage.exists: Path exists, file busy (e.g., stage-out): %s" % pathSURL )
+          successful[pathSURL] = True
         elif urlDict['status'] == 2:
           self.log.debug( "SRM2Storage.exists: Path does not exist: %s" % pathSURL )
           successful[pathSURL] = False
