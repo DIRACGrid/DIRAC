@@ -556,7 +556,7 @@ class TransformationDB( DB ):
       for row in transFiles:
         lfn = originalFileIDs[row[1]]
         # Prepare the structure for the web
-        fDict = {'LFN', lfn}
+        fDict = {'LFN': lfn}
         fDict.update( dict( zip( self.TRANSFILEPARAMS, row ) ) )
         # Note: the line below is returning "None" if the item is None... This seems to work but is ugly...
         rList = [lfn] + [str( item ) if not isinstance( item, ( long, int ) ) else item for item in row]
