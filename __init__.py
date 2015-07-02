@@ -119,6 +119,9 @@ from DIRAC.Core.Utilities import *
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DErrno import DError
+
 #Logger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
