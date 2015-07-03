@@ -28,9 +28,7 @@ class CEAvailabilityCommand_TestCase( unittest.TestCase ):
     self.registry_m = importlib.import_module( 'DIRAC.ConfigurationSystem.Client.Helpers.Registry')
     self.registry_m.getVOs = self.getVOs
         
-    #self.getBDIICEStateMock = mock.MagicMock()
-    #self.diracAdmin_m = importlib.import_module( 'DIRAC.Interfaces.API.DiracAdmin' )
-    #self.diracAdmin_m.DiracAdmin.getBDIICEState = self.getBDIICEStateMock
+
     self.DAObjectMock = mock.MagicMock()
     self.DAMock = mock.MagicMock()
     self.DAMock.return_value = self.DAObjectMock
@@ -73,7 +71,6 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
     '''
     
     #verify when it's "Production"
-    #self.getBDIICEStateMock.return_value =
     self.DAObjectMock.getBDIICEState.return_value = {'OK': True,
                                                   'Value': [{
                                                   'GlueCEInfoLRMSType': 'torque', 
@@ -161,7 +158,6 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
     self.assertEqual( res['Value']['Status'], 'Production' )
 
     #verify when it's not "Production"
-    #self.getBDIICEStateMock.return_value =
     self.DAObjectMock.getBDIICEState.return_value = {'OK': True,
                                                   'Value': [{
                                                   'GlueCEInfoLRMSType': 'torque', 
