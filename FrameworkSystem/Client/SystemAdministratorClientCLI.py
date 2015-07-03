@@ -406,6 +406,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                         + 'Uninstall by'.center( 12 ) )
         gLogger.notice( ( '-' ) * 164 )
       for i, installation in enumerate( installations ):
+        if not installation[ 'InstalledBy' ]:
+          installedBy = ''
+        else:
+          installedBy = installation[ 'InstalledBy' ]
+
         if installation[ 'UnInstallationTime' ]:
           uninstalledOn = installation[ 'UnInstallationTime' ].strftime( "%d-%m-%Y %H:%M" )
           uninstalledBy = installation[ 'UnInstalledBy' ]
@@ -423,7 +428,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                           + installation[ 'Component' ][ 'System' ].center( 16 ) + '|' \
                           + installation[ 'Component' ][ 'Type' ].center( 12 ) + '|' \
                           + installation[ 'InstallationTime' ].strftime( "%d-%m-%Y %H:%M" ).center( 18 ) + '|' \
-                          + installation[ 'InstalledBy' ].center( 12 ) + '|' \
+                          + installedBy.center( 12 ) + '|' \
                           + uninstalledOn.center( 18 ) + '|' \
                           + uninstalledBy.center( 12 ) + '|' )
           gLogger.notice( ( '-' ) * 164 )
@@ -437,7 +442,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           gLogger.notice( 'System: '.rjust( 20 ) + installation[ 'Component' ][ 'System' ] )
           gLogger.notice( 'Type: '.rjust( 20 ) + installation[ 'Component' ][ 'Type' ] )
           gLogger.notice( 'Installed on: '.rjust( 20 ) + installation[ 'InstallationTime' ].strftime( "%d-%m-%Y %H:%M" ) )
-          gLogger.notice( 'Installed by: '.rjust( 20 ) + installation[ 'InstalledBy' ] )
+          if installedBy != '':
+            gLogger.notice( 'Installed by: '.rjust( 20 ) + installedBy )
           if uninstalledOn != '':
             gLogger.notice( 'Uninstalled on: '.rjust( 20 ) + uninstalledOn )
             gLogger.notice( 'Uninstalled by: '.rjust( 20 ) + uninstalledBy )
