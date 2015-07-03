@@ -7,8 +7,12 @@
 
 import copy
 
-from DIRAC                                import S_OK#, S_ERROR
+from DIRAC                                import S_OK
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
+
+from DIRAC                                       import gConfig, gLogger
+
+
 
 __RCSID__ = '$Id: $'
 
@@ -125,6 +129,70 @@ class InfoGetter:
 #       
 #    return S_OK( policiesToBeLoaded )
 
+  def __getComputingElementsByDomainName( self , domain = None ):
+    '''
+      WARNING: TO ADD TO CSHelpers
+      Gets all computing elements from /Resources/Sites/<>/<>/CE
+    '''
+    
+    _basePath = 'Resources/Sites'
+  
+    ces = []
+  
+    domainNames = gConfig.getSections( _basePath )
+    if not domainNames[ 'OK' ]:
+      return domainNames
+    domainNames = domainNames[ 'Value' ]
+  
+    for domainName in domainNames:
+      if domainName != 'LCG':
+        print "OUT OF DOMAIN"
+        continue
+      else:
+        print "LCG"
+      domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+      if not domainSites[ 'OK' ]:
+        return domainSites
+      domainSites = domainSites[ 'Value' ]
+    
+      for site in domainSites:
+        siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
+        if not siteCEs[ 'OK' ]:
+          #return siteCEs
+          gLogger.error( siteCEs[ 'Message' ] )
+          continue
+        siteCEs = siteCEs[ 'Value' ]
+        ces.extend( siteCEs )  
+
+    # Remove duplicated ( just in case )
+    ces = list( set ( ces ) )
+    
+    return S_OK( ces ) 
+  
+  
+  
+  def __filterPolicies( self, policiesToBeLoaded, decisionParams):
+    '''
+      Method that filters out the policies if they don't meet certain conditions
+    '''
+    
+    policiesToBeLoadedFiltered = []
+    for policy in policiesToBeLoaded:
+      if policy['module'] == 'AlwaysBannedPolicy':
+        policiesToBeLoadedFiltered.append(policy)
+      if policy['module'] == 'CEAvailabilityPolicy':
+        #to get the list of only the LCG CEs
+        result = self.__getComputingElementsByDomainName("LCG")
+        if result['OK']:
+          ces = result['Value']
+          #to verify that the given CE is in the list of the LCG CEs
+          if decisionParams['name'] in ces:
+            policiesToBeLoadedFiltered.append(policy)
+    
+    return policiesToBeLoadedFiltered
+  
+  
+
   def __getPoliciesThatApply( self, decissionParams ):
     '''
       Method that matches the input dictionary with the policies configuration in
@@ -197,6 +265,7 @@ class InfoGetter:
       #policyDict[ 'args' ].update( policyConfigParams )
       
       policiesToBeLoaded.append( policyDict )
+      policiesToBeLoaded = self.__filterPolicies(policiesToBeLoaded, decissionParams)
        
     return S_OK( policiesToBeLoaded )
 
