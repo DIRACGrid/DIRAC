@@ -8,6 +8,7 @@ __RCSID__ = "$Id$"
 
 
 import stat
+import os
 import tempfile
 
 from GSI import crypto
