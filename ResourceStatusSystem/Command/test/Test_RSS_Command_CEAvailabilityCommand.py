@@ -6,6 +6,7 @@
 import unittest, importlib, mock
 
 from DIRAC import gLogger
+
 import DIRAC.ResourceStatusSystem.Command.CEAvailabilityCommand as moduleTested 
 
 __RCSID__ = '$Id:  $'
@@ -19,6 +20,8 @@ class CEAvailabilityCommand_TestCase( unittest.TestCase ):
     Setup
     '''
     
+    gLogger.setLevel( 'DEBUG' )
+    
     # Mock external libraries / modules not interesting for the unit test
     self.getVOs = mock.MagicMock()
     self.getVOs.return_value = {"OK": True, "Value": ["lhcb"]}
@@ -28,7 +31,9 @@ class CEAvailabilityCommand_TestCase( unittest.TestCase ):
     #self.getBDIICEStateMock = mock.MagicMock()
     #self.diracAdmin_m = importlib.import_module( 'DIRAC.Interfaces.API.DiracAdmin' )
     #self.diracAdmin_m.DiracAdmin.getBDIICEState = self.getBDIICEStateMock
+    self.DAObjectMock = mock.MagicMock()
     self.DAMock = mock.MagicMock()
+    self.DAMock.return_value = self.DAObjectMock
     self.CEAvailabilityCommand_m = importlib.import_module("DIRAC.ResourceStatusSystem.Command.CEAvailabilityCommand")
     self.CEAvailabilityCommand_m.DiracAdmin = self.DAMock
     
@@ -69,7 +74,7 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
     
     #verify when it's "Production"
     #self.getBDIICEStateMock.return_value =
-    self.DAMock.getBDIICEState.return_value = {'OK': True,
+    self.DAObjectMock.getBDIICEState.return_value = {'OK': True,
                                                   'Value': [{
                                                   'GlueCEInfoLRMSType': 'torque', 
                                                   'GlueCEInfoDataDir': 'unset', 
@@ -157,7 +162,7 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
 
     #verify when it's not "Production"
     #self.getBDIICEStateMock.return_value =
-    self.DAMock.getBDIICEState.return_value = {'OK': True,
+    self.DAObjectMock.getBDIICEState.return_value = {'OK': True,
                                                   'Value': [{
                                                   'GlueCEInfoLRMSType': 'torque', 
                                                   'GlueCEInfoDataDir': 'unset', 
