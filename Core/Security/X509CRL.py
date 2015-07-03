@@ -14,7 +14,7 @@ import tempfile
 from GSI import crypto
 from DIRAC import S_OK, S_ERROR
 
-class X509CRL:
+class X509CRL(object):
 
   def __init__( self, cert = False ):
     
