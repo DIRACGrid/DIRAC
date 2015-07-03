@@ -116,7 +116,7 @@ class X509CRL:
       return S_ERROR( "Cannot write to file %s :%s" % ( filename, str( e ) ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str( e ) ) )
     return S_OK( filename )
 
