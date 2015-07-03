@@ -172,7 +172,7 @@ class SocketInfo:
               crlsDict[ crlID ] = crl 
               crlsFound += 1
               continue
-            except Exception, e:
+            except Exception as e:
               if fileName.find( ".r0" ) == len( fileName ) - 2:
                 gLogger.exception( "LOADING %s ,Exception: %s" % ( filePath , str(e) ) )
 
