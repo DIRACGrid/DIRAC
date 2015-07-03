@@ -7,7 +7,9 @@ This class is used to manage the revoked certificates....
 __RCSID__ = "$Id$"
 
 
+import stat
 import tempfile
+
 from GSI import crypto
 from DIRAC import S_OK, S_ERROR
 
@@ -34,26 +36,26 @@ class X509CRL:
 
   def loadChainFromFile( self, crlLocation ):
     """
-    Load a x509 chain from a pem file
+    Load a x509CRL certificate from a pem file
     Return : S_OK / S_ERROR
     """
     try:
       fd = file( crlLocation )
       pemData = fd.read()
       fd.close()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't open %s file: %s" % ( crlLocation, str( e ) ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
     """
-    Load a x509 cert from a string containing the pem data
+    Load a x509CRL certificate from a string containing the pem data
     Return : S_OK / S_ERROR
     """
     self.__loadedCert = False
     try:
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't load pem data: %s" % str( e ) )
     if not self.__revokedCert:
       return S_ERROR( "No certificates in the contents" )
@@ -72,7 +74,7 @@ class X509CRL:
       fd = file( crlLocation )
       pemData = fd.read()
       fd.close()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't open %s file: %s" % ( crlLocation, str( e ) ) )
     return self.loadProxyFromString( pemData )
 
@@ -89,7 +91,7 @@ class X509CRL:
     Dump all to string
     """
     if not self.__loadedCert:
-      return S_ERROR( "No chain loaded" )
+      return S_ERROR( "No certificate loaded" )
    
     return S_OK( self.__pemData )
 
@@ -110,7 +112,7 @@ class X509CRL:
         fd = file( filename, "w" )
         fd.write( pemData )
         fd.close()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot write to file %s :%s" % ( filename, str( e ) ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
