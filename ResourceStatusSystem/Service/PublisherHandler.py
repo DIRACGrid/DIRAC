@@ -13,8 +13,8 @@ from types    import NoneType
 from DIRAC                                                      import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                            import RequestHandler
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers, Utils
+ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 __RCSID__ = '$Id: PublisherHandler.py 65921 2013-05-14 13:05:43Z ubeda $'
 
