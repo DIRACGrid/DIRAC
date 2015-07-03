@@ -18,6 +18,8 @@ class X509CRL:
 
   def __init__( self, cert = False ):
     
+    self.__pemData = None
+    
     if cert:
       self.__loadedCert = True
       self.__revokedCert = cert
