@@ -71,8 +71,8 @@ class CEAvailabilityCommand( Command ):
       #show the same status. In case of mismatch, the status of the CE 
       #will be associated to a non-production status 
       if key not in ['Status', 'Reason'] and value != 'Production':
-        result['Status'] = statusQueue
-        result['Reason'] = "Queue %s is in status %s" % ( queue, statusQueue )
+        result['Status'] = value
+        result['Reason'] = "Queue %s is in status %s" % ( queue, value )
     
     return S_OK( result )
       
