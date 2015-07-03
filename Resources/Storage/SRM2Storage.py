@@ -1079,8 +1079,13 @@ class SRM2Storage( StorageBase ):
       successful[directory] = { 'Files' : directoryFiles, 'Size' : directorySize, 'SubDirs' : subDirectories }
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
-  def listDirectory( self, path ):
+  def listDirectory( self, path, internalCall = False ):
     """ List the contents of the directory on the storage
+        :param interalCall : if this method is called from within
+                             that class, we should return index on SURL, not LFNs
+                             Do not set it to True for a normal call, unless you really
+                             know what you are doing !!
+
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1133,8 +1138,8 @@ class SRM2Storage( StorageBase ):
               elif subPathDict['status'] == 0:
                 statDict = self.__parse_file_metadata( subPathDict )
 
-                # Replace the URL with an LFN
-                subPathLFN = subPathSURL.replace( urlStart, '' )
+                # Replace the URL with an LFN in normal cases, but return the SURL if it is an internal call
+                subPathLFN = subPathSURL if internalCall else subPathSURL.replace( urlStart, '' )
                 if statDict['File']:
                   subPathFiles[subPathLFN] = statDict
                 elif statDict['Directory']:
@@ -1285,6 +1290,7 @@ class SRM2Storage( StorageBase ):
     filesToGet = res['Value']['Files']
     subDirs = res['Value']['SubDirs']
 
+
     allSuccessful = True
     res = self.getFile( filesToGet.keys(), destDirectory )
     if not res['OK']:
@@ -1404,12 +1410,17 @@ class SRM2Storage( StorageBase ):
     """
     directory = directory.rstrip( '/' )
     errMessage = "SRM2Storage.__getDirectoryContents: Failed to list directory."
-    res = self.__executeOperation( directory, 'listDirectory' )
+    res = self.listDirectory( directory, internalCall = True )
     if not res['OK']:
       self.log.error( errMessage, res['Message'] )
       return S_ERROR( errMessage )
-    surlsDict = res['Value']['Files']
-    subDirsDict = res['Value']['SubDirs']
+    if directory in res['Value']['Failed']:
+      self.log.error( errMessage, res['Value']['Failed'][directory] )
+      return S_ERROR( errMessage )
+
+    surlsDict = res['Value']['Successful'][directory]['Files']
+    subDirsDict = res['Value']['Successful'][directory]['SubDirs']
+
     filesToRemove = dict( [ ( url, surlsDict[url]['Size'] ) for url in  surlsDict  ] )
     return S_OK ( { 'Files' : filesToRemove, 'SubDirs' : subDirsDict.keys() } )
 
