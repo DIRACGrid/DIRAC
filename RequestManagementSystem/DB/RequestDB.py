@@ -571,13 +571,12 @@ class RequestDB( object ):
           tableName = 'Request'
 
           if key == 'Type':
-            summaryQuery = summaryQuery.join( Request.__operations__ )\
-                                       .group_by( Request.RequestID )
+            summaryQuery = summaryQuery.group_by( Request.RequestID, Operation.Type )
             tableName = 'Operation'
           elif key == 'Status':
             key = '_Status'
 
-          if type( value ) == ListType:
+          if isinstance( value, list ):
             summaryQuery = summaryQuery.filter( eval( '%s.%s.in_(%s)' % ( tableName, key, value ) ) )
           else:
             summaryQuery = summaryQuery.filter( eval( '%s.%s' % ( tableName, key ) ) == value )
@@ -693,6 +692,8 @@ class RequestDB( object ):
 
     session = self.DBSession()
     distinctValues = []
+    if columnName == 'Status':
+      columnName = '_Status'
     try:
       result = session.query( distinct( eval ( "%s.%s" % ( tableName, columnName ) ) ) ).all()
       distinctValues = [dist[0] for dist in result]
