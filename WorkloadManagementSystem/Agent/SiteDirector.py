@@ -505,8 +505,8 @@ class SiteDirector( AgentModule ):
         jobExecDir = ''
         if ceType == 'CREAM':
           jobExecDir = '.'
-        jobExecDir = self.queueDict[queue].get( 'JobExecDir', jobExecDir )
-        httpProxy = self.queueDict[queue].get( 'HttpProxy', '' )
+        jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )          
+        httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
 
         result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
@@ -588,7 +588,8 @@ class SiteDirector( AgentModule ):
         jobIDList = None
         result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                               'Queue':queueName,
-                                              'Status':['Running','Submitted','Scheduled'] } )
+                                              'Status': TRANSIENT_PILOT_STATUS } )                                              
+
         if result['OK']:
           jobIDList = result['Value']
           
