@@ -204,6 +204,7 @@ class JobWrapper( object ):
       if extraOpts:
         if os.path.exists( '%s/%s' % ( self.root, extraOpts ) ):
           shutil.copyfile( '%s/%s' % ( self.root, extraOpts ), extraOpts )
+        self.__loadLocalCFGFiles( self.localSiteRoot )
     else:
       self.log.info( 'JobID is not defined, running in current directory' )
 
@@ -236,10 +237,10 @@ class JobWrapper( object ):
     """
     files = os.listdir( localRoot )
     self.log.debug( 'Checking directory %s for *.cfg files' % localRoot )
-    for i in files:
-      if re.search( '.cfg$', i ):
-        gConfig.loadFile( '%s/%s' % ( localRoot, i ) )
-        self.log.debug( 'Found local .cfg file %s' % i )
+    for localFile in files:
+      if re.search( '.cfg$', localFile ):
+        gConfig.loadFile( '%s/%s' % ( localRoot, localFile ) )
+        self.log.verbose( "Found local .cfg file '%s'" % localFile )
 
   #############################################################################
   def __dictAsInfoString( self, dData, infoString = '', currentBase = "" ):
