@@ -204,6 +204,8 @@ class X509Certificate:
             attr = attr[0][0][1][0]
             data[ 'attribute' ] = "%s = %s (%s)" % attr
             data[ 'vo' ] = attr[2]
+        if not 'vo' in data and 'fqan' in data:
+          data['vo'] = data['fqan'][0].split( '/' )[1]
         return S_OK( data )
     return S_ERROR( "No VOMS data available" )
 
