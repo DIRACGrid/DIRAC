@@ -1552,6 +1552,30 @@ BEGIN
   COMMIT;
 END //
 DELIMITER ;
+
+
+
+-- ps_get_full_lfn_for_file_ids : get the full lfn for given file ids
+-- file_ids : list of file ids
+-- output : FileID, lfn
+
+DELIMITER //
+CREATE PROCEDURE ps_get_full_lfn_for_file_ids
+(IN file_ids TEXT)
+BEGIN
+
+  SET @sql = CONCAT('SELECT SQL_NO_CACHE f.FileID, CONCAT(d.Name, "/", f.FileName)
+                     FROM FC_Files f
+                     JOIN FC_DirectoryList d ON f.DirID = d.DirID
+                     WHERE f.FileID IN (', file_ids, ')');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+END //
+DELIMITER ;
+
 -- Consistency checks
 
 
