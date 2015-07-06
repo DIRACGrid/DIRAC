@@ -17,7 +17,7 @@ _writeMethods = ['changePathOwner', 'changePathGroup', 'changePathMode',
                 'removeReplica','setReplicaStatus','setReplicaHost',
                 'setFileOwner','setFileGroup','setFileMode',
                 'addFileAncestors','createDirectory','removeDirectory',
-                'setMetadata','__removeMetadata']
+                'setMetadata', '__removeMetadata']
 
 
 class SecurityManagerBase( object ):
@@ -249,15 +249,17 @@ class DirectorySecurityManagerWithDelete( DirectorySecurityManager ):
     permissions = {}
     failed = {}
 
-
-
     for path in nonExistingObjects:
       permissions[path] = {'Read':True, 'Write':True, 'Execute':True}
         # The try catch is just to protect in case there are duplicate in the paths
       try:
         paths.remove( path )
       except Exception, _e:
-        pass
+        try:
+          paths.pop( path )
+        except Exception, _ee:
+          pass
+
 
     # For all the paths that exist, check the write permission
     if paths:
@@ -296,6 +298,14 @@ class PolicyBasedSecurityManager( SecurityManagerBase ):
 
     pluginCls = self.__loadPlugin( pluginPath )
     self.policyObj = pluginCls( database = database )
+
+    # For the old clients to work with the new policy (since getPathPermissions is meant to disappear...)
+    # we fetch the old SecurityManager, and we call it if needed in the plugin.
+    oldSecurityManagerName = gConfig.getValue( cfgPath( serviceSection, 'OldSecurityManager' ), '' )
+    self.policyObj.oldSecurityManager = None
+    if oldSecurityManagerName:
+      self.policyObj.oldSecurityManager = eval( "%s(self.db)" % oldSecurityManagerName )
+
 
 
   @staticmethod
