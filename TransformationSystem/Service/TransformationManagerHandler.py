@@ -604,9 +604,11 @@ class TransformationManagerHandlerBase( RequestHandler ):
     toDate = selectDict.get( 'ToDate', None )
     if toDate:
       del selectDict['ToDate']
-    # Sorting instructions. Only one for the moment.
+    # Sorting instructions. Only one for the moment.  
     if sortList:
-      orderAttribute = sortList[0][0] + ":" + sortList[0][1]
+      orderAttribute = []
+      for i in sortList:
+        orderAttribute += [ i[0] + ":" + i[1] ]
     else:
       orderAttribute = None
 
