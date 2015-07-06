@@ -608,3 +608,16 @@ class VOMSPolicy( SecurityManagerBase ):
     res = policyToExecute( paths, credDict )
 
     return res
+
+
+  def getPathPermissions( self, paths, credDict ):
+    """ This method is meant to disappear, hopefully soon,
+        but as long as we have clients from versions < v6r14,
+        we need a getPathPermissions method. Since it does not make
+        sense with that kind of fine grain policy, we return what used to
+        be returned...
+    """
+    if hasattr( self, 'oldSecurityManager' ) and self.oldSecurityManager:
+      return self.oldSecurityManager.getPathPermissions( paths, credDict )
+    else:
+      return super( VOMSPolicy, self ).getPathPermissions( paths, credDict )
