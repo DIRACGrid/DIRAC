@@ -80,6 +80,8 @@ class SRM2Storage( StorageBase ):
     self.gfalLongTimeOut = gConfig.getValue( "/Resources/StorageElements/GFAL_LongTimeout", 1200 )
     # # gfal retry on errno.ECONN
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
+    # # should busy files be considered to exist
+    self.busyFilesExist = gConfig.getValue( "/Resources/StorageElements/SRMBusyFilesExist", False )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
@@ -762,6 +764,9 @@ class SRM2Storage( StorageBase ):
         pathSURL = pathSURL["Value"]
         if urlDict['status'] == 0:
           self.log.debug( "SRM2Storage.exists: Path exists: %s" % pathSURL )
+          successful[pathSURL] = True
+        elif urlDict['status'] == 22 and self.busyFilesExist:
+          self.log.debug( "SRM2Storage.exists: Path exists, file busy (e.g., stage-out): %s" % pathSURL )
           successful[pathSURL] = True
         elif urlDict['status'] == 2:
           self.log.debug( "SRM2Storage.exists: Path does not exist: %s" % pathSURL )
