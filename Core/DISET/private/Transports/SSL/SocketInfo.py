@@ -169,21 +169,16 @@ class SocketInfo:
               if crl.has_expired():
                 continue
               crlID = crl.get_issuer().one_line()
-              crlNotAfter = crl.get_not_after()
-              if crlID not in crlsDict:
-                crlsDict[ crlID ] = ( crlNotAfter, crl )
-                crlsFound += 1
-              else:
-                if crlsDict[ crlID ][0] < crlNotAfter:
-                  crlsDict[ crlID ] = ( crlNotAfter, crl )
+              crlsDict[ crlID ] = crl 
+              crlsFound += 1
               continue
-            except:
+            except Exception as e:
               if fileName.find( ".r0" ) == len( fileName ) - 2:
-                gLogger.exception( "LOADING %s" % filePath )
+                gLogger.exception( "LOADING %s ,Exception: %s" % ( filePath , str(e) ) )
 
         gLogger.debug( "Loaded %s CAs [%s CRLs]" % ( casFound, crlsFound ) )
         SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ],
-                                       [ crlsDict[k][1] for k in crlsDict ] )
+                                       [ crlsDict[k] for k in crlsDict ] )
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
       gLogger.exception( "ASD" )
