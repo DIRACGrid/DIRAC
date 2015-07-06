@@ -1,3 +1,30 @@
+[v6r13p7]
+
+*Core
+NEW: X509CRL - class to handle certificate revocation lists
+
+*DMS
+FIX: RequestOperations/RemoveFile.py - check target SEs to be online before
+     performing the removal operation. 
+FIX: SecurityManager, VOMSPolicy - make the vomspolicy compatible with the old client 
+     by calling in case of need the old SecurityManager     
+
+*Resources
+BUGFIX: Torque, GE - methods must return Message field in case of non-zero return status
+FIX: SRM2Storage - when used internaly, listDirectory should return urls and not lfns
+
+*WMS
+FIX: ConfigureCPURequirements pilot command - add queue CPU length to the extra local
+     configuration
+FIX: JobWrapper - load extra local configuration of any     
+
+*RMS
+FIX: RequestDB - fix in getRequestSummaryWeb() to suit the Web Portal requirements
+
+*Transformation
+FIX: TransformationManagerHandler - fix in getTransformationSummaryWeb() to suit 
+     the Web Portal requirements
+
 [v6r13p6]
 
 *Core
