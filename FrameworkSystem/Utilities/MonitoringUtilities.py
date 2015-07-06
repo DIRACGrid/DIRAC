@@ -3,7 +3,8 @@ Utilities for ComponentMonitoring features
 """
 
 import datetime
-from DIRAC import gConfig
+import socket
+from DIRAC import gConfig, S_OK
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 def monitorInstallation( componentType, system, component, module = None, cpu = None, hostname = None ):
