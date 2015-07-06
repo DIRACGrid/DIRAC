@@ -793,6 +793,8 @@ class FileManagerBase( object ):
     connection = self._getConnection( connection )
     successful = {}
     res = self._findFiles( lfns.keys(), ['DirID', 'FileID', 'Size'], connection = connection )
+    if not res['OK']:
+      return res
     failed = res['Value']['Failed']
     for lfn in failed.keys():
       lfns.pop( lfn )
