@@ -208,6 +208,16 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p44]
+
+*WMS
+FIX: SiteDirector - consider also pilots in Waiting status when evaluating
+     queue slots available
+
+*Resources
+NEW: SRM2Storage - makes use of /Resources/StorageElements/SRMBusyFilesExist option
+     to set up the mode of interpreting the 22 error code as existing file
+
 [v6r12p43]
 
 *DMS:
