@@ -28,10 +28,11 @@ import os
 import re
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 ########################################################################
-class RemoveFile( OperationHandlerBase ):
+class RemoveFile( DMSRequestOperationsBase ):
   """
   .. class:: RemoveFile
 
@@ -46,7 +47,7 @@ class RemoveFile( OperationHandlerBase ):
     :param str csPath: CS path for this handler
     """
     # # call base class ctor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__( self, operation, csPath )
     # # gMOnitor stuff goes here
     gMonitor.registerActivity( "RemoveFileAtt", "File removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
@@ -61,6 +62,27 @@ class RemoveFile( OperationHandlerBase ):
     """ action for 'removeFile' operation  """
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
+    fc = FileCatalog( self.operation.catalogList )
+
+    res = fc.getReplicas( waitingFiles )
+    if not res['OK']:
+      gMonitor.addMark( "RemoveFileAtt" )
+      gMonitor.addMark( "RemoveFileFail" )
+      return res
+
+    # We check the status of the SE from the LFN that are successful
+    # No idea what to do with the others...
+    succ = res['Value']['Successful']
+    targetSEs = set( [se for lfn in succ for se in succ[lfn] ] )
+    bannedTargets = self.checkSEsRSS( targetSEs, access = 'RemoveAccess' )
+    if not bannedTargets['OK']:
+      gMonitor.addMark( "RemoveFileAtt" )
+      gMonitor.addMark( "RemoveFileFail" )
+      return bannedTargets
+
+    if bannedTargets['Value']:
+      return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
+
     # # prepare waiting file dict
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
     gMonitor.addMark( "RemoveFileAtt", len( toRemoveDict ) )

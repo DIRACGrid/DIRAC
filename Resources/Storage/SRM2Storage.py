@@ -67,6 +67,8 @@ class SRM2Storage( StorageBase ):
     self.gfalLongTimeOut = gConfig.getValue( "/Resources/StorageElements/GFAL_LongTimeout", 1200 )
     # # gfal retry on errno.ECONN
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/GFAL_Retry", 3 )
+    # # should busy files be considered to exist
+    self.busyFilesExist = gConfig.getValue( "/Resources/StorageElements/SRMBusyFilesExist", False )
 
     # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", '' )
@@ -627,6 +629,9 @@ class SRM2Storage( StorageBase ):
         if urlDict['status'] == 0:
           self.log.debug( "SRM2Storage.exists: Path exists: %s" % pathSURL )
           successful[pathSURL] = True
+        elif urlDict['status'] == 22 and self.busyFilesExist:
+          self.log.debug( "SRM2Storage.exists: Path exists, file busy (e.g., stage-out): %s" % pathSURL )
+          successful[pathSURL] = True
         elif urlDict['status'] == 2:
           self.log.debug( "SRM2Storage.exists: Path does not exist: %s" % pathSURL )
           successful[pathSURL] = False
@@ -1079,8 +1084,13 @@ class SRM2Storage( StorageBase ):
       successful[directory] = { 'Files' : directoryFiles, 'Size' : directorySize, 'SubDirs' : subDirectories }
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
-  def listDirectory( self, path ):
+  def listDirectory( self, path, internalCall = False ):
     """ List the contents of the directory on the storage
+        :param interalCall : if this method is called from within
+                             that class, we should return index on SURL, not LFNs
+                             Do not set it to True for a normal call, unless you really
+                             know what you are doing !!
+
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1133,8 +1143,8 @@ class SRM2Storage( StorageBase ):
               elif subPathDict['status'] == 0:
                 statDict = self.__parse_file_metadata( subPathDict )
 
-                # Replace the URL with an LFN
-                subPathLFN = subPathSURL.replace( urlStart, '' )
+                # Replace the URL with an LFN in normal cases, but return the SURL if it is an internal call
+                subPathLFN = subPathSURL if internalCall else subPathSURL.replace( urlStart, '' )
                 if statDict['File']:
                   subPathFiles[subPathLFN] = statDict
                 elif statDict['Directory']:
@@ -1285,6 +1295,7 @@ class SRM2Storage( StorageBase ):
     filesToGet = res['Value']['Files']
     subDirs = res['Value']['SubDirs']
 
+
     allSuccessful = True
     res = self.getFile( filesToGet.keys(), destDirectory )
     if not res['OK']:
@@ -1404,12 +1415,17 @@ class SRM2Storage( StorageBase ):
     """
     directory = directory.rstrip( '/' )
     errMessage = "SRM2Storage.__getDirectoryContents: Failed to list directory."
-    res = self.__executeOperation( directory, 'listDirectory' )
+    res = self.listDirectory( directory, internalCall = True )
     if not res['OK']:
       self.log.error( errMessage, res['Message'] )
       return S_ERROR( errMessage )
-    surlsDict = res['Value']['Files']
-    subDirsDict = res['Value']['SubDirs']
+    if directory in res['Value']['Failed']:
+      self.log.error( errMessage, res['Value']['Failed'][directory] )
+      return S_ERROR( errMessage )
+
+    surlsDict = res['Value']['Successful'][directory]['Files']
+    subDirsDict = res['Value']['Successful'][directory]['SubDirs']
+
     filesToRemove = dict( [ ( url, surlsDict[url]['Size'] ) for url in  surlsDict  ] )
     return S_OK ( { 'Files' : filesToRemove, 'SubDirs' : subDirsDict.keys() } )
 

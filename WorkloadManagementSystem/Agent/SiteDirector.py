@@ -608,7 +608,8 @@ class SiteDirector( AgentModule ):
         jobIDList = None
         result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                               'Queue':queueName,
-                                              'Status':['Running','Submitted','Scheduled'] } )
+                                              'Status': TRANSIENT_PILOT_STATUS } )                                              
+
         if result['OK']:
           jobIDList = result['Value']
           
