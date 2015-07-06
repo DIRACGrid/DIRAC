@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
+import ast
 
 _readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
                'getReplicas','getReplicaStatus','getFileAncestors',
@@ -304,7 +305,7 @@ class PolicyBasedSecurityManager( SecurityManagerBase ):
     oldSecurityManagerName = gConfig.getValue( cfgPath( serviceSection, 'OldSecurityManager' ), '' )
     self.policyObj.oldSecurityManager = None
     if oldSecurityManagerName:
-      self.policyObj.oldSecurityManager = eval( "%s(self.db)" % oldSecurityManagerName )
+      self.policyObj.oldSecurityManager = ast.literal_eval( "%s(self.db)" % oldSecurityManagerName )
 
 
 
