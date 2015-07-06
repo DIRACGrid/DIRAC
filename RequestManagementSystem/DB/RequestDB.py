@@ -576,7 +576,7 @@ class RequestDB( object ):
           elif key == 'Status':
             key = '_Status'
 
-          if isinstance( value, ListType ):
+          if isinstance( value, list ):
             summaryQuery = summaryQuery.filter( eval( '%s.%s.in_(%s)' % ( tableName, key, value ) ) )
           else:
             summaryQuery = summaryQuery.filter( eval( '%s.%s' % ( tableName, key ) ) == value )
