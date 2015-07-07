@@ -1304,7 +1304,47 @@ BEGIN
 END //
 DELIMITER ;
 
+-- ps_set_dir_gid_recursive : change group of a directory recursively 
+--
+-- dir_name : name of the directory
+-- gid : new gid
+--
+-- output errno, affected column, errmsg. if errno == 0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_dir_gid_recursive;
+DELIMITER //
+CREATE PROCEDURE ps_set_dir_gid_recursive
+(IN  dir_name VARCHAR(255), IN gid INT)
+BEGIN
+  DECLARE dirUpdate INT DEFAULT 0;
+  DECLARE fileUpdate INT DEFAULT 0;
+  DECLARE start_dirId INT DEFAULT 0;
+  
+  SELECT SQL_NO_CACHE DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
+  IF start_dirId IS NULL THEN
+    SET start_dirId = 0;
+  END IF;
+  
+  UPDATE FC_DirectoryList d
+  JOIN  FC_DirectoryClosure c
+  ON d.DirID = c.ChildID
+  SET d.GID = gid, d.ModificationDate = UTC_TIMESTAMP()
+  WHERE c.ParentID = start_dirID;
+  
+  
+  SELECT ROW_COUNT() INTO dirUpdate;
+  
+  UPDATE FC_Files f
+  JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+  SET f.GID = gid, f.ModificationDate = UTC_TIMESTAMP()
+  WHERE c.ParentID = start_dirId;
+ 
+  SELECT ROW_COUNT() INTO fileUpdate;
+ 
+  SELECT 0 as errno, (fileUpdate + dirUpdate) as affected, 'OK' as errmsg;
+
+END //
+DELIMITER ;
 
 -- ps_set_dir_uid : change owner of a directory
 --
@@ -1317,7 +1357,7 @@ DELIMITER //
 CREATE PROCEDURE ps_set_dir_uid
 (IN  dir_name VARCHAR(255), IN uid INT)
 BEGIN
-
+ 
   UPDATE FC_DirectoryList SET UID = uid, ModificationDate = UTC_TIMESTAMP() WHERE Name = dir_name;
 
   SELECT 0 as errno, ROW_COUNT() as affected, 'OK' as errmsg;
@@ -1325,6 +1365,48 @@ BEGIN
 END //
 DELIMITER ;
 
+
+-- ps_set_dir_uid_recursive : change owner of a directory recursively 
+--
+-- dir_name : name of the directory
+-- uid : new uid
+--
+-- output errno, affected column (should be 0/1), errmsg. if errno == 0, all good
+
+DROP PROCEDURE IF EXISTS ps_set_dir_uid_recursive;
+DELIMITER //
+CREATE PROCEDURE ps_set_dir_uid_recursive
+(IN  dir_name VARCHAR(255), IN uid INT)
+BEGIN
+  DECLARE dirUpdate INT DEFAULT 0;
+  DECLARE fileUpdate INT DEFAULT 0;
+  DECLARE start_dirId INT DEFAULT 0;
+  
+  SELECT SQL_NO_CACHE DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
+  IF start_dirId IS NULL THEN
+    SET start_dirId = 0;
+  END IF;
+  
+  UPDATE FC_DirectoryList d
+  JOIN  FC_DirectoryClosure c
+  ON d.DirID = c.ChildID
+  SET d.UID = uid, d.ModificationDate = UTC_TIMESTAMP()
+  WHERE c.ParentID = start_dirID;
+  
+  
+  SELECT ROW_COUNT() INTO dirUpdate;
+  
+  UPDATE FC_Files f
+  JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+  SET f.UID = uid, f.ModificationDate = UTC_TIMESTAMP()
+  WHERE c.ParentID = start_dirId;
+ 
+  SELECT ROW_COUNT() INTO fileUpdate;
+ 
+  SELECT 0 as errno, (fileUpdate + dirUpdate) as affected, 'OK' as errmsg;
+
+END //
+DELIMITER ;
 
 
 -- ps_set_dir_status : change status of a directory
@@ -1366,6 +1448,48 @@ BEGIN
 END //
 DELIMITER ;
 
+
+-- ps_set_dir_mode_recursive : change Mode of a directory recursively 
+--
+-- dir_name : name of the directory
+-- mode : new mode
+--
+-- output errno, affected column (should be 0/1), errmsg. if errno == 0, all good
+
+DROP PROCEDURE IF EXISTS ps_set_dir_mode_recursive;
+DELIMITER //
+CREATE PROCEDURE ps_set_dir_mode_recursive
+(IN  dir_name VARCHAR(255), IN mode INT)
+BEGIN
+  DECLARE dirUpdate INT DEFAULT 0;
+  DECLARE fileUpdate INT DEFAULT 0;
+  DECLARE start_dirId INT DEFAULT 0;
+  
+  SELECT SQL_NO_CACHE DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
+  IF start_dirId IS NULL THEN
+    SET start_dirId = 0;
+  END IF;
+  
+  UPDATE FC_DirectoryList d
+  JOIN  FC_DirectoryClosure c
+  ON d.DirID = c.ChildID
+  SET d.Mode = mode, d.ModificationDate = UTC_TIMESTAMP()
+  WHERE c.ParentID = start_dirID;
+  
+  
+  SELECT ROW_COUNT() INTO dirUpdate;
+  
+  UPDATE FC_Files f
+  JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+  SET f.Mode = mode, f.ModificationDate = UTC_TIMESTAMP()
+  WHERE c.ParentID = start_dirId;
+ 
+  SELECT ROW_COUNT() INTO fileUpdate;
+ 
+  SELECT 0 as errno, (fileUpdate + dirUpdate) as affected, 'OK' as errmsg;
+
+END //
+DELIMITER ;
 
 -- ps_get_files_in_dir : list of files in a directory
 -- 

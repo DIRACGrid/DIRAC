@@ -1422,7 +1422,7 @@ class FileManagerBase( object ):
       elif path in fileList:
         fileArgs[path] = paths[path]
     if dirArgs:
-      result = change_function_directory( dirArgs, uid, gid )
+      result = change_function_directory( dirArgs, uid, gid, recursive = recursive )
       if not result['OK']:
         return result
       successful.update( result['Value']['Successful'] )
