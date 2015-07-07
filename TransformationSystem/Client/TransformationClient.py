@@ -371,24 +371,27 @@ class TransformationClient( Client, FileCatalogueBase ):
     """
     newStatuses = {}
 
-    for lfn in set( dictOfProposedLFNsStatus ) - set( tsFilesAsDict ):
-      newStatus = dictOfProposedLFNsStatus[lfn]
-      # Apply optional corrections
-      if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
-        if not force:
-          newStatus = 'Processed'
-      elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
-        if not force:
-          newStatus = 'MaxReset'
-      elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
-        errorCount = tsFilesAsDict[lfn][1]
-        # every 10 retries (by default)
-        if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ):
+    for lfn in dictOfProposedLFNsStatus.keys():
+      if lfn not in tsFilesAsDict.keys():
+        continue
+      else:
+        newStatus = dictOfProposedLFNsStatus[lfn]
+        # Apply optional corrections
+        if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
+          if not force:
+            newStatus = 'Processed'
+        elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
           if not force:
             newStatus = 'MaxReset'
+        elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
+          errorCount = tsFilesAsDict[lfn][1]
+          # every 10 retries (by default)
+          if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ):
+            if not force:
+              newStatus = 'MaxReset'
 
-      if tsFilesAsDict[lfn][0].lower() != newStatus:
-        newStatuses[lfn] = newStatus
+        if tsFilesAsDict[lfn][0].lower() != newStatus:
+          newStatuses[lfn] = newStatus
 
     return newStatuses
 
