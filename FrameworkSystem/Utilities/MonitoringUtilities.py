@@ -4,11 +4,8 @@ Utilities for ComponentMonitoring features
 
 import datetime
 import socket
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import gConfig, S_OK
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
-from DIRAC import S_OK, S_ERROR
 
 def monitorInstallation( componentType, system, component, module = None, cpu = None, hostname = None ):
   """

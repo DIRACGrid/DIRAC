@@ -675,12 +675,6 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       component = argss[1]
       client = SystemAdministratorClient( self.host, self.port )
 
-      result = client.uninstallDatabase( component )
-      if not result[ 'OK' ]:
-        self.__errMsg( result[ 'Message' ] )
-      else:
-        gLogger.notice( "Successfully uninstalled %s" % ( component ) )
-
       result = client.getHostInfo()
       if not result[ 'OK' ]:
         self.__errMsg( result[ 'Message' ] )
@@ -697,6 +691,12 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result[ 'OK' ]:
         self.__errMsg( result[ 'Message' ] )
         return
+
+      result = client.uninstallDatabase( component )
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+      else:
+        gLogger.notice( "Successfully uninstalled %s" % ( component ) )
     else:
       if option == '-f':
         force = True

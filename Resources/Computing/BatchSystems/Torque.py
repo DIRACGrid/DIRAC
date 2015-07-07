@@ -84,7 +84,7 @@ class Torque( object ):
     
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
 
     statusDict = {}
@@ -131,7 +131,7 @@ class Torque( object ):
   
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
   
     waitingJobs, runningJobs = output.split()[:2]

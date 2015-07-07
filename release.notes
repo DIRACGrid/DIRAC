@@ -1,11 +1,12 @@
-[v6r14-pre3]
+[v6r14-pre4]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
      list of extensions with proper names 
 NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
-NEW: LocalConfiguration - option to print out license information      
+NEW: LocalConfiguration - option to print out license information    
+FIX: SocketInfo.py - check the CRL lists while handshaking  
 
 *Resources
 NEW: ARCComputingElement based on the ARC python API
@@ -18,6 +19,7 @@ NEW: New FileCatalog SecurityManager with access control based on policies,
      VOMSPolicy as one of the policy implementations.
 NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC with 
      Foreign Keys and Stored Procedures by accessing the databases directly     
+NEW: FileManagerPs.py - added _getFileLFNs() to serve info for the Web Portal     
 
 *WMS
 FIX: Watchdog - review for style and pylint
@@ -27,6 +29,33 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p7]
+
+*Core
+NEW: X509CRL - class to handle certificate revocation lists
+
+*DMS
+FIX: RequestOperations/RemoveFile.py - check target SEs to be online before
+     performing the removal operation. 
+FIX: SecurityManager, VOMSPolicy - make the vomspolicy compatible with the old client 
+     by calling in case of need the old SecurityManager     
+
+*Resources
+BUGFIX: Torque, GE - methods must return Message field in case of non-zero return status
+FIX: SRM2Storage - when used internaly, listDirectory should return urls and not lfns
+
+*WMS
+FIX: ConfigureCPURequirements pilot command - add queue CPU length to the extra local
+     configuration
+FIX: JobWrapper - load extra local configuration of any     
+
+*RMS
+FIX: RequestDB - fix in getRequestSummaryWeb() to suit the Web Portal requirements
+
+*Transformation
+FIX: TransformationManagerHandler - fix in getTransformationSummaryWeb() to suit 
+     the Web Portal requirements
 
 [v6r13p6]
 
@@ -210,6 +239,16 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p44]
+
+*WMS
+FIX: SiteDirector - consider also pilots in Waiting status when evaluating
+     queue slots available
+
+*Resources
+NEW: SRM2Storage - makes use of /Resources/StorageElements/SRMBusyFilesExist option
+     to set up the mode of interpreting the 22 error code as existing file
 
 [v6r12p43]
 
