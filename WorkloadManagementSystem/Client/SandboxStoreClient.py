@@ -91,8 +91,8 @@ class SandboxStoreClient( object ):
       return S_ERROR( "fileList must be a list or tuple!" )
 
     for sFile in fileList:
-      if isinstance( sFile, str ):
-        if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
+      if isinstance( sFile, basestring ):
+        if re.search( '^lfn:', sFile, flags = re.IGNORECASE ):
           pass
         else:
           if os.path.exists( sFile ):
@@ -116,7 +116,7 @@ class SandboxStoreClient( object ):
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
     for sFile in files2Upload:
-      if isinstance( sFile, str ):
+      if isinstance( sFile, basestring ):
         tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
       elif isinstance( sFile, StringIO.StringIO ):
         tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
