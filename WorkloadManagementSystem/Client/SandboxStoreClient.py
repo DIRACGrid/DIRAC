@@ -6,20 +6,18 @@ __RCSID__ = "$Id$"
 
 import os
 import tarfile
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
+import hashlib
 import tempfile
-import types
 import re
+import StringIO
+
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 class SandboxStoreClient( object ):
 
@@ -72,8 +70,13 @@ class SandboxStoreClient( object ):
 
   def uploadFilesAsSandbox( self, fileList, sizeLimit = 0, assignTo = {} ):
     """ Send files in the fileList to a Sandbox service for the given jobID.
-        This is the preferable method to upload sandboxes. fileList can contain
-        both files and directories
+        This is the preferable method to upload sandboxes.
+
+        a fileList item can be:
+          - a string, which is an lfn name
+          - a file name (real), that is supposed to be on disk, in the current directory
+          - a fileObject that should be a StringIO.StringIO type of object
+
         Parameters:
           - assignTo : Dict containing { 'Job:<jobid>' : '<sbType>', ... }
     """
@@ -84,17 +87,23 @@ class SandboxStoreClient( object ):
       if assignTo[ key ] not in self.__validSandboxTypes:
         return S_ERROR( "Invalid sandbox type %s" % assignTo[ key ] )
 
-    if type( fileList ) not in ( types.TupleType, types.ListType ):
-      return S_ERROR( "fileList must be a tuple!" )
+    if not isinstance( fileList, ( list, tuple ) ):
+      return S_ERROR( "fileList must be a list or tuple!" )
 
     for sFile in fileList:
-      if re.search( '^lfn:', sFile ) or re.search( '^LFN:', sFile ):
-        pass
-      else:
-        if os.path.exists( sFile ):
-          files2Upload.append( sFile )
+      if isinstance( sFile, basestring ):
+        if re.search( '^lfn:', sFile, flags = re.IGNORECASE ):
+          pass
         else:
-          errorFiles.append( sFile )
+          if os.path.exists( sFile ):
+            files2Upload.append( sFile )
+          else:
+            errorFiles.append( sFile )
+      
+      elif isinstance( sFile, StringIO.StringIO ):
+        files2Upload.append( sFile )
+      else:
+        return S_ERROR("Objects of type %s can't be part of InputSandbox" % type( sFile ) )
 
     if errorFiles:
       return S_ERROR( "Failed to locate files: %s" % ", ".join( errorFiles ) )
@@ -107,7 +116,12 @@ class SandboxStoreClient( object ):
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
     for sFile in files2Upload:
-      tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+      if isinstance( sFile, basestring ):
+        tf.add( os.path.realpath( sFile ), os.path.basename( sFile ), recursive = True )
+      elif isinstance( sFile, StringIO.StringIO ):
+        tarInfo = tarfile.TarInfo( name = 'jobDescription.xml' )
+        tarInfo.size = len( sFile.buf )
+        tf.addfile( tarinfo = tarInfo, fileobj = sFile )
     tf.close()
 
     if sizeLimit > 0:
@@ -117,7 +131,7 @@ class SandboxStoreClient( object ):
         result[ 'SandboxFileName' ] = tmpFilePath
         return result
 
-    oMD5 = md5.md5()
+    oMD5 = hashlib.md5()
     fd = open( tmpFilePath, "rb" )
     bData = fd.read( 10240 )
     while bData:
@@ -224,7 +238,7 @@ class SandboxStoreClient( object ):
     return self.__assignSandboxToEntity( "Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignJobs( self, jobIdList ):
-    if type( jobIdList ) in ( types.IntType, types.LongType ):
+    if isinstance( jobIdList, ( int, long ) ):
       jobIdList = [ jobIdList ]
     entitiesList = []
     for jobId in jobIdList:
@@ -259,7 +273,7 @@ class SandboxStoreClient( object ):
     return self.__assignSandboxToEntity( "Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignPilots( self, pilotIdIdList ):
-    if type( pilotIdIdList ) in ( types.IntType, types.LongType ):
+    if isinstance( pilotIdIdList, ( int, long ) ):
       pilotIdIdList = [ pilotIdIdList ]
     entitiesList = []
     for pilotId in pilotIdIdList:

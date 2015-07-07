@@ -23,7 +23,12 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 __RCSID__ = "$Id$"
-import re, os, types, urllib
+
+import re
+import os
+import types
+import urllib
+import StringIO
 
 from DIRAC                                                    import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Workflow.Parameter                            import Parameter
@@ -992,7 +997,7 @@ class Job( API ):
     return self.workflow.toXML()
 
   #############################################################################
-  def _toJDL( self, xmlFile = '' ): #messy but need to account for xml file being in /tmp/guid dir
+  def _toJDL( self, xmlFile = '', jobDescriptionObject = None ):  # messy but need to account for xml file being in /tmp/guid dir
     """Creates a JDL representation of itself as a Job.
     """
     #Check if we have to do old bootstrap...
@@ -1005,19 +1010,30 @@ class Job( API ):
     for param in paramList:
       paramsDict[param.getName()] = {'type':param.getType(), 'value':param.getValue()}
 
-    scriptname = 'jobDescription.xml'
     arguments = []
-    if self.script:
-      if os.path.exists( self.script ):
-        scriptname = os.path.abspath( self.script )
-        self.log.verbose( 'Found script name %s' % scriptname )
+    scriptname = 'jobDescription.xml'
+
+    if jobDescriptionObject is None:
+      # if we are here it's because there's a real file, on disk, that is named 'jobDescription.xml'
+      if self.script:
+        if os.path.exists( self.script ):
+          scriptname = os.path.abspath( self.script )
+          self.log.verbose( "Found script name %s" % scriptname )
+        else:
+          self.log.error( "File not found", self.script )
+      else:
+        if xmlFile:
+          self.log.verbose( 'Found XML File %s' % xmlFile )
+          scriptname = xmlFile
+      self.addToInputSandbox.append( scriptname )
+
+    elif isinstance( jobDescriptionObject, StringIO.StringIO ):
+      self.log.verbose( "jobDescription is passed in as a StringIO object" )
+
     else:
-      if xmlFile:
-        self.log.verbose( 'Found XML File %s' % xmlFile )
-        scriptname = xmlFile
+      self.log.error( "Where's the job description?" )
 
     arguments.append( os.path.basename( scriptname ) )
-    self.addToInputSandbox.append( scriptname )
     if paramsDict.has_key( 'LogLevel' ):
       if paramsDict['LogLevel']['value']:
         arguments.append( '-o LogLevel=%s' % ( paramsDict['LogLevel']['value'] ) )
@@ -1144,9 +1160,12 @@ class Job( API ):
         else:
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
 
-    self.addToInputSandbox.remove( scriptname )
-    self.addToOutputSandbox.remove( self.stdout )
-    self.addToOutputSandbox.remove( self.stderr )
+    for fToBeRemoved in [scriptname, self.stdout, self.stderr]:
+      try:
+        self.addToInputSandbox.remove( fToBeRemoved )
+      except ValueError:
+        pass
+
     jdl = classadJob.asJDL()
     start = jdl.find( '[' )
     end = jdl.rfind( ']' )

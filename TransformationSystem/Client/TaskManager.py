@@ -5,7 +5,7 @@ __RCSID__ = "$Id$"
 COMPONENT_NAME = 'TaskManager'
 
 import time
-import os
+import StringIO
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
@@ -536,13 +536,11 @@ class WorkflowTasks( TaskBase ):
     else:
       self._logError( "No valid job description found" )
       return S_ERROR( "No valid job description found" )
-    # the WMSClient expects to find the jobDescription.xml file in the local directory to be added to the InputSandbox
-    workflowFile = open( "jobDescription.xml", 'w' )
-    workflowFile.write( oJob._toXML() )
-    workflowFile.close()
-    jdl = oJob._toJDL()
-    res = self.submissionClient.submitJob( jdl )
-    os.remove( "jobDescription.xml" )
+
+    workflowFileObject = StringIO.StringIO( oJob._toXML() )
+    jdl = oJob._toJDL( jobDescriptionObject = workflowFileObject )
+    res = self.submissionClient.submitJob( jdl, workflowFileObject )
+
     return res
 
   def updateTransformationReservedTasks( self, taskDicts ):
