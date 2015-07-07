@@ -6,7 +6,11 @@
     databases
 """
 
-import re, time, threading
+__RCSID__ = "$Id$"
+
+import re
+import time
+import threading
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -16,8 +20,6 @@ from DIRAC.Core.Utilities.List                            import stringListToStr
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
-
-__RCSID__ = "$Id$"
 
 MAX_ERROR_COUNT = 10
 
