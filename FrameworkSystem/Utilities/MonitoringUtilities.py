@@ -4,8 +4,9 @@ Utilities for ComponentMonitoring features
 
 import datetime
 import socket
-from DIRAC import gConfig, S_OK
+from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 def monitorInstallation( componentType, system, component, module = None, cpu = None, hostname = None ):
   """
@@ -18,20 +19,10 @@ def monitorInstallation( componentType, system, component, module = None, cpu = 
 
   # Retrieve user installing the component
   result = getProxyInfo()
-  if not result[ 'OK' ]:
+  if result[ 'OK' ]:
+    user = result[ 'Value' ][ 'username' ]
+  else:
     return result
-  chain = result[ 'Value' ][ 'chain' ]
-  result = chain.getCertInChain( -1 )
-  if not result[ 'OK' ]:
-    return result
-  result = result[ 'Value' ].getSubjectDN()
-  if not result[ 'OK' ]:
-    return result
-  userDN = result['Value']
-  result = getUsernameForDN( userDN )
-  if not result[ 'OK' ]:
-    return result
-  user = result[ 'Value' ]
   if not user:
     user = 'unknown'
 
@@ -80,20 +71,12 @@ def monitorUninstallation( system, component, cpu = None, hostname = None ):
 
   # Retrieve user uninstalling the component
   result = getProxyInfo()
-  if not result[ 'OK' ]:
+  if result[ 'OK' ]:
+    user = result[ 'Value' ][ 'username' ]
+  else:
     return result
-  chain = result[ 'Value' ][ 'chain' ]
-  result = chain.getCertInChain( -1 )
-  if not result[ 'OK' ]:
-    return result
-  result = result[ 'Value' ].getSubjectDN()
-  if not result[ 'OK' ]:
-    return result
-  userDN = result['Value']
-  result = getUsernameForDN( userDN )
-  if not result[ 'OK' ]:
-    return result
-  user = result[ 'Value' ]
+  if not user:
+    user = 'unknown'
 
   if not cpu:
     cpu = 'Not available'

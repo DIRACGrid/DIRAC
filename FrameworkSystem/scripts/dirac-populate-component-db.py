@@ -21,6 +21,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
   import ComponentMonitoringClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 global excludedHosts
 excludedHosts = []
@@ -52,26 +53,12 @@ resultAll = client.getOverallStatus()
 
 # Retrieve user installing the component
 result = getProxyInfo()
-if not result[ 'OK' ]:
-  user = 'unknown'
+if result[ 'OK' ]:
+  user = result[ 'Value' ][ 'username' ]
 else:
-  chain = result[ 'Value' ][ 'chain' ]
-  result = chain.getCertInChain( -1 )
-  if not result[ 'OK' ]:
-    user = 'unknown'
-  else:
-    result = result[ 'Value' ].getSubjectDN()
-    if not result[ 'OK' ]:
-      user = 'unknown'
-    else:
-      userDN = result['Value']
-      result = getUsernameForDN( userDN )
-      if not result[ 'OK' ]:
-        user = 'unknown'
-      else:
-        user = result[ 'Value' ]
-        if not user:
-          user = 'unknown'
+  return result
+if not user:
+  user = 'unknown'
 
 notificationClient = NotificationClient()
 for host in resultAll[ 'Value' ]:
