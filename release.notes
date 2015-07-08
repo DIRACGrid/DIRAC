@@ -34,6 +34,22 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+[v6r13p8]
+
+*Framework
+FIX: MonitoringUtilities - minor bug fix
+
+*DMS
+FIX: DataManager - remove local file when doing two hops transfer
+
+*WMS
+FIX: SandboxStoreClient - get the VO info from the delegatedGroup argument to 
+     use for the StorageElement instantiation
+
+*TMS
+CHANGE: Transformation(Client,DB,Manager) - multiple code clean-up without
+        changing the logic
+
 [v6r13p7]
 
 *Core
@@ -243,6 +259,12 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p45]
+
+*Resources
+FIX: SRM2Storage - error 22 of exists call is intepreted as exisiting file
+     ( backport from v6r13 )
 
 [v6r12p44]
 
