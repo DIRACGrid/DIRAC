@@ -123,7 +123,7 @@ class GE( object ):
     
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
       
     jobDict = {}
@@ -181,7 +181,7 @@ class GE( object ):
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Output'] = output
+      resultDict['Message'] = output
       return resultDict
 
     waitingJobs = 0

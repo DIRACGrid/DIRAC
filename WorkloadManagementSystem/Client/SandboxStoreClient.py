@@ -20,6 +20,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 class SandboxStoreClient( object ):
 
@@ -32,6 +33,9 @@ class SandboxStoreClient( object ):
     self.__rpcClient = rpcClient
     self.__transferClient = transferClient
     self.__kwargs = kwargs
+    self.__vo = None
+    if 'delegatedGroup' in kwargs:
+      self.__vo = getVOForGroup( kwargs['delegatedGroup'] )
     if SandboxStoreClient.__smdb == None:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
@@ -165,7 +169,7 @@ class SandboxStoreClient( object ):
     except Exception, e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
-    se = StorageElement( SEName )
+    se = StorageElement( SEName, vo = self.__vo )
     result = returnSingleResult( se.getFile( SEPFN, localPath = tmpSBDir ) )
 
     if not result[ 'OK' ]:
