@@ -1,4 +1,4 @@
-[v6r14-pre4]
+[v6r14-pre5]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
@@ -20,6 +20,10 @@ NEW: New FileCatalog SecurityManager with access control based on policies,
 NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC with 
      Foreign Keys and Stored Procedures by accessing the databases directly     
 NEW: FileManagerPs.py - added _getFileLFNs() to serve info for the Web Portal     
+
+*Interfaces
+CHANGE: use jobDescription.xml as a StringIO object to avoid multiple disk
+        write operations while massive job submission
 
 *WMS
 FIX: Watchdog - review for style and pylint
