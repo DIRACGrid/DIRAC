@@ -872,7 +872,7 @@ class DataManager( object ):
       # Remove the local file whatever happened
       try:
         os.remove( localFile )
-      except Exception as e:
+      except OSError as e:
         log.error( 'Error removing local file', '%s %s' % ( localFile, e ) )
 
       if not res['OK']:
