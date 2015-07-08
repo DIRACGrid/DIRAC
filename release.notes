@@ -1,3 +1,9 @@
+[v6r12p45]
+
+*Resources
+FIX: SRM2Storage - error 22 of exists call is intepreted as exisiting file
+     ( backport from v6r13 )
+
 [v6r12p44]
 
 *WMS
@@ -140,7 +146,6 @@ FIX: FileCatalog - return GUID in DirectoryParameters
 *Resource
 CHANGE: DFC/LFC clients - added setReplicaProblematic()
 
-
 [v6r12p26]
 
 *DMS
@@ -182,7 +187,6 @@ CHANGE: Dirac, JobMonitoringHandler,dirac-wms-job-get-jdl - possibility to retri
 
 *WMS
 CHANGE: JobManifest - make MaxInputData a configurable option
-
 
 [v6r12p21]
 
