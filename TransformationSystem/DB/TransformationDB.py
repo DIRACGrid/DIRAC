@@ -6,8 +6,11 @@
     databases
 """
 
-import re, time, threading, copy
-from types import IntType, LongType, StringTypes, StringType, ListType, TupleType, DictType
+__RCSID__ = "$Id$"
+
+import re
+import time
+import threading
 
 from DIRAC                                                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                   import DB
@@ -17,8 +20,6 @@ from DIRAC.Core.Utilities.List                            import stringListToStr
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
-
-__RCSID__ = "$Id$"
 
 MAX_ERROR_COUNT = 10
 
@@ -209,7 +210,7 @@ class TransformationDB( DB ):
     self.__updateTransformationLogging( transID, message, authorDN, connection = connection )
     return S_OK( transID )
 
-  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
+  def getTransformations( self, condDict = None, older = None, newer = None, timeStamp = 'LastUpdate',
                           orderAttribute = None, limit = None, extraParams = False, offset = None, connection = False ):
     """ Get parameters of all the Transformations with support for the web standard structure """
     connection = self.__getConnection( connection )
@@ -219,20 +220,14 @@ class TransformationDB( DB ):
     res = self._query( req, connection )
     if not res['OK']:
       return res
+    if condDict is None:
+      condDict = {}
     webList = []
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = []
-      transDict = {}
-      count = 0
-      for item in row:
-        transDict[self.TRANSPARAMS[count]] = item
-        count += 1
-        if type( item ) not in [IntType, LongType]:
-          rList.append( str( item ) )
-        else:
-          rList.append( item )
+      rList = [str( item ) if not isinstance( item, ( long, int ) ) else item for item in row]
+      transDict = dict( zip( self.TRANSPARAMS, row ) )
       webList.append( rList )
       if extraParams:
         res = self.__getAdditionalParameters( transDict['TransformationID'], connection = connection )
@@ -242,7 +237,7 @@ class TransformationDB( DB ):
       resultList.append( transDict )
     result = S_OK( resultList )
     result['Records'] = webList
-    result['ParameterNames'] = copy.copy( self.TRANSPARAMS )
+    result['ParameterNames'] = self.TRANSPARAMS
     return result
 
   def getTransformation( self, transName, extraParams = False, connection = False ):
@@ -263,19 +258,16 @@ class TransformationDB( DB ):
 
   def getTransformationParameters( self, transName, parameters, connection = False ):
     """ Get the requested parameters for a supplied transformation """
-    if type( parameters ) in StringTypes:
+    if isinstance( parameters, basestring ):
       parameters = [parameters]
-    extraParams = False
-    for param in parameters:
-      if not param in self.TRANSPARAMS:
-        extraParams = True
+    extraParams = bool( set( parameters ) - set( self.TRANSPARAMS ) )
     res = self.getTransformation( transName, extraParams = extraParams, connection = connection )
     if not res['OK']:
       return res
     transParams = res['Value']
     paramDict = {}
     for reqParam in parameters:
-      if not reqParam in transParams.keys():
+      if reqParam not in transParams:
         return S_ERROR( "Parameter %s not defined for transformation" % reqParam )
       paramDict[reqParam] = transParams[reqParam]
     if len( paramDict ) == 1:
@@ -288,9 +280,7 @@ class TransformationDB( DB ):
     res = self._query( req, conn = connection )
     if not res['OK']:
       return res
-    transIDs = []
-    for tupleIn in res['Value']:
-      transIDs.append( tupleIn[0] )
+    transIDs = [tupleIn[0] for tupleIn in res['Value']]
     return S_OK( transIDs )
 
   def getTableDistinctAttributeValues( self, table, attributes, selectDict, older = None, newer = None,
@@ -317,7 +307,7 @@ class TransformationDB( DB ):
     return S_OK( attributeValues )
 
   def __updateTransformationParameter( self, transID, paramName, paramValue, connection = False ):
-    if not ( paramName in self.mutable ):
+    if paramName not in self.mutable:
       return S_ERROR( "Can not update the '%s' transformation parameter" % paramName )
     if paramName == 'Body':
       res = self._escapeString( paramValue )
@@ -339,12 +329,12 @@ class TransformationDB( DB ):
       transName = long( transName )
       cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
     except:
-      if type( transName ) not in StringTypes:
-        return S_ERROR( "Transformation should ID or name" )
+      if not isinstance( transName, basestring ):
+        return S_ERROR( "Transformation should be ID or name" )
       cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
     res = self._query( cmd, connection )
     if not res['OK']:
-      gLogger.error( "Failed to obtain transformation ID for transformation", "%s:%s" % ( transName, res['Message'] ) )
+      gLogger.error( "Failed to obtain transformation ID for transformation", "%s: %s" % ( transName, res['Message'] ) )
       return res
     elif not res['Value']:
       gLogger.verbose( "Transformation %s does not exist" % ( transName ) )
@@ -453,7 +443,7 @@ class TransformationDB( DB ):
       return S_ERROR( "Failed to parse parameter value" )
     paramValue = res['Value']
     paramType = 'StringType'
-    if type( paramValue ) in [IntType, LongType]:
+    if isinstance( paramValue, ( long, int ) ):
       paramType = 'IntType'
     req = "INSERT INTO AdditionalParameters (%s) VALUES (%s,'%s',%s,'%s');" % ( ', '.join( self.ADDITIONALPARAMETERS ),
                                                                                 transID, paramName,
@@ -467,15 +457,16 @@ class TransformationDB( DB ):
     if not res['OK']:
       return res
     paramDict = {}
-    for transID, parameterName, parameterValue, parameterType in res['Value']:
-      parameterType = eval( parameterType )
-      if parameterType in [IntType, LongType]:
+    for _transID, parameterName, parameterValue, parameterType in res['Value']:
+      if parameterType in ( 'IntType', 'LongType' ):
         parameterValue = int( parameterValue )
       paramDict[parameterName] = parameterValue
     return S_OK( paramDict )
 
-  def __deleteTransformationParameters( self, transID, parameters = [], connection = False ):
+  def __deleteTransformationParameters( self, transID, parameters = None, connection = False ):
     """ Remove the parameters associated to a transformation """
+    if parameters is None:
+      parameters = []
     req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d" % transID
     if parameters:
       req = "%s AND ParameterName IN (%s);" % ( req, stringListToString( parameters ) )
@@ -517,24 +508,24 @@ class TransformationDB( DB ):
       res = self.__addFilesToTransformation( transID, fileIDs.keys(), connection = connection )
       if not res['OK']:
         return res
-      for fileID in fileIDs.keys():
+      for fileID in fileIDs:
         lfn = fileIDs[fileID]
-        successful[lfn] = "Present"
-        if fileID in res['Value']:
-          successful[lfn] = "Added"
+        successful[lfn] = "Added" if fileID in res['Value'] else "Present"
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def getTransformationFiles( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate',
+  def getTransformationFiles( self, condDict = None, older = None, newer = None, timeStamp = 'LastUpdate',
                               orderAttribute = None, limit = None, offset = None, connection = False ):
     """ Get files for the supplied transformations with support for the web standard structure """
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM TransformationFiles" % ( intListToString( self.TRANSFILEPARAMS ) )
     originalFileIDs = {}
+    if condDict is None:
+      condDict = {}
     if condDict or older or newer:
-      if condDict.has_key( 'LFN' ):
-        lfns = condDict.pop( 'LFN' )
-        if type( lfns ) in StringTypes:
+      lfns = condDict.pop( 'LFN', None )
+      if lfns:
+        if isinstance( lfns, basestring ):
           lfns = [lfns]
         res = self.__getFileIDsForLfns( lfns, connection = connection )
         if not res['OK']:
@@ -567,21 +558,13 @@ class TransformationDB( DB ):
       for row in transFiles:
         lfn = originalFileIDs[row[1]]
         # Prepare the structure for the web
-        rList = [lfn]
-        fDict = {}
-        fDict['LFN'] = lfn
-        count = 0
-        for item in row:
-          fDict[self.TRANSFILEPARAMS[count]] = item
-          count += 1
-          if type( item ) not in [IntType, LongType]:
-            rList.append( str( item ) )
-          else:
-            rList.append( item )
+        fDict = {'LFN': lfn}
+        fDict.update( dict( zip( self.TRANSFILEPARAMS, row ) ) )
+        # Note: the line below is returning "None" if the item is None... This seems to work but is ugly...
+        rList = [lfn] + [str( item ) if not isinstance( item, ( long, int ) ) else item for item in row]
         webList.append( rList )
         resultList.append( fDict )
     result = S_OK( resultList )
-    # result['LFNs'] = originalFileIDs.values()
     result['Records'] = webList
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
@@ -595,20 +578,11 @@ class TransformationDB( DB ):
       return res
     resDict = {}
     for fileDict in res['Value']:
-      lfn = fileDict['LFN']
-      transID = fileDict['TransformationID']
-      if not resDict.has_key( lfn ):
-        resDict[lfn] = {}
-      if not resDict[lfn].has_key( transID ):
-        resDict[lfn][transID] = {}
-      resDict[lfn][transID] = fileDict
-    failedDict = {}
-    for lfn in lfns:
-      if not resDict.has_key( lfn ):
-        failedDict[lfn] = 'Did not exist in the Transformation database'
+      resDict.setdefault( fileDict['LFN'], {} )[fileDict['TransformationID']] = fileDict
+    failedDict = dict.fromkeys( set( lfns ) - set( resDict ), 'Did not exist in the Transformation database' )
     return S_OK( {'Successful':resDict, 'Failed':failedDict} )
 
-  def setFileStatusForTransformation( self, transID, fileStatusDict = {}, connection = False ):
+  def setFileStatusForTransformation( self, transID, fileStatusDict = None, connection = False ):
     """ Set file status for the given transformation, based on
         fileStatusDict {fileID_A: 'statusA', fileID_B: 'statusB', ...}
 
@@ -620,11 +594,7 @@ class TransformationDB( DB ):
     # Building the request with "ON DUPLICATE KEY UPDATE"
     req = "INSERT INTO TransformationFiles (TransformationID, FileID, Status, ErrorCount, LastUpdate) VALUES "
 
-    updatesList = []
-    for fileID, status in fileStatusDict.items():
-
-      updatesList.append( "(%d, %d, '%s', 0, UTC_TIMESTAMP())" % ( transID, fileID, status ) )
-
+    updatesList = ["(%d, %d, '%s', 0, UTC_TIMESTAMP())" % ( transID, fileID, status ) for fileID, status in fileStatusDict.items()]
     req += ','.join( updatesList )
     req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),ErrorCount=ErrorCount+1,LastUpdate=VALUES(LastUpdate)"
 
@@ -641,21 +611,17 @@ class TransformationDB( DB ):
     res = self.getCounters( 'TransformationFiles', ['TransformationID', 'Status'], {'TransformationID':transID} )
     if not res['OK']:
       return res
-    statusDict = {}
-    total = 0
-    for attrDict, count in res['Value']:
-      status = attrDict['Status']
-      if not re.search( '-', status ):
-        statusDict[status] = count
-        total += count
-    statusDict['Total'] = total
+    statusDict = dict( [( attrDict['Status'], count ) for attrDict, count in res['Value'] if '-' not in attrDict['Status']] )
+    statusDict['Total'] = sum( statusDict.values() )
     return S_OK( statusDict )
 
-  def getTransformationFilesCount( self, transName, field, selection = {}, connection = False ):
+  def getTransformationFilesCount( self, transName, field, selection = None, connection = False ):
     """ Get the number of files in the TransformationFiles table grouped by the supplied field """
     res = self._getConnectionTransID( connection, transName )
     if not res['OK']:
       return res
+    if selection is None:
+      selection = {}
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     selection['TransformationID'] = transID
@@ -664,12 +630,8 @@ class TransformationDB( DB ):
     res = self.getCounters( 'TransformationFiles', ['TransformationID', field], selection )
     if not res['OK']:
       return res
-    countDict = {}
-    total = 0
-    for attrDict, count in res['Value']:
-      countDict[attrDict[field]] = count
-      total += count
-    countDict['Total'] = total
+    countDict = dict( [( attrDict[field], count ) for attrDict, count in res['Value']] )
+    countDict['Total'] = sum( countDict.values() )
     return S_OK( countDict )
 
   def __addFilesToTransformation( self, transID, fileIDs, connection = False ):
@@ -816,7 +778,7 @@ class TransformationDB( DB ):
   # These methods manipulate the TransformationTasks table
   #
 
-  def getTransformationTasks( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationTime',
+  def getTransformationTasks( self, condDict = None, older = None, newer = None, timeStamp = 'CreationTime',
                               orderAttribute = None, limit = None, inputVector = False,
                               offset = None, connection = False ):
     connection = self.__getConnection( connection )
@@ -826,20 +788,14 @@ class TransformationDB( DB ):
     res = self._query( req, connection )
     if not res['OK']:
       return res
+    if condDict is None:
+      condDict = {}
     webList = []
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = []
-      taskDict = {}
-      count = 0
-      for item in row:
-        taskDict[self.TASKSPARAMS[count]] = item
-        count += 1
-        if type( item ) not in [IntType, LongType]:
-          rList.append( str( item ) )
-        else:
-          rList.append( item )
+      rList = [str( item ) if not isinstance( item, ( long, int ) ) else item for item in row]
+      taskDict = dict ( zip( self.TASKSPARAMS, row ) )
       webList.append( rList )
       if inputVector:
         taskDict['InputVector'] = ''
@@ -847,7 +803,7 @@ class TransformationDB( DB ):
         transID = taskDict['TransformationID']
         res = self.getTaskInputVector( transID, taskID )
         if res['OK']:
-          if res['Value'].has_key( taskID ):
+          if taskID in res['Value']:
             taskDict['InputVector'] = res['Value'][taskID]
       resultList.append( taskDict )
     result = S_OK( resultList )
@@ -855,12 +811,14 @@ class TransformationDB( DB ):
     result['ParameterNames'] = self.TASKSPARAMS
     return result
 
-  def getTasksForSubmission( self, transName, numTasks = 1, site = '', statusList = ['Created'],
+  def getTasksForSubmission( self, transName, numTasks = 1, site = '', statusList = None,
                              older = None, newer = None, connection = False ):
     """ Select tasks with the given status (and site) for submission """
     res = self._getConnectionTransID( connection, transName )
     if not res['OK']:
       return res
+    if statusList is None:
+      statusList = ['Created']
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     condDict = {"TransformationID":transID}
@@ -948,7 +906,7 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    if type( taskID ) != ListType:
+    if not isinstance( taskID, list ):
       taskIDList = [taskID]
     else:
       taskIDList = list( taskID )
@@ -1019,21 +977,21 @@ class TransformationDB( DB ):
       return S_ERROR( "Input data query already exists for transformation" )
     if res['Message'] != 'No InputDataQuery found for transformation':
       return res
-    for parameterName in sorted( queryDict.keys() ):
+    for parameterName in sorted( queryDict ):
       parameterValue = queryDict[parameterName]
       if not parameterValue:
         continue
       parameterType = 'String'
-      if type( parameterValue ) in [ListType, TupleType]:
-        if type( parameterValue[0] ) in [IntType, LongType]:
+      if isinstance( parameterValue, ( list, tuple ) ):
+        if isinstance( parameterValue[0], ( long, int ) ):
           parameterType = 'Integer'
           parameterValue = [str( x ) for x in parameterValue]
         parameterValue = ';;;'.join( parameterValue )
       else:
-        if type( parameterValue ) in [IntType, LongType]:
+        if isinstance( parameterValue, ( long, int ) ):
           parameterType = 'Integer'
           parameterValue = str( parameterValue )
-        if type( parameterValue ) == DictType:
+        if isinstance( parameterValue, dict ):
           parameterType = 'Dict'
           parameterValue = str( parameterValue )
       res = self.insertFields( 'TransformationInputDataQuery', ['TransformationID', 'ParameterName',
@@ -1102,11 +1060,11 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    if type( taskID ) != ListType:
+    if not isinstance( taskID, list ):
       taskIDList = [taskID]
     else:
       taskIDList = list( taskID )
-    taskString = ','.join( ["'" + str( x ) + "'" for x in taskIDList] )
+    taskString = ','.join( ["'%s'" % x for x in taskIDList] )
     req = "SELECT TaskID,InputVector FROM TaskInputs WHERE TaskID in (%s) AND TransformationID='%d';" % ( taskString,
                                                                                                           transID )
     res = self._query( req )
@@ -1238,7 +1196,7 @@ class TransformationDB( DB ):
       return res
     _fileIDs, lfnFileIDs = res['Value']
     for lfn in lfns:
-      if not lfn in lfnFileIDs.keys():
+      if lfn not in lfnFileIDs:
         req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
         res = self._update( req, connection )
         if not res['OK']:
@@ -1257,12 +1215,14 @@ class TransformationDB( DB ):
   # These methods manipulate multiple tables
   #
 
-  def addTaskForTransformation( self, transID, lfns = [], se = 'Unknown', connection = False ):
+  def addTaskForTransformation( self, transID, lfns = None, se = 'Unknown', connection = False ):
     """ Create a new task with the supplied files for a transformation.
     """
     res = self._getConnectionTransID( connection, transID )
     if not res['OK']:
       return res
+    if lfns is None:
+      lfns = []
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     # Be sure the all the supplied LFNs are known to the database for the supplied transformation
@@ -1404,7 +1364,7 @@ class TransformationDB( DB ):
       return res
     return self.__deleteTransformationTask( transID, taskID, connection = connection )
 
-  def __checkUpdate( self, table, param, paramValue, selectDict = {}, connection = False ):
+  def __checkUpdate( self, table, param, paramValue, selectDict = None, connection = False ):
     """ Check whether the update will perform an update """
     req = "UPDATE %s SET %s = '%s'" % ( table, param, paramValue )
     if selectDict:
@@ -1448,10 +1408,7 @@ class TransformationDB( DB ):
     successful = {}
     fileIDsValues = set( fileIDs.values() )
     for lfn in lfns:
-      if not lfn in fileIDsValues:
-        successful[lfn] = False
-      else:
-        successful[lfn] = True
+      successful[lfn] = ( lfn in fileIDsValues )
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
@@ -1459,22 +1416,20 @@ class TransformationDB( DB ):
     """  Add a new file to the TransformationDB together with its first replica.
          In the input dict, the only mandatory info are PFN and SE
     """
-    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts.keys() ) )
+    gLogger.info( "TransformationDB.addFile: Attempting to add %s files." % len( fileDicts ) )
     successful = {}
     failed = {}
     # Determine which files pass the filters and are to be added to transformations
     transFiles = {}
     filesToAdd = []
-    for lfn in fileDicts.keys():
+    for lfn in fileDicts:
       fileTrans = self.__filterFile( lfn )
       if not ( fileTrans or force ):
         successful[lfn] = True
       else:
         filesToAdd.append( lfn )
         for trans in fileTrans:
-          if not transFiles.has_key( trans ):
-            transFiles[trans] = []
-          transFiles[trans].append( lfn )
+          transFiles.setdefault( trans, [] ).append( lfn )
     # Add the files to the DataFiles and Replicas tables
     if filesToAdd:
       connection = self.__getConnection( connection )
@@ -1483,7 +1438,7 @@ class TransformationDB( DB ):
         return res
       lfnFileIDs = res['Value']
       for lfn in filesToAdd:
-        if lfnFileIDs.has_key( lfn ):
+        if lfn in lfnFileIDs:
           successful[lfn] = True
         else:
           failed[lfn] = True
@@ -1492,7 +1447,7 @@ class TransformationDB( DB ):
       for transID, lfns in transFiles.items():
         fileIDs = []
         for lfn in lfns:
-          if lfnFileIDs.has_key( lfn ):
+          if lfn in lfnFileIDs:
             fileIDs.append( lfnFileIDs[lfn] )
         if fileIDs:
           res = self.__addFilesToTransformation( transID, fileIDs, connection = connection )
@@ -1519,8 +1474,8 @@ class TransformationDB( DB ):
       return res
     fileIDs, lfnFilesIDs = res['Value']
     for lfn in lfns:
-      if not lfnFilesIDs.has_key( lfn ):
-        successful[lfn] = 'File did not exist'
+      if lfn not in lfnFilesIDs:
+        successful[lfn] = 'File does not exist'
     if fileIDs:
       res = self.__setTransformationFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
       if not res['OK']:
@@ -1528,8 +1483,8 @@ class TransformationDB( DB ):
       res = self.__setDataFileStatus( fileIDs.keys(), 'Deleted', connection = connection )
       if not res['OK']:
         return S_ERROR( "TransformationDB.removeFile: Failed to remove files." )
-    for lfn in lfnFilesIDs.keys():
-      if not failed.has_key( lfn ):
+    for lfn in lfnFilesIDs:
+      if lfn not in failed:
         successful[lfn] = True
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
@@ -1559,12 +1514,9 @@ class TransformationDB( DB ):
     gLogger.info( "TransformationDB.addDirectory: Obtained %s files in %s seconds." % ( path, time.time() - start ) )
     successful = []
     failed = []
-    for lfn in res['Value']['Successful'][path]["Files"].keys():
+    for lfn in res['Value']['Successful'][path]["Files"]:
       res = self.addFile( {lfn:{}}, force = force )
-      if not res['OK']:
-        failed.append( lfn )
-        continue
-      if not lfn in res['Value']['Successful']:
+      if not res['OK'] or lfn not in res['Value']['Successful']:
         failed.append( lfn )
       else:
         successful.append( lfn )

@@ -144,7 +144,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     """
 
     # create dictionary in case newLFNsStatus is a string - for backward compatibility
-    if type( dictOfNewFilesStatus ) == type( '' ):
+    if isinstance( dictOfNewFilesStatus, basestring ):
       dictOfNewFilesStatus = dict( [( lfn, dictOfNewFilesStatus ) for lfn in lfns ] )
       res = database.getTransformationFiles( {'TransformationID':transName, 'LFN': dictOfNewFilesStatus.keys()} )
       if not res['OK']:
@@ -625,8 +625,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
     nTrans = len( trList )
     resultDict['TotalRecords'] = nTrans
     # Create the ParameterNames entry
-    paramNames = res['ParameterNames']
-    resultDict['ParameterNames'] = paramNames
+    # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
+    resultDict['ParameterNames'] = list( res['ParameterNames'] )
     # Add the job states to the ParameterNames entry
     taskStateNames = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
                       'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
@@ -656,7 +656,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
                                                ['Problematic'] )
     # Add specific information for each selected transformation
     for trans in transList:
-      transDict = dict( zip( paramNames, trans ) )
+      transDict = dict( zip( resultDict['ParameterNames'], trans ) )
 
       # Update the status counters
       status = transDict['Status']
