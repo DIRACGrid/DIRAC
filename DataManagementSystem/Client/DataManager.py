@@ -868,6 +868,13 @@ class DataManager( object ):
         continue
 
       res = returnSingleResult( destStorageElement.putFile( {destPath:localFile} ) )
+
+      # Remove the local file whatever happened
+      try:
+        os.remove( localFile )
+      except OSError as e:
+        log.error( 'Error removing local file', '%s %s' % ( localFile, e ) )
+
       if not res['OK']:
         log.debug( 'Error putting file coming from %s' % candidateSE.name, res['Message'] )
         # if the put is the problem, it's maybe pointless to try the other candidateSEs...
