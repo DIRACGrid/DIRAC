@@ -1,3 +1,19 @@
+[v6r13p8]
+
+*Framework
+FIX: MonitoringUtilities - minor bug fix
+
+*DMS
+FIX: DataManager - remove local file when doing two hops transfer
+
+*WMS
+FIX: SandboxStoreClient - get the VO info from the delegatedGroup argument to 
+     use for the StorageElement instantiation
+
+*TMS
+CHANGE: Transformation(Client,DB,Manager) - multiple code clean-up without
+        changing the logic
+
 [v6r13p7]
 
 *Core
