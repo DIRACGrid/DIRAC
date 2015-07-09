@@ -64,7 +64,7 @@ class RemoveFile( DMSRequestOperationsBase ):
     waitingFiles = self.getWaitingFilesList()
     fc = FileCatalog( self.operation.catalogList )
 
-    res = fc.getReplicas( waitingFiles )
+    res = fc.getReplicas( [wf.LFN for wf in waitingFiles] )
     if not res['OK']:
       gMonitor.addMark( "RemoveFileAtt" )
       gMonitor.addMark( "RemoveFileFail" )

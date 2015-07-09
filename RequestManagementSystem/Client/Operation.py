@@ -228,7 +228,7 @@ class Operation( object ):
   @property
   def catalogList( self ):
     """ helper property returning catalogs as list """
-    return self._Catalog.split( "," ) if self._Catalog else ['']
+    return self._Catalog.split( "," ) if self._Catalog else []
 
   @property
   def Status( self ):
