@@ -21,6 +21,7 @@ from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getGroupOption
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
 
 
 import os
@@ -149,6 +150,16 @@ class GlobusComputingElement( ComputingElement ):
     result['SubmittedJobs'] = 0
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
+
+    ##getWaitingPilots
+    condDict = { 'DestinationSite': self.ceName,
+                 'Status': WAITING_PILOT_STATUS }
+    res = PilotAgentsDB().countPilots( condDict )
+    if res['OK']:
+      result[ 'WaitingJobs' ] = int( res['Value'] )
+    else:
+      self.log.warn( "Failure getting pilot count for %s: %s " % ( self.ceName, res['Message'] ) )
+
     return result
 
   def getJobStatus( self, jobIDList ):
