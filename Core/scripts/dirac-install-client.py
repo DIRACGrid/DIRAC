@@ -162,6 +162,6 @@ setup the client environment with the following command:
 
 > source %s/bashrc
 
-You can add this command to you .bash_profile script to execute automatically
+You can add this command to your .bash_profile script to execute automatically
 each time you log in.
 """ % clientDir
