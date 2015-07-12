@@ -3,7 +3,8 @@ import os
 import time
 import DIRAC
 import threading
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR, gMonitor
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import List, Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient

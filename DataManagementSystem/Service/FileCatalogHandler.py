@@ -17,7 +17,8 @@ import os
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 from DIRAC.Core.Utilities.List import sortList
 
