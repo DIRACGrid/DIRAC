@@ -41,7 +41,7 @@ CREATE  TABLE IF NOT EXISTS `Sites` (
 
 CREATE  TABLE IF NOT EXISTS `ClientIPs` (
   `ClientIPNumberID` INT NOT NULL AUTO_INCREMENT ,
-  `ClientIPNumberString` VARCHAR(15) NOT NULL DEFAULT '0.0.0.0' ,
+  `ClientIPNumberString` VARCHAR(45) NOT NULL DEFAULT '0.0.0.0' ,
   `ClientFQDN` VARCHAR(128) NOT NULL DEFAULT 'unknown' ,
   `SiteID` INT NOT NULL ,
   PRIMARY KEY (`ClientIPNumberID`, `SiteID`) ,
@@ -111,7 +111,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                             'Engine': 'InnoDB',
                             },
                 'ClientIPs':{ 'Fields': { 'ClientIPNumberID': 'INT NOT NULL AUTO_INCREMENT',
-                                          'ClientIPNumberString': "VARCHAR(15) NOT NULL DEFAULT '0.0.0.0'",
+                                          'ClientIPNumberString': "VARCHAR(45) NOT NULL DEFAULT '0.0.0.0'",
                                           'ClientFQDN': "VARCHAR(128) NOT NULL DEFAULT 'unknown'",
                                           'SiteID': 'INT NOT NULL' },
                               'PrimaryKey': [ 'ClientIPNumberID', 'SiteID' ],
