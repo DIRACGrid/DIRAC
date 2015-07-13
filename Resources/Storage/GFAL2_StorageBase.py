@@ -285,13 +285,11 @@ class GFAL2_StorageBase( StorageBase ):
 
     # file is local so we can set the protocol and determine source size accordingly
       else:
-        if not os.path.isabs( src_file ):
-          src_file = os.path.join( os.getcwd(), src_file )
         if not os.path.exists( src_file ) or not os.path.isfile( src_file ):
           errStr = "GFAL2_StorageBase.__putFile: The local source file does not exist or is a directory"
           self.log.error( errStr, src_file )
           return S_ERROR( errStr )
-        src_url = 'file://%s' % src_file
+        src_url = 'file:%s' % src_file
         sourceSize = getSize( src_file )
         if sourceSize == -1:
           errStr = "GFAL2_StorageBase.__putFile: Failed to get file size"
@@ -406,8 +404,6 @@ class GFAL2_StorageBase( StorageBase ):
     """
     self.log.info( "GFAL2_StorageBase.__getSingleFile: Trying to download %s to %s" % ( src_url, dest_file ) )
 
-    if not os.path.isabs( dest_file ):
-      dest_file = os.path.join( os.getcwd(), dest_file )
     if not os.path.exists( os.path.dirname( dest_file ) ):
       self.log.debug( "GFAL2_StorageBase.__getSingleFile: Local directory does not yet exist. Creating it", os.path.dirname( dest_file ) )
       try:
@@ -443,7 +439,7 @@ class GFAL2_StorageBase( StorageBase ):
     # Params set, copying file now
     try:
       # gfal2 needs a protocol to copy local which is 'file:'
-      dest = 'file://' + dest_file
+      dest = 'file:' + dest_file
       self.gfal2.filecopy( params, src_url, dest )
       if self.checksumType:
         # gfal2 did a checksum check, so we should be good
@@ -1343,8 +1339,7 @@ class GFAL2_StorageBase( StorageBase ):
       self.log.error( errStr, src_dir )
       return S_ERROR( errStr )
 
-    if not os.path.isabs( dest_dir ):
-      dest_dir = os.path.join( os.getcwd(), dest_dir )
+
     if not os.path.exists( dest_dir ):
       try:
         os.makedirs( dest_dir )
@@ -1456,8 +1451,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     filesPut = 0
     sizePut = 0
-    if not os.path.isabs( src_directory ):
-      src_directory = os.path.join( os.getcwd(), src_directory )
+
     if not os.path.isdir( src_directory ):
       errStr = 'GFAL2_StorageBase.__putSingleDirectory: The supplied source directory does not exist or is not a directory.'
       self.log.error( errStr, src_directory )
