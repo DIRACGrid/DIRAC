@@ -486,6 +486,11 @@ class ConfigureSite( CommandBase ):
     if os.environ.has_key( 'OSG_WN_TMP' ):
       self.pp.flavour = 'OSG'
 
+    #GLOBUS Computing Elements
+    if 'GLOBUS_GRAM_JOB_CONTACT' in os.environ:
+      self.pp.flavour = 'GLOBUS'
+      pilotRef = os.environ['GLOBUS_GRAM_JOB_CONTACT']
+
     self.__doOSG()
 
     # Direct SSH tunnel submission
