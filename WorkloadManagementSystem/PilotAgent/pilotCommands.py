@@ -491,8 +491,6 @@ class ConfigureSite( CommandBase ):
       self.pp.flavour = 'GLOBUS'
       pilotRef = os.environ['GLOBUS_GRAM_JOB_CONTACT']
 
-    self.__doOSG()
-
     # Direct SSH tunnel submission
     if os.environ.has_key( 'SSHCE_JOBID' ):
       self.pp.flavour = 'SSH'
@@ -557,40 +555,6 @@ class ConfigureSite( CommandBase ):
         self.pp.ceName = os.environ['CE_ID'].split( ':' )[0]
         if os.environ['CE_ID'].count( "/" ):
           self.pp.queueName = os.environ['CE_ID'].split( '/' )[1]
-
-
-
-  def __doOSG ( self ):
-    """ Treat the OSG case """
-
-    osgDir = ''
-    if self.pp.flavour == "OSG":
-      vo = self.pp.releaseProject.replace( 'DIRAC', '' ).upper()
-      if not vo:
-        vo = 'DIRAC'
-      osgDir = os.environ['OSG_WN_TMP']
-      # Make a separate directory per Project if it is defined
-      jobDir = os.path.basename( self.pp.pilotReference )
-      if not jobDir:  # just in case
-        import random
-        jobDir = str( random.randint( 1000, 10000 ) )
-      osgDir = os.path.join( osgDir, vo, jobDir )
-      if not os.path.isdir( osgDir ):
-        os.makedirs( osgDir )
-      os.chdir( osgDir )
-      try:
-        import shutil
-        shutil.copy( self.pp.installScript, os.path.join( osgDir, self.pp.installScriptName ) )
-      except Exception, x:
-        print sys.executable
-        print sys.version
-        print os.uname()
-        print x
-        raise x
-    if os.environ.has_key( 'OSG_APP' ):
-    # Try to define it here although this will be only in the local shell environment
-      os.environ['VO_%s_SW_DIR' % vo] = os.path.join( os.environ['OSG_APP'], vo )
-
 
 class ConfigureArchitecture( CommandBase ):
   """ This command simply calls dirac-platfom to determine the platform.
