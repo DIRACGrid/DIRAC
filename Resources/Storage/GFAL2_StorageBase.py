@@ -636,6 +636,10 @@ class GFAL2_StorageBase( StorageBase ):
       return res  # res is S_ERROR ( errStr )
 
     metaDict = res['Value']
+    # Add metadata expected in some places if not provided by itself
+    metaDict['Lost'] = metaDict.get( 'Lost', 0 )
+    metaDict['Cached'] = metaDict.get( 'Cached', 1 )
+    metaDict['Unavailable'] = metaDict.get('Unavailable', 0)
 
     if not metaDict['File']:
       errStr = "GFAL2_StorageBase.__getSingleFileMetadata: supplied path is not a file"
