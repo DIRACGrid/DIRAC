@@ -5,6 +5,7 @@ import os
 import stat
 import commands
 import sys
+import signal
 
 class CFG:
   """ DIRAC independent version of the CFG class to interpret cfg files
@@ -245,269 +246,278 @@ def getInstallationHelp():
 
   print "\nChoose one of the above installations"
 
+def handler( signum, frame ):
+  print '\nDIRAC client installation termination is forced, bye...'
+  sys.exit( -1 )
 
 ##############################################
 # Start the client installation
 ##############################################
 
-print """
-Welcome to the DIRAC client installer !
+if __name__ == "__main__":
 
-This tool will guide you through the installation process
-asking for the necessary details.
-"""
+  signal.signal( signal.SIGTERM, handler )
+  signal.signal( signal.SIGINT, handler )
 
-inp = raw_input( "Do you want to continue ? [default=yes] [yes|no]: ")
-inp = inp.strip()
-if not inp and inp.lower().startswith( 'n' ):
-  sys.exit()
 
-##############################################
-# 1. Determine the installation directory
-##############################################
+  print """
+  Welcome to the DIRAC client installer !
 
-cwdDir = os.getcwd()
-clientDir = cwdDir
-overWriteFlag = False
-doneFlag = False
-while not doneFlag:
-  inp = raw_input( "\nChoose the DIRAC client installation directory\n" \
-                   "[default=%s]: " % clientDir )
+  This tool will guide you through the installation process
+  asking for the necessary details.
+  """
 
+  inp = raw_input( "Do you want to continue ? [default=yes] [yes|no]: ")
   inp = inp.strip()
-  if inp and inp != clientDir:
-    clientDir = os.path.abspath( inp )
+  if inp and inp.lower().startswith( 'n' ):
+    sys.exit()
 
-    if not os.path.exists( clientDir ):
-      os.makedirs( clientDir )
+  ##############################################
+  # 1. Determine the installation directory
+  ##############################################
 
-    if os.path.exists( "%s/etc/dirac.cfg" % clientDir ):
-      inp = raw_input( "\nThe requested directory already contains the DIRAC client installation.\n" \
-                       "Do you want to overwrite it ? [default=yes] yes|no ")
-      inp = inp.strip()
-      if inp.lower().startswith( 'n' ):
-        inp = raw_input( "\nDo you want to choose another directory ? [default=no] yes|no " )
+  cwdDir = os.getcwd()
+  clientDir = cwdDir
+  overWriteFlag = False
+  doneFlag = False
+  while not doneFlag:
+    inp = raw_input( "\nChoose the DIRAC client installation directory\n" \
+                     "[default=%s]: " % clientDir )
+
+    inp = inp.strip()
+    if inp and inp != clientDir:
+      clientDir = os.path.abspath( inp )
+
+      if not os.path.exists( clientDir ):
+        os.makedirs( clientDir )
+
+      if os.path.exists( "%s/etc/dirac.cfg" % clientDir ):
+        inp = raw_input( "\nThe requested directory already contains the DIRAC client installation.\n" \
+                         "Do you want to overwrite it ? [default=yes] yes|no ")
         inp = inp.strip()
-        if inp.lower().startswith( 'y' ):
-          continue
-      else:
-        overWriteFlag = True
+        if inp.lower().startswith( 'n' ):
+          inp = raw_input( "\nDo you want to choose another directory ? [default=no] yes|no " )
+          inp = inp.strip()
+          if inp.lower().startswith( 'y' ):
+            continue
+        else:
+          overWriteFlag = True
 
-    os.chdir( clientDir )
-  doneFlag = True
+      os.chdir( clientDir )
+    doneFlag = True
 
-##############################################
-# 2. Install the DIRAC software
-##############################################
+  ##############################################
+  # 2. Install the DIRAC software
+  ##############################################
 
-doneFlag = False
-while not doneFlag:
-  inp = raw_input( "\nChoose which pre-configured service your client will be connected to\n" \
-                   "or choose to make a custom installation [default=custom, help=?] " )
+  doneFlag = False
+  while not doneFlag:
+    inp = raw_input( "\nChoose which pre-configured service your client will be connected to\n" \
+                     "or choose to make a custom installation [default=custom, help=?] " )
 
-  installConfig = "custom"
-  installDefaults = '-l DIRAC -r v6r13p8 -e COMDIRAC'
-  inp = inp.strip()
-  if inp == "?":
-    getInstallationHelp()
-    continue
-  if inp and inp != 'custom':
-    installConfig = inp
-    installDefaults = "-V %s" % installConfig
-  else:
-    inp = raw_input( '\nEnter the project name [default=DIRAC]: ' )
+    installConfig = "custom"
+    installDefaults = '-l DIRAC -r v6r13p8 -e COMDIRAC'
     inp = inp.strip()
-    if inp:
-      project = inp.strip()
-    else:
-      project = 'DIRAC'
-
-    inp = raw_input( '\nEnter the project version (e.g. v6r13p8): ' )
-    inp = inp.strip()
-    version = inp
-    if not version:
-      print "please, provide a valid version"
+    if inp == "?":
+      getInstallationHelp()
       continue
-
-    inp = raw_input( '\nEnter a comma separated list of extensions [default=no extensions] : ' )
-    inp = inp.strip()
-    extensions = [ e.strip() for e in inp.split( ',' ) ]
-    extensions = ','.join( extensions )
-
-    inp = raw_input( '\nEnter the lcg bindings version (e.g. 2015-06-26) [default=no bindings]: ' )
-    inp = inp.strip()
-    lcgVersion = inp
-
-    installDefaults = "-l %s -r %s " % ( project, version )
-    if extensions:
-      installDefaults += "-e %s " % extensions
-    if lcgVersion:
-      installDefaults += "-g %s " % lcgVersion
-
-  doneFlag = True
-
-print "\nInstalling DIRAC client software in %s ..." % clientDir
-
-installer = urllib2.urlopen( "https://raw.github.com/DIRACGrid/DIRAC/master/Core/scripts/dirac-install.py" )
-diracInstall = installer.read()
-installer.close()
-diracInstallScript = "%s/dirac-install" % clientDir
-with open( diracInstallScript, "w" ) as diracInstallFile:
-  diracInstallFile.write( diracInstall )
-
-os.chmod( diracInstallScript , stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-status, output = commands.getstatusoutput( "%s/dirac-install %s" % ( clientDir, installDefaults ) )
-if status != 0:
-  print "ERROR:", output
-  sys.exit( 1 )
-
-print "Done"
-
-bashrcScript = "%s/bashrc" % clientDir
-sys.path.append( clientDir )
-
-#############################################
-# 3. Checking/installing the user certificate
-#############################################
-
-globusDir = os.path.expandvars( "$HOME/.globus" )
-globusFiles = os.listdir( globusDir )
-
-if "usercert.pem" not in globusFiles or "userkey.pem" not in globusFiles:
-
-  input_message = """
-The user certificate is not installed.
-
-To install the certificate you will need a certificate file in .p12 format.
-You can obtain this file by exporting the certificate from your web browser.
-Note that you will not be able to complete the installation of the DIRAC
-client software without a properly installed certificate.
-
-Do you want to install the certificate now ? [default=yes] [yes|no]:
-"""
-
-  inp = raw_input( input_message )
-  if not inp or inp.lower().startswith( "y" ):
-    doneFlag = False
-    while not doneFlag:
-      inp = raw_input( "\nType the name of the certificate file in the .p12 format: " )
-      p12File = inp.strip()
-      p12File = os.path.expanduser( p12File )
-      p12File = os.path.expandvars( p12File )
-      if os.path.exists( p12File ):
-        print "\nInstalling user certificate from file:", p12File
-        status, output = commands.getstatusoutput( "source %s; dirac-cert-convert.sh %s" % ( bashrcScript, p12File) )
-        if status != 0:
-          print "ERROR:", output
-          sys.exit( 1 )
+    if inp and inp != 'custom':
+      installConfig = inp
+      installDefaults = "-V %s" % installConfig
+    else:
+      inp = raw_input( '\nEnter the project name [default=DIRAC]: ' )
+      inp = inp.strip()
+      if inp:
+        project = inp.strip()
       else:
-        print "The certificate file %s is not found. Please retry" % p12File
+        project = 'DIRAC'
+
+      inp = raw_input( '\nEnter the project version (e.g. v6r13p8): ' )
+      inp = inp.strip()
+      version = inp
+      if not version:
+        print "please, provide a valid version"
         continue
-      doneFlag = True
 
-#############################################
-# 4. Create first CS-less proxy
-#############################################
+      inp = raw_input( '\nEnter a comma separated list of extensions [default=no extensions] : ' )
+      inp = inp.strip()
+      extensions = [ e.strip() for e in inp.split( ',' ) ]
+      extensions = ','.join( extensions )
 
-print "\nIn order to proceed with the installation you will have to create a temporary\n" \
-      "certificate proxy. You will be prompted to give the certificate pass phrase.\n"
+      inp = raw_input( '\nEnter the lcg bindings version (e.g. 2015-06-26) [default=no bindings]: ' )
+      inp = inp.strip()
+      lcgVersion = inp
 
-status, output = commands.getstatusoutput( "source %s; dirac-proxy-init -x" % bashrcScript )
-if status != 0:
-  print "ERROR:", output
-  sys.exit( 1 )
+      installDefaults = "-l %s -r %s " % ( project, version )
+      if extensions:
+        installDefaults += "-e %s " % extensions
+      if lcgVersion:
+        installDefaults += "-g %s " % lcgVersion
 
-#############################################
-# 5. Configuring the client
-#############################################
+    doneFlag = True
 
-configOptions = ''
-if overWriteFlag:
-  configOptions = '-F '
-  os.rename( "%s/etc/dirac.cfg" % clientDir, "%s/etc/dirac.cfg.bak" % clientDir )
+  print "\nInstalling DIRAC client software in %s ..." % clientDir
 
-if installConfig == "custom":
+  installer = urllib2.urlopen( "https://raw.github.com/DIRACGrid/DIRAC/master/Core/scripts/dirac-install.py" )
+  diracInstall = installer.read()
+  installer.close()
+  diracInstallScript = "%s/dirac-install" % clientDir
+  with open( diracInstallScript, "w" ) as diracInstallFile:
+    diracInstallFile.write( diracInstall )
 
-  print "\nYou have chosen to make a custom installation. You will be prompted to provide\n" \
-        "several configuration details"
-
-  csURL = ''
-  setup = ''
-  extensions = []
-
-  inp = raw_input( '\nEnter the Configuration Server: ' )
-  csURL = inp.strip()
-  if not csURL.endswith( "Configuration/Server" ):
-    csURL = "dips://%s:9135/Configuration/Server" % csURL
-
-  inp = raw_input( '\nEnter the DIRAC Setup: ' )
-  setup = inp.strip()
-
-  inp = raw_input( "\nSkip CA checks [default=yes] yes|no : " )
-  inp = inp.strip()
-  if inp and inp.lower().startswith( 'n' ):
-    configOptions += "-H "
-
-  inp = raw_input( "\nSkip CA download [default=yes] yes|no : " )
-  inp = inp.strip()
-  if inp and inp.lower().startswith( 'n' ):
-    configOptions += "-D "
-
-  inp = raw_input( "\nSkip VOMS download [default=yes] yes|no : " )
-  inp = inp.strip()
-  if inp and inp.lower().startswith( 'n' ):
-    configOptions += "-M "
-
-  print "\nConfiguring the DIRAC client as a custom installation ..."
-  status, output = commands.getstatusoutput( "source %s; dirac-configure %s -C %s -S %s" % ( bashrcScript, configOptions, csURL, setup) )
+  os.chmod( diracInstallScript , stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
+  status, output = commands.getstatusoutput( "%s/dirac-install %s" % ( clientDir, installDefaults ) )
   if status != 0:
     print "ERROR:", output
     sys.exit( 1 )
 
-else:
-  print "\nConfiguring the DIRAC client as %s installation ..." % installConfig
-  status, output = commands.getstatusoutput( "source %s; dirac-configure %s defaults-%s.cfg" % ( bashrcScript, configOptions, installConfig) )
+  print "Done"
+
+  bashrcScript = "%s/bashrc" % clientDir
+  sys.path.append( clientDir )
+
+  #############################################
+  # 3. Checking/installing the user certificate
+  #############################################
+
+  globusDir = os.path.expandvars( "$HOME/.globus" )
+  globusFiles = os.listdir( globusDir )
+
+  if "usercert.pem" not in globusFiles or "userkey.pem" not in globusFiles:
+
+    input_message = """
+  The user certificate is not installed.
+
+  To install the certificate you will need a certificate file in .p12 format.
+  You can obtain this file by exporting the certificate from your web browser.
+  Note that you will not be able to complete the installation of the DIRAC
+  client software without a properly installed certificate.
+
+  Do you want to install the certificate now ? [default=yes] [yes|no]:
+  """
+
+    inp = raw_input( input_message )
+    if not inp or inp.lower().startswith( "y" ):
+      doneFlag = False
+      while not doneFlag:
+        inp = raw_input( "\nType the name of the certificate file in the .p12 format: " )
+        p12File = inp.strip()
+        p12File = os.path.expanduser( p12File )
+        p12File = os.path.expandvars( p12File )
+        if os.path.exists( p12File ):
+          print "\nInstalling user certificate from file:", p12File
+          status, output = commands.getstatusoutput( "source %s; dirac-cert-convert.sh %s" % ( bashrcScript, p12File) )
+          if status != 0:
+            print "ERROR:", output
+            sys.exit( 1 )
+        else:
+          print "The certificate file %s is not found. Please retry" % p12File
+          continue
+        doneFlag = True
+
+  #############################################
+  # 4. Create first CS-less proxy
+  #############################################
+
+  print "\nIn order to proceed with the installation you will have to create a temporary\n" \
+        "certificate proxy. You will be prompted to give the certificate pass phrase.\n"
+
+  status, output = commands.getstatusoutput( "source %s; dirac-proxy-init -x" % bashrcScript )
   if status != 0:
     print "ERROR:", output
     sys.exit( 1 )
 
-#############################################
-# 6. Working proxy initialization
-#############################################
+  #############################################
+  # 5. Configuring the client
+  #############################################
 
-print "\nThe DIRAC client is installed and configured. In order to start working with it\n" \
-      "you have to create a working proxy."
-inp = raw_input( "Choose your DIRAC group [default=default DIRAC group] : " )
-inp = inp.strip()
-groupInput = ''
-if inp:
-  groupInput = "-g %s" % inp
+  configOptions = ''
+  if overWriteFlag:
+    configOptions = '-F '
+    os.rename( "%s/etc/dirac.cfg" % clientDir, "%s/etc/dirac.cfg.bak" % clientDir )
 
-status, output = commands.getstatusoutput( "source %s; dirac-proxy-init %s" % ( bashrcScript, groupInput) )
-if status != 0:
-  print "ERROR:", output
-  sys.exit( 1 )
-else:
-  print output
+  if installConfig == "custom":
 
-#############################################
-# 7. Finalization
-#############################################
+    print "\nYou have chosen to make a custom installation. You will be prompted to provide\n" \
+          "several configuration details"
 
-print "\nThe DIRAC client is installed with the following parameters:\n"
+    csURL = ''
+    setup = ''
+    extensions = []
 
-status, output = commands.getstatusoutput( "source %s; dirac-info" % bashrcScript )
-if status != 0:
-  print "ERROR:", output
-else:
-  print output
+    inp = raw_input( '\nEnter the Configuration Server: ' )
+    csURL = inp.strip()
+    if not csURL.endswith( "Configuration/Server" ):
+      csURL = "dips://%s:9135/Configuration/Server" % csURL
 
-print """
-The DIRAC client installation is now completed. To start using it you will have to
-setup the client environment with the following command:
+    inp = raw_input( '\nEnter the DIRAC Setup: ' )
+    setup = inp.strip()
 
-> source %s/bashrc
+    inp = raw_input( "\nSkip CA checks [default=yes] yes|no : " )
+    inp = inp.strip()
+    if inp and inp.lower().startswith( 'n' ):
+      configOptions += "-H "
 
-You can add this command to your .bash_profile script to execute automatically
-each time you log in.
-""" % clientDir
+    inp = raw_input( "\nSkip CA download [default=yes] yes|no : " )
+    inp = inp.strip()
+    if inp and inp.lower().startswith( 'n' ):
+      configOptions += "-D "
+
+    inp = raw_input( "\nSkip VOMS download [default=yes] yes|no : " )
+    inp = inp.strip()
+    if inp and inp.lower().startswith( 'n' ):
+      configOptions += "-M "
+
+    print "\nConfiguring the DIRAC client as a custom installation ..."
+    status, output = commands.getstatusoutput( "source %s; dirac-configure %s -C %s -S %s" % ( bashrcScript, configOptions, csURL, setup) )
+    if status != 0:
+      print "ERROR:", output
+      sys.exit( 1 )
+
+  else:
+    print "\nConfiguring the DIRAC client as %s installation ..." % installConfig
+    status, output = commands.getstatusoutput( "source %s; dirac-configure %s defaults-%s.cfg" % ( bashrcScript, configOptions, installConfig) )
+    if status != 0:
+      print "ERROR:", output
+      sys.exit( 1 )
+
+  #############################################
+  # 6. Working proxy initialization
+  #############################################
+
+  print "\nThe DIRAC client is installed and configured. In order to start working with it\n" \
+        "you have to create a working proxy."
+  inp = raw_input( "Choose your DIRAC group [default=default DIRAC group] : " )
+  inp = inp.strip()
+  groupInput = ''
+  if inp:
+    groupInput = "-g %s" % inp
+
+  status, output = commands.getstatusoutput( "source %s; dirac-proxy-init %s" % ( bashrcScript, groupInput) )
+  if status != 0:
+    print "ERROR:", output
+    sys.exit( 1 )
+  else:
+    print output
+
+  #############################################
+  # 7. Finalization
+  #############################################
+
+  print "\nThe DIRAC client is installed with the following parameters:\n"
+
+  status, output = commands.getstatusoutput( "source %s; dirac-info" % bashrcScript )
+  if status != 0:
+    print "ERROR:", output
+  else:
+    print output
+
+  print """
+  The DIRAC client installation is now completed. To start using it you will have to
+  setup the client environment with the following command:
+
+  > source %s/bashrc
+
+  You can add this command to your .bash_profile script to execute automatically
+  each time you log in.
+  """ % clientDir
