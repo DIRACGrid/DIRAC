@@ -40,8 +40,8 @@ class Extensions( object ):
       exts = gConfig.getValue( '/DIRAC/Extensions', [] )
       for iP in range( len( exts ) ):
         ext = exts[ iP ]
-        if ext.find( "DIRAC" ) == len( ext ) - 5:
-          ext = ext[:5]
+        if ext.endswith( "DIRAC" ):
+          ext = ext[:-5]
           exts[ iP ] = ext
       self.__csExt = exts
     return self.__csExt
