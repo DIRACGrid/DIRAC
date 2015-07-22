@@ -1,4 +1,4 @@
-[v6r14-pre5]
+[v6r14-pre6]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
@@ -7,6 +7,10 @@ NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
 NEW: LocalConfiguration - option to print out license information    
 FIX: SocketInfo.py - check the CRL lists while handshaking  
+
+*Framework
+NEW: InstalledComponentsDB will now store information about the user who did the 
+     installation/uninstallation of components.
 
 *Resources
 NEW: ARCComputingElement based on the ARC python API
