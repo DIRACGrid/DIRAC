@@ -21,6 +21,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
   import ComponentMonitoringClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 global excludedHosts
 excludedHosts = []
@@ -49,6 +50,15 @@ mySetup = gConfig.getValue( 'DIRAC/Setup' )
 # Retrieve information from all the hosts
 client = SystemAdministratorIntegrator( exclude = excludedHosts )
 resultAll = client.getOverallStatus()
+
+# Retrieve user installing the component
+result = getProxyInfo()
+if result[ 'OK' ]:
+  user = result[ 'Value' ][ 'username' ]
+else:
+  return result
+if not user:
+  user = 'unknown'
 
 notificationClient = NotificationClient()
 for host in resultAll[ 'Value' ]:
@@ -144,6 +154,7 @@ for host in finalSet:
             record[ 'Host' ][ 'CPU' ] = cpu
             record[ 'Installation' ][ 'Instance' ] = component
             record[ 'Installation' ][ 'InstallationTime' ] = datetime.utcnow()
+            record[ 'Installation' ][ 'InstalledBy' ] = user
             records.append( record )
 
   # Databases
@@ -172,6 +183,7 @@ for host in finalSet:
           record[ 'Host' ][ 'CPU' ] = cpu
           record[ 'Installation' ][ 'Instance' ] = db
           record[ 'Installation' ][ 'InstallationTime' ] = datetime.utcnow()
+          record[ 'Installation' ][ 'InstalledBy' ] = user
           records.append( record )
 
 monitoringClient = ComponentMonitoringClient()
