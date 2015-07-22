@@ -1,7 +1,24 @@
+[v6r12p46]
+
+*Core
+FIX: GraphData - check for missing keys in parsed_data in initialize()
+
+*WMS
+CHANGE: PilotStatusAgent - kill pilots being deleted; do not delete pilots still
+        running jobs
+  
+*RSS
+CHANGE: Instantiate RequestManagementDB/Client taking into account possible extensions        
+
+*Resources
+FIX: GlobusComputingElement - evaluate WaitingJobs in getCEStatus()
+FIX: SRM2Storage - error 16 of exists call is interpreted as existing file
+FIX: XROOTStorage - added Lost, Cached, Unavailable in the output of getSingleMetadata()
+
 [v6r12p45]
 
 *Resources
-FIX: SRM2Storage - error 22 of exists call is intepreted as exisiting file
+FIX: SRM2Storage - error 22 of exists call is interpreted as existing file
      ( backport from v6r13 )
 
 [v6r12p44]
