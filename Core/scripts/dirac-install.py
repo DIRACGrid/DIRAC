@@ -5,7 +5,7 @@ The main DIRAC installer script
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil
+import sys, os, getopt, urllib2, imp, signal, re, time, stat, types, shutil
 
 try:
   import zipfile
@@ -843,11 +843,17 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
   tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )
   tarPath = os.path.join( cliParams.targetPath, tarName )
   tarFileURL = "%s/%s" % ( tarsURL, tarName )
+  tarFileCVMFS = "/cvmfs/dirac.egi.eu/installSource/%s" % tarName
   cacheDir = os.path.join( cliParams.basePath, ".installCache" )
   tarCachePath = os.path.join( cacheDir, tarName )
   if cache and os.path.isfile( tarCachePath ):
     logNOTICE( "Using cached copy of %s" % tarName )
     shutil.copy( tarCachePath, tarPath )
+  elif os.path.exists( tarFileCVMFS ):
+    logNOTICE( "Using CVMFS copy of %s" % tarName )
+    tarPath = tarFileCVMFS
+    checkHash = False
+    cache = False
   else:
     logNOTICE( "Retrieving %s" % tarFileURL )
     try:
@@ -912,7 +918,8 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
       os.makedirs( cacheDir )
     os.rename( tarPath, tarCachePath )
   else:
-    os.unlink( tarPath )
+    if tarPath != tarFileCVMFS:
+      os.unlink( tarPath )
 
   postInstallScript = os.path.join( cliParams.targetPath, pkgName, 'dirac-postInstall.py' )
   if os.path.isfile( postInstallScript ):
