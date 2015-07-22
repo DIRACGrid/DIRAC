@@ -270,7 +270,7 @@ class PilotStatusAgent( AgentModule ):
     pilotsDict = result['Value']
 
     for pRef in pilotsDict:
-      if pilotsDict[pRef].has_key('Jobs') and len(pilotsDict[pRef]['Jobs']) > 0 and self._CheckJobLastUpdateTime(pilotsDict[pRef]['Jobs'],self.pilotStalledDays):
+      if pilotsDict[pRef].has_key('Jobs') and len(pilotsDict[pRef]['Jobs']) > 0 and self._checkJobLastUpdateTime(pilotsDict[pRef]['Jobs'],self.pilotStalledDays):
         self.log.debug('%s should not be deleted since one job of %s is running.' % ( str(pRef) , str(pilotsDict[pRef]['Jobs']) ) )
         continue
       deletedJobDict = pilotsDict[pRef]
@@ -528,7 +528,7 @@ class PilotStatusAgent( AgentModule ):
       else:
         self.log.error("Failed to get info. of %s : %s" % ( i, str(result)))
 
-  def _CheckJobLastUpdateTime( self, joblist , StalledDays ):
+  def _checkJobLastUpdateTime( self, joblist , StalledDays ):
     timeLimitToConsider = Time.dateTime() - Time.day * StalledDays 
     ret = False
     for JobID in joblist:
