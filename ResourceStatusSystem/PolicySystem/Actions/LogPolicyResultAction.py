@@ -4,8 +4,9 @@
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
+from DIRAC.ResourceStatusSystem.Utilities                       import Utils
+ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 __RCSID__ = '$Id:  $'
 

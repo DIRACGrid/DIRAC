@@ -12,9 +12,10 @@ __RCSID__ = '$Id:  $'
 
 from DIRAC                                                 import gLogger, S_OK
 from DIRAC.ResourceStatusSystem.Client                     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client                     import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities                  import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
+from DIRAC.ResourceStatusSystem.Utilities                  import Utils
+ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 class Synchronizer( object ):
   '''
@@ -31,7 +32,7 @@ class Synchronizer( object ):
     if rStatus is None:
       self.rStatus     = ResourceStatusClient.ResourceStatusClient()
     if rManagement is None:   
-      self.rManagement = ResourceManagementClient.ResourceManagementClient()
+      self.rManagement = ResourceManagementClient()
       
     self.rssConfig = RssConfiguration()  
   
