@@ -29,15 +29,11 @@ class InputDataByProtocol( object ):
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
-    self.storageElements = {}
     # This is because  replicas contain SEs and metadata keys!
     # FIXME: the structure of the dictionary must be fixed to avoid this mess
     self.metaKeys = set( ['ChecksumType', 'Checksum', 'NumberOfLinks', 'Mode', 'GUID',
                           'Status', 'ModificationDate', 'CreationDate', 'Size',
                           'Owner', 'OwnerGroup', 'GID', 'UID', 'FileID'] )
-
-  def __storageElement( self, seName ):
-    return self.storageElements.setdefault( seName, StorageElement( seName ) )
 
   #############################################################################
   def execute( self, dataToResolve = None ):
@@ -107,7 +103,7 @@ class InputDataByProtocol( object ):
       return S_OK( {'Successful': {}, 'Failed': []} )
 
     for localSE in seList:
-      seStatus = self.__storageElement( localSE ).getStatus()['Value']
+      seStatus = StorageElement( localSE ).getStatus()['Value']
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( localSE )
       elif seStatus['Read'] and seStatus['TapeSE']:
@@ -166,7 +162,7 @@ class InputDataByProtocol( object ):
       if not lfns:
         continue
       failedReps = set()
-      result = self.__storageElement( seName ).getFileMetadata( lfns )
+      result = StorageElement( seName ).getFileMetadata( lfns )
       if not result['OK']:
         self.log.error( "Error getting metadata.", result['Message'] + ':\n%s' % '\n'.join( lfns ) )
         # If we can not get MetaData, most likely there is a problem with the SE
@@ -205,7 +201,7 @@ class InputDataByProtocol( object ):
       else:
         self.log.warn( "Errors during preliminary checks for %d files" % len( failedReps ) )
 
-      result = self.__storageElement( seName ).getURL( lfns, protocol = requestedProtocol )
+      result = StorageElement( seName ).getURL( lfns, protocol = requestedProtocol )
       if not result['OK']:
         self.log.error( "Error getting TURLs", result['Message'] )
         return result

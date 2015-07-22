@@ -32,6 +32,9 @@ from DIRAC.Core.Utilities                      import Time
 from DIRAC.Core.Utilities.PrettyPrint          import printTable 
 import re
 import datetime
+from DIRAC.ResourceStatusSystem.Utilities      import Utils
+ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
+
 
 __RCSID__ = '$Id:$'
 
@@ -244,7 +247,7 @@ def select( switchDict ):
     that gets from DowntimeCache all rows that match the parameters given.
   '''
 
-  rmsClient = ResourceManagementClient.ResourceManagementClient()
+  rmsClient = ResourceManagementClient()
 
   meta = { 'columns' : [ 'downtimeID', 'element', 'name', 'startDate', 'endDate',
                          'severity', 'description', 'link', 'dateEffective' ] }
@@ -280,7 +283,7 @@ def add( switchDict ):
     that inserts or updates-if-duplicated from DowntimeCache.
   '''
 
-  rmsClient = ResourceManagementClient.ResourceManagementClient()
+  rmsClient = ResourceManagementClient()
 
   result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.addOrModifyDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],
@@ -307,7 +310,7 @@ def delete( switchDict ):
     that deletes from DowntimeCache all rows that match the parameters given.
   '''
 
-  rmsClient = ResourceManagementClient.ResourceManagementClient()
+  rmsClient = ResourceManagementClient()
 
   result = { 'output': None, 'successful': None, 'message': None, 'match': None }
   output = rmsClient.deleteDowntimeCache( downtimeID = switchDict[ 'downtimeID' ],

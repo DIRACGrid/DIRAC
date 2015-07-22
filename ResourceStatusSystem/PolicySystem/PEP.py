@@ -13,9 +13,9 @@
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
 from DIRAC.ResourceStatusSystem.Utilities                       import Utils
+ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
 __RCSID__  = '$Id: $'
 

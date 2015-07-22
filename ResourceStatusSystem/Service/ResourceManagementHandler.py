@@ -7,8 +7,8 @@
 
 from DIRAC                                              import gConfig, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities               import Synchronizer
+from DIRAC.ResourceStatusSystem.Utilities               import Synchronizer, Utils
+ResourceManagementDB = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceManagementDB' ),'ResourceManagementDB')
 
 __RCSID__ = '$Id: $'
 db        = False
