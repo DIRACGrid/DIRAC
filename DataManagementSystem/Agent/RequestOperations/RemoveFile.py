@@ -64,7 +64,7 @@ class RemoveFile( DMSRequestOperationsBase ):
     waitingFiles = self.getWaitingFilesList()
     fc = FileCatalog( self.operation.catalogList )
 
-    res = fc.getReplicas( waitingFiles )
+    res = fc.getReplicas( [wf.LFN for wf in waitingFiles] )
     if not res['OK']:
       gMonitor.addMark( "RemoveFileAtt" )
       gMonitor.addMark( "RemoveFileFail" )
@@ -74,14 +74,16 @@ class RemoveFile( DMSRequestOperationsBase ):
     # No idea what to do with the others...
     succ = res['Value']['Successful']
     targetSEs = set( [se for lfn in succ for se in succ[lfn] ] )
-    bannedTargets = self.checkSEsRSS( targetSEs, access = 'RemoveAccess' )
-    if not bannedTargets['OK']:
-      gMonitor.addMark( "RemoveFileAtt" )
-      gMonitor.addMark( "RemoveFileFail" )
-      return bannedTargets
 
-    if bannedTargets['Value']:
-      return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
+    if targetSEs:
+      bannedTargets = self.checkSEsRSS( targetSEs, access = 'RemoveAccess' )
+      if not bannedTargets['OK']:
+        gMonitor.addMark( "RemoveFileAtt" )
+        gMonitor.addMark( "RemoveFileFail" )
+        return bannedTargets
+
+      if bannedTargets['Value']:
+        return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
 
     # # prepare waiting file dict
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )

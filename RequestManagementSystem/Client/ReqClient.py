@@ -512,7 +512,7 @@ def printOperation( indexOperation, verbose = True, onlyFailed = False ):
 def printFile( indexFile ):
   j, f = indexFile
   gLogger.always( "    [%02d] ID=%s LFN='%s' Status='%s'%s%s%s" % ( j + 1, f.FileID if hasattr( f, 'FileID' ) else '(not set yet)', f.LFN, f.Status,
-                                                                    ( " Checksum='%s'" % f.Checksum ) if f.Checksum or 'checksum' in f.Error.lower() else "",
+                                                                    ( " Checksum='%s'" % f.Checksum ) if f.Checksum or ( f.Error and 'checksum' in f.Error.lower() ) else "",
                                                                     ( " Error='%s'" % f.Error ) if f.Error and f.Error.strip() else "",
                                                                     ( " Attempts=%d" % f.Attempt ) if f.Attempt > 1 else ""
                                                                     )

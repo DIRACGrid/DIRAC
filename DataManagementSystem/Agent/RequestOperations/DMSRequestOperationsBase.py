@@ -75,7 +75,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
       # If it is temporary, we wait an hour
       else:
         self.log.info( "Banning is temporary, next attempt in an hour" )
-        self.operation.Error( "%s currently banned" % bannedSEs )
+        self.operation.Error = "%s currently banned" % bannedSEs
         self.request.delayNextExecution( 60 )
 
 
