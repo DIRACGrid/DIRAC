@@ -400,9 +400,9 @@ class PlotData:
     else:
       self.keys = self.sortKeys()
 
-    self.values = [ self.parsed_data[k] for k in self.keys ]
-    self.errors = [ self.parsed_errors[k] for k in self.keys ]
-    values_to_sum = [ self.parsed_data[k] for k in self.keys if k != '' ]
+    self.values = [ self.parsed_data.get(k, 0.0) for k in self.keys ]
+    self.errors = [ self.parsed_errors.get(k, 0.0) for k in self.keys ]
+    values_to_sum = [ self.parsed_data.get(k, 0.0) for k in self.keys if k != '' ]
 
     self.real_values = []
     for k in self.keys:
