@@ -19,6 +19,8 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 import re, time
 
@@ -50,6 +52,8 @@ class PilotStatusAgent( AgentModule ):
     self.am_setOption( 'GridEnv', '' )
     self.am_setOption( 'PilotStalledDays', 3 )
     self.pilotDB = PilotAgentsDB()
+    self.diracadmin = DiracAdmin()
+    self.jobDB = JobDB()
     return S_OK()
 
   #############################################################################
@@ -266,15 +270,21 @@ class PilotStatusAgent( AgentModule ):
     pilotsDict = result['Value']
 
     for pRef in pilotsDict:
+      if pilotsDict[pRef].has_key('Jobs') and len(pilotsDict[pRef]['Jobs']) > 0 and self._CheckJobLastUpdateTime(pilotsDict[pRef]['Jobs'],self.pilotStalledDays):
+        self.log.debug('%s should not be deleted since one job of %s is running.' % ( str(pRef) , str(pilotsDict[pRef]['Jobs']) ) )
+        continue
       deletedJobDict = pilotsDict[pRef]
       deletedJobDict['Status'] = 'Deleted'
       deletedJobDict['StatusDate'] = Time.dateTime()
       pilotsToAccount[ pRef ] = deletedJobDict
       if len( pilotsToAccount ) > 100:
         self.accountPilots( pilotsToAccount, connection )
+        self._killPilots( pilotsToAccount )
         pilotsToAccount = {}
 
     self.accountPilots( pilotsToAccount, connection )
+    self._killPilots( pilotsToAccount )
+
 
     return S_OK()
 
@@ -505,3 +515,32 @@ class PilotStatusAgent( AgentModule ):
       if not retVal[ 'OK' ]:
         return retVal
     return S_OK()
+
+  def _killPilots( self, acc ):
+    for i in sorted(acc.keys()):
+      result = self.diracadmin.getPilotInfo( i )
+      if result['OK'] and result['Value'].has_key(i) and result['Value'][i].has_key('Status'):
+        ret = self.diracadmin.killPilot( str(i) )
+        if ret['OK']:
+          self.log.info("Sucsessfully deleted: %s (Status : %s)" % (i, result['Value'][i]['Status'] ) )
+        else:
+          self.log.error("Filed to delete %s : %s"  % ( i, ret['Message']))
+      else:
+        self.log.error("Failed to get info. of %s : %s" % ( i, str(result)))
+
+  def _CheckJobLastUpdateTime( self, joblist , StalledDays ):
+    timeLimitToConsider = Time.dateTime() - Time.day * StalledDays 
+    ret = False
+    for JobID in joblist:
+      result = self.jobDB.getJobAttributes(int(JobID))
+      if result['OK']:
+         if result['Value'].has_key('LastUpdateTime'):
+           LastUpdateTime = result['Value']['LastUpdateTime']
+           if Time.fromString(LastUpdateTime) > timeLimitToConsider:
+             ret = True
+             self.log.debug('Since '+str(JobID)+' updates LastUpdateTime on '+str(LastUpdateTime)+', this does not to need to be deleted.')
+             break
+      else:
+        self.log.error("Error taking job info. from DB:%s" % str( result['Message'] ) )
+    return ret
+
