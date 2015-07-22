@@ -624,7 +624,10 @@ class XROOTStorage( StorageBase ):
     if status.ok:
       # Transform the api output into a dictionary
       metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
-
+      # Add metadata expected in some places but not provided by itself
+      metadataDict['Lost'] = 0
+      metadataDict['Cached'] = 1
+      metadataDict['Unavailable'] = 0
       # If we expect a given type, we return a boolean
       if expectedType:
         isExpectedType = metadataDict[expectedType]
