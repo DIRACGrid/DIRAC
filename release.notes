@@ -1,3 +1,23 @@
+[v6r13p9]
+
+*Framework
+FIX: SystemLoggingDB - schema change for ClientIPs table to store IPv6 addresses
+
+*DMS
+BUGFIX: DMSRequestOperationsBase - bug fix in checkSEsRSS()
+FIX: RemoveFile - in __cal__(): bug fix; fix in the BannedSE treatment logic
+
+*RMS
+BUGFIX: Operation - in catalogList()
+BUGFIX: ReqClient - in printOperation()
+
+*Resources
+FIX: GFAL2_StorageBase - added Lost, Cached, Unavailable in getSingleFileMetadata() output
+BUGFIX: GFAL2_StorageBase - fixed URL construction in put(get)SingleFile() methods
+
+*WMS
+FIX: InputDataByProtocol - removed StorageElement object caching
+
 [v6r13p8]
 
 *Framework
