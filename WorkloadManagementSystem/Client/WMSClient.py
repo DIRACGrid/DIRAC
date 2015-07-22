@@ -22,7 +22,7 @@ class WMSClient( object ):
 
         Here we also initialize the needed clients and connections
     """
-    
+
     self.useCertificates = useCertificates
     self.timeout = timeout
     self.jobManager = jobManagerClient
@@ -72,9 +72,13 @@ class WMSClient( object ):
     if not realFiles:
       return S_OK()
 
+    stringIOFiles = []
+    stringIOFilesSize = 0
     if jobDescriptionObject is not None:
       if isinstance( jobDescriptionObject, StringIO.StringIO ):
-        stringIOFiles = [isFile]
+        stringIOFiles = [jobDescriptionObject]
+        stringIOFilesSize = len( jobDescriptionObject.buf )
+        gLogger.debug( "Size of the stringIOFiles: " + str( stringIOFilesSize ) )
       else:
         return S_ERROR( "jobDescriptionObject is not a StringIO object" )
 
@@ -86,10 +90,8 @@ class WMSClient( object ):
         continue
       diskFiles.append( isFile )
 
-    stringIOFilesSize = len( jobDescriptionObject.buf )
-    gLogger.debug( "Size of the stringIOFiles: " + str( stringIOFilesSize ) )
     diskFilesSize = File.getGlobbedTotalSize( diskFiles )
-    gLogger.debug( "Size of the diskFiles: " + str( stringIOFilesSize ) )
+    gLogger.debug( "Size of the diskFiles: " + str( diskFilesSize ) )
     totalSize = diskFilesSize + stringIOFilesSize
     gLogger.verbose( "Total size of the inputSandbox: " + str( totalSize ) )
 
@@ -163,7 +165,7 @@ class WMSClient( object ):
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
                                     useCertificates = self.useCertificates,
-                                    timeout = self.timeout )    
+                                    timeout = self.timeout )
     return self.jobManager.deleteJob( jobID )
 
   def rescheduleJob( self, jobID ):
@@ -173,7 +175,7 @@ class WMSClient( object ):
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
                                     useCertificates = self.useCertificates,
-                                    timeout = self.timeout )    
+                                    timeout = self.timeout )
     return self.jobManager.rescheduleJob( jobID )
 
   def resetJob( self, jobID ):
@@ -183,5 +185,5 @@ class WMSClient( object ):
     if not self.jobManager:
       self.jobManager = RPCClient( 'WorkloadManagement/JobManager',
                                     useCertificates = self.useCertificates,
-                                    timeout = self.timeout )    
+                                    timeout = self.timeout )
     return self.jobManager.resetJob( jobID )
