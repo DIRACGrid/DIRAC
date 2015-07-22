@@ -45,7 +45,7 @@ FIX: SystemLoggingDB - schema change for ClientIPs table to store IPv6 addresses
 
 *DMS
 BUGFIX: DMSRequestOperationsBase - bug fix in checkSEsRSS()
-FIX: RemoveFile - in __cal__(): bug fix; fix in the BannedSE treatment logic
+FIX: RemoveFile - in __call__(): bug fix; fix in the BannedSE treatment logic
 
 *RMS
 BUGFIX: Operation - in catalogList()
