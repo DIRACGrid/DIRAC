@@ -258,8 +258,8 @@ class InfoGetter:
       if policyMatch and policyFilter:
         policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
         
-    policiesToBeLoaded = []    
-    
+    policiesToBeLoaded = []   
+        
     # Gets policies parameters from code.    
     for policyName, policyType, _policyConfigParams in policiesThatApply:
       
@@ -282,10 +282,13 @@ class InfoGetter:
       # FIXME: watch out, args can be None !
       #policyDict[ 'args' ].update( policyConfigParams )
       
-      policiesToBeLoaded.append( policyDict )
-      policiesToBeLoaded = self.__filterPolicies(policiesToBeLoaded, decissionParams)
+      #we also check if the policy meets also additional conditions
+      if self.__checkPolicies(policyDict, decissionParams):
+        policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
+  
+  
 
   @staticmethod
   def __getPolicyActionsThatApply2( decisionParams, singlePolicyResults,
