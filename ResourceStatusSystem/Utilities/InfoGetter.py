@@ -146,10 +146,9 @@ class InfoGetter:
   
     for domainName in domainNames:
       if domainName != 'LCG':
-        print "OUT OF DOMAIN"
         continue
       else:
-        print "LCG"
+        gLogger.info( "Fetching the list of Computing Elements belonging to the LCG domain")
       domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
       if not domainSites[ 'OK' ]:
         return domainSites
@@ -166,30 +165,31 @@ class InfoGetter:
 
     # Remove duplicated ( just in case )
     ces = list( set ( ces ) )
+    gLogger.info( "List of CEs: %s" % str( ces ) )
     
     return S_OK( ces ) 
   
   
   
-  def __filterPolicies( self, policiesToBeLoaded, decisionParams):
+  def __checkPolicies( self, policy, decisionParams):
     '''
-      Method that filters out the policies if they don't meet certain conditions
+      Method that checks if the given policy doesn't meet certain conditions
     '''
     
-    policiesToBeLoadedFiltered = []
-    for policy in policiesToBeLoaded:
-      if policy['module'] == 'AlwaysBannedPolicy':
-        policiesToBeLoadedFiltered.append(policy)
-      if policy['module'] == 'CEAvailabilityPolicy':
-        #to get the list of only the LCG CEs
-        result = self.__getComputingElementsByDomainName("LCG")
-        if result['OK']:
-          ces = result['Value']
-          #to verify that the given CE is in the list of the LCG CEs
-          if decisionParams['name'] in ces:
-            policiesToBeLoadedFiltered.append(policy)
+    #some policies may apply or not also depending on the VO's domain
+    # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
+    if policy['module'] == 'CEAvailabilityPolicy':
+      #to get the list of only the LCG CEs
+      result = self.__getComputingElementsByDomainName("LCG")
+      
+      if result['OK']:
+        ces = result['Value']
+
+        #to verify that the given CE is in the list of the LCG CEs
+        if decisionParams['name'] not in ces:
+          return False
     
-    return policiesToBeLoadedFiltered
+    return True
   
   
 
@@ -237,11 +237,12 @@ class InfoGetter:
       #policyConfigParams = policySetup.get( 'configParams', {} )
       
       policyMatch = Utils.configMatch( decissionParams, policyMatchParams )   
+      
       if policyMatch:
         policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
         
-    policiesToBeLoaded = []    
-    
+    policiesToBeLoaded = []   
+        
     # Gets policies parameters from code.    
     for policyName, policyType, _policyConfigParams in policiesThatApply:
       
@@ -264,10 +265,13 @@ class InfoGetter:
       # FIXME: watch out, args can be None !
       #policyDict[ 'args' ].update( policyConfigParams )
       
-      policiesToBeLoaded.append( policyDict )
-      policiesToBeLoaded = self.__filterPolicies(policiesToBeLoaded, decissionParams)
+      #we also check if the policy meets also additional conditions
+      if self.__checkPolicies(policyDict, decissionParams):
+        policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
+  
+  
 
   @staticmethod
   def __getPolicyActionsThatApply2( decissionParams, singlePolicyResults,
