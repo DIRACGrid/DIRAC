@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import ListType, StringTypes, BooleanType
-import os, re, commands, getpass
+import os, re, commands, getpass, importlib
 from datetime import timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -549,3 +549,11 @@ class SystemAdministratorHandler( RequestHandler ):
       pass
 
     return S_OK(result)
+
+  types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
+  def export_getComponentDocumentation( self, cType, system, module ):
+    if cType == 'service':
+      module = '%sHandler' % module
+    importedModule = importlib.import_module( 'DIRAC.%sSystem.%s.%s' % ( system, cType.capitalize(), module ) )
+    return S_OK( importedModule.__doc__ )
+
