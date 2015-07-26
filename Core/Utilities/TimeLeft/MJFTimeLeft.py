@@ -2,12 +2,11 @@
 # $Id$
 ########################################################################
 
-""" The Machine/Job Features TimeLeft utility interrogates the MJF environment 
+""" The Machine/Job Features TimeLeft utility interrogates the MJF values
     for the current CPU and Wallclock consumed, as well as their limits.
 """
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
