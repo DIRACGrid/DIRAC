@@ -1,5 +1,5 @@
 ########################################################################
-# $Id$
+# 650893b (2012-11-27 11:27:36 +0100) ricardo <Ricardo.Graciani@gmail.com>
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -13,7 +13,7 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
-__RCSID__ = "$Id$"
+__RCSID__ = "650893b (2012-11-27 11:27:36 +0100) ricardo <Ricardo.Graciani@gmail.com>"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -140,7 +140,11 @@ class TimeLeft:
       if os.environ.has_key( envVar ):
         name = batchSystem
         break
- 
+
+    if name == None and os.environ.has_key( 'MACHINEFEATURES' ) and os.environ.has_key( 'JOBFEATURES' ):
+      # Only use MJF if legacy batch system information not available for now
+      name = 'MJF'
+
     if name == None:
       self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
       return S_ERROR( 'Current batch system is not supported' )
