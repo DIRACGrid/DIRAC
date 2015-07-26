@@ -1,5 +1,5 @@
 ########################################################################
-# 650893b (2012-11-27 11:27:36 +0100) ricardo <Ricardo.Graciani@gmail.com>
+# $Id$
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -13,7 +13,7 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
-__RCSID__ = "650893b (2012-11-27 11:27:36 +0100) ricardo <Ricardo.Graciani@gmail.com>"
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
