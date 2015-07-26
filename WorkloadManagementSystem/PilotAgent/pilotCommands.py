@@ -454,9 +454,13 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'sshoar://' + self.pp.ceName + '/' + os.environ['OAR_JOBID']
 
     # Grid Engine
-    if os.environ.has_key( 'JOB_ID' ):
+    if os.environ.has_key( 'JOB_ID' ) and os.environ.has_key( 'SGE_TASK_ID' ):
       self.pp.flavour = 'SSHGE'
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
+    # Generic JOB_ID
+    elif os.environ.has_key( 'JOB_ID' ):
+       self.pp.flavour = 'Generic'
+       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
     if os.environ.has_key( 'CONDOR_JOBID' ):
