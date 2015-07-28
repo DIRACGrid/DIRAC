@@ -554,6 +554,21 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_getComponentDocumentation( self, cType, system, module ):
     if cType == 'service':
       module = '%sHandler' % module
-    importedModule = importlib.import_module( 'DIRAC.%sSystem.%s.%s' % ( system, cType.capitalize(), module ) )
-    return S_OK( importedModule.__doc__ )
+
+    result = InstallTools.getExtensions()
+    extensions = result[ 'Value' ]
+    # Look for the component in extensions
+    for extension in extensions:
+      try:
+        importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system, cType.capitalize(), module ) )
+        return S_OK( importedModule.__doc__ )
+      except Exception, e:
+        pass
+
+    # If not in an extension, try in base DIRAC
+    try:
+      importedModule = importlib.import_module( 'DIRAC.%sSystem.%s.%s' % ( system, cType.capitalize(), module ) )
+      return S_OK( importedModule.__doc__ )
+    except Exception, e:
+      return S_ERROR( 'No documentation was found' )
 
