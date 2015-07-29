@@ -317,8 +317,6 @@ class StorageElementItem( object ):
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
 
-    if ( not operation ) or ( operation in self.okMethods ):
-      return S_OK()
     # Determine whether the StorageElement is valid for checking, reading, writing
     res = self.getStatus()
     if not res[ 'OK' ]:
