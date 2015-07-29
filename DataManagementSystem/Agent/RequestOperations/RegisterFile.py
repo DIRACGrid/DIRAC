@@ -80,9 +80,13 @@ class RegisterFile( OperationHandlerBase ):
 #        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
         reason = registerFile.get( "Message", registerFile.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
-        errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
-        opFile.Error = errorStr
-        self.log.warn( errorStr )
+        errorStr = "failed to register LFN"
+        opFile.Error = "%s: %s" % ( errorStr, reason )
+        if 'GUID already registered' in reason:
+          opFile.Status = 'Failed'
+          self.log.error( errorStr, "%s: %s" % ( lfn, reason ) )
+        else:
+          self.log.warn( errorStr, "%s: %s" % ( lfn, reason ) )
         failedFiles += 1
 
       else:
@@ -90,12 +94,12 @@ class RegisterFile( OperationHandlerBase ):
         gMonitor.addMark( "RegisterOK", 1 )
 #        self.dataLoggingClient().addFileRecord( lfn, "Register", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
-        self.log.info( "file %s has been registered at %s" % ( lfn, ','.join( catalogs ) if catalogs else "all catalogs" ) )
+        self.log.verbose( "file %s has been registered at %s" % ( lfn, ','.join( catalogs ) if catalogs else "all catalogs" ) )
         opFile.Status = "Done"
 
     # # final check
     if failedFiles:
-      self.log.info( "all files processed, %s files failed to register" % failedFiles )
+      self.log.warn( "all files processed, %s files failed to register" % failedFiles )
       self.operation.Error = "some files failed to register"
       return S_ERROR( self.operation.Error )
 
