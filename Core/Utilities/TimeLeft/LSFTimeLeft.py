@@ -51,7 +51,7 @@ class LSFTimeLeft:
     if not result['OK']:
       return
 
-    self.log.debug( result['Value'] )
+    self.log.debug( 'From %s' % cmd, result['Value'] )
     lines = result['Value'].split( '\n' )
     for i in xrange( len( lines ) ):
       if re.search( '.*CPULIMIT.*', lines[i] ):
@@ -74,24 +74,28 @@ class LSFTimeLeft:
       # Now try to get the CPU_FACTOR for this reference CPU,
       # it must be either a Model, a Host or the largest Model
 
-      cmd = '%s/lshosts -w %s' % ( self.bin, self.cpuRef )
-      result = runCommand( cmd )
-      if result['OK']:
-        # At CERN this command will return an error since there is no host defined 
-        # with the name of the reference Host.
-        lines = result['Value'].split( '\n' )
-        l1 = lines[0].split()
-        l2 = lines[1].split()
-        if len( l1 ) > len( l2 ):
-          self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
-        else:
-          for i in range( len( l1 ) ):
-            if l1[i] == 'cpuf':
-              try:
-                self.normRef = float( l2[i] )
-                self.log.info( 'Reference Normalization taken from Host', '%s: %s' % ( self.cpuRef, self.normRef ) )
-              except Exception:
-                pass
+      if self.cpuRef == 'KSI2K':
+        self.normRef = 1.
+        self.log.info( 'Reference Normalization is in', '%s: %s' % ( self.cpuRef, self.normRef ) )
+      else:
+        cmd = '%s/lshosts -w %s' % ( self.bin, self.cpuRef )
+        result = runCommand( cmd )
+        if result['OK']:
+          # At CERN this command will return an error since there is no host defined
+          # with the name of the reference Host.
+          lines = result['Value'].split( '\n' )
+          l1 = lines[0].split()
+          l2 = lines[1].split()
+          if len( l1 ) > len( l2 ):
+            self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
+          else:
+            for i in range( len( l1 ) ):
+              if l1[i] == 'cpuf':
+                try:
+                  self.normRef = float( l2[i] )
+                  self.log.info( 'Reference Normalization taken from Host', '%s: %s' % ( self.cpuRef, self.normRef ) )
+                except Exception as e:
+                  self.log.exception( 'Exception parsing lshosts output', '', e )
 
       if not self.normRef:
         # Try if there is a model define with the name of cpuRef
@@ -110,14 +114,15 @@ class LSFTimeLeft:
                   self.normRef = norm
                   self.log.info( 'Reference Normalization taken from Host Model',
                                  '%s: %s' % ( self.cpuRef, self.normRef ) )
-              except:
-                pass
+              except Exception as e:
+                self.log.exception( 'Exception parsing lsfinfo output', '', e )
 
       if not self.normRef:
         # Now parse LSF configuration files
         if not os.path.isfile( './lsf.sh' ):
           os.symlink( os.path.join( os.environ['LSF_ENVDIR'], 'lsf.conf' ) , './lsf.sh' )
-        ret = sourceEnv( 10, ['./lsf' ] )
+        # As the variables are not exported, we must force it
+        ret = sourceEnv( 10, ['./lsf', '&& export LSF_CONFDIR' ] )
         if ret['OK']:
           lsfEnv = ret['outputEnv']
           shared = None
@@ -128,8 +133,8 @@ class LSFTimeLeft:
               shared = egoShared
             elif os.path.exists( lsfShared ):
               shared = lsfShared
-          except Exception:
-            pass
+          except Exception as e:
+            self.log.exception( 'Exception getting LSF configuration', '', e )
           if shared:
             f = open( shared )
             hostModelSection = False
@@ -147,8 +152,12 @@ class LSFTimeLeft:
                   self.normRef = float( line.split()[1] )
                   self.log.info( 'Reference Normalization taken from Configuration File',
                                  '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
-                except Exception:
-                  pass
+                except Exception as e:
+                  self.log.exception( 'Exception reading LSF configuration', '', e )
+          else:
+            self.log.warn( 'Could not find LSF configuration' )
+        else:
+          self.log.error( 'Cannot source the LSF environment', ret['Message'] )
     if not self.normRef:
       # If nothing worked, take the maximum defined for a Model
       if modelMaxNorm:
@@ -171,11 +180,11 @@ class LSFTimeLeft:
               try:
                 self.hostNorm = float( l2[i] )
                 self.log.info( 'Host Normalization', '%s: %s' % ( self.host, self.hostNorm ) )
-              except:
-                pass
+              except Exception as e:
+                self.log.exception( 'Exception parsing lshosts output', '', e )
 
       if self.hostNorm and self.normRef:
-        self.hostNorm = self.hostNorm / self.normRef
+        self.hostNorm /= self.normRef
         self.log.info( 'CPU Normalization', self.hostNorm )
 
 
@@ -219,16 +228,16 @@ class LSFTimeLeft:
         sStart = '%s %s' % ( sStart, self.year )
         try:
           timeTup = time.strptime( sStart, '%m/%d-%H:%M:%S %Y' )
-          wallClock = time.mktime( timeTup )
-          wallClock = time.mktime( time.localtime() ) - wallClock
+          wallClock = time.mktime( time.localtime() ) - time.mktime( timeTup )
         except Exception:
           pass
 
     if cpu == None or wallClock == None:
       return S_ERROR( 'Failed to parse LSF output' )
 
-    cpu = cpu * self.hostNorm
-    wallClock = wallClock * self.hostNorm
+    # This is the normalised CPU in the LSF sense
+    cpu *= self.hostNorm
+    wallClock *= self.hostNorm
 
     consumed = {'CPU':cpu, 'CPULimit':self.cpuLimit, 'WallClock':wallClock, 'WallClockLimit':self.wallClockLimit}
     self.log.debug( consumed )
@@ -246,4 +255,4 @@ class LSFTimeLeft:
       self.log.info( msg )
       return S_ERROR( 'Could not determine some parameters' )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
