@@ -5,20 +5,19 @@ import os
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
-                                     ' %s [option|cfgfile] requestName LFNs targetSE [targetSE ...]' % Script.scriptName,
+                                     ' %s [option|cfgfile] requestName LFNs targetSE1 [targetSE2 ...]' % Script.scriptName,
                                      'Arguments:',
                                      ' requestName: a request name',
                                      '        LFNs: single LFN or file with LFNs',
                                      '    targetSE: target SE' ] ) )
 
-def getLFNList( LFNs ):
+def getLFNList( arg ):
   """ get list of LFNs """
   lfnList = []
-  if os.path.exists( LFNs ):
-     for line in open( LFNs ).readlines():
-       lfnList.append( line.strip() )
+  if os.path.exists( arg ):
+     lfnList = [line.split()[0] for line in open( arg ).read().splitlines()]
   else:
-    lfnList = [ LFNs ]
+    lfnList = [ arg ]
   return list( set ( lfnList ) )
 
 # # execution
@@ -33,18 +32,16 @@ if __name__ == "__main__":
   args = Script.getPositionalArgs()
 
   requestName = None
-  LFNs = None
   targetSEs = None
   if len( args ) < 3:
     Script.showHelp()
-    DIRAC.exit( 0 )
-  else:
-    requestName = args[0]
-    LFNs = args[1]
-    targetSEs = list( set( [ targetSE.strip() for targetSE in args[2:] ] ) )
+    DIRAC.exit( 1 )
 
-  lfnList = getLFNList( LFNs )
-  gLogger.info( "will create request '%s' with 'ReplicateAndRegister' "\
+  requestName = args[0]
+  lfnList = getLFNList( args[1] )
+  targetSEs = list( set( [ se for targetSE in args[2:] for se in targetSE.split( ',' ) ] ) )
+
+  gLogger.info( "Will create request '%s' with 'ReplicateAndRegister' "\
                 "operation using %s lfns and %s target SEs" % ( requestName, len( lfnList ), len( targetSEs ) ) )
 
   from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -52,53 +49,70 @@ if __name__ == "__main__":
   from DIRAC.RequestManagementSystem.Client.File import File
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+  from DIRAC.Core.Utilities.List import breakListIntoChunks
 
-  metaDatas = FileCatalog().getFileMetadata( lfnList )
-  if not metaDatas["OK"]:
-    gLogger.error( "unable to read metadata for lfns: %s" % metaDatas["Message"] )
-    DIRAC.exit( -1 )
-  metaDatas = metaDatas["Value"]
-  for failedLFN, reason in metaDatas["Failed"].items():
-    gLogger.error( "skipping %s: %s" % ( failedLFN, reason ) )
-  lfnList = [ lfn for lfn in lfnList if lfn not in metaDatas["Failed"] ]
+  lfnChunks = breakListIntoChunks( lfnList, 100 )
+  multiRequests = len( lfnChunks ) > 1
 
-  if not lfnList:
-    gLogger.error( "LFN list is empty!!!" )
-    DIRAC.exit( -1 )
-
-  if len( lfnList ) > Operation.MAX_FILES:
-    gLogger.error( "too many LFNs, max number of files per operation is %s" % Operation.MAX_FILES )
-    DIRAC.exit( -1 )
-
-  request = Request()
-  request.RequestName = requestName
-
-  replicateAndRegister = Operation()
-  replicateAndRegister.Type = "ReplicateAndRegister"
-  replicateAndRegister.TargetSE = ",".join( targetSEs )
-
-  for lfn in lfnList:
-    metaDict = metaDatas["Successful"][lfn]
-    opFile = File()
-    opFile.LFN = lfn
-    opFile.Size = metaDict["Size"]
-
-    if "Checksum" in metaDict:
-      # # should check checksum type, now assuming Adler32 (metaDict["ChecksumType"] = 'AD'
-      opFile.Checksum = metaDict["Checksum"]
-      opFile.ChecksumType = "ADLER32"
-    replicateAndRegister.addFile( opFile )
-
-  request.addOperation( replicateAndRegister )
-
+  error = 0
+  count = 0
   reqClient = ReqClient()
-  putRequest = reqClient.putRequest( request )
-  if not putRequest["OK"]:
-    gLogger.error( "unable to put request '%s': %s" % ( requestName, putRequest["Message"] ) )
-    DIRAC.exit( -1 )
+  fc = FileCatalog()
+  for lfnChunk in lfnChunks:
+    metaDatas = fc.getFileMetadata( lfnChunk )
+    if not metaDatas["OK"]:
+      gLogger.error( "unable to read metadata for lfns: %s" % metaDatas["Message"] )
+      error = -1
+      continue
+    metaDatas = metaDatas["Value"]
+    for failedLFN, reason in metaDatas["Failed"].items():
+      gLogger.error( "skipping %s: %s" % ( failedLFN, reason ) )
+    lfnChunk = set( metaDatas["Successful"] )
 
-  gLogger.always( "Request '%s' has been put to ReqDB for execution." % requestName )
-  gLogger.always( "You can monitor its status using command: 'dirac-rms-show-request %s'" % requestName )
+    if not lfnChunk:
+      gLogger.error( "LFN list is empty!!!" )
+      error = -1
+      continue
+
+    if len( lfnChunk ) > Operation.MAX_FILES:
+      gLogger.error( "too many LFNs, max number of files per operation is %s" % Operation.MAX_FILES )
+      error = -1
+      continue
+
+    count += 1
+    request = Request()
+    request.RequestName = requestName if not multiRequests else '%s_%d' % ( requestName, count )
+
+    replicateAndRegister = Operation()
+    replicateAndRegister.Type = "ReplicateAndRegister"
+    replicateAndRegister.TargetSE = ",".join( targetSEs )
+
+    for lfn in lfnChunk:
+      metaDict = metaDatas["Successful"][lfn]
+      opFile = File()
+      opFile.LFN = lfn
+      opFile.Size = metaDict["Size"]
+
+      if "Checksum" in metaDict:
+        # # should check checksum type, now assuming Adler32 (metaDict["ChecksumType"] = 'AD'
+        opFile.Checksum = metaDict["Checksum"]
+        opFile.ChecksumType = "ADLER32"
+      replicateAndRegister.addFile( opFile )
+
+    request.addOperation( replicateAndRegister )
+
+    putRequest = reqClient.putRequest( request )
+    if not putRequest["OK"]:
+      gLogger.error( "unable to put request '%s': %s" % ( request.RequestName, putRequest["Message"] ) )
+      error = -1
+      continue
+
+    if not multiRequests:
+      gLogger.always( "Request '%s' has been put to ReqDB for execution." % request.RequestName )
+
+  if multiRequests:
+    gLogger.always( "%d requests have been put to ReqDB for execution, with name %s_<num>" % ( count, requestName ) )
+  gLogger.always( "You can monitor requests' status using command: 'dirac-rms-show-request <requestName>'" )
   DIRAC.exit( 0 )
 
 

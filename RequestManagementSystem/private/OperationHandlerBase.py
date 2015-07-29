@@ -156,7 +156,7 @@ class OperationHandlerBase( object ):
     :param str lfn: LFN
     :return: S_ERROR or S_OK( "/path/to/proxy/file" )
     """
-    dirMeta = returnSingleResult( self.fc.getDirectoryMetadata( lfn ) )
+    dirMeta = returnSingleResult( self.fc.getDirectoryMetadata( os.path.dirname( lfn ) ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]

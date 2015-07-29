@@ -38,7 +38,7 @@ class TimeLeft:
     if not self.normFactor:
       self.log.warn( '/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName() )
 
-    self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 ) #percent
+    self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 )  # percent
     result = self.__getBatchSystemPlugin()
     if result['OK']:
       self.batchPlugin = result['Value']
@@ -47,14 +47,14 @@ class TimeLeft:
       self.batchError = result['Message']
 
   def getScaledCPU( self ):
-    """Returns the current CPU Time spend (according to batch system) scaled according 
+    """Returns the current CPU Time spend (according to batch system) scaled according
        to /LocalSite/CPUScalingFactor
     """
-    #Quit if no scale factor available
+    # Quit if no scale factor available
     if not self.scaleFactor:
       return S_OK( 0.0 )
 
-    #Quit if Plugin is not available
+    # Quit if Plugin is not available
     if not self.batchPlugin:
       return S_OK( 0.0 )
 
@@ -70,7 +70,7 @@ class TimeLeft:
     """Returns the CPU Time Left for supported batch systems.  The CPUConsumed
        is the current raw total CPU.
     """
-    #Quit if no scale factor available
+    # Quit if no scale factor available
     if not self.scaleFactor:
       return S_ERROR( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
 
@@ -94,26 +94,26 @@ class TimeLeft:
     wcFactor = 100 * float( resources['WallClock'] ) / float( resources['WallClockLimit'] )
     wcRemaining = 100 - wcFactor
     wcLimit = float( resources['WallClockLimit'] )
-    self.log.verbose( 'Used CPU is %.02f, Used WallClock is %.02f.' % ( cpuFactor, wcFactor ) )
-    self.log.verbose( 'Remaining WallClock %.02f, Remaining CPU %.02f, margin %s' %
+    self.log.verbose( 'Used CPU is %.02f%%, Used WallClock is %.02f%%.' % ( cpuFactor, wcFactor ) )
+    self.log.verbose( 'Remaining WallClock %.02f%%, Remaining CPU %.02f%%, margin %s%%' %
                       ( wcRemaining, cpuRemaining, self.cpuMargin ) )
 
     timeLeft = None
     if wcRemaining > cpuRemaining and ( wcRemaining - cpuRemaining ) > self.cpuMargin:
-      self.log.verbose( 'Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %
+      self.log.verbose( 'Remaining WallClock %.02f%% > Remaining CPU %.02f%% and difference > margin %s%%' %
                         ( wcRemaining, cpuRemaining, self.cpuMargin ) )
       timeLeft = True
     else:
       if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
-        self.log.verbose( 'Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' %
+        self.log.verbose( 'Remaining WallClock %.02f%% and Remaining CPU %.02f%% both > margin %s%%' %
                           ( wcRemaining, cpuRemaining, self.cpuMargin ) )
         timeLeft = True
       else:
-        self.log.verbose( 'Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %
+        self.log.verbose( 'Remaining CPU %.02f%% < margin %s%% and WallClock %.02f%% < margin %s%% so no time left' %
                           ( cpuRemaining, self.cpuMargin, wcRemaining, self.cpuMargin ) )
     if timeLeft:
       if cpu and cpuConsumed > 3600. and self.normFactor:
-        # If there has been more than 1 hour of consumed CPU and 
+        # If there has been more than 1 hour of consumed CPU and
         # there is a Normalization set for the current CPU
         # use that value to renormalize the values returned by the batch system
         cpuWork = cpuConsumed * self.normFactor
@@ -134,11 +134,10 @@ class TimeLeft:
     """Using the name of the batch system plugin, will return an instance
        of the plugin class.
     """
-    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'} #more to be added later
-    name = None
+    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
     for batchSystem, envVar in batchSystems.items():
-      if os.environ.has_key( envVar ):
-        name = batchSystem
+      name = os.environ.get( envVar )
+      if name:
         break
 
     if name == None:
@@ -174,9 +173,7 @@ def runCommand( cmd, timeout = 120 ):
   result = shellCall( timeout, cmd )
   if not result['OK']:
     return result
-  status = result['Value'][0]
-  stdout = result['Value'][1]
-  stderr = result['Value'][2]
+  status, stdout, stderr = result['Value'][0:3]
 
   if status:
     gLogger.warn( 'Status %s while executing %s' % ( status, cmd ) )
@@ -187,7 +184,7 @@ def runCommand( cmd, timeout = 120 ):
       return S_ERROR( stderr )
     return S_ERROR( 'Status %s while executing %s' % ( status, cmd ) )
   else:
-    return S_OK( stdout )
+    return S_OK( str( stdout ) )
 
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
