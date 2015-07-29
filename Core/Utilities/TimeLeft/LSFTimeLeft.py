@@ -66,28 +66,24 @@ class LSFTimeLeft:
       # Now try to get the CPU_FACTOR for this reference CPU,
       # it must be either a Model, a Host or the largest Model
 
-      if self.cpuRef == 'KSI2K':
-        self.normRef = 1.
-        self.log.info( 'Reference Normalization is in', '%s: %s' % ( self.cpuRef, self.normRef ) )
-      else:
-        cmd = '%s/lshosts -w %s' % ( self.bin, self.cpuRef )
-        result = runCommand( cmd )
-        if result['OK']:
-          # At CERN this command will return an error since there is no host defined
-          # with the name of the reference Host.
-          lines = str( result['Value'] ).split( '\n' )
-          l1 = lines[0].split()
-          l2 = lines[1].split()
-          if len( l1 ) > len( l2 ):
-            self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
-          else:
-            for i in range( len( l1 ) ):
-              if l1[i] == 'cpuf':
-                try:
-                  self.normRef = float( l2[i] )
-                  self.log.info( 'Reference Normalization taken from Host', '%s: %s' % ( self.cpuRef, self.normRef ) )
-                except Exception as e:
-                  self.log.exception( 'Exception parsing lshosts output', '', e )
+      cmd = '%s/lshosts -w %s' % ( self.bin, self.cpuRef )
+      result = runCommand( cmd )
+      if result['OK']:
+        # At CERN this command will return an error since there is no host defined
+        # with the name of the reference Host.
+        lines = str( result['Value'] ).split( '\n' )
+        l1 = lines[0].split()
+        l2 = lines[1].split()
+        if len( l1 ) > len( l2 ):
+          self.log.error( "Failed lshost command", "%s:\n %s\n %s" % ( cmd, lines[0], lines[0] ) )
+        else:
+          for i in range( len( l1 ) ):
+            if l1[i] == 'cpuf':
+              try:
+                self.normRef = float( l2[i] )
+                self.log.info( 'Reference Normalization taken from Host', '%s: %s' % ( self.cpuRef, self.normRef ) )
+              except Exception as e:
+                self.log.exception( 'Exception parsing lshosts output', '', e )
 
       if not self.normRef:
         # Try if there is a model define with the name of cpuRef
