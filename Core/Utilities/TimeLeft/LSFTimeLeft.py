@@ -22,18 +22,10 @@ class LSFTimeLeft:
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger( 'LSFTimeLeft' )
-    self.jobID = None
-    if os.environ.has_key( 'LSB_JOBID' ):
-      self.jobID = os.environ['LSB_JOBID']
-    self.queue = None
-    if os.environ.has_key( 'LSB_QUEUE' ):
-      self.queue = os.environ['LSB_QUEUE']
-    self.bin = None
-    if os.environ.has_key( 'LSF_BINDIR' ):
-      self.bin = os.environ['LSF_BINDIR']
-    self.host = None
-    if os.environ.has_key( 'LSB_HOSTS' ):
-      self.host = os.environ['LSB_HOSTS']
+    self.jobID = os.environ.get( 'LSB_JOBID' )
+    self.queue = os.environ.get( 'LSB_QUEUE' )
+    self.bin = os.environ.get( 'LSF_BINDIR' )
+    self.host = os.environ.get( 'LSB_HOSTS' )
     self.year = time.strftime( '%Y', time.gmtime() )
     self.log.verbose( 'LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s, LSB_HOSTS=%s' % ( self.jobID,
                                                                                     self.queue,
@@ -52,7 +44,7 @@ class LSFTimeLeft:
       return
 
     self.log.debug( 'From %s' % cmd, result['Value'] )
-    lines = result['Value'].split( '\n' )
+    lines = str( result['Value'] ).split( '\n' )
     for i in xrange( len( lines ) ):
       if re.search( '.*CPULIMIT.*', lines[i] ):
         info = lines[i + 1].split()
@@ -83,7 +75,7 @@ class LSFTimeLeft:
         if result['OK']:
           # At CERN this command will return an error since there is no host defined
           # with the name of the reference Host.
-          lines = result['Value'].split( '\n' )
+          lines = str( result['Value'] ).split( '\n' )
           l1 = lines[0].split()
           l2 = lines[1].split()
           if len( l1 ) > len( l2 ):
@@ -102,7 +94,7 @@ class LSFTimeLeft:
         cmd = '%s/lsinfo -m' % ( self.bin )
         result = runCommand( cmd )
         if result['OK']:
-          lines = result['Value'].split( '\n' )
+          lines = str( result['Value'] ).split( '\n' )
           for line in lines[1:]:
             words = line.split()
             if len( words ) > 1:
@@ -169,7 +161,7 @@ class LSFTimeLeft:
       cmd = '%s/lshosts -w %s' % ( self.bin, self.host )
       result = runCommand( cmd )
       if result['OK']:
-        lines = result['Value'].split( '\n' )
+        lines = str( result['Value'] ).split( '\n' )
         l1 = lines[0].split()
         l2 = lines[1].split()
         if len( l1 ) > len( l2 ):
@@ -206,7 +198,7 @@ class LSFTimeLeft:
     result = runCommand( cmd )
     if not result['OK']:
       return result
-    lines = result['Value'].split( '\n' )
+    lines = str( result['Value'] ).split( '\n' )
     l1 = lines[0].split()
     l2 = lines[1].split()
     if len( l1 ) > len( l2 ):

@@ -135,10 +135,9 @@ class TimeLeft:
        of the plugin class.
     """
     batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
-    name = None
     for batchSystem, envVar in batchSystems.items():
-      if os.environ.has_key( envVar ):
-        name = batchSystem
+      name = os.environ.get( envVar )
+      if name:
         break
 
     if name == None:
@@ -174,9 +173,7 @@ def runCommand( cmd, timeout = 120 ):
   result = shellCall( timeout, cmd )
   if not result['OK']:
     return result
-  status = result['Value'][0]
-  stdout = result['Value'][1]
-  stderr = result['Value'][2]
+  status, stdout, stderr = result['Value'][0:3]
 
   if status:
     gLogger.warn( 'Status %s while executing %s' % ( status, cmd ) )
@@ -187,7 +184,7 @@ def runCommand( cmd, timeout = 120 ):
       return S_ERROR( stderr )
     return S_ERROR( 'Status %s while executing %s' % ( status, cmd ) )
   else:
-    return S_OK( stdout )
+    return S_OK( str( stdout ) )
 
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
