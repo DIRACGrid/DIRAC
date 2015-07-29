@@ -204,9 +204,10 @@ class StorageElementItem( object ):
 
   def dump( self ):
     """ Dump to the logger a summary of the StorageElement items. """
-    self.log.verbose( "dump: Preparing dump for StorageElement %s." % self.name )
+    log = self.log.getSubLogger( 'dump', True )
+    log.verbose( "Preparing dump for StorageElement %s." % self.name )
     if not self.valid:
-      self.log.debug( "dump: Failed to create StorageElement plugins.", self.errorReason )
+      log.debug( "Failed to create StorageElement plugins.", self.errorReason )
       return
     i = 1
     outStr = "\n\n============ Options ============\n"
@@ -219,7 +220,7 @@ class StorageElementItem( object ):
       for key in sorted( storageParameters ):
         outStr = "%s%s: %s\n" % ( outStr, key.ljust( 15 ), storageParameters[key] )
       i = i + 1
-    self.log.verbose( outStr )
+    log.verbose( outStr )
 
   #################################################################################################
   #
@@ -228,14 +229,14 @@ class StorageElementItem( object ):
 
   def getStorageElementName( self ):
     """ SE name getter """
-    self.log.verbose( "StorageElement.getStorageElementName: The Storage Element name is %s." % self.name )
+    self.log.getSubLogger( 'getStorageElementName' ).verbose( "The Storage Element name is %s." % self.name )
     return S_OK( self.name )
 
   def getChecksumType( self ):
     """ get local /Resources/StorageElements/SEName/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
-    self.log.verbose( "StorageElement.getChecksumType : get checksum type for %s." % self.name )
+    self.log.getSubLogger( 'getChecksumType' ).verbose( "get checksum type for %s." % self.name )
     return S_OK( str( gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" ) ).upper()
                  if "ChecksumType" not in self.options else str( self.options["ChecksumType"] ).upper() )
 
@@ -253,7 +254,7 @@ class StorageElementItem( object ):
       - DiskCacheTB: float (-1 if not defined)
     """
 
-    self.log.verbose( "StorageElement.getStatus : determining status of %s." % self.name )
+    self.log.getSubLogger( 'getStatus' ).verbose( "determining status of %s." % self.name )
 
     retDict = {}
     if not self.valid:
@@ -301,18 +302,19 @@ class StorageElementItem( object ):
 
     :param str operation: operation name
     """
-    self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for VO %s" % ( self.name,
+    log = self.log.getSubLogger( 'isValid', True )
+    log.verbose( "Determining if the StorageElement %s is valid for VO %s" % ( self.name,
                                                                                                             self.vo ) )
 
     if not self.valid:
-      self.log.debug( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
-      return S_ERROR( self.errorReason )
+      log.debug( "Failed to create StorageElement plugins.", self.errorReason )
+      return S_ERROR( "SE.isValid: Failed to create StorageElement plugins." % self.errorReason )
 
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
-      self.log.debug( "StorageElementisValid: StorageElement is not allowed for VO %s" % self.vo )
-      return S_ERROR( "StorageElement.isValid: StorageElement is not allowed for VO" )
-    self.log.verbose( "StorageElement.isValid: Determining if the StorageElement %s is valid for %s" % ( self.name,
+      log.debug( "StorageElement is not allowed for VO", self.vo )
+      return S_ERROR( "SE.isValid: StorageElement is not allowed for VO." )
+    log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name,
                                                                                                          operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
@@ -320,8 +322,8 @@ class StorageElementItem( object ):
     # Determine whether the StorageElement is valid for checking, reading, writing
     res = self.getStatus()
     if not res[ 'OK' ]:
-      self.log.debug( "Could not call getStatus" )
-      return S_ERROR( "StorageElement.isValid could not call the getStatus method" )
+      log.debug( "Could not call getStatus" )
+      return S_ERROR( "SE.isValid could not call the getStatus method" )
     checking = res[ 'Value' ][ 'Check' ]
     reading = res[ 'Value' ][ 'Read' ]
     writing = res[ 'Value' ][ 'Write' ]
@@ -329,8 +331,8 @@ class StorageElementItem( object ):
 
     # Determine whether the requested operation can be fulfilled
     if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
-      self.log.debug( "StorageElement.isValid: Read, write and check access not permitted." )
-      return S_ERROR( "StorageElement.isValid: Read, write and check access not permitted." )
+      log.debug( "Read, write and check access not permitted." )
+      return S_ERROR( "SE.isValid: Read, write and check access not permitted." )
 
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
     if ( operation in self.readMethods ) or ( operation.lower() in ( 'read', 'readaccess' ) ):
@@ -342,33 +344,33 @@ class StorageElementItem( object ):
     elif operation in self.checkMethods or ( operation.lower() in ( 'check', 'checkaccess' ) ):
       operation = 'CheckAccess'
     else:
-      self.log.debug( "StorageElement.isValid: The supplied operation is not known.", operation )
-      return S_ERROR( "StorageElement.isValid: The supplied operation is not known." )
-    self.log.debug( "in isValid check the operation: %s " % operation )
+      log.debug( "The supplied operation is not known.", operation )
+      return S_ERROR( "SE.isValid: The supplied operation is not known." )
+    log.debug( "check the operation: %s " % operation )
     # Check if the operation is valid
     if operation == 'CheckAccess':
       if not reading:
         if not checking:
-          self.log.debug( "StorageElement.isValid: Check access not currently permitted." )
-          return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
+          log.debug( "Check access not currently permitted." )
+          return S_ERROR( "SE.isValid: Check access not currently permitted." )
     if operation == 'ReadAccess':
       if not reading:
-        self.log.debug( "StorageElement.isValid: Read access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Read access not currently permitted." )
+        log.debug( "Read access not currently permitted." )
+        return S_ERROR( "SE.isValid: Read access not currently permitted." )
     if operation == 'WriteAccess':
       if not writing:
-        self.log.debug( "StorageElementisValid: Write access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Write access not currently permitted." )
+        log.debug( "Write access not currently permitted." )
+        return S_ERROR( "SE.isValid: Write access not currently permitted." )
     if operation == 'RemoveAccess':
       if not removing:
-        self.log.debug( "StorageElement.isValid: Remove access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Remove access not currently permitted." )
+        log.debug( "Remove access not currently permitted." )
+        return S_ERROR( "SE.isValid: Remove access not currently permitted." )
     return S_OK()
 
   def getPlugins( self ):
     """ Get the list of all the plugins defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getPlugins : Obtaining all plugins of %s." % self.name )
+    self.log.getSubLogger( 'getPlugins' ).verbose( "Obtaining all plugins of %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
     allPlugins = self.localPlugins + self.remotePlugins
@@ -377,7 +379,7 @@ class StorageElementItem( object ):
   def getRemotePlugins( self ):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getRemotePlugins: Obtaining remote protocols for %s." % self.name )
+    self.log.getSubLogger( 'getRemotePlugins' ).verbose( "Obtaining remote protocols for %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
     return S_OK( self.remotePlugins )
@@ -385,7 +387,7 @@ class StorageElementItem( object ):
   def getLocalPlugins( self ):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
-    self.log.verbose( "StorageElement.getLocalPlugins: Obtaining local protocols for %s." % self.name )
+    self.log.getSubLogger( 'getLocalPlugins' ).verbose( "Obtaining local protocols for %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
     return S_OK( self.localPlugins )
@@ -394,22 +396,24 @@ class StorageElementItem( object ):
     """ Get plugin specific options
       :param plugin : plugin we are interested in
     """
-    self.log.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s plugin %s." % ( self.name,
+
+    log = self.log.getSubLogger( 'getStorageParameters' )
+    log.verbose( "Obtaining storage parameters for %s plugin %s." % ( self.name,
                                                                                                                 plugin ) )
     res = self.getPlugins()
     if not res['OK']:
       return res
     availablePlugins = res['Value']
     if not plugin in availablePlugins:
-      errStr = "StorageElement.getStorageParameters: Requested plugin not available for SE."
-      self.log.debug( errStr, '%s for %s' % ( plugin, self.name ) )
+      errStr = "Requested plugin not available for SE."
+      log.debug( errStr, '%s for %s' % ( plugin, self.name ) )
       return S_ERROR( errStr )
     for storage in self.storages:
       storageParameters = storage.getParameters()
       if storageParameters['PluginName'] == plugin:
         return S_OK( storageParameters )
-    errStr = "StorageElement.getStorageParameters: Requested plugin supported but no object found."
-    self.log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
+    errStr = "Requested plugin supported but no object found."
+    log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
     return S_ERROR( errStr )
 
   def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
@@ -448,7 +452,8 @@ class StorageElementItem( object ):
     """  Get the part of the URL path below the basic storage path.
          This path must coincide with the LFN of the file in order to be compliant with the DIRAC conventions.
     """
-    self.log.verbose( "StorageElement.__getURLPath: Getting path from url in %s." % self.name )
+    log = self.log.getSubLogger( '__getURLPath' )
+    log.verbose( "Getting path from url in %s." % self.name )
     if not self.valid:
       return S_ERROR( self.errorReason )
     res = pfnparse( url )
@@ -474,8 +479,8 @@ class StorageElementItem( object ):
       if urlPath:
         return S_OK( urlPath )
     # This should never happen. DANGER!!
-    errStr = "StorageElement.__getURLPath: Failed to get the url path for any of the protocols!!"
-    self.log.debug( errStr )
+    errStr = "Failed to get the url path for any of the protocols!!"
+    log.debug( errStr )
     return S_ERROR( errStr )
 
   def getLFNFromURL( self, urls ):
@@ -486,8 +491,8 @@ class StorageElementItem( object ):
     if result['OK']:
       urlDict = result['Value']
     else:
-      errStr = "StorageElement.getLFNFromURL: Supplied urls must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
+      errStr = "Supplied urls must be string, list of strings or a dictionary."
+      self.log.getSubLogger( 'getLFNFromURL' ).debug( errStr )
       return S_ERROR( errStr )
 
     retDict = { "Successful" : {}, "Failed" : {} }
@@ -511,7 +516,7 @@ class StorageElementItem( object ):
       :param replicaDict: optional results from the File Catalog replica query
     """
 
-    self.log.verbose( "StorageElement.getURL: Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
+    self.log.getSubLogger( 'getURL' ).verbose( "Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
 
     if not protocol:
       protocols = self.turlProtocols
@@ -527,7 +532,7 @@ class StorageElementItem( object ):
   def __isLocalSE( self ):
     """ Test if the Storage Element is local in the current context
     """
-    self.log.verbose( "StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name )
+    self.log.getSubLogger( 'sLocalSE' ).verbose( "iDetermining whether %s is a local SE." % self.name )
 
     import DIRAC
     localSEs = getSEsForSite( DIRAC.siteName() )['Value']
@@ -548,7 +553,8 @@ class StorageElementItem( object ):
         :param: lfns : dictionary {lfn:whatever}
         :returns dictionary {constructed url : lfn}
     """
-    self.log.verbose( "StorageElement.__generateURLDict: generating url dict for %s lfn in %s." % ( len( lfns ), self.name ) )
+    log = self.log.getSubLogger( "__generateURLDict" )
+    log.verbose( "generating url dict for %s lfn in %s." % ( len( lfns ), self.name ) )
 
     urlDict = {}  # url : lfn
     failed = {}  # lfn : string with errors
@@ -578,8 +584,8 @@ class StorageElementItem( object ):
       else:
         result = storage.constructURLFromLFN( lfn, withWSUrl = True )
         if not result['OK']:
-          errStr = "StorageElement.__generateURLDict %s." % result['Message']
-          self.log.debug( errStr, 'for %s' % ( lfn ) )
+          errStr = result['Message']
+          log.debug( errStr, 'for %s' % ( lfn ) )
           failed[lfn] = "%s %s" % ( failed[lfn], errStr ) if lfn in failed else errStr
         else:
           urlDict[result['Value']] = lfn
@@ -600,23 +606,24 @@ class StorageElementItem( object ):
     """
 
     removedArgs = {}
-    self.log.verbose( "StorageElement.__executeMethod : preparing the execution of %s" % ( self.methodName ) )
+    log = self.log.getSubLogger( '__executeMethod' )
+    log.verbose( "preparing the execution of %s" % ( self.methodName ) )
 
     # args should normaly be empty to avoid problem...
     if len( args ):
-      self.log.verbose( "StorageElement.__executeMethod: args should be empty!%s" % args )
+      log.verbose( "args should be empty!%s" % args )
       # because there is normally only one kw argument, I can move it from args to kwargs
       methDefaultArgs = StorageElementItem.__defaultsArguments.get( self.methodName, {} ).keys()
       if len( methDefaultArgs ):
         kwargs[methDefaultArgs[0] ] = args[0]
         args = args[1:]
-      self.log.verbose( "StorageElement.__executeMethod: put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % ( args, kwargs ) )
+      log.verbose( "put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % ( args, kwargs ) )
 
 
     # We check the deprecated arguments
     for depArg in StorageElementItem.__deprecatedArguments:
       if depArg in kwargs:
-        self.log.verbose( "StorageElement.__executeMethod: %s is not an allowed argument anymore. Please change your code!" % depArg )
+        log.verbose( "%s is not an allowed argument anymore. Please change your code!" % depArg )
         removedArgs[depArg] = kwargs[depArg]
         del kwargs[depArg]
 
@@ -626,19 +633,18 @@ class StorageElementItem( object ):
     methDefaultArgs = StorageElementItem.__defaultsArguments.get( self.methodName, {} )
     for argName in methDefaultArgs:
       if argName not in kwargs:
-        self.log.debug( "StorageElement.__executeMethod : default argument %s for %s not present.\
+        log.debug( "default argument %s for %s not present.\
          Setting value %s." % ( argName, self.methodName, methDefaultArgs[argName] ) )
         kwargs[argName] = methDefaultArgs[argName]
 
     res = checkArgumentFormat( lfn )
     if not res['OK']:
-      errStr = "StorageElement.__executeMethod: Supplied lfns must be string, list of strings or a dictionary."
-      self.log.debug( errStr )
+      errStr = "Supplied lfns must be string, list of strings or a dictionary."
+      log.debug( errStr )
       return S_ERROR( errStr )
     lfnDict = res['Value']
 
-    self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' operation with %s lfns." % ( self.methodName,
-                                                                                                               len( lfnDict ) ) )
+    log.verbose( "Attempting to perform '%s' operation with %s lfns." % ( self.methodName, len( lfnDict ) ) )
 
     res = self.isValid( operation = self.methodName )
     if not res['OK']:
@@ -655,20 +661,18 @@ class StorageElementItem( object ):
       # Determine whether to use this storage object
       storageParameters = storage.getParameters()
       if not storageParameters:
-        self.log.debug( "StorageElement.__executeMethod: Failed to get storage parameters.", "%s %s" % ( self.name,
-                                                                                                         res['Message'] ) )
+        log.debug( "Failed to get storage parameters.", "%s %s" % ( self.name, res['Message'] ) )
         continue
       pluginName = storageParameters['PluginName']
       if not lfnDict:
-        self.log.debug( "StorageElement.__executeMethod: No lfns to be attempted for %s protocol." % pluginName )
+        log.debug( "No lfns to be attempted for %s protocol." % pluginName )
         continue
       if not ( pluginName in self.remotePlugins ) and not localSE and not storage.pluginName == "Proxy":
         # If the SE is not local then we can't use local protocols
-        self.log.debug( "StorageElement.__executeMethod: Local protocol not appropriate for remote use: %s." % pluginName )
+        log.debug( "Local protocol not appropriate for remote use: %s." % pluginName )
         continue
 
-      self.log.verbose( "StorageElement.__executeMethod: Generating %s protocol URLs for %s." % ( len( lfnDict ),
-                                                                                                  pluginName ) )
+      log.verbose( "Generating %s protocol URLs for %s." % ( len( lfnDict ), pluginName ) )
       replicaDict = kwargs.pop( 'replicaDict', {} )
       if storage.pluginName != "Proxy":
         res = self.__generateURLDict( lfnDict, storage, replicaDict = replicaDict )
@@ -677,15 +681,14 @@ class StorageElementItem( object ):
       else:
         urlDict = dict( [ ( lfn, lfn ) for lfn in lfnDict ] )
       if not len( urlDict ):
-        self.log.verbose( "StorageElement.__executeMethod No urls generated for protocol %s." % pluginName )
+        log.verbose( "__executeMethod No urls generated for protocol %s." % pluginName )
       else:
-        self.log.verbose( "StorageElement.__executeMethod: Attempting to perform '%s' for %s physical files" % ( self.methodName,
-                                                                                                    len( urlDict ) ) )
+        log.verbose( "Attempting to perform '%s' for %s physical files" % ( self.methodName, len( urlDict ) ) )
         fcn = None
         if hasattr( storage, self.methodName ) and callable( getattr( storage, self.methodName ) ):
           fcn = getattr( storage, self.methodName )
         if not fcn:
-          return S_ERROR( "StorageElement.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
+          return S_ERROR( "SE.__executeMethod: unable to invoke %s, it isn't a member function of storage" )
 
         urlsToUse = {}  # url : the value of the lfn dictionary for the lfn of this url
         for url in urlDict:
@@ -693,8 +696,8 @@ class StorageElementItem( object ):
 
         res = fcn( urlsToUse, *args, **kwargs )
         if not res['OK']:
-          errStr = "StorageElement.__executeMethod: Completely failed to perform %s." % self.methodName
-          self.log.debug( errStr, '%s with plugin %s: %s' % ( self.name, pluginName, res['Message'] ) )
+          errStr = "Completely failed to perform %s." % self.methodName
+          log.debug( errStr, 'with plugin %s: %s' % ( pluginName, res['Message'] ) )
           for lfn in urlDict.values():
             if lfn not in failed:
               failed[lfn] = ''
@@ -719,7 +722,7 @@ class StorageElementItem( object ):
 
 
   def __getattr__( self, name ):
-    """ Forwards the equivalent Storage calls to StorageElement.__executeMethod"""
+    """ Forwards the equivalent Storage calls to __executeMethod"""
     # We take either the equivalent name, or the name itself
     self.methodName = StorageElementItem.__equivalentMethodNames.get( name, None )
 
