@@ -136,8 +136,8 @@ class TimeLeft:
     """
     batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
     for batchSystem, envVar in batchSystems.items():
-      name = os.environ.get( envVar )
-      if name:
+      if envVar in os.environ:
+        name = batchSystem
         break
 
     if name == None:
