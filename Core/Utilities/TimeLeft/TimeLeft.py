@@ -135,6 +135,7 @@ class TimeLeft:
        of the plugin class.
     """
     batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
+    name = None
     for batchSystem, envVar in batchSystems.items():
       if envVar in os.environ:
         name = batchSystem
