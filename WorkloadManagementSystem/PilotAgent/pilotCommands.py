@@ -145,7 +145,7 @@ class CheckWorkerNode( CommandBase ):
 
     if diskSpace < self.pp.minDiskSpace:
       self.log.error( '%s MB < %s MB, not enough local disk space available, exiting'
-                  % ( diskSpace, self.pp.minDiskSpace ) )
+                      % ( diskSpace, self.pp.minDiskSpace ) )
       sys.exit( 1 )
 
 
@@ -163,6 +163,7 @@ class InstallDIRAC( CommandBase ):
     self.installOpts = []
     self.pp.rootPath = self.pp.pilotRootPath
     self.installScriptName = 'dirac-install.py'
+    self.installScript = ''
 
   def _setInstallOptions( self ):
     """ Setup installation parameters
@@ -225,7 +226,7 @@ class InstallDIRAC( CommandBase ):
     try:
       # change permission of the script
       os.chmod( self.installScript, stat.S_IRWXU )
-    except:
+    except OSError:
       pass
 
   def _installDIRAC( self ):
@@ -256,7 +257,7 @@ class InstallDIRAC( CommandBase ):
     for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
       if envVarName in os.environ:
         os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
-        del( os.environ[ envVarName ] )
+        del os.environ[ envVarName ]
       else:
         os.environ[ '%s_SAVE' % envVarName ] = ""
 
@@ -527,7 +528,7 @@ class ConfigureSite( CommandBase ):
     # FIXME: this should not be part of the standard configuration (flavours discriminations should stay out)
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       retCode, CEName = self.executeAndGetOutput( 'glite-brokerinfo getCE',
-                                                   self.pp.installEnv )
+                                                  self.pp.installEnv )
       if retCode:
         self.log.warn( "Could not get CE name with 'glite-brokerinfo getCE' command [ERROR %d]" % retCode )
         if os.environ.has_key( 'OSG_JOB_CONTACT' ):
@@ -700,7 +701,7 @@ class LaunchAgent( CommandBase ):
     try:
       import pwd
       localUser = pwd.getpwuid( localUid )[0]
-    except:
+    except KeyError:
       localUser = 'Unknown'
     self.log.info( 'User Name  = %s' % localUser )
     self.log.info( 'User Id    = %s' % localUid )
