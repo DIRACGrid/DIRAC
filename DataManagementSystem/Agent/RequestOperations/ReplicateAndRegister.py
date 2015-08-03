@@ -56,6 +56,15 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     return S_ERROR( failed )
 
   replicas = replicas["Successful"].get( opFile.LFN, {} )
+  if not replicas:
+    replicas = dataManager.getReplicas( opFile.LFN )
+    if replicas['OK']:
+      replicas = replicas['Value']['Successful'].get( opFile.LFN, {} )
+      if not replicas:
+        log.warn( "File has no replica in File Catalog", opFile.LFN )
+        ret['NoReplicas'].append( None )
+    else:
+      return replicas
 
   if not opFile.Checksum:
     # Set Checksum to FC checksum if not set in the request
