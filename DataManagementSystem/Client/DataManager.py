@@ -1607,7 +1607,7 @@ class DataManager( object ):
         return res
     if not getUrl:
       for lfn in catalogReplicas:
-        catalogReplicas[lfn] = dict.fromkeys( catalogReplicas.keys(), True )
+        catalogReplicas[lfn] = dict.fromkeys( catalogReplicas[lfn].keys(), True )
     elif not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
