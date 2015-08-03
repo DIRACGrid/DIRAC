@@ -238,7 +238,7 @@ class InstallDIRAC( CommandBase ):
     self.log.info( output, header = False )
 
     if retCode:
-      self.log.error( "Could not make a proper DIRAC installation" )
+      self.log.error( "Could not make a proper DIRAC installation [ERROR %d]" % retCode )
       sys.exit( 1 )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
@@ -247,7 +247,7 @@ class InstallDIRAC( CommandBase ):
     if not self.pp.platform:
       retCode, output = self.executeAndGetOutput( platformScript )
       if retCode:
-        self.log.error( "Failed to determine DIRAC platform" )
+        self.log.error( "Failed to determine DIRAC platform [ERROR %d]" % retCode )
         sys.exit( 1 )
       self.pp.platform = output
     diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
@@ -331,7 +331,7 @@ class ConfigureBasics( CommandBase ):
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
     if retCode:
-      self.log.error( "Could not configure DIRAC basics" )
+      self.log.error( "Could not configure DIRAC basics [ERROR %d]" % retCode )
       sys.exit( 1 )
 
   def _getBasicsCFG( self ):
@@ -430,7 +430,7 @@ class ConfigureSite( CommandBase ):
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
 
     if retCode:
-      self.log.error( "Could not configure DIRAC" )
+      self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
       sys.exit( 1 )
 
 
@@ -528,34 +528,51 @@ class ConfigureSite( CommandBase ):
     if self.pp.flavour in ['LCG', 'gLite', 'OSG']:
       retCode, CEName = self.executeAndGetOutput( 'glite-brokerinfo getCE',
                                                    self.pp.installEnv )
-      if not retCode:
+      if retCode:
+        self.log.warn( "Could not get CE name with 'glite-brokerinfo getCE' command [ERROR %d]" % retCode )
+        if os.environ.has_key( 'OSG_JOB_CONTACT' ):
+          # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
+          #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
+          CE = os.environ['OSG_JOB_CONTACT']
+          self.pp.ceName = CE.split( '/' )[0]
+          if len( CE.split( '/' ) ) > 1:
+            self.pp.queueName = CE.split( '/' )[1]
+          else:
+            self.log.error( "CE Name %s not accepted" % CE )
+            sys.exit( 1 )
+        else:
+          self.log.info( "Looking if queue name is already present in local cfg" )
+          from DIRAC import gConfig
+          ceName = gConfig.getValue( 'LocalSite/GridCE', '' )
+          ceQueue = gConfig.getValue( 'LocalSite/CEQueue', '' )
+          if ceName and ceQueue:
+            self.log.debug( "Found CE %s, queue %s" % ( ceName, ceQueue ) )
+            self.pp.ceName = ceName
+            self.pp.queueName = ceQueue
+          else:
+            self.log.error( "Can't find ceName nor queue... have to fail!" )
+            sys.exit( 1 )
+      else:
+        self.log.debug( "Found CE %s" % ceName )
         self.pp.ceName = CEName.split( ':' )[0]
         if len( CEName.split( '/' ) ) > 1:
           self.pp.queueName = CEName.split( '/' )[1]
-      elif os.environ.has_key( 'OSG_JOB_CONTACT' ):
-        # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission
-        #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
-        CE = os.environ['OSG_JOB_CONTACT']
-        self.pp.ceName = CE.split( '/' )[0]
-        if len( CE.split( '/' ) ) > 1:
-          self.pp.queueName = CE.split( '/' )[1]
       # configureOpts.append( '-N "%s"' % cliParams.ceName )
-      else:
-        # is it already present?
-        from DIRAC import gConfig
-        ceName = gConfig.getValue( 'LocalSite/GridCE', '' )
-        ceQueue = gConfig.getValue( 'LocalSite/CEQueue', '' )
-        if ceName and ceQueue:
-          self.pp.ceName = ceName
-          self.pp.queueName = ceQueue
-        else:
-          self.log.error( "Can't find ceName nor queue... have to fail!" )
-          sys.exit( 1 )
+
     elif self.pp.flavour == "CREAM":
       if os.environ.has_key( 'CE_ID' ):
+        self.log.debug( "Found CE %s" % os.environ['CE_ID'] )
         self.pp.ceName = os.environ['CE_ID'].split( ':' )[0]
         if os.environ['CE_ID'].count( "/" ):
           self.pp.queueName = os.environ['CE_ID'].split( '/' )[1]
+        else:
+          self.log.error( "Can't find queue name" )
+          sys.exit( 1 )
+      else:
+        self.log.error( "Can't find CE name" )
+        sys.exit( 1 )
+
+
 
 class ConfigureArchitecture( CommandBase ):
   """ This command simply calls dirac-platfom to determine the platform.
@@ -577,29 +594,34 @@ class ConfigureArchitecture( CommandBase ):
     architectureCmd = "%s %s" % ( self.pp.architectureScript, " ".join( cfg ) )
 
     retCode, localArchitecture = self.executeAndGetOutput( architectureCmd, self.pp.installEnv )
-    if not retCode:
-      # standard options
-      cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
-      if self.pp.useServerCertificate:
-        cfg.append( '--UseServerCertificate' )
-      if self.pp.localConfigFile:    
-        cfg.append( '-O %s' % self.pp.localConfigFile )  # our target file for pilots
-        cfg.append( self.pp.localConfigFile )  # this file is also an input
-      if self.pp.debugFlag:
-        cfg.append( "-ddd" )
+    if retCode:
+      self.log.error( "There was an error updating the platform [ERROR %d]" % retCode )
+      sys.exit( 1 )
+    self.log.debug( "Architecture determined: %s" % localArchitecture )
 
-      # real options added here
-      localArchitecture = localArchitecture.strip()
-      cfg.append( '-S "%s"' % self.pp.setup )
-      cfg.append( '-o /LocalSite/Architecture=%s' % localArchitecture )
+    # standard options
+    cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
+    if self.pp.useServerCertificate:
+      cfg.append( '--UseServerCertificate' )
+    if self.pp.localConfigFile:    
+      cfg.append( '-O %s' % self.pp.localConfigFile )  # our target file for pilots
+      cfg.append( self.pp.localConfigFile )  # this file is also an input
+    if self.pp.debugFlag:
+      cfg.append( "-ddd" )
 
-      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
-      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
-      if not retCode:
-        return localArchitecture
+    # real options added here
+    localArchitecture = localArchitecture.strip()
+    cfg.append( '-S "%s"' % self.pp.setup )
+    cfg.append( '-o /LocalSite/Architecture=%s' % localArchitecture )
 
-    self.log.error( "There was an error updating the platform" )
-    sys.exit( 1 )
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+    if retCode:
+      self.log.error( "Configuration error [ERROR %d]" % retCode )
+      sys.exit( 1 )
+
+    return localArchitecture
+
 
 
 class ConfigureCPURequirements( CommandBase ):
@@ -623,7 +645,7 @@ class ConfigureCPURequirements( CommandBase ):
     retCode, cpuNormalizationFactorOutput = self.executeAndGetOutput( 'dirac-wms-cpu-normalization -U %s' % configFileArg,
                                                                       self.pp.installEnv )
     if retCode:
-      self.log.error( "Failed to determine cpu normalization" )
+      self.log.error( "Failed to determine cpu normalization [ERROR %d]" % retCode )
       sys.exit( 1 )
 
     # HS06 benchmark
@@ -637,7 +659,7 @@ class ConfigureCPURequirements( CommandBase ):
                                                                                           self.pp.localConfigFile ),
                                                  self.pp.installEnv )
     if retCode:
-      self.log.error( "Failed to determine cpu time left in the queue" )
+      self.log.error( "Failed to determine cpu time left in the queue [ERROR %d]" % retCode )
       sys.exit( 1 )
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
@@ -657,7 +679,7 @@ class ConfigureCPURequirements( CommandBase ):
     configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( cfg ) )
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
     if retCode:
-      self.log.error( "Failed to update CFG file for CPUTimeLeft" )
+      self.log.error( "Failed to update CFG file for CPUTimeLeft [ERROR %d]" % retCode )
       sys.exit( 1 )
 
 
@@ -746,7 +768,7 @@ class LaunchAgent( CommandBase ):
 
     retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
     if retCode:
-      self.log.error( "Could not start the JobAgent" )
+      self.log.error( "Error executing the JobAgent [ERROR %d]" % retCode )
       sys.exit( 1 )
 
     fs = os.statvfs( self.pp.workingDir )

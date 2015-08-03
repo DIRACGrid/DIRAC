@@ -318,6 +318,7 @@ class CommandBase( object ):
 
       # return code
       returnCode = _p.wait()
+      self.log.debug( "Return code of %s: %d" % ( cmd, returnCode ) )
 
       return (returnCode, outData)
     except ImportError:
