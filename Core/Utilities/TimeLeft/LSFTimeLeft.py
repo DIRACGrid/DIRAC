@@ -82,7 +82,7 @@ class LSFTimeLeft:
               try:
                 self.normRef = float( l2[i] )
                 self.log.info( 'Reference Normalization taken from Host', '%s: %s' % ( self.cpuRef, self.normRef ) )
-              except Exception as e:
+              except ValueError as e:
                 self.log.exception( 'Exception parsing lshosts output', '', e )
 
       if not self.normRef:
@@ -102,7 +102,7 @@ class LSFTimeLeft:
                   self.normRef = norm
                   self.log.info( 'Reference Normalization taken from Host Model',
                                  '%s: %s' % ( self.cpuRef, self.normRef ) )
-              except Exception as e:
+              except ValueError as e:
                 self.log.exception( 'Exception parsing lsfinfo output', '', e )
 
       if not self.normRef:
@@ -121,7 +121,7 @@ class LSFTimeLeft:
               shared = egoShared
             elif os.path.exists( lsfShared ):
               shared = lsfShared
-          except Exception as e:
+          except KeyError as e:
             self.log.exception( 'Exception getting LSF configuration', '', e )
           if shared:
             f = open( shared )
@@ -140,7 +140,7 @@ class LSFTimeLeft:
                   self.normRef = float( line.split()[1] )
                   self.log.info( 'Reference Normalization taken from Configuration File',
                                  '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
-                except Exception as e:
+                except ValueError as e:
                   self.log.exception( 'Exception reading LSF configuration', '', e )
           else:
             self.log.warn( 'Could not find LSF configuration' )
@@ -168,7 +168,7 @@ class LSFTimeLeft:
               try:
                 self.hostNorm = float( l2[i] )
                 self.log.info( 'Host Normalization', '%s: %s' % ( self.host, self.hostNorm ) )
-              except Exception as e:
+              except ValueError as e:
                 self.log.exception( 'Exception parsing lshosts output', '', e )
 
       if self.hostNorm and self.normRef:
@@ -209,7 +209,7 @@ class LSFTimeLeft:
         lCPU = sCPU.split( ':' )
         try:
           cpu = float( lCPU[0] ) * 3600 + float( lCPU[1] ) * 60 + float( lCPU[2] )
-        except Exception:
+        except ValueError, IndexError:
           pass
       elif l1[i] == 'START_TIME':
         sStart = l2[i]
@@ -217,7 +217,7 @@ class LSFTimeLeft:
         try:
           timeTup = time.strptime( sStart, '%m/%d-%H:%M:%S %Y' )
           wallClock = time.mktime( time.localtime() ) - time.mktime( timeTup )
-        except Exception:
+        except ValueError:
           pass
 
     if cpu == None or wallClock == None:
