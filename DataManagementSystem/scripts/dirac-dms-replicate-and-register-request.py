@@ -113,7 +113,7 @@ if __name__ == "__main__":
   if multiRequests:
     gLogger.always( "%d requests have been put to ReqDB for execution, with name %s_<num>" % ( count, requestName ) )
   gLogger.always( "You can monitor requests' status using command: 'dirac-rms-show-request <requestName>'" )
-  DIRAC.exit( 0 )
+  DIRAC.exit( error )
 
 
 
