@@ -31,6 +31,7 @@ from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 
 def _isOlderThan( stringTime, days ):
   timeDelta = timedelta( days = days )
@@ -1593,13 +1594,23 @@ class DataManager( object ):
   #
 
 
-  def getReplicas( self, lfns, allStatus = True ):
+  def getReplicas( self, lfns, allStatus = True, getUrl = True ):
     """ get replicas from catalogue """
-    res = self.fc.getReplicas( lfns, allStatus = allStatus )
-    if not self.useCatalogPFN:
+    catalogReplicas = {}
+    failed = {}
+    for lfnChunk in breakListIntoChunks( lfns, 1000 ):
+      res = self.fc.getReplicas( lfnChunk, allStatus = allStatus )
+      if res['OK']:
+        catalogReplicas.update( res['Value']['Successful'] )
+        failed.update( res['Value']['Failed'] )
+      else:
+        return res
+    if not getUrl:
+      for lfn in catalogReplicas:
+        catalogReplicas[lfn] = dict.fromkeys( catalogReplicas.keys(), True )
+    elif not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
-        catalogReplicas = res['Value']['Successful']
 
         # We group the query to getURL by storage element to gain in speed
         for lfn in catalogReplicas:
@@ -1613,7 +1624,7 @@ class DataManager( object ):
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
             catalogReplicas[lfn][se] = succPfn[lfn]
 
-    return res
+    return S_OK( {'Successful':catalogReplicas, 'Failed':failed} )
 
 
   ##################################################################################################3
