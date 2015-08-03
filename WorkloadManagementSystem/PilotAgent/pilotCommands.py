@@ -240,7 +240,7 @@ class InstallDIRAC( CommandBase ):
 
     if retCode:
       self.log.error( "Could not make a proper DIRAC installation [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
     self.log.info( "%s completed successfully" % self.installScriptName )
 
     diracScriptsPath = os.path.join( self.pp.rootPath, 'scripts' )
@@ -249,7 +249,7 @@ class InstallDIRAC( CommandBase ):
       retCode, output = self.executeAndGetOutput( platformScript )
       if retCode:
         self.log.error( "Failed to determine DIRAC platform [ERROR %d]" % retCode )
-        sys.exit( 1 )
+        self.exitWithError( retCode )
       self.pp.platform = output
     diracBinPath = os.path.join( self.pp.rootPath, self.pp.platform, 'bin' )
     diracLibPath = os.path.join( self.pp.rootPath, self.pp.platform, 'lib' )
@@ -333,7 +333,7 @@ class ConfigureBasics( CommandBase ):
 
     if retCode:
       self.log.error( "Could not configure DIRAC basics [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
 
   def _getBasicsCFG( self ):
     """  basics (needed!)
@@ -432,7 +432,7 @@ class ConfigureSite( CommandBase ):
 
     if retCode:
       self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
 
 
   def __setFlavour( self ):
@@ -540,7 +540,7 @@ class ConfigureSite( CommandBase ):
             self.pp.queueName = CE.split( '/' )[1]
           else:
             self.log.error( "CE Name %s not accepted" % CE )
-            sys.exit( 1 )
+            self.exitWithError( retCode )
         else:
           self.log.info( "Looking if queue name is already present in local cfg" )
           from DIRAC import gConfig
@@ -597,7 +597,7 @@ class ConfigureArchitecture( CommandBase ):
     retCode, localArchitecture = self.executeAndGetOutput( architectureCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "There was an error updating the platform [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
     self.log.debug( "Architecture determined: %s" % localArchitecture )
 
     # standard options
@@ -619,7 +619,7 @@ class ConfigureArchitecture( CommandBase ):
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Configuration error [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
 
     return localArchitecture
 
@@ -647,7 +647,7 @@ class ConfigureCPURequirements( CommandBase ):
                                                                       self.pp.installEnv )
     if retCode:
       self.log.error( "Failed to determine cpu normalization [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
 
     # HS06 benchmark
     cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
@@ -661,7 +661,7 @@ class ConfigureCPURequirements( CommandBase ):
                                                  self.pp.installEnv )
     if retCode:
       self.log.error( "Failed to determine cpu time left in the queue [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
     self.log.info( "CPUTime left (in seconds) is %s" % cpuTime )
 
     # HS06s = seconds * HS06
@@ -681,7 +681,7 @@ class ConfigureCPURequirements( CommandBase ):
     retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
     if retCode:
       self.log.error( "Failed to update CFG file for CPUTimeLeft [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
 
 
 class LaunchAgent( CommandBase ):
@@ -756,7 +756,7 @@ class LaunchAgent( CommandBase ):
     if self.pp.executeCmd:
       # Execute user command
       self.log.info( "Executing user defined command: %s" % self.pp.executeCmd )
-      sys.exit( os.system( "source bashrc; %s" % self.pp.executeCmd ) / 256 )
+      self.exitWithError( os.system( "source bashrc; %s" % self.pp.executeCmd ) / 256 )
 
     self.log.info( 'Starting JobAgent' )
     os.environ['PYTHONUNBUFFERED'] = 'yes'
@@ -770,7 +770,7 @@ class LaunchAgent( CommandBase ):
     retCode, _output = self.executeAndGetOutput( jobAgent, self.pp.installEnv )
     if retCode:
       self.log.error( "Error executing the JobAgent [ERROR %d]" % retCode )
-      sys.exit( 1 )
+      self.exitWithError( retCode )
 
     fs = os.statvfs( self.pp.workingDir )
     diskSpace = fs[4] * fs[0] / 1024 / 1024

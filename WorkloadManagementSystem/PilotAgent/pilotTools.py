@@ -14,6 +14,7 @@ import imp
 import types
 import urllib2
 import signal
+import getpass
 
 __RCSID__ = '$Id$'
 
@@ -323,6 +324,14 @@ class CommandBase( object ):
       return (returnCode, outData)
     except ImportError:
       self.log.error( "Error importing subprocess" )
+
+  def exitWithError( self, errorCode ):
+    """ Wrapper around sys.exit()
+    """
+    retCode, _outData = self.executeAndGetOutput( "ps -u %s fux" % getpass.getuser() )
+    if retCode:
+      self.log.error( "Failed to issue ps [ERROR %d] " % retCode )
+    sys.exit( errorCode )
 
 class PilotParams( object ):
   """ Class that holds the structure with all the parameters to be used across all the commands
