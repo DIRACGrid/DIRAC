@@ -1756,7 +1756,11 @@ def installComponent( componentType, system, component, extensions, componentMod
     return result
   instance = result[ 'Value' ]
 
-  result = getComponentCfg( componentType, system, component, instance, extensions )
+  specialOptions = {}
+  if componentModule:
+    specialOptions['Module'] = componentModule
+  result = getComponentCfg( componentType, system, component, instance, extensions,
+                            specialOptions = specialOptions )
   if not result[ 'OK' ]:
     return result
   compCfg = result[ 'Value' ]
