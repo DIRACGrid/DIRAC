@@ -30,96 +30,6 @@ def getGridEnv():
 
   return gridEnv
 
-def getPilotOutput( proxy, grid, pilotRef, pilotStamp = '' ):
-
-  if grid in ['LCG', 'gLite']:
-    return getWMSPilotOutput( proxy, grid, pilotRef )
-  elif grid == "CREAM":
-    return getCREAMPilotOutput( proxy, pilotRef, pilotStamp )
-  elif grid == "ARC":
-    return getARCPilotOutput( proxy, pilotRef )
-  else:
-    return S_ERROR( 'Non-valid grid type %s' % grid )
-
-def getCREAMPilotOutput( proxy, pilotRef, pilotStamp ):
-  """
-  """
-  gridEnv = getGridEnv()
-  tmpdir = mkdtemp()
-  result = ComputingElementFactory().getCE( ceName = 'CREAMSite', ceType = 'CREAM',
-                                       ceParametersDict = {'GridEnv':gridEnv,
-                                                           'Queue':'Qeuue',
-                                                           'OutputURL':"gsiftp://localhost",
-                                                           'WorkingDirectory':tmpdir} )
-
-  if not result['OK']:
-    shutil.rmtree( tmpdir )
-    return result
-  ce = result['Value']
-  ce.setProxy( proxy )
-  fullPilotRef = ":::".join( [pilotRef, pilotStamp] )
-  result = ce.getJobOutput( fullPilotRef )
-  shutil.rmtree( tmpdir )
-  if not result['OK']:
-    return S_ERROR( 'Failed to get pilot output: %s' % result['Message'] )
-  output, error = result['Value']
-  fileList = outputSandboxFiles
-  result = S_OK()
-  result['FileList'] = fileList
-  result['StdOut'] = output
-  result['StdErr'] = error
-  return result
-
-def ARCJob( theCE, theArcID ):
-  """ Create an ARC Job with all the needed / possible parameters defined.
-      By the time we come here, the environment variable X509_USER_PROXY should already be set
-  """
-  j = arc.Job()
-  j.JobID = theArcID
-  statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % ( theCE, theArcID )
-  j.JobStatusURL = arc.URL( statURL )
-  j.JobStatusInterfaceName = "org.nordugrid.ldapng"
-  mangURL = "gsiftp://%s:2811/jobs/" % ( theCE )
-  j.JobManagementURL = arc.URL( mangURL )
-  j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
-  j.ServiceInformationURL = j.JobManagementURL
-  j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
-  userCfg = arc.UserConfig()
-  j.PrepareHandler( userCfg )
-  return j, userCfg
-
-def getARCPilotOutput( proxy, pilotRef ):
-  """ Getting pilot output from ARC Computing Element
-  """
-  tmp_dir = mkdtemp()
-  myce = pilotRef.split( ":" )[1].strip( "/" )
-  job, userCfg = ARCJob( myce, pilotRef )
-  output = job.Retrieve( userCfg, arc.URL( tmp_dir ), False )
-  if 'Results stored at:' in output :
-    tmp_dir = os.path.join( tmp_dir, os.listdir( tmp_dir )[0] )
-    result = S_OK()
-    result['FileList'] = os.listdir( tmp_dir )
-    for filename in result['FileList']:
-      tmpname = os.path.join( tmp_dir, filename )
-      if os.path.exists( tmpname ):
-        myfile = file( tmpname, 'r' )
-        f = myfile.read()
-        myfile.close()
-      else :
-        f = ' '
-      if ".out" in filename:
-        filename = 'StdOut'
-      if ".err" in filename:
-        filename = 'StdErr'
-      result[filename] = f
-    shutil.rmtree( tmp_dir )
-    return result
-  if 'Warning: Job not found in job list' in output:
-    shutil.rmtree( tmp_dir )
-    message = "Pilot not yet visible in the ARC dB of the CE %s" % ( myce )
-    return S_ERROR( message )
-  return S_ERROR( "Sorry - requested pilot output not yet available" )
-
 def getWMSPilotOutput( proxy, grid, pilotRef ):
   """
    Get Output of a GRID job
@@ -188,16 +98,12 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
   """
    Get LoggingInfo of a GRID job
   """
-  if grid == 'LCG':
-    cmd = [ 'edg-job-get-logging-info', '-v', '2', '--noint', pilotRef ]
-  elif grid == 'gLite':
+  if grid == 'gLite':
     cmd = [ 'glite-wms-job-logging-info', '-v', '3', '--noint', pilotRef ]
   elif grid == 'CREAM':
     cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]
-  elif grid == 'ARC':
-    return S_ERROR( 'Pilot logging not available for ARC CEs' )
   else:
-    return S_ERROR( 'Unknnown GRID %s' % grid )
+    return S_ERROR( 'Pilot logging not available for %s CEs' % grid )
 
   gridEnv = getGridEnv()
   ret = executeGridCommand( proxy, cmd, gridEnv )
