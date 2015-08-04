@@ -7,14 +7,12 @@ __RCSID__ = "$Id$"
 from tempfile import mkdtemp
 import shutil, os
 from DIRAC.Core.Utilities.Grid import executeGridCommand
-from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-import arc
-
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC import S_OK, S_ERROR, gConfig
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
-outputSandboxFiles = [ 'StdOut', 'StdErr', 'std.out', 'std.err' ]
+outputSandboxFiles = [ 'StdOut', 'StdErr' ]
 
 COMMAND_TIMEOUT = 60
 ###########################################################################
@@ -30,14 +28,13 @@ def getGridEnv():
 
   return gridEnv
 
-def getWMSPilotOutput( proxy, grid, pilotRef ):
+@executeWithUserProxy
+def getWMSPilotOutput( pilotRef ):
   """
    Get Output of a GRID job
   """
   tmp_dir = mkdtemp()
-  if grid == 'LCG':
-    cmd = [ 'edg-job-get-output' ]
-  elif grid == 'gLite':
+  if grid == 'gLite':
     cmd = [ 'glite-wms-job-output' ]
   else:
     return S_ERROR( 'Unknown GRID %s' % grid )
@@ -46,7 +43,7 @@ def getWMSPilotOutput( proxy, grid, pilotRef ):
 
   gridEnv = getGridEnv()
 
-  ret = executeGridCommand( proxy, cmd, gridEnv )
+  ret = executeGridCommand( '', cmd, gridEnv )
   if not ret['OK']:
     shutil.rmtree( tmp_dir )
     return ret
@@ -83,18 +80,14 @@ def getWMSPilotOutput( proxy, grid, pilotRef ):
       myfile.close()
     else:
       f = ''
-    # HACK: removed after the current scheme has been in production for at least 1 week
-    if filename == 'std.out' and f:
-      filename = 'StdOut'
-    if filename == 'std.err' and f:
-      filename = 'StdErr'
     result[filename] = f
 
   shutil.rmtree( tmp_dir )
   return result
 
 ###########################################################################
-def getPilotLoggingInfo( proxy, grid, pilotRef ):
+@executeWithUserProxy
+def getPilotLoggingInfo( grid, pilotRef ):
   """
    Get LoggingInfo of a GRID job
   """
@@ -106,7 +99,7 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
     return S_ERROR( 'Pilot logging not available for %s CEs' % grid )
 
   gridEnv = getGridEnv()
-  ret = executeGridCommand( proxy, cmd, gridEnv )
+  ret = executeGridCommand( '', cmd, gridEnv )
   if not ret['OK']:
     return ret
 
