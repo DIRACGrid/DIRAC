@@ -230,20 +230,10 @@ class WMSAdministratorHandler(RequestHandler):
     pilotDict = result['Value'][pilotReference]
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
-
-    group = getGroupOption(group,'VOMSRole',group)
-    ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
-    if not ret['OK']:
-      gLogger.error( ret['Message'] )
-      gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
-      return S_ERROR("Failed to get the pilot's owner proxy")
-    proxy = ret['Value']
-
     gridType = pilotDict['GridType']
 
-    return getPilotLoggingInfo( proxy, gridType, pilotReference )
-
-
+    return getPilotLoggingInfo( gridType, pilotReference,
+                                proxyUserDN = owner, proxyUserGroup = group )
 
   ##############################################################################
   types_getJobPilotOutput = [[StringType, IntType, LongType]]
@@ -305,18 +295,8 @@ class WMSAdministratorHandler(RequestHandler):
         gLogger.warn( 'Empty pilot output found for %s' % pilotReference )
 
     gridType = pilotDict['GridType']
-
-    group = getGroupOption(group,'VOMSRole',group)
-    ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
-    if not ret['OK']:
-      gLogger.error( ret['Message'] )
-      gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
-      return S_ERROR("Failed to get the pilot's owner proxy")
-    proxy = ret['Value']
-
     if gridType == "gLite":
-      pilotStamp = pilotDict['PilotStamp']
-      result = getWMSPilotOutput( proxy, gridType, pilotReference, pilotStamp )
+      result = getWMSPilotOutput( pilotReference, proxyUserDN = owner, proxyUserGroup = group)
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -350,6 +330,13 @@ class WMSAdministratorHandler(RequestHandler):
         shutil.rmtree( queueDict['WorkingDirectory'] )
         return result
       ce = result['Value']
+      groupVOMS = getGroupOption(group,'VOMSRole',group)
+      result = gProxyManager.getPilotProxyFromVOMSGroup( owner, groupVOMS )
+      if not result['OK']:
+        gLogger.error( result['Message'] )
+        gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, groupVOMS ) )
+        return S_ERROR("Failed to get the pilot's owner proxy")
+      proxy = result['Value']
       ce.setProxy( proxy )
       pilotStamp = pilotDict['PilotStamp']
       pRef = pilotReference
@@ -534,7 +521,7 @@ class WMSAdministratorHandler(RequestHandler):
       ce = result['Value']
   
       # FIXME: quite hacky. Should be either removed, or based on some flag
-      if gridType in ["LCG", "gLite", "CREAM", 'ARC']:
+      if gridType in ["LCG", "gLite", "CREAM", "ARC", "Globus"]:
         group = getGroupOption(group,'VOMSRole',group)
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
