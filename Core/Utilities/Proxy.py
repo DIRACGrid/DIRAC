@@ -41,6 +41,7 @@ def executeWithUserProxy( fcn ):
 
   :param str proxyUserName: the user name of the proxy to be used
   :param str proxyUserGroup: the user group of the proxy to be used
+  :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
   """
