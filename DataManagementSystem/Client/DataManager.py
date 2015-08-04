@@ -1563,7 +1563,7 @@ class DataManager( object ):
 
   def __SEActive( self, se, access = 'Read' ):
     """ check is SE is active for a given access """
-    return StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )
+    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
 
 ##########################################
   #
