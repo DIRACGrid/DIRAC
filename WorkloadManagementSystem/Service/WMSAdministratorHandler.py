@@ -14,6 +14,8 @@ Access to the pilot data:
 __RCSID__ = "$Id$"
 
 from types import DictType, ListType, IntType, LongType, StringTypes, StringType, FloatType
+from tempfile import mkdtemp
+import shutil
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -21,7 +23,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getPilotOutput
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getWMSPilotOutput, getGridEnv
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
@@ -303,17 +305,18 @@ class WMSAdministratorHandler(RequestHandler):
         gLogger.warn( 'Empty pilot output found for %s' % pilotReference )
 
     gridType = pilotDict['GridType']
-    if gridType in ["LCG","gLite","CREAM","ARC"]:
-      group = getGroupOption(group,'VOMSRole',group)
-      ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
-      if not ret['OK']:
-        gLogger.error( ret['Message'] )
-        gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
-        return S_ERROR("Failed to get the pilot's owner proxy")
-      proxy = ret['Value']
 
+    group = getGroupOption(group,'VOMSRole',group)
+    ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
+    if not ret['OK']:
+      gLogger.error( ret['Message'] )
+      gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
+      return S_ERROR("Failed to get the pilot's owner proxy")
+    proxy = ret['Value']
+
+    if gridType == "gLite":
       pilotStamp = pilotDict['PilotStamp']
-      result = getPilotOutput( proxy, gridType, pilotReference, pilotStamp )
+      result = getWMSPilotOutput( proxy, gridType, pilotReference, pilotStamp )
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -339,16 +342,22 @@ class WMSAdministratorHandler(RequestHandler):
       if not result['OK']:
         return result
       queueDict = result['Value']
+      gridEnv = getGridEnv()
+      queueDict['GridEnv'] = gridEnv
+      queueDict['WorkingDirectory'] = mkdtemp()
       result = ceFactory.getCE( gridType, pilotDict['DestinationSite'], queueDict )
       if not result['OK']:
+        shutil.rmtree( queueDict['WorkingDirectory'] )
         return result
       ce = result['Value']
+      ce.setProxy( proxy )
       pilotStamp = pilotDict['PilotStamp']
       pRef = pilotReference
       if pilotStamp:
         pRef = pRef + ':::' + pilotStamp
       result = ce.getJobOutput( pRef )
       if not result['OK']:
+        shutil.rmtree( queueDict['WorkingDirectory'] )
         return result
       stdout,error = result['Value']
       if stdout:
@@ -362,6 +371,7 @@ class WMSAdministratorHandler(RequestHandler):
       resultDict['OwnerDN'] = owner
       resultDict['OwnerGroup'] = group
       resultDict['FileList'] = []
+      shutil.rmtree( queueDict['WorkingDirectory'] )
       return S_OK( resultDict )
 
   ##############################################################################
