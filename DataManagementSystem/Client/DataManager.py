@@ -1664,7 +1664,6 @@ class DataManager( object ):
     lfnReplicas = res["Value"]["Successful"]
     # # store PFN to LFN mapping
     lfnList = []
-    se = None  # Placeholder for the StorageElement object
     for lfn, replicas in lfnReplicas.items():
       if storageElementName  in replicas:
         lfnList.append( lfn )
@@ -1677,7 +1676,7 @@ class DataManager( object ):
       kwargs['replicaDict'] = lfnReplicas
 
     # # call StorageElement function at least
-    se = se = se if se else StorageElement( storageElementName, vo = self.vo )
+    se = StorageElement( storageElementName, vo = self.vo )
     fcn = getattr( se, method )
     res = fcn( lfnList, **kwargs )
     # # check result
