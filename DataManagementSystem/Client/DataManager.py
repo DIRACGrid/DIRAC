@@ -1173,6 +1173,7 @@ class DataManager( object ):
     # Check that we have write permissions to this file.
     res = self.__verifyWritePermission( lfns )
     if not res['OK']:
+      log.debug( 'Error in __verifyWritePermisison', res['Message'] )
       return res
     if res['Value']['Failed']:
       errStr = "Write access not permitted for this credential."
@@ -1180,8 +1181,11 @@ class DataManager( object ):
       failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
       lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
 
-    log.debug( "Will remove catalogue entry for %s lfns at %s." % ( len( lfns ),
-                                                                                          storageElementName ) )
+    if not lfns:
+      log.debug( 'Permission denied for all files' )
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
+
+    log.debug( "Will remove catalogue entry for %s lfns at %s." % ( len( lfns ), storageElementName ) )
     res = self.fc.getReplicas( lfns, True )
     if not res['OK']:
       errStr = "Completely failed to get replicas for lfns."
@@ -1190,7 +1194,7 @@ class DataManager( object ):
     failed.update( res['Value']['Failed'] )
     replicaDict = res['Value']['Successful']
     lfnsToRemove = []
-    for lfn, repDict in res['Value']['Successful'].items():
+    for lfn, repDict in replicaDict.items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
@@ -1205,6 +1209,7 @@ class DataManager( object ):
       return S_OK( { 'Successful' : successful, 'Failed' : failed } )
     res = self.__removeReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
     if not res['OK']:
+      log.debug( "Failed in __removeReplica", res['Message'] )
       return res
     failed.update( res['Value']['Failed'] )
     successful.update( res['Value']['Successful'] )
@@ -1231,6 +1236,7 @@ class DataManager( object ):
     for lfn in lfns:
       res = self.__verifyWritePermission( lfn )
       if not res['OK']:
+        log.debug( 'Error in __verifyWritePermission', res['Message'] )
         return res
       if lfn not in res['Value']['Successful']:
         errStr = "Write access not permitted for this credential."
