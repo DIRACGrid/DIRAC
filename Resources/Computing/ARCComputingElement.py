@@ -148,29 +148,6 @@ class ARCComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-
-  #############################################################################
-  def __prepareProxy( self ):
-    """ Set the environment variable X509_USER_PROXY and let the ARC CE pick it up from there.
-    Unfortunately I cannot trust the proxies that are floating around here. So, explicitly hunt
-    for the pilot proxy which is the only one I care about. Also, try to be safe about finding
-    out the VO, given that the self.ceParameters['VO'] is not always filled.
-    """
-    if not self.proxy:
-      result = getProxyInfo()
-      if not result['OK']:
-        return S_ERROR( "No proxy available" )
-      if "path" in result['Value']:
-        os.environ['X509_USER_PROXY'] = result['Value']['path']
-        return S_OK()
-    else:
-      result = gProxyManager.dumpProxyToFile( self.proxy )
-      if not result['OK']:
-        return result
-      os.environ['X509_USER_PROXY'] = result['Value']
-
-    gLogger.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
-    return S_OK()
     
   #############################################################################
   def __writeXRSL( self, executableFile ):
@@ -206,7 +183,7 @@ class ARCComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
-    result = self.__prepareProxy()
+    result = self._prepareProxy()
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
@@ -277,7 +254,7 @@ class ARCComputingElement( ComputingElement ):
     """ Kill the specified jobs
     """
     
-    result = self.__prepareProxy()
+    result = self._prepareProxy()
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
@@ -309,7 +286,7 @@ class ARCComputingElement( ComputingElement ):
     """ Method to return information on running and pending jobs.
     """
 
-    result = self.__prepareProxy()
+    result = self._prepareProxy()
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
@@ -335,7 +312,7 @@ class ARCComputingElement( ComputingElement ):
     """ Get the status information for the given list of jobs
     """
 
-    result = self.__prepareProxy()
+    result = self._prepareProxy()
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
@@ -382,7 +359,7 @@ class ARCComputingElement( ComputingElement ):
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
     """
-    result = self.__prepareProxy()
+    result = self._prepareProxy()
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
