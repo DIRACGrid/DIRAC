@@ -236,6 +236,11 @@ class CREAMComputingElement( ComputingElement ):
           cmd.extend( delegationIDs )
           self.log.info( 'Refreshing proxy for:', ' '.join( delegationIDs ) )
           result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+          if result['OK']:
+            status, output, error = result['Value']
+            if status:
+              self.log.error( "Failed to renew proxy delegation",
+                              'Output:\n' + output + '\nError:\n' + error )
 
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = workingDirectory )

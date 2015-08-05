@@ -19,10 +19,9 @@ import arc # Has to work if this module is called
 from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo, getVOfromProxyGroup
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import ARCJob
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
+from DIRAC.Core.Utilities.File                           import makeGuid
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -71,6 +70,25 @@ class ARCComputingElement( ComputingElement ):
     self.__getXRSLExtraString() # Do this after all other initialisations, in case something barks
     
   #############################################################################
+
+  def __getARCJob( self, jobID ):
+    """ Create an ARC Job with all the needed / possible parameters defined.
+        By the time we come here, the environment variable X509_USER_PROXY should already be set
+    """
+    j = arc.Job()
+    j.JobID = jobID
+    statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % ( self.ceHost, jobID )
+    j.JobStatusURL = arc.URL( statURL )
+    j.JobStatusInterfaceName = "org.nordugrid.ldapng"
+    mangURL = "gsiftp://%s:2811/jobs/" % ( self.ceHost )
+    j.JobManagementURL = arc.URL( mangURL )
+    j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+    j.ServiceInformationURL = j.JobManagementURL
+    j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+    userCfg = arc.UserConfig()
+    j.PrepareHandler( userCfg )
+    return j, userCfg
+
   def __getXRSLExtraString( self ):
     # For the XRSL additional string from configuration - only done at initialisation time
     # If this string changes, the corresponding (ARC) site directors have to be restarted
@@ -130,52 +148,12 @@ class ARCComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-
-  #############################################################################
-  def _doTheProxyBit( self ):
-    """ Set the environment variable X509_USER_PROXY and let the ARC CE pick it up from there.
-    Unfortunately I cannot trust the proxies that are floating around here. So, explicitly hunt
-    for the pilot proxy which is the only one I care about. Also, try to be safe about finding
-    out the VO, given that the self.ceParameters['VO'] is not always filled.
-    """
-    vo = ''
-    try: # First get the VO
-      result = getVOfromProxyGroup()
-      if result['OK']:
-        vo = result['Value']
-      else: # A backup solution which may work
-        vo = self.ceParameters['VO']
-    except:
-      gLogger.error("Could not get the VO we are in ...")
-    result = findGenericPilotCredentials( vo ) # Second find out who is the pilot for this vo
-    if not result[ 'OK' ]:
-      os.environ['X509_USER_PROXY'] = ''
-      gLogger.error("Could not set proxy correctly. You (or maybe I) should worry about this.")
-      return
-    self.pilotDN, self.pilotGroup = result[ 'Value' ]
-    # Third - get the actual proxy into a temp file and set the environment to point to this file.
-    result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup )
-    if not result[ 'OK' ]:
-      os.environ['X509_USER_PROXY'] = ''
-      gLogger.error("Why did I crash here? Likely Dirac bug (report please) - or try restarting the siteDirector.")
-      return
-    self.pilotProxy = result['Value']
-    try:
-      ret = gProxyManager.dumpProxyToFile( self.pilotProxy )
-      os.environ['X509_USER_PROXY'] = ret['Value']
-    except AttributeError:
-      ret = getProxyInfo()
-      os.environ['X509_USER_PROXY'] = ret['Value']['path']
-    gLogger.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
     
   #############################################################################
   def __writeXRSL( self, executableFile ):
     """ Create the JDL for submission
     """
-
-    workingDirectory = self.ceParameters['WorkingDirectory']
-    _fd, name = tempfile.mkstemp( suffix = '.xrsl', prefix = 'ARC_', dir = workingDirectory )
-    diracStamp = os.path.basename( name ).replace( '.xrsl', '' ).replace( 'ARC_', '' )
+    diracStamp = makeGuid()[:8]
 
     xrsl = """
 &(executable="%(executable)s")
@@ -188,6 +166,7 @@ class ARCComputingElement( ComputingElement ):
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'diracStamp':diracStamp,
+#            'queue':self.queue,
             'xrslExtraString':self.xrslExtraString
            }
 
@@ -204,7 +183,11 @@ class ARCComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
-    self._doTheProxyBit()
+    result = self._prepareProxy()
+    if not result['OK']:
+      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+      return result
+
     gLogger.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH )
@@ -271,7 +254,11 @@ class ARCComputingElement( ComputingElement ):
     """ Kill the specified jobs
     """
     
-    self._doTheProxyBit()
+    result = self._prepareProxy()
+    if not result['OK']:
+      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+      return result
+
     usercfg = arc.UserConfig()
     js = arc.compute.JobSupervisor(usercfg)
 
@@ -280,7 +267,7 @@ class ARCComputingElement( ComputingElement ):
       jobList = [ jobIDList ]
 
     for jobID in jobList:
-      job, _userCfg = ARCJob( self.ceHost, jobID )
+      job, _userCfg = self.__getARCJob( jobID )
       js.AddJob( job )
 
     result = js.Cancel() # Cancel all jobs at once
@@ -299,7 +286,11 @@ class ARCComputingElement( ComputingElement ):
     """ Method to return information on running and pending jobs.
     """
 
-    self._doTheProxyBit()
+    result = self._prepareProxy()
+    if not result['OK']:
+      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+      return result
+
     usercfg = arc.UserConfig()
     endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
                                arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
@@ -321,10 +312,10 @@ class ARCComputingElement( ComputingElement ):
     """ Get the status information for the given list of jobs
     """
 
-    self._doTheProxyBit()
-    workingDirectory = self.ceParameters['WorkingDirectory']
-    #fd, name = tempfile.mkstemp( suffix = '.list', prefix = 'StatJobs_', dir = workingDirectory )
-    #jobListFile = os.fdopen( fd, 'w' )
+    result = self._prepareProxy()
+    if not result['OK']:
+      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+      return result
 
     jobTmpList = list( jobIDList )
     if type( jobIDList ) in StringTypes:
@@ -338,12 +329,11 @@ class ARCComputingElement( ComputingElement ):
       else:
         job = j
       jobList.append( job )
-      #jobListFile.write( job+'\n' )  
 
     resultDict = {}
     for jobID in jobList:
       gLogger.debug("Retrieving status for job %s" % jobID)
-      job, _userCfg = ARCJob( self.ceHost, jobID )
+      job, _userCfg = self.__getARCJob( jobID )
       job.Update()
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
@@ -369,7 +359,11 @@ class ARCComputingElement( ComputingElement ):
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
     """
-    self._doTheProxyBit()
+    result = self._prepareProxy()
+    if not result['OK']:
+      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+      return result
+
     if jobID.find( ':::' ) != -1:
       pilotRef, stamp = jobID.split( ':::' )
     else:
@@ -378,7 +372,7 @@ class ARCComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    job, userCfg = ARCJob( self.ceHost, pilotRef )
+    job, userCfg = self.__getARCJob( pilotRef )
 
     arcID = os.path.basename(pilotRef)
     gLogger.debug("Retrieving pilot logs for %s" % pilotRef)
@@ -391,8 +385,6 @@ class ARCComputingElement( ComputingElement ):
     gLogger.debug("Working directory for pilot output %s" % workingDirectory)
 
     isItOkay = job.Retrieve( userCfg, arc.URL( workingDirectory ), False )
-    output = ''
-    error = ''
     if ( isItOkay ):
       outFile = open( outFileName, 'r' )
       output = outFile.read()

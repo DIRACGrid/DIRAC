@@ -41,6 +41,7 @@ def executeWithUserProxy( fcn ):
 
   :param str proxyUserName: the user name of the proxy to be used
   :param str proxyUserGroup: the user group of the proxy to be used
+  :param str proxyUserDN: the user DN of the proxy to be used
   :param str proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
   :param str proxyFilePath: optional file location for the temporary proxy
   """
@@ -48,18 +49,20 @@ def executeWithUserProxy( fcn ):
   def wrapped_fcn( *args, **kwargs ):
 
     userName = kwargs.pop( 'proxyUserName', '' )
+    userDN = kwargs.pop( 'proxyUserDN', '' )
     userGroup = kwargs.pop( 'proxyUserGroup', '' )
     vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
     proxyFilePath = kwargs.pop( 'proxyFilePath', False )
 
-    if userName and userGroup:
+    if ( userName or userDN ) and userGroup:
 
       # Setup user proxy
       originalUserProxy = os.environ.get( 'X509_USER_PROXY' )
-      result = getDNForUsername( userName )
-      if not result[ 'OK' ]:
-        return result
-      userDN = result[ 'Value' ][0]
+      if not userDN:
+        result = getDNForUsername( userName )
+        if not result[ 'OK' ]:
+          return result
+        userDN = result[ 'Value' ][0]
       vomsAttr = ''
       if vomsFlag:
         vomsAttr = getVOMSAttributeForGroup( userGroup )
