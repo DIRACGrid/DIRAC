@@ -17,7 +17,7 @@
      j.setName('MyJobName')
 
      dirac = Dirac()
-     jobID = dirac.submit(j)
+     jobID = dirac.submitJob(j)
      print 'Submission Result: ',jobID
 
    Note that several executables can be provided and wil be executed sequentially.
@@ -97,11 +97,7 @@ class Job( API ):
   #############################################################################
 
   def setExecutable( self, executable, arguments = '', logFile = '',
-                       modulesList = ['Script'],
-                       parameters = [( 'executable', 'string', '', "Executable Script" ),
-                                     ( 'arguments', 'string', '', 'Arguments for executable Script' ),
-                                     ( 'applicationLog', 'string', '', "Log file name" )],
-                       paramValues = [] ):
+                     modulesList = None, parameters = None, paramValues = None ):
     """Helper function.
 
        Specify executable script to run with optional arguments and log file
@@ -152,6 +148,13 @@ class Job( API ):
         logName = str(logFile)
     else:
       logName = "Script%s_%s" %( self.stepCount, logName )
+
+    if not modulesList:
+      modulesList = ['Script']
+    if not parameters:
+      parameters = [( 'executable', 'string', '', "Executable Script" ),
+                    ( 'arguments', 'string', '', 'Arguments for executable Script' ),
+                    ( 'applicationLog', 'string', '', "Log file name" )]
 
     step = getStepDefinition( 'ScriptStep%s' % ( self.stepCount ), modulesList, parametersList = parameters )
     self.addToOutputSandbox.append( logName )
@@ -596,7 +599,7 @@ class Job( API ):
     return S_OK( '%s is valid' % site )
 
   #############################################################################
-  def setDestinationCE( self, ceName, diracSite = '' ):
+  def setDestinationCE( self, ceName, diracSite = None ):
     """ Developer function.
 
         Allows to direct a job to a particular Grid CE.
@@ -1193,6 +1196,6 @@ class Job( API ):
     if dirac is None:
       dirac = Dirac()
 
-    return dirac.submit( self, mode = 'local' )
+    return dirac.submitJob( self, mode = 'local' )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
