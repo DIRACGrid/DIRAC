@@ -34,12 +34,7 @@ def getWMSPilotOutput( pilotRef ):
    Get Output of a GRID job
   """
   tmp_dir = mkdtemp()
-  if grid == 'gLite':
-    cmd = [ 'glite-wms-job-output' ]
-  else:
-    return S_ERROR( 'Unknown GRID %s' % grid )
-
-  cmd.extend( ['--noint', '--dir', tmp_dir, pilotRef] )
+  cmd = [ 'glite-wms-job-output', '--noint', '--dir', tmp_dir, pilotRef]
 
   gridEnv = getGridEnv()
 
