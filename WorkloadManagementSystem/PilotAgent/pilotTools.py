@@ -14,7 +14,6 @@ import imp
 import types
 import urllib2
 import signal
-import getpass
 
 __RCSID__ = '$Id$'
 
@@ -328,7 +327,8 @@ class CommandBase( object ):
   def exitWithError( self, errorCode ):
     """ Wrapper around sys.exit()
     """
-    retCode, _outData = self.executeAndGetOutput( "ps -u %s fux" % getpass.getuser() )
+    self.log.info( "List of child processes of current PID:" )
+    retCode, _outData = self.executeAndGetOutput( "ps --forest -o pid,%cpu,%mem,tty,stat,time,cmd -g %d" % os.getpid() )
     if retCode:
       self.log.error( "Failed to issue ps [ERROR %d] " % retCode )
     sys.exit( errorCode )
