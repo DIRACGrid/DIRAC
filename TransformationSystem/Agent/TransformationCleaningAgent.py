@@ -10,6 +10,7 @@ __RCSID__ = "$Id$"
 # # imports
 import re
 import ast
+import os.path
 from datetime import datetime, timedelta
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -227,7 +228,7 @@ class TransformationCleaningAgent( AgentModule ):
       transStr = str( transID ).zfill( 8 )
       if re.search( transStr, str( folder ) ):
         if not folder in existingDirs:
-          existingDirs.append( folder.rstrip( '/' ) )
+          existingDirs.append( os.path.normpath( folder ) )
     return existingDirs
 
   #############################################################################

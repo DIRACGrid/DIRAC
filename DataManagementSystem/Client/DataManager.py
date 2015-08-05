@@ -31,6 +31,7 @@ from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 
 def _isOlderThan( stringTime, days ):
   timeDelta = timedelta( days = days )
@@ -132,16 +133,17 @@ class DataManager( object ):
   def cleanLogicalDirectory( self, lfnDir ):
     """ Clean the logical directory from the catalog and storage
     """
+    log = self.log.getSubLogger( 'cleanLogicalDirectory' )
     if isinstance( lfnDir, basestring ):
       lfnDir = [ lfnDir ]
     retDict = { "Successful" : {}, "Failed" : {} }
     for folder in lfnDir:
       res = self.__cleanDirectory( folder )
       if not res['OK']:
-        self.log.debug( "Failed to clean directory.", "%s %s" % ( folder, res['Message'] ) )
+        log.debug( "Failed to clean directory.", "%s %s" % ( folder, res['Message'] ) )
         retDict["Failed"][folder] = res['Message']
       else:
-        self.log.debug( "Successfully removed directory.", folder )
+        log.debug( "Successfully removed directory.", folder )
         retDict["Successful"][folder] = res['Value']
     return S_OK( retDict )
 
@@ -151,12 +153,13 @@ class DataManager( object ):
     :param self: self reference
     :param str folder: directory name
     """
+    log = self.log.getSubLogger( '__cleanDirectory' )
     res = self.__hasAccess( 'removeDirectory', folder )
     if not res['OK']:
       return res
     if folder not in res['Value']['Successful']:
-      errStr = "__cleanDirectory: Write access not permitted for this credential."
-      self.log.debug( errStr, folder )
+      errStr = "Write access not permitted for this credential."
+      log.debug( errStr, folder )
       return S_ERROR( errStr )
     res = self.__getCatalogDirectoryContents( [ folder ] )
     if not res['OK']:
@@ -165,11 +168,11 @@ class DataManager( object ):
     if not res['OK']:
       return res
     for lfn, reason in res['Value']['Failed'].items():
-      gLogger.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
+      log.error( "Failed to remove file found in the catalog", "%s %s" % ( lfn, reason ) )
     res = returnSingleResult( self.removeFile( [ '%s/dirac_directory' % folder ] ) )
     if not res['OK']:
       if not "No such file" in res['Message']:
-        gLogger.warn( 'Failed to delete dirac_directory placeholder file' )
+        log.warn( 'Failed to delete dirac_directory placeholder file' )
 
     storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
     failed = False
@@ -195,21 +198,22 @@ class DataManager( object ):
     se = StorageElement( storageElement, vo = self.vo )
     res = returnSingleResult( se.exists( directory ) )
 
+    log = self.log.getSubLogger( '__removeStorageDirectory' )
     if not res['OK']:
-      self.log.debug( "Failed to obtain existance of directory", res['Message'] )
+      log.debug( "Failed to obtain existance of directory", res['Message'] )
       return res
 
     exists = res['Value']
     if not exists:
-      self.log.debug( "The directory %s does not exist at %s " % ( directory, storageElement ) )
+      log.debug( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
 
     res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
     if not res['OK']:
-      self.log.debug( "Failed to remove storage directory", res['Message'] )
+      log.debug( "Failed to remove storage directory", res['Message'] )
       return res
 
-    self.log.debug( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'],
+    log.debug( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'],
                                                                     directory,
                                                                     storageElement ) )
     return S_OK()
@@ -220,7 +224,8 @@ class DataManager( object ):
     :param self: self reference
     :param list directories: folder names
     """
-    self.log.debug( 'Obtaining the catalog contents for %d directories:' % len( directories ) )
+    log = self.log.getSubLogger( '__getCatalogDirectoryContents' )
+    log.debug( 'Obtaining the catalog contents for %d directories:' % len( directories ) )
     activeDirs = directories
     allFiles = {}
     while len( activeDirs ) > 0:
@@ -229,13 +234,13 @@ class DataManager( object ):
       activeDirs.remove( currentDir )
 
       if not res['OK']:
-        self.log.debug( "Problem getting the %s directory content" % currentDir, res['Message'] )
+        log.debug( "Problem getting the %s directory content" % currentDir, res['Message'] )
       else:
         dirContents = res['Value']
         activeDirs.extend( dirContents['SubDirs'] )
         allFiles.update( dirContents['Files'] )
 
-    self.log.debug( "Found %d files" % len( allFiles ) )
+    log.debug( "Found %d files" % len( allFiles ) )
     return S_OK( allFiles )
 
 
@@ -269,9 +274,10 @@ class DataManager( object ):
       directories = [directory]
     else:
       directories = directory
-    self.log.debug( "Obtaining the files older than %d days in %d directories:" % ( days, len( directories ) ) )
+    log = self.log.getSubLogger( 'getFilesFromDirectory' )
+    log.debug( "Obtaining the files older than %d days in %d directories:" % ( days, len( directories ) ) )
     for folder in directories:
-      self.log.debug( folder )
+      log.debug( folder )
     activeDirs = directories
     allFiles = []
     while len( activeDirs ) > 0:
@@ -280,12 +286,12 @@ class DataManager( object ):
       res = returnSingleResult( self.fc.listDirectory( currentDir, verbose = ( days != 0 ) ) )
       activeDirs.remove( currentDir )
       if not res['OK']:
-        self.log.debug( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
+        log.debug( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
       else:
         dirContents = res['Value']
         subdirs = dirContents['SubDirs']
         files = dirContents['Files']
-        self.log.debug( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
+        log.debug( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
         for subdir in subdirs:
           if ( not days ) or _isOlderThan( subdirs[subdir]['CreationDate'], days ):
             if subdir[0] != '/':
@@ -310,15 +316,16 @@ class DataManager( object ):
 
         'lfn' is the logical file name for the desired file
     """
+    log = self.log.getSubLogger( 'getFile' )
     if isinstance( lfn, list ):
       lfns = lfn
     elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
-      errStr = "getFile: Supplied lfn must be string or list of strings."
-      self.log.debug( errStr )
+      errStr = "Supplied lfn must be string or list of strings."
+      log.debug( errStr )
       return S_ERROR( errStr )
-    self.log.debug( "getFile: Attempting to get %s files." % len( lfns ) )
+    log.debug( "Attempting to get %s files." % len( lfns ) )
     res = self.getActiveReplicas( lfns )
     if not res['OK']:
       return res
@@ -341,9 +348,11 @@ class DataManager( object ):
     return S_OK( { 'Successful': successful, 'Failed' : failed } )
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
+
+    log = self.log.getSubLogger( '__getFile' )
     if not replicas:
       errStr = "No accessible replicas found"
-      self.log.debug( errStr )
+      log.debug( errStr )
       return S_ERROR( errStr )
     # Determine the best replicas
     res = self._getSEProximity( replicas.keys() )
@@ -388,12 +397,12 @@ class DataManager( object ):
           gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
       # If we are here, there was an error, log it debug level
-      self.log.debug( errTuple[0], errTuple[1] )
+      log.debug( errTuple[0], errTuple[1] )
 
     gDataStoreClient.addRegister( oDataOperation )
-    self.log.verbose( "getFile: Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
+    log.verbose( "Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
-    return S_ERROR( "DataManager.getFile: Failed to get local copy from any replicas\n%s %s" % errTuple )
+    return S_ERROR( "Failed to get local copy from any replicas\n%s %s" % errTuple )
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """
@@ -421,15 +430,16 @@ class DataManager( object ):
     res = self.__hasAccess( 'addFile', lfn )
     if not res['OK']:
       return res
+    log = self.log.getSubLogger( 'putAndRegister' )
     if lfn not in res['Value']['Successful']:
-      errStr = "putAndRegister: Write access not permitted for this credential."
-      self.log.debug( errStr, lfn )
+      errStr = "Write access not permitted for this credential."
+      log.debug( errStr, lfn )
       return S_ERROR( errStr )
 
     # Check that the local file exists
     if not os.path.exists( fileName ):
-      errStr = "putAndRegister: Supplied file does not exist."
-      self.log.debug( errStr, fileName )
+      errStr = "Supplied file does not exist."
+      log.debug( errStr, fileName )
       return S_ERROR( errStr )
     # If the path is not provided then use the LFN path
     if not path:
@@ -437,33 +447,33 @@ class DataManager( object ):
     # Obtain the size of the local file
     size = getSize( fileName )
     if size == 0:
-      errStr = "putAndRegister: Supplied file is zero size."
-      self.log.debug( errStr, fileName )
+      errStr = "Supplied file is zero size."
+      log.debug( errStr, fileName )
       return S_ERROR( errStr )
     # If the GUID is not given, generate it here
     if not guid:
       guid = makeGuid( fileName )
     if not checksum:
-      self.log.debug( "putAndRegister: Checksum information not provided. Calculating adler32." )
+      log.debug( "Checksum information not provided. Calculating adler32." )
       checksum = fileAdler( fileName )
-      self.log.debug( "putAndRegister: Checksum calculated to be %s." % checksum )
+      log.debug( "Checksum calculated to be %s." % checksum )
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
-      errStr = "putAndRegister: Completey failed to determine existence of destination LFN."
-      self.log.debug( errStr, lfn )
+      errStr = "Completey failed to determine existence of destination LFN."
+      log.debug( errStr, lfn )
       return res
     if lfn not in res['Value']['Successful']:
-      errStr = "putAndRegister: Failed to determine existence of destination LFN."
-      self.log.debug( errStr, lfn )
+      errStr = "Failed to determine existence of destination LFN."
+      log.debug( errStr, lfn )
       return S_ERROR( errStr )
     if res['Value']['Successful'][lfn]:
       if res['Value']['Successful'][lfn] == lfn:
-        errStr = "putAndRegister: The supplied LFN already exists in the File Catalog."
-        self.log.debug( errStr, lfn )
+        errStr = "The supplied LFN already exists in the File Catalog."
+        log.debug( errStr, lfn )
       else:
-        errStr = "putAndRegister: This file GUID already exists for another file. " \
+        errStr = "This file GUID already exists for another file. " \
             "Please remove it and try again."
-        self.log.debug( errStr, res['Value']['Successful'][lfn] )
+        log.debug( errStr, res['Value']['Successful'][lfn] )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
 
     ##########################################################
@@ -471,9 +481,9 @@ class DataManager( object ):
     storageElement = StorageElement( diracSE, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
-      errStr = "putAndRegister: The storage element is not currently valid."
-      self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
-      return S_ERROR( errStr )
+      errStr = "The storage element is not currently valid."
+      log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
 
     fileDict = {lfn:fileName}
@@ -490,15 +500,15 @@ class DataManager( object ):
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
-      errStr = "putAndRegister: Failed to put file to Storage Element."
+      errStr = "Failed to put file to Storage Element."
       oDataOperation.setValueByKey( 'TransferOK', 0 )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
       oDataOperation.setEndTime()
       gDataStoreClient.addRegister( oDataOperation )
       startTime = time.time()
       gDataStoreClient.commit()
-      self.log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
-      self.log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
+      log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
 
@@ -507,9 +517,9 @@ class DataManager( object ):
     destinationSE = storageElement.getStorageElementName()['Value']
     res = returnSingleResult( storageElement.getURL( lfn, protocol = self.registrationProtocol ) )
     if not res['OK']:
-      errStr = "putAndRegister: Failed to generate destination PFN."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      errStr = "Failed to generate destination PFN."
+      log.debug( errStr, res['Message'] )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     destUrl = res['Value']
     oDataOperation.setValueByKey( 'RegistrationTotal', 1 )
 
@@ -520,13 +530,13 @@ class DataManager( object ):
     registerTime = time.time() - startTime
     oDataOperation.setValueByKey( 'RegistrationTime', registerTime )
     if not res['OK']:
-      errStr = "putAndRegister: Completely failed to register file."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to register file."
+      log.debug( errStr, res['Message'] )
       failed[lfn] = { 'register' : registerDict }
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
     elif lfn in res['Value']['Failed']:
-      errStr = "putAndRegister: Failed to register file."
-      self.log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
+      errStr = "Failed to register file."
+      log.debug( errStr, "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
       failed[lfn] = { 'register' : registerDict }
     else:
@@ -536,7 +546,7 @@ class DataManager( object ):
     gDataStoreClient.addRegister( oDataOperation )
     startTime = time.time()
     gDataStoreClient.commit()
-    self.log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+    log.debug( 'Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
     return S_OK( {'Successful': successful, 'Failed': failed } )
 
   def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
@@ -548,19 +558,20 @@ class DataManager( object ):
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
         'localCache' is the local file system location to be used as a temporary cache
     """
+    log = self.log.getSubLogger( 'replicateAndRegister' )
     successful = {}
     failed = {}
-    self.log.debug( "replicateAndRegister: Attempting to replicate %s to %s." % ( lfn, destSE ) )
+    log.debug( "Attempting to replicate %s to %s." % ( lfn, destSE ) )
     startReplication = time.time()
     res = self.__replicate( lfn, destSE, sourceSE, destPath, localCache )
     replicationTime = time.time() - startReplication
     if not res['OK']:
-      errStr = "DataManager.replicateAndRegister: Completely failed to replicate file."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      errStr = "Completely failed to replicate file."
+      log.debug( errStr, res['Message'] )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     if not res['Value']:
       # The file was already present at the destination SE
-      self.log.debug( "replicateAndRegister: %s already present at %s." % ( lfn, destSE ) )
+      log.debug( "%s already present at %s." % ( lfn, destSE ) )
       successful[lfn] = { 'replicate' : 0, 'register' : 0 }
       resDict = { 'Successful' : successful, 'Failed' : failed }
       return S_OK( resDict )
@@ -568,23 +579,23 @@ class DataManager( object ):
 
     destPfn = res['Value']['DestPfn']
     destSE = res['Value']['DestSE']
-    self.log.debug( "replicateAndRegister: Attempting to register %s at %s." % ( destPfn, destSE ) )
+    log.debug( "Attempting to register %s at %s." % ( destPfn, destSE ) )
     replicaTuple = ( lfn, destPfn, destSE )
     startRegistration = time.time()
     res = self.registerReplica( replicaTuple, catalog = catalog )
     registrationTime = time.time() - startRegistration
     if not res['OK']:
       # Need to return to the client that the file was replicated but not registered
-      errStr = "replicateAndRegister: Completely failed to register replica."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to register replica."
+      log.debug( errStr, res['Message'] )
       failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
     else:
       if lfn in res['Value']['Successful']:
-        self.log.debug( "replicateAndRegister: Successfully registered replica." )
+        log.debug( "Successfully registered replica." )
         successful[lfn]['register'] = registrationTime
       else:
-        errStr = "replicateAndRegister: Failed to register replica."
-        self.log.debug( errStr, res['Value']['Failed'][lfn] )
+        errStr = "Failed to register replica."
+        log.debug( errStr, res['Value']['Failed'][lfn] )
         failed[lfn] = { 'Registration' : { 'LFN' : lfn, 'TargetSE' : destSE, 'PFN' : destPfn } }
     return S_OK( {'Successful': successful, 'Failed': failed} )
 
@@ -597,15 +608,16 @@ class DataManager( object ):
         'destPath' is the path on the destination storage element, if to be different from LHCb convention
         'localCache' is the local file system location to be used as a temporary cache
     """
-    self.log.debug( "replicate: Attempting to replicate %s to %s." % ( lfn, destSE ) )
+    log = self.log.getSubLogger( 'replicate' )
+    log.debug( "Attempting to replicate %s to %s." % ( lfn, destSE ) )
     res = self.__replicate( lfn, destSE, sourceSE, destPath, localCache )
     if not res['OK']:
-      errStr = "replicate: Replication failed."
-      self.log.debug( errStr, "%s %s" % ( lfn, destSE ) )
+      errStr = "Replication failed."
+      log.debug( errStr, "%s %s" % ( lfn, destSE ) )
       return res
     if not res['Value']:
       # The file was already present at the destination SE
-      self.log.debug( "replicate: %s already present at %s." % ( lfn, destSE ) )
+      log.debug( "%s already present at %s." % ( lfn, destSE ) )
       return res
     return S_OK( lfn )
 
@@ -671,7 +683,7 @@ class DataManager( object ):
     if not res['OK']:
       errStr = "The storage element is not currently valid."
       log.debug( errStr, "%s %s" % ( destSEName, res['Message'] ) )
-      return S_ERROR( errStr )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
     # Get the real name of the SE
     destSEName = destStorageElement.getStorageElementName()['Value']
@@ -690,7 +702,7 @@ class DataManager( object ):
     log.debug( "Attempting to obtain replicas for %s." % ( lfn ) )
     res = returnSingleResult( self.getReplicas( lfn ) )
     if not res[ 'OK' ]:
-      errStr = "%Failed to get replicas for LFN."
+      errStr = "Failed to get replicas for LFN."
       log.debug( errStr, "%s %s" % ( lfn, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
@@ -911,22 +923,23 @@ class DataManager( object ):
     :param tuple fileTuple: (lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum )
     :param str catalog: catalog name
     """
+    log = self.log.getSubLogger( 'registerFile' )
     if isinstance( fileTuple, ( list, set ) ):
       fileTuples = fileTuple
     elif isinstance( fileTuple, tuple ):
       fileTuples = [fileTuple]
     for fileTuple in fileTuples:
       if not isinstance( fileTuple, tuple ):
-        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
-        self.log.debug( errStr )
+        errStr = "Supplied file info must be tuple or list of tuples."
+        log.debug( errStr )
         return S_ERROR( errStr )
     if not fileTuples:
       return S_OK( {'Successful':[], 'Failed':{}} )
-    self.log.debug( "registerFile: Attempting to register %s files." % len( fileTuples ) )
+    log.debug( "Attempting to register %s files." % len( fileTuples ) )
     res = self.__registerFile( fileTuples, catalog )
     if not res['OK']:
-      errStr = "registerFile: Completely failed to register files."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to register files."
+      log.debug( errStr, res['Message'] )
       return res
     return res
 
@@ -947,8 +960,8 @@ class DataManager( object ):
 
     res = fileCatalog.addFile( fileDict )
     if not res['OK']:
-      errStr = "__registerFile: Completely failed to register files."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to register files."
+      self.log.getSubLogger( '__registerFile' ).debug( errStr, res['Message'] )
 
     return res
 
@@ -957,27 +970,29 @@ class DataManager( object ):
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
     """
+    log = self.log.getSubLogger( 'registerReplica' )
     if isinstance( replicaTuple, ( list, set ) ):
       replicaTuples = replicaTuple
     elif isinstance( replicaTuple, tuple ):
       replicaTuples = [ replicaTuple ]
     for replicaTuple in replicaTuples:
       if not isinstance( replicaTuple, tuple ):
-        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
-        self.log.debug( errStr )
+        errStr = "Supplied file info must be tuple or list of tuples."
+        log.debug( errStr )
         return S_ERROR( errStr )
     if not replicaTuples:
       return S_OK( {'Successful':[], 'Failed':{}} )
-    self.log.debug( "registerReplica: Attempting to register %s replicas." % len( replicaTuples ) )
+    log.debug( "Attempting to register %s replicas." % len( replicaTuples ) )
     res = self.__registerReplica( replicaTuples, catalog )
     if not res['OK']:
-      errStr = "registerReplica: Completely failed to register replicas."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to register replicas."
+      log.debug( errStr, res['Message'] )
       return res
     return res
 
   def __registerReplica( self, replicaTuples, catalog ):
     """ register replica to catalogue """
+    log = self.log.getSubLogger( '__registerReplica' )
     seDict = {}
     for lfn, url, storageElementName in replicaTuples:
       seDict.setdefault( storageElementName, [] ).append( ( lfn, url ) )
@@ -987,8 +1002,8 @@ class DataManager( object ):
       destStorageElement = StorageElement( storageElementName, vo = self.vo )
       res = destStorageElement.isValid()
       if not res['OK']:
-        errStr = "__registerReplica: The storage element is not currently valid."
-        self.log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
+        errStr = "The storage element is not currently valid."
+        log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
         for lfn, url in replicaTuple:
           failed[lfn] = errStr
       else:
@@ -1000,7 +1015,7 @@ class DataManager( object ):
           else:
             replicaTuple = ( lfn, res['Value'], storageElementName, False )
             replicaTuples.append( replicaTuple )
-    self.log.debug( "__registerReplica: Successfully resolved %s replicas for registration." % len( replicaTuples ) )
+    log.debug( "Successfully resolved %s replicas for registration." % len( replicaTuples ) )
     # HACK!
     replicaDict = {}
     for lfn, url, se, _master in replicaTuples:
@@ -1012,9 +1027,9 @@ class DataManager( object ):
     else:
       res = self.fc.addReplica( replicaDict )
     if not res['OK']:
-      errStr = "__registerReplica: Completely failed to register replicas."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      errStr = "Completely failed to register replicas."
+      log.debug( errStr, res['Message'] )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
     resDict = {'Successful':successful, 'Failed':failed}
@@ -1030,6 +1045,7 @@ class DataManager( object ):
 
         'lfn' is the file to be removed
     """
+    log = self.log.getSubLogger( 'removeFile' )
     if force == None:
       force = self.ignoreMissingInFC
     if isinstance( lfn, ( list, dict, set, tuple ) ):
@@ -1038,8 +1054,8 @@ class DataManager( object ):
       lfns = [lfn]
     for lfn in lfns:
       if not isinstance( lfn, basestring ):
-        errStr = "removeReplica: Supplied lfns must be string or list of strings."
-        self.log.debug( errStr )
+        errStr = "Supplied lfns must be string or list of strings."
+        log.debug( errStr )
         return S_ERROR( errStr )
     successful = {}
     failed = {}
@@ -1062,18 +1078,18 @@ class DataManager( object ):
       if not res['OK']:
         return res
       if res['Value']['Failed']:
-        errStr = "removeFile: Write access not permitted for this credential."
-        self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
+        errStr = "Write access not permitted for this credential."
+        log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
         failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
 
       lfns = res['Value']['Successful']
     
       if lfns:
-        self.log.debug( "removeFile: Attempting to remove %s files from Storage and Catalog. Get replicas first" % len( lfns ) )
+        log.debug( "Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
         res = self.fc.getReplicas( lfns, True )
         if not res['OK']:
           errStr = "DataManager.removeFile: Completely failed to get replicas for lfns."
-          self.log.debug( errStr, res['Message'] )
+          log.debug( errStr, res['Message'] )
           return res
         lfnDict = res['Value']['Successful']
 
@@ -1088,8 +1104,8 @@ class DataManager( object ):
 
         res = self.__removeFile( lfnDict )
         if not res['OK']:
-          errStr = "removeFile: Completely failed to remove files."
-          self.log.debug( errStr, res['Message'] )
+          errStr = "Completely failed to remove files."
+          log.debug( errStr, res['Message'] )
           return res
         failed.update( res['Value']['Failed'] )
         successful.update( res['Value']['Successful'] )
@@ -1138,14 +1154,15 @@ class DataManager( object ):
        'storageElementName' is the storage where the file is to be removed
        'lfn' is the file to be removed
     """
+    log = self.log.getSubLogger( 'removeReplica' )
     if isinstance( lfn, ( list, dict, set, tuple ) ):
       lfns = list( lfn )
     else:
       lfns = [lfn]
     for lfn in lfns:
       if not isinstance( lfn, basestring ):
-        errStr = "removeReplica: Supplied lfns must be string or list of strings."
-        self.log.debug( errStr )
+        errStr = "Supplied lfns must be string or list of strings."
+        log.debug( errStr )
         return S_ERROR( errStr )
     successful = {}
     failed = {}
@@ -1154,30 +1171,34 @@ class DataManager( object ):
     # Check that we have write permissions to this file.
     res = self.__hasAccess( 'removeReplica', lfns )
     if not res['OK']:
+      log.debug( 'Error in __verifyWritePermisison', res['Message'] )
       return res
     if res['Value']['Failed']:
-      errStr = "removeReplica: Write access not permitted for this credential."
-      self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
+      errStr = "Write access not permitted for this credential."
+      log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
       failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
       lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
 
-    self.log.debug( "removeReplica: Will remove catalogue entry for %s lfns at %s." % ( len( lfns ),
-                                                                                          storageElementName ) )
+    if not lfns:
+      log.debug( 'Permission denied for all files' )
+      return S_OK( { 'Successful' : successful, 'Failed' : failed } )
+
+    log.debug( "Will remove catalogue entry for %s lfns at %s." % ( len( lfns ), storageElementName ) )
     res = self.fc.getReplicas( lfns, True )
     if not res['OK']:
-      errStr = "removeReplica: Completely failed to get replicas for lfns."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to get replicas for lfns."
+      log.debug( errStr, res['Message'] )
       return res
     failed.update( res['Value']['Failed'] )
     replicaDict = res['Value']['Successful']
     lfnsToRemove = []
-    for lfn, repDict in res['Value']['Successful'].items():
+    for lfn, repDict in replicaDict.items():
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
       elif len( repDict ) == 1:
         # The file has only a single replica so don't remove
-        self.log.debug( "The replica you are trying to remove is the only one.", "%s @ %s" % ( lfn,
+        log.debug( "The replica you are trying to remove is the only one.", "%s @ %s" % ( lfn,
                                                                                                storageElementName ) )
         failed[lfn] = "Failed to remove sole replica"
       else:
@@ -1186,6 +1207,7 @@ class DataManager( object ):
       return S_OK( { 'Successful' : successful, 'Failed' : failed } )
     res = self.__removeReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
     if not res['OK']:
+      log.debug( "Failed in __removeReplica", res['Message'] )
       return res
     failed.update( res['Value']['Failed'] )
     successful.update( res['Value']['Successful'] )
@@ -1202,6 +1224,7 @@ class DataManager( object ):
         :param replicaDict : cache of fc.getReplicas(lfns) : { lfn { se : catalog url } }
 
     """
+    log = self.log.getSubLogger( '__removeReplica' )
     failed = {}
     successful = {}
     replicaDict = replicaDict if replicaDict else {}
@@ -1211,10 +1234,11 @@ class DataManager( object ):
     for lfn in lfns:
       res = self.__hasAccess( 'removeReplica', lfn )
       if not res['OK']:
+        log.debug( 'Error in __verifyWritePermission', res['Message'] )
         return res
       if lfn not in res['Value']['Successful']:
-        errStr = "__removeReplica: Write access not permitted for this credential."
-        self.log.debug( errStr, lfn )
+        errStr = "Write access not permitted for this credential."
+        log.debug( errStr, lfn )
         failed[lfn] = errStr
       else:
         lfnsToRemove.append( lfn )
@@ -1223,9 +1247,9 @@ class DataManager( object ):
     res = self.__removePhysicalReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
 
     if not res['OK']:
-      errStr = "__removeReplica: Failed to remove physical replicas."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      errStr = "Failed to remove physical replicas."
+      log.debug( errStr, res['Message'] )
+      return res
 
     failed.update( dict( [( lfn, error ) for lfn, error in res['Value']['Failed'].items()] ) )
 
@@ -1237,8 +1261,8 @@ class DataManager( object ):
 
     res = self.__removeCatalogReplica( replicaTuples )
     if not res['OK']:
-      errStr = "__removeReplica: Completely failed to remove physical files."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to remove physical files."
+      log.debug( errStr, res['Message'] )
       failed.update( dict.fromkeys( [lfn for lfn, _pfn, _se in replicaTuples if lfn not in failed], res['Message'] ) )
       successful = {}
     else:
@@ -1253,7 +1277,7 @@ class DataManager( object ):
     :param str storageElementName: SE name
     :param mixed lfn: a single LFN or list of LFNs
     """
-
+    log = self.log.getSubLogger( 'removeReplicaFromCatalog' )
     # Remove replica from the file catalog 'lfn' are the file
     # to be removed 'storageElementName' is the storage where the file is to be removed
     if isinstance( lfn, ( list, dict, set, tuple ) ):
@@ -1262,19 +1286,19 @@ class DataManager( object ):
       lfns = [lfn]
     for lfn in lfns:
       if not isinstance( lfn, basestring ):
-        errStr = "removeReplica: Supplied lfns must be string or list of strings."
-        self.log.debug( errStr )
+        errStr = "Supplied lfns must be string or list of strings."
+        log.debug( errStr )
         return S_ERROR( errStr )
     successful = {}
     failed = {}
     if not lfns:
       return S_OK( {'Successful':successful, 'Failed':failed} )
-    self.log.debug( "removeReplicaFromCatalog: Will remove catalogue entry for %s lfns at %s." % \
+    log.debug( "Will remove catalogue entry for %s lfns at %s." % \
                         ( len( lfns ), storageElementName ) )
     res = self.fc.getReplicas( lfns, allStatus = True )
     if not res['OK']:
-      errStr = "removeReplicaFromCatalog: Completely failed to get replicas for lfns."
-      self.log.debug( errStr, res['Message'] )
+      errStr = "Completely failed to get replicas for lfns."
+      log.debug( errStr, res['Message'] )
       return res
     failed = {}
     successful = {}
@@ -1290,7 +1314,7 @@ class DataManager( object ):
         successful[lfn] = True
       else:
         replicaTuples.append( ( lfn, repDict[storageElementName], storageElementName ) )
-    self.log.debug( "removeReplicaFromCatalog: Resolved %s pfns for catalog removal at %s." % ( len( replicaTuples ),
+    log.debug( "Resolved %s pfns for catalog removal at %s." % ( len( replicaTuples ),
                                                                                                   storageElementName ) )
     res = self.__removeCatalogReplica( replicaTuples )
     failed.update( res['Value']['Failed'] )
@@ -1303,14 +1327,15 @@ class DataManager( object ):
 
        'replicaTuple' is a tuple containing the replica to be removed and is of the form ( lfn, pfn, se )
     """
+    log = self.log.getSubLogger( 'removeCatalogPhysicalFileNames' )
     if isinstance( replicaTuple, ( list, dict, set, tuple ) ):
       replicaTuples = list( replicaTuple )
     else:
       replicaTuples = [replicaTuple]
     for replicaTuple in replicaTuples:
       if not isinstance( replicaTuple, tuple ):
-        errStr = "registerFile: Supplied file info must be tuple or list of tuples."
-        self.log.debug( errStr )
+        errStr = "Supplied file info must be tuple or list of tuples."
+        log.debug( errStr )
         return S_ERROR( errStr )
     if not replicaTuples:
       return S_OK( {'Successful':[], 'Failed':{}} )
@@ -1320,6 +1345,7 @@ class DataManager( object ):
     """ remove replica form catalogue
         :param replicaTuples : list of (lfn, catalogPFN, se)
     """
+    log = self.log.getSubLogger( '__removeCatalogReplica' )
     oDataOperation = _initialiseAccountingObject( 'removeCatalogReplica', '', len( replicaTuples ) )
     oDataOperation.setStartTime()
     start = time.time()
@@ -1334,9 +1360,9 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'RegistrationOK', 0 )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
       gDataStoreClient.addRegister( oDataOperation )
-      errStr = "__removeCatalogReplica: Completely failed to remove replica: " + res['Message']
-      self.log.debug( errStr )
-      return S_ERROR( errStr )
+      errStr = "Completely failed to remove replica: "
+      log.debug( errStr, res['Message'] )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
 
     success = res['Value']['Successful']
     failed = res['Value']['Failed']
@@ -1350,71 +1376,20 @@ class DataManager( object ):
       if not failed[lfn]:
         failed.pop( lfn )
       else:
-        self.log.error( "__removeCatalogReplica: Failed to remove replica.", "%s %s" % ( lfn, error ) )
+        log.error( "Failed to remove replica.", "%s %s" % ( lfn, error ) )
 
     # Only for logging information
     if success:
-      self.log.debug( "__removeCatalogReplica: Removed %d replicas" % len( success ) )
+      log.debug( "Removed %d replicas" % len( success ) )
       for lfn in success:
-        self.log.debug( "__removeCatalogReplica: Successfully removed replica.", lfn )
+        log.debug( "Successfully removed replica.", lfn )
 
     oDataOperation.setValueByKey( 'RegistrationOK', len( success ) )
     gDataStoreClient.addRegister( oDataOperation )
     return res
 
 
-#   def removePhysicalReplicaLegacy( self, storageElementName, lfn ):
-#     """ Remove replica from Storage Element.
-#
-#        'lfn' are the files to be removed
-#        'storageElementName' is the storage where the file is to be removed
-#     """
-#     if type( lfn ) == ListType:
-#       lfns = lfn
-#     elif type( lfn ) == StringType:
-#       lfns = [lfn]
-#     else:
-#       errStr = "removePhysicalReplica: Supplied lfns must be string or list of strings."
-#       self.log.debug( errStr )
-#       return S_ERROR( errStr )
-#     successful = {}
-#     failed = {}
-#     # Check that we have write permissions to this directory.
-#     res = self.__hasAccess( 'removeReplica', lfns )
-#     if not res['OK']:
-#       return res
-#     if res['Value']['Failed']:
-#       errStr = "removePhysicalReplica: Write access not permitted for this credential."
-#       self.log.debug( errStr, 'for %d files' % len( res['Value']['Failed'] ) )
-#       failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
-#       lfns = [lfn for lfn in lfns if lfn not in res['Value']['Failed']]
-#     self.log.debug( "removePhysicalReplica: Attempting to remove %s lfns at %s." % ( len( lfns ),
-#                                                                                        storageElementName ) )
-#     self.log.debug( "removePhysicalReplica: Attempting to resolve replicas." )
-#     res = self.getReplicas( lfns )
-#     if not res['OK']:
-#       errStr = "removePhysicalReplica: Completely failed to get replicas for lfns."
-#       self.log.debug( errStr, res['Message'] )
-#       return res
-#     failed.update( res['Value']['Failed'] )
-#     replicaDict = res['Value']['Successful']
-#     successful = {}
-#     lfnsToRemove = []
-#     for lfn, repDict in replicaDict.items():
-#       if storageElementName not in repDict:
-#         # The file doesn't exist at the storage element so don't have to remove it
-#         successful[lfn] = True
-#       else:
-#         lfnsToRemove.append( lfn )
-#     self.log.debug( "removePhysicalReplica: Resolved %s pfns for removal at %s." % ( len( lfnsToRemove ),
-#                                                                                        storageElementName ) )
-#     res = self.__removePhysicalReplica( storageElementName, lfnsToRemove, replicaDict = replicaDict )
-#     for lfn, error in res['Value']['Failed'].items():
-#       failed[lfn] = error
-#     for lfn in res['Value']['Successful']:
-#       successful[lfn] = True
-#     resDict = { 'Successful' : successful, 'Failed' : failed }
-#     return S_OK( resDict )
+
 
 
   def __removePhysicalReplica( self, storageElementName, lfnsToRemove, replicaDict = None ):
@@ -1424,14 +1399,15 @@ class DataManager( object ):
         :param lfnsToRemove : list of lfn to removes
         :param replicaDict : cache of fc.getReplicas, to be passed to the SE
      """
-    self.log.debug( "__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
+    log = self.log.getSubLogger( '__removePhysicalReplica' )
+    log.debug( "Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
                                                                                          storageElementName ) )
     storageElement = StorageElement( storageElementName, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
-      errStr = "__removePhysicalReplica: The storage element is not currently valid."
-      self.log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
-      return S_ERROR( errStr )
+      errStr = "The storage element is not currently valid."
+      log.debug( errStr, "%s %s" % ( storageElementName, res['Message'] ) )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     oDataOperation = _initialiseAccountingObject( 'removePhysicalReplica',
                                                   storageElementName,
                                                   len( lfnsToRemove ) )
@@ -1446,9 +1422,9 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'TransferOK', 0 )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
       gDataStoreClient.addRegister( oDataOperation )
-      errStr = "__removePhysicalReplica: Failed to remove replicas."
-      self.log.debug( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      errStr = "Failed to remove replicas."
+      log.debug( errStr, res['Message'] )
+      return res
     else:
       for lfn, value in res['Value']['Failed'].items():
         if 'No such file or directory' in value:
@@ -1462,8 +1438,8 @@ class DataManager( object ):
       oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 
       gDataStoreClient.addRegister( oDataOperation )
-      infoStr = "__removePhysicalReplica: Successfully issued accounting removal request."
-      self.log.debug( infoStr )
+      infoStr = "Successfully issued accounting removal request."
+      log.debug( infoStr )
       return res
 
   #########################################################################
@@ -1481,10 +1457,11 @@ class DataManager( object ):
     :param str path: the path on the storage where the file will be put (if not provided the LFN will be used)
 
     """
+    log = self.log.getSubLogger( 'put' )
     # Check that the local file exists
     if not os.path.exists( fileName ):
-      errStr = "put: Supplied file does not exist."
-      self.log.debug( errStr, fileName )
+      errStr = "Supplied file does not exist."
+      log.debug( errStr, fileName )
       return S_ERROR( errStr )
     # If the path is not provided then use the LFN path
     if not path:
@@ -1492,8 +1469,8 @@ class DataManager( object ):
     # Obtain the size of the local file
     size = getSize( fileName )
     if size == 0:
-      errStr = "put: Supplied file is zero size."
-      self.log.debug( errStr, fileName )
+      errStr = "Supplied file is zero size."
+      log.debug( errStr, fileName )
       return S_ERROR( errStr )
 
     ##########################################################
@@ -1501,9 +1478,9 @@ class DataManager( object ):
     storageElement = StorageElement( diracSE, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
-      errStr = "put: The storage element is not currently valid."
-      self.log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
-      return S_ERROR( errStr )
+      errStr = "The storage element is not currently valid."
+      log.debug( errStr, "%s %s" % ( diracSE, res['Message'] ) )
+      return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     fileDict = {lfn:fileName}
 
     successful = {}
@@ -1514,11 +1491,11 @@ class DataManager( object ):
     res = returnSingleResult( storageElement.putFile( fileDict ) )
     putTime = time.time() - startTime
     if not res['OK']:
-      errStr = "put: Failed to put file to Storage Element."
+      errStr = "Failed to put file to Storage Element."
       failed[lfn] = res['Message']
-      self.log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
+      log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
     else:
-      self.log.debug( "put: Put file to storage in %s seconds." % putTime )
+      log.debug( "Put file to storage in %s seconds." % putTime )
       successful[lfn] = res['Value']
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
@@ -1562,7 +1539,7 @@ class DataManager( object ):
 
   def __SEActive( self, se, access = 'Read' ):
     """ check is SE is active for a given access """
-    return StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )
+    return StorageElement( se, vo = self.vo ).getStatus().get( 'Value', {} ).get( access, False )
 
 ##########################################
   #
@@ -1570,13 +1547,23 @@ class DataManager( object ):
   #
 
 
-  def getReplicas( self, lfns, allStatus = True ):
+  def getReplicas( self, lfns, allStatus = True, getUrl = True ):
     """ get replicas from catalogue """
-    res = self.fc.getReplicas( lfns, allStatus = allStatus )
-    if not self.useCatalogPFN:
+    catalogReplicas = {}
+    failed = {}
+    for lfnChunk in breakListIntoChunks( lfns, 1000 ):
+      res = self.fc.getReplicas( lfnChunk, allStatus = allStatus )
+      if res['OK']:
+        catalogReplicas.update( res['Value']['Successful'] )
+        failed.update( res['Value']['Failed'] )
+      else:
+        return res
+    if not getUrl:
+      for lfn in catalogReplicas:
+        catalogReplicas[lfn] = dict.fromkeys( catalogReplicas[lfn].keys(), True )
+    elif not self.useCatalogPFN:
       if res['OK']:
         se_lfn = {}
-        catalogReplicas = res['Value']['Successful']
 
         # We group the query to getURL by storage element to gain in speed
         for lfn in catalogReplicas:
@@ -1590,7 +1577,7 @@ class DataManager( object ):
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
             catalogReplicas[lfn][se] = succPfn[lfn]
 
-    return res
+    return S_OK( {'Successful':catalogReplicas, 'Failed':failed} )
 
 
   ##################################################################################################3
@@ -1605,44 +1592,44 @@ class DataManager( object ):
     :param str storageElementName: DIRAC SE name
     :param mixed lfn: a LFN str, list of LFNs or dict with LFNs as keys
     """
+    log = self.log.getSubLogger( '__executeIfReplicaExists' )
     # # default value
     kwargs = kwargs if kwargs else {}
     # # get replicas for lfn
     res = FileCatalog( vo = self.vo ).getReplicas( lfn )
     if not res["OK"]:
-      errStr = "__executeIfReplicaExists: Completely failed to get replicas for LFNs."
-      self.log.debug( errStr, res["Message"] )
+      errStr = "Completely failed to get replicas for LFNs."
+      log.debug( errStr, res["Message"] )
       return res
     # # returned dict, get failed replicase
     retDict = { "Failed": res["Value"]["Failed"],
                 "Successful" : {} }
     # # print errors
     for lfn, reason in retDict["Failed"].items():
-      self.log.error( "_callReplicaSEFcn: Failed to get replicas for file.", "%s %s" % ( lfn, reason ) )
+      log.error( "_callReplicaSEFcn: Failed to get replicas for file.", "%s %s" % ( lfn, reason ) )
     # # good replicas
     lfnReplicas = res["Value"]["Successful"]
     # # store PFN to LFN mapping
     lfnList = []
-    se = None  # Placeholder for the StorageElement object
     for lfn, replicas in lfnReplicas.items():
       if storageElementName  in replicas:
         lfnList.append( lfn )
       else:
-        errStr = "__executeIfReplicaExists: File hasn't got replica at supplied Storage Element."
-        self.log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
+        errStr = "File hasn't got replica at supplied Storage Element."
+        log.error( errStr, "%s %s" % ( lfn, storageElementName ) )
         retDict["Failed"][lfn] = errStr
 
     if 'replicaDict' not in kwargs:
       kwargs['replicaDict'] = lfnReplicas
 
     # # call StorageElement function at least
-    se = se = se if se else StorageElement( storageElementName, vo = self.vo )
+    se = StorageElement( storageElementName, vo = self.vo )
     fcn = getattr( se, method )
     res = fcn( lfnList, **kwargs )
     # # check result
     if not res["OK"]:
-      errStr = "__executeIfReplicaExists: Failed to execute %s StorageElement method." % method
-      self.log.error( errStr, res["Message"] )
+      errStr = "Failed to execute %s StorageElement method." % method
+      log.error( errStr, res["Message"] )
       return res
 
     # # filter out failed and successful

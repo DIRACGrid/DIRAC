@@ -633,6 +633,8 @@ class WMSAdministratorHandler(RequestHandler):
           userName = getUsernameForDN( status['OwnerDN'] )
           if userName['OK']:
             status['OwnerDN'] = userName['Value'] 
-        statistics[status['OwnerDN']] = count
-        
+          statistics[ status['OwnerDN'] ] = count
+        else:
+          statistics[ status[attribute] ] = count
+          
     return S_OK( statistics )
