@@ -156,7 +156,7 @@ class OperationHandlerBase( object ):
     :param str lfn: LFN
     :return: S_ERROR or S_OK( "/path/to/proxy/file" )
     """
-    dirMeta = returnSingleResult( self.fc.getDirectoryMetadata( lfn ) )
+    dirMeta = returnSingleResult( self.fc.getDirectoryMetadata( os.path.dirname( lfn ) ) )
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]
@@ -199,6 +199,8 @@ class OperationHandlerBase( object ):
       maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 1024
       if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
+        if opFile.Error is None:
+          opFile.Error = ''
         opFile.Error += " (Max attempts limit reached)"
     return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
 
