@@ -328,7 +328,7 @@ class CommandBase( object ):
     """ Wrapper around sys.exit()
     """
     self.log.info( "List of child processes of current PID:" )
-    retCode, _outData = self.executeAndGetOutput( "ps --forest -o pid,%cpu,%mem,tty,stat,time,cmd -g %d" % os.getpid() )
+    retCode, _outData = self.executeAndGetOutput( "ps --forest -o pid,%%cpu,%%mem,tty,stat,time,cmd -g %d" % os.getpid() )
     if retCode:
       self.log.error( "Failed to issue ps [ERROR %d] " % retCode )
     sys.exit( errorCode )
