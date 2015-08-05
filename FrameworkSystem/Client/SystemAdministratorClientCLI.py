@@ -136,6 +136,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
+          show doc <type> <system> <name>
+                             - show documentation for a given service or agent
           show host          - show host related parameters
           show hosts         - show all available hosts
           show installations [ list | current | -n <Name> | -h <Host> | -s <System> | -m <Module> | -t <Type> | -itb <InstallationTime before>
@@ -299,6 +301,22 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.getErrors( argss )
     elif option == "installations":
       self.getInstallations( argss )
+    elif option == "doc":
+      if len( argss ) > 2:
+        if argss[0] in [ 'service', 'agent' ]:
+          compType = argss[0]
+          compSystem = argss[1]
+          compModule = argss[2]
+          client = SystemAdministratorClient( self.host, self.port )
+          result = client.getComponentDocumentation( compType, compSystem, compModule )
+          if result[ 'OK' ]:
+            gLogger.notice( result[ 'Value' ] )
+          else:
+            self.__errMsg( result[ 'Message' ] )
+        else:
+          gLogger.notice( self.do_show.__doc__ )
+      else:
+        gLogger.notice( self.do_show.__doc__ )
     else:
       gLogger.notice( "Unknown option:", option )
 
