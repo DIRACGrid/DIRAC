@@ -4,11 +4,14 @@
 
 __RCSID__ = "$Id$"
 
+import shutil
+import os
+
 from tempfile import mkdtemp
-import shutil, os
+
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
-from DIRAC import S_OK, S_ERROR, gConfig
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
