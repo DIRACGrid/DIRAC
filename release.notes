@@ -1,3 +1,30 @@
+[v6r13p10]
+
+CHANGE: Use sublogger to better identify log source in multiple places
+
+*Core
+CHANGE: Review / beautify code in TimeLeft and LSFTimeLeft
+FIX: LSFTimeLeft - is setting shell variables, not environment variables, 
+     therefore added an "export" command to get the relevant variable 
+     and extract then the correct normalization
+
+*Accounting
+FIX: DataOperationPlotter - add better names to the data operations
+
+*DMS:
+FIX: DataManager - add mandatory vo parameter in __SEActive()
+CHANGE: dirac-dms-replicate-and-register-request - submit multiple requests
+        to avoid too many files in a single FTS request
+FIX: FileCatalog - typo in getDirectoryMetadata()
+FIX: FileCatalog - pass directory name to getDirectoryMetadata and not file name 
+FIX: DataManager - in __SEActive() break LFN list in smaller chunks when
+     getting replicas from a catalog        
+
+*WMS
+FIX: WMSAdministratorHandler - fix in reporting pilot statistics
+FIX: JobScheduling - fix in __getSitesRequired() when calling self.jobLog.info 
+CHANGE: pilotCommands - when exiting with error, print out current processes info
+
 [v6r13p9]
 
 *Framework
