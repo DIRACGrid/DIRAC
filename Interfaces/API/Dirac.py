@@ -304,7 +304,6 @@ class Dirac( API ):
     self.__printInfo()
 
     cleanPath = ''
-    jobDescription = ''
 
     if isinstance( job, basestring ):
       if os.path.exists( job ):
@@ -364,7 +363,11 @@ class Dirac( API ):
           stopCallback = True
 
         self.log.info( 'Executing at', os.getcwd() )
-        result = self.runLocal( jdl, jobDescriptionObject, curDir,
+        jobXMLFile = tmpdir + '/jobDescription.xml'
+        fd = os.open( jobXMLFile, os.O_RDWR | os.O_CREAT )
+        os.write( fd, job._toXML() )
+        os.close( fd )
+        result = self.runLocal( jdl, jobXMLFile, curDir,
                                 disableCallback = stopCallback )
         os.chdir( curDir )
       if mode.lower() == 'agent':
@@ -785,12 +788,14 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXMLObject, baseDir, disableCallback = False ):
+  def runLocal( self, jobJDL, jobXML, baseDir, disableCallback = False ):
     """Internal function.  This method is equivalent to submitJob(job,mode='Local').
        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
     # FIXME: This has to reviewed. Probably some of the things here are not needed at all
+
+    shutil.copy( jobXML, '%s/%s' % ( os.getcwd(), os.path.basename( jobXML ) ) )
 
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
