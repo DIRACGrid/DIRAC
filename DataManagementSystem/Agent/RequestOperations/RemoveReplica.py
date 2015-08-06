@@ -159,11 +159,11 @@ class RemoveReplica( DMSRequestOperationsBase ):
         # #  you're a data manager - save current proxy and get a new one for LFN and retry
         saveProxy = os.environ["X509_USER_PROXY"]
         try:
-          proxyFile = self.getProxyForLFN( opFile.LFN )
-          if not proxyFile["OK"]:
-            opFile.Error = proxyFile["Message"]
+          fileProxy = self.getProxyForLFN( opFile.LFN )
+          if not fileProxy["OK"]:
+            opFile.Error = fileProxy["Message"]
           else:
-            proxyFile = proxyFile["Value"]
+            proxyFile = fileProxy["Value"]
             removeReplica = self.dm.removeReplica( targetSE, opFile.LFN )
             if not removeReplica["OK"]:
               opFile.Error = removeReplica["Message"]
