@@ -364,11 +364,11 @@ class Dirac( API ):
 
     elif mode.lower() == 'agent':
       self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
-      result = self.runLocalAgent( jdlAsString )
+      result = self.runLocalAgent( jdlAsString, jobDescriptionObject )
 
     elif mode.lower() == 'wms':
       self.log.verbose( 'Will submit job to WMS' )  # this will happen by default anyway
-      result = WMSClient().submitJob( jdlAsString )
+      result = WMSClient().submitJob( jdlAsString, jobDescriptionObject )
       if not result['OK']:
         self.log.error( 'Job submission failure', result['Message'] )
       elif self.jobRepo:
@@ -404,7 +404,7 @@ class Dirac( API ):
     return S_OK( 'Nothing to do' )
 
   #############################################################################
-  def runLocalAgent( self, jdl ):
+  def runLocalAgent( self, jdl, jobDescriptionObject ):
     """Internal function.  This method is equivalent to submitJob(job,mode='Agent').
        All output files are written to a <jobID> directory where <jobID> is the
        result of submission to the WMS.  Please note that the job must be eligible to the
@@ -413,7 +413,7 @@ class Dirac( API ):
 
     jdl = self.__forceLocal( jdl )
 
-    jobID = WMSClient().submitJob( jdl )
+    jobID = WMSClient().submitJob( jdl, jobDescriptionObject )
 
     if not jobID['OK']:
       self.log.error( 'Job submission failure', jobID['Message'] )
