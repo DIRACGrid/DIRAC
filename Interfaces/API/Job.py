@@ -540,7 +540,7 @@ class Job( API ):
     if not type( timeInSecs ) == int:
       try:
         timeInSecs = int( timeInSecs )
-      except Exception:
+      except ValueError:
         if not re.search( '{{', timeInSecs ):
           return self._reportError( 'Expected numerical string or int for CPU time in seconds', **kwargs )
 
@@ -718,7 +718,6 @@ class Job( API ):
       return self._reportError( 'Expected string or list for job tags', tags = tags )
 
     self._addParameter( self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags' )
-    self.tags = tags
     return S_OK()
 
   #############################################################################
@@ -912,7 +911,9 @@ class Job( API ):
                         'Default null parametric input parameters value' )
 
   #############################################################################
-  def _addParameter( self, wObject, name, ptype, value, description, io = 'input' ):
+
+  @staticmethod
+  def _addParameter( wObject, name, ptype, value, description, io = 'input' ):
     """ Internal Function
 
         Adds a parameter to the object.
@@ -928,7 +929,6 @@ class Job( API ):
 
     par = Parameter( name, value, ptype, "", "", inBool, outBool, description )
     wObject.addParameter( Parameter( parameter = par ) )
-    return par
 
   ############################################################################
   def _resolveInputSandbox( self, inputSandbox ):
