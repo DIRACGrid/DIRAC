@@ -292,7 +292,7 @@ class Dirac( API ):
 
        Example usage:
 
-       >>> print dirac.submit(job)
+       >>> print dirac.submitJob(job)
        {'OK': True, 'Value': '12345'}
 
        :param job: Instance of Job class or JDL string
@@ -356,20 +356,15 @@ class Dirac( API ):
         self.log.info( 'Executing workflow locally without WMS submission' )
         curDir = os.getcwd()
 
-        stopCopies = False
-        if gConfig.getValue( '/LocalSite/DisableLocalJobDirectory', '' ):
-          stopCopies = True
-        else:
-          jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
-          os.chdir( jobDir )
+        jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
+        os.chdir( jobDir )
 
         stopCallback = False
         if gConfig.getValue( '/LocalSite/DisableLocalModeCallback', '' ):
           stopCallback = True
 
         self.log.info( 'Executing at', os.getcwd() )
-        result = self.runLocal( jdl, jobDescription, curDir,
-                                disableCopies = stopCopies,
+        result = self.runLocal( jdl, jobDescriptionObject, curDir,
                                 disableCallback = stopCallback )
         os.chdir( curDir )
       if mode.lower() == 'agent':
@@ -416,7 +411,7 @@ class Dirac( API ):
 
   #############################################################################
   def runLocalAgent( self, jdl ):
-    """Internal function.  This method is equivalent to submit(job,mode='Agent').
+    """Internal function.  This method is equivalent to submitJob(job,mode='Agent').
        All output files are written to a <jobID> directory where <jobID> is the
        result of submission to the WMS.  Please note that the job must be eligible to the
        site it is submitted from.
@@ -790,16 +785,12 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXML, baseDir, disableCopies = False, disableCallback = False ):
-    """Internal function.  This method is equivalent to submit(job,mode='Local').
+  def runLocal( self, jobJDL, jobXMLObject, baseDir, disableCallback = False ):
+    """Internal function.  This method is equivalent to submitJob(job,mode='Local').
        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
     # FIXME: This has to reviewed. Probably some of the things here are not needed at all
-
-    if disableCopies:
-      self.log.verbose( 'DisableLocalJobDirectory is set, leaving everything in local dir' )
-      shutil.copy( jobXML, '%s/%s' % ( os.getcwd(), os.path.basename( jobXML ) ) )
 
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
@@ -898,8 +889,6 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if disableCopies:
-          break
         if not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( baseDir, isFile )
@@ -991,8 +980,6 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for i in sandbox:
-        if disableCopies:
-          break
         globList = glob.glob( i )
         for isFile in globList:
           if os.path.isabs( isFile ):
