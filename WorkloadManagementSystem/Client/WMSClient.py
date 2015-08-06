@@ -58,7 +58,6 @@ class WMSClient( object ):
     realFiles = []
     badFiles = []
     diskFiles = []
-    stringIOFiles = []
 
     for isFile in inputSandbox:
       valid = True
@@ -68,9 +67,6 @@ class WMSClient( object ):
           break
       if valid:
         realFiles.append( isFile )
-    # If there are no files, skip!
-    if not realFiles:
-      return S_OK()
 
     stringIOFiles = []
     stringIOFilesSize = 0

@@ -539,9 +539,7 @@ class WorkflowTasks( TaskBase ):
 
     workflowFileObject = StringIO.StringIO( oJob._toXML() )
     jdl = oJob._toJDL( jobDescriptionObject = workflowFileObject )
-    res = self.submissionClient.submitJob( jdl, workflowFileObject )
-
-    return res
+    return self.submissionClient.submitJob( jdl, workflowFileObject )
 
   def updateTransformationReservedTasks( self, taskDicts ):
     requestNames = []
