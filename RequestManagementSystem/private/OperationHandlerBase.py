@@ -183,9 +183,8 @@ class OperationHandlerBase( object ):
     dumpToFile = ownerProxy.dumpAllToFile()
     if not dumpToFile["OK"]:
       self.log.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
-      return dumpToFile
-    dumpToFile = dumpToFile["Value"]
-    os.environ["X509_USER_PROXY"] = dumpToFile
+    else:
+      os.environ["X509_USER_PROXY"] = dumpToFile["Value"]
     return dumpToFile
 
   def getWaitingFilesList( self ):
