@@ -292,7 +292,7 @@ class Dirac( API ):
 
        Example usage:
 
-       >>> print dirac.submit(job)
+       >>> print dirac.submitJob(job)
        {'OK': True, 'Value': '12345'}
 
        :param job: Instance of Job class or JDL string
@@ -303,23 +303,18 @@ class Dirac( API ):
     """
     self.__printInfo()
 
-    cleanPath = ''
-    jobDescription = ''
-
     if isinstance( job, basestring ):
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
-        jdl = job
+        fd = os.open( job, 'r' )
+        jdlAsString = fd.read()
       else:
-        ( fd, jdl ) = tempfile.mkstemp( prefix = 'DIRAC_', suffix = '.jdl', text = True )
         self.log.verbose( 'Job is a JDL string' )
-        os.write( fd, job )
-        os.close( fd )
-        cleanPath = jdl
-    else:
+        jdlAsString = job
+    else:  # we assume it is of type "DIRAC.Interfaces.API.Job.Job"
       try:
         formulationErrors = job.errorDict
-      except Exception, x:
+      except AttributeError, x:
         self.log.verbose( 'Could not obtain job errors:%s' % ( x ) )
         formulationErrors = {}
 
@@ -340,55 +335,49 @@ class Dirac( API ):
         self.log.error( msg )
         return S_ERROR( msg )
 
+      jobDescriptionObject = StringIO.StringIO( job._toXML() )
+      jdlAsString = job._toJDL( jobDescriptionObject = jobDescriptionObject )
+
+    if mode.lower() == 'local':
+      self.log.info( 'Executing workflow locally without WMS submission' )
+      curDir = os.getcwd()
+
+      jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
+      os.chdir( jobDir )
+
+      stopCallback = False
+      if gConfig.getValue( '/LocalSite/DisableLocalModeCallback', '' ):
+        stopCallback = True
+
+      self.log.info( 'Executing at', os.getcwd() )
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
-
-      jobDescriptionObject = StringIO.StringIO( job._toXML() )
-
-      jdl = tmpdir + '/job.jdl'
-      fd = os.open( jdl, os.O_RDWR | os.O_CREAT )
-      os.write( fd, job._toJDL( jobDescriptionObject = jobDescriptionObject ) )
+      jobXMLFile = tmpdir + '/jobDescription.xml'
+      fd = os.open( jobXMLFile, os.O_RDWR | os.O_CREAT )
+      os.write( fd, job._toXML() )
       os.close( fd )
-      cleanPath = tmpdir
+      result = self.runLocal( jdlAsString, jobXMLFile, curDir,
+                              disableCallback = stopCallback )
+      self.log.verbose( 'Cleaning up %s...' % tmpdir )
+      self.__cleanTmp( tmpdir )
+      os.chdir( curDir )
 
-    if mode:
-      if mode.lower() == 'local':
-        self.log.info( 'Executing workflow locally without WMS submission' )
-        curDir = os.getcwd()
+    elif mode.lower() == 'agent':
+      self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
+      result = self.runLocalAgent( jdlAsString, jobDescriptionObject )
 
-        stopCopies = False
-        if gConfig.getValue( '/LocalSite/DisableLocalJobDirectory', '' ):
-          stopCopies = True
-        else:
-          jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
-          os.chdir( jobDir )
+    elif mode.lower() == 'wms':
+      self.log.verbose( 'Will submit job to WMS' )  # this will happen by default anyway
+      result = WMSClient().submitJob( jdlAsString, jobDescriptionObject )
+      if not result['OK']:
+        self.log.error( 'Job submission failure', result['Message'] )
+      elif self.jobRepo:
+        jobIDList = result['Value']
+        if not isinstance( jobIDList, list ):
+          jobIDList = [ jobIDList ]
+        for jobID in jobIDList:
+          result = self.jobRepo.addJob( jobID, 'Submitted' )
 
-        stopCallback = False
-        if gConfig.getValue( '/LocalSite/DisableLocalModeCallback', '' ):
-          stopCallback = True
-
-        self.log.info( 'Executing at', os.getcwd() )
-        result = self.runLocal( jdl, jobDescription, curDir,
-                                disableCopies = stopCopies,
-                                disableCallback = stopCallback )
-        os.chdir( curDir )
-      if mode.lower() == 'agent':
-        self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
-        result = self.runLocalAgent( jdl )
-      if mode.lower() == 'wms':
-        self.log.verbose( 'Will submit job to WMS' )  # this will happen by default anyway
-        result = self._sendJob( jdl )
-        if not result['OK']:
-          self.log.error( 'Job submission failure', result['Message'] )
-        elif self.jobRepo:
-          jobIDList = result['Value']
-          if not isinstance( jobIDList, list ):
-            jobIDList = [ jobIDList ]
-          for jobID in jobIDList:
-            result = self.jobRepo.addJob( jobID, 'Submitted' )
-
-    self.log.verbose( 'Cleaning up %s...' % cleanPath )
-    self.__cleanTmp( cleanPath )
     return result
 
   #############################################################################
@@ -415,8 +404,8 @@ class Dirac( API ):
     return S_OK( 'Nothing to do' )
 
   #############################################################################
-  def runLocalAgent( self, jdl ):
-    """Internal function.  This method is equivalent to submit(job,mode='Agent').
+  def runLocalAgent( self, jdl, jobDescriptionObject ):
+    """Internal function.  This method is equivalent to submitJob(job,mode='Agent').
        All output files are written to a <jobID> directory where <jobID> is the
        result of submission to the WMS.  Please note that the job must be eligible to the
        site it is submitted from.
@@ -424,7 +413,7 @@ class Dirac( API ):
 
     jdl = self.__forceLocal( jdl )
 
-    jobID = self._sendJob( jdl )
+    jobID = WMSClient().submitJob( jdl, jobDescriptionObject )
 
     if not jobID['OK']:
       self.log.error( 'Job submission failure', jobID['Message'] )
@@ -790,16 +779,14 @@ class Dirac( API ):
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXML, baseDir, disableCopies = False, disableCallback = False ):
-    """Internal function.  This method is equivalent to submit(job,mode='Local').
-       All output files are written to the local directory.
+  def runLocal( self, jobJDL, jobXML, baseDir, disableCallback = False ):
+    """ Internal function.  This method is equivalent to submitJob(job,mode='Local').
+        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
     # FIXME: This has to reviewed. Probably some of the things here are not needed at all
 
-    if disableCopies:
-      self.log.verbose( 'DisableLocalJobDirectory is set, leaving everything in local dir' )
-      shutil.copy( jobXML, '%s/%s' % ( os.getcwd(), os.path.basename( jobXML ) ) )
+    shutil.copy( jobXML, '%s/%s' % ( os.getcwd(), os.path.basename( jobXML ) ) )
 
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
@@ -810,7 +797,6 @@ class Dirac( API ):
     self.log.verbose( 'DIRACROOT = %s' % ( siteRoot ) )
     os.environ['DIRACPYTHON'] = sys.executable
     self.log.verbose( 'DIRACPYTHON = %s' % ( sys.executable ) )
-    self.log.verbose( 'JDL file is: %s' % jobJDL )
     self.log.verbose( 'Job XML file description is: %s' % jobXML )
 
     parameters = self.__getJDLParameters( jobJDL )
@@ -852,17 +838,15 @@ class Dirac( API ):
       resolvedData = guidDict
       diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
       tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
-      configDict = { 'JobID':        None,
-                     'LocalSEList':  localSEList,
-                     'DiskSEList':   diskSE,
-                     'TapeSEList':   tapeSE
-                   }
+      configDict = {'JobID':        None,
+                    'LocalSEList':  localSEList,
+                    'DiskSEList':   diskSE,
+                    'TapeSEList':   tapeSE }
       self.log.verbose( configDict )
-      argumentsDict = { 'FileCatalog':   resolvedData,
-                        'Configuration': configDict,
-                        'InputData':     inputData,
-                        'Job':           parameters['Value']
-                      }
+      argumentsDict = {'FileCatalog':   resolvedData,
+                       'Configuration': configDict,
+                       'InputData':     inputData,
+                       'Job':           parameters['Value']}
       self.log.verbose( argumentsDict )
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
@@ -898,8 +882,6 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for isFile in sandbox:
-        if disableCopies:
-          break
         if not os.path.isabs( isFile ):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( baseDir, isFile )
@@ -991,8 +973,6 @@ class Dirac( API ):
       if isinstance( sandbox, basestring ):
         sandbox = [sandbox]
       for i in sandbox:
-        if disableCopies:
-          break
         globList = glob.glob( i )
         for isFile in globList:
           if os.path.isabs( isFile ):
@@ -1556,28 +1536,6 @@ class Dirac( API ):
     if printOutput and result['OK']:
       print self.pPrint.pformat( result['Value'] )
     return result
-
-  #############################################################################
-  def _sendJob( self, jdl ):
-    """Internal function.
-
-       This is an internal wrapper for submit() in order to
-       catch whether a user is authorized to submit to DIRAC or
-       does not have a valid proxy. This is not intended for
-       direct use.
-
-    """
-    jobID = None
-    if gConfig.getValue( '/LocalSite/DisableSubmission', '' ):
-      return S_ERROR( 'Submission disabled by /LocalSite/DisableSubmission flag for debugging purposes' )
-
-    try:
-      jobID = WMSClient().submitJob( jdl )
-      # raise 'problem'
-    except Exception, x:
-      return S_ERROR( "Cannot submit job: %s" % str( x ) )
-
-    return jobID
 
   #############################################################################
   def getInputSandbox( self, jobID, outputDir = None ):
@@ -2557,12 +2515,17 @@ class Dirac( API ):
 
   #############################################################################
   def __getJDLParameters( self, jdl ):
-    """Internal function. Returns a dictionary of JDL parameters.
+    """ Internal function. Returns a dictionary of JDL parameters.
+
+        jdl can be a string, or a file containing the JDL string
     """
     if os.path.exists( jdl ):
       jdlFile = open( jdl, 'r' )
       jdl = jdlFile.read()
       jdlFile.close()
+    else:
+      if not isinstance( jdl, basestring ):
+        return S_ERROR( "Can't read JDL" )
 
     try:
       parameters = {}

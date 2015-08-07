@@ -478,8 +478,6 @@ class ParameterCollection( list ):
   def findIndex( self, name ):
     i = 0
     for v in self:
-      print v
-      print v.getName()
       if v.getName() == name:
         return i
       i = i + 1

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-jobexec
 # Author :  Stuart Paterson
 ########################################################################
@@ -11,6 +10,10 @@ __RCSID__ = "$Id$"
     this script is the Job Wrapper.
 """
 
+import os
+import os.path
+import sys
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -18,25 +21,18 @@ from DIRAC.Core.Base import Script
 Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
 Script.parseCommandLine()
 
-from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Module import *
-from DIRAC.Core.Workflow.Step import *
-from DIRAC.Core.Workflow.Workflow import *
-from DIRAC.Core.Workflow.WorkflowReader import *
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+# from DIRAC.Core.Workflow.Parameter import *
+from DIRAC import gLogger
+from DIRAC.Core.Workflow.Workflow import fromXMLFile
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
-
-import DIRAC
-
-import os, os.path, sys, string
 
 # Forcing the current directory to be the first in the PYTHONPATH
 sys.path.insert( 0, os.path.realpath( '.' ) )
 gLogger.showHeaders( True )
 
-def jobexec( jobxml, wfParameters = {} ):
+def jobexec( jobxml, wfParameters ):
   jobfile = os.path.abspath( jobxml )
   if not os.path.exists( jobfile ):
     gLogger.warn( 'Path to specified workflow %s does not exist' % ( jobfile ) )
@@ -55,8 +51,8 @@ def jobexec( jobxml, wfParameters = {} ):
   workflow.addTool( 'Request', Request() )
 
   # Propagate the command line parameters to the workflow if any
-  for name, value in wfParameters.items():
-    workflow.setValue( name, value )
+  for pName, pValue in wfParameters.items():
+    workflow.setValue( pName, pValue )
 
   result = workflow.execute()
   return result
@@ -84,9 +80,9 @@ for switch, parameter in parList:
 
     parDict[name] = value
 
-gLogger.debug( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
-result = jobexec( jobXMLfile, parDict )
-if not result['OK']:
+gLogger.debug( 'PYTHONPATH:\n%s' % ( '\n'.join( sys.path ) ) )
+jobExec = jobexec( jobXMLfile, parDict )
+if not jobExec['OK']:
   gLogger.debug( 'Workflow execution finished with errors, exiting' )
   sys.exit( 1 )
 else:
