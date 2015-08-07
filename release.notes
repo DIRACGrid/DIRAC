@@ -1,3 +1,8 @@
+[v6r12p47]
+
+*DMS
+BUGFIX: FileCatalogClientCLI - wrong signature in the removeMetadata() service call
+
 [v6r12p46]
 
 *Core
