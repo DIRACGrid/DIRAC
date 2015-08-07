@@ -311,6 +311,7 @@ class Dirac( API ):
       else:
         self.log.verbose( 'Job is a JDL string' )
         jdlAsString = job
+      jobDescriptionObject = None
     else:  # we assume it is of type "DIRAC.Interfaces.API.Job.Job"
       try:
         formulationErrors = job.errorDict
