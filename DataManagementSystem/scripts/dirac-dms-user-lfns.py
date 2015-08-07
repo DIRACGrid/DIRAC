@@ -93,7 +93,7 @@ allFiles = []
 emptyDirs = []
 while len( activeDirs ) > 0:
   currentDir = activeDirs.pop()
-  res = fc.listDirectory( currentDir, withMetadata )
+  res = fc.listDirectory( currentDir, withMetadata, timeout = 360 )
   if not res['OK']:
     gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
   elif currentDir in res['Value']['Failed']:
