@@ -1590,7 +1590,8 @@ File Catalog Client $Revision: 1.17 $Date:
       return
     
     metadata = argss[1:]
-    result = self.fc.removeMetadata(path,metadata)
+    metaDict = {path:metadata}
+    result = self.fc.removeMetadata(metaDict)
     if not result['OK']:
       print "Error:", result['Message']
       if "FailedMetadata" in result:
