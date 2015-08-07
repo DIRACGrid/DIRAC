@@ -116,7 +116,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
           if "Write access not permitted for this credential" in opFile.Error:
             opFile.Status = "Failed"
             gMonitor.addMark( "PhysicalRemovalFail", len( errors ) )
-            continue
+          continue
         gMonitor.addMark( "PhysicalRemovalOK", len( targetSEs ) )
         gMonitor.addMark( "PhysicalRemovalSize", opFile.Size * len( targetSEs ) )
         opFile.Status = "Done"
