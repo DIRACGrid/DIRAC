@@ -334,7 +334,7 @@ class DirectoryTreeBase:
     return S_OK( dirDict )
 
 #####################################################################
-  def _setDirectoryParameter( self, path, pname, pvalue ):
+  def _setDirectoryParameter( self, path, pname, pvalue, recursive = False ):
     """ Set a numerical directory parameter
     """
     result = self.__getDirID( path )
@@ -346,19 +346,19 @@ class DirectoryTreeBase:
     return result
 
 #####################################################################
-  def _setDirectoryUid( self, path, uid ):
+  def _setDirectoryUid( self, path, uid, recursive = False ):
     """ Set the directory owner
     """
-    return self._setDirectoryParameter( path, 'UID', uid )
+    return self._setDirectoryParameter( path, 'UID', uid, recursive = recursive )
 
 #####################################################################
-  def _setDirectoryGid( self, path, gid ):
+  def _setDirectoryGid( self, path, gid, recursive = False ):
     """ Set the directory group
     """
-    return self._setDirectoryParameter( path, 'GID', gid )
+    return self._setDirectoryParameter( path, 'GID', gid, recursive = recursive )
 
 #####################################################################
-  def setDirectoryOwner( self, path, owner ):
+  def setDirectoryOwner( self, path, owner, recursive = False ):
     """ Set the directory owner
     """
 
@@ -368,11 +368,11 @@ class DirectoryTreeBase:
     dirID = result['Value']
     result = self.db.ugManager.findUser( owner )
     uid = result['Value']
-    result = self._setDirectoryUid( dirID, uid )
+    result = self._setDirectoryUid( dirID, uid, recursive = recursive )
     return result
 
 #####################################################################
-  def changeDirectoryOwner( self, paths, s_uid = 0, s_gid = 0 ):
+  def changeDirectoryOwner( self, paths, s_uid = 0, s_gid = 0, recursive = False ):
     """ Bulk setting of the directory owner
     """
     result = self.db.ugManager.findUser( s_uid )
@@ -391,7 +391,7 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path, owner in arguments.items():
-      result = self.setDirectoryOwner( path, owner )
+      result = self.setDirectoryOwner( path, owner, recursive = recursive )
       if not result['OK']:
         failed[path] = result['Message']
       else:
@@ -400,7 +400,7 @@ class DirectoryTreeBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
 #####################################################################
-  def setDirectoryGroup( self, path, gname ):
+  def setDirectoryGroup( self, path, gname, recursive = False ):
     """ Set the directory owner
     """
 
@@ -410,11 +410,11 @@ class DirectoryTreeBase:
     dirID = result['Value']
     result = self.db.ugManager.findGroup( gname )
     gid = result['Value']
-    result = self._setDirectoryGid( dirID, gid )
+    result = self._setDirectoryGid( dirID, gid, recursive = recursive )
     return result
 
 #####################################################################
-  def changeDirectoryGroup( self, paths, s_uid = 0, s_gid = 0 ):
+  def changeDirectoryGroup( self, paths, s_uid = 0, s_gid = 0, recursive = False ):
     """ Bulk setting of the directory owner
     """
     result = self.db.ugManager.findUser( s_uid )
@@ -433,7 +433,7 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path, group in arguments.items():
-      result = self.setDirectoryGroup( path, group )
+      result = self.setDirectoryGroup( path, group, recursive = recursive )
       if not result['OK']:
         failed[path] = result['Message']
       else:
@@ -442,13 +442,13 @@ class DirectoryTreeBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
 #####################################################################
-  def setDirectoryMode( self, path, mode ):
+  def setDirectoryMode( self, path, mode, recursive = False ):
     """ set the directory mask
     """
-    return self._setDirectoryParameter( path, 'Mode', mode )
+    return self._setDirectoryParameter( path, 'Mode', mode, recursive = recursive )
 
 #####################################################################
-  def changeDirectoryMode( self, paths, s_uid = 0, s_gid = 0 ):
+  def changeDirectoryMode( self, paths, s_uid = 0, s_gid = 0, recursive = False ):
     """ Bulk setting of the directory owner
     """
     result = self.db.ugManager.findUser( s_uid )
@@ -467,7 +467,7 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path, mode in arguments.items():
-      result = self.setDirectoryMode( path, mode )
+      result = self.setDirectoryMode( path, mode, recursive = recursive )
       if not result['OK']:
         failed[path] = result['Message']
       else:

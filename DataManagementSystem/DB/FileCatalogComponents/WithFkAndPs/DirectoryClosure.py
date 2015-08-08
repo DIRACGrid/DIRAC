@@ -478,7 +478,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     return S_OK( rowDict )
 
 
-  def _setDirectoryParameter( self, path, pname, pvalue ):
+  def _setDirectoryParameter( self, path, pname, pvalue, recursive = False ):
     """ Set a numerical directory parameter
 
 
@@ -502,6 +502,10 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     psName = psNames.get( pname, None )
 
+    # If we have a recursive procedure and it is wanted, call it
+    if recursive and pname in ['UID', 'GID', 'Mode'] and psName:
+      psName += '_recursive'
+
     # If there is an associated procedure, we go for it
     if psName:
       result = self.db.executeStoredProcedureWithCursor( psName, ( path, pvalue ) )
@@ -512,8 +516,10 @@ class DirectoryClosure( DirectoryTreeBase ):
       if errno:
         return S_ERROR( errMsg )
 
+
+
       if not affected:
-        return S_ERROR( 'Directory does not exist: %s' % path )
+        return S_ERROR( 'Directory does not exist %s: %s' % ( psName, path ) )
 
       return S_OK( affected )
 
@@ -524,7 +530,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
 
 
-  def setDirectoryGroup( self, path, gname ):
+  def setDirectoryGroup( self, path, gname, recursive = False ):
     """ Set the directory owner
     """
 
@@ -535,9 +541,9 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     gid = result['Value']
 
-    return self._setDirectoryParameter( path, 'GID', gid )
+    return self._setDirectoryParameter( path, 'GID', gid, recursive = recursive )
 
-  def setDirectoryOwner( self, path, owner ):
+  def setDirectoryOwner( self, path, owner, recursive = False ):
     """ Set the directory owner
     """
 
@@ -547,7 +553,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     uid = result['Value']
 
-    return self._setDirectoryParameter( path, 'UID', uid )
+    return self._setDirectoryParameter( path, 'UID', uid, recursive = recursive )
   
   
   def __getLogicalSize( self, lfns, ps_name, connection ):
