@@ -7,7 +7,7 @@
 
 import copy
 
-from DIRAC                                import S_OK
+from DIRAC                                import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
 
 from DIRAC                                       import gConfig, gLogger
@@ -129,7 +129,7 @@ class InfoGetter:
 #       
 #    return S_OK( policiesToBeLoaded )
 
-  def __getComputingElementsByDomainName( self , domain = None ):
+  def __getComputingElementsByDomainName( self , targetDomain = None ):
     '''
       WARNING: TO ADD TO CSHelpers
       Gets all computing elements from /Resources/Sites/<>/<>/CE
@@ -145,7 +145,7 @@ class InfoGetter:
     domainNames = domainNames[ 'Value' ]
   
     for domainName in domainNames:
-      if domainName != 'LCG':
+      if domainName != targetDomain:
         continue
       else:
         gLogger.info( "Fetching the list of Computing Elements belonging to the LCG domain")
@@ -178,9 +178,13 @@ class InfoGetter:
     
     #some policies may apply or not also depending on the VO's domain
     # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
+    try:
+      domain = decisionParams['domain']
+    except:
+      return S_ERROR("Pls specify a 'domain' name in your params!")
     if policy['module'] == 'CEAvailabilityPolicy':
       #to get the list of only the LCG CEs
-      result = self.__getComputingElementsByDomainName("LCG")
+      result = self.__getComputingElementsByDomainName(targetDomain = domain)
       
       if result['OK']:
         ces = result['Value']
