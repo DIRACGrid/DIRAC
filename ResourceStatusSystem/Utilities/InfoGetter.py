@@ -282,9 +282,7 @@ class InfoGetter:
       # FIXME: watch out, args can be None !
       #policyDict[ 'args' ].update( policyConfigParams )
       
-      #we also check if the policy meets also additional conditions
-      if self.__checkPolicies(policyDict, decissionParams):
-        policiesToBeLoaded.append( policyDict )
+      policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
   
