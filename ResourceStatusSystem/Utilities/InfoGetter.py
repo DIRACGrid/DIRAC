@@ -141,14 +141,15 @@ class InfoGetter:
   
     domainNames = gConfig.getSections( _basePath )
     if not domainNames[ 'OK' ]:
-      return domainNames
+      return S_ERROR("No domain names have been specified on the CS")
     domainNames = domainNames[ 'Value' ]
   
-    for domainName in domainNames:
-      if domainName != targetDomain:
-        continue
-      else:
-        gLogger.info( "Fetching the list of Computing Elements belonging to the LCG domain")
+    unknownDomains = list( set(targetDomain) - set(domainNames) )
+    if len(unknownDomains) > 0:
+      gLogger.warn( "Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains )
+      
+    for domainName in list( set(domainNames) & set(targetDomain) ):
+      gLogger.info( "Fetching the list of Computing Elements belonging to domain %s" % domainName )
       domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
       if not domainSites[ 'OK' ]:
         return domainSites
@@ -171,27 +172,31 @@ class InfoGetter:
   
   
   
-  def __checkPolicies( self, policy, decisionParams):
+  def __filterPolicies( self, decissionParams, policyMatchParams):
     '''
       Method that checks if the given policy doesn't meet certain conditions
     '''
     
+    
     #some policies may apply or not also depending on the VO's domain
     # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
-    try:
-      domain = decisionParams['domain']
-    except:
-      return S_ERROR("Pls specify a 'domain' name in your params!")
-    if policy['module'] == 'CEAvailabilityPolicy':
-      #to get the list of only the LCG CEs
-      result = self.__getComputingElementsByDomainName(targetDomain = domain)
-      
-      if result['OK']:
-        ces = result['Value']
-
-        #to verify that the given CE is in the list of the LCG CEs
-        if decisionParams['name'] not in ces:
-          return False
+    if 'elementType' in decissionParams and 'name' in decissionParams:
+      elementType = decissionParams['elementType']
+      name = decissionParams['name']
+      if elementType.lower() == 'ComputingElement'.lower() and 'domain' in policyMatchParams:
+        #WARNING: policyMatchParams['domain'] is a list of domains
+        domains = policyMatchParams['domain']
+        result = self.__getComputingElementsByDomainName( targetDomain = domains )
+        if result['OK']:
+          ces = result['Value']
+          #to verify that the given CE is in the list of the LCG CEs
+          if name not in ces:
+            gLogger.info( "ComputingElement %s NOT found in domains %s" % ( name, domains )  )
+            return False
+          else:
+            gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
+        else:
+          gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
     
     return True
   
@@ -239,10 +244,13 @@ class InfoGetter:
       # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
       policyConfigParams = {}
       #policyConfigParams = policySetup.get( 'configParams', {} )
+      policyMatch = Utils.configMatch( decissionParams, policyMatchParams )
+      policyFilter = self.__filterPolicies( decissionParams, policyMatchParams )
       
-      policyMatch = Utils.configMatch( decissionParams, policyMatchParams )   
-      
-      if policyMatch:
+      #WARNING: we need an additional filtering function when the matching
+      #is not straightforward (e.g. when the policy specify a 'domain', while
+      #the decisionParams has only the name of the element)  
+      if policyMatch and policyFilter:
         policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
         
     policiesToBeLoaded = []   
@@ -269,9 +277,7 @@ class InfoGetter:
       # FIXME: watch out, args can be None !
       #policyDict[ 'args' ].update( policyConfigParams )
       
-      #we also check if the policy meets also additional conditions
-      if self.__checkPolicies(policyDict, decissionParams):
-        policiesToBeLoaded.append( policyDict )
+      policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
   
