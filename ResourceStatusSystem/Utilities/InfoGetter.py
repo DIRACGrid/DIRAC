@@ -147,8 +147,13 @@ class InfoGetter:
     unknownDomains = list( set(targetDomain) - set(domainNames) )
     if len(unknownDomains) > 0:
       gLogger.warn( "Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains )
+    
+    knownDomains = list( set(domainNames) & set(targetDomain) )
+    if len(knownDomains) == 0:
+      gLogger.warn("Policy parameters domain names do not match with any CS domain names")
+      return S_OK([])
       
-    for domainName in list( set(domainNames) & set(targetDomain) ):
+    for domainName in knownDomains:
       gLogger.info( "Fetching the list of Computing Elements belonging to domain %s" % domainName )
       domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
       if not domainSites[ 'OK' ]:
