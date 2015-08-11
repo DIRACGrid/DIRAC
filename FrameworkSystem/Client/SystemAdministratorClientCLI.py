@@ -429,13 +429,16 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         else:
           installedBy = installation[ 'InstalledBy' ]
 
+        if not installation[ 'UnInstalledBy' ]:
+          uninstalledBy = ''
+        else:
+          uninstalledBy = installation[ 'UnInstalledBy' ]
+
         if installation[ 'UnInstallationTime' ]:
           uninstalledOn = installation[ 'UnInstallationTime' ].strftime( "%d-%m-%Y %H:%M" )
-          uninstalledBy = installation[ 'UnInstalledBy' ]
           isInstalled = 'No'
         else:
           uninstalledOn = ''
-          uninstalledBy = ''
           isInstalled = 'Yes'
 
         if display == 'table':
