@@ -166,8 +166,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     protocolsList = []
     for section in sections['Value']:
-      path = '/Resources/StorageElements/%s/%s/ProtocolName' % ( self.name, section )
-      if gConfig.getValue( path, '' ) == self.protocol:
+      path = '/Resources/StorageElements/%s/%s/PluginName' % ( self.name, section )
+      if gConfig.getValue( path, '' ) == self.pluginName:
         protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
         siteProtocols = gConfig.getValue( protPath, [] )
         if siteProtocols:
