@@ -100,8 +100,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
     if self.protocolParameters['Protocol'] in listProtocols:
-      successful = {}
-      failed = {}
       for url in urls:
         if self.isURL( url )['Value']:
           successful[url] = url
@@ -109,15 +107,15 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
           failed[url] = 'getTransportURL: Failed to obtain turls.'
 
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
+    else:
+      for url in urls:
+        res = self.__getSingleTransportURL( url, listProtocols )
+        self.log.debug( 'res = %s' % res )
 
-    for url in urls:
-      res = self.__getSingleTransportURL( url, listProtocols )
-      self.log.debug( 'res = %s' % res )
-
-      if not res['OK']:
-        failed[url] = res['Message']
-      else:
-        successful[url] = res['Value']
+        if not res['OK']:
+          failed[url] = res['Message']
+        else:
+          successful[url] = res['Value']
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
