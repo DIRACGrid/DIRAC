@@ -1,4 +1,6 @@
-# $HeadURL$
+""" Module that holds DISET Authorization class for services
+"""
+
 __RCSID__ = "$Id$"
 
 import types
@@ -8,9 +10,8 @@ from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
 
-class AuthManager:
-  """
-    Handle Service Authorization
+class AuthManager( object ):
+  """ Handle Service Authorization
   """
 
   __authLogger = gLogger.getSubLogger( "Authorization" )
