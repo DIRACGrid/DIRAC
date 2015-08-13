@@ -14,7 +14,7 @@ from DIRAC.Resources.Utilities import checkArgumentFormat
 
 
 
-__RCSID__ = "$Id$"
+__RCSID__ = "b5c4db8 (2015-04-16 09:43:25 +0200) fibbo <siebesiech@gmail.com>"
 
 class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
