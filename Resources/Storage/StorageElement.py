@@ -308,7 +308,7 @@ class StorageElementItem( object ):
 
     if not self.valid:
       log.debug( "Failed to create StorageElement plugins.", self.errorReason )
-      return S_ERROR( "SE.isValid: Failed to create StorageElement plugins." % self.errorReason )
+      return S_ERROR( "SE.isValid: Failed to create StorageElement plugins: %s" % self.errorReason )
 
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
