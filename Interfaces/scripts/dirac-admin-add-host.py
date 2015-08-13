@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-admin-add-site.py $
-########################################################################
-__RCSID__ = "$Id: dirac-admin-add-site.py 28168 2010-08-27 13:35:11Z rgracian $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
 
