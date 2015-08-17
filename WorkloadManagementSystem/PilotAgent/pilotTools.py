@@ -383,7 +383,7 @@ class PilotParams( object ):
     self.diracInstalled = False
     self.diracExtensions = []
     # Some commands can define environment necessary to execute subsequent commands
-    self.installEnv = None
+    self.installEnv = os.environ
     # If DIRAC is preinstalled this file will receive the updates of the local configuration
     self.localConfigFile = ''
     self.executeCmd = False
