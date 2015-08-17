@@ -50,7 +50,6 @@ from DIRAC                                                   import S_OK, S_ERRO
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.Core.Base.DB                                      import DB
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getUsernameForDN, getDNForUsername
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 
