@@ -165,7 +165,7 @@ class PDP( object ):
     if not policyActionsThatApply[ 'OK' ]:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply[ 'Value' ]
-    self.log.verbose( "Policy actions that apply: %s" % ','.join( policyActionsThatApply ) )
+    self.log.verbose( "Policy actions that apply: %s" % ','.join( pata[0] for pata in policyActionsThatApply ) )
 
     policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
 

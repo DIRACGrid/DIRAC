@@ -12,10 +12,10 @@
 """
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
 from DIRAC.ResourceStatusSystem.Utilities                       import Utils
-ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
+ResourceManagementClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
+ResourceStatusClient = getattr( Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceStatusClient' ), 'ResourceStatusClient' )
 
 __RCSID__  = '$Id: $'
 
@@ -168,8 +168,8 @@ class PEP( object ):
     
     # We expect to have an exact match. If not, then something has changed and
     # we cannot proceed with the actions.    
-    unchangedRow = self.clients['ResourceManagementClient'].selectStatusElement( decisionParams[ 'element' ],
-                                                                                 'Status', **selectParams )
+    unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
+                                                                             'Status', **selectParams )
     if not unchangedRow[ 'OK' ]:
       return unchangedRow
     
