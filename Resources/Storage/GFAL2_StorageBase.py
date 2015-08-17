@@ -639,7 +639,7 @@ class GFAL2_StorageBase( StorageBase ):
     # Add metadata expected in some places if not provided by itself
     metaDict['Lost'] = metaDict.get( 'Lost', 0 )
     metaDict['Cached'] = metaDict.get( 'Cached', 1 )
-    metaDict['Unavailable'] = metaDict.get('Unavailable', 0)
+    metaDict['Unavailable'] = metaDict.get( 'Unavailable', 0 )
 
     if not metaDict['File']:
       errStr = "GFAL2_StorageBase.__getSingleFileMetadata: supplied path is not a file"
@@ -1819,7 +1819,7 @@ class GFAL2_StorageBase( StorageBase ):
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
-        errStr = 'GFAL2_StorageBase._getExtendedAttributesPath does not exist.'
+        errStr = 'GFAL2_StorageBase._getExtendedAttributes: Path does not exist.'
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
       else:
