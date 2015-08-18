@@ -54,6 +54,11 @@ FIX: added fixes from v6r11p34 patch release
 *WMS
 CHANGE: dirac-wms-job-submit - "-r" switch to enable job repo
 
+[v6r12p41]
+
+*DMS
+FIX: DirectoryTreeBase - fix in changeDirectoryXXX methods to properly interpret input
+
 [v6r12p40]
 
 *DMS
