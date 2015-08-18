@@ -295,20 +295,21 @@ class JobManagerHandler( RequestHandler ):
 
     return S_OK()
 
-  def __killJob( self, jobID ):
+  def __killJob( self, jobID, sendKillCommand = True ):
     """  Kill one job
     """
-    result = gJobDB.setJobCommand( jobID, 'Kill' )
+    if sendKillCommand:
+      result = gJobDB.setJobCommand( jobID, 'Kill' )
+      if not result['OK']:
+        return result
+
+    gLogger.info( 'Job %d is marked for termination' % jobID )
+    result = gJobDB.setJobStatus( jobID, 'Killed', 'Marked for termination' )
     if not result['OK']:
-      return result
-    else:
-      gLogger.info( 'Job %d is marked for termination' % jobID )
-      result = gJobDB.setJobStatus( jobID, 'Killed', 'Marked for termination' )
-      if not result['OK']:
-        gLogger.warn( 'Failed to set job Killed status' )
-      result = gtaskQueueDB.deleteJob( jobID )
-      if not result['OK']:
-        gLogger.warn( 'Failed to delete job from the TaskQueue' )
+      gLogger.warn( 'Failed to set job Killed status' )
+    result = gtaskQueueDB.deleteJob( jobID )
+    if not result['OK']:
+      gLogger.warn( 'Failed to delete job from the TaskQueue' )
 
     return S_OK()
 
@@ -328,6 +329,7 @@ class JobManagerHandler( RequestHandler ):
       return result
     killJobList = []
     deleteJobList = []
+    markKilledJobList = []
     stagingJobList = []
     for jobID, sDict in result['Value'].items():
       if sDict['Status'] in ['Running','Matched','Stalled']:
@@ -336,11 +338,16 @@ class JobManagerHandler( RequestHandler ):
         if not right == RIGHT_KILL:
           deleteJobList.append( jobID )
       else:
-        deleteJobList.append( jobID )
+        markKilledJobList.append( jobID )
       if sDict['Status'] in ['Staging']:
         stagingJobList.append( jobID )
     
     bad_ids = []
+    for jobID in markKilledJobList:
+      result = self.__killJob( jobID, sendKillCommand = False )
+      if not result['OK']:
+        bad_ids.append( jobID )
+
     for jobID in killJobList:
       result = self.__killJob( jobID )
       if not result['OK']:

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-install-agent
 # Author :  Ricardo Graciani
 ########################################################################
@@ -87,7 +86,7 @@ else:
     if not result['OK']:
       print "ERROR:", result['Message']
       DIRACexit( 1 )
-    result = monitoringUtilities.monitorInstallation( 'agent', system, agent, module )
+    result = MonitoringUtilities.monitorInstallation( 'agent', system, agent, module )
     if not result['OK']:
       print "ERROR:", result['Message']
       DIRACexit( 1 )

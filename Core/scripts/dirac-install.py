@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-# $HeadURL$
 """
 The main DIRAC installer script
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil
-
-try:
-  import zipfile
-  zipEnabled = True
-except:
-  zipEnabled = False
+import sys
+import os
+import getopt
+import tarfile
+import urllib2
+import imp
+import signal
+import re
+import time
+import stat
+import types
+import shutil
+import zipfile
+import hashlib as md5
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-
-try:
-  import hashlib as md5
-except:
-  import md5
 
 def S_OK( value = "" ):
   return { 'OK' : True, 'Value' : value }
@@ -31,7 +32,7 @@ def S_ERROR( msg = "" ):
 ############
 
 
-class Params:
+class Params( object ):
 
   def __init__( self ):
     self.extraModules = []
@@ -59,7 +60,7 @@ cliParams = Params()
 # Release config manager
 ###
 
-class ReleaseConfig:
+class ReleaseConfig( object ):
 
   class CFG:
     def __init__( self, cfgData = "" ):

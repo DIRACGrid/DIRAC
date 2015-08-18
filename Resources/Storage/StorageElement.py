@@ -303,26 +303,24 @@ class StorageElementItem( object ):
     :param str operation: operation name
     """
     log = self.log.getSubLogger( 'isValid', True )
-    log.verbose( "Determining if the StorageElement %s is valid for VO %s" % ( self.name,
-                                                                                                            self.vo ) )
+    log.verbose( "Determining if the StorageElement %s is valid for VO %s" % ( self.name, self.vo ) )
 
     if not self.valid:
       log.debug( "Failed to create StorageElement plugins.", self.errorReason )
-      return S_ERROR( "SE.isValid: Failed to create StorageElement plugins." % self.errorReason )
+      return S_ERROR( "SE.isValid: Failed to create StorageElement plugins." )
 
     # Check if the Storage Element is eligible for the user's VO
     if 'VO' in self.options and not self.vo in self.options['VO']:
       log.debug( "StorageElement is not allowed for VO", self.vo )
       return S_ERROR( "SE.isValid: StorageElement is not allowed for VO." )
-    log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name,
-                                                                                                         operation ) )
+    log.verbose( "Determining if the StorageElement %s is valid for %s" % ( self.name, operation ) )
     if ( not operation ) or ( operation in self.okMethods ):
       return S_OK()
 
     # Determine whether the StorageElement is valid for checking, reading, writing
     res = self.getStatus()
     if not res[ 'OK' ]:
-      log.debug( "Could not call getStatus" )
+      log.debug( "Could not call getStatus", res['Message'] )
       return S_ERROR( "SE.isValid could not call the getStatus method" )
     checking = res[ 'Value' ][ 'Check' ]
     reading = res[ 'Value' ][ 'Read' ]

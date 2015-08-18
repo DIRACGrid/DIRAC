@@ -253,7 +253,7 @@ and this is thread %s
         if self.__retry < 5:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
           if url not in self.__bannedUrls: 
-            gLogger.info( "URL banned", "%s" % url )
+            gLogger.notice( "URL banned", "%s" % url )
             self.__bannedUrls += [url]   
           self.__retry += 1
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
