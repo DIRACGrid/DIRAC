@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: ReplicateAndRegister.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 18:49:12
@@ -22,6 +21,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import re
+import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler
@@ -207,7 +207,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     else:
       if res['Value']['Failed']:
         self.log.warn( "Can't schedule %d files: problems getting the metadata: %s" % ( len( res['Value']['Failed'] ),
-                                                                                ', '.join( res['Value']['Failed'] ) ) )
+                                                                                        ', '.join( res['Value']['Failed'] ) ) )
       metadata = res['Value']['Successful']
 
     filesToScheduleList = []
