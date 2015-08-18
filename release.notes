@@ -1,3 +1,9 @@
+[v6r13p12]
+
+*Resources
+FIX: StorageElement - bug fixed in inValid()
+CHANGE: StorageFactory - do not interpret VO parameter as mandatory
+
 [v6r13p11]
 
 *DMS
