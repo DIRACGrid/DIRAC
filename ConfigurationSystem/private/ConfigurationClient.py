@@ -156,6 +156,41 @@ class ConfigurationClient:
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
+    
+  def getSectionTree(self, root = '', substr = ''):
+    """
+    Creates a list of all subsections starting from given root.
+    List can be filtered by setting `substr` parameter.
+    
+    :param:`root` - string:
+            Starting point in the CS tree.
+    
+    :param:`substr` - string:
+            Select only results that contains given substring.
+            
+    :return: Returns a list of strings containing full path taken form CS
+    """
+    
+    if substr and substr in root:
+      result = [root]
+    else:
+      result = []
+    
+    # get subsections of the root
+    sections = self.getSections( root )
+    if not sections['OK']:
+      gLogger.error('getSectionTree', "getSection() failed with message: %s" % sections['Message'])
+      return S_ERROR('Invalid root path provided')
+    
+    # recursively go through subsections and get their subsections
+    for section in sections['Value']:
+      subtree = self.getSectionTree("%s/%s" % ( root, section ), substr)
+      if not subtree['OK']:
+        gLogger.error('getSectionTree', "getSection() failed with message: %s" % sections['Message'])
+        return S_ERROR('CS content was altered during the operation')
+      result.extend(subtree['Value'])
+        
+    return S_OK(result) 
 
   def setOptionValue( self, optionPath, value ):
     """
