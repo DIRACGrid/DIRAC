@@ -1,4 +1,4 @@
-[v6r14-pre8]
+[v6r14-pre9]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
@@ -7,6 +7,9 @@ NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
 NEW: LocalConfiguration - option to print out license information    
 FIX: SocketInfo.py - check the CRL lists while handshaking  
+
+Configuration
+NEW: ConfigurationClient - added getSectionTree() method
 
 *Framework
 NEW: InstalledComponentsDB will now store information about the user who did the 
@@ -24,6 +27,7 @@ NEW: New FileCatalog SecurityManager with access control based on policies,
 NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC with 
      Foreign Keys and Stored Procedures by accessing the databases directly     
 NEW: FileManagerPs.py - added _getFileLFNs() to serve info for the Web Portal     
+CHANGE: Moving several tests to TestDIRAC
 
 *Interfaces
 CHANGE: use jobDescription.xml as a StringIO object to avoid multiple disk
