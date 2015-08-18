@@ -89,7 +89,7 @@ class StorageFactory:
     if pluginList is None:
       pluginList = []
     if not self.vo:
-      return S_ERROR( 'Mandatory vo parameter is not defined' )
+      gLogger.warn( 'No VO information available' )
 
     # Get the name of the storage provided
     res = self._getConfigStorageName( storageName, 'Alias' )
