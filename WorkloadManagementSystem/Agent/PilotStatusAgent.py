@@ -522,9 +522,9 @@ class PilotStatusAgent( AgentModule ):
       if result['OK'] and result['Value'].has_key(i) and result['Value'][i].has_key('Status'):
         ret = self.diracadmin.killPilot( str(i) )
         if ret['OK']:
-          self.log.info("Sucsessfully deleted: %s (Status : %s)" % (i, result['Value'][i]['Status'] ) )
+          self.log.info("Successfully deleted: %s (Status : %s)" % (i, result['Value'][i]['Status'] ) )
         else:
-          self.log.error("Filed to delete %s : %s"  % ( i, ret['Message']))
+          self.log.error("Failed to delete %s : %s"  % ( i, ret['Message']))
       else:
         self.log.error("Failed to get info. of %s : %s" % ( i, str(result)))
 
