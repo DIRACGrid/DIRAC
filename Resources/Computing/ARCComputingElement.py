@@ -120,7 +120,12 @@ class ARCComputingElement( ComputingElement ):
     """ Kill the specified jobs
     """
     
-    workingDirectory = self.ceParameters['WorkingDirectory']
+    workingDirectory = "temp"
+    if "WorkingDirectory" in self.ceParameters:
+      workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], "temp" )
+    if not os.path.exists( workingDirectory ):
+      os.mkdir( workingDirectory )
+
     fd, name = tempfile.mkstemp( suffix = '.list', prefix = 'KillJobs_', dir = workingDirectory )
     jobListFile = os.fdopen( fd, 'w' )
     
@@ -231,7 +236,12 @@ class ARCComputingElement( ComputingElement ):
     """ Get the status information for the given list of jobs
     """
 
-    workingDirectory = self.ceParameters['WorkingDirectory']
+    workingDirectory = "temp"
+    if "WorkingDirectory" in self.ceParameters:
+      workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], "temp" )
+    if not os.path.exists( workingDirectory ):
+      os.mkdir( workingDirectory )
+
     fd, name = tempfile.mkstemp( suffix = '.list', prefix = 'StatJobs_', dir = workingDirectory )
     jobListFile = os.fdopen( fd, 'w' )
     
