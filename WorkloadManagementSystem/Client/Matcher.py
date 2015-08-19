@@ -8,8 +8,9 @@ __RCSID__ = "$Id"
 import time
 from types import StringTypes
 
-from DIRAC import gLogger, gMonitor
+from DIRAC import gLogger
 
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry

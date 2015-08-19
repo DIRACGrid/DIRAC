@@ -8,7 +8,8 @@ import os
 import hashlib
 from types import DictType, ListType
 
-from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
+from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.Service.PlotCache import gPlotCache

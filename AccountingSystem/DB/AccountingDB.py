@@ -6,7 +6,8 @@ import types
 import threading
 import random
 from DIRAC.Core.Base.DB import DB
-from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
 from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
