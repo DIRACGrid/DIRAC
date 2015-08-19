@@ -58,7 +58,7 @@ class DataManager( object ):
 
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
-    self.registrationProtocol = ['SRM2', 'DIP']
+    self.registrationProtocol = ['SRM2', 'DIP', 'XROOT']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
