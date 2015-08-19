@@ -155,7 +155,7 @@ class FileCatalogClient( Client ):
       owner = result['Value']['Successful'][path]['Owner']
       group = result['Value']['Successful'][path]['OwnerGroup']
       res = getDNForUsername( owner )
-      if result['OK']:
+      if res['OK']:
         result['Value']['Successful'][path]['OwnerDN'] = res['Value'][0]
       else:
         result['Value']['Successful'][path]['OwnerDN'] = ''
