@@ -37,9 +37,15 @@ class DLSequence( DLSerializable ) :
     self.methodCalls = []
 
     if methodCalls :
+      firstMethodCall = None
+      for mc in methodCalls :
+        # get the first method call, its parentID is None
+        if not mc.parentID:
+          firstMethodCall = mc
       # we have to do this because when objects are deserialize from JSON
       # references about same objects are not saved and two objects are created instead of one
-      self.stack.append( methodCalls[0] )
+      self.stack.append( firstMethodCall )
+
       while len( self.stack ) != 0 :
         mc = self.stack.pop()
         mc.sequence = self

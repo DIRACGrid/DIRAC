@@ -82,6 +82,7 @@ class DataLoggingClient( Client ):
     res = self.dataLoggingManager.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group )
     if not res["OK"]:
       return res
+
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
 
     return S_OK( sequences )

@@ -70,14 +70,14 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printSequence( seq, full = False ):
   seqLines = []
-  line = 'Sequence %s Caller %s %s %s %s ' % ( seq.sequenceID, seq.caller.name,
-                                                'UserName %s' % seq.userName.name if seq.userName else '',
-                                                'HostName %s' % seq.hostName.name if seq.hostName else '' ,
-                                                'Group %s' % seq.group.name if seq.group else '' )
+  line = 'Sequence %s, Caller %s %s %s %s ' % ( seq.sequenceID, seq.caller.name,
+                                                ', UserName %s' % seq.userName.name if seq.userName else '',
+                                                ', HostName %s' % seq.hostName.name if seq.hostName else '' ,
+                                                ', Group %s' % seq.group.name if seq.group else '' )
   if seq.extra :
-    line += 'Extra '
+    line += 'Extra : '
     for key, value in seq.extra.items() :
-      line += '%s = %s ' % ( key, value )
+      line += ' %s = %s ' % ( key, value )
   seqLines.append( line )
   stack = list()
   stack.append( [seq.methodCalls[0], 1] )
@@ -88,7 +88,7 @@ def printSequence( seq, full = False ):
     line = ''
     for x in range( cpt ):
       line += '\t'
-    line += '%s %s' % \
+    line += '%s, %s' % \
     ( mc.name.name, mc.creationTime )
     seqLines.append( line )
     for action in mc.actions :
@@ -96,19 +96,19 @@ def printSequence( seq, full = False ):
       for x in range( cpt + 1 ):
         line += '\t'
       if full :
-        line += '\t%s %s %s %s %s %s '\
-          % ( '%s' % action.status,
-              'file %s' % action.file.name if action.file else '',
-              'sourceSE %s' % action.srcSE.name if action.srcSE else '',
-              'targetSE %s' % action.targetSE.name if action.targetSE else '',
-              'extra %s' % action.extra if action.extra else '',
-              'errorMessage %s' % action.errorMessage if action.errorMessage else '' )
+        line += '\t%s%s%s%s%s%s'\
+          % ( action.status,
+              ', File %s' % action.file.name if action.file else '',
+              ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+              ', TargetSE %s' % action.targetSE.name if action.targetSE else '',
+              ', Extra %s' % action.extra if action.extra else '',
+              ', ErrorMessage %s' % action.errorMessage if action.errorMessage else '' )
       else :
-        line += '\t%s %s %s %s'\
-            % ( '%s' % action.status,
-                'file %s' % action.file.name if action.file else '',
-                'sourceSE %s' % action.srcSE.name if action.srcSE else '',
-                'targetSE %s' % action.targetSE.name if action.targetSE else '' )
+        line += '\t%s%s%s%s'\
+            % ( action.status,
+                ', File %s' % action.file.name if action.file else '',
+                ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+                ', TargetSE %s' % action.targetSE.name if action.targetSE else '' )
       seqLines.append( line )
 
     for child in reversed( mc.children ) :
@@ -118,9 +118,9 @@ def printSequence( seq, full = False ):
 
 def printSequenceLFN( seq, lfn, full = False ):
   seqLines = []
-  line = 'Sequence %s Caller %s ' % ( seq.sequenceID, '%s' % seq.caller.name if seq.caller else 'None' )
+  line = 'Sequence %s, Caller %s ' % ( seq.sequenceID, '%s' % seq.caller.name if seq.caller else 'None' )
   if seq.extra :
-    line += 'Extra : '
+    line += ', Extra : '
     for key, value in seq.extra.items() :
       line += '%s = %s, ' % ( key, value )
   seqLines.append( line )
@@ -134,24 +134,25 @@ def printSequenceLFN( seq, lfn, full = False ):
     base = ''
     for x in range( cpt ):
       base += '\t'
-    base += '%s %s ' % \
+    base += '%s, %s, ' % \
     ( mc.name.name, mc.creationTime )
     for action in mc.actions :
+
       if action.file.name == lfn:
         line = base
         if full :
-          line += '%s %s %s %s %s '\
-              % ( '%s' % action.status,
-                  'sourceSE %s' % action.srcSE.name if action.srcSE else '',
-                  'targetSE %s' % action.targetSE.name if action.targetSE else '',
-                  'extra %s' % action.extra if action.extra else '',
-                  'errorMessage %s' % action.errorMessage if action.errorMessage else '' )
+          line += '%s%s%s%s%s '\
+              % ( action.status,
+                  ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+                  ', TargetSE %s' % action.targetSE.name if action.targetSE else '',
+                  ', Extra %s' % action.extra if action.extra else '',
+                  ', ErrorMessage %s' % action.errorMessage if action.errorMessage else '' )
           seqLines.append( line )
         else :
-          line += '%s %s %s'\
-              % ( '%s' % action.status,
-                  'sourceSE %s' % action.srcSE.name if action.srcSE else '',
-                  'targetSE %s' % action.targetSE.name if action.targetSE else '' )
+          line += '%s%s%s'\
+              % ( action.status,
+                  ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+                  ', TargetSE %s' % action.targetSE.name if action.targetSE else '' )
           seqLines.append( line )
     for child in mc.children :
       stack.append( [child, cpt + 1] )

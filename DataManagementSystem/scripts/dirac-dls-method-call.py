@@ -46,32 +46,32 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printMethodCallLFN( call, lfn, full = False, status = None ):
   callLines = []
-  line = '%s %s' % \
-    ( call.name.name, 'SequenceID %s ' % call.sequenceID )
+  line = '%s, %s' % \
+    ( call.creationTime, call.name.name )
   for action in call.actions :
     if action.file.name == lfn:
       if status :
         if action.status == status :
-          line += '%s %s %s %s '\
-            % ( '%s' % action.status,
-                'sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-                'targetSE %s ' % action.targetSE.name if action.targetSE else '',
-                call.creationTime )
+          line += '%s%s%s%s'\
+            % ( ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+                ', TargetSE %s' % action.targetSE.name if action.targetSE else '',
+                ', %s' % action.status,
+                ', SequenceID %s' % call.sequenceID )
           if full :
-            line += '%s %s'\
-              % ( 'extra %s ' % action.extra if action.extra else '',
-              'errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
+            line += '%s%s'\
+              % ( ', Extra %s ' % action.extra if action.extra else '',
+              ', ErrorMessage %s ' % action.errorMessage if action.errorMessage else '' )
 
       else :
-        line += '%s %s %s %s '\
-            % ( '%s' % action.status,
-                'sourceSE %s ' % action.srcSE.name if action.srcSE else '',
-                'targetSE %s ' % action.targetSE.name if action.targetSE else '',
-                call.creationTime )
+        line += '%s%s%s%s'\
+            % ( ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+                ', TargetSE %s' % action.targetSE.name if action.targetSE else '',
+                ', %s' % action.status,
+                ', SequenceID %s' % call.sequenceID )
         if full :
-          line += '%s %s'\
-            % ( ', extra %s' % action.extra if action.extra else '',
-              ', errorMessage %s' % action.errorMessage if action.errorMessage else '' )
+          line += '%s%s'\
+            % ( ', Extra %s ' % action.extra if action.extra else '',
+            ', ErrorMessage %s ' % action.errorMessage if action.errorMessage else '' )
       callLines.append( line )
   return '\n'.join( callLines )
 
@@ -79,30 +79,30 @@ def printMethodCallLFN( call, lfn, full = False, status = None ):
 def printMethodCall( call, full = False, status = None ):
   callLines = []
   line = '%s %s %s' % \
-    ( call.name.name, 'SequenceID %s' % call.sequenceID, call.creationTime )
+    ( call.creationTime, call.name.name, 'SequenceID %s' % call.sequenceID )
   callLines.append( line )
   for action in call.actions :
     if status :
         if action.status == status :
-          line = '\t%s %s %s %s'\
-              % ( ' %s' % action.status,
-              'file %s' % action.file.name if action.file else '',
-              'sourceSE %s' % action.srcSE.name if action.srcSE else '',
-              'targetSE %s' % action.targetSE.name if action.targetSE else '' )
-          if full :
-            line += '%s %s'\
-                % ( 'extra %s' % action.extra if action.extra else '',
-                  'errorMessage %s' % action.errorMessage if action.errorMessage else '' )
-    else :
-      line = '\t%s %s %s %s '\
+          line = '\t%s%s%s%s'\
               % ( '%s' % action.status,
-              'file %s' % action.file.name if action.file else '',
-              'sourceSE %s' % action.srcSE.name if action.srcSE else '',
-              'targetSE %s' % action.targetSE.name if action.targetSE else '' )
+              ', File %s' % action.file.name if action.file else '',
+              ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+              ', TargetSE %s' % action.targetSE.name if action.targetSE else '' )
+          if full :
+            line += '%s%s'\
+                % ( ', Extra %s' % action.extra if action.extra else '',
+                  ', ErrorMessage %s' % action.errorMessage if action.errorMessage else '' )
+    else :
+      line = '\t%s%s%s%s'\
+              % ( '%s' % action.status,
+              ', File %s' % action.file.name if action.file else '',
+              ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
+              ', TargetSE %s' % action.targetSE.name if action.targetSE else '' )
       if full :
-        line += '%s %s'\
-            % ( 'extra %s' % action.extra if action.extra else '',
-              'errorMessage %s ' % action.errorMessage if action.errorMessage else '' )
+        line += '%s%s'\
+            % ( ', Extra %s' % action.extra if action.extra else '',
+              ', ErrorMessage %s' % action.errorMessage if action.errorMessage else '' )
     callLines.append( line )
   return '\n'.join( callLines )
 
@@ -112,7 +112,7 @@ args = Script.getPositionalArgs()
 
 dlc = DataLoggingClient()
 
-if not lfn and not name :
+if not lfn and not name and not status and not before and not after :
   print 'you should give at least one lfn or one method name'
 else :
   if lfn :
@@ -121,18 +121,18 @@ else :
       if not res['Value'] :
         print 'no methodCall to print'
       else :
-        print "found %s method calls" % len( res['Value'] )
+        print "Found %s method calls" % len( res['Value'] )
         for call in res['Value'] :
           print printMethodCallLFN( call, lfn, fullFlag, status )
     else :
       print 'error %s' % res['Message']
-  elif name :
+  else :
     res = dlc.getMethodCallByName( name, before, after, status )
     if res['OK']:
       if not res['Value'] :
         print 'no methodCall to print'
       else :
-        print "found %s method calls" % len( res['Value'] )
+        print "Found %s method calls" % len( res['Value'] )
         for call in res['Value'] :
           print printMethodCall( call, fullFlag, status )
     else :
