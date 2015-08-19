@@ -42,6 +42,11 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+[v6r13p13]
+
+*DMS
+BUGFIX: FileCatalogClient - bug fixed in getDirectoryMetadata()
+
 [v6r13p12]
 
 *Resources
