@@ -530,7 +530,7 @@ class StorageElementItem( object ):
   def __isLocalSE( self ):
     """ Test if the Storage Element is local in the current context
     """
-    self.log.getSubLogger( 'sLocalSE' ).verbose( "iDetermining whether %s is a local SE." % self.name )
+    self.log.getSubLogger( 'LocalSE' ).verbose( "Determining whether %s is a local SE." % self.name )
 
     import DIRAC
     localSEs = getSEsForSite( DIRAC.siteName() )['Value']
