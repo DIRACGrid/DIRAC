@@ -288,6 +288,18 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
+[v6r12p49]
+
+*Resources
+FIX: GlobusComputingElement - in killJob added -f switch to globus-job-clean command
+FIX: ARCComputingElement - create working directory if it does not exist
+
+*DMS
+CHANGE: DataManager - added XROOTD to registration protocols
+
+*TMS
+FIX: TransformationCLI - doc string
+
 [v6r12p48]
 
 *DMS

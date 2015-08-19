@@ -534,7 +534,7 @@ class WMSAdministratorHandler(RequestHandler):
       ce = result['Value']
   
       # FIXME: quite hacky. Should be either removed, or based on some flag
-      if gridType in ["LCG", "gLite", "CREAM", 'ARC']:
+      if gridType in ["LCG", "gLite", "CREAM", 'ARC', 'Globus']:
         group = getGroupOption(group,'VOMSRole',group)
         ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
         if not ret['OK']:
