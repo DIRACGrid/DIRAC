@@ -724,9 +724,12 @@ class FTSJob( object ):
     # pop of the method call, the sequence is passed to the client and it is inserted
     DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
     if DLThreadPool.getDataLoggingSequence( current_thread().ident ).isComplete() :
-      dlClient = DataLoggingClient()
-      dlSequence = DLThreadPool.popDataLoggingSequence( current_thread().ident )
-      dlClient.insertSequence( dlSequence )
+      try :
+        dlClient = DataLoggingClient()
+        dlSequence = DLThreadPool.popDataLoggingSequence( current_thread().ident )
+        dlClient.insertSequence( dlSequence )
+      except Exception as e :
+        self._log.error( 'DataLogging for FTSJob.finalize, exception %s' % s )
 
     return res
 
@@ -801,9 +804,12 @@ class FTSJob( object ):
       # pop of the method call
       DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
       if DLThreadPool.getDataLoggingSequence( current_thread().ident ).isComplete() :
-        dlClient = DataLoggingClient()
-        dlSequence = DLThreadPool.popDataLoggingSequence( current_thread().ident )
-        dlClient.insertSequence( dlSequence )
+        try :
+          dlClient = DataLoggingClient()
+          dlSequence = DLThreadPool.popDataLoggingSequence( current_thread().ident )
+          dlClient.insertSequence( dlSequence )
+        except Exception as e :
+          self._log.error( 'DataLogging for FTSJob.finalize, exception %s' % s )
     else:
       statuses = set( [ftsFile.Status for ftsFile in self] )
       self._log.warn( "No replicas to register for FTSJob (%s) - Files status: '%s'" % \
