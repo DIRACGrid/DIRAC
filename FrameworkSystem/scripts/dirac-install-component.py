@@ -40,25 +40,40 @@ Script.registerSwitch( "m:", "module=", "Python module name for the component co
 Script.registerSwitch( "p:", "parameter=", "Special component option ", setSpecialOption )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
-                                    '  %s [option|cfgfile] ... CompType ( System Component|System/Component )' % Script.scriptName,
+                                    '  %s [option|cfgfile] ... System Component|System/Component' % Script.scriptName,
                                     'Arguments:',
-                                    '  CompType: Type of the component to be installed',
                                     '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
                                     '  Service: Name of the DIRAC component (ie: Matcher)'] ) )
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
-if len( args ) == 2:
-  args = [ args[0] ] + args[1].split( '/' )
+if len( args ) == 1:
+  args = args.split( '/' )
 
-if len( args ) != 3:
+if len( args ) != 2:
   Script.showHelp()
   DIRACexit( 1 )
 
-cType = args[0]
-system = args[1]
-component = args[2]
+cType = None
+system = args[0]
+component = args[1]
+
+result = InstallTools.getSoftwareComponents( getCSExtensions() )
+if not result[ 'OK' ]:
+  gLogger.error( result[ 'Message' ] )
+  DIRACexit( 1 )
+else:
+  availableComponents = result[ 'Value' ]
+
+for compType in availableComponents:
+  if system in availableComponents[ compType ] and component in availableComponents[ compType ][ system ]:
+    cType = compType[:-1].lower()
+    break
+
+if not cType:
+  gLogger.error( 'Component %s/%s is not available for installation' % ( system, component ) )
+  DIRACexit( 1 )
 
 if module:
   result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, module,
@@ -74,6 +89,7 @@ else:
                                                getCSExtensions(),
                                                specialOptions = specialOptions,
                                                overwrite = overwrite )
+
 if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
