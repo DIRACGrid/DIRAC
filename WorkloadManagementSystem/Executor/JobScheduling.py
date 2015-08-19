@@ -204,7 +204,10 @@ class JobScheduling( OptimizerExecutor ):
     # Set the site info back to the original dict to save afterwards
     opData[ 'SiteCandidates' ][ stageSite ] = stageData
 
-    stageLFNs = self.__preRequestStaging( jobState, stageSite, opData )
+    stageRequest = self.__preRequestStaging( jobState, stageSite, opData )
+    if not stageRequest['OK']:
+      return stageRequest
+    stageLFNs = stageRequest['Value']
     result = self.__requestStaging( jobState, stageLFNs )
     if not result[ 'OK' ]:
       return result
@@ -424,7 +427,7 @@ class JobScheduling( OptimizerExecutor ):
         if len( stageLFNs[ seName ] ) == 0:
           stageLFNs.pop( seName )
 
-    return stageLFNs
+    return S_OK( stageLFNs )
 
 
   def __requestStaging( self, jobState, stageLFNs ):

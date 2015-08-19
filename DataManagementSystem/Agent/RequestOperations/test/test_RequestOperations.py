@@ -1,5 +1,6 @@
 import unittest
 import datetime
+import json
 from mock import MagicMock
 
 from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import ReplicateAndRegister
@@ -12,7 +13,9 @@ class ReqOpsTestCase( unittest.TestCase ):
     fcMock = MagicMock()
     ftsMock = MagicMock
 
-    self.rr = ReplicateAndRegister( fc = fcMock, ftsClient = ftsMock )
+    self.rr = ReplicateAndRegister()
+    self.rr.fc = fcMock
+    self.rr.ftsClient = ftsMock
 
   def tearDown( self ):
     pass
@@ -55,11 +58,12 @@ class ReplicateAndRegisterSuccess( ReqOpsTestCase ):
     
     res = self.rr._addMetadataToFiles( toSchedule )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'][0][0]['LFN'], resMeta['Value']['Successful'].keys()[0] )
-    self.assertEqual( res['Value'][0][0]['Size'], str( resMeta['Value']['Successful'].values()[0]['Size'] ) )
 
-    self.assertEqual( res['Value'][1][0]['LFN'], resMeta['Value']['Successful'].keys()[1] )
-    self.assertEqual( res['Value'][1][0]['Size'], str( resMeta['Value']['Successful'].values()[1]['Size'] ) )
+    self.assertEqual( json.loads( res['Value'][0][0] )['LFN'], resMeta['Value']['Successful'].keys()[0] )
+    self.assertEqual( json.loads( res['Value'][0][0] )['Size'], resMeta['Value']['Successful'].values()[0]['Size'] )
+
+    self.assertEqual( json.loads( res['Value'][1][0] )['LFN'], resMeta['Value']['Successful'].keys()[1] )
+    self.assertEqual( json.loads( res['Value'][1][0] )['Size'], resMeta['Value']['Successful'].values()[1]['Size'] )
 
 
 if __name__ == '__main__':

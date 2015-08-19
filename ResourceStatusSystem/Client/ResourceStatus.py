@@ -142,9 +142,8 @@ class ResourceStatus( object ):
 
       if statusType is not None:
         # Added Active by default
-        res = gConfig.getOption( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
-        if res[ 'OK' ] and res[ 'Value' ]:
-          result[ element ] = { statusType : res[ 'Value' ] }
+        res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
+        result[element] = {statusType: res}
 
       else:
         res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
