@@ -1,3 +1,20 @@
+[v6r15-pre1]
+
+*Core
+NEW: New class DError for reporting errors in output results of DIRAC functions 
+CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems in
+        documentation generation
+NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
+NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
+NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
+
+*RSS
+NEW: CE Availability policy, closing #2373
+
+*WMS
+NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
+     site( pilot ) to the jobs to select ones with required properties
+
 [v6r14]
 
 *Core
