@@ -1,4 +1,4 @@
-[v6r14-pre8]
+[v6r14]
 
 *Core
 NEW: CSGlobals - includes Extensions class to consistently check the returned
@@ -7,6 +7,9 @@ NEW: ProxyManagerXXX, ProxyGeneration, X509XXX - support for RFC proxies
 NEW: ProxyInfo - VOMS proxy information without using voms commands
 NEW: LocalConfiguration - option to print out license information    
 FIX: SocketInfo.py - check the CRL lists while handshaking  
+
+Configuration
+NEW: ConfigurationClient - added getSectionTree() method
 
 *Framework
 NEW: InstalledComponentsDB will now store information about the user who did the 
@@ -24,6 +27,7 @@ NEW: New FileCatalog SecurityManager with access control based on policies,
 NEW: lfc_dfc_db_copy - script used by LHCb to migrate from the LFC to the DFC with 
      Foreign Keys and Stored Procedures by accessing the databases directly     
 NEW: FileManagerPs.py - added _getFileLFNs() to serve info for the Web Portal     
+CHANGE: Moving several tests to TestDIRAC
 
 *Interfaces
 CHANGE: use jobDescription.xml as a StringIO object to avoid multiple disk
@@ -37,6 +41,17 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p13]
+
+*DMS
+BUGFIX: FileCatalogClient - bug fixed in getDirectoryMetadata()
+
+[v6r13p12]
+
+*Resources
+FIX: StorageElement - bug fixed in inValid()
+CHANGE: StorageFactory - do not interpret VO parameter as mandatory
 
 [v6r13p11]
 
@@ -316,6 +331,23 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p49]
+
+*Resources
+FIX: GlobusComputingElement - in killJob added -f switch to globus-job-clean command
+FIX: ARCComputingElement - create working directory if it does not exist
+
+*DMS
+CHANGE: DataManager - added XROOTD to registration protocols
+
+*TMS
+FIX: TransformationCLI - doc string
+
+[v6r12p48]
+
+*DMS
+FIX: DirectoryTreeBase - fix in changeDirectoryXXX methods to properly interpret input
 
 [v6r12p47]
 
