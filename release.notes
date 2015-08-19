@@ -1,3 +1,8 @@
+[v6r13p13]
+
+*DMS
+BUGFIX: FileCatalogClient - bug fixed in getDirectoryMetadata()
+
 [v6r13p12]
 
 *Resources
