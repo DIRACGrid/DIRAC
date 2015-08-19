@@ -242,7 +242,7 @@ def mock_getGroupOption( grpName, grpOption ):
 
 
 
-class TestBase(unittest.TestCase):
+class BaseCase( unittest.TestCase ):
   """ Base test class. Defines all the method to test
   """
 
@@ -250,6 +250,18 @@ class TestBase(unittest.TestCase):
   @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getGroupOption', side_effect = mock_getGroupOption )
   @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getAllGroups', side_effect = mock_getAllGroups )
   def setUp( self, mk_getAllGroups, mk_getGroupOption ):
+
+    global directoryTree
+    global fileTree
+    # A dictionary of directories. The keys are path,
+    # the values are another dic with keys 'owner', 'OwnerGroup' and 'mode'
+    directoryTree = {}
+
+    # Same as directoryTree, but for files
+    fileTree = {}
+
+    setupTree()
+
     # These two dict have to be defined by the children class and method,
     # and are used to compare against the output of the test
     self.expectedExistingRet = None
@@ -378,7 +390,7 @@ class TestBase(unittest.TestCase):
 
 
 
-class TestNonExistingUser( TestBase ):
+class TestNonExistingUser( BaseCase, unittest.TestCase ):
   """ As anonymous user and no group
   """
 
@@ -618,7 +630,7 @@ class TestNonExistingUser( TestBase ):
 
 
 
-class TestAdminGrpAnonUser( TestBase ):
+class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
   """ The grp_admin has adminAccess so should be able to do everything
   """
 
@@ -773,7 +785,7 @@ class TestAdminGrpAnonUser( TestBase ):
 
 
 
-class TestAdminGrpAdminUser( TestBase ):
+class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
   """ The grp_admin has adminAccess so should be able to do everything
   """
 
@@ -929,7 +941,7 @@ class TestAdminGrpAdminUser( TestBase ):
 
 
 
-class TestDataGrpDmUser( TestBase ):
+class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
   """ Should have the permission of the 'dm' user and the group
       permission of all the vomsRole 'prod' (grp_data, grp_mc)
   """
@@ -1227,7 +1239,7 @@ class TestDataGrpDmUser( TestBase ):
 
 
 
-class TestDataGrpUsr1User( TestBase ):
+class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
   """ Should have the permission of the 'usr1' user and the group
       permission of all the vomsRole 'prod' (grp_data, grp_mc)
   """
@@ -1521,7 +1533,7 @@ class TestDataGrpUsr1User( TestBase ):
 
 
 
-class TestUserGrpUsr1User( TestBase ):
+class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
   """ Just a normal user, should be able to write only in its own directory
   """
 
@@ -1810,7 +1822,6 @@ class TestUserGrpUsr1User( TestBase ):
 
 
 if __name__ == '__main__':
-  setupTree()
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestNonExistingUser )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestAdminGrpAnonUser ) )
