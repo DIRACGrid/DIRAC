@@ -21,7 +21,6 @@ __RCSID__ = "$Id $"
 
 # # imports
 import re
-import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler
