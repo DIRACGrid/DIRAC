@@ -350,4 +350,3 @@ class Operation( object ):
     jsonData['Files'] = self.__files__
 
     return jsonData
-

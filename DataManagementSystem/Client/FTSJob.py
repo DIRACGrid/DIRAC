@@ -21,6 +21,7 @@ import os
 import datetime, time
 import re
 import tempfile
+from threading import current_thread
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
@@ -34,7 +35,13 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 import fts3.rest.client.easy as fts3
-
+# from DLS
+from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
+from DIRAC.DataManagementSystem.Client.DataLogging.DLThreadPool import DLThreadPool
+from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
+from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
+from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 ########################################################################
 class FTSJob( object ):
   """
@@ -689,14 +696,39 @@ class FTSJob( object ):
 
   def submitFTS( self, ftsVersion, command = 'glite-transfer-submit', pinTime = False ):
     """ Wrapper calling the proper method for a given version of FTS"""
-
     if ftsVersion == "FTS2":
-      return self.submitFTS2( command = command, pinTime = pinTime )
+      res = self.submitFTS2( command = command, pinTime = pinTime )
     elif ftsVersion == "FTS3":
-      return self.submitFTS3( pinTime = pinTime )
+      res = self.submitFTS3( pinTime = pinTime )
     else:
-      return S_ERROR( "submitFTS: unknown FTS version %s" % ftsVersion )
+      res = S_ERROR( "submitFTS: unknown FTS version %s" % ftsVersion )
 
+    # logging of operation, creation of the sequence, add a emthod call and add actions
+    if not DLThreadPool.getDataLoggingSequence( current_thread().ident ).isCallerSet():
+      DLThreadPool.getDataLoggingSequence( current_thread().ident ).setCaller( 'FTSJob' )
+    dlMethodCall = DLThreadPool.getDataLoggingSequence( current_thread().ident )\
+                    .appendMethodCall( {'name': DLMethodName( self.__class__ .__name__ + '.submitFTS' )} )
+    dlExtra = '%s = %s' % ( 'FTSJobID', self.FTSJobID )
+    dlExtra += ', %s = %s' % ( 'FTSGUID', self.FTSGUID )
+    dlExtra += ', %s = %s' % ( 'ftsVersion', ftsVersion )
+    dlExtra += ', %s = %s' % ( 'command', command )
+    dlSrcSE = self.SourceSE
+    dlTargetSE = self.TargetSE
+
+
+    for ftsFile in self:
+      # add actions with status 'Failed' to the methodCall
+      dlMethodCall.addAction( DLAction( DLFile( ftsFile.LFN ), 'Successful' if res['OK'] else 'Failed', DLStorageElement( dlSrcSE ),
+             DLStorageElement( dlTargetSE ), dlExtra, res.get( 'Message' ) ) )
+
+    # pop of the method call, the sequence is passed to the client and it is inserted
+    DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
+    if DLThreadPool.getDataLoggingSequence( current_thread().ident ).isComplete() :
+      dlClient = DataLoggingClient()
+      dlSequence = DLThreadPool.popDataLoggingSequence( current_thread().ident )
+      dlClient.insertSequence( dlSequence )
+
+    return res
 
   def finalize( self ):
     """ register successfully transferred  files """
@@ -711,6 +743,7 @@ class FTSJob( object ):
     targetSE = StorageElement( self.TargetSE )
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
+
     for ftsFile in toRegister:
       pfn = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
       if pfn["OK"]:
@@ -720,31 +753,63 @@ class FTSJob( object ):
         self._log.error( "Error getting SRM URL", pfn['Message'] )
 
     if toRegisterDict:
+      if not DLThreadPool.getDataLoggingSequence( current_thread().ident ).isCallerSet():
+        DLThreadPool.getDataLoggingSequence( current_thread().ident ).setCaller( 'FTSJob' )
+      dlMethodCall = DLThreadPool.getDataLoggingSequence( current_thread().ident )\
+                    .appendMethodCall( {'name': DLMethodName( self.__class__ .__name__ + '.finalize' )} )
+      dlExtra = '%s = %s' % ( 'FTSJobID', self.FTSJobID )
+      dlExtra += ', %s = %s' % ( 'FTSGUID', self.FTSGUID )
+      dlSrcSE = self.SourceSE
+      dlTargetSE = self.TargetSE
+
       self._regTotal += len( toRegisterDict )
       register = self._fc.addReplica( toRegisterDict )
       self._regTime += time.time() - startTime
       if not register["OK"]:
+        for lfn in toRegisterDict :
+          # add actions with status 'Failed' to the methodCall
+          dlMethodCall.addAction( DLAction( DLFile( lfn ), 'Failed', DLStorageElement( dlSrcSE ),
+               DLStorageElement( dlTargetSE ), dlExtra, register['Message'] ) )
+
         self._log.error( 'Error registering replica', register['Message'] )
         for ftsFile in toRegister:
           ftsFile.Error = "AddCatalogReplicaFailed"
         return register
       register = register["Value"]
-      self._regSuccess += len( register.get( 'Successful', {} ) )
+
+      successfulFiles = register.get( 'Successful', {} )
+      for lfn in successfulFiles:
+        # add actions with status 'Successful' to the methodCall
+        dlMethodCall.addAction( DLAction( DLFile( lfn ), 'Successful', DLStorageElement( dlSrcSE ),
+               DLStorageElement( dlTargetSE ), dlExtra, None ) )
+
+      self._regSuccess += len( successfulFiles )
       if self._regSuccess:
         self._log.info( 'Successfully registered %d replicas' % self._regSuccess )
       failedFiles = register.get( "Failed", {} )
       errorReason = {}
       for lfn, reason in failedFiles.items():
+        # add actions with status 'Failed' to the methodCall
+        dlMethodCall.addAction( DLAction( DLFile( lfn ), 'Failed', DLStorageElement( dlSrcSE ),
+               DLStorageElement( dlTargetSE ), dlExtra, reason ) )
         errorReason.setdefault( str( reason ), [] ).append( lfn )
       for reason in errorReason:
         self._log.error( 'Error registering %d replicas' % len( errorReason[reason] ), reason )
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
+      # pop of the method call
+      DLThreadPool.getDataLoggingSequence( current_thread().ident ).popMethodCall()
+      if DLThreadPool.getDataLoggingSequence( current_thread().ident ).isComplete() :
+        dlClient = DataLoggingClient()
+        dlSequence = DLThreadPool.popDataLoggingSequence( current_thread().ident )
+        dlClient.insertSequence( dlSequence )
     else:
       statuses = set( [ftsFile.Status for ftsFile in self] )
       self._log.warn( "No replicas to register for FTSJob (%s) - Files status: '%s'" % \
                       ( self.Status, ','.join( sorted( statuses ) ) ) )
+
+
 
     return S_OK()
 

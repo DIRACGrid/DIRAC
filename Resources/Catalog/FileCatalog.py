@@ -9,6 +9,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
 from DIRAC.Resources.Utilities                              import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
+from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files, dl_srcSE, dl_targetSE
 
 class FileCatalog( object ):
 
@@ -33,6 +35,44 @@ class FileCatalog( object ):
                         'removeMetadata', 'addMetadataSet']
 
   write_methods += write_meta_methods
+
+  dataLoggingMethodsToLog = {
+              'addFile' :
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', 'Size':'Size', dl_targetSE:'SE', 'GUID':'GUID', 'Checksum':'Checksum'} },
+              'setFileStatus' :
+                {'argsPosition' : ['self', dl_files],
+                 'valueName' : 'Status'},
+              'addReplica' :
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'SE'} },
+              'removeReplica' :
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'SE'} },
+              'removeFile' :
+                {'argsPosition' : ['self', dl_files] },
+              'setReplicaStatus' :
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'SE', 'Status':'Status'} },
+              'setReplicaHost' :
+                {'argsPosition' : ['self', dl_files],
+                 'keysToGet' : { 'PFN':'PFN', dl_targetSE:'NewSE', dl_srcSE:'SE', 'Status':'Status'} },
+              'setReplicaProblematic' :
+                {'argsPosition' : ['self', dl_files],
+                 'specialFunction' : 'setReplicaProblematic' },
+              'createDirectory' :
+                {'argsPosition' : ['self', dl_files] },
+              'removeDirectory' :
+                {'argsPosition' : ['self', dl_files]},
+              'changePathMode' :
+                {'argsPosition' : ['self', dl_files] },
+              'changePathOwner' :
+                {'argsPosition' : ['self', dl_files]},
+              'changePathGroup' :
+                {'argsPosition' : ['self', dl_files] },
+              }
+
+
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
@@ -88,6 +128,8 @@ class FileCatalog( object ):
     else:
       raise AttributeError
 
+  @DataLoggingDecorator( getActionArgsFunction = 'ExecuteFC', attributesToGet = {'methodName' : 'call'},
+                            methods_to_log = dataLoggingMethodsToLog )
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
     """

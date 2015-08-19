@@ -16,6 +16,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.DataLoggingDecorator import DataLoggingDecorator
+from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import dl_files
 
 class StorageElementCache( object ):
 
@@ -113,6 +115,67 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
+
+  readMethods = [ 'getFile',
+                       'prestageFile',
+                       'prestageFileStatus',
+                       'getDirectory']
+
+  writeMethods = [ 'retransferOnlineFile',
+                        'putFile',
+                        'replicateFile',
+                        'pinFile',
+                        'releaseFile',
+                        'createDirectory',
+                        'putDirectory' ]
+
+  removeMethods = [ 'removeFile', 'removeDirectory' ]
+
+  checkMethods = [ 'exists',
+                        'getDirectoryMetadata',
+                        'getDirectorySize',
+                        'getFileSize',
+                        'getFileMetadata',
+                        'listDirectory',
+                        'isDirectory',
+                        'isFile',
+                         ]
+
+  okMethods = [ 'getLocalProtocols',
+                     'getProtocols',
+                     'getRemoteProtocols',
+                     'getStorageElementName',
+                     'getStorageParameters',
+                     'getTransportURL',
+                     'isLocalSE' ]
+
+  dataLoggingMethodsToLog = {
+              'retransferOnlineFile' :
+                {'argsPosition' : ['self', 'link'] },
+              'putFile' :
+                {'argsPosition' : ['self', dl_files],
+                 'valueName' : 'src_file'},
+              'replicateFile' :
+                {'argsPosition' : ['self', dl_files],
+                 'valueName' : 'src_file'},
+              'pinFile' :
+                {'argsPosition' : ['self', dl_files],
+                 'valueName' : 'srmRequestID'},
+              'releaseFile' :
+                {'argsPosition' : ['self', dl_files],
+                 'valueName' : 'srmRequestID'},
+              'createDirectory' :
+                {'argsPosition' : ['self', dl_files]},
+              'putDirectory' :
+                {'argsPosition' : ['self', dl_files],
+                 'valueName' : 'sourceDir'},
+              'removeFile' :
+                {'argsPosition' : ['self', dl_files]},
+              'removeDirectory' :
+                {'argsPosition' : ['self', dl_files]},
+              }
+
+
   def __init__( self, name, plugins = None, vo = None ):
     """ c'tor
 
@@ -166,39 +229,6 @@ class StorageElementItem( object ):
     self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
     self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
 
-    #                         'getTransportURL',
-    self.readMethods = [ 'getFile',
-                         'prestageFile',
-                         'prestageFileStatus',
-                         'getDirectory']
-
-    self.writeMethods = [ 'retransferOnlineFile',
-                          'putFile',
-                          'replicateFile',
-                          'pinFile',
-                          'releaseFile',
-                          'createDirectory',
-                          'putDirectory' ]
-
-    self.removeMethods = [ 'removeFile', 'removeDirectory' ]
-
-    self.checkMethods = [ 'exists',
-                          'getDirectoryMetadata',
-                          'getDirectorySize',
-                          'getFileSize',
-                          'getFileMetadata',
-                          'listDirectory',
-                          'isDirectory',
-                          'isFile',
-                           ]
-
-    self.okMethods = [ 'getLocalProtocols',
-                       'getProtocols',
-                       'getRemoteProtocols',
-                       'getStorageElementName',
-                       'getStorageParameters',
-                       'getTransportURL',
-                       'isLocalSE' ]
 
     self.__fileCatalog = None
 
@@ -592,6 +622,8 @@ class StorageElementItem( object ):
 #     res['Failed'] = failed
     return res
 
+  @DataLoggingDecorator( getActionArgsFunction = 'ExecuteSE', attributesToGet = {'methodName' : 'methodName', 'targetSE' : 'name' },
+                          className = 'StorageElement', methods_to_log = dataLoggingMethodsToLog )
   def __executeMethod( self, lfn, *args, **kwargs ):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
