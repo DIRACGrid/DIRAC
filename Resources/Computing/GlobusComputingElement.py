@@ -127,18 +127,17 @@ class GlobusComputingElement( ComputingElement ):
 
   def killJob( self, jobIDList ):
     """ Kill the specified jobs
-    #FIXME: Needs to be tested
     """
     jobList = list( jobIDList )
     if isinstance(jobIDList, basestring):
       jobList = [ jobIDList ]
     for jobID in jobList:
-      cmd = ['globus-job-clean', jobID]
+      cmd = ['globus-job-clean', '-f', jobID]
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       if not result['OK']:
         return result
       if result['Value'][0] != 0:
-        return S_ERROR( 'Failed kill job: %s' % result['Value'][0][1] )
+        return S_ERROR( 'Failed kill job: %s' % result['Value'][1].strip() )
 
     return S_OK()
 
