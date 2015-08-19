@@ -242,7 +242,7 @@ def mock_getGroupOption( grpName, grpOption ):
 
 
 
-class BaseCase( unittest.TestCase ):
+class BaseCase( object ):
   """ Base test class. Defines all the method to test
   """
 
