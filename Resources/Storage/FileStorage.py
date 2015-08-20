@@ -1,5 +1,5 @@
 """
- This is the XROOTD StorageClass
+ This is the File StorageClass
  """
 
 __RCSID__ = "$Id$"
@@ -12,9 +12,6 @@ import stat
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Utilities                  import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
-from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
-from DIRAC.Core.Utilities.File                  import getSize
-from types import StringType, ListType, DictType
 from DIRAC.Core.Utilities.Adler import fileAdler
 
 
@@ -35,7 +32,7 @@ class FileStorage( StorageBase ):
 
     # # init base class
     StorageBase.__init__( self, storageName, parameters )
-    self.log = gLogger.getSubLogger( "XROOTStorage", True )
+    self.log = gLogger.getSubLogger( "FileStorage", True )
 #     self.log.setLevel( "DEBUG" )
 
     self.pluginName = 'File'
@@ -129,8 +126,8 @@ class FileStorage( StorageBase ):
 
         fileSize = os.path.getsize( dest_url )
         successful[src_url] = fileSize
-      except Exception as e:
-        failed[src_url] = str( e )
+      except OSError as ose:
+        failed[src_url] = str( ose )
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
@@ -167,13 +164,13 @@ class FileStorage( StorageBase ):
         if sourceSize and ( sourceSize != fileSize ):
           try:
             os.unlink(dest_url)
-          except Exception as e:
+          except OSError as _ose:
             pass
           failed[dest_url] = "Source and destination file sizes do not match (%s vs %s)." % ( sourceSize, fileSize )
         else:
           successful[dest_url] = fileSize
-      except Exception as e:
-        failed[dest_url] = str( e )
+      except OSError as ose:
+        failed[dest_url] = str( ose )
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
@@ -251,7 +248,7 @@ class FileStorage( StorageBase ):
     """  Get metadata associated to the file(s)
 
       :param self: self reference
-      :param path: path (or list of path) on storage (pfn : root://...)
+      :param path: path (or list of path) on storage
       :returns Successful dict {path : metadata}
          Failed dict {path : error message }
     """
@@ -279,7 +276,7 @@ class FileStorage( StorageBase ):
     """Get the physical size of the given file
 
       :param self: self reference
-      :param path: path (or list of path) on storage (pfn : root://...)
+      :param path: path (or list of path) on storage
       :returns Successful dict {path : size}
              Failed dict {path : error message }
     """
@@ -334,7 +331,7 @@ class FileStorage( StorageBase ):
       if os.path.exists( url ):
         successful[url] = os.path.isdir( url )
       else:
-        failed[url] = "No such file or directory"
+        failed[url] = os.strerror( errno.ENOENT )
 
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -386,7 +383,7 @@ class FileStorage( StorageBase ):
   def putDirectory( self, path ):
     """ puts a or several local directory to the physical storage together with all its files and subdirectories
         :param self: self reference
-        :param str  path: dictionnary {pfn (root://...) : local dir}
+        :param str  path: dictionnary {url : local dir}
         :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary {'Files': amount of files uploaded, 'Size': amount of data uploaded}
     """
@@ -414,7 +411,7 @@ class FileStorage( StorageBase ):
         This method creates all the intermediate directory
 
     :param self: self reference
-    :param str path: path (or list of path) on storage (pfn : root://...)
+    :param str path: path (or list of path) on storage
     :returns Successful dict {path : True}
          Failed dict {path : error message }
     """
@@ -441,10 +438,13 @@ class FileStorage( StorageBase ):
   def removeDirectory( self, path, recursive = False ):
     """Remove a directory on the physical storage together with all its files and
        subdirectories.
-       :param path : single or list of path (root://..)
+       :param path : single or list of path
        :param recursive : if True, we recursively delete the subdir
        :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
+
+      Note: it is known that if recursive is False, the removal of a non existing directory is successful,
+            while it is failed for recursive = True. That's stupid, but well... I guess I have to keep the interface
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -468,7 +468,7 @@ class FileStorage( StorageBase ):
           shutil.rmtree(url)
           successful[url] = {'FilesRemoved':nbOfFiles, 'SizeRemoved':totalSize}
         except OSError as ose:
-          # if the directory does not exist, then the numbers are already correct, no need to redo
+          # if the directory does not exist, then the numbers are already correct, no need to re do
           # the walk
           if ose.errno != errno.ENOENT:
             # If we only removed partially, check how much was removed
@@ -482,19 +482,14 @@ class FileStorage( StorageBase ):
           failed[url] = {'FilesRemoved':nbOfFiles, 'SizeRemoved':totalSize}
       # If no recursive
       else:
-        print url
-        print "no recursive"
         try:
           # Delete all the files
           for child in os.listdir( url ):
-            print "child %s" % child,
             fullpath = os.path.join( url, child )
             if os.path.isfile( fullpath ):
-              print " it is a file "
               os.unlink( fullpath )
           successful[url] = True
         except OSError as ose:
-          print "exception ! %s" % ose
           # If we get as exception that the directory does not exist
           # (it can only be the directory), then success
           if ose.errno == errno.ENOENT:
@@ -511,7 +506,7 @@ class FileStorage( StorageBase ):
   def listDirectory( self, path ):
     """ List the supplied path
         CAUTION : It is not recursive!
-       :param path : single or list of path (root://..)
+       :param path : single or list of url
        :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary 'SubDirs' and 'Files'. Each are dictionaries with
             path as key and metadata as values (for Files only, SubDirs has just True as value)
@@ -522,7 +517,7 @@ class FileStorage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "XROOTStorage.listDirectory: Attempting to list %s directories." % len( urls ) )
+    self.log.debug( "FileStorage.listDirectory: Attempting to list %s directories." % len( urls ) )
 
     successful = {}
     failed = {}
@@ -553,7 +548,7 @@ class FileStorage( StorageBase ):
   def getDirectoryMetadata( self, path ):
     """  Get metadata associated to the directory(ies)
       :param self: self reference
-      :param path: path (or list of path) on storage (pfn : root://...)
+      :param path: url (or list of urls) on storage
       :returns Successful dict {path : metadata}
                Failed dict {path : error message }
     """
@@ -581,7 +576,7 @@ class FileStorage( StorageBase ):
     """ Get the size of the directory on the storage
       CAUTION : the size is not recursive, and does not go into subfolders
       :param self: self reference
-      :param path: path (or list of path) on storage (pfn : root://...)
+      :param path: path (or list of path) on storage
       :returns: list of successfull and failed dictionnary, both indexed by the path
                 In the failed, the value is the error message
                 In the successful the values are dictionnaries : Files : amount of files in the directory
@@ -593,7 +588,7 @@ class FileStorage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "XROOTStorage.getDirectorySize: Attempting to get size of %s directories." % len( urls ) )
+    self.log.debug( "FileStorage.getDirectorySize: Attempting to get size of %s directories." % len( urls ) )
 
     failed = {}
     successful = {}
