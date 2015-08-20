@@ -18,6 +18,28 @@ NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to H
 
 UNITS = { 'HS06': 1. , 'SI00': 1. / 250. }
 
+def getMachineFeatures():
+  features = {}
+  if 'MACHINEFEATURES' not in os.environ:
+    return features
+  for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
+    fname = os.path.join( os.environ['MACHINEFEATURES'], item )
+    if os.path.exists( fname ):
+      val = open( fname ).read()
+    else:
+      val = None
+    features[item] = val
+  return features
+
+def getPowerFromMJF():
+  features = getMachineFeatures()
+  totalPower = features.get( 'hs06' )
+  logCores = features.get( 'log_cores' )
+  if totalPower and logCores:
+    return int( 10. * float( totalPower ) / float( logCores ) ) / 10.
+  else:
+    return None
+
 def queueNormalizedCPU( ceUniqueID ):
   """ Report Normalized CPU length of queue
   """
@@ -61,8 +83,8 @@ def getQueueNormalization( ceUniqueID ):
     return S_OK( benchmarkSI00 )
   else:
     return S_ERROR( 'benchmarkSI00 info not available for %s' % subClusterUniqueID )
-    #errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
-    #exitCode = 3
+    # errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
+    # exitCode = 3
 
 def __getQueueNormalization( queueCSSection, siteCSSEction ):
   """ Query the CS and return the Normalization
