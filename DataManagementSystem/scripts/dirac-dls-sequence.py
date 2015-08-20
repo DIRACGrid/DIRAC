@@ -70,6 +70,7 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printSequence( seq, full = False ):
   seqLines = []
+  print 'tot %s' % seq.userName
   line = 'Sequence %s, Caller %s %s %s %s ' % ( seq.sequenceID, seq.caller.name,
                                                 ', UserName %s' % seq.userName.name if seq.userName else '',
                                                 ', HostName %s' % seq.hostName.name if seq.hostName else '' ,
@@ -118,7 +119,10 @@ def printSequence( seq, full = False ):
 
 def printSequenceLFN( seq, lfn, full = False ):
   seqLines = []
-  line = 'Sequence %s, Caller %s ' % ( seq.sequenceID, '%s' % seq.caller.name if seq.caller else 'None' )
+  line = 'Sequence %s, Caller %s %s %s %s ' % ( seq.sequenceID, seq.caller.name,
+                                                ', UserName %s' % seq.userName.name if seq.userName else '',
+                                                ', HostName %s' % seq.hostName.name if seq.hostName else '' ,
+                                                ', Group %s' % seq.group.name if seq.group else '' )
   if seq.extra :
     line += ', Extra : '
     for key, value in seq.extra.items() :

@@ -64,10 +64,10 @@ class _DataLoggingDecorator( object ):
       you can pass as much arguments as you want to the decorator
 
       Common arguments are :
-        _argsPosition : a list of arguments names, to know which argument it is on each position, if the argument can be passed in kwargs
+        argsPosition : a list of arguments names, to know which argument it is on each position, if the argument can be passed in kwargs
                         and its key is not the same name we want to save, you need to pass a tuple ( 'specialKeyWord', 'keyInKwargs' )
-        _getActionArgsFunction : a string to know which function will be used to extract args, possibilities are in funcDict
-        _tupelPostion : a list of arguments names, to describe tuple
+        getActionArgsFunction : a string to know which function will be used to extract args, possibilities are in funcDict
+        tupelPostion : a list of arguments names, to describe tuple
   """
 
   def __init__( self, func , **kwargs ):
