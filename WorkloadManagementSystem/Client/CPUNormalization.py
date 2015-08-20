@@ -8,7 +8,9 @@
 """
 __RCSID__ = "$Id$"
 
-import os, random
+import os
+import random
+import urllib
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
@@ -24,9 +26,9 @@ def getMachineFeatures():
     return features
   for item in ( 'hs06', 'jobslots', 'log_cores', 'phys_cores' ):
     fname = os.path.join( os.environ['MACHINEFEATURES'], item )
-    if os.path.exists( fname ):
-      val = open( fname ).read()
-    else:
+    try:
+      val = urllib.urlopen( fname ).read()
+    except:
       val = None
     features[item] = val
   return features
