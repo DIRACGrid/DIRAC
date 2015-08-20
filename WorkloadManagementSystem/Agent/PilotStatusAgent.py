@@ -524,9 +524,9 @@ class PilotStatusAgent( AgentModule ):
         if ret['OK']:
           self.log.info("Successfully deleted: %s (Status : %s)" % (i, result['Value'][i]['Status'] ) )
         else:
-          self.log.error("Failed to delete %s : %s"  % ( i, ret['Message']))
+          self.log.error( "Failed to delete pilot: ", "%s : %s" % ( i, ret['Message'] ) )
       else:
-        self.log.error("Failed to get info. of %s : %s" % ( i, str(result)))
+        self.log.error( "Failed to get pilot info", "%s : %s" % ( i, str( result ) ) )
 
   def _checkJobLastUpdateTime( self, joblist , StalledDays ):
     timeLimitToConsider = Time.dateTime() - Time.day * StalledDays 
@@ -541,6 +541,6 @@ class PilotStatusAgent( AgentModule ):
              self.log.debug('Since '+str(JobID)+' updates LastUpdateTime on '+str(LastUpdateTime)+', this does not to need to be deleted.')
              break
       else:
-        self.log.error("Error taking job info. from DB:%s" % str( result['Message'] ) )
+        self.log.error( "Error taking job info from DB", result['Message'] )
     return ret
 
