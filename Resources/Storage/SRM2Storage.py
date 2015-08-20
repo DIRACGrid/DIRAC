@@ -2128,7 +2128,7 @@ class SRM2Storage( StorageBase ):
     if numberOfResults <= 0:
       errObj = DError( DErrno.EGFAL, "__gfal_get_ids could not obtain request ID" )
       self.log.error( errObj )
-      return S_ERROR( errObj )
+      return errObj
     else:
       self.log.debug( "SRM2Storage.__get_gfal_ids: Retrieved SRM request ID %s." % srmRequestToken )
       return S_OK( srmRequestToken )
