@@ -8,16 +8,16 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 
 _readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
-               'getReplicas','getReplicaStatus','getFileAncestors',
-               'getFileDescendents','listDirectory','isDirectory',
-               'getDirectoryReplicas', 'getDirectorySize', 'getDirectoryMetadata']
+                'getReplicas','getReplicaStatus','getFileAncestors',
+                'getFileDescendents','listDirectory','isDirectory',
+                'getDirectoryReplicas', 'getDirectorySize', 'getDirectoryMetadata']
 
 _writeMethods = ['changePathOwner', 'changePathGroup', 'changePathMode',
-                'addFile','setFileStatus','removeFile','addReplica',
-                'removeReplica','setReplicaStatus','setReplicaHost',
-                'setFileOwner','setFileGroup','setFileMode',
-                'addFileAncestors','createDirectory','removeDirectory',
-                'setMetadata', '__removeMetadata']
+                 'addFile','setFileStatus','removeFile','addReplica',
+                 'removeReplica','setReplicaStatus','setReplicaHost',
+                 'setFileOwner','setFileGroup','setFileMode',
+                 'addFileAncestors','createDirectory','removeDirectory',
+                 'setMetadata', '__removeMetadata']
 
 
 class SecurityManagerBase( object ):
