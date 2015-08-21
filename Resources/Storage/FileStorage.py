@@ -235,6 +235,12 @@ class FileStorage( StorageBase ):
 
       metadataDict['Checksum'] = cks if cks else ""
 
+      # FIXME: only here for compatibility with SRM until multi protocol is properly handled
+      metadataDict['Cached'] = 1
+      metadataDict['Migrated'] = 0
+      metadataDict['Lost'] = 0
+      metadataDict['Unavailable'] = 0
+
     except OSError as ose:
       return S_ERROR( str( ose ) )
 
