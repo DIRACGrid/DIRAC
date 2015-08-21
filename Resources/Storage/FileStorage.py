@@ -1,5 +1,5 @@
 """
- This is the File StorageClass
+ This is the File StorageClass, only meant to be used localy
  """
 
 __RCSID__ = "$Id$"
@@ -43,7 +43,7 @@ class FileStorage( StorageBase ):
     return S_OK( self.basePath )
 
   def exists( self, path ):
-    """Check if the given path exists. The 'path' variable can be a string or a list of strings.
+    """Check if the given path exists.
 
     :param self: self reference
     :param path: path (or list of path) on storage
@@ -139,22 +139,20 @@ class FileStorage( StorageBase ):
     """Put a copy of the local file to the current directory on the
        physical storage
        :param path: dictionnary {pfn  : localFile}
-       :param sourceSize : size in B (NOT USED)
+       :param sourceSize : compares the size of the local and remote.
+                           You obviously run into trouble if you use a list of path...
+                           If the size do not match, remove the remote file
        :returns Successful dict {path : size}
                 Failed dict {path : error message }
-                S_ERROR(errMsg) in case of arguments problems
     """
 
     if not isinstance( path, dict ):
       return S_ERROR ( "FileStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
 
-    urls = path
-
-
     failed = {}
     successful = {}
 
-    for dest_url, src_file in urls.items():
+    for dest_url, src_file in path.items():
       try:
         dirname = os.path.dirname( dest_url )
         if not os.path.exists(dirname):
@@ -338,6 +336,17 @@ class FileStorage( StorageBase ):
 
   @staticmethod
   def __copyDirectory( src_dir, dest_dir ):
+    """ Copy a whole tree, and return the number of files and the size copied
+
+        :raise OSError
+
+        :param src_dir: source folder
+        :param dest_dir: destination folder
+
+
+        :return dictionary with 'Files' and 'Size' as key
+     """
+
     shutil.copytree( src_dir, dest_dir )
     nbOfFiles = 0
     totalSize = 0
@@ -350,6 +359,7 @@ class FileStorage( StorageBase ):
   def getDirectory( self, path, localPath = False ):
     """Get locally a directory from the physical storage together with all its
        files and subdirectories.
+
        :param: path: path (or list of path) on storage
        :param: localPath: local path where to store what is downloaded
        :return: successful and failed dictionaries. The keys are the pathes,
@@ -506,6 +516,7 @@ class FileStorage( StorageBase ):
   def listDirectory( self, path ):
     """ List the supplied path
         CAUTION : It is not recursive!
+
        :param path : single or list of url
        :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary 'SubDirs' and 'Files'. Each are dictionaries with
@@ -575,6 +586,7 @@ class FileStorage( StorageBase ):
   def getDirectorySize( self, path ):
     """ Get the size of the directory on the storage
       CAUTION : the size is not recursive, and does not go into subfolders
+
       :param self: self reference
       :param path: path (or list of path) on storage
       :returns: list of successfull and failed dictionnary, both indexed by the path
