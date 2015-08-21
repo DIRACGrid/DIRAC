@@ -522,33 +522,6 @@ class DirectoryClosure( DirectoryTreeBase ):
     else:
       return DirectoryTreeBase._setDirectoryParameter( self, path, pname, pvalue )
 
-
-
-  def setDirectoryGroup( self, path, gname ):
-    """ Set the directory owner
-    """
-
-
-    result = self.db.ugManager.findGroup( gname )
-    if not result['OK']:
-      return result
-
-    gid = result['Value']
-
-    return self._setDirectoryParameter( path, 'GID', gid )
-
-  def setDirectoryOwner( self, path, owner ):
-    """ Set the directory owner
-    """
-
-    result = self.db.ugManager.findUser( owner )
-    if not result['OK']:
-      return result
-
-    uid = result['Value']
-
-    return self._setDirectoryParameter( path, 'UID', uid )
-  
   
   def __getLogicalSize( self, lfns, ps_name, connection ):
     paths = lfns.keys()
