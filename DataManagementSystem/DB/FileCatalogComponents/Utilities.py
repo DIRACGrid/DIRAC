@@ -69,25 +69,31 @@ def checkCatalogArguments( f ):
   """ Decorator to check arguments of FileCatalog calls in the clients
   """
   def processWithCheckingArguments(*args, **kwargs):
-    lfnDict = dict( args[0] )
-    result = checkArgumentFormat( lfnDict, generateMap = True )
+
+    argList = list( args )
+    lfnArgument = argList[1]
+    result = checkArgumentFormat( lfnArgument, generateMap = True )
     if not result['OK']:
       return result
     checkedLFNDict, lfnMap = result['Value']
-    args[0] = checkedLFNDict
-    result = f(*args, **kwargs)
+    argList[1] = checkedLFNDict
+    argTuple = tuple( argList )
+    result = f(*argTuple, **kwargs)
     if not result['OK']:
       return result
 
     # Restore original paths
-    args[0] = lfnDict
+    argList[1] = lfnArgument
+    args = tuple( argList )
     failed = {}
     successful = {}
     for lfn in result['Value']['Failed']:
       failed[lfnMap[lfn]] = result['Value']['Failed'][lfn]
     for lfn in result['Value']['Successful']:
       successful[lfnMap[lfn]] = result['Value']['Successful'][lfn]
-    return S_OK( { "Successful": successful, "Failed": failed } )
+
+    result['Value'].update( { "Successful": successful, "Failed": failed } )
+    return result
 
   return processWithCheckingArguments
 
