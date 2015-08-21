@@ -531,15 +531,15 @@ class PilotStatusAgent( AgentModule ):
   def _checkJobLastUpdateTime( self, joblist , StalledDays ):
     timeLimitToConsider = Time.dateTime() - Time.day * StalledDays 
     ret = False
-    for JobID in joblist:
-      result = self.jobDB.getJobAttributes(int(JobID))
+    for jobID in joblist:
+      result = self.jobDB.getJobAttributes( int( jobID ) )
       if result['OK']:
-         if result['Value'].has_key('LastUpdateTime'):
-           LastUpdateTime = result['Value']['LastUpdateTime']
-           if Time.fromString(LastUpdateTime) > timeLimitToConsider:
-             ret = True
-             self.log.debug('Since '+str(JobID)+' updates LastUpdateTime on '+str(LastUpdateTime)+', this does not to need to be deleted.')
-             break
+        if 'LastUpdateTime' in result['Value']:
+          lastUpdateTime = result['Value']['LastUpdateTime']
+          if Time.fromString( lastUpdateTime ) > timeLimitToConsider:
+            ret = True
+            self.log.debug( 'Since %s updates LastUpdateTime on %s this does not to need to be deleted.' % ( str( jobID ), str( lastUpdateTime ) ) )
+            break
       else:
         self.log.error( "Error taking job info from DB", result['Message'] )
     return ret
