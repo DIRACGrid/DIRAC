@@ -7,30 +7,26 @@
 
 __RCSID__ = "$Id$"
 
-try:
-  import hashlib 
-  md5 = hashlib
-except:
-  import md5
+import hashlib as md5
 
 import random, os, time
-from types import StringTypes, ListType, DictType
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.List import intListToString
 
-def checkArgumentFormat( path ):
+def checkArgumentFormat( path, generateMap = False ):
   """ Bring the various possible form of arguments to FileCatalog methods to
       the standard dictionary form
   """
   
   def checkArgumentDict( path ):
     """ Check and process format of the arguments to FileCatalog methods """
-    if type( path ) in StringTypes:
+    if isinstance( path, basestring ):
       urls = {path:True}
-    elif type( path ) == ListType:
+    elif isinstance( path, list ):
       urls = {}
       for url in path:
         urls[url] = True
-    elif type( path ) == DictType:
+    elif isinstance( path, dict ):
       urls = path
     else:
       return S_ERROR( "checkArgumentDict: Supplied path is not of the correct format" )
@@ -47,6 +43,7 @@ def checkArgumentFormat( path ):
 
   # Bring the lfn path to the normalized form
   urls = {}
+  urlMap = {}
   for url in pathDict:
     # avoid empty path...
     if not url:
@@ -62,7 +59,37 @@ def checkArgumentFormat( path ):
         mUrl = mUrl[5:] 
     normpath = os.path.normpath( mUrl )
     urls[normpath] = pathDict[url]
-  return S_OK( urls )
+    urlMap[normpath] = url
+  if generateMap:
+    return S_OK( ( urls, urlMap ) )
+  else:
+    return S_OK( urls )
+
+def checkCatalogArguments( f ):
+  """ Decorator to check arguments of FileCatalog calls in the clients
+  """
+  def processWithCheckingArguments(*args, **kwargs):
+    lfnDict = dict( args[0] )
+    result = checkArgumentFormat( lfnDict, generateMap = True )
+    if not result['OK']:
+      return result
+    checkedLFNDict, lfnMap = result['Value']
+    args[0] = checkedLFNDict
+    result = f(*args, **kwargs)
+    if not result['OK']:
+      return result
+
+    # Restore original paths
+    args[0] = lfnDict
+    failed = {}
+    successful = {}
+    for lfn in result['Value']['Failed']:
+      failed[lfnMap[lfn]] = result['Value']['Failed'][lfn]
+    for lfn in result['Value']['Successful']:
+      successful[lfnMap[lfn]] = result['Value']['Successful'][lfn]
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  return processWithCheckingArguments
 
 def generateGuid( checksum, checksumtype ):
   """ Generate a GUID based on the file checksum
@@ -106,3 +133,20 @@ def queryTime(f):
       result['QueryTime'] = time.time() - start
     return result
   return measureQueryTime
+
+def getIDSelectString( ids ):
+  """
+  :param ids: input IDs - can be single int, list or tuple or a SELECT string
+  :return: Select string
+  """
+  if isinstance( ids, basestring ) and ids.lower().startswith( 'select' ):
+    idString = ids
+  elif isinstance( ids, ( int, long ) ):
+    idString = '%d' % ids
+  elif isinstance( ids, ( tuple, list) ):
+    idString = intListToString( ids )
+  else:
+    return S_ERROR( 'Illegal fileID' )
+
+  return S_OK( idString )
+
