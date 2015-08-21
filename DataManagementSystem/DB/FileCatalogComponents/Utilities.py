@@ -113,13 +113,13 @@ def getIDSelectString( ids ):
   :return: Select string
   """
   if isinstance( ids, basestring ) and ids.lower().startswith( 'select' ):
-    fileIDString = ids
+    idString = ids
   elif isinstance( ids, ( int, long ) ):
-    fileIDString = '%d' % ids
+    idString = '%d' % ids
   elif isinstance( ids, ( tuple, list) ):
-    fileIDString = intListToString( ids )
+    idString = intListToString( ids )
   else:
     return S_ERROR( 'Illegal fileID' )
 
-  return S_OK( fileIDString )
+  return S_OK( idString )
 
