@@ -181,6 +181,7 @@ class DirectoryTreeBase:
     if result['Value']:
       result = S_OK( int( result['Value'] ) )
       result['Exists'] = True
+      result['DirID'] = result['Value']
     else:
       result = S_OK( 0 )
       result['Exists'] = False
@@ -281,7 +282,7 @@ class DirectoryTreeBase:
     """ Get directory ID from the given path or already evaluated ID
     """
 
-    if type( path ) in StringTypes:
+    if isinstance( path, basestring ):
       result = self.findDir( path )
       if not result['OK']:
         return result
@@ -336,181 +337,116 @@ class DirectoryTreeBase:
 #####################################################################
   def _setDirectoryParameter( self, path, pname, pvalue ):
     """ Set a numerical directory parameter
+
+        :param mixed path: Directory path or paths as a string or directory ID as int,
+                           list/tuple of ints or a string to select directory IDs
+        :param str pname: parameter name
+        :param int pvalue: parameter value
     """
     result = getIDSelectString( path )
     if not result['OK'] and isinstance( path, basestring ):
       result = self.__getDirID( path )
       if not result['OK']:
         return result
-      result = getIDSelectString( path )
+      dirID = result['Value']
+      result = getIDSelectString( dirID )
       if not result['OK']:
         return result
 
     dirIDString = result['Value']
-    req = "UPDATE FC_DirectoryInfo SET %s=%d WHERE DirID IN ( %s )" % ( pname, pvalue, dirIDString )
+    req = "UPDATE FC_DirectoryInfo SET %s=%d, " \
+          "ModificationDate=UTC_TIMESTAMP() WHERE DirID IN ( %s )" % \
+          ( pname, pvalue, dirIDString )
     result = self.db._update( req )
     return result
 
 #####################################################################
-  def _setDirectoryUid( self, path, uid ):
-    """ Set the directory owner
-    """
-    return self._setDirectoryParameter( path, 'UID', uid )
+  def setDirectoryGroup( self, path, gname ):
+    """ Set the directory group
 
-  def setDirectoryOwner( self, path, owner ):
-    """ Set the directory owner
-        :param path: can be string path int ID, tuple or list of IDs, SELECT string of IDs
-        :return S_OK/S_ERROR
+        :param mixed path: directory path as a string or int or list of ints or select statement
+        :param mixt group: new group as a string or int gid
     """
-    return self._setDirectoryOwner( path, owner )
 
-  def _setDirectoryOwner( self, path, owner ):
-    """ Set the directory owner
-        :param path: can be string path int ID, tuple or list of IDs, SELECT string of IDs
-        :return S_OK/S_ERROR
-    """
-    if isinstance( owner, basestring ):
-      result = self.db.ugManager.findUser( owner )
-      if not result['OK']:
-        return result
-      owner = result['Value']
-    return self._setDirectoryParameter( path, 'UID', owner )
+    result = self.db.ugManager.findGroup( gname )
+    if not result['OK']:
+      return result
+
+    gid = result['Value']
+
+    return self._setDirectoryParameter( path, 'GID', gid )
 
 #####################################################################
-  def _setDirectoryGid( self, path, gid ):
-    """ Set the directory group
+  def setDirectoryOwner( self, path, owner ):
+    """ Set the directory owner
+
+        :param mixed path: directory path as a string or int or list of ints or select statement
+        :param mixt owner: new user as a string or int uid
     """
-    return self._setDirectoryParameter( path, 'GID', gid )
+
+    result = self.db.ugManager.findUser( owner )
+    if not result['OK']:
+      return result
+
+    uid = result['Value']
+
+    return self._setDirectoryParameter( path, 'UID', uid )
 
 #####################################################################
   def changeDirectoryOwner( self, paths, recursive = False ):
     """ Bulk setting of the directory owner
+
+        :param dictionary paths : dictionary < lfn : owner >
     """
-    result = checkArgumentFormat( paths )
-    if not result['OK']:
-      return result
-    arguments = result['Value']
-    successful = {}
-    failed = {}
-    for path, owner in arguments.items():
-      result = self.setDirectoryOwner( path, owner )
-      if not result['OK']:
-        failed[path] = result['Message']
-        continue
-      if recursive:
-        result = self.__getDirID( path )
-        if not result['OK']:
-          failed[path] = result['Message']
-          continue
-        dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True )
-        if not result['OK']:
-          failed[path] = result['Message']
-          continue
-
-        subDirQuery = result['Value']
-        fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
-
-        result = self.db.ugManager.findUser( owner )
-        uid = result['Value']
-
-        result = self._setDirectoryOwner( subDirQuery, uid )
-        if not result['OK']:
-          failed[path] = result['Message']
-          continue
-        result = self.db.fileManager._setFileOwner( fileQuery, uid )
-        if not result['OK']:
-          failed[path] = result['Message']
-        else:
-          successful[path] = True
-
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-
-#####################################################################
-  def setDirectoryGroup( self, path, gname ):
-    """ Set the directory owner
-    """
-
-    result = self.__getDirID( path )
-    if not result['OK']:
-      return result
-    dirID = result['Value']
-    result = self.db.ugManager.findGroup( gname )
-    gid = result['Value']
-    result = self._setDirectoryGid( dirID, gid )
-    return result
+    return self.changeDirectoryParameter( paths,
+                                          self.setDirectoryOwner,
+                                          self.db.fileManager.setFileOwner,
+                                          recursive = recursive )
 
 #####################################################################
   def changeDirectoryGroup( self, paths, recursive = False ):
-    """ Bulk setting of the directory owner
+    """ Bulk setting of the directory group
+
+        :param dictionary paths : dictionary < lfn : group >
     """
-    return changeDirectoryAttribute( paths,
-                                     self.setDirectoryGroup,
-                                     self.db.fileManager._setFileMode,
-                                     recursive = recursive )
-    result = checkArgumentFormat( paths )
-    if not result['OK']:
-      return result
-    arguments = result['Value']
-    successful = {}
-    failed = {}
-    for path, group in arguments.items():
-      result = self.setDirectoryGroup( path, group )
-      if not result['OK']:
-        failed[path] = result['Message']
-        continue
-      if recursive:
-        result = self.__getDirID( path )
-        if not result['OK']:
-          failed[path] = result['Message']
-          continue
-        dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True )
-        if not result['OK']:
-          failed[path] = result['Message']
-          continue
-
-        subDirQuery = result['Value']
-        fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
-
-        result = self._setDirectoryGroup( subDirQuery, group )
-        if not result['OK']:
-          failed[path] = result['Message']
-          continue
-        result = self.db.fileManager._setFileGroup( fileQuery, group )
-        if not result['OK']:
-          failed[path] = result['Message']
-        else:
-          successful[path] = True
-
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return self.changeDirectoryParameter( paths,
+                                          self.setDirectoryGroup,
+                                          self.db.fileManager.setFileGroup,
+                                          recursive = recursive )
 
 #####################################################################
   def setDirectoryMode( self, path, mode ):
-    """ set the directory mask
+    """ set the directory mode
+
+        :param mixed path: directory path as a string or int or list of ints or select statement
+        :param int mode: new mode
     """
     return self._setDirectoryParameter( path, 'Mode', mode )
 
 #####################################################################
   def changeDirectoryMode( self, paths, recursive = False ):
-    """ Bulk setting of the directory owner
+    """ Bulk setting of the directory mode
+
+        :param dictionary paths : dictionary < lfn : mode >
     """
-    return changeDirectoryAttribute( paths,
-                                     self.setDirectoryMode,
-                                     self.db.fileManager._setFileMode,
-                                     recursive = recursive )
+    return self.changeDirectoryParameter( paths,
+                                          self.setDirectoryMode,
+                                          self.db.fileManager.setFileMode,
+                                          recursive = recursive )
 
 #####################################################################
-  def changeDirectoryAttribute( self, paths,
+  def changeDirectoryParameter( self, paths,
                                 directoryFunction,
                                 fileFunction,
                                 recursive = False ):
-    """ Bulk setting of the directory owner
+    """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
+
+        :param dictionary paths : dictionary < lfn : value >, where value is the value of parameter to be set
+        :param function directoryFunction: function to change directory(ies) parameter
+        :param function fileFunction: function to change file(s) parameter
+        :param bool recursive: flag to apply the operation recursively
     """
-    result = checkArgumentFormat( paths )
-    if not result['OK']:
-      return result
-    arguments = result['Value']
+    arguments = paths
     successful = {}
     failed = {}
     for path, attribute in arguments.items():
@@ -524,7 +460,7 @@ class DirectoryTreeBase:
           failed[path] = result['Message']
           continue
         dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True )
+        result = self.getSubdirectoriesByID( dirID, requestString = True, includeParent = True )
         if not result['OK']:
           failed[path] = result['Message']
           continue

@@ -8,8 +8,8 @@ from DIRAC                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List              import intListToString
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
-import os, stat
-from types import ListType, StringTypes, DictType
+import os
+import stat
 
 class FileManagerBase( object ):
 
@@ -259,7 +259,7 @@ class FileManagerBase( object ):
     extraLfns = {}
     for lfn in lfns:
       masterLfns[lfn] = dict( lfns[lfn] )
-      if 'SE' in lfns[lfn] and type( lfns[lfn]['SE'] ) == ListType:
+      if 'SE' in lfns[lfn] and isinstance( lfns[lfn]['SE'], list ):
         masterLfns[lfn]['SE'] = lfns[lfn]['SE'][0]  
         if len( lfns[lfn]['SE'] ) > 1:
           extraLfns[lfn] = dict( lfns[lfn] )
@@ -706,32 +706,6 @@ class FileManagerBase( object ):
 
     return S_OK( directorySESizeDict )
 
-  def _setFileOwner( self, fileID, owner, connection = False ):
-    """ Set the file owner """
-    connection = self._getConnection( connection )
-    if isinstance( owner, basestring ):
-      result = self.db.ugManager.findUser( owner )
-      if not result['OK']:
-        return result
-      owner = result['Value']
-    return self._setFileParameter( fileID, 'UID', owner, connection = connection )
-
-  def _setFileGroup( self, fileID, group, connection = False ):
-    """ Set the file group """
-    connection = self._getConnection( connection )
-    if isinstance( group, basestring ):
-      result = self.db.ugManager.findGroup( group )
-      if not result['OK']:
-        return result
-      group = result['Value']
-    return self._setFileParameter( fileID, 'GID', group, connection = connection )
-
-  def _setFileMode( self, fileID, mode, connection = False ):
-    """ Set the file mode """
-    connection = self._getConnection( connection )
-    return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
-  
-
   def setFileStatus( self, lfns, connection = False ):
     """ Get set the group for the supplied files """
     connection = self._getConnection( connection )
@@ -742,27 +716,20 @@ class FileManagerBase( object ):
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       status = lfns[lfn]
+      if isinstance( status, basestring ):
+        if not status in self.db.validFileStatus:
+          return S_ERROR( 'Invalid file status %s' % status )
+        result = self._getStatusInt( status, connection = connection )
+        if not result['OK']:
+          return result
+        status = result['Value']
       fileID = res['Value']['Successful'][lfn]['FileID']
-      res = self._setFileStatus( fileID, status, connection = connection )
+      res = self._setFileParameter( fileID, "Status", status, connection = connection )
       if not res['OK']:
         failed[lfn] = res['Message']
       else:
         successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
-
-
-
-  def _setFileStatus( self, fileID, status, connection = False ):
-    """ Set the file owner """
-    connection = self._getConnection( connection )
-    if type( status ) in StringTypes:
-      if not status in self.db.validFileStatus:
-        return S_ERROR( 'Invalid file status %s' % status )
-      result = self._getStatusInt( status, connection = connection )
-      if not result['OK']:
-        return result
-      status = result['Value']
-    return self._setFileParameter( fileID, 'Status', status, connection = connection )
 
   ######################################################
   #
@@ -899,18 +866,18 @@ class FileManagerBase( object ):
       # We consider only 2 options :
       # either {lfn : guid}
       # or P lfn : {PFN : .., GUID : ..} }
-      if type( lfns ) == DictType:
+      if isinstance( lfns, dict ):
         val = lfns.values()
 
       # We have values, take the first to identify the type
       if val:
         val = val[0]
 
-      if type( val ) == DictType and 'GUID' in val:
+      if isinstance( val, dict ) and 'GUID' in val:
         # We are in the case {lfn : {PFN:.., GUID:..}}
         guidList = [lfns[lfn]['GUID'] for lfn in lfns]
         pass
-      elif type( val ) in StringTypes:
+      elif isinstance( val, basestring ):
         # We hope that it is the GUID which is given
         guidList = lfns.values()
 
@@ -1257,14 +1224,14 @@ class FileManagerBase( object ):
     result = self._getStorageElement( se )
     if not result['OK']:
       return result
-    selement = result['Value']
+    sElement = result['Value']
     res = pfnparse( pfn )
     if not res['OK']:
       return res
     pfnDict = res['Value']
     protocol = pfnDict['Protocol']
     pfnpath = pfnDict['Path']
-    result = selement.getStorageParameters( protocol )
+    result = sElement.getStorageParameters( protocol )
     if not result['OK']:
       return result
     seDict = result['Value']
@@ -1282,27 +1249,25 @@ class FileManagerBase( object ):
     return S_OK()
 
   def _getStorageElement( self, seName ):
-    from DIRAC.Resources.Storage.StorageElement              import StorageElement
+    from DIRAC.Resources.Storage.StorageElement import StorageElement
     storageElement = StorageElement( seName )
     if not storageElement.valid:
       return S_ERROR( storageElement.errorReason )
     return S_OK( storageElement )
 
-  def setFileGroup( self, lfns, uid=0, gid=0, connection = False ):
+  def changeFileGroup( self, lfns ):
     """ Get set the group for the supplied files
         :param lfns : dictionary < lfn : group >
-        :param uid : useless
-        :param gid : useless
+        :param int/str newGroup: optional new group/groupID the same for all the supplied lfns
      """
-    connection = self._getConnection( connection )
-    res = self._findFiles( lfns, ['FileID', 'GID'], connection = connection )
+    res = self._findFiles( lfns, ['FileID', 'GID'] )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       group = lfns[lfn]
-      if type( group ) in StringTypes:
+      if isinstance( group, basestring ):
         groupRes = self.db.ugManager.findGroup( group )
         if not groupRes['OK']:
           return groupRes
@@ -1312,28 +1277,26 @@ class FileManagerBase( object ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileGroup( fileID, group, connection = connection )
+        res = self._setFileParameter( fileID, "GID", group )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileOwner( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the group for the supplied files
-        :param lfns : dictionary < lfn : group >
-        :param uid : useless
-        :param gid : useless
-     """
-    connection = self._getConnection( connection )
-    res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
+  def changeFileOwner( self, lfns ):
+    """ Set the owner for the supplied files
+        :param lfns : dictionary < lfn : owner >
+        :param int/str newOwner: optional new user/userID the same for all the supplied lfns
+    """
+    res = self._findFiles( lfns, ['FileID', 'UID'] )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       owner = lfns[lfn]
-      if type( owner ) in StringTypes:
+      if isinstance( owner, basestring ):
         userRes = self.db.ugManager.findUser( owner )
         if not userRes['OK']:
           return userRes
@@ -1343,17 +1306,19 @@ class FileManagerBase( object ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileOwner( fileID, owner, connection = connection )
+        res = self._setFileParameter( fileID, "UID", owner )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileMode( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the mode for the supplied files """
-    connection = self._getConnection( connection )
-    res = self._findFiles( lfns, ['FileID', 'Mode'], connection = connection )
+  def changeFileMode( self, lfns ):
+    """" Set the mode for the supplied files
+        :param lfns : dictionary < lfn : mode >
+        :param int newMode: optional new mode the same for all the supplied lfns
+    """
+    res = self._findFiles( lfns, ['FileID', 'Mode'] )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -1365,9 +1330,47 @@ class FileManagerBase( object ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileMode( fileID, mode, connection = connection )
+        res = self._setFileParameter( fileID, "Mode", mode )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
+
+  def setFileOwner( self, path, owner ):
+    """ Set the file owner
+
+        :param mixed path: file path as a string or int or list of ints or select statement
+        :param mixt group: new user as a string or int uid
+    """
+
+    result = self.db.ugManager.findUser( owner )
+    if not result['OK']:
+      return result
+
+    uid = result['Value']
+
+    return self._setFileParameter( path, 'UID', uid )
+
+  def setFileGroup( self, path, gname ):
+    """ Set the file group
+
+        :param mixed path: file path as a string or int or list of ints or select statement
+        :param mixt group: new group as a string or int gid
+    """
+
+    result = self.db.ugManager.findGroup( gname )
+    if not result['OK']:
+      return result
+
+    gid = result['Value']
+
+    return self._setFileParameter( path, 'GID', gid )
+
+  def setFileMode( self, path, mode ):
+    """ Set the file mode
+
+        :param mixed path: file path as a string or int or list of ints or select statement
+        :param int mode: new mode
+    """
+    return self._setFileParameter( path, 'Mode', mode )
