@@ -2,6 +2,9 @@
 # $Id$
 ########################################################################
 
+""" FileManagerBase is a base class for all the specific File Managers
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC                                  import S_OK, S_ERROR, gLogger
@@ -30,6 +33,8 @@ class FileManagerBase( object ):
     self.db = database
 
   def getFileCounters( self, connection = False ):
+    """ Get a number of counters to verify the sanity of the Files in the catalog
+    """
     connection = self._getConnection( connection )
   
     resultDict = {}
@@ -75,6 +80,9 @@ class FileManagerBase( object ):
     return S_OK( resultDict )
 
   def getReplicaCounters( self, connection = False ):
+    """ Get a number of counters to verify the sanity of the Replicas in the catalog
+    """
+
     connection = self._getConnection( connection )
     req = "SELECT COUNT(*) FROM FC_Replicas;"
     res = self.db._query( req, connection )
@@ -194,31 +202,6 @@ class FileManagerBase( object ):
           failed[id_] = "File ID not found"
 
     return S_OK({'Successful':successful,'Failed':failed})
-    
-  def _getFileLFNs_old(self,fileIDs):
-    """ Get the file LFNs for a given list of file IDs
-    """            
-    stringIDs = intListToString(fileIDs)
-    req = "SELECT DirID, FileID, FileName from FC_Files WHERE FileID IN ( %s )" % stringIDs
-    result = self.db._query(req)
-    if not result['OK']:
-      return result
-
-    dirPathDict = {}  
-    fileNameDict = {}
-    for row in result['Value']:
-      if not row[0] in dirPathDict:
-        dirPathDict[row[0]] = self.db.dtree.getDirectoryPath(row[0])['Value']      
-      fileNameDict[row[1]] = '%s/%s' % (dirPathDict[row[0]],row[2])
-
-    failed = {}
-    successful = fileNameDict
-    for id_ in fileIDs:
-      if not id_ in fileNameDict:
-        failed[id_] = "File ID not found"
-
-    return S_OK({'Successful':successful,'Failed':failed})          
-                                    
 
   def addFile( self, lfns, credDict, connection = False ):
     """ Add files to the catalog
