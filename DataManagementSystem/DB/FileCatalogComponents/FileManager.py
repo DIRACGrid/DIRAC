@@ -623,10 +623,11 @@ class FileManager( FileManagerBase ):
     if not result['OK']:
       return result
     fileIDString = result['Value']
-      
+
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
-      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % ( paramName, paramValue, fileIDString )
+      tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
+      req = tmpreq % "SET %s='%s'" % ( paramName, paramValue )
       result = self.db._update(req,connection)
       if not result['OK']:
         return result
