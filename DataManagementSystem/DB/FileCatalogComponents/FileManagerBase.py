@@ -155,6 +155,10 @@ class FileManagerBase( object ):
     """
     return S_ERROR( "To be implemented on derived class" )
 
+  def _getDirectoryFileIDs( self, dirID, requestString = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
   
   def _findFileIDs( self, lfns, connection=False ):
     """ To be implemented on derived class
@@ -1106,6 +1110,16 @@ class FileManagerBase( object ):
     if statusID in self.statusDict:
       return S_OK(self.statusDict[statusID])
     return S_OK('Unknown')
+
+  def getFileIDsInDirectory( self, dirID, requestString = False ):
+    """ Get a list of IDs for all the files stored in given directories or their
+        subdirectories
+    :param mixt dirID: single directory ID or a list of directory IDs
+    :param boolean requestString: if True return result as a SQL SELECT string
+    :return: list of file IDs or SELECT string
+    """
+
+    return self._getDirectoryFileIDs( dirID, requestString )
 
   def getFilesInDirectory( self, dirID, verbose = False, connection = False ):
     connection = self._getConnection( connection )
