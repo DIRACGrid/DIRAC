@@ -188,6 +188,27 @@ class FileManager( FileManagerBase ):
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
 
+  def _getDirectoryFileIDs( self, dirID, requestString = False ):
+    """ Get a list of IDs for all the files stored in given directories or their
+        subdirectories
+    :param mixt dirID: single directory ID or a list of directory IDs
+    :param boolean requestString: if True return result as a SQL SELECT string
+    :return: list of file IDs or SELECT string
+    """
+
+    result = getIDSelectString( dirID )
+    if not result['OK']:
+      return result
+    dirListString = result['Value']
+
+    if requestString:
+      req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % dirListString
+      return S_OK( req )
+
+    req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
+    result = self.db._query( req )
+    return result
+
   def _getFileMetadataByID( self, fileIDs, connection=False ):
     """ Get standard file metadata for a list of files specified by FileID
     """
@@ -302,9 +323,6 @@ class FileManager( FileManagerBase ):
     for fileID,guid in res['Value']:
       guidDict[guid] = fileID
     return S_OK(guidDict)
-
-
-
 
   def getLFNForGUID( self, guids, connection = False ):
     """ Returns the lfns matching given guids"""
