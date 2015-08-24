@@ -15,7 +15,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC                                            import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.List                        import sortList
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Path    import cfgPath
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
@@ -86,6 +85,7 @@ class StorageFactory:
     self.options = {}
     self.protocolDetails = []
     self.storages = []
+    derivedStorageName = None
     if pluginList is None:
       pluginList = []
     if not self.vo:
@@ -102,6 +102,7 @@ class StorageFactory:
     res = self._getConfigStorageName( storageName, 'BaseSE' )
     if not res['OK']:
       return res
+    derivedStorageName = storageName
     storageName = res['Value']
 
     # Get the options defined in the CS for this storage
@@ -111,7 +112,7 @@ class StorageFactory:
     self.options = res['Value']
 
     # Get the protocol specific details
-    res = self._getConfigStorageProtocols( storageName )
+    res = self._getConfigStorageProtocols( storageName, derivedStorageName = derivedStorageName )
     if not res['OK']:
       return res
     self.protocolDetails = res['Value']
@@ -221,9 +222,7 @@ class StorageFactory:
 
     return S_OK( optionsDict )
 
-  def _getConfigStorageProtocols( self, storageName ):
-    """ Protocol specific information is present as sections in the Storage configuration
-    """
+  def __getProtocolsSections( self, storageName ):
     storageConfigPath = cfgPath( self.rootConfigPath, storageName )
     res = gConfig.getSections( storageConfigPath )
     if not res['OK']:
@@ -231,16 +230,42 @@ class StorageFactory:
       gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
       return S_ERROR( errStr )
     protocolSections = res['Value']
-    sortedProtocolSections = sortList( protocolSections )
+    return S_OK( protocolSections )
+
+  def _getConfigStorageProtocols( self, storageName, derivedStorageName = None ):
+    """ Protocol specific information is present as sections in the Storage configuration
+    """
+    res = self.__getProtocolsSections( storageName )
+    if not res['OK']:
+      return res
+    protocolSections = res['Value']
+    sortedProtocolSections = sorted( protocolSections )
     protocolDetails = []
     for protocolSection in sortedProtocolSections:
       res = self._getConfigStorageProtocolDetails( storageName, protocolSection )
       if not res['OK']:
         return res
       protocolDetails.append( res['Value'] )
+    if derivedStorageName:
+      # We may have parameters overwriting the baseSE protocols
+      res = self.__getProtocolsSections( derivedStorageName )
+      if not res['OK']:
+        return res
+      for protocolSection in res['Value']:
+        res = self._getConfigStorageProtocolDetails( derivedStorageName, protocolSection, checkAccess = False )
+        if not res['OK']:
+          return res
+        detail = res['Value']
+        pluginName = detail.get( 'PluginName' )
+        if pluginName:
+          for protocolDetail in protocolDetails:
+            if protocolDetail.get( 'PluginName' ) == pluginName:
+              protocolDetail.update( detail )
+            break
+
     return S_OK( protocolDetails )
 
-  def _getConfigStorageProtocolDetails( self, storageName, protocolSection ):
+  def _getConfigStorageProtocolDetails( self, storageName, protocolSection, checkAccess = True ):
     """
       Parse the contents of the protocol block
     """
@@ -276,13 +301,14 @@ class StorageFactory:
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
-    if protocolDict['Access'].lower() == 'remote':
-      self.remotePlugins.append( protocolDict['PluginName'] )
-    elif protocolDict['Access'].lower() == 'local':
-      self.localPlugins.append( protocolDict['PluginName'] )
-    else:
-      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
-      gLogger.warn( errStr )
+    if checkAccess:
+      if protocolDict['Access'].lower() == 'remote':
+        self.remotePlugins.append( protocolDict['PluginName'] )
+      elif protocolDict['Access'].lower() == 'local':
+        self.localPlugins.append( protocolDict['PluginName'] )
+      else:
+        errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
+        gLogger.warn( errStr )
 
     # The PluginName option must be defined
     if not protocolDict['PluginName']:
