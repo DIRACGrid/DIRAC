@@ -14,8 +14,9 @@ import time
 import datetime
 from Queue import Queue
 
-from DIRAC import S_OK, gMonitor
+from DIRAC import S_OK
 
+from DIRAC.FrameworkSystem.Client.MonitoringClient                  import gMonitor
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport

@@ -24,7 +24,8 @@ __RCSID__ = "$Id $"
 # @brief Definition of PutAndRegister class.
 
 # # imports
-from DIRAC import S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 

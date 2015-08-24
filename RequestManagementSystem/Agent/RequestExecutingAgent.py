@@ -24,7 +24,8 @@ __RCSID__ = '$Id$'
 # # imports
 import time
 # # from DIRAC
-from DIRAC import gMonitor, S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool

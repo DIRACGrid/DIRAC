@@ -141,6 +141,10 @@ class TimeLeft:
         name = batchSystem
         break
 
+    if name == None and os.environ.has_key( 'MACHINEFEATURES' ) and os.environ.has_key( 'JOBFEATURES' ):
+      # Only use MJF if legacy batch system information not available for now
+      name = 'MJF'
+
     if name == None:
       self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
       return S_ERROR( 'Current batch system is not supported' )

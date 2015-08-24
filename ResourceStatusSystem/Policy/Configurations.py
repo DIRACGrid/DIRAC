@@ -49,6 +49,18 @@ POLICIESMETA = {
      }, 
 
 
+  # CE POLICIES........................................................
+
+  'CEAvailability' :
+    { 
+      'description' : "policy that checks the CE Availability",
+      'module'      : 'CEAvailabilityPolicy',
+      'command'     : ( 'CEAvailability', 'CEAvailability' ),
+      'args'        : { 'onlyCache' : True },
+     }, 
+
+
+
   # Job POLICIES..............................................................
 
   'JobDoneRatio' :

@@ -24,7 +24,8 @@ __RCSID__ = "$Id $"
 import os
 import time
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gMonitor, gConfig
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
