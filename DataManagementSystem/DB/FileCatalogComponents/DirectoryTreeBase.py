@@ -5,7 +5,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import checkArgumentFormat, getIDSelectString
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import getIDSelectString
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 import time, threading, os
 from types import StringTypes, ListType
@@ -466,7 +466,11 @@ class DirectoryTreeBase:
           continue
 
         subDirQuery = result['Value']
-        fileQuery = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % subDirQuery
+        result = self.db.fileManager.getFileIDsInDirectory( subDirQuery, requestString = True )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        fileQuery = result['Value']
 
         result = directoryFunction( subDirQuery, attribute )
         if not result['OK']:
@@ -552,7 +556,7 @@ class DirectoryTreeBase:
 
     return S_OK( resultDict )
 
-  def getFileIDsInDirectory( self, dirID, credDict, startItem = 1, maxItems = 25 ):
+  def getFileIDsInDirectoryWithLimits( self, dirID, credDict, startItem = 1, maxItems = 25 ):
     """ Get file IDs for the given directory
     """
     dirs = dirID
@@ -582,23 +586,6 @@ class DirectoryTreeBase:
       return result
     result = S_OK( [ fileId[0] for fileId in result['Value'] ] )
     result['TotalRecords'] = totalRecords
-    return result
-
-
-  def getFilesInDirectory( self, dirID, credDict, requestString = False ):
-    """ Get file IDs for the given directory
-    """
-    result = getIDSelectString( dirID )
-    if not result['OK']:
-      return result
-    dirListString = result['Value']
-
-    if requestString:
-      req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % dirListString
-      return S_OK( req )
-
-    req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
-    result = self.db._query( req )
     return result
 
   def getFileLFNsInDirectory( self, dirID, credDict ):
