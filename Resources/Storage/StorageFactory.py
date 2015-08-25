@@ -102,11 +102,12 @@ class StorageFactory:
     res = self._getConfigStorageName( storageName, 'BaseSE' )
     if not res['OK']:
       return res
-    derivedStorageName = storageName
-    storageName = res['Value']
+    if res['Value'] != storageName:
+      derivedStorageName = storageName
+      storageName = res['Value']
 
     # Get the options defined in the CS for this storage
-    res = self._getConfigStorageOptions( storageName )
+    res = self._getConfigStorageOptions( storageName, derivedStorageName = derivedStorageName )
     if not res['OK']:
       return res
     self.options = res['Value']
@@ -186,31 +187,29 @@ class StorageFactory:
       resolvedName = storageName
     return S_OK( resolvedName )
 
-  def _getConfigStorageOptions( self, storageName ):
+  def _getConfigStorageOptions( self, storageName, derivedStorageName = None ):
     """ Get the options associated to the StorageElement as defined in the CS
     """
-    storageConfigPath = cfgPath( self.rootConfigPath, storageName )
-    res = gConfig.getOptions( storageConfigPath )
-    if not res['OK']:
-      errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
-      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
-      return S_ERROR( errStr )
-    options = res['Value']
     optionsDict = {}
-    for option in options:
+    # We first get the options of the baseSE, and then overwrite with the derivedSE
+    for seName in ( storageName, derivedStorageName ) if derivedStorageName else ( storageName, ):
+      storageConfigPath = cfgPath( self.rootConfigPath, seName )
+      res = gConfig.getOptions( storageConfigPath )
+      if not res['OK']:
+        errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
+        gLogger.error( errStr, "%s: %s" % ( seName, res['Message'] ) )
+        return S_ERROR( errStr )
+      for option in set( res['Value'] ) - set( ( 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess' ) ):
+        optionConfigPath = cfgPath( storageConfigPath, option )
+        default = [] if option in [ 'VO' ] else ''
+        optionsDict[option] = gConfig.getValue( optionConfigPath, default )
 
-      if option in [ 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']:
-        continue
-      optionConfigPath = cfgPath( storageConfigPath, option )
-      if option in [ 'VO' ]:
-        optionsDict[option] = gConfig.getValue( optionConfigPath, [] )
-      else:
-        optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
-
-    res = self.resourceStatus.getStorageElementStatus( storageName )
+    # The status is that of the derived SE only
+    seName = derivedStorageName if derivedStorageName else storageName
+    res = self.resourceStatus.getStorageElementStatus( seName )
     if not res[ 'OK' ]:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
-      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
+      gLogger.error( errStr, "%s: %s" % ( seName, res['Message'] ) )
       return S_ERROR( errStr )
 
     # For safety, we did not add the ${statusType}Access keys
@@ -218,7 +217,7 @@ class StorageFactory:
 
     # We add the dictionary with the statusTypes and values
     # { 'statusType1' : 'status1', 'statusType2' : 'status2' ... }
-    optionsDict.update( res[ 'Value' ][ storageName ] )
+    optionsDict.update( res[ 'Value' ][ seName ] )
 
     return S_OK( optionsDict )
 
