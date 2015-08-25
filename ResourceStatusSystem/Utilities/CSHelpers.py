@@ -162,12 +162,16 @@ def getStorageElementsHosts( seNames = None ):
 
   return S_OK( list( set( seHosts ) ) )
 
+def _getSEParameters( seName ):
+  se = StorageElement( seName )
+  seParameters = se.getStorageParameters( 'SRM2' )
+  return seParameters
+
 def getSEToken( seName ):
   ''' Get StorageElement token
   '''
 
-  se = StorageElement( seName )
-  seParameters = se.getStorageParameters( 'SRM2' )
+  seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
     return seParameters
 
@@ -177,25 +181,24 @@ def getSEHost( seName ):
   ''' Get StorageElement host name
   '''
 
-  se = StorageElement( seName )
-  seParameters = se.getStorageParameters( 'SRM2' )
+  seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
     return seParameters
 
   return S_OK( seParameters['Value']['Host'] )
 
-def getStorageElementEndpoint( storageElement ):
-
-  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1' % storageElement
-
-  host = gConfig.getValue( _basePath + '/Host' )
-  port = gConfig.getValue( _basePath + '/Port' )
-  wsurl = gConfig.getValue( _basePath + '/WSUrl', '' )
+def getStorageElementEndpoint( seName ):
+  """ Get endpoint as combination of host, port, wsurl
+  """
+  seParameters = _getSEParameters( seName )
+  if not seParameters['OK']:
+    return seParameters
+  host = seParameters['Value']['Host']
+  port = seParameters['Value']['Port']
+  wsurl = seParameters['Value']['WSUrl']
 
   # MAYBE wusrl is not defined
-  # if host and port and wsurl:
   if host and port:
-
     url = 'httpg://%s:%s%s' % ( host, port, wsurl )
     url = url.replace( '?SFN=', '' )
     return S_OK( url )
