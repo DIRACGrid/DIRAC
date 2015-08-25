@@ -85,9 +85,10 @@ class StorageFactory:
     self.options = {}
     self.protocolDetails = []
     self.storages = []
-    derivedStorageName = None
     if pluginList is None:
       pluginList = []
+    elif isinstance( pluginList, basestring ):
+      pluginList = [pluginList]
     if not self.vo:
       gLogger.warn( 'No VO information available' )
 
@@ -102,9 +103,12 @@ class StorageFactory:
     res = self._getConfigStorageName( storageName, 'BaseSE' )
     if not res['OK']:
       return res
+    # If the storage is derived frmo another one, keep the information
     if res['Value'] != storageName:
       derivedStorageName = storageName
       storageName = res['Value']
+    else:
+      derivedStorageName = None
 
     # Get the options defined in the CS for this storage
     res = self._getConfigStorageOptions( storageName, derivedStorageName = derivedStorageName )
