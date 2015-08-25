@@ -162,15 +162,16 @@ def getStorageElementsHosts( seNames = None ):
 
   return S_OK( list( set( seHosts ) ) )
 
-def getSEToken( se ):
-  '''
-    Get StorageElement token
+def getSEToken( seName ):
+  ''' Get StorageElement token
   '''
 
-  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken'
+  se = StorageElement( seName )
+  seParameters = se.getStorageParameters( 'SRM2' )
+  if not seParameters['OK']:
+    return seParameters
 
-  # FIXME: return S_OK, S_ERROR
-  return gConfig.getValue( _basePath % se, '' )
+  return S_OK( seParameters['Value']['SpaceToken'] )
 
 def getSEHost( seName ):
   ''' Get StorageElement host name
