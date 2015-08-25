@@ -1206,52 +1206,6 @@ class FileManagerBase( object ):
   #     return S_ERROR( 'PFN does not correspond to the LFN convention' )
   #  return S_OK()
 
-  def _checkLFNPFNConvention( self, lfn, pfn, se ):
-    """ Check that the PFN corresponds to the LFN-PFN convention
-    """
-    # Check if the PFN corresponds to the LFN convention
-    if pfn == lfn:
-      return S_OK()
-    lfn_pfn = True   # flag that the lfn is contained in the pfn
-    if ( len( pfn ) < len( lfn ) ) or ( pfn[-len( lfn ):] != lfn ) :
-      return S_ERROR( 'PFN does not correspond to the LFN convention' )
-    if not pfn.endswith( lfn ):
-      return S_ERROR()
-    # Check if the pfn corresponds to the SE definition
-    result = self._getStorageElement( se )
-    if not result['OK']:
-      return result
-    sElement = result['Value']
-    res = pfnparse( pfn )
-    if not res['OK']:
-      return res
-    pfnDict = res['Value']
-    protocol = pfnDict['Protocol']
-    pfnpath = pfnDict['Path']
-    result = sElement.getStorageParameters( protocol )
-    if not result['OK']:
-      return result
-    seDict = result['Value']
-    sePath = seDict['Path']
-    ind = pfnpath.find( sePath )
-    if ind == -1:
-      return S_ERROR( 'The given PFN %s does not correspond to the %s SE definition' % ( pfn, se ) )
-    # Check the full LFN-PFN-SE convention
-    if lfn_pfn:
-      seAccessDict = dict( seDict )
-      seAccessDict['Path'] = sePath + '/' + lfn
-      check_pfn = pfnunparse( seAccessDict )
-      if check_pfn != pfn:
-        return S_ERROR( 'PFN does not correspond to the LFN convention' )
-    return S_OK()
-
-  def _getStorageElement( self, seName ):
-    from DIRAC.Resources.Storage.StorageElement import StorageElement
-    storageElement = StorageElement( seName )
-    if not storageElement.valid:
-      return S_ERROR( storageElement.errorReason )
-    return S_OK( storageElement )
-
   def changeFileGroup( self, lfns ):
     """ Get set the group for the supplied files
         :param lfns : dictionary < lfn : group >
