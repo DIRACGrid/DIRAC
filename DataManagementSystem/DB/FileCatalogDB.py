@@ -273,12 +273,14 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    result = self.__changePathFunction( res['Value']['Successful'], credDict,
-                                        self.dtree.changeDirectoryOwner,
-                                        self.fileManager.changeFileOwner,
-                                        recursive = recursive )
-    failed.update( result['Value']['Failed'] )
-    successful = result['Value']['Successful']
+    successful = {}
+    if res['Value']['Successful']:
+      result = self.__changePathFunction( res['Value']['Successful'], credDict,
+                                          self.dtree.changeDirectoryOwner,
+                                          self.fileManager.changeFileOwner,
+                                          recursive = recursive )
+      failed.update( result['Value']['Failed'] )
+      successful = result['Value']['Successful']
     return S_OK( { 'Successful':successful, 'Failed':failed } )
 
   def changePathGroup( self, paths, credDict, recursive = False ):
@@ -292,12 +294,14 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    result = self.__changePathFunction( res['Value']['Successful'], credDict,
-                                        self.dtree.changeDirectoryGroup,
-                                        self.fileManager.changeFileGroup,
-                                        recursive = recursive )
-    failed.update( result['Value']['Failed'] )
-    successful = result['Value']['Successful']
+    successful = {}
+    if res['Value']['Successful']:
+      result = self.__changePathFunction( res['Value']['Successful'], credDict,
+                                          self.dtree.changeDirectoryGroup,
+                                          self.fileManager.changeFileGroup,
+                                          recursive = recursive )
+      failed.update( result['Value']['Failed'] )
+      successful = result['Value']['Successful']
     return S_OK( { 'Successful':successful, 'Failed':failed } )
 
   def changePathMode( self, paths, credDict, recursive = False ):
@@ -312,12 +316,14 @@ class FileCatalogDB( DB ):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    result = self.__changePathFunction( res['Value']['Successful'], credDict,
-                                        self.dtree.changeDirectoryMode,
-                                        self.fileManager.changeFileMode,
-                                        recursive = recursive )
-    failed.update( result['Value']['Failed'] )
-    successful = result['Value']['Successful']
+    successful = {}
+    if res['Value']['Successful']:
+      result = self.__changePathFunction( res['Value']['Successful'], credDict,
+                                          self.dtree.changeDirectoryMode,
+                                          self.fileManager.changeFileMode,
+                                          recursive = recursive )
+      failed.update( result['Value']['Failed'] )
+      successful = result['Value']['Successful']
     return S_OK( { 'Successful':successful, 'Failed':failed } )
 
   def __changePathFunction( self, paths, credDict,
@@ -336,15 +342,17 @@ class FileCatalogDB( DB ):
     result = self.isDirectory( paths, credDict )
     if not result['OK']:
       return result
-    for p in result['Value']['Successful']:
-      if result['Value']['Successful'][p]:
-        dirList.append( p )
+    for di in result['Value']['Successful']:
+      if result['Value']['Successful'][di]:
+        dirList.append( di )
     fileList = []
     if len( dirList ) < len( paths ):
       result = self.isFile( paths, credDict )
       if not result['OK']:
         return result
-      fileList = result['Value']['Successful'].keys()
+      for fi in result['Value']['Successful']:
+        if result['Value']['Successful'][fi]:
+          fileList.append( fi )
 
     successful = {}
     failed = {}
