@@ -361,7 +361,7 @@ class DirectoryTreeBase:
     return result
 
 #####################################################################
-  def setDirectoryGroup( self, path, gname ):
+  def _setDirectoryGroup( self, path, gname ):
     """ Set the directory group
 
         :param mixed path: directory path as a string or int or list of ints or select statement
@@ -377,7 +377,7 @@ class DirectoryTreeBase:
     return self._setDirectoryParameter( path, 'GID', gid )
 
 #####################################################################
-  def setDirectoryOwner( self, path, owner ):
+  def _setDirectoryOwner( self, path, owner ):
     """ Set the directory owner
 
         :param mixed path: directory path as a string or int or list of ints or select statement
@@ -398,10 +398,10 @@ class DirectoryTreeBase:
 
         :param dictionary paths : dictionary < lfn : owner >
     """
-    return self.changeDirectoryParameter( paths,
-                                          self.setDirectoryOwner,
-                                          self.db.fileManager.setFileOwner,
-                                          recursive = recursive )
+    return self._changeDirectoryParameter( paths,
+                                           self._setDirectoryOwner,
+                                           self.db.fileManager.setFileOwner,
+                                           recursive = recursive )
 
 #####################################################################
   def changeDirectoryGroup( self, paths, recursive = False ):
@@ -409,13 +409,13 @@ class DirectoryTreeBase:
 
         :param dictionary paths : dictionary < lfn : group >
     """
-    return self.changeDirectoryParameter( paths,
-                                          self.setDirectoryGroup,
-                                          self.db.fileManager.setFileGroup,
-                                          recursive = recursive )
+    return self._changeDirectoryParameter( paths,
+                                           self._setDirectoryGroup,
+                                           self.db.fileManager.setFileGroup,
+                                           recursive = recursive )
 
 #####################################################################
-  def setDirectoryMode( self, path, mode ):
+  def _setDirectoryMode( self, path, mode ):
     """ set the directory mode
 
         :param mixed path: directory path as a string or int or list of ints or select statement
@@ -429,16 +429,16 @@ class DirectoryTreeBase:
 
         :param dictionary paths : dictionary < lfn : mode >
     """
-    return self.changeDirectoryParameter( paths,
-                                          self.setDirectoryMode,
-                                          self.db.fileManager.setFileMode,
-                                          recursive = recursive )
+    return self._changeDirectoryParameter( paths,
+                                           self._setDirectoryMode,
+                                           self.db.fileManager.setFileMode,
+                                           recursive = recursive )
 
 #####################################################################
-  def changeDirectoryParameter( self, paths,
-                                directoryFunction,
-                                fileFunction,
-                                recursive = False ):
+  def _changeDirectoryParameter( self, paths,
+                                 directoryFunction,
+                                 fileFunction,
+                                 recursive = False ):
     """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
 
         :param dictionary paths : dictionary < lfn : value >, where value is the value of parameter to be set
