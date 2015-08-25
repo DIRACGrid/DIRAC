@@ -282,16 +282,14 @@ class StorageFactory:
     options = res['Value']
 
     # We must have certain values internally even if not supplied in CS
-    protocolDict = {'Access':'', 'Host':'', 'Path':'', 'Port':'', 'Protocol':'', 'PluginName':'', 'SpaceToken':'', 'WSUrl':''}
+    protocolDict = {'Access':'', 'Host':'', 'Path':'', 'Port':'', 'Protocol':'', 'SpaceToken':'', 'WSUrl':''}
     for option in options:
       configPath = cfgPath( protocolConfigPath, option )
       optionValue = gConfig.getValue( configPath, '' )
       protocolDict[option] = optionValue
 
-    # This is a temporary for backward compatibility
-    if "ProtocolName" in protocolDict and not protocolDict['PluginName']:
-      protocolDict['PluginName'] = protocolDict['ProtocolName']
-    protocolDict.pop( 'ProtocolName', None )
+    # This is a temporary for backward compatibility: move ProtocolName to PluginName
+    protocolDict.setdefault( 'PluginName', protocolDict.pop( 'ProtocolName', None ) )
 
     # Evaluate the base path taking into account possible VO specific setting
     if self.vo:
