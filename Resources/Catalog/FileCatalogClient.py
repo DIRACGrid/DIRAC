@@ -38,7 +38,7 @@ class FileCatalogClient( Client ):
         self.available = True
     return S_OK( self.available )
 
-  def getReplicas( self, lfns, allStatus = False, rpc = '', url = '', timeout = 120 ):
+  def getReplicas( self, lfns, allStatus = False, timeout = 120 ):
     """ Get the replicas of the given files
     """
     rpcClient = self._getRPC( timeout = timeout )
@@ -128,7 +128,7 @@ class FileCatalogClient( Client ):
     return S_OK( {'Successful' : successful, 'Failed': failed} )
 
 
-  def listDirectory( self, lfn, verbose = False, rpc = '', url = '', timeout = 120 ):
+  def listDirectory( self, lfn, verbose = False, timeout = 120 ):
     """ List the given directory's contents
     """
     rpcClient = self._getRPC( timeout = timeout )
@@ -145,7 +145,7 @@ class FileCatalogClient( Client ):
           entryDict[lfn] = detailsDict
     return result
 
-  def getDirectoryMetadata( self, lfns, rpc = '', url = '', timeout = 120 ):
+  def getDirectoryMetadata( self, lfns, timeout = 120 ):
     ''' Get standard directory metadata
     '''
     rpcClient = self._getRPC( timeout = timeout )
@@ -164,13 +164,13 @@ class FileCatalogClient( Client ):
       result['Value']['Successful'][path]['OwnerRole'] = getVOMSAttributeForGroup( group )
     return result
 
-  def removeDirectory( self, lfn, recursive = False, rpc = '', url = '', timeout = 120 ):
+  def removeDirectory( self, lfn, recursive = False, timeout = 120 ):
     """ Remove the directory from the File Catalog. The recursive keyword is for the ineterface.
     """
     rpcClient = self._getRPC( timeout = timeout )
     return rpcClient.removeDirectory( lfn )
 
-  def getDirectoryReplicas( self, lfns, allStatus = False, rpc = '', url = '', timeout = 120 ):
+  def getDirectoryReplicas( self, lfns, allStatus = False, timeout = 120 ):
     """ Find all the given directories' replicas
     """
     rpcClient = self._getRPC( timeout = timeout )
@@ -190,7 +190,7 @@ class FileCatalogClient( Client ):
         pathDict[lfn] = detailsDict
     return result
 
-  def findFilesByMetadata( self, metaDict, path = '/', rpc = '', url = '', timeout = 120 ):
+  def findFilesByMetadata( self, metaDict, path = '/', timeout = 120 ):
     """ Find files given the meta data query and the path
     """
     rpcClient = self._getRPC( timeout = timeout )
@@ -210,7 +210,7 @@ class FileCatalogClient( Client ):
     else:
       return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )
 
-  def getFileUserMetadata( self, path, rpc = '', url = '', timeout = 120 ):
+  def getFileUserMetadata( self, path, timeout = 120 ):
     """Get the meta data attached to a file, but also to
     the its corresponding directory
     """
