@@ -184,15 +184,6 @@ def getSEHost( seName ):
 
   return S_OK( seParameters['Value']['Host'] )
 
-def getStorageElementSpaceToken( storageElement ):
-
-  _basePath = '/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken' % storageElement
-
-  res = gConfig.getValue( _basePath, '' )
-#  if not res:
-#    return S_ERROR( '%s not found' % _basePath )
-  return S_OK( res )
-
 def getStorageElementEndpoint( storageElement ):
 
   _basePath = '/Resources/StorageElements/%s/AccessProtocol.1' % storageElement
