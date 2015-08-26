@@ -291,7 +291,7 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def moveSequences( self , maxSequenceToMove = 100 ):
+  def moveSequences( self , maxSequenceToMove = 100, deleteCompressedSequences = True ):
     """
       move DLCompressedSequence in DLSequence
       selection of a number of maxSequence DLCompressedSequence in DB
@@ -372,15 +372,18 @@ class DataLoggingDB( object ):
             ret = self.__putSequence( session, sequence )
             if not ret['OK']:
               return S_ERROR( ret['Value'] )
-            # update of status and lastUpdate
-            sequenceCompressed.lastUpdate = datetime.now()
-            sequenceCompressed.status = 'Done'
-            session.merge( sequenceCompressed )
+            if deleteCompressedSequences:
+              # remove the compressed sequence, the insertion is ok
+              session.delete( sequenceCompressed )
+            else :
+              sequenceCompressed.lastUpdate = datetime.now()
+              sequenceCompressed.status = 'Done'
+              session.merge( sequenceCompressed )
           except Exception, e:
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
             # if there is an error we try to insert sequence one by one
-            res = self.moveSequencesOneByOne( session, sequences )
+            res = self.moveSequencesOneByOne( session, sequences, deleteCompressedSequences )
             if not res['OK']:
               return res
         session.commit()
@@ -403,7 +406,7 @@ class DataLoggingDB( object ):
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
     return S_OK()
 
-  def moveSequencesOneByOne( self, session, sequences ):
+  def moveSequencesOneByOne( self, session, sequences, deleteCompressedSequences = True ):
     """
       move DLCompressedSequence in DLSequence
       sequences is a list of DLSequence
@@ -447,9 +450,13 @@ class DataLoggingDB( object ):
         ret = self.__putSequence( session, sequence )
         if not ret['OK']:
           return S_ERROR( ret['Value'] )
-        sequenceCompressed.lastUpdate = datetime.now()
-        sequenceCompressed.status = 'Done'
-        session.merge( sequenceCompressed )
+        if deleteCompressedSequences:
+          # remove the compressed sequence, the insertion is ok
+          session.delete( sequenceCompressed )
+        else :
+          sequenceCompressed.lastUpdate = datetime.now()
+          sequenceCompressed.status = 'Done'
+          session.merge( sequenceCompressed )
         session.commit()
       except Exception, e:
         gLogger.error( "moveSequencesOneByOne: unexpected exception %s" % e )

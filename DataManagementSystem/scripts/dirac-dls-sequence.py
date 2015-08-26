@@ -70,7 +70,6 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 
 def printSequence( seq, full = False ):
   seqLines = []
-  print 'tot %s' % seq.userName
   line = 'Sequence %s, Caller %s %s %s %s ' % ( seq.sequenceID, seq.caller.name,
                                                 ', UserName %s' % seq.userName.name if seq.userName else '',
                                                 ', HostName %s' % seq.hostName.name if seq.hostName else '' ,

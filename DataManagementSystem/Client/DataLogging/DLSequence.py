@@ -3,7 +3,6 @@ Created on May 4, 2015
 
 @author: Corentin Berger
 '''
-from DIRAC import S_ERROR, S_OK
 
 from DIRAC.DataManagementSystem.private.DLSerializable import DLSerializable
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodCall import DLMethodCall
@@ -42,6 +41,7 @@ class DLSequence( DLSerializable ) :
         # get the first method call, its parentID is None
         if not mc.parentID:
           firstMethodCall = mc
+          break
       # we have to do this because when objects are deserialize from JSON
       # references about same objects are not saved and two objects are created instead of one
       self.stack.append( firstMethodCall )

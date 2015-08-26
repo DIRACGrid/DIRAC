@@ -31,6 +31,8 @@ class DataLoggingHandler( RequestHandler ):
     cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 10 )
     # period between each call of cleanExpiredCompressedSequence method, in second
     cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 3600 )
+    # if this flag is true, DLCompressedSequence object will be removed when the corresponding sequence will be inserted
+    cls.deleteCompressedSequences = gConfig.getValue( '%s/DeleteCompressedSequences' % csSection, True )
 
     try:
       cls.__dataLoggingDB = DataLoggingDB()
@@ -50,12 +52,12 @@ class DataLoggingHandler( RequestHandler ):
   @classmethod
   def moveSequences( cls ):
     """ this method call the moveSequences method of DataLoggingDB"""
-    res = cls.__dataLoggingDB.moveSequences( cls.maxSequenceToMove )
+    res = cls.__dataLoggingDB.moveSequences( cls.maxSequenceToMove, cls.deleteCompressedSequences )
     return res
 
   @classmethod
   def cleanExpiredCompressedSequence( cls ):
-    """ this method call the cleanStaledSequencesStatus method of DataLoggingDB"""
+    """ this method call the cleanExpiredCompressedSequence method of DataLoggingDB"""
     res = cls.__dataLoggingDB.cleanExpiredCompressedSequence( cls.expirationTime )
     return res
 
