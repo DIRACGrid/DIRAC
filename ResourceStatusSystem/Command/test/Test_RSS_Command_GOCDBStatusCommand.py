@@ -8,7 +8,7 @@ import importlib
 from datetime import datetime, timedelta
 
 from DIRAC.ResourceStatusSystem.Command.DowntimeCommand import DowntimeCommand
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 
 
 __RCSID__ = '$Id:  $'
@@ -31,7 +31,7 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
                                                                 'TapeSE': True}}
     self.CSHelpersMock = mock.MagicMock()
     self.getStorageElementOptionsMock = mock.MagicMock()
-    self.CSHelpersMock.getSEHost.return_value = 'aRealName'
+    self.CSHelpersMock.getSEHost.return_value = S_OK('aRealName')
     self.dowtimeCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.DowntimeCommand' )
     self.dowtimeCommandModule.CSHelpers = self.CSHelpersMock
     self.dowtimeCommandModule.getStorageElementOptions = self.getStorageElementOptionsMock
