@@ -794,7 +794,7 @@ import os, stat, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
-    pilotExecDir = None
+    pilotExecDir = os.getcwd()
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
   pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
