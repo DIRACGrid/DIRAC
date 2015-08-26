@@ -32,7 +32,7 @@ class DataLoggingHandler( RequestHandler ):
     # period between each call of cleanExpiredCompressedSequence method, in second
     cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 10800 )
     # period between each call of deleteCompressedSequences method, in second
-    cls.deleteCompressedSequencesPeriod = gConfig.getValue( '%s/DeleteCompressedSequencesPeriod' % csSection, 10 )
+    cls.deleteCompressedSequencesPeriod = gConfig.getValue( '%s/DeleteCompressedSequencesPeriod' % csSection, 10800 )
     try:
       cls.__dataLoggingDB = DataLoggingDB()
       cls.__dataLoggingDB.createTables()
