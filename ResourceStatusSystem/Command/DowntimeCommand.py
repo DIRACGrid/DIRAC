@@ -132,9 +132,9 @@ class DowntimeCommand( Command ):
       seOptions = getStorageElementOptions( elementName )
       if not seOptions['OK']:
         return seOptions
-      if 'TapeSE' in seOptions['Value'] and seOptions['Value']['TapeSE']:
+      if seOptions['Value'].get( 'TapeSE' ):
         gocdbServiceType = "srm.nearline"
-      elif 'DiskSE' in seOptions['Value'] and seOptions['Value']['DiskSE']:
+      elif seOptions['Value'].get( 'DiskSE' ):
         gocdbServiceType = "srm"
 
       seHost = CSHelpers.getSEHost( elementName )
