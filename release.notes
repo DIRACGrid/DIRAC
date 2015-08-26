@@ -1,4 +1,4 @@
-[v6r15-pre1]
+[v6r15-pre2]
 
 *Core
 NEW: New class DError for reporting errors in output results of DIRAC functions 
@@ -10,6 +10,9 @@ NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
 
 *RSS
 NEW: CE Availability policy, closing #2373
+
+*DMS
+CHANGE: FileCatalogClient - make explicit methods for all service calls
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
