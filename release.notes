@@ -1,3 +1,19 @@
+[v6r13p14]
+
+*DMS
+FIX: ReplicateAndRegister - fix a problem when a file is set Problematic 
+     in the FC but indeed doesn't exist at all 
+
+*Resources
+CHANGE: StorageFactory - enhance the logic of BaseSE inheritance in the
+        SE definition in the CS
+        
+*WMS
+CHANGE: CPUNormalization, dirac-wms-cpu-normalization - reading CPU power 
+        from MJF for comparison with the DIRAC evaluation
+FIX: SiteDirector - create pilot working directory in the batch system working
+     directory and not in "/tmp"                
+
 [v6r13p13]
 
 *DMS
