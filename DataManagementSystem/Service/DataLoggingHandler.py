@@ -30,29 +30,31 @@ class DataLoggingHandler( RequestHandler ):
     # period between each call of moveSequences method, in second
     cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 10 )
     # period between each call of cleanExpiredCompressedSequence method, in second
-    cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 3600 )
-    # if this flag is true, DLCompressedSequence object will be removed when the corresponding sequence will be inserted
-    cls.deleteCompressedSequences = gConfig.getValue( '%s/DeleteCompressedSequences' % csSection, True )
-
+    cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 10800 )
+    # period between each call of deleteCompressedSequences method, in second
+    cls.deleteCompressedSequencesPeriod = gConfig.getValue( '%s/DeleteCompressedSequencesPeriod' % csSection, 10 )
     try:
       cls.__dataLoggingDB = DataLoggingDB()
       cls.__dataLoggingDB.createTables()
     except RuntimeError, error:
       gLogger.exception( error )
       return S_ERROR( error )
-    # we set the minimum Valid period at 10 seconds
+    # we set the minimum Valid period at 1 second
     gThreadScheduler.setMinValidPeriod( 10 )
     # method moveSequences will be call each 10 seconds
     gThreadScheduler.addPeriodicTask( cls.moveSequencesPeriod, cls.moveSequences )
+    # method deleteCompressedSequences will be call each 10800 seconds or 3 hours
+    gThreadScheduler.addPeriodicTask( cls.deleteCompressedSequencesPeriod, cls.deleteCompressedSequences )
     # method cleanExpiredCompressedSequence will be call each 10800 seconds or 3 hours
     gThreadScheduler.addPeriodicTask( cls.cleanExpiredPeriod, cls.cleanExpiredCompressedSequence )
+
     return S_OK()
 
 
   @classmethod
   def moveSequences( cls ):
     """ this method call the moveSequences method of DataLoggingDB"""
-    res = cls.__dataLoggingDB.moveSequences( cls.maxSequenceToMove, cls.deleteCompressedSequences )
+    res = cls.__dataLoggingDB.moveSequences( cls.maxSequenceToMove )
     return res
 
   @classmethod
@@ -60,6 +62,13 @@ class DataLoggingHandler( RequestHandler ):
     """ this method call the cleanExpiredCompressedSequence method of DataLoggingDB"""
     res = cls.__dataLoggingDB.cleanExpiredCompressedSequence( cls.expirationTime )
     return res
+
+  @classmethod
+  def deleteCompressedSequences( cls ):
+    """ this method call the deleteCompressedSequences method of DataLoggingDB"""
+    res = cls.__dataLoggingDB.deleteCompressedSequences()
+    return res
+
 
   types_insertSequence = [StringTypes, BooleanType]
   @classmethod

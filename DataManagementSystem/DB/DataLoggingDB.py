@@ -196,8 +196,6 @@ class DataLoggingDB( object ):
 
       :param self: self reference
     """
-    self.f1 = open( '/tmp/insertionTime.txt', 'a' )
-    self.f2 = open( '/tmp/betweenTime.txt', 'a' )
 
     self.log = gLogger.getSubLogger( 'DataLoggingDB' )
     # Initialize the connection info
@@ -230,6 +228,22 @@ class DataLoggingDB( object ):
       return S_ERROR( "createTables: unexpected exception %s" % e )
     return S_OK()
 
+  def deleteCompressedSequences( self ):
+    session = None
+    try:
+      session = self.DBSession()
+      session.query( DLCompressedSequence ).filter( DLCompressedSequence.status == 'Done' ).delete()
+      session.commit()
+    except Exception, e:
+      if session :
+        session.rollback()
+      gLogger.error( "DataLoggingDB.deleteCompressedSequences: unexpected exception %s" % e )
+      raise DLException( "DataLoggingDB.deleteCompressedSequences: unexpected exception %s" % e )
+    finally:
+      session.close()
+    gLogger.info( 'DataLoggingDB.deleteCompressedSequences done' )
+    return S_OK()
+
 
   def cleanExpiredCompressedSequence( self, expirationTime = 1440 ):
     """
@@ -248,7 +262,7 @@ class DataLoggingDB( object ):
                 .with_for_update().all()
       if rows:
         # if we found some DLCompressedSequence, we change their status
-        gLogger.info( "DataLoggingDB.cleanStaledSequencesStatus found %s sequences with status Ongoing since %s minutes, try to insert them"
+        gLogger.info( "DataLoggingDB.cleanExpiredCompressedSequence found %s sequences with status Ongoing since %s minutes, try to insert them"
                        % ( len( rows ), expirationTime ) )
         for sequenceCompressed in rows :
           sequenceCompressed.status = 'Waiting'
@@ -256,13 +270,13 @@ class DataLoggingDB( object ):
           session.merge( sequenceCompressed )
         session.commit()
       else :
-        gLogger.info( "DataLoggingDB.cleanStaledSequencesStatus found 0 sequence with status Ongoing" )
+        gLogger.info( "DataLoggingDB.cleanExpiredCompressedSequence found 0 sequence with status Ongoing" )
         return S_OK( "no sequence to insert" )
     except Exception, e:
       if session :
         session.rollback()
-      gLogger.error( "cleanStaledSequencesStatus: unexpected exception %s" % e )
-      raise DLException( "cleanStaledSequencesStatus: unexpected exception %s" % e )
+      gLogger.error( "cleanExpiredCompressedSequence: unexpected exception %s" % e )
+      raise DLException( "cleanExpiredCompressedSequence: unexpected exception %s" % e )
     finally:
       session.close()
     return S_OK()
@@ -291,7 +305,7 @@ class DataLoggingDB( object ):
     return S_OK()
 
 
-  def moveSequences( self , maxSequenceToMove = 100, deleteCompressedSequences = True ):
+  def moveSequences( self , maxSequenceToMove = 100 ):
     """
       move DLCompressedSequence in DLSequence
       selection of a number of maxSequence DLCompressedSequence in DB
@@ -372,18 +386,14 @@ class DataLoggingDB( object ):
             ret = self.__putSequence( session, sequence )
             if not ret['OK']:
               return S_ERROR( ret['Value'] )
-            if deleteCompressedSequences:
-              # remove the compressed sequence, the insertion is ok
-              session.delete( sequenceCompressed )
-            else :
-              sequenceCompressed.lastUpdate = datetime.now()
-              sequenceCompressed.status = 'Done'
-              session.merge( sequenceCompressed )
+            sequenceCompressed.lastUpdate = datetime.now()
+            sequenceCompressed.status = 'Done'
+            session.merge( sequenceCompressed )
           except Exception, e:
             gLogger.error( "moveSequences: unexpected exception %s" % e )
             session.rollback()
             # if there is an error we try to insert sequence one by one
-            res = self.moveSequencesOneByOne( session, sequences, deleteCompressedSequences )
+            res = self.moveSequencesOneByOne( session, sequences )
             if not res['OK']:
               return res
         session.commit()
@@ -406,7 +416,7 @@ class DataLoggingDB( object ):
     gLogger.info( "DataLoggingDB.moveSequences, move %s sequences in %s" % ( len( sequences ), ( endMove - beginMove ) ) )
     return S_OK()
 
-  def moveSequencesOneByOne( self, session, sequences, deleteCompressedSequences = True ):
+  def moveSequencesOneByOne( self, session, sequences ):
     """
       move DLCompressedSequence in DLSequence
       sequences is a list of DLSequence
@@ -450,13 +460,9 @@ class DataLoggingDB( object ):
         ret = self.__putSequence( session, sequence )
         if not ret['OK']:
           return S_ERROR( ret['Value'] )
-        if deleteCompressedSequences:
-          # remove the compressed sequence, the insertion is ok
-          session.delete( sequenceCompressed )
-        else :
-          sequenceCompressed.lastUpdate = datetime.now()
-          sequenceCompressed.status = 'Done'
-          session.merge( sequenceCompressed )
+        sequenceCompressed.lastUpdate = datetime.now()
+        sequenceCompressed.status = 'Done'
+        session.merge( sequenceCompressed )
         session.commit()
       except Exception, e:
         gLogger.error( "moveSequencesOneByOne: unexpected exception %s" % e )
