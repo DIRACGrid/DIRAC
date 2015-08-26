@@ -523,8 +523,6 @@ class SiteDirector( AgentModule ):
 
         bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
         jobExecDir = ''
-        if ceType == 'CREAM':
-          jobExecDir = '.'
         jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )          
         httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )          
 
