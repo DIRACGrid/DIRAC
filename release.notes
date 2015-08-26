@@ -1,3 +1,16 @@
+[v6r14p1]
+
+*Core
+NEW: dirac-install-component command replacing dirac-install-agent/service/executor
+     commands
+     
+*Resources
+NEW: FileStorage - plugin for "file" protocol
+FIX: ARCComputingElement - evaluate as int the job exit code
+
+*RSS
+FIX: CSHelpers - several fixes and beautifications     
+
 [v6r14]
 
 *Core
