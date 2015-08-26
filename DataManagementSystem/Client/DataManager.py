@@ -344,7 +344,6 @@ class DataManager( object ):
       else:
         successful[lfn] = res['Value']
 
-    gDataStoreClient.commit()
     return S_OK( { 'Successful': successful, 'Failed' : failed } )
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
@@ -362,44 +361,26 @@ class DataManager( object ):
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
-      oDataOperation = _initialiseAccountingObject( 'getFile', storageElementName, 1 )
-      oDataOperation.setStartTime()
-      startTime = time.time()
-
       res = returnSingleResult( se.getFile( lfn, localPath = os.path.realpath( destinationDir ) ) )
-
-      getTime = time.time() - startTime
-      oDataOperation.setValueByKey( 'TransferTime', getTime )
 
       if not res['OK']:
         errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
-        oDataOperation.setValueByKey( 'TransferOK', 0 )
-        oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-        oDataOperation.setEndTime()
-
       else:
-        oDataOperation.setValueByKey( 'TransferSize', res['Value'] )
-
-
         localFile = os.path.realpath( os.path.join( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
 
         if metadata['Size'] != res['Value']:
-          oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
-          oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
 
         else:
-          oDataOperation.setEndTime()
-          gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
       # If we are here, there was an error, log it debug level
       log.debug( errTuple[0], errTuple[1] )
 
-    gDataStoreClient.addRegister( oDataOperation )
+
     log.verbose( "Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
     return S_ERROR( "Failed to get local copy from any replicas\n%s %s" % errTuple )
