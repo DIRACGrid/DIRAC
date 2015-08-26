@@ -21,7 +21,6 @@ from DIRAC.Resources.Catalog.FileCatalog           import FileCatalog
 from DIRAC.Core.Utilities.List                     import breakListIntoChunks
 from DIRAC.Interfaces.API.Dirac                    import Dirac
 from DIRAC.Core.Utilities.List                     import sortList
-
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
 
