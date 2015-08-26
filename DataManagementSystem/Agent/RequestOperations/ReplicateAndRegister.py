@@ -67,7 +67,7 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
       else:
         # We try inactive replicas to see if maybe the file doesn't exist at all
         replicas = allReplicas
-      log.warn( "File has no%s replica in File Catalog" % ( '' if noReplicas else 'active' ), opFile.LFN )
+      log.warn( "File has no%s replica in File Catalog" % ( '' if noReplicas else ' active' ), opFile.LFN )
     else:
       return allReplicas
 
