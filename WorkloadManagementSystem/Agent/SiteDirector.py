@@ -523,8 +523,6 @@ class SiteDirector( AgentModule ):
 
         bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
         jobExecDir = ''
-        if ceType == 'CREAM':
-          jobExecDir = '.'
         jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )          
         httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )          
 
@@ -794,7 +792,7 @@ import os, stat, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
-    pilotExecDir = None
+    pilotExecDir = os.getcwd()
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
   pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
@@ -820,6 +818,7 @@ try:
   print '==========================================================='
 except Exception, x:
   print >> sys.stderr, x
+  shutil.rmtree( pilotWorkingDirectory )
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"
 print 'Executing: ', cmd
