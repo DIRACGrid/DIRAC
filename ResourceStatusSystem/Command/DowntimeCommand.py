@@ -4,15 +4,15 @@
 import urllib2
 
 from datetime import datetime, timedelta
+from operator import itemgetter
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getGOCFTSName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
-from operator                                                   import itemgetter
 
 __RCSID__ = '$Id:  $'
 
@@ -42,16 +42,15 @@ class DowntimeCommand( Command ):
     '''
 
     for dt in result:
-      resQuery = self.rmClient.addOrModifyDowntimeCache( 
-                               downtimeID = dt[ 'DowntimeID' ],
-                               element = dt[ 'Element' ],
-                               name = dt[ 'Name' ],
-                               startDate = dt[ 'StartDate' ],
-                               endDate = dt[ 'EndDate' ],
-                               severity = dt[ 'Severity' ],
-                               description = dt[ 'Description' ],
-                               link = dt[ 'Link' ],
-                               gocdbServiceType = dt[ 'GOCDBServiceType' ] )
+      resQuery = self.rmClient.addOrModifyDowntimeCache( downtimeID = dt[ 'DowntimeID' ],
+                                                         element = dt[ 'Element' ],
+                                                         name = dt[ 'Name' ],
+                                                         startDate = dt[ 'StartDate' ],
+                                                         endDate = dt[ 'EndDate' ],
+                                                         severity = dt[ 'Severity' ],
+                                                         description = dt[ 'Description' ],
+                                                         link = dt[ 'Link' ],
+                                                         gocdbServiceType = dt[ 'GOCDBServiceType' ] )
     return resQuery
   
   
@@ -64,10 +63,8 @@ class DowntimeCommand( Command ):
     
     for elementName in elementNames:
       #reading all the cache entries
-      result = self.rmClient.selectDowntimeCache( 
-                               element = element,
-                               name = elementName
-                               )
+      result = self.rmClient.selectDowntimeCache( element = element,
+                                                  name = elementName )
 
       if not result[ 'OK' ]:
         return result
@@ -132,12 +129,19 @@ class DowntimeCommand( Command ):
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
       # We need to distinguish if it's tape or disk
-      if getStorageElementOptions( elementName )['Value']['TapeSE']:
+      seOptions = getStorageElementOptions( elementName )
+      if not seOptions['OK']:
+        return seOptions
+      if seOptions['Value'].get( 'TapeSE' ):
         gocdbServiceType = "srm.nearline"
-      elif getStorageElementOptions( elementName )['Value']['DiskSE']:
+      elif seOptions['Value'].get( 'DiskSE' ):
         gocdbServiceType = "srm"
 
       seHost = CSHelpers.getSEHost( elementName )
+      if not seHost['OK']:
+        return seHost
+      seHost = seHost['Value']
+
       if not seHost:
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
