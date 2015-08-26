@@ -820,6 +820,7 @@ try:
   print '==========================================================='
 except Exception, x:
   print >> sys.stderr, x
+  shutil.rmtree( pilotWorkingDirectory )
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"
 print 'Executing: ', cmd
