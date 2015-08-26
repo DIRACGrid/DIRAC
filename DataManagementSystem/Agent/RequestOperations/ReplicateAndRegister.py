@@ -95,6 +95,7 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
       seChecksum = repSEMetadata.get( "Checksum" )
       if not seChecksum and opFile.Checksum:
         opFile.Checksum = None
+        opFile.ChecksumType = None
       elif seChecksum and not opFile.Checksum:
         opFile.Checksum = seChecksum
       if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
