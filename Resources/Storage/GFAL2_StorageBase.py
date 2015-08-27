@@ -708,10 +708,10 @@ class GFAL2_StorageBase( StorageBase ):
           metadataDict['Lost'] = 0
         if attributeDict['user.status'] == 'UNAVAILABLE':
           metadataDict['Unavailable'] = 1
-	else:
-	  metadataDict['Unavailable'] = 0
-	if attributeDict['user.status'] == 'ONLINE_AND_NEARLINE':
-	  metadataDict['Cached'] = 1
+        else:
+          metadataDict['Unavailable'] = 0
+        if attributeDict['user.status'] == 'ONLINE_AND_NEARLINE':
+          metadataDict['Cached'] = 1
           metadataDict['Migrated'] = 1
 
     return S_OK ( metadataDict )
@@ -1262,7 +1262,7 @@ class GFAL2_StorageBase( StorageBase ):
       res = self.__getSingleMetadata( fullPath )
       if res['OK']:
         metadataDict = res['Value']
-	subPathLFN = fullPath if internalCall else fullPath.replace( urlStart, '' )
+        subPathLFN = fullPath if internalCall else fullPath.replace( urlStart, '' )
         if metadataDict['Directory']:
           subDirs[subPathLFN] = metadataDict
         elif metadataDict['File']:
