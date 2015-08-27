@@ -163,7 +163,7 @@ def getStorageElementsHosts( seNames = None ):
   return S_OK( list( set( seHosts ) ) )
 
 def _getSEParameters( seName ):
-  se = StorageElement( seName )
+  se = StorageElement( seName, hideExceptions = True )
   seParameters = se.getStorageParameters( 'SRM2' )
   return seParameters
 
