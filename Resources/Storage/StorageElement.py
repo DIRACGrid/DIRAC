@@ -811,36 +811,38 @@ class StorageElementItem( object ):
       oDataOperation.setValueByKey( 'TransferTotal', len( lfns ) )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
     else:
+
+      succ = callRes.get( 'Value', {} ).get( 'Successful', {} )
+      failed = callRes.get( 'Value', {} ).get( 'Failed', {} )
+
       totalSize = 0
+      # We don't take len(lfns) in order to make two
+      # separate entries in case of few failures
+      totalSucc = len( succ )
 
-      oDataOperation.setValueByKey( 'TransferTotal', len( callRes['Value']['Successful'] ) )
-      oDataOperation.setValueByKey( 'TransferOK', len( callRes['Value']['Successful'] ) )
-
-      totalFiles = len( callRes['Value']['Successful'] )
-
-      # putFile and getFile return for each entry
-      # in the successful dir the size of the corresponding file
       if self.methodName in ( 'putFile', 'getFile' ):
-        totalSize = sum( callRes['Value']['Successful'].values() )
-  
-      # putDirectory and getDirectory return for each dir name
-      # a dictionnary with the keys 'Files' and 'Size'
-      elif self.methodName in ( 'putDirectory', 'getDirectory' ):
-        totalSize = sum( val.get( 'Size', 0 ) for val in callRes['Value']['Successful'].values() )
-        totalFiles = sum( val.get( 'Files', 0 ) for val in callRes['Value']['Successful'].values() )
-        oDataOperation.setValueByKey( 'TransferOK', len( callRes['Value']['Successful'] ) )
+        # putFile and getFile return for each entry
+        # in the successful dir the size of the corresponding file
+        totalSize = sum( succ.values() )
 
+      elif self.methodName in ( 'putDirectory', 'getDirectory' ):
+        # putDirectory and getDirectory return for each dir name
+        # a dictionnary with the keys 'Files' and 'Size'
+        totalSize = sum( val.get( 'Size', 0 ) for val in succ.values() if isinstance( val, dict ) )
+        totalSucc = sum( val.get( 'Files', 0 ) for val in succ.values() if isinstance( val, dict ) )
+        oDataOperation.setValueByKey( 'TransferOK', len( succ ) )
 
       oDataOperation.setValueByKey( 'TransferSize', totalSize )
-      oDataOperation.setValueByKey( 'TransferTotal', totalFiles )
+      oDataOperation.setValueByKey( 'TransferTotal', totalSucc )
+      oDataOperation.setValueByKey( 'TransferOK', totalSucc )
       
       if callRes['Value']['Failed']:
         oDataOperationFailed = copy.deepcopy( oDataOperation )
-        oDataOperationFailed.setValueByKey( 'TransferTotal', len( callRes['Value']['Failed'] ) )
-
+        oDataOperationFailed.setValueByKey( 'TransferTotal', len( failed ) )
         oDataOperationFailed.setValueByKey( 'TransferOK', 0 )
         oDataOperationFailed.setValueByKey( 'TransferSize', 0 )
         oDataOperationFailed.setValueByKey( 'FinalStatus', 'Failed' )
+
         accRes = gDataStoreClient.addRegister( oDataOperationFailed )
         if not accRes['OK']:
           self.log.error( "Could not send failed accounting report", accRes['Message'] )
