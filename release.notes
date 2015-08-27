@@ -1,4 +1,4 @@
-[v6r15-pre1]
+[v6r15-pre2]
 
 *Core
 NEW: New class DError for reporting errors in output results of DIRAC functions 
@@ -11,9 +11,25 @@ NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
 *RSS
 NEW: CE Availability policy, closing #2373
 
+*DMS
+CHANGE: FileCatalogClient - make explicit methods for all service calls
+
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
+
+[v6r14p1]
+
+*Core
+NEW: dirac-install-component command replacing dirac-install-agent/service/executor
+     commands
+     
+*Resources
+NEW: FileStorage - plugin for "file" protocol
+FIX: ARCComputingElement - evaluate as int the job exit code
+
+*RSS
+FIX: CSHelpers - several fixes and beautifications     
 
 [v6r14]
 
@@ -58,6 +74,22 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p14]
+
+*DMS
+FIX: ReplicateAndRegister - fix a problem when a file is set Problematic 
+     in the FC but indeed doesn't exist at all 
+
+*Resources
+CHANGE: StorageFactory - enhance the logic of BaseSE inheritance in the
+        SE definition in the CS
+        
+*WMS
+CHANGE: CPUNormalization, dirac-wms-cpu-normalization - reading CPU power 
+        from MJF for comparison with the DIRAC evaluation
+FIX: SiteDirector - create pilot working directory in the batch system working
+     directory and not in "/tmp"                
 
 [v6r13p13]
 

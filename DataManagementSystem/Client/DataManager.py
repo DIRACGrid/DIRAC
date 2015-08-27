@@ -358,6 +358,7 @@ class DataManager( object ):
     if not res['OK']:
       return res
     errTuple = ( "No SE", "found" )
+
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
@@ -365,16 +366,19 @@ class DataManager( object ):
 
       if not res['OK']:
         errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
+        errToReturn = res
       else:
         localFile = os.path.realpath( os.path.join( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
 
         if metadata['Size'] != res['Value']:
           errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
+          errToReturn = DError( DErrno.EFILESIZE, errTuple[1] )
+
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
           errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
-
+          errToReturn = DError( DErrno.EBADCKS, errTuple[1] )
         else:
           return S_OK( localFile )
       # If we are here, there was an error, log it debug level
@@ -383,7 +387,9 @@ class DataManager( object ):
 
     log.verbose( "Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
-    return S_ERROR( "Failed to get local copy from any replicas\n%s %s" % errTuple )
+
+    return errToReturn
+
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """

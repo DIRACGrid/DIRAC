@@ -221,6 +221,9 @@ class PublisherHandler( RequestHandler ):
     
     if elementType == 'StorageElement':
       name = CSHelpers.getSEHost( name )
+      if not name['OK']:
+        return name
+      name = name['Value']
     
     return rmClient.selectDowntimeCache( element = element, name = name, 
                                          meta = { 'columns' : [ 'StartDate', 'EndDate', 
@@ -233,6 +236,9 @@ class PublisherHandler( RequestHandler ):
     
     if elementType == 'StorageElement':
       name = CSHelpers.getSEHost( name )
+      if not name['OK']:
+        return name
+      name = name['Value']
    
     if startDate > endDate:
       return S_ERROR( 'startDate > endDate' )

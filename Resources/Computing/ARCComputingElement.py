@@ -12,14 +12,11 @@ __RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@
 
 import os
 import stat
-import tempfile # Need it for the Dirac stamp
 from types import StringTypes
 
 import arc # Has to work if this module is called
 from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo, getVOfromProxyGroup
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
 
@@ -202,7 +199,6 @@ class ARCComputingElement( ComputingElement ):
     # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
     for __i in range(numberOfJobs):
       # The basic job description
-      job = arc.Job()
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
       xrslString, diracStamp = self.__writeXRSL( executableFile )
@@ -343,9 +339,9 @@ class ARCComputingElement( ComputingElement ):
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
       if (resultDict[jobID] == "Done"):
-        exitCode = jobID.ExitCode
-        if ( exitCode != 0 ):
-          resultDict[jobID] == "Failed"
+        exitCode = int( jobID.ExitCode )
+        if exitCode:
+          resultDict[jobID] = "Failed"
       gLogger.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
 
     if not resultDict:
