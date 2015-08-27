@@ -96,7 +96,7 @@ class ObjectLoader( object ):
   def loadModule( self, importString, hideExceptions = False ):
     """ Load a module from an import string
     """
-    result = self.__rootImport( importString, hideExceptions )
+    result = self.__rootImport( importString, hideExceptions = hideExceptions )
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ]:
@@ -106,7 +106,7 @@ class ObjectLoader( object ):
   def loadObject( self, importString, objName = False, hideExceptions = False ):
     """ Load an object from inside a module
     """
-    result = self.loadModule( importString, hideExceptions )
+    result = self.loadModule( importString, hideExceptions = hideExceptions )
     if not result[ 'OK' ]:
       return result
     modObj = result[ 'Value' ]

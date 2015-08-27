@@ -71,7 +71,7 @@ class StorageFactory( object ):
       gLogger.error( errStr )
       return S_ERROR( errStr )
 
-    return self.__generateStorageObject( storageName, pluginName, parameterDict, hideExceptions )
+    return self.__generateStorageObject( storageName, pluginName, parameterDict, hideExceptions = hideExceptions )
 
   def getStorages( self, storageName, pluginList = None, hideExceptions = False ):
     """ Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
@@ -132,7 +132,7 @@ class StorageFactory( object ):
       if pluginList and pluginName not in pluginList:
         continue
       protocol = protocolDict['Protocol']
-      result = self.__generateStorageObject( storageName, pluginName, protocolDict, hideExceptions )
+      result = self.__generateStorageObject( storageName, pluginName, protocolDict, hideExceptions = hideExceptions )
       if result['OK']:
         self.storages.append( result['Value'] )
         if pluginName in self.localPlugins:
@@ -331,7 +331,8 @@ class StorageFactory( object ):
       storageType = 'Proxy'
 
     objectLoader = ObjectLoader()
-    result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage', hideExceptions )
+    result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage',
+                                      hideExceptions = hideExceptions )
     if not result['OK']:
       gLogger.error( 'Failed to load storage object: %s' % result['Message'] )
       return result
