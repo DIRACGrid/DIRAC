@@ -165,6 +165,8 @@ def getStorageElementsHosts( seNames = None ):
 def _getSEParameters( seName ):
   se = StorageElement( seName, hideExceptions = True )
   seParameters = se.getStorageParameters( 'SRM2' )
+  if not seParameters['OK']:
+    seParameters = se.getStorageParameters( 'DIP' )
   return seParameters
 
 def getSEToken( seName ):
@@ -173,6 +175,7 @@ def getSEToken( seName ):
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
+    gLogger.warn( "Could not get SE parameters", "SE: %s, protocols: %s" % seName )
     return seParameters
 
   return S_OK( seParameters['Value']['SpaceToken'] )
