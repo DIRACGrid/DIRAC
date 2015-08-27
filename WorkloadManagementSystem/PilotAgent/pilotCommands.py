@@ -650,7 +650,9 @@ class ConfigureCPURequirements( CommandBase ):
       self.exitWithError( retCode )
 
     # HS06 benchmark
-    cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Estimated CPU power is ", '' ).replace( " HS06", '' ) )
+    # FIXME: this is a hack!
+    cpuNormalizationFactor = float( cpuNormalizationFactorOutput.split( '\n' )[0].replace( "Estimated CPU power is ",
+                                                                                           '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
     configFileArg = ''
