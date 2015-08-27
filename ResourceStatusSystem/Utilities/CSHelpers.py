@@ -164,9 +164,20 @@ def getStorageElementsHosts( seNames = None ):
 
 def _getSEParameters( seName ):
   se = StorageElement( seName, hideExceptions = True )
-  seParameters = se.getStorageParameters( 'SRM2' )
-  if not seParameters['OK']:
-    seParameters = se.getStorageParameters( 'DIP' )
+
+  pluginsList = se.getPlugins()
+  if not pluginsList['OK']:
+    return pluginsList
+  pluginsList = pluginsList['Value']
+  if 'SRM2' in pluginsList:
+    pluginsList.remove( 'SRM2' )
+    pluginsList.insert( 0, 'SRM2' )
+
+  for plugin in pluginsList:
+    seParameters = se.getStorageParameters( plugin )
+    if seParameters['OK']:
+      break
+
   return seParameters
 
 def getSEToken( seName ):
