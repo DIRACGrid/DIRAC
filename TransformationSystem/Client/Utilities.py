@@ -342,7 +342,10 @@ class PluginUtilities( object ):
     self.logDebug( "Transformation plugin param %s: '%s'" % ( name, value ) )
     if valueType and type( value ) != valueType:
       if valueType == type( [] ):
-        value = ast.literal_eval( value )
+        try:
+          value = ast.literal_eval( value )
+        except ValueError:
+          value = value.replace( ' ', '' ).split( ',' )
       elif valueType == type( 0 ):
         value = int( value )
       elif valueType == type( 0. ):
