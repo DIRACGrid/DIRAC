@@ -798,17 +798,15 @@ class StorageElementItem( object ):
     oDataOperation.setEndTime( startDate + datetime.timedelta( seconds = elapsedTime ) )
     oDataOperation.setValueByKey( 'TransferTime', elapsedTime )
     oDataOperation.setValueByKey( 'Protocol', storageParameters.get( 'Protocol', 'unknown' ) )
-    totalSize = 0
   
     if not callRes['OK']:
+      # Everything failed
+      oDataOperation.setValueByKey( 'TransferTotal', len( lfns ) )
       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-
-
-
-
     else:
-      oDataOperation.setValueByKey( 'TransferTotal', len( callRes['Value']['Successful'] ) )
+      totalSize = 0
 
+      oDataOperation.setValueByKey( 'TransferTotal', len( callRes['Value']['Successful'] ) )
       oDataOperation.setValueByKey( 'TransferOK', len( callRes['Value']['Successful'] ) )
 
       totalFiles = len( callRes['Value']['Successful'] )
