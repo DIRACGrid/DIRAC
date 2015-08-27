@@ -113,7 +113,7 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
-  def __init__( self, name, plugins = None, vo = None ):
+  def __init__( self, name, plugins = None, vo = None, hideExceptions = False ):
     """ c'tor
 
     :param str name: SE name
@@ -143,9 +143,9 @@ class StorageElementItem( object ):
 
     self.valid = True
     if plugins == None:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [] )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
     else:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
 
     if not res['OK']:
       self.valid = False

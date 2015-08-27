@@ -93,20 +93,20 @@ class ObjectLoader( object ):
     self.__rootModules.reverse()
 
 
-  def loadModule( self, importString ):
+  def loadModule( self, importString, hideExceptions = False ):
     """ Load a module from an import string
     """
-    result = self.__rootImport( importString )
+    result = self.__rootImport( importString, hideExceptions )
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ]:
       return S_ERROR( "No module %s found" % importString )
     return S_OK( result[ 'Value' ][1] )
 
-  def loadObject( self, importString, objName = False ):
+  def loadObject( self, importString, objName = False, hideExceptions = False ):
     """ Load an object from inside a module
     """
-    result = self.loadModule( importString )
+    result = self.loadModule( importString, hideExceptions )
     if not result[ 'OK' ]:
       return result
     modObj = result[ 'Value' ]
