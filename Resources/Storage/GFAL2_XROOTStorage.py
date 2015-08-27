@@ -42,6 +42,10 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.protocolParameters['Port'] = 0
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
+   
+    # setting the XROOTD Checksum type for gfal2_filecopy	 
+    if self.checksumType:
+      self.gfal2.set_opt_string("XROOTD PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType)
 
 
   def _getExtendedAttributes( self, path ):

@@ -10,6 +10,7 @@ from types import StringType, ListType
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Utilities import checkArgumentFormat
+from UnitTests.HTTP_Test.GFAL2_HTTPStorage import GFAL2_HTTPStorage
 
 
 class GFAL2_HTTPStorage( GFAL2_StorageBase ):
@@ -33,7 +34,7 @@ class GFAL2_HTTPStorage( GFAL2_StorageBase ):
     """
     self.log = gLogger.getSubLogger( "GFAL2_HTTPStorage", True )
     # # init base class
-    GFAL2_StorageBase.__init__( self, storageName, parameters )
+    super( GFAL2_HTTPStorage, self ).__init__( storageName, parameters )
 
     # TODO: test if HTTP can handle checksums.
     self.checksumType = None

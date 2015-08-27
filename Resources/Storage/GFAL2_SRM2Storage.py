@@ -24,7 +24,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     """ """
     self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
     self.log.debug( "GFAL2_SRM2Storage.__init__: Initializing object" )
-    GFAL2_StorageBase.__init__( self, storageName, parameters )
+    #GFAL2_StorageBase.__init__( self, storageName, parameters )
+    super(GFAL2_SRM2Storage, self).__init__( storageName, parameters )
     self.pluginName = 'GFAL2_SRM2'
 
     # ##
@@ -38,7 +39,10 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
     self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+#    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'])
+    if self.checksumType:
+      self.gfal2.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
 
 
   def __setSRMOptionsToDefault( self ):
@@ -47,10 +51,11 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     '''
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+#    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'])
 
 
-  def _getExtendedAttributes( self, path, protocols = False ):
+  def _getExtendedAttributes( self, path, protocols = False, attributes = None ):
     ''' Changing the TURL_PROTOCOLS option for SRM in case we ask for a specific
         protocol
 
@@ -62,7 +67,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     '''
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    res = GFAL2_StorageBase._getExtendedAttributes( self, path )
+    #res = GFAL2_StorageBase._getExtendedAttributes( self, path, attributes  )
+    res = super(GFAL2_SRM2Storage, self)._getExtendedAttributes( path, attributes )
     self.__setSRMOptionsToDefault()
     return res
 
@@ -100,6 +106,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
     if self.protocolParameters['Protocol'] in listProtocols:
+      successful = {}
+      failed = {}
       for url in urls:
         if self.isURL( url )['Value']:
           successful[url] = url
@@ -107,15 +115,15 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
           failed[url] = 'getTransportURL: Failed to obtain turls.'
 
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
-    else:
-      for url in urls:
-        res = self.__getSingleTransportURL( url, listProtocols )
-        self.log.debug( 'res = %s' % res )
 
-        if not res['OK']:
-          failed[url] = res['Message']
-        else:
-          successful[url] = res['Value']
+    for url in urls:
+      res = self.__getSingleTransportURL( url, listProtocols )
+      self.log.debug( 'res = %s' % res )
+
+      if not res['OK']:
+        failed[url] = res['Message']
+      else:
+        successful[url] = res['Value']
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
@@ -130,10 +138,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
              S_ERROR( errStr ) in case of a failure
     """
     self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
-    if protocols:
-      res = self._getExtendedAttributes( path, protocols )
-    else:
-      res = self._getExtendedAttributes( path )
+    res = self._getExtendedAttributes( path, protocols=protocols, attributes=['user.replicas'] )
     if res['OK']:
       attributeDict = res['Value']
       # 'user.replicas' is the extended attribute we are interested in
