@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' SpaceTokenOccupancyCommand
 
   The Command gets information of the SpaceTokenOccupancy from the lcg_utils
@@ -9,7 +8,7 @@
 import lcg_util
 
 
-from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess                            import pythonCall
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -151,8 +150,10 @@ class SpaceTokenOccupancyCommand( Command ):
       in the database for those combinations, which then are not queried.
     '''
 
+    self.log.verbose( "Getting all SEs defined in the CS" )
     storageElementNames = CSHelpers.getStorageElements()
     if not storageElementNames[ 'OK' ]:
+      self.log.warn( storageElementNames['Message'] )
       return storageElementNames
     storageElementNames = storageElementNames[ 'Value' ]
 
@@ -162,17 +163,19 @@ class SpaceTokenOccupancyCommand( Command ):
 
       endpoint = CSHelpers.getStorageElementEndpoint( storageElementName )
       if not endpoint[ 'OK' ]:
+        self.log.warn( endpoint['Message'] )
         continue
       endpoint = endpoint[ 'Value' ]
 
       spaceToken = CSHelpers.getSEToken( storageElementName )
       if not spaceToken[ 'OK' ]:
+        self.log.warn( spaceToken['Message'] )
         continue
       spaceToken = spaceToken[ 'Value' ]
 
       endpointTokenSet.add( ( endpoint, spaceToken ) )
 
-    gLogger.verbose( 'Processing %s' % endpointTokenSet )
+    self.log.verbose( 'Processing %s' % endpointTokenSet )
 
     for elementToQuery in endpointTokenSet:
 

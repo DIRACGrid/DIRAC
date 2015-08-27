@@ -6,7 +6,7 @@ import urllib2
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getGOCFTSName
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getStorageElementOptions, getFTS3Servers
@@ -356,13 +356,13 @@ class DowntimeCommand( Command ):
       resources.extend( ce[ 'Value' ] )
        
 
-    gLogger.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
+    self.log.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
 
     siteRes = self.doNew( ( 'Site', gocSites ) )
     if not siteRes[ 'OK' ]:
       self.metrics[ 'failed' ].append( siteRes[ 'Message' ] )
 
-    gLogger.verbose( 'Processing Resources: %s' % ', '.join( resources ) )
+    self.log.verbose( 'Processing Resources: %s' % ', '.join( resources ) )
 
     resourceRes = self.doNew( ( 'Resource', resources ) )
     if not resourceRes[ 'OK' ]:

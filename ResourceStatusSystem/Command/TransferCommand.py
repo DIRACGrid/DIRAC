@@ -4,7 +4,7 @@
 
 from datetime                                                   import datetime, timedelta
 
-from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient                import ReportsClient
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -229,7 +229,7 @@ class TransferCommand( Command ):
 #    sourceQuery = [ element[0] for element in sourceQuery[ 'Value' ] ]
 #    
 #    sourceElementsToQuery = list( set( elementNames ).difference( set( sourceQuery ) ) )
-    gLogger.info( 'Processing %s' % ', '.join( elementNames ) )
+    self.log.info( 'Processing %s' % ', '.join( elementNames ) )
  
     for metric in [ 'Quality', 'FailedTransfers' ]:
       for direction in [ 'Source', 'Destination' ]: 
