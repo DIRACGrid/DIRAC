@@ -13,6 +13,7 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegr
 from DIRAC.Resources.Catalog.FileCatalog                       import FileCatalog
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
+from DIRAC.DataManagementSystem.Client.ConsistencyChecks       import ConsistencyChecks
 
 AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 
@@ -22,7 +23,8 @@ class ValidateOutputDataAgent( AgentModule ):
     """ c'tor
     """
     AgentModule.__init__( self, *args, **kwargs )
-
+    
+    self.consistencyChecks = ConsistencyChecks()
     self.integrityClient = DataIntegrityClient()
     self.fc = FileCatalog()
     self.transClient = TransformationClient()
@@ -185,7 +187,7 @@ class ValidateOutputDataAgent( AgentModule ):
     for directory in sorted( directoryExists.keys() ):
       if not directoryExists[directory]:
         continue
-      iRes = self.integrityClient.catalogDirectoryToSE( directory )
+      iRes = self.consistencyChecks.catalogDirectoryToSE( directory )
       if not iRes['OK']:
         gLogger.error( iRes['Message'] )
         return iRes
@@ -195,7 +197,8 @@ class ValidateOutputDataAgent( AgentModule ):
     # This check performs SE->Catalog for possible output directories
     #
     for storageElementName in sorted( self.activeStorages ):
-      res = self.integrityClient.storageDirectoryToCatalog( directories, storageElementName )
+      res = self.consistencyChecks.storageDirectoryToCatalog( directories, storageElementName )
+      
       if not res['OK']:
         gLogger.error( 'Failed to check integrity SE->Catalog', res['Message'] )
         return res
@@ -208,6 +211,7 @@ class ValidateOutputDataAgent( AgentModule ):
     """ Move to 'WaitingIntegrity' or 'ValidatedOutput'
     """
     res = self.integrityClient.getTransformationProblematics( int( transID ) )
+    
     if not res['OK']:
       gLogger.error( "Failed to determine whether there were associated problematic files", res['Message'] )
       newStatus = ''
