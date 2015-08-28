@@ -12,7 +12,6 @@ __RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@
 
 import os
 import stat
-from types import StringTypes
 
 import arc # Has to work if this module is called
 from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
@@ -259,7 +258,7 @@ class ARCComputingElement( ComputingElement ):
     js = arc.compute.JobSupervisor(usercfg)
 
     jobList = list( jobIDList )
-    if type( jobIDList ) in StringTypes:
+    if isinstance( jobIDList, basestring ):
       jobList = [ jobIDList ]
 
     for jobID in jobList:
@@ -314,7 +313,7 @@ class ARCComputingElement( ComputingElement ):
       return result
 
     jobTmpList = list( jobIDList )
-    if type( jobIDList ) in StringTypes:
+    if isinstance( jobIDList, basestring ):
       jobTmpList = [ jobIDList ]
 
     # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
