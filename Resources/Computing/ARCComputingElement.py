@@ -20,8 +20,7 @@ from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Grid import ldapsearchBDII
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-
+from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
 # logstdout = arc.LogStream(sys.stdout)
@@ -81,9 +80,9 @@ class ARCComputingElement( ComputingElement ):
     j.JobStatusInterfaceName = "org.nordugrid.ldapng"
     mangURL = "gsiftp://%s:2811/jobs/" % ( self.ceHost )
     j.JobManagementURL = arc.URL( mangURL )
-    #j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+    j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
     j.ServiceInformationURL = j.JobManagementURL
-    j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+    #j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
     userCfg = arc.UserConfig()
     j.PrepareHandler( userCfg )
     return j, userCfg
@@ -307,7 +306,12 @@ class ARCComputingElement( ComputingElement ):
     # result['WaitingJobs'] = ceStats.WaitingJobs
     # result['SubmittedJobs'] = 0
 
-    vo = getVOForGroup( ret['Value']['group'] )
+    vo = ''
+    result = getVOfromProxyGroup()
+    if result['OK']:
+      vo = result['Value']
+    else: # A backup solution which may work
+      vo = self.ceParameters['VO']
     voFilters = '(GlueCEAccessControlBaseRule=VOMS:/%s/*)' % vo
     voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
     voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
@@ -315,11 +319,11 @@ class ARCComputingElement( ComputingElement ):
     result = ldapsearchBDII( filt, attr=None, host=None, base=None )
     ces = result['Value']
     filt = '(&(objectClass=GlueVOView)(|%s))' % ( voFilters )
-    dn = ced[0]['dn']
+    dn = ces[0]['dn']
     result = ldapsearchBDII( filt, attr=None, host=None, base = dn )
     stats = result['Value'][0]['attr']
-    result['RunningJobs'] = stats["GlueCEStateRunningJobs"]
-    result['WaitingJobs'] = stats["GlueCEStateTotalJobs"]
+    result['RunningJobs'] = int(stats["GlueCEStateRunningJobs"])
+    result['WaitingJobs'] = int(stats["GlueCEStateTotalJobs"])
     result['SubmittedJobs'] = 0
     return result
 
