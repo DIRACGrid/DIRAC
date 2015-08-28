@@ -345,7 +345,7 @@ class PluginUtilities( object ):
         try:
           value = ast.literal_eval( value )
         except Exception:
-          value = value.replace( ' ', '' ).split( ',' )
+          value = [val for val in value.replace( ' ', '' ).split( ',' ) if val]
       elif valueType is int:
         value = int( value )
       elif valueType is float:
