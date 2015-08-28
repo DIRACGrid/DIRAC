@@ -341,21 +341,21 @@ class PluginUtilities( object ):
     value = self.params.get( name, default )
     self.logDebug( "Transformation plugin param %s: '%s'" % ( name, value ) )
     if valueType and type( value ) != valueType:
-      if valueType == type( [] ):
+      if valueType is list:
         try:
           value = ast.literal_eval( value )
-        except ValueError:
+        except Exception:
           value = value.replace( ' ', '' ).split( ',' )
-      elif valueType == type( 0 ):
+      elif valueType is int:
         value = int( value )
-      elif valueType == type( 0. ):
+      elif valueType is float:
         value = float( value )
-      elif valueType == type( True ):
+      elif valueType is bool:
         if value in ( 'False', 'No' ):
           value = False
         else:
           value = bool( value )
-      elif valueType != type( '' ):
+      elif valueType is not str:
         self.logWarn( "Unknown parameter type (%s) for %s, passed as string" % ( str( valueType ), name ) )
     self.logDebug( "Final plugin param %s: '%s'" % ( name, value ) )
     return value
