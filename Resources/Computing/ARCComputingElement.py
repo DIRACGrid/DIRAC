@@ -82,7 +82,7 @@ class ARCComputingElement( ComputingElement ):
     j.JobManagementURL = arc.URL( mangURL )
     j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
     j.ServiceInformationURL = j.JobManagementURL
-    #j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+    j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
     userCfg = arc.UserConfig()
     j.PrepareHandler( userCfg )
     return j, userCfg
