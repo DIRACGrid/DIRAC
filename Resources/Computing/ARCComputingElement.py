@@ -19,6 +19,8 @@ from DIRAC                                               import S_OK, S_ERROR, g
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Utilities.Grid import ldapsearchBDII
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -79,7 +81,7 @@ class ARCComputingElement( ComputingElement ):
     j.JobStatusInterfaceName = "org.nordugrid.ldapng"
     mangURL = "gsiftp://%s:2811/jobs/" % ( self.ceHost )
     j.JobManagementURL = arc.URL( mangURL )
-    j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+    #j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
     j.ServiceInformationURL = j.JobManagementURL
     j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
     userCfg = arc.UserConfig()
@@ -282,24 +284,42 @@ class ARCComputingElement( ComputingElement ):
     """ Method to return information on running and pending jobs.
     """
 
-    result = self._prepareProxy()
-    if not result['OK']:
-      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
-      return result
+    # result = self._prepareProxy()
+    # if not result['OK']:
+    #   gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+    #   return result
 
-    usercfg = arc.UserConfig()
-    endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
-                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
-    retriever = arc.ComputingServiceRetriever(usercfg, endpoints)
-    retriever.wait() # Takes a bit of time to get and parse the ldap information
-    targets = retriever.GetExecutionTargets()
-    ceStats = targets[0].ComputingShare
-    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
-    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+    # usercfg = arc.UserConfig()
+    # endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
+    #                            arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+    # retriever = arc.ComputingServiceRetriever(usercfg, endpoints)
+    # retriever.wait() # Takes a bit of time to get and parse the ldap information
+    # targets = retriever.GetExecutionTargets()
+    # if ( targets.size() == 0 ):
+    #   result = S_ERROR("Likely unresponsive CE ... GGUS ticket to %s ?" % (self.ceHost))
+    #   return result
+    # ceStats = targets[0].ComputingShare
+    # gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
+    # gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
 
-    result = S_OK()
-    result['RunningJobs'] = ceStats.RunningJobs
-    result['WaitingJobs'] = ceStats.WaitingJobs
+    # result = S_OK()
+    # result['RunningJobs'] = ceStats.RunningJobs
+    # result['WaitingJobs'] = ceStats.WaitingJobs
+    # result['SubmittedJobs'] = 0
+
+    vo = getVOForGroup( ret['Value']['group'] )
+    voFilters = '(GlueCEAccessControlBaseRule=VOMS:/%s/*)' % vo
+    voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
+    voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
+    filt = '(&(GlueCEUniqueID=%s*)(|%s))' % ( self.ceHost, voFilters )
+    result = ldapsearchBDII( filt, attr=None, host=None, base=None )
+    ces = result['Value']
+    filt = '(&(objectClass=GlueVOView)(|%s))' % ( voFilters )
+    dn = ced[0]['dn']
+    result = ldapsearchBDII( filt, attr=None, host=None, base = dn )
+    stats = result['Value'][0]['attr']
+    result['RunningJobs'] = stats["GlueCEStateRunningJobs"]
+    result['WaitingJobs'] = stats["GlueCEStateTotalJobs"]
     result['SubmittedJobs'] = 0
     return result
 
@@ -330,7 +350,12 @@ class ARCComputingElement( ComputingElement ):
     for jobID in jobList:
       gLogger.debug("Retrieving status for job %s" % jobID)
       job, _userCfg = self.__getARCJob( jobID )
-      job.Update()
+      try :
+        job.Update()
+      except:
+        gLogger.error("ARC status for job %s could not be found. Setting to unknown" % jobID)
+        resultDict[jobID] = 'Unknown'
+        continue
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
       if ( arcState ): # Meaning arcState is filled. Is this good python?
@@ -339,7 +364,7 @@ class ARCComputingElement( ComputingElement ):
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
       if (resultDict[jobID] == "Done"):
-        exitCode = int( jobID.ExitCode )
+        exitCode = int( job.ExitCode )
         if exitCode:
           resultDict[jobID] = "Failed"
       gLogger.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
