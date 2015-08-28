@@ -1328,6 +1328,9 @@ def createBashrc():
       lines.extend( ['# IPv6 support',
                      'export GLOBUS_IO_IPV6=TRUE',
                      'export GLOBUS_FTP_CLIENT_IPV6=TRUE'] )
+      # Add the lines required for ARC CE support
+      lines.extend( ['# ARC Computing Element',
+                     'export ARC_PLUGIN_PATH=$DIRACLIB/arc'] )
       lines.append( '' )
       f = open( bashrcFile, 'w' )
       f.write( '\n'.join( lines ) )
@@ -1378,6 +1381,9 @@ def createCshrc():
       lines.extend( ['# IPv6 support',
                      'setenv GLOBUS_IO_IPV6 TRUE',
                      'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
+      # Add the lines required for ARC CE support
+      lines.extend( ['# ARC Computing Element',
+                     'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'] )
       lines.append( '' )
       f = open( cshrcFile, 'w' )
       f.write( '\n'.join( lines ) )
