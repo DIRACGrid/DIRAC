@@ -88,7 +88,7 @@ class JobInfo(object):
     statuses = reps['Value']
     success = statuses['Successful']
 
-    self.inputFileExists = self.inputFile in success
+    self.inputFileExists = success.get(self.inputFile, False)
     for lfn in self.outputFiles:
       if lfn in success and success[lfn]:
         self.outputFileStatus.append("Exists")
