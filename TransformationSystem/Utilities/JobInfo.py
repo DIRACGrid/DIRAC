@@ -59,10 +59,10 @@ class JobInfo(object):
 
   def getJobInformation(self, jobMon):
     """get all the information for the job"""
-    jdlString = self.__getJDL(jobMon)
-    self.__getOutputFiles(jdlString)
-    self.__getTaskID(jdlString)
-    self.__getInputFile(jdlString)
+    jdlList = self.__getJDL(jobMon)
+    self.__getOutputFiles(jdlList)
+    self.__getTaskID(jdlList)
+    self.__getInputFile(jdlList)
 
   def getTaskInfo(self, tasksDict, lfnTaskDict):
     """extract the task information from the taskDict"""
@@ -107,32 +107,33 @@ class JobInfo(object):
       self.pendingRequest = request.Status != "Done"
 
   def __getJDL(self, jobMon):
-    """return jdlstring for this job"""
+    """return jdlList for this job"""
     res = jobMon.getJobJDL(int(self.jobID), False)
     if not res['OK']:
       raise RuntimeError("Failed to get jobJDL: %s" % res['Message'])
     jdlString = res['Value']
-    return jdlString
+    jdlList = jdlString.split('\n')
+    return jdlList
 
-  def __getOutputFiles(self, jdlString):
+  def __getOutputFiles(self, jdlList):
     """get the Production Outputfiles for the given Job"""
-    if 'ProductionOutputData = "' in jdlString:
-      lfns = JobInfo.__getSingleLFN(jdlString)
+    if 'ProductionOutputData = "' in jdlList:
+      lfns = JobInfo.__getSingleLFN(jdlList)
     else:
-      lfns = JobInfo.__getMultiLFN(jdlString)
+      lfns = JobInfo.__getMultiLFN(jdlList)
     self.outputFiles = lfns
 
-  def __getInputFile(self, jdlString):
+  def __getInputFile(self, jdlList):
     """get the Inputdata for the given job"""
-    for val in jdlString.split('\n'):
+    for val in jdlList:
       if 'InputData' in val:
         lfn = re.search('".*"', val)
         lfn = lfn.group(0).strip('"')
         self.inputFile = lfn
 
-  def __getTaskID(self, jdlString):
+  def __getTaskID(self, jdlList):
     """get the taskID """
-    for val in jdlString.split('\n'):
+    for val in jdlList:
       if 'TaskID' in val:
         try:
           self.taskID = int(val.strip(";").split("=")[1].strip(' "'))
@@ -146,21 +147,21 @@ class JobInfo(object):
         break
 
   @staticmethod
-  def __getSingleLFN(jdlString):
+  def __getSingleLFN(jdlList):
     """get the only productionOutputData LFN from the jdlString"""
-    for val in jdlString.split('\n'):
+    for val in jdlList:
       if 'ProductionOutputData' in val:
         lfn = re.search('".*"', val)
         lfn = lfn.group(0).strip('"')
         return [lfn]
 
   @staticmethod
-  def __getMultiLFN(jdlString):
+  def __getMultiLFN(jdlList):
     """ get multiple outputfiles """
     lfns = []
     counter = 0
     getEm = False
-    for val in jdlString.split('\n'):
+    for val in jdlList:
       if 'ProductionOutputData' in val:
         counter += 1
         continue
