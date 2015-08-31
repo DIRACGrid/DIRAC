@@ -15,7 +15,12 @@ from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
 from DIRAC.ResourceStatusSystem.Utilities import Utils
-InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+
+try:
+  InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+except Exception, e:
+  InstallTools = Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' )
+  InstallTools = InstallTools.InstallTools
 
 InstallTools.exitOnError = True
 
@@ -35,6 +40,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+if len( args ) == 1:
+  args = args[0].split( '/' )
 
 if len( args ) < 2:
   Script.showHelp()
