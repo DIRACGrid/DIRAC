@@ -191,6 +191,11 @@ class JobInfo(object):
     if ENABLED:
       tInfo.setInputProcessed(self)
 
+  def setInputDeleted(self, tInfo):
+    """mark input file as Deleted"""
+    if ENABLED:
+      tInfo.setInputDeleted(self)
+
   def setInputUnused(self, tInfo):
     """mark input file as Unused"""
     if ENABLED:
