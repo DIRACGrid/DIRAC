@@ -33,7 +33,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     """
     self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
     # # init base class
-    GFAL2_StorageBase.__init__( self, storageName, parameters )
+    super(GFAL2_XROOTStorage, self).__init__( storageName, parameters )
 
 #     self.log.setLevel( "DEBUG" )
 
@@ -44,8 +44,8 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.protocolParameters['SpaceToken'] = 0
    
     # setting the XROOTD Checksum type for gfal2_filecopy	 
-    if self.checksumType:
-      self.gfal2.set_opt_string("XROOTD PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType)
+#    if self.checksumType:
+#      self.gfal2.set_opt_string("XROOTD PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType)
 
 
   def _getExtendedAttributes( self, path ):
@@ -59,6 +59,13 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     # hard coding the attributes list for xroot because the plugin returns the wrong values
     # xrootd.* instead of xroot.* see: https://its.cern.ch/jira/browse/DMC-664
     attributes = ['xroot.cksum', 'xroot.space']
-    res = GFAL2_StorageBase._getExtendedAttributes( self, path, attributes )
+    res = super(GFAL2_XROOTStorage, self)._getExtendedAttributes( path, attributes )
     return res
 
+  def _getSingleFile( self, src_url, dest_file ):
+    """ Some XROOT StorageElements have problems with the checksum at the moment so to still be able to copy files from XROOT we disable the checksum check for this operation.
+
+    """
+    self.log.debug( "GFAL2_XROOTStorage._getSingleFile: Calling base method with checksum disabled" )
+    res = super(GFAL2_XROOTStorage, self)._getSingleFile( src_url, dest_file, disableChecksum = True )
+    return res

@@ -289,7 +289,7 @@ class GFAL2_StorageBase( StorageBase ):
           errStr = "GFAL2_StorageBase.__putFile: The local source file does not exist or is a directory"
           self.log.error( errStr, src_file )
           return S_ERROR( errStr )
-        src_url = 'file:%s' % os.path.abspath( src_file )
+        src_url = 'file://%s' % os.path.abspath( src_file )
         sourceSize = getSize( src_file )
         if sourceSize == -1:
           errStr = "GFAL2_StorageBase.__putFile: Failed to get file size"
@@ -382,7 +382,7 @@ class GFAL2_StorageBase( StorageBase ):
         dest_file = '%s/%s' % ( localPath, fileName )
       else:
         dest_file = '%s/%s' % ( os.getcwd(), fileName )
-      res = self.__getSingleFile( src_url, dest_file )
+      res = self._getSingleFile( src_url, dest_file )
 
       if not res['OK']:
         failed[src_url] = res['Message']
@@ -393,7 +393,7 @@ class GFAL2_StorageBase( StorageBase ):
 
 
 
-  def __getSingleFile( self, src_url, dest_file ):
+  def _getSingleFile( self, src_url, dest_file, disableChecksum = False ):
     """ Copy a storage file :src_url: to a local fs under :dest_file:
 
     :param self: self reference
@@ -402,14 +402,14 @@ class GFAL2_StorageBase( StorageBase ):
     :returns: S_ERROR( errStr ) in case of an error
               S_OK( size of file ) if copying is successful
     """
-    self.log.info( "GFAL2_StorageBase.__getSingleFile: Trying to download %s to %s" % ( src_url, dest_file ) )
+    self.log.info( "GFAL2_StorageBase._getSingleFile: Trying to download %s to %s" % ( src_url, dest_file ) )
 
     if not os.path.exists( os.path.dirname( dest_file ) ):
-      self.log.debug( "GFAL2_StorageBase.__getSingleFile: Local directory does not yet exist. Creating it", os.path.dirname( dest_file ) )
+      self.log.debug( "GFAL2_StorageBase._getSingleFile: Local directory does not yet exist. Creating it", os.path.dirname( dest_file ) )
       try:
         os.makedirs( os.path.dirname( dest_file ) )
       except OSError, error:
-        errStr = "GFAL2_StorageBase.__getSingleFile: Error while creating the destination folder"
+        errStr = "GFAL2_StorageBase._getSingleFile: Error while creating the destination folder"
         self.log.exception( errStr, error )
         return S_ERROR( errStr )
 
@@ -417,7 +417,7 @@ class GFAL2_StorageBase( StorageBase ):
 
 
     if not res['OK']:
-      errStr = "GFAL2_StorageBase.__getSingleFile: Error while determining file size: %s" % res['Message']
+      errStr = "GFAL2_StorageBase._getSingleFile: Error while determining file size: %s" % res['Message']
       self.log.error( res['Message'] )
       return S_ERROR( errStr )
 
@@ -434,14 +434,17 @@ class GFAL2_StorageBase( StorageBase ):
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
     params.src_spacetoken = self.spaceToken
 
-    params.checksum_check = True if self.checksumType else False
+    if disableChecksum:
+      params.checksum_check = False
+    else:
+      params.checksum_check = True if self.checksumType else False
 
     # Params set, copying file now
     try:
       # gfal2 needs a protocol to copy local which is 'file:'
-      dest = 'file:' + os.path.abspath( dest_file )
+      dest = 'file://%s' %  os.path.abspath( dest_file )
       self.gfal2.filecopy( params, src_url, dest )
-      if self.checksumType:
+      if params.checksum_check:
         # gfal2 did a checksum check, so we should be good
         return S_OK( remoteSize )
       else:
@@ -450,13 +453,13 @@ class GFAL2_StorageBase( StorageBase ):
         if destSize == remoteSize:
           return S_OK( destSize )
         else:
-          errStr = "GFAL2_StorageBase.__getSingleFile: File sizes don't match. Something went wrong. Removing local file %s" % dest_file
+          errStr = "GFAL2_StorageBase._getSingleFile: File sizes don't match. Something went wrong. Removing local file %s" % dest_file
           self.log.error( errStr, {remoteSize : destSize} )
           if os.path.exists( dest_file ):
             os.remove( dest_file )
           return S_ERROR( errStr )
     except gfal2.GError, e:
-      errStr = 'GFAL2_StorageBase.__getSingleFile: Could not copy %s to %s, [%d] %s' % ( src_url, dest, e.code, e.message )
+      errStr = 'GFAL2_StorageBase._getSingleFile: Could not copy %s to %s, [%d] %s' % ( src_url, dest, e.code, e.message )
       self.log.error( errStr )
       return S_ERROR( errStr )
 
@@ -609,7 +612,7 @@ class GFAL2_StorageBase( StorageBase ):
     successful = {}
 
     for url in urls:
-      res = self.__getSingleFileMetadata( url )
+      res = self._getSingleFileMetadata( url )
 
       if not res['OK']:
         failed[url] = res['Message']
@@ -620,7 +623,7 @@ class GFAL2_StorageBase( StorageBase ):
 
 
 
-  def __getSingleFileMetadata( self, path ):
+  def _getSingleFileMetadata( self, path ):
     """  Fetch the metadata associated to the file
       :param self: self reference
       :param path: path (only 1) on storage (srm://...)
@@ -628,7 +631,7 @@ class GFAL2_StorageBase( StorageBase ):
           S_OK (MetadataDict) if we could get the metadata
           S_ERROR (errorMsg) if there was a problem getting the metadata or if it is not a file
     """
-    self.log.debug( 'GFAL2_StorageBase.__getSingleFileMetadata: trying to read metadata for %s' % path )
+    self.log.debug( 'GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for %s' % path )
 
     res = self.__getSingleMetadata( path )
 
@@ -642,7 +645,7 @@ class GFAL2_StorageBase( StorageBase ):
     metaDict['Unavailable'] = metaDict.get('Unavailable', 0)
 
     if not metaDict['File']:
-      errStr = "GFAL2_StorageBase.__getSingleFileMetadata: supplied path is not a file"
+      errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
       self.log.error( errStr, path )
       return S_ERROR( errStr )
 
@@ -1369,7 +1372,7 @@ class GFAL2_StorageBase( StorageBase ):
     self.log.debug( 'GFAL2_StorageBase.__getSingleDirectory: Trying to download the %s files' % len( sFilesDict ) )
     for sFile in sFilesDict:
       # Returns S_OK(fileSize) if successful
-      res = self.__getSingleFile( sFile, '/'.join( [dest_dir, os.path.basename( sFile ) ] ) )
+      res = self._getSingleFile( sFile, '/'.join( [dest_dir, os.path.basename( sFile ) ] ) )
       if res['OK']:
         filesReceived += 1
         sizeReceived += res['Value']
