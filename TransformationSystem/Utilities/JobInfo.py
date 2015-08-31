@@ -10,8 +10,9 @@ import re
 class JobInfo(object):
   """ hold information about jobs"""
 
-  def __init__(self, jobID, status, tID):
+  def __init__(self, jobID, status, tID, tType=None):
     self.tID = int(tID)
+    self.tType = tType
     self.jobID = int(jobID)
     self.status = status
     self.inputFile = None
@@ -27,7 +28,7 @@ class JobInfo(object):
   def __str__(self):
     info = "%d: %s" % (self.jobID, self.status)
     if self.tID and self.taskID:
-      info += " Transformation: %d -- %d " % (self.tID, self.taskID)
+      info += " %s Transformation: %d -- %d " % (self.tType, self.tID, self.taskID)
     if self.taskStatus:
       info += "TaskStatus: %s " % self.taskStatus
       if self.finalTask:
@@ -64,12 +65,13 @@ class JobInfo(object):
     self.__getTaskID(jdlList)
     self.__getInputFile(jdlList)
 
-  def getTaskInfo(self, tasksDict, lfnTaskDict):
+  def getTaskInfo(self, tasksDict, lfnTaskDict, ignoreTasks):
     """extract the task information from the taskDict"""
     if self.taskID not in tasksDict:
       #print "taskID %d not in tasksDict" % self.taskID
       taskDict = tasksDict[lfnTaskDict[self.inputFile]]
       self.finalTask = lfnTaskDict[self.inputFile]
+      ignoreTasks.add(lfnTaskDict[self.inputFile])
     else:
       taskDict = tasksDict[self.taskID]
 
@@ -81,14 +83,17 @@ class JobInfo(object):
 
   def checkFileExistance(self, fcClient):
     """check if input and outputfile still exist"""
-    lfns = [self.inputFile] + self.outputFiles
+    lfns = []
+    if self.inputFile:
+      lfns = [self.inputFile]
+    lfns = lfns + self.outputFiles
     reps = fcClient.exists(lfns)
     if not reps['OK']:
       raise RuntimeError("Failed to check existance: %s" % reps['Message'])
     statuses = reps['Value']
     success = statuses['Successful']
-
-    self.inputFileExists = success.get(self.inputFile, False)
+    if self.inputFile:
+      self.inputFileExists = True if (self.inputFile in success and success[self.inputFile]) else False
     for lfn in self.outputFiles:
       if lfn in success and success[lfn]:
         self.outputFileStatus.append("Exists")
@@ -117,7 +122,7 @@ class JobInfo(object):
 
   def __getOutputFiles(self, jdlList):
     """get the Production Outputfiles for the given Job"""
-    if 'ProductionOutputData = "' in jdlList:
+    if 'ProductionOutputData = "' in "".join(jdlList):
       lfns = JobInfo.__getSingleLFN(jdlList)
     else:
       lfns = JobInfo.__getMultiLFN(jdlList)

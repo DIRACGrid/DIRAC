@@ -7,14 +7,14 @@ from DIRAC.Core.Workflow.Workflow import fromXMLString
 from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
+from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.TransformationSystem.Utilities.JobInfo import ENABLED
-from DIRAC.TransformationSystem.Utilities import JobInfo
 
 
 class TransformationInfo(object):
   """ hold information about transformations """
 
-  def __init__(self, transformationID, transName, tClient, jobDB, logDB, dMan, fcClient, jobMon):
+  def __init__(self, transformationID, transName, transType, tClient, jobDB, logDB, dMan, fcClient, jobMon):
     self.log = gLogger.getSubLogger("TInfo")
     self.tID = transformationID
     self.transName = transName
@@ -25,6 +25,7 @@ class TransformationInfo(object):
     self.jobMon = jobMon
     self.fcClient = fcClient
     self.olist = self.__getOutputList()
+    self.transType = transType
 
   def __getTransformationWorkflow(self):
     """return the workflow for the transformation"""
@@ -86,20 +87,14 @@ class TransformationInfo(object):
     """ set the taskID to Done"""
     if not ENABLED:
       return
-    taskID = job.taskID
-    res = self.tClient.setTaskStatus(self.transName, taskID, "Done")
-    if not res['OK']:
-      raise RuntimeError("Failed updating task status: %s" % res['Message'])
-    self.__updateJobStatus(job.jobID, "Done", "Job Finished Successfully")
+    self.__setTaskStatus(job, 'Done')
+    self.__updateJobStatus(job.jobID, "Done", "Job forced to Done")
 
   def setJobFailed(self, job):
     """ set the taskID to Done"""
     if not ENABLED:
       return
-    taskID = job.taskID
-    res = self.tClient.setTaskStatus(self.transName, taskID, "Failed")
-    if not res['OK']:
-      raise RuntimeError("Failed updating task status: %s" % res['Message'])
+    self.__setTaskStatus(job, 'Failed')
     self.__updateJobStatus(job.jobID, "Failed", minorstatus="Job forced to Failed")
 
   def setInputUnused(self, job):
@@ -121,6 +116,13 @@ class TransformationInfo(object):
       if not result['OK']:
         gLogger.error("Failed updating status", result['Message'])
         raise RuntimeError("Failed updating file status")
+
+  def __setTaskStatus(self, job, status):
+    """update the task in the TransformationDB"""
+    taskID = job.taskID
+    res = self.tClient.setTaskStatus(self.transName, taskID, status)
+    if not res['OK']:
+      raise RuntimeError("Failed updating task status: %s" % res['Message'])
 
   def __updateJobStatus(self, jobID, status, minorstatus=None):
     """ This method updates the job status in the JobDB
@@ -187,12 +189,18 @@ class TransformationInfo(object):
       self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
     self.log.notice("Successfully removed %d files" % successfullyRemoved)
 
-  def getJobs(self):
+  def getJobs(self, statusList=None):
     """get done and failed jobs"""
-    self.log.notice("Getting 'Done' Jobs...")
-    done = self.__getJobs(["Done"])
-    self.log.notice("Getting 'Failed' Jobs...")
-    failed = self.__getJobs(["Failed"])
+    done = S_OK([])
+    failed = S_OK([])
+    if statusList is None:
+      statusList = ['Done', 'Failed']
+    if 'Done' in statusList:
+      self.log.notice("Getting 'Done' Jobs...")
+      done = self.__getJobs(["Done"])
+    if 'Failed' in statusList:
+      self.log.notice("Getting 'Failed' Jobs...")
+      failed = self.__getJobs(["Failed"])
     if not done['OK']:
       raise RuntimeError("Failed to get Done Jobs")
     if not failed['OK']:
@@ -202,17 +210,26 @@ class TransformationInfo(object):
 
     jobs = {}
     for job in done:
-      jobs[int(job)] = JobInfo(job, "Done", self.tID)
+      jobs[int(job)] = JobInfo(job, "Done", self.tID, self.transType)
     for job in failed:
-      jobs[int(job)] = JobInfo(job, "Failed", self.tID)
+      jobs[int(job)] = JobInfo(job, "Failed", self.tID, self.transType)
 
     self.log.notice("Found %d Done Jobs " % len(done))
     self.log.notice("Found %d Failed Jobs " % len(failed))
+    return jobs
 
   def __getJobs(self, status):
     """returns list of done jobs"""
     attrDict = dict(Status=status, JobGroup="%08d" % int(self.tID))
+    # if 'Done' in status:
+    #   resAppStates = self.jobMon.getApplicationStates()
+    #   if not resAppStates['OK']:
+    #     raise RuntimeError( "Failed to get application states" )
+    #   appStates = resAppStates['Value']
+    #   appStates.remove( "Job Finished Successfully" )
+    #   attrDict['ApplicationStatus'] = appStates
     res = self.jobMon.getJobs(attrDict)
+
     if res['OK']:
       self.log.debug("Found Prod jobs: %s" % res['Value'])
     else:
