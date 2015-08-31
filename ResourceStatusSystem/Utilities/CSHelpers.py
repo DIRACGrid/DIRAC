@@ -156,9 +156,10 @@ def getStorageElementsHosts( seNames = None ):
 
     seHost = getSEHost( seName )
     if not seHost['OK']:
-      return seHost
+      gLogger.warn( "Could not get SE Host", "SE: %s" % seName )
+      continue
     if seHost['Value']:
-      seHosts.append( seHost )
+      seHosts.append( seHost['Value'] )
 
   return S_OK( list( set( seHosts ) ) )
 
@@ -167,6 +168,7 @@ def _getSEParameters( seName ):
 
   pluginsList = se.getPlugins()
   if not pluginsList['OK']:
+    gLogger.warn( pluginsList['Message'], "SE: %s" % seName )
     return pluginsList
   pluginsList = pluginsList['Value']
   if 'SRM2' in pluginsList:
