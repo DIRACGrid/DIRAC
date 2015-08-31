@@ -20,7 +20,6 @@ try:
   InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
 except Exception, e:
   InstallTools = Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' )
-  InstallTools = InstallTools.InstallTools
 
 InstallTools.exitOnError = True
 
