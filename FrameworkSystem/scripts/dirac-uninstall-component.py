@@ -17,8 +17,17 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 __RCSID__ = "$Id$"
 =======
 from DIRAC.ResourceStatusSystem.Utilities import Utils
+<<<<<<< dd899e7f34f2257d1d0b37c091f1be423c8ec794
 InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
 >>>>>>> Installation scripts
+=======
+
+try:
+  InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+except Exception, e:
+  InstallTools = Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' )
+  InstallTools = InstallTools.InstallTools
+>>>>>>> Fixed installation scripts
 
 InstallTools.exitOnError = True
 
@@ -38,6 +47,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+if len( args ) == 1:
+  args = args[0].split( '/' )
 
 if len( args ) < 2:
   Script.showHelp()
