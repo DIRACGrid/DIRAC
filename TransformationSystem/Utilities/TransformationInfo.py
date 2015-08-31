@@ -5,6 +5,7 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Workflow.Workflow import fromXMLString
 
 from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import ENABLED
 
@@ -12,13 +13,15 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import ENABLED
 class TransformationInfo(object):
   """ hold information about transformations """
 
-  def __init__(self, transformationID, transName, tClient, jobDB, logDB):
+  def __init__(self, transformationID, transName, tClient, jobDB, logDB, dMan, fcClient):
     self.log = gLogger.getSubLogger("TInfo")
     self.tID = transformationID
     self.transName = transName
     self.tClient = tClient
     self.jobDB = jobDB
     self.logDB = logDB
+    self.dMan = dMan
+    self.fcClient = fcClient
     self.olist = self.__getOutputList()
 
   def __getTransformationWorkflow(self):
@@ -84,8 +87,8 @@ class TransformationInfo(object):
     taskID = job.taskID
     res = self.tClient.setTaskStatus(self.transName, taskID, "Done")
     if not res['OK']:
-      raise RuntimeError("Failed updating task status")
-    self.__updateJobStatus("Done", "Job Finished Successfully")
+      raise RuntimeError("Failed updating task status: %s" % res['Message'])
+    self.__updateJobStatus(job.jobID, "Done", "Job Finished Successfully")
 
   def setJobFailed(self, job):
     """ set the taskID to Done"""
@@ -94,8 +97,8 @@ class TransformationInfo(object):
     taskID = job.taskID
     res = self.tClient.setTaskStatus(self.transName, taskID, "Failed")
     if not res['OK']:
-      raise RuntimeError("Failed updating task status")
-    self.__updateJobStatus("Failed", "Job forced to Failed")
+      raise RuntimeError("Failed updating task status: %s" % res['Message'])
+    self.__updateJobStatus(job.jobID, "Failed", minorstatus="Job forced to Failed")
 
   def setInputUnused(self, job):
     """set the inputfile to unused"""
@@ -139,3 +142,41 @@ class TransformationInfo(object):
       self.log.warn(result)
 
     return result
+
+  def __findAllDescendants(self, lfnList):
+    """finds all descendants of a list of LFNs"""
+    allDescendants = []
+    result = self.fcClient.getFileDescendents(lfnList, range(1, 8))
+    if not result['OK']:
+      return allDescendants
+    for dummy_lfn, descendants in result['Value']['Successful'].items():
+      allDescendants.extend(descendants)
+    return allDescendants
+
+  def cleanOutputs(self, jobInfo):
+    """remove all job outputs"""
+    return
+    if not ENABLED:
+      return
+    if len(jobInfo.outputFiles) == 0:
+      return
+    descendants = self.__findAllDescendants(jobInfo.outputFiles)
+    filesToDelete = jobInfo.outputFiles + descendants
+
+    errorReasons = {}
+    successfullyRemoved = 0
+    for lfnList in breakListIntoChunks(filesToDelete, 200):
+      result = self.dMan.removeFile(lfnList)
+      if not result['OK']:
+        self.log.error("Failed to remove LFNs", result['Message'])
+        raise RuntimeError("Failed to remove LFNs: %s" % result['Message'])
+      for lfn, err in result['Value']['Failed'].items():
+        reason = str(err)
+        if reason not in errorReasons.keys():
+          errorReasons[reason] = []
+        errorReasons[reason].append(lfn)
+      successfullyRemoved += len(result['Value']['Successful'].keys())
+
+    for reason, lfns in errorReasons.items():
+      self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
+    self.log.notice("Successfully removed %d files" % successfullyRemoved)
