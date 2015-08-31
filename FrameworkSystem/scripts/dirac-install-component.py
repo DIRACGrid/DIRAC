@@ -3,7 +3,7 @@
 """
 Do the initial installation and configuration of a DIRAC component
 """
-from DIRAC.Core.Utilities import InstallTools
+
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
