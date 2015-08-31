@@ -4,6 +4,8 @@
 Uninstallation of a DIRAC component
 """
 
+__RCSID__ = "$Id$"
+
 import socket
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
@@ -11,23 +13,12 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
-<<<<<<< d39b896288ebd64a4049134ef5bdbadba2d78d28
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-
-__RCSID__ = "$Id$"
-=======
 from DIRAC.ResourceStatusSystem.Utilities import Utils
-<<<<<<< dd899e7f34f2257d1d0b37c091f1be423c8ec794
-InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
->>>>>>> Installation scripts
-=======
 
 try:
   InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
 except Exception, e:
   InstallTools = Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' )
-  InstallTools = InstallTools.InstallTools
->>>>>>> Fixed installation scripts
 
 InstallTools.exitOnError = True
 
@@ -76,11 +67,7 @@ removeLogs = False
 if force:
   removeLogs = True
 else:
-<<<<<<< d39b896288ebd64a4049134ef5bdbadba2d78d28
-  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.componentTypes:
-=======
   if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in InstallTools.COMPONENT_TYPES:
->>>>>>> Installation scripts
     result = promptUser( 'Remove logs?', [ 'y', 'n' ], 'n' )
     if result[ 'OK' ]:
       removeLogs = result[ 'Value' ] == 'y'
