@@ -186,7 +186,7 @@ def getSEToken( seName ):
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
-    gLogger.warn( "Could not get SE parameters", "SE: %s, protocols: %s" % seName )
+    gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
 
   return S_OK( seParameters['Value']['SpaceToken'] )
@@ -197,6 +197,7 @@ def getSEHost( seName ):
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
+    gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
 
   return S_OK( seParameters['Value']['Host'] )
@@ -206,7 +207,9 @@ def getStorageElementEndpoint( seName ):
   """
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
+    gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
+
   host = seParameters['Value']['Host']
   port = seParameters['Value']['Port']
   wsurl = seParameters['Value']['WSUrl']
