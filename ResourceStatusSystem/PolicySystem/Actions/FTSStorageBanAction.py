@@ -80,6 +80,7 @@ class FTSStorageBanAction( BaseAction ):
 
       # TODO: ban_se returns the list of jobIDs interrupted by the banning
       pausedJobIDs = fts3.ban_se( context, storageElement, status, timeout, allow_submit )
+      self.log.info( "fts3.ban_se: %s" % pausedJobIDs )
 
       blacklist[endpoint] = json.loads( context.get( "ban/se" ) )
 
