@@ -8,12 +8,13 @@ from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import ENABLED
+from DIRAC.TransformationSystem.Utilities import JobInfo
 
 
 class TransformationInfo(object):
   """ hold information about transformations """
 
-  def __init__(self, transformationID, transName, tClient, jobDB, logDB, dMan, fcClient):
+  def __init__(self, transformationID, transName, tClient, jobDB, logDB, dMan, fcClient, jobMon):
     self.log = gLogger.getSubLogger("TInfo")
     self.tID = transformationID
     self.transName = transName
@@ -21,6 +22,7 @@ class TransformationInfo(object):
     self.jobDB = jobDB
     self.logDB = logDB
     self.dMan = dMan
+    self.jobMon = jobMon
     self.fcClient = fcClient
     self.olist = self.__getOutputList()
 
@@ -184,3 +186,36 @@ class TransformationInfo(object):
     for reason, lfns in errorReasons.items():
       self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
     self.log.notice("Successfully removed %d files" % successfullyRemoved)
+
+  def getJobs(self):
+    """get done and failed jobs"""
+    self.log.notice("Getting 'Done' Jobs...")
+    done = self.__getJobs(["Done"])
+    self.log.notice("Getting 'Failed' Jobs...")
+    failed = self.__getJobs(["Failed"])
+    if not done['OK']:
+      raise RuntimeError("Failed to get Done Jobs")
+    if not failed['OK']:
+      raise RuntimeError("Failed to get Failed Jobs")
+    done = done['Value']
+    failed = failed['Value']
+
+    jobs = {}
+    for job in done:
+      jobs[int(job)] = JobInfo(job, "Done", self.tID)
+    for job in failed:
+      jobs[int(job)] = JobInfo(job, "Failed", self.tID)
+
+    self.log.notice("Found %d Done Jobs " % len(done))
+    self.log.notice("Found %d Failed Jobs " % len(failed))
+
+  def __getJobs(self, status):
+    """returns list of done jobs"""
+    attrDict = dict(Status=status, JobGroup="%08d" % int(self.tID))
+    res = self.jobMon.getJobs(attrDict)
+    if res['OK']:
+      self.log.debug("Found Prod jobs: %s" % res['Value'])
+    else:
+      self.log.error("Error finding jobs: ", res['Message'])
+      raise RuntimeError("Failed to get jobs")
+    return res
