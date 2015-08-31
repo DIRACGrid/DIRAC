@@ -13,7 +13,11 @@ This module consists of DataManager and related classes.
 __RCSID__ = "$Id$"
 # # imports
 from datetime import datetime, timedelta
-import fnmatch, os, time
+import fnmatch
+import os
+import time
+import errno
+
 # # from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DError, DErrno
@@ -31,6 +35,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
+
 
 def _isOlderThan( stringTime, days ):
   timeDelta = timedelta( days = days )
@@ -486,14 +491,17 @@ class DataManager( object ):
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
-      errStr = "Failed to put file to Storage Element."
-      oDataOperation.setValueByKey( 'TransferOK', 0 )
-      oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-      oDataOperation.setEndTime()
-      gDataStoreClient.addRegister( oDataOperation )
-      startTime = time.time()
-      gDataStoreClient.commit()
-      log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      
+      # We don't consider it a failure if the SE is not valid
+      if not DErrno.cmpError( res, errno.EACCES ):
+        errStr = "Failed to put file to Storage Element."
+        oDataOperation.setValueByKey( 'TransferOK', 0 )
+        oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
+        oDataOperation.setEndTime()
+        gDataStoreClient.addRegister( oDataOperation )
+        gDataStoreClient.commit()
+        startTime = time.time()
+        log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
       log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
