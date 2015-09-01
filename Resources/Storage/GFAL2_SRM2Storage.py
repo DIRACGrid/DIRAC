@@ -24,7 +24,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     """ """
     self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
     self.log.debug( "GFAL2_SRM2Storage.__init__: Initializing object" )
-    # GFAL2_StorageBase.__init__( self, storageName, parameters )
     super( GFAL2_SRM2Storage, self ).__init__( storageName, parameters )
     self.pluginName = 'GFAL2_SRM2'
 
@@ -67,7 +66,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     '''
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    # res = GFAL2_StorageBase._getExtendedAttributes( self, path, attributes  )
     res = super( GFAL2_SRM2Storage, self )._getExtendedAttributes( path, attributes )
     self.__setSRMOptionsToDefault()
     return res
