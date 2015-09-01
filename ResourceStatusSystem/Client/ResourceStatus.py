@@ -5,6 +5,9 @@
 """
 
 import datetime
+import math
+from time import sleep
+
 
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
@@ -91,14 +94,22 @@ class ResourceStatus( object ):
 ################################################################################
 
   def __updateSECache( self ):
-    """
-      Method used to update the StorageElementCache.
+    """ Method used to update the StorageElementCache.
+
+        It will try 5 times to contact the RSS before giving up
     """
 
     meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
-    rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
-                                                    elementType = 'StorageElement',
-                                                    meta = meta )
+
+    for ti in range( 5 ):
+      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
+                                                     elementType = 'StorageElement',
+                                                     meta = meta )
+      if rawCache['OK']:
+        break
+      self.log.warn( "Can't get SE status", rawCache['Message'] + "; trial %d" % ti )
+      sleep( math.pow( ti, 2 ) )
+      self.rssClient = ResourceStatusClient()
 
     if not rawCache[ 'OK' ]:
       return rawCache
