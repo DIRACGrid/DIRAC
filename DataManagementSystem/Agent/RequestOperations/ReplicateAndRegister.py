@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: ReplicateAndRegister.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 18:49:12
@@ -23,8 +22,9 @@ __RCSID__ = "$Id $"
 # # imports
 import re
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gMonitor, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager                                import DataManager
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
@@ -56,31 +56,32 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
     return S_ERROR( failed )
 
   replicas = replicas["Successful"].get( opFile.LFN, {} )
+  noReplicas = False
   if not replicas:
     allReplicas = dataManager.getReplicas( opFile.LFN )
     if allReplicas['OK']:
       allReplicas = allReplicas['Value']['Successful'].get( opFile.LFN, {} )
       if not allReplicas:
-        log.warn( "File has no replica in File Catalog", opFile.LFN )
         ret['NoReplicas'].append( None )
+        noReplicas = True
+      else:
+        # We try inactive replicas to see if maybe the file doesn't exist at all
+        replicas = allReplicas
+      log.warn( "File has no%s replica in File Catalog" % ( '' if noReplicas else ' active' ), opFile.LFN )
     else:
       return allReplicas
 
   if not opFile.Checksum:
     # Set Checksum to FC checksum if not set in the request
     fcMetadata = FileCatalog().getFileMetadata( opFile.LFN )
-    fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum', '' )
+    fcChecksum = fcMetadata.get( 'Value', {} ).get( 'Successful', {} ).get( opFile.LFN, {} ).get( 'Checksum' )
     # Replace opFile.Checksum if it doesn't match a valid FC checksum
     if fcChecksum:
       opFile.Checksum = fcChecksum
       opFile.ChecksumType = fcMetadata['Value']['Successful'][opFile.LFN].get( 'ChecksumType', 'Adler32' )
 
   for repSEName in replicas:
-
-    repSE = StorageElement( repSEName )
-
-
-    repSEMetadata = repSE.getFileMetadata( opFile.LFN )
+    repSEMetadata = StorageElement( repSEName ).getFileMetadata( opFile.LFN )
     error = repSEMetadata.get( 'Message', repSEMetadata.get( 'Value', {} ).get( 'Failed', {} ).get( opFile.LFN ) )
     if error:
       log.warn( 'unable to get metadata at %s for %s' % ( repSEName, opFile.LFN ), error.replace( '\n', '' ) )
@@ -88,12 +89,16 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
         ret['NoReplicas'].append( repSEName )
       else:
         ret["NoMetadata"].append( repSEName )
-    else:
+    elif not noReplicas:
       repSEMetadata = repSEMetadata['Value']['Successful'][opFile.LFN]
 
       seChecksum = repSEMetadata.get( "Checksum" )
-      if ( opFile.Checksum and seChecksum and compareAdler( seChecksum, opFile.Checksum ) ) or\
-         ( not opFile.Checksum and not seChecksum ):
+      if not seChecksum and opFile.Checksum:
+        opFile.Checksum = None
+        opFile.ChecksumType = None
+      elif seChecksum and not opFile.Checksum:
+        opFile.Checksum = seChecksum
+      if not opFile.Checksum or not seChecksum or compareAdler( seChecksum, opFile.Checksum ):
         # # All checksums are OK
         ret["Valid"].append( repSEName )
       else:
@@ -102,6 +107,9 @@ def filterReplicas( opFile, logger = None, dataManager = None ):
                                                               repSEName,
                                                               seChecksum ) )
         ret["Bad"].append( repSEName )
+    else:
+      # If a replica was found somewhere, don't set the file as no replicas
+      ret['NoReplicas'] = []
 
   return S_OK( ret )
 
@@ -207,7 +215,7 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     else:
       if res['Value']['Failed']:
         self.log.warn( "Can't schedule %d files: problems getting the metadata: %s" % ( len( res['Value']['Failed'] ),
-                                                                                ', '.join( res['Value']['Failed'] ) ) )
+                                                                                        ', '.join( res['Value']['Failed'] ) ) )
       metadata = res['Value']['Successful']
 
     filesToScheduleList = []

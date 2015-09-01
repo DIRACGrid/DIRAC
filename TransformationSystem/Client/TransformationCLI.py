@@ -365,7 +365,7 @@ class TransformationCLI( cmd.Cmd, API ):
   def do_resetFile( self, args ):
     """Reset file status for the given transformation
 
-    usage: resetFile <transName|ID> <lfn>
+    usage: resetFile <transName|ID> <lfns>
     """
     argss = args.split()
     if not len( argss ) > 1:
@@ -377,7 +377,7 @@ class TransformationCLI( cmd.Cmd, API ):
     if not res['OK']:
       print "Failed to reset file status: %s" % res['Message']
     else:
-      if res['Value']['Failed']:
+      if 'Failed' in res['Value']:
         print "Could not reset some files: "
         for lfn, reason in res['Value']['Failed'].items():
           print lfn, reason

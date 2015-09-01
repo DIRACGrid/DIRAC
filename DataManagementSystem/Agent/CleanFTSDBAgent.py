@@ -23,7 +23,8 @@ __RCSID__ = "$Id: $"
 # # imports
 import datetime
 # # from DIRAC
-from DIRAC import S_OK, gMonitor
+from DIRAC import S_OK
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob

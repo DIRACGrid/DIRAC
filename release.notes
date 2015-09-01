@@ -1,3 +1,36 @@
+[v6r15-pre2]
+
+*Core
+NEW: New class DError for reporting errors in output results of DIRAC functions 
+CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems in
+        documentation generation
+NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
+NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
+NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
+
+*RSS
+NEW: CE Availability policy, closing #2373
+
+*DMS
+CHANGE: FileCatalogClient - make explicit methods for all service calls
+
+*WMS
+NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
+     site( pilot ) to the jobs to select ones with required properties
+
+[v6r14p1]
+
+*Core
+NEW: dirac-install-component command replacing dirac-install-agent/service/executor
+     commands
+     
+*Resources
+NEW: FileStorage - plugin for "file" protocol
+FIX: ARCComputingElement - evaluate as int the job exit code
+
+*RSS
+FIX: CSHelpers - several fixes and beautifications     
+
 [v6r14]
 
 *Core
@@ -41,6 +74,27 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p14]
+
+*DMS
+FIX: ReplicateAndRegister - fix a problem when a file is set Problematic 
+     in the FC but indeed doesn't exist at all 
+
+*Resources
+CHANGE: StorageFactory - enhance the logic of BaseSE inheritance in the
+        SE definition in the CS
+        
+*WMS
+CHANGE: CPUNormalization, dirac-wms-cpu-normalization - reading CPU power 
+        from MJF for comparison with the DIRAC evaluation
+FIX: SiteDirector - create pilot working directory in the batch system working
+     directory and not in "/tmp"                
+
+[v6r13p13]
+
+*DMS
+BUGFIX: FileCatalogClient - bug fixed in getDirectoryMetadata()
 
 [v6r13p12]
 
@@ -326,6 +380,18 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p49]
+
+*Resources
+FIX: GlobusComputingElement - in killJob added -f switch to globus-job-clean command
+FIX: ARCComputingElement - create working directory if it does not exist
+
+*DMS
+CHANGE: DataManager - added XROOTD to registration protocols
+
+*TMS
+FIX: TransformationCLI - doc string
 
 [v6r12p48]
 

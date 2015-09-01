@@ -7,8 +7,12 @@
 
 import copy
 
-from DIRAC                                import S_OK#, S_ERROR
+from DIRAC                                import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
+
+from DIRAC                                       import gConfig, gLogger
+
+
 
 __RCSID__ = '$Id: $'
 
@@ -125,7 +129,85 @@ class InfoGetter:
 #       
 #    return S_OK( policiesToBeLoaded )
 
-  def __getPoliciesThatApply( self, decisionParams ):
+  def __getComputingElementsByDomainName( self , targetDomain = None ):
+    '''
+      WARNING: TO ADD TO CSHelpers
+      Gets all computing elements from /Resources/Sites/<>/<>/CE
+    '''
+    
+    _basePath = 'Resources/Sites'
+  
+    ces = []
+  
+    domainNames = gConfig.getSections( _basePath )
+    if not domainNames[ 'OK' ]:
+      return S_ERROR("No domain names have been specified on the CS")
+    domainNames = domainNames[ 'Value' ]
+  
+    unknownDomains = list( set(targetDomain) - set(domainNames) )
+    if len(unknownDomains) > 0:
+      gLogger.warn( "Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains )
+    
+    knownDomains = list( set(domainNames) & set(targetDomain) )
+    if len(knownDomains) == 0:
+      gLogger.warn("Policy parameters domain names do not match with any CS domain names")
+      return S_OK([])
+      
+    for domainName in knownDomains:
+      gLogger.info( "Fetching the list of Computing Elements belonging to domain %s" % domainName )
+      domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+      if not domainSites[ 'OK' ]:
+        return domainSites
+      domainSites = domainSites[ 'Value' ]
+    
+      for site in domainSites:
+        siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
+        if not siteCEs[ 'OK' ]:
+          #return siteCEs
+          gLogger.error( siteCEs[ 'Message' ] )
+          continue
+        siteCEs = siteCEs[ 'Value' ]
+        ces.extend( siteCEs )  
+
+    # Remove duplicated ( just in case )
+    ces = list( set ( ces ) )
+    gLogger.info( "List of CEs: %s" % str( ces ) )
+    
+    return S_OK( ces ) 
+  
+  
+  
+  def __filterPolicies( self, decissionParams, policyMatchParams):
+    '''
+      Method that checks if the given policy doesn't meet certain conditions
+    '''
+    
+    
+    #some policies may apply or not also depending on the VO's domain
+    # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
+    if decissionParams['elementType'] and decissionParams['name']:
+      elementType = decissionParams['elementType']
+      name = decissionParams['name']
+      if elementType.lower() == 'computingelement' and 'domain' in policyMatchParams:
+        #WARNING: policyMatchParams['domain'] is a list of domains
+        domains = policyMatchParams['domain']
+        result = self.__getComputingElementsByDomainName( targetDomain = domains )
+        if result['OK']:
+          ces = result['Value']
+          #to verify that the given CE is in the list of the LCG CEs
+          if name not in ces:
+            gLogger.info( "ComputingElement %s NOT found in domains %s" % ( name, domains )  )
+            return False
+          else:
+            gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
+        else:
+          gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
+    
+    return True
+  
+  
+
+  def __getPoliciesThatApply( self, decissionParams ):
     '''
       Method that matches the input dictionary with the policies configuration in
       the CS. It returns a list of policy dictionaries that matched.
@@ -167,13 +249,17 @@ class InfoGetter:
       # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
       policyConfigParams = {}
       #policyConfigParams = policySetup.get( 'configParams', {} )
+      policyMatch = Utils.configMatch( decissionParams, policyMatchParams )
+      policyFilter = self.__filterPolicies( decissionParams, policyMatchParams )
       
-      policyMatch = Utils.configMatch( decisionParams, policyMatchParams )
-      if policyMatch:
+      #WARNING: we need an additional filtering function when the matching
+      #is not straightforward (e.g. when the policy specify a 'domain', while
+      #the decisionParams has only the name of the element)  
+      if policyMatch and policyFilter:
         policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
         
-    policiesToBeLoaded = []    
-    
+    policiesToBeLoaded = []   
+        
     # Gets policies parameters from code.    
     for policyName, policyType, _policyConfigParams in policiesThatApply:
       
@@ -199,6 +285,8 @@ class InfoGetter:
       policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
+  
+  
 
   @staticmethod
   def __getPolicyActionsThatApply2( decisionParams, singlePolicyResults,

@@ -7,9 +7,8 @@ import unittest
 import mock
 from datetime import datetime, timedelta
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-from DIRAC.Core.LCG.SLSClient import getAvailabilityStatus, getServiceInfo
+# from DIRAC.Core.LCG.SLSClient import getAvailabilityStatus, getServiceInfo
 # from DIRAC.Core.LCG.SAMResultsClient import *
-from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient
 # #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 # #from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 #
@@ -24,7 +23,6 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.GOCCli = GOCDBClient()
 #     self.SAMCli = SAMResultsClient()
-    self.GGUSCli = GGUSTicketsClient()
 
 # #############################################################################
 
@@ -214,13 +212,6 @@ class GOCDBClientSuccess( ClientsTestCase ):
 #
 # #############################################################################
 
-class GGUSTicketsClientSuccess( ClientsTestCase ):
-
-  def test_getTicketsList( self ):
-    res = self.GGUSCli.getTicketsList( 'INFN-CAGLIARI' )
-    self.assertEqual( res['OK'], True )
-
-
 # #############################################################################
 #
 if __name__ == '__main__':
@@ -230,5 +221,4 @@ if __name__ == '__main__':
 # #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientFailure))
 #   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SLSClientSuccess ) )
 # #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientFailure))
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GGUSTicketsClientSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
