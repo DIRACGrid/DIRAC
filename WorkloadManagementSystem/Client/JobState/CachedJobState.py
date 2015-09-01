@@ -1,5 +1,10 @@
+""" I wish who wrote this would have put some doc...
+"""
 
-import types, copy, time
+import types
+import copy
+import time
+
 from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
@@ -79,7 +84,7 @@ class CachedJobState( object ):
       result = self.__jobState.setManifest( self.__manifest )
       if not result[ 'OK' ]:
         self.cleanState()
-        for i in range( 5 ):
+        for _ in range( 5 ):
           if self.__jobState.rescheduleJob()[ 'OK' ]:
             break
         return result
@@ -89,7 +94,7 @@ class CachedJobState( object ):
       result = self.__jobState.insertIntoTQ()
       if not result[ 'OK' ]:
         self.cleanState()
-        for i in range( 5 ):
+        for _ in range( 5 ):
           if self.__jobState.rescheduleJob()[ 'OK' ]:
             break
         return result
@@ -109,7 +114,7 @@ class CachedJobState( object ):
 
   @staticmethod
   def deserialize( stub ):
-    dataTuple, slen = DEncode.decode( stub )
+    dataTuple, _slen = DEncode.decode( stub )
     if len( dataTuple ) != 7:
       return S_ERROR( "Invalid stub" )
     #jid
@@ -369,10 +374,7 @@ class CachedJobState( object ):
   def resetJob( self, source = "" ):
     """ Reset the job!
     """
-    result = self.__jobState.resetJob( source = source )
-    if result[ 'OK' ]:
-      self.__resetState()
-    return result
+    return self.__jobState.resetJob( source = source )
 
   def getInputData( self ):
     return self.__cacheResult( "inputData" , self.__jobState.getInputData )
