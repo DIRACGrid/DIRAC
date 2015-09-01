@@ -8,16 +8,18 @@ from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
-from DIRAC.TransformationSystem.Utilities.JobInfo import ENABLED
 
 from collections import OrderedDict
+from itertools import izip_longest
 
 
 class TransformationInfo(object):
   """ hold information about transformations """
 
-  def __init__(self, transformationID, transName, transType, tClient, jobDB, logDB, dMan, fcClient, jobMon):
+  def __init__(self, transformationID, transName, transType, enabled,
+               tClient, jobDB, logDB, dMan, fcClient, jobMon):
     self.log = gLogger.getSubLogger("TInfo")
+    self.enabled = enabled
     self.tID = transformationID
     self.transName = transName
     self.tClient = tClient
@@ -87,14 +89,14 @@ class TransformationInfo(object):
 
   def setJobDone(self, job):
     """ set the taskID to Done"""
-    if not ENABLED:
+    if not self.enabled:
       return
     self.__setTaskStatus(job, 'Done')
     self.__updateJobStatus(job.jobID, "Done", "Job forced to Done")
 
   def setJobFailed(self, job):
     """ set the taskID to Done"""
-    if not ENABLED:
+    if not self.enabled:
       return
     self.__setTaskStatus(job, 'Failed')
     self.__updateJobStatus(job.jobID, "Failed", minorstatus="Job forced to Failed")
@@ -113,7 +115,7 @@ class TransformationInfo(object):
 
   def __setInputStatus(self, job, status):
     """set the input file to status"""
-    if ENABLED:
+    if self.enabled:
       result = self.tClient.setFileStatusForTransformation(self.tID, status, [job.inputFile], force=True)
       if not result['OK']:
         gLogger.error("Failed updating status", result['Message'])
@@ -131,7 +133,7 @@ class TransformationInfo(object):
     """
     self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (jobID, status))
 
-    if ENABLED:
+    if self.enabled:
       result = self.jobDB.setJobAttribute(jobID, 'Status', status, update=True)
     else:
       return S_OK('DisabledMode')
@@ -165,16 +167,26 @@ class TransformationInfo(object):
 
   def cleanOutputs(self, jobInfo):
     """remove all job outputs"""
-    return
-    if not ENABLED:
-      return
     if len(jobInfo.outputFiles) == 0:
       return
     descendants = self.__findAllDescendants(jobInfo.outputFiles)
-    filesToDelete = jobInfo.outputFiles + descendants
+    existingOutputFiles = [
+        lfn for lfn,
+        status in izip_longest(
+            jobInfo.outputFiles,
+            jobInfo.outputFileStatus) if status == "Exists"]
+    filesToDelete = existingOutputFiles + descendants
+
+    if not filesToDelete:
+      return
+
+    self.log.notice("Remove these files: \n +++ %s " % "\n +++ ".join(filesToDelete))
+    if not self.enabled:
+      return
 
     errorReasons = {}
     successfullyRemoved = 0
+
     for lfnList in breakListIntoChunks(filesToDelete, 200):
       result = self.dMan.removeFile(lfnList)
       if not result['OK']:

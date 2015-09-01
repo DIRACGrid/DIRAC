@@ -108,7 +108,7 @@ class JobInfo(object):
       raise RuntimeError("Failed to check Requests: %s " % result['Message'])
     if self.jobID in result['Value']['Successful']:
       request = result['Value']['Successful'][self.jobID]
-      self.pendingRequest = request.Status != "Done"
+      self.pendingRequest = request.Status not in ("Done", "Canceled")
 
   def __getJDL(self, jobMon):
     """return jdlList for this job"""
@@ -182,30 +182,24 @@ class JobInfo(object):
 
   def setJobDone(self, tInfo):
     """mark job as done in wms and transformationsystem"""
-    if ENABLED:
-      tInfo.setJobDone(self)
+    tInfo.setJobDone(self)
 
   def setJobFailed(self, tInfo):
     """mark job as failed in  wms and transformationsystem"""
-    if ENABLED:
-      tInfo.setJobFailed(self)
+    tInfo.setJobFailed(self)
 
   def setInputProcessed(self, tInfo):
     """mark input file as Processed"""
-    if ENABLED:
-      tInfo.setInputProcessed(self)
+    tInfo.setInputProcessed(self)
 
   def setInputDeleted(self, tInfo):
     """mark input file as Deleted"""
-    if ENABLED:
-      tInfo.setInputDeleted(self)
+    tInfo.setInputDeleted(self)
 
   def setInputUnused(self, tInfo):
     """mark input file as Unused"""
-    if ENABLED:
-      tInfo.setInputProcessed(self)
+    tInfo.setInputProcessed(self)
 
   def cleanOutputs(self, tInfo):
     """remove all job outputs"""
-    if ENABLED:
-      tInfo.cleanOutputs(self)
+    tInfo.cleanOutputs(self)
