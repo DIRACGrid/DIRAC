@@ -9,6 +9,7 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
+
 __RCSID__ = "$Id$"
 
 import os
