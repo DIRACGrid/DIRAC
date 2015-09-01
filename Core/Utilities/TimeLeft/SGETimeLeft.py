@@ -1,19 +1,18 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The SGE TimeLeft utility interrogates the SGE batch system for the
     current CPU consumed, as well as its limit.
 """
 
+__RCSID__ = "$Id$"
+
+import os
+import re
+import time
+import socket
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
-__RCSID__ = "$Id$"
-
-import os, re, time, socket
-
-class SGETimeLeft:
+class SGETimeLeft( object ):
   """
    This is the SGE plugin of the TimeLeft Utility
   """
