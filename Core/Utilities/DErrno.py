@@ -30,6 +30,19 @@ ECONF = 1006
 EGFAL = 1007
 EBADCKS = 1008
 
+# 1000: Generic
+# 1100: Core
+# 1200: Framework
+# 1300: Interfaces
+# 1400: Config
+# 1500: WMS / Workflow
+# 1600: DMS/StorageManagement
+# 1700: RMS
+# 1800: Accounting
+# 1900: TS
+# 2000: RSS
+
+
 # This translates the integer number into the name of the variable
 dErrorCode = { 1001 : 'ERRX',
                1002 : 'ERRY',
