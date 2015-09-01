@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ Definitions of a standard set of pilot commands
 
     Each commands is represented by a class inheriting CommandBase class.
@@ -21,14 +17,14 @@
     execution.
 """
 
+__RCSID__ = "$Id$"
+
 import sys
 import os
 import stat
 import socket
 
 from pilotTools import CommandBase, retrieveUrlTimeout
-
-__RCSID__ = "$Id$"
 
 class GetPilotVersion( CommandBase ):
   """ Used to get the pilot version that needs to be installed.
@@ -460,8 +456,8 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
     # Generic JOB_ID
     elif os.environ.has_key( 'JOB_ID' ):
-       self.pp.flavour = 'Generic'
-       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
+      self.pp.flavour = 'Generic'
+      pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
     if os.environ.has_key( 'CONDOR_JOBID' ):
