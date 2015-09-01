@@ -10,6 +10,8 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.TransformationSystem.Utilities.JobInfo import ENABLED
 
+from collections import OrderedDict
+
 
 class TransformationInfo(object):
   """ hold information about transformations """
@@ -213,6 +215,7 @@ class TransformationInfo(object):
       jobs[int(job)] = JobInfo(job, "Done", self.tID, self.transType)
     for job in failed:
       jobs[int(job)] = JobInfo(job, "Failed", self.tID, self.transType)
+    jobs = OrderedDict(sorted(jobs.items(), key=lambda t: t[0]))
 
     self.log.notice("Found %d Done Jobs " % len(done))
     self.log.notice("Found %d Failed Jobs " % len(failed))
