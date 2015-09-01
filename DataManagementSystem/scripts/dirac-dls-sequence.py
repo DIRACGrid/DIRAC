@@ -96,13 +96,14 @@ def printSequence( seq, full = False ):
       for x in range( cpt + 1 ):
         line += '\t'
       if full :
-        line += '\t%s%s%s%s%s%s'\
+        line += '\t%s%s%s%s%s%s%s'\
           % ( action.status,
               ', File %s' % action.file.name if action.file else '',
               ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
               ', TargetSE %s' % action.targetSE.name if action.targetSE else '',
               ', Extra %s' % action.extra if action.extra else '',
-              ', ErrorMessage %s' % action.errorMessage if action.errorMessage else '' )
+              ', ErrorCode %s ' % action.errorCode if action.errorCode else '',
+              ', ErrorMessage %s ' % action.errorMessage if action.errorMessage else '' )
       else :
         line += '\t%s%s%s%s'\
             % ( action.status,
@@ -144,12 +145,13 @@ def printSequenceLFN( seq, lfn, full = False ):
       if action.file.name == lfn:
         line = base
         if full :
-          line += '%s%s%s%s%s '\
+          line += '%s%s%s%s%s%s'\
               % ( action.status,
                   ', SourceSE %s' % action.srcSE.name if action.srcSE else '',
                   ', TargetSE %s' % action.targetSE.name if action.targetSE else '',
                   ', Extra %s' % action.extra if action.extra else '',
-                  ', ErrorMessage %s' % action.errorMessage if action.errorMessage else '' )
+                  ', ErrorCode %s ' % action.errorCode if action.errorCode else '',
+                  ', ErrorMessage %s ' % action.errorMessage if action.errorMessage else '' )
           seqLines.append( line )
         else :
           line += '%s%s%s'\

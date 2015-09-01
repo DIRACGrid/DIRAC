@@ -4,15 +4,18 @@ Created on May 4, 2015
 @author: Corentin Berger
 '''
 
-import functools
-import types
-import sys
+import functools, types, sys, time, random
 
 from types import StringTypes
 from threading import current_thread
 
 from DIRAC import gLogger
 
+from DIRAC.Core.Utilities                           import DEncode
+from DIRAC.RequestManagementSystem.Client.Request   import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+# from dls
 import DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities as DLUtilities
 from DIRAC.DataManagementSystem.Client.DataLogging.DLUtilities import getCallerName
 from DIRAC.DataManagementSystem.Client.DataLogging.DLAction import DLAction
@@ -20,7 +23,6 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLThreadPool import DLThreadP
 from DIRAC.DataManagementSystem.Client.DataLogging.DLFile import DLFile
 from DIRAC.DataManagementSystem.Client.DataLogging.DLStorageElement import DLStorageElement
 from DIRAC.DataManagementSystem.Client.DataLogging.DLMethodName import DLMethodName
-
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException, NoLogException
 
@@ -233,7 +235,7 @@ class _DataLoggingDecorator( object ):
       for actionArgs in actionsArgs :
         methodCall.addAction( DLAction( DLFile( actionArgs['file'] ), 'Unknown',
               DLStorageElement( actionArgs['srcSE'] ), DLStorageElement( actionArgs['targetSE'] ),
-              actionArgs['extra'], None ) )
+              actionArgs['extra'], None, None ) )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.initializeActions %s' % e )
       raise DLException( e )
@@ -323,10 +325,24 @@ class _DataLoggingDecorator( object ):
     """ this method call method named insertSequence from DLClient
         to insert a sequence into database
     """
+    seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
     try :
       client = DataLoggingClient()
-      seq = DLThreadPool.popDataLoggingSequence( current_thread().ident )
-      client.insertSequence( seq, self.argsDecorator['directInsert'] )
+      res = client.insertSequence( seq, self.argsDecorator['directInsert'] )
+      if not res['OK'] :
+        rpcstub = list( res[ 'rpcStub' ] )
+        arguments = list( rpcstub[2] )
+        arguments[0] = seq.toJSON()['Value']
+        arguments = tuple( arguments )
+        rpcstub[2] = arguments
+        rpcstub = tuple( rpcstub )
+        request = Request()
+        request.RequestName = "DataManagement.DataLogging.%s.%s" % ( time.time(), random.random() )
+        forwardDISETOp = Operation()
+        forwardDISETOp.Type = "ForwardDISET"
+        forwardDISETOp.Arguments = DEncode.encode( rpcstub )
+        request.addOperation( forwardDISETOp )
+        res = ReqClient().putRequest( request )
     except Exception as e:
       gLogger.error( 'unexpected Exception in DLDecorator.insertSequence %s' % e )
       raise

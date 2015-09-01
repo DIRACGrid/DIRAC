@@ -81,7 +81,12 @@ class DataLoggingHandler( RequestHandler ):
       :param directInsert, a boolean, if we want to insert directly as a DLSequence and not a DLCompressedSequence
     """
     if directInsert :
-      sequenceJSON = zlib.decompress( sequenceCompressed )
+      # if the compressed sequence has been inserted by the RequestManager,
+      # the value is just a JSON DLSequence object representation which is not compressed
+      try :
+        sequenceJSON = zlib.decompress( sequenceCompressed )
+      except zlib.error :
+        sequenceJSON = sequenceCompressed
       sequence = json.loads( sequenceJSON , cls = DLDecoder )
       res = cls.__dataLoggingDB.insertSequenceDirectly( sequence )
     else :
@@ -133,10 +138,11 @@ class DataLoggingHandler( RequestHandler ):
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
-  types_getMethodCallOnFile = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+  types_getMethodCall = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                               ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
                                ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getMethodCallOnFile( cls, fileName, before = None, after = None, status = None ):
+  def export_getMethodCall( cls, fileName = None, name = None, before = None, after = None, status = None ):
     """
       this method call the getMethodCallOnFile method of DataLoggingDB
 
@@ -147,28 +153,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return methodCalls, a list of method call
     """
-    res = cls.__dataLoggingDB.getMethodCallOnFile( fileName, before, after, status )
-    if not res["OK"]:
-      return res
-    methodCalls = [call.toJSON()['Value'] for call in res['Value']]
-    return S_OK( methodCalls )
-
-
-  types_getMethodCallByName = [StringTypes, ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), \
-                               ( list( StringTypes ) + [NoneType] )]
-  @classmethod
-  def export_getMethodCallByName( cls, methodName, before = None, after = None, status = None ):
-    """
-      this method call the getMethodCallByName method of DataLoggingDB
-
-      :param name, name of the method
-      :param before, a date
-      :param after, a date
-      :param status, a str in [ Failed, Successful, Unknown ], can be None
-
-      :return methodCalls, a list of method call
-    """
-    res = cls.__dataLoggingDB.getMethodCallByName( methodName, before, after, status )
+    res = cls.__dataLoggingDB.getMethodCall( fileName, name, before, after, status )
     if not res["OK"]:
       return res
     methodCalls = [call.toJSON()['Value'] for call in res['Value']]

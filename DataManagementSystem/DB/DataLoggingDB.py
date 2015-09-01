@@ -109,6 +109,7 @@ dataLoggingActionTable = Table( 'DLAction', metadata,
                    Column( 'targetSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
                    Column( 'extra', String( 2048 ) ),
                    Column( 'errorMessage', String( 2048 ) ),
+                   Column( 'errorCode', Integer ),
                    mysql_engine = 'InnoDB' )
 # Map the DLAction object to the dataLoggingActionTable, with two foreign key constraints,
 # and one relationship between attribute file and table DLFile
@@ -337,8 +338,12 @@ class DataLoggingDB( object ):
       if rows:
         # if we have found some
         for sequenceCompressed in rows :
-
-          sequenceJSON = zlib.decompress( sequenceCompressed.value )
+          # if the compressed sequence has been inserted by the RequestManager,
+          # the value is just a JSON DLSequence object representation which is not compressed
+          try :
+            sequenceJSON = zlib.decompress( sequenceCompressed.value )
+          except zlib.error :
+            sequenceJSON = sequenceCompressed.value
           # decode of the JSON
           sequence = json.loads( sequenceJSON , cls = DLDecoder )
           # we save in sequences dictionary
@@ -711,8 +716,6 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime <= before )
     elif after :
       query = query.filter( DLMethodCall.creationTime >= after )
-
-
     if status :
       query = query.filter( DLAction.status == status )
 
@@ -779,53 +782,11 @@ class DataLoggingDB( object ):
     return S_OK( seqs )
 
 
-  def getMethodCallOnFile( self, lfn, before, after, status ):
+  def getMethodCall( self, lfn, name, before, after, status ):
     """
       get all operation about a file's name, before and after are date
 
       :param lfn, a lfn name
-      :param before, a date, can be None
-      :param after, a date, can be None
-      :param status, a str in [ Failed, Successful, Unknown ], can be None
-
-      :return calls: a list of DLMethodCall
-    """
-    targetSE_alias = aliased( DLStorageElement )
-    session = self.DBSession()
-    query = session.query( DLMethodCall )\
-                .outerjoin( DLMethodName )\
-                .outerjoin( DLAction )\
-                .outerjoin( DLFile )\
-                .outerjoin( DLAction.srcSE )\
-                .outerjoin( targetSE_alias, DLAction.targetSE )\
-                .filter( DLFile.name == lfn )\
-                .order_by( DLMethodCall.creationTime )
-    if before and after :
-      query = query.filter( DLMethodCall.creationTime.between( after, before ) )
-    elif before :
-      query = query.filter( DLMethodCall.creationTime <= before )
-    elif after :
-      query = query.filter( DLMethodCall.creationTime >= after )
-
-    if status :
-      query = query.filter( DLAction.status == status )
-
-    try:
-      calls = query.distinct( DLMethodCall.methodCallID ).limit( 1000 )
-    except Exception, e:
-      gLogger.error( "getLFNOperation: unexpected exception %s" % e )
-      return S_ERROR( "getLFNOperation: unexpected exception %s" % e )
-
-    finally:
-      session.expunge_all()
-      session.close()
-
-    return S_OK( calls )
-
-  def getMethodCallByName( self, name, before, after, status ):
-    """
-      get all operation about a method call name
-
       :param name, a method name
       :param before, a date, can be None
       :param after, a date, can be None
@@ -841,9 +802,11 @@ class DataLoggingDB( object ):
                 .outerjoin( DLFile )\
                 .outerjoin( DLAction.srcSE )\
                 .outerjoin( targetSE_alias, DLAction.targetSE )\
-                .filter( DLMethodName.name == name )\
                 .order_by( DLMethodCall.creationTime )
-
+    if lfn :
+      query = query.filter( DLFile.name == lfn )
+    if name :
+      query = query.filter( DLMethodName.name == name )
     if before and after :
       query = query.filter( DLMethodCall.creationTime.between( after, before ) )
     elif before :

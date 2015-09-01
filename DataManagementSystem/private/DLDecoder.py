@@ -32,7 +32,7 @@ class DLDecoder( json.JSONDecoder ):
       typeObj = d.pop( '__type__' )
       try:
         if typeObj == 'DLAction':
-          obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'] )
+          obj = DLAction( d['file'], d['status'] , d['srcSE'], d['targetSE'], d['extra'], d['errorMessage'], d['errorCode'] )
         elif typeObj == 'DLSequence':
           obj = DLSequence( d['methodCalls'], d['caller'], d['sequenceID'], d['userName'], d['group'], d['hostName'], d['extra'] )
         elif typeObj == 'DLFile':

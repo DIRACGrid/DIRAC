@@ -52,7 +52,6 @@ class DataLoggingClient( Client ):
       sequence.group = DLGroup( proxyInfo.get( 'group' ) )
     # we get the host name
     sequence.hostName = DLHostName( socket.gethostname() )
-
     sequenceJSON = sequence.toJSON()
     if not sequenceJSON["OK"]:
       gLogger.error( sequenceJSON['Message'] )
@@ -101,27 +100,11 @@ class DataLoggingClient( Client ):
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getMethodCallOnFile( self, fileName, before = None, after = None, status = None ):
+  def getMethodCall( self, fileName = None, name = None, before = None, after = None, status = None ):
     """
       This select all method call about a file, you can specify a date before, a date after and both to make a between
 
       :param fileName, a LFN
-      :param before, a date
-      :param after, a date
-      :param status, a str in [ Failed, Successful, Unknown ], can be None
-
-      :return methodCalls, a list of method call
-    """
-    res = self.dataLoggingManager.getMethodCallOnFile( fileName, before, after, status )
-    if not res["OK"]:
-      return res
-    methodCalls = [json.loads( call, cls = DLDecoder ) for call in res['Value']]
-    return S_OK( methodCalls )
-
-  def getMethodCallByName( self, name, before = None, after = None, status = None ):
-    """
-      This select all method call about a specific method name, you can specify a date before, a date after and both to make a between
-
       :param name, name of the method
       :param before, a date
       :param after, a date
@@ -129,7 +112,7 @@ class DataLoggingClient( Client ):
 
       :return methodCalls, a list of method call
     """
-    res = self.dataLoggingManager.getMethodCallByName( name, before, after, status )
+    res = self.dataLoggingManager.getMethodCall( fileName, name, before, after, status )
     if not res["OK"]:
       return res
     methodCalls = [json.loads( call, cls = DLDecoder ) for call in res['Value']]
