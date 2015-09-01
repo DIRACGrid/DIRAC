@@ -20,7 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path    import cfgPath
 from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
 from DIRAC.Core.Security.ProxyInfo                    import getVOfromProxyGroup
 
-class StorageFactory:
+class StorageFactory( object ):
 
   def __init__( self, useProxy = False, vo = None ):
     self.rootConfigPath = '/Resources/StorageElements'
@@ -49,7 +49,7 @@ class StorageFactory:
   def getStorageName( self, initialName ):
     return self._getConfigStorageName( initialName, 'Alias' )
 
-  def getStorage( self, parameterDict ):
+  def getStorage( self, parameterDict, hideExceptions = False ):
     """ This instantiates a single storage for the details provided and doesn't check the CS.
     """
     # The storage name must be supplied.
@@ -71,9 +71,9 @@ class StorageFactory:
       gLogger.error( errStr )
       return S_ERROR( errStr )
 
-    return self.__generateStorageObject( storageName, pluginName, parameterDict )
+    return self.__generateStorageObject( storageName, pluginName, parameterDict, hideExceptions = hideExceptions )
 
-  def getStorages( self, storageName, pluginList = None ):
+  def getStorages( self, storageName, pluginList = None, hideExceptions = False ):
     """ Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
 
         'storageName' is the DIRAC SE name i.e. 'CERN-RAW'
@@ -132,7 +132,7 @@ class StorageFactory:
       if pluginList and pluginName not in pluginList:
         continue
       protocol = protocolDict['Protocol']
-      result = self.__generateStorageObject( storageName, pluginName, protocolDict )
+      result = self.__generateStorageObject( storageName, pluginName, protocolDict, hideExceptions = hideExceptions )
       if result['OK']:
         self.storages.append( result['Value'] )
         if pluginName in self.localPlugins:
@@ -324,14 +324,15 @@ class StorageFactory:
   # Below is the method for obtaining the object instantiated for a provided storage configuration
   #
 
-  def __generateStorageObject( self, storageName, pluginName, parameters ):
+  def __generateStorageObject( self, storageName, pluginName, parameters, hideExceptions = False ):
 
     storageType = pluginName
     if self.proxy:
       storageType = 'Proxy'
 
     objectLoader = ObjectLoader()
-    result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage' )
+    result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage',
+                                      hideExceptions = hideExceptions )
     if not result['OK']:
       gLogger.error( 'Failed to load storage object: %s' % result['Message'] )
       return result

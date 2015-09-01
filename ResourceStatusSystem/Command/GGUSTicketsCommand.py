@@ -8,7 +8,7 @@
 
 import urllib2
 
-from DIRAC                                                      import gLogger, S_ERROR, S_OK
+from DIRAC                                                      import S_ERROR, S_OK
 from DIRAC.Core.LCG.GGUSTicketsClient                           import GGUSTicketsClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -162,7 +162,7 @@ class GGUSTicketsCommand( Command ):
 #    
 #    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )   
     
-    gLogger.info( 'Processing %s' % ', '.join( gocSites ) )
+    self.log.info( 'Processing %s' % ', '.join( gocSites ) )
     
     for gocNameToQuery in gocSites:
       

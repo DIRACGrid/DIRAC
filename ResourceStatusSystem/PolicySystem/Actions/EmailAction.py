@@ -1,20 +1,16 @@
-# $HeadURL:  $
-''' EmailAction
+''' Action that sends and email
 
 '''
 
-from DIRAC                                                      import gConfig, gLogger, S_ERROR, S_OK
+from DIRAC                                                      import gConfig, S_ERROR, S_OK
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
-#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 
 __RCSID__ = '$Id:  $'
 
 class EmailAction( BaseAction ):
-  '''
-    Action that sends an email with the information concerning the status and 
-    the policies run.
+  ''' Action that sends an email with the information concerning the status and the policies run.
   '''
   
   def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
@@ -25,9 +21,7 @@ class EmailAction( BaseAction ):
     self.diracAdmin = DiracAdmin()
 
   def run( self ):
-    '''
-      Checks it has the parameters it needs and tries to send an email to the users
-      that apply.
+    ''' Checks it has the parameters it needs and tries to send an email to the users that apply.
     '''    
     
     # Minor security checks
@@ -110,7 +104,7 @@ class EmailAction( BaseAction ):
       try:
         userEmails.extend( notifications[ notificationGroupName ][ 'users' ] ) 
       except KeyError:
-        gLogger.error( '%s not present' % notificationGroupName )
+        self.log.error( '%s not present' % notificationGroupName )
 
     return S_OK( userEmails )
 

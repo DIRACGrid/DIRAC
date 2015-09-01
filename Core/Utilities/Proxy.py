@@ -24,7 +24,7 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC                                               import gConfig, S_ERROR
+from DIRAC                                               import gConfig, gLogger, S_ERROR
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData  import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOMSAttributeForGroup, getDNForUsername
@@ -80,6 +80,7 @@ def executeWithUserProxy( fcn ):
                                                     cacheTime =  3600 )
 
       if not result['OK']:
+        gLogger.warn( "Can't download proxy to file", result['Message'] )
         return result
 
       proxyFile = result['Value']

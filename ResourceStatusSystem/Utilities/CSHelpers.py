@@ -156,15 +156,30 @@ def getStorageElementsHosts( seNames = None ):
 
     seHost = getSEHost( seName )
     if not seHost['OK']:
-      return seHost
+      gLogger.warn( "Could not get SE Host", "SE: %s" % seName )
+      continue
     if seHost['Value']:
-      seHosts.append( seHost )
+      seHosts.append( seHost['Value'] )
 
   return S_OK( list( set( seHosts ) ) )
 
 def _getSEParameters( seName ):
-  se = StorageElement( seName )
-  seParameters = se.getStorageParameters( 'SRM2' )
+  se = StorageElement( seName, hideExceptions = True )
+
+  pluginsList = se.getPlugins()
+  if not pluginsList['OK']:
+    gLogger.warn( pluginsList['Message'], "SE: %s" % seName )
+    return pluginsList
+  pluginsList = pluginsList['Value']
+  if 'SRM2' in pluginsList:
+    pluginsList.remove( 'SRM2' )
+    pluginsList.insert( 0, 'SRM2' )
+
+  for plugin in pluginsList:
+    seParameters = se.getStorageParameters( plugin )
+    if seParameters['OK']:
+      break
+
   return seParameters
 
 def getSEToken( seName ):
@@ -173,6 +188,7 @@ def getSEToken( seName ):
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
+    gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
 
   return S_OK( seParameters['Value']['SpaceToken'] )
@@ -183,6 +199,7 @@ def getSEHost( seName ):
 
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
+    gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
 
   return S_OK( seParameters['Value']['Host'] )
@@ -192,7 +209,9 @@ def getStorageElementEndpoint( seName ):
   """
   seParameters = _getSEParameters( seName )
   if not seParameters['OK']:
+    gLogger.warn( "Could not get SE parameters", "SE: %s" % seName )
     return seParameters
+
   host = seParameters['Value']['Host']
   port = seParameters['Value']['Port']
   wsurl = seParameters['Value']['WSUrl']
