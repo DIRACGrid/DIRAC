@@ -1,4 +1,36 @@
+[v6r14p2]
+
+*Core
+FIX: Use GSI version 0.6.3 by default
+CHANGE: Time - print out the caller information in the timed decorator
+CHANGE: dirac-install - set up ARC_PLUGIN_PATH environment variable
+
+*Framework
+FIX: dirac-proxy-info - use actimeleft VOMS attribute
+
+*Accounting
+CHANGE: Removed SRMSpaceTokenDeployment Accounting type
+
+*RSS
+CHANGE: ResourceStatus - re-try few times to update the RSS SE cache before giving up
+FIX: XXXCommand, XXXAction - use self.lof instead of gLogger
+CHANGE: Added support for all protocols for SEs managed by RSS
+
+*RMS
+FIX: Request - produce enhanced digest string
+FIX: RequestDB - fix in getDigest() in case of errors while getting request
+
+*Resources
+CHANGE: Propagate hideExceptions flag to the ObjectLoader when creating StorageElements
+FIX: ARCComputingElement - multiple fixes after experience in production
+
+*WMS
+FIX: Pilot commands - fixed an important bug, when using the 
+     dirac-wms-cpu-normalization script
+
 [v6r14p1]
+
+The version is buggy when used in pilots
 
 *Core
 NEW: dirac-install-component command replacing dirac-install-agent/service/executor
