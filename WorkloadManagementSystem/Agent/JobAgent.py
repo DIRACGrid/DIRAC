@@ -289,8 +289,7 @@ class JobAgent( AgentModule ):
         self.timeLeftError = result['Message']
       else:
         if self.cpuFactor:
-          # if the batch system is not defined used the CPUNormalizationFactor
-          # defined locally
+          # if the batch system is not defined use the CPUNormalizationFactor defined locally
           self.timeLeft = self.__getCPUTimeLeft()
     scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
 

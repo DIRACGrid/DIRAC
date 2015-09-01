@@ -8,7 +8,7 @@
 
 import os
 
-from DIRAC import gLogger, gConfig, S_OK, DError
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
@@ -33,10 +33,10 @@ class BQSTimeLeft( object ):
        and WallClockLimit for current slot.  All values returned in seconds.
     """
     if not self.jobID:
-      return DError( 'Could not determine batch jobID from QSUB_REQNAME env var.' )
+      return S_ERROR( 'Could not determine batch jobID from QSUB_REQNAME env var.' )
 
     if not self.scaleFactor:
-      return DError( 'CPU scale factor is not defined' )
+      return S_ERROR( 'CPU scale factor is not defined' )
 
     cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
     result = runCommand( cmd )
