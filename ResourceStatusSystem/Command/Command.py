@@ -25,6 +25,7 @@ class Command( object ):
     self.args       = { 'onlyCache' : False }
     _args           = ( 1 and args ) or {}
     self.args.update( _args )
+    self.log = gLogger.getSubLogger( self.__class__.__name__ )
 
   def doNew( self, masterParams = None ):
     ''' To be extended by real commands
@@ -46,10 +47,10 @@ class Command( object ):
     '''
     
     if self.masterMode:
-      gLogger.verbose( 'doMaster')
+      self.log.verbose( 'doMaster' )
       return self.returnSObj( self.doMaster() )
     
-    gLogger.verbose( 'doCache' )      
+    self.log.verbose( 'doCache' )
     result = self.doCache()
     if not result[ 'OK' ]:
       return self.returnERROR( result )
@@ -58,7 +59,7 @@ class Command( object ):
     if result[ 'Value' ] or self.args[ 'onlyCache' ]:
       return result
     
-    gLogger.verbose( 'doNew' )
+    self.log.verbose( 'doNew' )
     return self.returnSObj( self.doNew() )
       
   def returnERROR( self, s_obj ):

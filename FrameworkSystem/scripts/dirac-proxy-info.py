@@ -154,7 +154,7 @@ if params.checkValid:
       invalidProxy( "Unexpected VOMS extension %s. Extension expected for DIRAC group is %s" % ( 
                                                                                  infoDict[ 'VOMS' ][0],
                                                                                  requiredVOMS ) )
-    result = VOMS.VOMS().getVOMSProxyInfo( infoDict[ 'chain' ], 'actime' )
+    result = VOMS.VOMS().getVOMSProxyInfo( infoDict[ 'chain' ], 'actimeleft' )
     if not result[ 'OK' ]:
       invalidProxy( "Cannot determine life time of VOMS attributes: %s" % result[ 'Message' ] )
     if int( result[ 'Value' ].strip() ) == 0:
