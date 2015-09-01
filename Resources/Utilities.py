@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import errno
 from  DIRAC import S_OK, DError
 
 
