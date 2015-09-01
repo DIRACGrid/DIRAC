@@ -65,13 +65,12 @@ class JobInfo(object):
     self.__getTaskID(jdlList)
     self.__getInputFile(jdlList)
 
-  def getTaskInfo(self, tasksDict, lfnTaskDict, ignoreTasks):
+  def getTaskInfo(self, tasksDict, lfnTaskDict):
     """extract the task information from the taskDict"""
     if self.taskID not in tasksDict:
       #print "taskID %d not in tasksDict" % self.taskID
       taskDict = tasksDict[lfnTaskDict[self.inputFile]]
       self.finalTask = lfnTaskDict[self.inputFile]
-      ignoreTasks.add(lfnTaskDict[self.inputFile])
     else:
       taskDict = tasksDict[self.taskID]
 
