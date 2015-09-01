@@ -22,7 +22,7 @@ from DIRAC.Core.Utilities.File import getSize
 
 
 # # RCSID
-__RCSID__ = "e6bba13 (2015-07-22 15:24:34 +0200) Andrei Tsaregorodtsev <atsareg@diracgrid.org>"
+__RCSID__ = "$Id$"
 
 class GFAL2_StorageBase( StorageBase ):
   """ .. class:: GFAL2_StorageBase
@@ -442,7 +442,7 @@ class GFAL2_StorageBase( StorageBase ):
     # Params set, copying file now
     try:
       # gfal2 needs a protocol to copy local which is 'file:'
-      dest = 'file://%s' %  os.path.abspath( dest_file )
+      dest = 'file://%s' % os.path.abspath( dest_file )
       self.gfal2.filecopy( params, src_url, dest )
       if params.checksum_check:
         # gfal2 did a checksum check, so we should be good
@@ -642,7 +642,7 @@ class GFAL2_StorageBase( StorageBase ):
     # Add metadata expected in some places if not provided by itself
     metaDict['Lost'] = metaDict.get( 'Lost', 0 )
     metaDict['Cached'] = metaDict.get( 'Cached', 1 )
-    metaDict['Unavailable'] = metaDict.get('Unavailable', 0)
+    metaDict['Unavailable'] = metaDict.get( 'Unavailable', 0 )
 
     if not metaDict['File']:
       errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
@@ -1233,7 +1233,7 @@ class GFAL2_StorageBase( StorageBase ):
 
 
 
-  def __listSingleDirectory( self, path, internalCall=False ):
+  def __listSingleDirectory( self, path, internalCall = False ):
     """ List the content of the single directory provided
     :param self: self reference
     :param str path: single path on storage (srm://...)
@@ -1258,7 +1258,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     files = {}
     subDirs = {}
-    urlStart = self.getURLBase( withWSUrl=True )['Value']
+    urlStart = self.getURLBase( withWSUrl = True )['Value']
     for entry in listing:
       fullPath = os.path.join( path, entry )
       self.log.debug( 'GFAL2_StorageBase.__listSingleDirectory: path: %s' % fullPath )
@@ -1815,9 +1815,9 @@ class GFAL2_StorageBase( StorageBase ):
       if not attributes:
         attributes = self.gfal2.listxattr( path )
         # castor storages time out when file is not staged so we remove it for
-        # the metadata call since it's not used there anyway and only when we 
+        # the metadata call since it's not used there anyway and only when we
         # call getTransportURL we add it as keyword in the function parameters
-        attributes.remove('user.replicas')
+        attributes.remove( 'user.replicas' )
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
         self.log.debug( "GFAL2_StorageBase._getExtendedAttributes: Path is %s" % path )
