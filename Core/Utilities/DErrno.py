@@ -10,13 +10,34 @@
 
     It also contains utilities to manipulate these errors.
 
-    Finaly, it contains a DErrno class that contains an error number
+    Finally, it contains a DErrno class that contains an error number
     as well as a low level error message. It behaves like a string for
     compatibility reasons
+
+    In order to add extension specific error, you need to create in your extension the file
+    Core/Utilities/DErrno.py, which will contains the following dictionnary:
+      * extra_dErrName: keys are the error name, values the number of it
+      * extra_dErrorCode: same as dErrorCode. keys are the error code, values the name
+                          (we don't simply revert the previous dict in case we do not
+                           have a one to one mapping)
+      * extra_dStrError: same as dStrError, Keys are the error code, values the error description
+      * extra_compatErrorString: same as compatErrorString. The compatible error strings are
+                                 added to the existing one, and not replacing them.
+
+
+    Example of extension file :
+
+      extra_dErrName = { 'ELHCBSPE' : 3001 }
+      extra_dErrorCode = { 3001 : 'ELHCBSPE'}
+      extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
+      extra_compatErrorString = { 3001 : ["living easy, living free"],
+                             DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
+
 """
 
 import os
 import traceback
+
 
 
 # To avoid conflict, the error numbers should be greater than 1000
@@ -67,8 +88,7 @@ dStrError = { ERRX : "A human readable error message for ERRX",
 
 # In case the error is returned as a string, and not as a DErrno object, 
 # these strings are used to test the error. 
-compatErrorString = {
-                     # ERRX : ['not found', 'X'],
+compatErrorString = { ERRX : ['not found', 'X'],
 
                      }
 
@@ -201,10 +221,16 @@ def cmpError( inErr, candidate ):
     # Create a DError object to represent the candidate
     derr = DError( candidate )
     return inErr == derr
+  elif isinstance( inErr, dict ):  # if the S_ERROR structure is given
+    # Create a DError object to represent the candidate
+    derr = DError( candidate )
+    return inErr.get( 'Message' ) == derr
   elif isinstance( inErr, int ):
     return inErr == candidate
   elif isinstance( inErr, DError ):
     return inErr.errno == candidate
+  else:
+    raise TypeError( "Unknown input error type %s" % type( inErr ) )
 
   return False
 
