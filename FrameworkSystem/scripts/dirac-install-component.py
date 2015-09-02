@@ -11,12 +11,7 @@ from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC import exit as DIRACexit
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-
-try:
-  InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
-except Exception, e:
-  InstallTools = Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' )
+import DIRAC.Core.Utilities.InstallTools as InstallTools
 
 InstallTools.exitOnError = True
 
