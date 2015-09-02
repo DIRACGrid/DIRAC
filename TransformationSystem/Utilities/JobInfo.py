@@ -20,19 +20,19 @@ class JobInfo(object):
     self.outputFiles = None
     self.outputFileStatus = []
     self.taskID = None
-    self.taskStatus = None
+    self.fileStatus = None
     self.taskFileID = None
     self.pendingRequest = False
-    self.finalTask = None
+    self.otherTasks = None
 
   def __str__(self):
     info = "%d: %s" % (self.jobID, self.status)
     if self.tID and self.taskID:
       info += " %s Transformation: %d -- %d " % (self.tType, self.tID, self.taskID)
-    if self.taskStatus:
-      info += "TaskStatus: %s " % self.taskStatus
-      if self.finalTask:
-        info += "(File was processed in task %d)" % self.finalTask
+    if self.fileStatus:
+      info += "TaskStatus: %s " % self.fileStatus
+      if self.otherTasks:
+        info += "(Last task %d)" % self.otherTasks
     if self.inputFile:
       info += "\n---> inputFile: %s (%s)" % (self.inputFile, self.inputFileExists)
     if self.outputFiles:
@@ -70,14 +70,14 @@ class JobInfo(object):
     if self.taskID not in tasksDict:
       #print "taskID %d not in tasksDict" % self.taskID
       taskDict = tasksDict[lfnTaskDict[self.inputFile]]
-      self.finalTask = lfnTaskDict[self.inputFile]
+      self.otherTasks = lfnTaskDict[self.inputFile]
     else:
       taskDict = tasksDict[self.taskID]
 
     #dict( FileID=fileID, LFN=lfn, Status=status )
     if self.inputFile != taskDict['LFN']:
       raise RuntimeError("Task info does not fit with job info: \n %s" % str(self))
-    self.taskStatus = taskDict['Status']
+    self.fileStatus = taskDict['Status']
     self.taskFileID = taskDict['FileID']
 
   def checkFileExistance(self, fcClient):
@@ -198,7 +198,7 @@ class JobInfo(object):
 
   def setInputUnused(self, tInfo):
     """mark input file as Unused"""
-    tInfo.setInputProcessed(self)
+    tInfo.setInputUnused(self)
 
   def cleanOutputs(self, tInfo):
     """remove all job outputs"""

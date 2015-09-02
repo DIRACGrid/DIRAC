@@ -92,14 +92,16 @@ class TransformationInfo(object):
     if not self.enabled:
       return
     self.__setTaskStatus(job, 'Done')
-    self.__updateJobStatus(job.jobID, "Done", "Job forced to Done")
+    if job.status != 'Done':
+      self.__updateJobStatus(job.jobID, 'Done', "Job forced to Done")
 
   def setJobFailed(self, job):
     """ set the taskID to Done"""
     if not self.enabled:
       return
     self.__setTaskStatus(job, 'Failed')
-    self.__updateJobStatus(job.jobID, "Failed", minorstatus="Job forced to Failed")
+    if job.status != 'Failed':
+      self.__updateJobStatus(job.jobID, "Failed", minorstatus="Job forced to Failed")
 
   def setInputUnused(self, job):
     """set the inputfile to unused"""
@@ -180,9 +182,10 @@ class TransformationInfo(object):
     if not filesToDelete:
       return
 
-    self.log.notice("Remove these files: \n +++ %s " % "\n +++ ".join(filesToDelete))
     if not self.enabled:
+      self.log.notice("Would have removed these files: \n +++ %s " % "\n +++ ".join(filesToDelete))
       return
+    self.log.notice("Remove these files: \n +++ %s " % "\n +++ ".join(filesToDelete))
 
     errorReasons = {}
     successfullyRemoved = 0
