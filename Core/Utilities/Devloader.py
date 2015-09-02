@@ -9,15 +9,12 @@ import time
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import Extensions
 
 class Devloader( object ):
   __metaclass__ = DIRACSingleton
 
   def __init__( self ):
     self.__log = gLogger.getSubLogger( "Devloader" )
-    self.__observers = []
-    self.__exts = Extensions()
     self.__reloaded = False
     self.__enabled = True
     self.__reloadTask = False
