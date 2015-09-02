@@ -50,7 +50,12 @@ def timeThis( method ):
     result = method( *args, **kw )
     te = nativetime.time()
 
-    print( "Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( method.__name__, len( kw ), te - ts ) )
+    try:
+      pre = str( dateTime() ) + args[0].log._systemName + args[0].transString
+    except Exception:
+      pre = str( dateTime() )
+
+    print( "%s Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( pre, method.__name__, len( kw ), te - ts ) )
     return result
 
   return timed
