@@ -35,8 +35,6 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     # # init base class
     super( GFAL2_XROOTStorage, self ).__init__( storageName, parameters )
 
-#     self.log.setLevel( "DEBUG" )
-
     self.pluginName = 'GFAL2_XROOT'
 
     self.protocolParameters['Port'] = 0
@@ -60,7 +58,14 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     return res
 
   def _getSingleFile( self, src_url, dest_file ):
-    """ Some XROOT StorageElements have problems with the checksum at the moment so to still be able to copy files from XROOT we disable the checksum check for this operation.
+    """ Some XROOT StorageElements have problems with the checksum at the moment so to still be able to copy
+    files from XROOT we disable the checksum check for this operation.
+
+    :param self: self reference
+    :param str src_url: path of the source file
+    :param str dest_file: path of destination
+    :returns: S_ERROR( errStr ) in case of an error
+              S_OK( size of file ) if copying is successful
 
     """
     self.log.debug( "GFAL2_XROOTStorage._getSingleFile: Calling base method with checksum disabled" )
