@@ -96,10 +96,11 @@ class DataLoggingHandler( RequestHandler ):
 
   types_getSequence = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
                        ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
-                       ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+                       ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                       ( list( StringTypes ) + [NoneType] )]
   @classmethod
   def export_getSequence( cls, fileName = None, callerName = None, before = None, after = None, status = None, extra = None,
-                          userName = None, hostName = None, group = None ):
+                          userName = None, hostName = None, group = None, errorCode = None ):
     """
       this method call the getSequence method of DataLoggingDB
 
@@ -115,7 +116,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return sequences, a list of sequence
     """
-    res = cls.__dataLoggingDB.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group )
+    res = cls.__dataLoggingDB.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group, errorCode )
     if not res["OK"]:
       return res
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
@@ -138,11 +139,10 @@ class DataLoggingHandler( RequestHandler ):
     sequences = [seq.toJSON()['Value'] for seq in res['Value']]
     return S_OK( sequences )
 
-  types_getMethodCall = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
-                               ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
-                               ( list( StringTypes ) + [NoneType] )]
+  types_getMethodCall = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                         ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
   @classmethod
-  def export_getMethodCall( cls, fileName = None, name = None, before = None, after = None, status = None ):
+  def export_getMethodCall( cls, fileName = None, name = None, before = None, after = None, status = None, errorCode = None ):
     """
       this method call the getMethodCallOnFile method of DataLoggingDB
 
@@ -153,7 +153,7 @@ class DataLoggingHandler( RequestHandler ):
 
       :return methodCalls, a list of method call
     """
-    res = cls.__dataLoggingDB.getMethodCall( fileName, name, before, after, status )
+    res = cls.__dataLoggingDB.getMethodCall( fileName, name, before, after, status, errorCode )
     if not res["OK"]:
       return res
     methodCalls = [call.toJSON()['Value'] for call in res['Value']]

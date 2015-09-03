@@ -62,7 +62,7 @@ class DataLoggingClient( Client ):
     return res
 
   def getSequence( self, fileName = None, callerName = None, before = None, after = None, status = None, extra = None,
-                   userName = None, hostName = None, group = None ):
+                   userName = None, hostName = None, group = None, errorCode = None ):
     """
       This select all Sequence with  different criterias
 
@@ -78,7 +78,7 @@ class DataLoggingClient( Client ):
 
       :return sequences, a list of sequence
     """
-    res = self.dataLoggingManager.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group )
+    res = self.dataLoggingManager.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group, errorCode )
     if not res["OK"]:
       return res
 
@@ -100,7 +100,7 @@ class DataLoggingClient( Client ):
     sequences = [json.loads( seq, cls = DLDecoder ) for seq in res['Value']]
     return S_OK( sequences )
 
-  def getMethodCall( self, fileName = None, name = None, before = None, after = None, status = None ):
+  def getMethodCall( self, fileName = None, name = None, before = None, after = None, status = None, errorCode = None ):
     """
       This select all method call about a file, you can specify a date before, a date after and both to make a between
 
@@ -112,7 +112,7 @@ class DataLoggingClient( Client ):
 
       :return methodCalls, a list of method call
     """
-    res = self.dataLoggingManager.getMethodCall( fileName, name, before, after, status )
+    res = self.dataLoggingManager.getMethodCall( fileName, name, before, after, status, errorCode )
     if not res["OK"]:
       return res
     methodCalls = [json.loads( call, cls = DLDecoder ) for call in res['Value']]

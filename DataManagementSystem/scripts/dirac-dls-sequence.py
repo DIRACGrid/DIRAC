@@ -17,6 +17,7 @@ extra = None
 group = None
 userName = None
 hostName = None
+errorCode = None
 
 Script.registerSwitch( '', 'Full', 'Full print option' )
 Script.registerSwitch( 'i:', 'ID=', 'ID of sequence ' )
@@ -27,7 +28,8 @@ Script.registerSwitch( 'g:', 'Group=', 'A DIRAC Group' )
 Script.registerSwitch( 'u:', 'UserName=', 'A DIRAC UserName' )
 Script.registerSwitch( 'y:', 'HostName=', 'A HostName' )
 Script.registerSwitch( 'z:', 'Status=', 'Failed, Successful or Unknown' )
-Script.registerSwitch( 'e:', 'Extra=', 'A string, see below for more informations' )
+Script.registerSwitch( 'm:', 'Extra=', 'A string, see below for more informations' )
+Script.registerSwitch( 'e:', 'ErrorCode=', 'An error code' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                     'WARNING : the maximum number of sequence to get from database is 500',
                                     'USAGE:',
@@ -49,7 +51,7 @@ for switch in Script.getUnprocessedSwitches():
     before = switch[1]
   elif switch[0] == "z" or switch[0].lower() == "status":
     status = switch[1]
-  elif switch[0] == "e" or switch[0].lower() == "extra":
+  elif switch[0] == "m" or switch[0].lower() == "extra":
     extra = switch[1]
   elif switch[0] == "g" or switch[0].lower() == "Group":
     group = switch[1]
@@ -57,6 +59,8 @@ for switch in Script.getUnprocessedSwitches():
     userName = switch[1]
   elif switch[0] == "y" or switch[0].lower() == "HostName":
     hostName = switch[1]
+  elif switch[0] == "e" or switch[0].lower() == "ErrorCode":
+    errorCode = switch[1]
   elif switch[0].lower() == "full":
     fullFlag = True
   else :
@@ -166,8 +170,19 @@ def printSequenceLFN( seq, lfn, full = False ):
 
 
 dlc = DataLoggingClient()
-if lfn or callerName or after or before or status or extra or userName or hostName or group :
-  res = dlc.getSequence( lfn, callerName, before, after, status, extra, userName, hostName, group )
+if IDSeq :
+  res = dlc.getSequenceByID( IDSeq )
+  if res['OK']:
+    if not res['Value'] :
+      print 'no sequence to print'
+    else :
+      for seq in res['Value'] :
+        print printSequence( seq, full = fullFlag )
+        print'\n'
+  else :
+    print res['Message']
+else:
+  res = dlc.getSequence( lfn, callerName, before, after, status, extra, userName, hostName, group, errorCode )
   if res['OK']:
     if not res['Value'] :
       print 'no sequence to print'
@@ -180,17 +195,5 @@ if lfn or callerName or after or before or status or extra or userName or hostNa
         for seq in res['Value'] :
           print printSequence( seq, full = fullFlag )
           print'\n'
-  else :
-    print res['Message']
-
-elif IDSeq :
-  res = dlc.getSequenceByID( IDSeq )
-  if res['OK']:
-    if not res['Value'] :
-      print 'no sequence to print'
-    else :
-      for seq in res['Value'] :
-        print printSequence( seq, full = fullFlag )
-        print'\n'
   else :
     print res['Message']

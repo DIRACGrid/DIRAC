@@ -191,31 +191,30 @@ class _DataLoggingDecorator( object ):
     # by default all status are Unknown
     try :
       if not exception  :
-        if isinstance( foncResult, dict ):
-          if foncResult['OK']:
-            if isinstance( foncResult['Value'], dict ) and \
-               ( 'Successful' in foncResult['Value'] ) and \
-               ( 'Failed' in foncResult['Value'] ) :
-            # get the success and the fail
-              successful = foncResult['Value']['Successful']
-              failed = foncResult['Value']['Failed']
-              for action in methodCall.actions :
-                if action.file.name in successful :
-                  action.status = 'Successful'
-                elif action.file.name in failed :
-                  action.status = 'Failed'
-                  action.errorMessage = str( foncResult['Value']['Failed'][action.file.name] )
-            else:
-              for action in methodCall.actions :
-                action.status = 'Successful'
-
-          else :  # if  not ok
+        if foncResult['OK']:
+          if isinstance( foncResult['Value'], dict ) and \
+             ( 'Successful' in foncResult['Value'] ) and \
+             ( 'Failed' in foncResult['Value'] ) :
+          # get the success and the fail
+            successful = foncResult['Value']['Successful']
+            failed = foncResult['Value']['Failed']
             for action in methodCall.actions :
-              action.status = 'Failed'
-              action.errorMessage = foncResult['Message']
+              if action.file.name in successful :
+                action.status = 'Successful'
+              elif action.file.name in failed :
+                action.status = 'Failed'
+                action.errorMessage = str( foncResult['Value']['Failed'][action.file.name] )
+          else:
+            for action in methodCall.actions :
+              action.status = 'Successful'
 
-        else :  # if not a dict
-          gLogger.error( 'the result of a function is not a dict, you have to use S_OK and S_ERROR' )
+        else :  # if  not ok
+          for action in methodCall.actions :
+            action.status = 'Failed'
+            action.errorMessage = foncResult['Message']
+            if hasattr( foncResult, 'errno' ):
+              action.errorCode = foncResult.errno
+
       else :
         # exception not None
         for action in methodCall.actions :

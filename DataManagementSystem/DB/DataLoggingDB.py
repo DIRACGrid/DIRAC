@@ -668,7 +668,7 @@ class DataLoggingDB( object ):
 
 
   def getSequence( self, lfn = None, callerName = None, before = None, after = None, status = None, extra = None,
-                     userName = None, hostName = None, group = None ):
+                     userName = None, hostName = None, group = None, errorCode = None ):
     """
       get all sequence about some criteria
 
@@ -718,7 +718,8 @@ class DataLoggingDB( object ):
       query = query.filter( DLMethodCall.creationTime >= after )
     if status :
       query = query.filter( DLAction.status == status )
-
+    if errorCode :
+      query = query.filter( DLAction.errorCode == errorCode )
     if extra :
       extra = extra.split()
       query = query.join( DLSequenceAttributeValue )\
@@ -782,7 +783,7 @@ class DataLoggingDB( object ):
     return S_OK( seqs )
 
 
-  def getMethodCall( self, lfn, name, before, after, status ):
+  def getMethodCall( self, lfn = None, name = None, before = None, after = None, status = None, errorCode = None ):
     """
       get all operation about a file's name, before and after are date
 
@@ -794,6 +795,7 @@ class DataLoggingDB( object ):
 
       :return calls: a list of DLMethodCall
     """
+    print 'toto %s' % errorCode
     targetSE_alias = aliased( DLStorageElement )
     session = self.DBSession()
     query = session.query( DLMethodCall )\
@@ -816,6 +818,8 @@ class DataLoggingDB( object ):
 
     if status :
       query = query.filter( DLAction.status == status )
+    if errorCode :
+      query = query.filter( DLAction.errorCode == errorCode )
 
     try:
       calls = query.distinct( DLMethodCall.methodCallID ).limit( 1000 )

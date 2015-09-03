@@ -11,12 +11,14 @@ fullFlag = False
 after = None
 before = None
 status = None
+errorCode = None
 
 Script.registerSwitch( '', 'Full', 'Print full method call' )
 Script.registerSwitch( 'm:', 'MethodName=', 'Name of method [%s]' % name )
 Script.registerSwitch( 'a:', 'After=', 'Date, format be like 1999-12-31 [%s]' % after )
 Script.registerSwitch( 'b:', 'Before=', 'Date, format be like 1999-12-31 [%s]' % before )
 Script.registerSwitch( 'w:', 'Status=', 'Failed, Successful or Unknown [%s]' % status )
+Script.registerSwitch( 'e:', 'ErrorCode=', 'An error code' )
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                     'WARNING : the maximum number of method call to get from database is 1000',
                                      'USAGE:',
@@ -37,6 +39,8 @@ for switch in Script.getUnprocessedSwitches():
     status = switch[1]
   elif switch[0].lower() == "full":
     fullFlag = True
+  elif switch[0] == "e" or switch[0].lower() == "errorcode":
+    errorCode = switch[1]
 
 args = Script.getPositionalArgs()
 if args :
@@ -116,8 +120,7 @@ args = Script.getPositionalArgs()
 
 dlc = DataLoggingClient()
 
-
-res = dlc.getMethodCall( lfn, name, before, after, status )
+res = dlc.getMethodCall( lfn, name, before, after, status, errorCode )
 if res['OK']:
   if not res['Value'] :
     print 'no methodCall to print'
