@@ -1,7 +1,11 @@
-# $HeadURL$
+""" Commits monitoring information using gServiceInterface singleton
+"""
+
 __RCSID__ = "$Id$"
+
 import types
 import os
+
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DEncode, Time
@@ -80,7 +84,7 @@ class MonitoringHandler( RequestHandler ):
     """
       Generates plots based on a DEncoded view description
     """
-    viewDescription, stubLength = DEncode.decode( viewDescriptionStub )
+    viewDescription, _stubLength = DEncode.decode( viewDescriptionStub )
     if not 'definition' in viewDescription:
       return S_ERROR( "No plot definition given" )
     defDict = viewDescription[ 'definition' ]
@@ -94,7 +98,7 @@ class MonitoringHandler( RequestHandler ):
     """
     if len( viewName ) == 0:
       return S_OK( "View name not valid" )
-    viewDescription, stubLength = DEncode.decode( viewDescriptionStub )
+    viewDescription, _stubLength = DEncode.decode( viewDescriptionStub )
     if not 'definition' in viewDescription:
       return S_ERROR( "No plot definition given" )
     defDict = viewDescription[ 'definition' ]
