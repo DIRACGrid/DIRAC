@@ -4,7 +4,7 @@
 __RCSID__ = "$Id$"
 
 import random
-import types
+
 from DIRAC  import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, List, Network
@@ -76,7 +76,7 @@ class ComponentMonitoringDB( DB ):
     return self._createTables( tablesD )
 
   def __datetime2str( self, dt ):
-    if type( dt ) == types.StringType:
+    if isinstance( dt, basestring ):
       return dt
     return "%s-%s-%s %s:%s:%s" % ( dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second )
 
@@ -222,9 +222,9 @@ class ComponentMonitoringDB( DB ):
     sqlWhere = []
     for field in condDict:
       val = condDict[ field ]
-      if type( val ) == types.StringType:
+      if isinstance( val, basestring ):
         sqlWhere.append( "%s='%s'" % ( field, val ) )
-      elif type( val ) in ( types.IntType, types.LongType, types.FloatType ):
+      elif isinstance( val, ( int, long, float ) ):
         sqlWhere.append( "%s='%s'" % ( field, val ) )
       else:
         sqlWhere.append( "( %s )" % " OR ".join( [ "%s='%s'" % ( field, v ) for v in val ] ) )
@@ -258,7 +258,7 @@ class ComponentMonitoringDB( DB ):
     if field not in condDict:
       return True
     condVal = condDict[ field ]
-    if type( condVal ) in ( types.ListType, types.TupleType ):
+    if isinstance( condVal, ( list, tuple ) ):
       return value in condVal
     return value == condVal
 
