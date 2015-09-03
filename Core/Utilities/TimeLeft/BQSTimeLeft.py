@@ -6,14 +6,14 @@
     current CPU consumed and CPU limit.
 """
 
+import os
+
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
-import os
-
-class BQSTimeLeft:
+class BQSTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
@@ -36,7 +36,7 @@ class BQSTimeLeft:
       return S_ERROR( 'Could not determine batch jobID from QSUB_REQNAME env var.' )
 
     if not self.scaleFactor:
-      return S_ERROR( 'CPU scala factor is not defined' )
+      return S_ERROR( 'CPU scale factor is not defined' )
 
     cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
     result = runCommand( cmd )

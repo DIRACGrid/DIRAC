@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The TimeLeft utility allows to calculate the amount of CPU time
     left for a given batch system slot.  This is essential for the 'Filling
     Mode' where several VO jobs may be executed in the same allocated slot.
@@ -13,16 +9,17 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
+
 __RCSID__ = "$Id$"
+
+import os
+
+import DIRAC
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-import DIRAC
-
-import os
-
-class TimeLeft:
+class TimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
