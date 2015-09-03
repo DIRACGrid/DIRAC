@@ -583,10 +583,10 @@ class GFAL2_StorageBase( StorageBase ):
     else:  # if this is true, path is a file
       try:
         statInfo = self.gfal2.stat( path )  # keeps info like size, mode.
-        self.log.debug( "GFAL2_StorageBase.__singleExists: File size successfully determined" )
+        self.log.debug( "GFAL2_StorageBase.__getSingleFileSize: File size successfully determined" )
         return S_OK( long ( statInfo.st_size ) )
       except gfal2.GError, e:
-        errStr = "GFAL2_StorageBase.__singleExists: Failed to determine file size."
+        errStr = "GFAL2_StorageBase.__getSingleFileSize: Failed to determine file size."
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
 
