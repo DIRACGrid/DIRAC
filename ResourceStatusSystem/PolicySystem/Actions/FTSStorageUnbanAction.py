@@ -3,17 +3,13 @@
 
 '''
 
-from DIRAC                                                      import gConfig, gLogger, S_ERROR, S_OK
-from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
+import json
+import fts3.rest.client.easy as fts3
+
+from DIRAC                                                      import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
-#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getFTS3Servers
-import fts3.rest.client.easy as fts3
-import json
-
-from DIRAC import gLogger
 
 __RCSID__  = '$Id:  $'
 

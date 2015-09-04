@@ -423,8 +423,8 @@ class Request( object ):
         opDigest.append( op.Catalog )
       if len( op ):
         opFile = op[0]
-        opDigest.append( opFile.LFN )
-        opDigest.append( ",...<%d files>" % len( op ) )
+        extraFilesStr = "...+<%d files>" % ( len( op ) - 1 ) if (len(op) > 1 ) else ''
+        opDigest.append( opFile.LFN + extraFilesStr )
       digest.append( ":".join( opDigest ) )
     return S_OK( "\n".join( digest ) )
 

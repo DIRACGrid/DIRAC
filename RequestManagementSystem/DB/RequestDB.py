@@ -856,6 +856,7 @@ class RequestDB( object ):
     request = self.getRequest( requestID, False )
     if not request["OK"]:
       self.log.error( "getDigest: %s" % request["Message"] )
+      return request
     request = request["Value"]
     if not isinstance( request, Request ):
       self.log.info( "getDigest: request '%s' not found" )

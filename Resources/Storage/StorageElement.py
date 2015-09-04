@@ -25,13 +25,13 @@ class StorageElementCache( object ):
   def __init__( self ):
     self.seCache = DictCache()
 
-  def __call__( self, name, protocols = None, vo = None ):
+  def __call__( self, name, protocols = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
     argTuple = ( name, protocols, vo )
     seObj = self.seCache.get( argTuple )
 
     if not seObj:
-      seObj = StorageElementItem( name, protocols, vo )
+      seObj = StorageElementItem( name, protocols, vo, hideExceptions = hideExceptions )
       # Add the StorageElement to the cache for 1/2 hour
       self.seCache.add( argTuple, 1800, seObj )
 
@@ -116,7 +116,6 @@ class StorageElementItem( object ):
                          "getDirectory" : { "localPath" : False },
                          }
 
-
   readMethods = [ 'getFile',
                        'prestageFile',
                        'prestageFileStatus',
@@ -176,8 +175,7 @@ class StorageElementItem( object ):
                 {'argsPosition' : ['self', dl_files]},
               }
 
-
-  def __init__( self, name, plugins = None, vo = None ):
+  def __init__( self, name, plugins = None, vo = None, hideExceptions = False ):
     """ c'tor
 
     :param str name: SE name
@@ -207,9 +205,9 @@ class StorageElementItem( object ):
 
     self.valid = True
     if plugins == None:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [] )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = [], hideExceptions = hideExceptions )
     else:
-      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins )
+      res = StorageFactory( useProxy = useProxy, vo = self.vo ).getStorages( name, pluginList = plugins, hideExceptions = hideExceptions )
 
     if not res['OK']:
       self.valid = False
