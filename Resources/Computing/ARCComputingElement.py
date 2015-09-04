@@ -289,7 +289,8 @@ class ARCComputingElement( ComputingElement ):
     cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
     res = shellCall( 0, cmd )
     if not res['OK']:
-      return S_ERROR("Could not query CE - is it down?")
+      gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
+      return res
     ldapValues = res['Value'][1].split("\n")
     running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
     waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
