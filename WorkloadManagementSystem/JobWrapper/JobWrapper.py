@@ -697,8 +697,8 @@ class JobWrapper( object ):
       outputSandbox = [ outputSandbox ]
     if outputSandbox:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
-    outputData = self.jobArgs.get( 'OutputData', '' )
-    if isinstance( outputData, basestring ):
+    outputData = self.jobArgs.get( 'OutputData', [] )
+    if outputData and isinstance( outputData, basestring ):
       outputData = outputData.split( ';' )
     if outputData:
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
