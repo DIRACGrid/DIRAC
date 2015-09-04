@@ -210,16 +210,14 @@ class DataLoggingDB( object ):
     self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
 
     # this dictionaries will serve to save object from database, like that we don't need to do a select all the time for the same object
-    # there is the key None with value None . If an attribute like the sourceSE in an DLAction object is None, we don't want to insert
-    # the value "None" for the name of the sourceSE in databse but we want "null" for the sourceSE in the DLAction database
-    self.dictStorageElement = {None:None}
-    self.dictFile = {None:None}
-    self.dictMethodName = {None:None}
-    self.dictCaller = {None:None}
-    self.dictUserName = {None:None}
-    self.dictHostName = {None:None}
-    self.dictGroup = {None:None}
-    self.dictSequenceAttribute = {None:None}
+    self.dictStorageElement = {}
+    self.dictFile = {}
+    self.dictMethodName = {}
+    self.dictCaller = {}
+    self.dictUserName = {}
+    self.dictHostName = {}
+    self.dictGroup = {}
+    self.dictSequenceAttribute = {}
 
 
   def createTables( self ):
@@ -320,14 +318,14 @@ class DataLoggingDB( object ):
     """
 
     # flush of all dictionaries
-    self.dictStorageElement = {None:None}
-    self.dictFile = {None:None}
-    self.dictMethodName = {None:None}
-    self.dictCaller = {None:None}
-    self.dictUserName = {None:None}
-    self.dictHostName = {None:None}
-    self.dictGroup = {None:None}
-    self.dictSequenceAttribute = {None:None}
+    self.dictStorageElement = {}
+    self.dictFile = {}
+    self.dictMethodName = {}
+    self.dictCaller = {}
+    self.dictUserName = {}
+    self.dictHostName = {}
+    self.dictGroup = {}
+    self.dictSequenceAttribute = {}
 
     session = None
     sequences = {}
@@ -493,30 +491,30 @@ class DataLoggingDB( object ):
       self.getOrCreateMultiple( session, [sequence] )
 
       if sequence.caller:
-          sequence.caller = self.dictCaller[sequence.caller.name]
+          sequence.caller = self.dictCaller.get( sequence.caller.name )
 
       if sequence.group:
-        sequence.group = self.dictGroup[sequence.group.name]
+        sequence.group = self.dictGroup.get( sequence.group.name )
 
       if sequence.userName:
-        sequence.userName = self.dictUserName[sequence.userName.name]
+        sequence.userName = self.dictUserName.get( sequence.userName.name )
 
       if sequence.hostName:
-        sequence.hostName = self.dictHostName[sequence.hostName.name]
+        sequence.hostName = self.dictHostName.get( sequence.hostName.name )
 
       for mc in sequence.methodCalls :
         if mc.name :
-          mc.name = self.dictMethodName[mc.name.name]
+          mc.name = self.dictMethodName.get( mc.name.name )
 
         for action in mc.actions :
           if action.file :
-            action.file = self.dictFile[action.file.name]
+            action.file = self.dictFile.get( action.file.name )
 
           if action.targetSE:
-            action.targetSE = self.dictStorageElement[action.targetSE.name]
+            action.targetSE = self.dictStorageElement.get( action.targetSE.name )
 
           if action.srcSE:
-            action.srcSE = self.dictStorageElement[action.srcSE.name]
+            action.srcSE = self.dictStorageElement.get( action.srcSE.name )
 
 
       ret = self.__putSequence( session, sequence )
@@ -619,13 +617,13 @@ class DataLoggingDB( object ):
           storageNames.add( '%s' % action.srcSE.name if action.srcSE else None )
 
     # calls of getOrCreate multiple with the different sets
-    self._getOrCreateMultiple( session, DLCaller, callerNames, self.dictCaller )
-    self._getOrCreateMultiple( session, DLGroup, groupNames, self.dictGroup )
-    self._getOrCreateMultiple( session, DLUserName, userNames, self.dictUserName )
-    self._getOrCreateMultiple( session, DLHostName, hostNames, self.dictHostName )
-    self._getOrCreateMultiple( session, DLMethodName, methodNames, self.dictMethodName )
-    self._getOrCreateMultiple( session, DLFile, fileNames, self.dictFile )
-    self._getOrCreateMultiple( session, DLStorageElement, storageNames, self.dictStorageElement )
+    self._getOrCreateMultiple( session, DLCaller, callerNames.difference( ['None'] ), self.dictCaller )
+    self._getOrCreateMultiple( session, DLGroup, groupNames.difference( ['None'] ), self.dictGroup )
+    self._getOrCreateMultiple( session, DLUserName, userNames.difference( ['None'] ), self.dictUserName )
+    self._getOrCreateMultiple( session, DLHostName, hostNames.difference( ['None'] ), self.dictHostName )
+    self._getOrCreateMultiple( session, DLMethodName, methodNames.difference( ['None'] ), self.dictMethodName )
+    self._getOrCreateMultiple( session, DLFile, fileNames.difference( ['None'] ), self.dictFile )
+    self._getOrCreateMultiple( session, DLStorageElement, storageNames.difference( ['None'] ), self.dictStorageElement )
 
 
   def _getOrCreateMultiple( self, session, model, values, objDict ):
