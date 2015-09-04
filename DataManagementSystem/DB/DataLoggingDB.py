@@ -210,6 +210,8 @@ class DataLoggingDB( object ):
     self.DBSession = sessionmaker( bind = self.engine, autoflush = False, expire_on_commit = False )
 
     # this dictionaries will serve to save object from database, like that we don't need to do a select all the time for the same object
+    # there is the key None with value None . If an attribute like the sourceSE in an DLAction object is None, we don't want to insert
+    # the value "None" for the name of the sourceSE in databse but we want "null" for the sourceSE in the DLAction database
     self.dictStorageElement = {None:None}
     self.dictFile = {None:None}
     self.dictMethodName = {None:None}
