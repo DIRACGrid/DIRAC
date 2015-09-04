@@ -119,6 +119,9 @@ from DIRAC.Core.Utilities import *
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DErrno import DError
+
 #Logger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
@@ -126,7 +129,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 #Monitoring client
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+#from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()

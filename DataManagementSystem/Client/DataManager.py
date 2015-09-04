@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import fnmatch, os, time
 # # from DIRAC
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, DError, DErrno, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -359,6 +359,7 @@ class DataManager( object ):
     if not res['OK']:
       return res
     errTuple = ( "No SE", "found" )
+
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
@@ -373,6 +374,7 @@ class DataManager( object ):
 
       if not res['OK']:
         errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
+        errToReturn = res
         oDataOperation.setValueByKey( 'TransferOK', 0 )
         oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
         oDataOperation.setEndTime()
@@ -387,11 +389,13 @@ class DataManager( object ):
         if metadata['Size'] != res['Value']:
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
+          errToReturn = DError( DErrno.EFILESIZE, errTuple[1] )
+
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
           oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
-
+          errToReturn = DError( DErrno.EBADCKS, errTuple[1] )
         else:
           oDataOperation.setEndTime()
           gDataStoreClient.addRegister( oDataOperation )
@@ -402,7 +406,9 @@ class DataManager( object ):
     gDataStoreClient.addRegister( oDataOperation )
     log.verbose( "Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
-    return S_ERROR( "Failed to get local copy from any replicas\n%s %s" % errTuple )
+
+    return errToReturn
+
 
   def _getSEProximity( self, ses ):
     """ get SE proximity """

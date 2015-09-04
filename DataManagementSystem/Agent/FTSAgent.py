@@ -42,7 +42,7 @@ import time
 import datetime
 import re
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
+from DIRAC import S_OK, S_ERROR, gLogger
 # # from CS
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
@@ -50,6 +50,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 # # from Core
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule

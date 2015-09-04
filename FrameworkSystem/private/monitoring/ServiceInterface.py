@@ -120,7 +120,7 @@ class ServiceInterface( object ):
     """
     Adds marks to activities
     """
-    gLogger.info( "Commiting marks", "From %s for %s" % ( sourceId, ", ".join( activitiesDict.keys() ) ) )
+    gLogger.info( "Committing marks", "From %s for %s" % ( sourceId, ", ".join( activitiesDict.keys() ) ) )
     acCatalog = self.__createCatalog()
     rrdManager = self.__createRRDManager()
     unregisteredActivities = []
