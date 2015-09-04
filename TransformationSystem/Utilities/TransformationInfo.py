@@ -17,14 +17,12 @@ class TransformationInfo(object):
   """ hold information about transformations """
 
   def __init__(self, transformationID, transName, transType, enabled,
-               tClient, jobDB, logDB, dMan, fcClient, jobMon):
+               tClient, dMan, fcClient, jobMon):
     self.log = gLogger.getSubLogger("TInfo")
     self.enabled = enabled
     self.tID = transformationID
     self.transName = transName
     self.tClient = tClient
-    self.jobDB = jobDB
-    self.logDB = logDB
     self.dMan = dMan
     self.jobMon = jobMon
     self.fcClient = fcClient
@@ -134,24 +132,27 @@ class TransformationInfo(object):
     """ This method updates the job status in the JobDB
     """
     self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (jobID, status))
-
+    from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+    jobDB = JobDB()
     if self.enabled:
-      result = self.jobDB.setJobAttribute(jobID, 'Status', status, update=True)
+      result = jobDB.setJobAttribute(jobID, 'Status', status, update=True)
     else:
       return S_OK('DisabledMode')
 
     if result['OK']:
       if minorstatus:
         self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (jobID, minorstatus))
-        result = self.jobDB.setJobAttribute(jobID, 'MinorStatus', minorstatus, update=True)
+        result = jobDB.setJobAttribute(jobID, 'MinorStatus', minorstatus, update=True)
 
     if not minorstatus:  # Retain last minor status for stalled jobs
-      result = self.jobDB.getJobAttributes(jobID, ['MinorStatus'])
+      result = jobDB.getJobAttributes(jobID, ['MinorStatus'])
       if result['OK']:
         minorstatus = result['Value']['MinorStatus']
 
     logStatus = status
-    result = self.logDB.addLoggingRecord(jobID, status=logStatus, minor=minorstatus, source='DataRecoveryAgent')
+    from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+
+    result = JobLoggingDB().addLoggingRecord(jobID, status=logStatus, minor=minorstatus, source='DataRecoveryAgent')
     if not result['OK']:
       self.log.warn(result)
 
