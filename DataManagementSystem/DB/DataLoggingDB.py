@@ -797,7 +797,6 @@ class DataLoggingDB( object ):
 
       :return calls: a list of DLMethodCall
     """
-    print 'toto %s' % errorCode
     targetSE_alias = aliased( DLStorageElement )
     session = self.DBSession()
     query = session.query( DLMethodCall )\
