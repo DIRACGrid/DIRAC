@@ -708,7 +708,8 @@ class FileManagerBase( object ):
           return S_ERROR( 'Invalid file status %s' % status )
         result = self._getStatusInt( status, connection = connection )
         if not result['OK']:
-          return result
+          failed[lfn] = res['Message']
+          continue
         status = result['Value']
       fileID = res['Value']['Successful'][lfn]['FileID']
       res = self._setFileParameter( fileID, "Status", status, connection = connection )
