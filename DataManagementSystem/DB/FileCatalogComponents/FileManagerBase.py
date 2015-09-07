@@ -1118,7 +1118,6 @@ class FileManagerBase( object ):
     :param boolean requestString: if True return result as a SQL SELECT string
     :return: list of file IDs or SELECT string
     """
-
     return self._getDirectoryFileIDs( dirID, requestString = requestString )
 
   def getFilesInDirectory( self, dirID, verbose = False, connection = False ):
