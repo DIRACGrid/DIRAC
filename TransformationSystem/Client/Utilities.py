@@ -339,24 +339,19 @@ class PluginUtilities( object ):
       default = value
     # Finally look at a transformation-specific parameter
     value = self.params.get( name, default )
-    self.logVerbose( "Transformation plugin param %s: '%s', convert it to type %s" % ( name, value, valueType ) )
+    self.logVerbose( "Transformation plugin param %s: '%s'. Convert to %s" % ( name, value, valueType ) )
     if valueType and type( value ) is not valueType:
       if valueType is list:
         try:
           value = ast.literal_eval( value ) if value and value != 'None' else []
-          if type( value ) is not list:
-            value = list( value )
-        except ValueError:
-          pass
-        if type( value ) is str:
-          # Value should be a string already but pylint doesn't know
-          value = [val for val in str( value ).replace( ' ', '' ).split( ',' ) if val]
+        except Exception:
+          value = [val for val in value.replace( ' ', '' ).split( ',' ) if val]
       elif valueType is int:
         value = int( value ) if value else 0
       elif valueType is float:
         value = float( value ) if value else 0.
       elif valueType is bool:
-        if value in ( 'False', 'No', 'None', '0' ):
+        if value in ( 'False', 'No', 'None', None, 0 ):
           value = False
         else:
           value = bool( value )
