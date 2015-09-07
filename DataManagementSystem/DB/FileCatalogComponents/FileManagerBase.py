@@ -246,7 +246,7 @@ class FileManagerBase( object ):
     extraLfns = {}
     for lfn in lfns:
       masterLfns[lfn] = dict( lfns[lfn] )
-      if 'SE' in lfns[lfn] and isinstance( lfns[lfn]['SE'], list ):
+      if isinstance( lfns[lfn].get( 'SE' ), list ):
         masterLfns[lfn]['SE'] = lfns[lfn]['SE'][0]  
         if len( lfns[lfn]['SE'] ) > 1:
           extraLfns[lfn] = dict( lfns[lfn] )
@@ -1119,7 +1119,7 @@ class FileManagerBase( object ):
     :return: list of file IDs or SELECT string
     """
 
-    return self._getDirectoryFileIDs( dirID, requestString )
+    return self._getDirectoryFileIDs( dirID, requestString = requestString )
 
   def getFilesInDirectory( self, dirID, verbose = False, connection = False ):
     connection = self._getConnection( connection )
