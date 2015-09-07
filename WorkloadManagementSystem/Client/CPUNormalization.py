@@ -37,8 +37,10 @@ def getPowerFromMJF():
   features = getMachineFeatures()
   totalPower = features.get( 'hs06' )
   logCores = features.get( 'log_cores' )
-  if totalPower and logCores:
-    return int( 10. * float( totalPower ) / float( logCores ) ) / 10.
+  jobSlots = features.get( 'jobslots' )
+  denom = min( logCores, jobSlots ) if logCores and jobSlots else None
+  if totalPower and denom:
+    return int( 100. * float( totalPower ) / float( denom ) ) / 100.
   else:
     return None
 
