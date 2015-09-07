@@ -362,7 +362,7 @@ class FileCatalogDB( DB ):
 
     for path in paths:
       if ( not path in dirList ) and ( not path in fileList ):
-        failed[path] = 'Path not found'
+        failed[path] = 'No such file or directory'
       if path in dirList:
         dirArgs[path] = paths[path]
       elif path in fileList:
