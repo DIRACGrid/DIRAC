@@ -90,7 +90,7 @@ class TimeLeft( object ):
     cpuLimit = float( resources['CPULimit'] )
     wcFactor = 100 * float( resources['WallClock'] ) / float( resources['WallClockLimit'] )
     wcRemaining = 100 - wcFactor
-    wcLimit = float( resources['WallClockLimit'] )
+    # wcLimit = float( resources['WallClockLimit'] )
     self.log.verbose( 'Used CPU is %.02f%%, Used WallClock is %.02f%%.' % ( cpuFactor, wcFactor ) )
     self.log.verbose( 'Remaining WallClock %.02f%%, Remaining CPU %.02f%%, margin %s%%' %
                       ( wcRemaining, cpuRemaining, self.cpuMargin ) )
