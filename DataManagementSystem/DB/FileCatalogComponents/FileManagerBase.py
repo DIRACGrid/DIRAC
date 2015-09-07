@@ -705,7 +705,8 @@ class FileManagerBase( object ):
       status = lfns[lfn]
       if isinstance( status, basestring ):
         if not status in self.db.validFileStatus:
-          return S_ERROR( 'Invalid file status %s' % status )
+          failed[lfn] = 'Invalid file status %s' % status
+          continue
         result = self._getStatusInt( status, connection = connection )
         if not result['OK']:
           failed[lfn] = res['Message']
