@@ -10,6 +10,7 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import checkCatalogArguments
 
 class FileCatalogClient( Client ):
   """ Client code to the DIRAC File Catalogue
@@ -38,6 +39,7 @@ class FileCatalogClient( Client ):
         self.available = True
     return S_OK( self.available )
 
+  @checkCatalogArguments
   def getReplicas( self, lfns, allStatus = False, timeout = 120 ):
     """ Get the replicas of the given files
     """
