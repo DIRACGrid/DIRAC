@@ -349,7 +349,8 @@ class PluginUtilities( object ):
         except ValueError:
           pass
         if type( value ) is str:
-          value = value.replace( ' ', '' ).split( ',' )
+          # Value should be a string already but pylint doesn't know
+          value = [val for val in str( value ).replace( ' ', '' ).split( ',' ) if val]
       elif valueType is int:
         value = int( value ) if value else 0
       elif valueType is float:
