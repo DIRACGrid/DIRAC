@@ -291,12 +291,17 @@ class ARCComputingElement( ComputingElement ):
     if not res['OK']:
       gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
       return res
-    ldapValues = res['Value'][1].split("\n")
-    running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
-    waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
     result = S_OK()
-    result['RunningJobs'] = int(running[0].split(":")[1])
-    result['WaitingJobs'] = int(waiting[0].split(":")[1])
+    try:
+      ldapValues = res['Value'][1].split("\n")
+      running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
+      waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
+      result['RunningJobs'] = int(running[0].split(":")[1])
+      result['WaitingJobs'] = int(waiting[0].split(":")[1])
+    except:
+      result = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
+      result['RunningJobs'] = 0
+      result['WaitingJobs'] = 0
     gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, result['RunningJobs']))
     gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, result['WaitingJobs']))
     result['SubmittedJobs'] = 0
