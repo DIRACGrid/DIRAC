@@ -644,7 +644,10 @@ class FileManager( FileManagerBase ):
 
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
-      tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
+      if 'select' in fileIDString.lower():
+        tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
+      else:
+        tmpreq = "UPDATE FC_Files %%s WHERE FileID IN (%s)" % fileIDString
       req = tmpreq % "SET %s='%s'" % ( paramName, paramValue )
       result = self.db._update(req,connection)
       if not result['OK']:
