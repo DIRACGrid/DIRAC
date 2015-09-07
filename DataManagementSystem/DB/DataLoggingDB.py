@@ -26,7 +26,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
 from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLException
 # from sqlalchemy
-from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, Integer, String, DateTime, Enum, exc
+from sqlalchemy         import create_engine, Table, Column, MetaData, ForeignKey, BigInteger, String, DateTime, Enum, exc
 from sqlalchemy.orm     import mapper, sessionmaker, relationship, aliased
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
@@ -35,7 +35,7 @@ metadata = MetaData()
 
 # Description of the DLCompressedSequence table
 dataLoggingCompressedSequenceTable = Table( 'DLCompressedSequence', metadata,
-                   Column( 'compressedSequenceID', Integer, primary_key = True ),
+                   Column( 'compressedSequenceID', BigInteger, primary_key = True ),
                    Column( 'value', MEDIUMBLOB ),
                    Column( 'lastUpdate', DateTime, index = True ),
                    Column( 'status', Enum( 'Waiting', 'Ongoing', 'Done' ), server_default = 'Waiting', index = True ),
@@ -45,7 +45,7 @@ mapper( DLCompressedSequence, dataLoggingCompressedSequenceTable )
 
 # Description of the DLFile table
 dataLoggingFileTable = Table( 'DLFile', metadata,
-                   Column( 'fileID', Integer, primary_key = True ),
+                   Column( 'fileID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLFile object to the dataLoggingFileTable
@@ -53,7 +53,7 @@ mapper( DLFile, dataLoggingFileTable )
 
 # Description of the DLUserName table
 dataLoggingUserNameTable = Table( 'DLUserName', metadata,
-                   Column( 'userNameID', Integer, primary_key = True ),
+                   Column( 'userNameID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLUserName object to the dataLoggingUserNameTable
@@ -61,7 +61,7 @@ mapper( DLUserName, dataLoggingUserNameTable )
 
 # Description of the DLUserName table
 dataLoggingGroupTable = Table( 'DLGroup', metadata,
-                   Column( 'groupID', Integer, primary_key = True ),
+                   Column( 'groupID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLUserName object to the dataLoggingUserNameTable
@@ -69,7 +69,7 @@ mapper( DLGroup, dataLoggingGroupTable )
 
 # Description of the DLUserName table
 dataLoggingHostNameTable = Table( 'DLHostName', metadata,
-                   Column( 'hostNameID', Integer, primary_key = True ),
+                   Column( 'hostNameID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLUserName object to the dataLoggingUserNameTable
@@ -77,7 +77,7 @@ mapper( DLHostName, dataLoggingHostNameTable )
 
 # Description of the DLMethodName table
 dataLoggingMethodNameTable = Table( 'DLMethodName', metadata,
-                   Column( 'methodNameID', Integer, primary_key = True ),
+                   Column( 'methodNameID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLMethodName object to the dataLoggingMethodNameTable
@@ -85,7 +85,7 @@ mapper( DLMethodName, dataLoggingMethodNameTable )
 
 # Description of the DLStorageElement table
 dataLoggingStorageElementTable = Table( 'DLStorageElement', metadata,
-                   Column( 'storageElementID', Integer, primary_key = True ),
+                   Column( 'storageElementID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLStorageElement object to the dataLoggingStorageElementTable
@@ -93,7 +93,7 @@ mapper( DLStorageElement, dataLoggingStorageElementTable )
 
 # Description of the DLCaller table
 dataLoggingCallerTable = Table( 'DLCaller', metadata,
-                   Column( 'callerID', Integer, primary_key = True ),
+                   Column( 'callerID', BigInteger, primary_key = True ),
                    Column( 'name', String( 255 ), unique = True, index = True ),
                    mysql_engine = 'InnoDB' )
 # Map the DLCaller object to the dataLoggingCallerTable
@@ -101,15 +101,15 @@ mapper( DLCaller, dataLoggingCallerTable )
 
 # Description of the DLAction table
 dataLoggingActionTable = Table( 'DLAction', metadata,
-                   Column( 'actionID', Integer, primary_key = True ),
-                   Column( 'methodCallID', Integer, ForeignKey( 'DLMethodCall.methodCallID' ) ),
-                   Column( 'fileID', Integer, ForeignKey( 'DLFile.fileID' ) ),
+                   Column( 'actionID', BigInteger, primary_key = True ),
+                   Column( 'methodCallID', BigInteger, ForeignKey( 'DLMethodCall.methodCallID' ) ),
+                   Column( 'fileID', BigInteger, ForeignKey( 'DLFile.fileID' ) ),
                    Column( 'status' , Enum( 'Successful', 'Failed', 'Unknown' ), server_default = 'Unknown' ),
-                   Column( 'srcSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
-                   Column( 'targetSEID', Integer, ForeignKey( 'DLStorageElement.storageElementID' ) ),
+                   Column( 'srcSEID', BigInteger, ForeignKey( 'DLStorageElement.storageElementID' ) ),
+                   Column( 'targetSEID', BigInteger, ForeignKey( 'DLStorageElement.storageElementID' ) ),
                    Column( 'extra', String( 2048 ) ),
                    Column( 'errorMessage', String( 2048 ) ),
-                   Column( 'errorCode', Integer ),
+                   Column( 'errorCode', BigInteger ),
                    mysql_engine = 'InnoDB' )
 # Map the DLAction object to the dataLoggingActionTable, with two foreign key constraints,
 # and one relationship between attribute file and table DLFile
@@ -120,11 +120,11 @@ mapper( DLAction, dataLoggingActionTable,
 
 # Description of the DLSequence table
 dataLoggingSequenceTable = Table( 'DLSequence', metadata,
-                   Column( 'sequenceID', Integer, primary_key = True ),
-                   Column( 'callerID', Integer, ForeignKey( 'DLCaller.callerID' ) ),
-                   Column( 'groupID', Integer, ForeignKey( 'DLGroup.groupID' ) ),
-                   Column( 'userNameID', Integer, ForeignKey( 'DLUserName.userNameID' ) ),
-                   Column( 'hostNameID', Integer, ForeignKey( 'DLHostName.hostNameID' ) ),
+                   Column( 'sequenceID', BigInteger, primary_key = True ),
+                   Column( 'callerID', BigInteger, ForeignKey( 'DLCaller.callerID' ) ),
+                   Column( 'groupID', BigInteger, ForeignKey( 'DLGroup.groupID' ) ),
+                   Column( 'userNameID', BigInteger, ForeignKey( 'DLUserName.userNameID' ) ),
+                   Column( 'hostNameID', BigInteger, ForeignKey( 'DLHostName.hostNameID' ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLSequence object to the dataLoggingSequenceTable with one relationship between attribute methodCalls and table DLMethodCall
 # an other relationship between attribute attributesValues and table DLSequenceAttributeValue
@@ -138,12 +138,12 @@ mapper( DLSequence, dataLoggingSequenceTable, properties = { 'methodCalls' : rel
 
 # Description of the DLMethodCall table
 dataLoggingMethodCallTable = Table( 'DLMethodCall', metadata,
-                   Column( 'methodCallID', Integer, primary_key = True ),
+                   Column( 'methodCallID', BigInteger, primary_key = True ),
                    Column( 'creationTime', DateTime ),
-                   Column( 'methodNameID', Integer, ForeignKey( 'DLMethodName.methodNameID' ) ),
-                   Column( 'parentID', Integer, ForeignKey( 'DLMethodCall.methodCallID' ) ),
-                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID' ) ),
-                   Column( 'rank', Integer ),
+                   Column( 'methodNameID', BigInteger, ForeignKey( 'DLMethodName.methodNameID' ) ),
+                   Column( 'parentID', BigInteger, ForeignKey( 'DLMethodCall.methodCallID' ) ),
+                   Column( 'sequenceID', BigInteger, ForeignKey( 'DLSequence.sequenceID' ) ),
+                   Column( 'rank', BigInteger ),
                    mysql_engine = 'InnoDB' )
 # Map the DLMethodCall object to the dataLoggingMethodCallTable with one relationship between attribute children and table DLMethodCall
 # one foreign key for attribute name on table DLMethodName
@@ -153,7 +153,7 @@ mapper( DLMethodCall, dataLoggingMethodCallTable  , properties = { 'children' : 
                                                                     'actions': relationship( DLAction, lazy = 'joined' ) } )
 # Description of the DLSequenceAttribute table
 dataLoggingSequenceAttribute = Table( 'DLSequenceAttribute', metadata,
-                   Column( 'sequenceAttributeID', Integer, primary_key = True ),
+                   Column( 'sequenceAttributeID', BigInteger, primary_key = True ),
                    Column( 'name', String( 128 ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLSequenceAttribute object to the dataLoggingSequenceAttribute
@@ -161,8 +161,8 @@ mapper( DLSequenceAttribute, dataLoggingSequenceAttribute )
 
 # Description of the DLSequenceAttributeValue table
 dataLoggingSequenceAttributeValue = Table( 'DLSequenceAttributeValue', metadata,
-                   Column( 'sequenceID', Integer, ForeignKey( 'DLSequence.sequenceID' ), primary_key = True ),
-                   Column( 'sequenceAttributeID', Integer, ForeignKey( 'DLSequenceAttribute.sequenceAttributeID' ), primary_key = True ),
+                   Column( 'sequenceID', BigInteger, ForeignKey( 'DLSequence.sequenceID' ), primary_key = True ),
+                   Column( 'sequenceAttributeID', BigInteger, ForeignKey( 'DLSequenceAttribute.sequenceAttributeID' ), primary_key = True ),
                    Column( 'value', String( 128 ) ),
                    mysql_engine = 'InnoDB' )
 # Map the DLSequenceAttributeValue object to the dataLoggingSequenceAttributeValue
