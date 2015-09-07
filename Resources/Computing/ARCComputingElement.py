@@ -298,7 +298,7 @@ class ARCComputingElement( ComputingElement ):
       waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
       result['RunningJobs'] = int(running[0].split(":")[1])
       result['WaitingJobs'] = int(waiting[0].split(":")[1])
-    except:
+    except IndexError:
       result = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
       result['RunningJobs'] = 0
       result['WaitingJobs'] = 0
