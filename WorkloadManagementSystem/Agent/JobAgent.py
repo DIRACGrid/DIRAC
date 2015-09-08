@@ -53,11 +53,11 @@ class JobAgent( AgentModule ):
     self.initTimes = os.times()
 
     self.computingElement = ceInstance['Value']
-    #Localsite options
+    # Localsite options
     self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
     self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.defaultProxyLength = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 * 5 )
-    #Agent options
+    # Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
     self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
     self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
@@ -67,7 +67,7 @@ class JobAgent( AgentModule ):
     self.jobCount = 0
     self.matchFailedCount = 0
     self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', '' )
-    #Timeleft
+    # Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
     self.timeLeftError = ''
@@ -80,7 +80,7 @@ class JobAgent( AgentModule ):
     """The JobAgent execution method.
     """
     if self.jobCount:
-      #Only call timeLeft utility after a job has been picked up
+      # Only call timeLeft utility after a job has been picked up
       self.log.info( 'Attempting to check CPU time left for filling mode' )
       if self.fillingMode:
         if self.timeLeftError:
@@ -91,7 +91,7 @@ class JobAgent( AgentModule ):
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft = self.timeLeft )
         if not result['OK']:
           return self.__finish( result['Message'] )
-        
+
         # Update local configuration to be used by submitted job wrappers
         localCfg = CFG()
         if self.extraOptions:
@@ -99,11 +99,11 @@ class JobAgent( AgentModule ):
         else:
           localConfigFile = os.path.join( rootPath, "etc", "dirac.cfg" )
         localCfg.loadFromFile( localConfigFile )
-        if not localCfg.isSection('/LocalSite'):
-          localCfg.createNewSection('/LocalSite')
+        if not localCfg.isSection( '/LocalSite' ):
+          localCfg.createNewSection( '/LocalSite' )
         localCfg.setOption( '/LocalSite/CPUTimeLeft', self.timeLeft )
         localCfg.writeToFile( localConfigFile )
-        
+
       else:
         return self.__finish( 'Filling Mode is Disabled' )
 
@@ -234,7 +234,7 @@ class JobAgent( AgentModule ):
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
 
       if os.environ.has_key( 'BOINC_JOB_ID' ):
-        # Report BOINC environment 
+        # Report BOINC environment
         for p in ['BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName']:
           jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
 
@@ -286,7 +286,7 @@ class JobAgent( AgentModule ):
         self.timeLeftError = result['Message']
       else:
         if self.cpuFactor:
-          # if the batch system is not defined used the CPUNormalizationFactor 
+          # if the batch system is not defined used the CPUNormalizationFactor
           # defined locally
           self.timeLeft = self.__getCPUTimeLeft()
     scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
@@ -424,7 +424,7 @@ class JobAgent( AgentModule ):
 
     self.log.info( 'Submitting %s to %sCE' % ( os.path.basename( wrapperFile ), self.ceName ) )
 
-    #Pass proxy to the CE
+    # Pass proxy to the CE
     proxy = proxyChain.dumpAllToString()
     if not proxy['OK']:
       self.log.error( 'Invalid proxy', proxy )
@@ -585,9 +585,9 @@ class JobAgent( AgentModule ):
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     jobReport = JobReport( int( jobID ), 'JobAgent@%s' % self.siteName )
 
-    #Setting a job parameter does not help since the job will be rescheduled,
-    #instead set the status with the cause and then another status showing the
-    #reschedule operation.
+    # Setting a job parameter does not help since the job will be rescheduled,
+    # instead set the status with the cause and then another status showing the
+    # reschedule operation.
 
     jobReport.setJobStatus( status = 'Rescheduled',
                             application = message,
@@ -617,4 +617,4 @@ class JobAgent( AgentModule ):
 
     return S_OK()
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
