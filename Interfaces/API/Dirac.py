@@ -306,8 +306,8 @@ class Dirac( API ):
     if isinstance( job, basestring ):
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
-        fd = os.open( job, 'r' )
-        jdlAsString = fd.read()
+        f = open( job, 'r' )
+        jdlAsString = f.read()
       else:
         self.log.verbose( 'Job is a JDL string' )
         jdlAsString = job
