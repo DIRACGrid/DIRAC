@@ -62,6 +62,7 @@ class JobAgent( AgentModule ):
     self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
     self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
+    self.minimumTimeLeft = self.am_getOption( 'MinimumTimeLeft', 1000 )
     self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', True )
     self.stopAfterFailedMatches = self.am_getOption( 'StopAfterFailedMatches', 10 )
     self.jobCount = 0
@@ -87,6 +88,8 @@ class JobAgent( AgentModule ):
           self.log.warn( self.timeLeftError )
           return self.__finish( self.timeLeftError )
         self.log.info( '%s normalized CPU units remaining in slot' % ( self.timeLeft ) )
+        if self.timeLeft <= self.minimumTimeLeft:
+          return self.__finish( 'No more time left' )
         # Need to update the Configuration so that the new value is published in the next matching request
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft = self.timeLeft )
         if not result['OK']:
