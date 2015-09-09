@@ -56,7 +56,7 @@ result = getProxyInfo()
 if result[ 'OK' ]:
   user = result[ 'Value' ][ 'username' ]
 else:
-  return result
+  DIRACexit( -1 )
 if not user:
   user = 'unknown'
 
