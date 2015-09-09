@@ -4,11 +4,11 @@
 import DIRAC
 from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Resources.Utilities                                import checkArgumentFormat
-from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, getVOForGroup, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, \
+                                                                     getVOForGroup, getVOOption
 
 from stat import *
 import os, re, types, time
@@ -162,12 +162,10 @@ def returnCode( error, value = '', errMsg = '' ):
 #
 #####################################################
 
-class LcgFileCatalogClient( FileCatalogueBase ):
+class LcgFileCatalogClient( object ):
 
   def __init__( self, infosys = None, host = None ):
     global lfc, importedLFC
-
-    FileCatalogueBase.__init__( self, 'LFC' )
 
     if importedLFC == None:
       try:
@@ -224,7 +222,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # These are the get/set methods for use within the client
   #
 
-  def hasMethod( self, methodName ):
+  def hasCatalogMethod( self, methodName ):
     """
     :param methodName: the name of the method to check
     :return: bollean if the method is implemented
