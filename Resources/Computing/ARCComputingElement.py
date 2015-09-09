@@ -14,11 +14,10 @@ import os
 import stat
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger, shellCall
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
-from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
@@ -282,23 +281,29 @@ class ARCComputingElement( ComputingElement ):
     """ Method to return information on running and pending jobs.
     """
     vo = ''
-    result = getVOfromProxyGroup()
-    if result['OK']:
-      vo = result['Value']
+    res = getVOfromProxyGroup()
+    if res['OK']:
+      vo = res['Value']
     else: # A backup solution which may work
       vo = self.ceParameters['VO']
-    voFilters = '(GlueCEAccessControlBaseRule=VOMS:/%s/*)' % vo
-    voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
-    voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
-    filt = '(&(GlueCEUniqueID=%s*)(|%s))' % ( self.ceHost, voFilters )
-    result = ldapsearchBDII( filt, attr=None, host=None, base=None )
-    ces = result['Value']
-    filt = '(&(objectClass=GlueVOView)(|%s))' % ( voFilters )
-    dn = ces[0]['dn']
-    result = ldapsearchBDII( filt, attr=None, host=None, base = dn )
-    stats = result['Value'][0]['attr']
-    result['RunningJobs'] = int(stats["GlueCEStateRunningJobs"])
-    result['WaitingJobs'] = int(stats["GlueCEStateTotalJobs"])
+    cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
+    res = shellCall( 0, cmd )
+    if not res['OK']:
+      gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
+      return res
+    result = S_OK()
+    try:
+      ldapValues = res['Value'][1].split("\n")
+      running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
+      waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
+      result['RunningJobs'] = int(running[0].split(":")[1])
+      result['WaitingJobs'] = int(waiting[0].split(":")[1])
+    except IndexError:
+      result = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
+      result['RunningJobs'] = 0
+      result['WaitingJobs'] = 0
+    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, result['RunningJobs']))
+    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, result['WaitingJobs']))
     result['SubmittedJobs'] = 0
     return result
 

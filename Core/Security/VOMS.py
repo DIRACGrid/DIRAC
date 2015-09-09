@@ -170,7 +170,7 @@ class VOMS( BaseSecurity ):
 
     finally:
       if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyDict[ 'tempFile' ] )
+        self._unlinkFiles( proxyDict[ 'file' ] )
 
   def getVOMSESLocation( self ):
     #755

@@ -1,4 +1,4 @@
-[v6r15-pre2]
+[v6r15-pre3]
 
 *Core
 NEW: New class DError for reporting errors in output results of DIRAC functions 
@@ -17,6 +17,29 @@ CHANGE: FileCatalogClient - make explicit methods for all service calls
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
+
+[v6r14p3]
+
+*Core
+BUGFIX: small bug fixed in dirac-install-component, dirac-uninstall-component
+BUGFIX: VOMS - remove the temporary file created when issuing getVOMSProxyInfo
+FIX: FileHelper - support unicode file names
+FIX: DictCache - purges all the entry of the DictCache when deleting the DictCache object 
+
+*Framework
+BUGFIX: dirac-populate-component-db - avoid return statement out of scope
+
+*Interfaces
+BUGFIX: Dirac - in submitJob() faulty use of os.open
+
+*WMS
+FIX: JobWrapper - avoid evaluation of OutputData to ['']
+FIX: Matcher - the Matcher object uses a VO dependent Operations helper
+CHANGE: JobAgent - stop agent if time left is too small (default 1000 HS06.s)
+FIX: CPUNormalization - use correct denominator to get power in MJF
+
+*Resources
+FIX: ARCComputingElement - changed implementation of ldap query for getCEStatus
 
 [v6r14p2]
 
