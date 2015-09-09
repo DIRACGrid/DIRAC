@@ -12,6 +12,30 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import checkCatalogArguments
 
+# List of common File Catalog methods implemented by this client
+CATALOG_METHODS = [ 'exists', 'addFile', 'removeFile', 'isFile', 'getFileMetadata', 'getFileSize',
+                    'getLFNForGUID', 'getLFNForPFN', 'setFileStatus', 'addFileAncestors',
+                    'getFileAncestors', 'getFileDescendents',
+
+                    'addReplica', 'setReplicaProblematic', 'getReplicas', 'getReplicaStatus',
+                    'setReplicaHost', 'setReplicaStatus',
+
+                    'isDirectory', 'getDirectoryReplicas', 'createDirectory', 'removeDirectory',
+                    'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+
+                    'changePathOwner', 'changePathGroup', 'changePathMode',
+
+                    'addMetadataField', 'deleteMetadataField', 'getMetadataFields', 'setMetadata',
+                    'setMetadataBulk', 'removeMetadata'
+                    'findFilesByMetadata', 'getFileUserMetadata', 'getDirectoryUserMetadata',
+                    'findDirectoriesByMetadata', 'getReplicasByMetadata', 'findFilesByMetadataDetailed',
+                    'findFilesByMetadataWeb', 'getCompatibleMetadata', 'addMetadataSet', 'getMetadataSet',
+
+                    'addDataset', 'addDatasetAnnotation', 'removeDataset', 'checkDataset', 'updateDataset',
+                    'getDatasets', 'getDatasetParameters', 'getDatasetAnnotation', 'freezeDataset',
+                    'releaseDataset', 'getDatasetFiles'
+                    ]
+
 class FileCatalogClient( Client ):
   """ Client code to the DIRAC File Catalogue
   """
@@ -38,6 +62,13 @@ class FileCatalogClient( Client ):
       else:
         self.available = True
     return S_OK( self.available )
+
+  def hasMethod( self, methodName ):
+    """ Check of a method with the given name is implemented
+    :param str methodName: the name of the method to check
+    :return: boolean Flag
+    """
+    return methodName in CATALOG_METHODS
 
   @checkCatalogArguments
   def getReplicas( self, lfns, allStatus = False, timeout = 120 ):
