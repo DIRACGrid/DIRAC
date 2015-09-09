@@ -7,7 +7,7 @@ from DIRAC import S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 class PluginBase( object ):
-  
+
   def __init__( self, plugin, operationsHelper = None ):
     """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
@@ -31,12 +31,12 @@ class PluginBase( object ):
     try:
       evalString = "self._%s()" % self.plugin
       return eval( evalString )
-    except AttributeError, x:
+    except AttributeError as x:
       if re.search( self.plugin, str( x ) ):
         return S_ERROR( "Plugin not found" )
       else:
         raise AttributeError( x )
-    except Exception, x:
-      gLogger.exception( x )
+    except Exception as x:
+      gLogger.exception( 'Exception in plugin', self.plugin, x )
       raise Exception( x )
 
