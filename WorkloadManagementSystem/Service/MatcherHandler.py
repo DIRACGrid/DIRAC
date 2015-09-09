@@ -8,20 +8,21 @@ __RCSID__ = "$Id$"
 
 from types import StringType, DictType, StringTypes
 
-from DIRAC                                             import gLogger, S_OK, S_ERROR
+from DIRAC                                               import gLogger, S_OK, S_ERROR
 
-from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
-from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
+from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
+from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
 
-from DIRAC.FrameworkSystem.Client.MonitoringClient     import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient       import gMonitor
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB   import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB             import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB       import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB      import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 
-from DIRAC.WorkloadManagementSystem.Client.Matcher     import Matcher
-from DIRAC.WorkloadManagementSystem.Client.Limiter     import Limiter
+from DIRAC.WorkloadManagementSystem.Client.Matcher       import Matcher
+from DIRAC.WorkloadManagementSystem.Client.Limiter       import Limiter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 gJobDB = False
 gTaskQueueDB = False
@@ -68,7 +69,6 @@ def sendNumTaskQueues():
 class MatcherHandler( RequestHandler ):
 
   def initialize( self ):
-    self.matcher = Matcher( pilotAgentsDB = pilotAgentsDB, jobDB = gJobDB, tqDB = gTaskQueueDB, jlDB = jlDB, )
     self.limiter = Limiter( jobDB = gJobDB )
 
 ##############################################################################
@@ -82,7 +82,13 @@ class MatcherHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
 
     try:
-      result = self.matcher.selectJob( resourceDescription, credDict )
+      opsHelper = Operations( group = credDict['group'] )
+      matcher = Matcher( pilotAgentsDB = pilotAgentsDB,
+                         jobDB = gJobDB,
+                         tqDB = gTaskQueueDB,
+                         jlDB = jlDB,
+                         opsHelper = opsHelper )
+      result = matcher.selectJob( resourceDescription, credDict )
     except RuntimeError, rte:
       self.log.error( "Error requesting job: ", rte )
       return S_ERROR( "Error requesting job" )
