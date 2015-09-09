@@ -34,6 +34,15 @@ class FileCatalog( object ):
 
   write_methods += write_meta_methods
 
+  lfn_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
+                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                'resolveDataset', 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID',
+                'createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
+                'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
+                'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
+                'changePathOwner', 'changePathGroup']
+
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
     """
@@ -49,10 +58,10 @@ class FileCatalog( object ):
 
     if catalogs is None:
       catalogList = []
-    elif type( catalogs ) in types.StringTypes:
+    elif isinstance( catalogs, basestring ):
       catalogList = [catalogs]
-    else:
-      catalogList = catalogs
+    elif isinstance( catalogs, ( list, tuple ) ):
+      catalogList = list( catalogs )
 
     if catalogList:
       res = self._getSelectedCatalogs( catalogList )
@@ -94,25 +103,33 @@ class FileCatalog( object ):
     successful = {}
     failed = {}
     failedCatalogs = []
-    fileInfo = parms[0]
-    res = checkArgumentFormat( fileInfo )
-    if not res['OK']:
-      return res
-    fileInfo = res['Value']
-    allLfns = fileInfo.keys()
-    parms1 = parms[1:]
-    lfnsFlag = False
+    fileInfo = {}
+    lfnMapDict = {}
+
+    # For methods that pass an LFN argument first do the check and get the
+    # changed LFN mapping
+    lfnsFlag = self.call in FileCatalog.lfn_methods
+    if lfnsFlag:
+      fileInfo = parms[0]
+      res = checkArgumentFormat( fileInfo, generateMap = True )
+      if not res['OK']:
+        return res
+      fileInfo, lfnMapDict = res['Value']
+      kws['NoLFNChecking'] = True
+      allLfns = fileInfo.keys()
+      parms1 = parms[1:]
+
     for catalogName, oCatalog, master in self.writeCatalogs:
 
-      # Skip if metadata related method on pure File Catalog
-      if self.call in FileCatalog.write_meta_methods and not catalogName in self.metaCatalogs:
+      # Skip if the method is not implemented in this catalog
+      if not oCatalog.hasMethod( self.call ):
         continue
 
       method = getattr( oCatalog, self.call )
-      if self.call in FileCatalog.write_meta_methods:
-        res = method( *parms, **kws )
-      else:
+      if lfnsFlag:
         res = method( fileInfo, *parms1, **kws )
+      else:
+        res = method( *parms, **kws )
 
       if not res['OK']:
         if master:
@@ -123,23 +140,27 @@ class FileCatalog( object ):
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
           failedCatalogs.append( ( catalogName, res['Message'] ) )
-      else:
-        if 'Failed' in res['Value']:
-          lfnsFlag = True
-          for lfn, message in res['Value']['Failed'].items():
-            # Save the error message for the failed operations
-            failed.setdefault( lfn, {} )[catalogName] = message
-            if master:
-              # If this is the master catalog then we should not attempt the operation on other catalogs
-              fileInfo.pop( lfn, None )
-          for lfn, result in res['Value']['Successful'].items():
-            # Save the result return for each file for the successful operations
-            successful.setdefault( lfn, {} )[catalogName] = result
+      elif lfnsFlag:
+        for lfn, message in res['Value']['Failed'].items():
+          # Save the error message for the failed operations
+          failed.setdefault( lfn, {} )[catalogName] = message
+          if master:
+            # If this is the master catalog then we should not attempt the operation on other catalogs
+            fileInfo.pop( lfn, None )
+        for lfn, result in res['Value']['Successful'].items():
+          # Save the result return for each file for the successful operations
+          successful.setdefault( lfn, {} )[catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
     if lfnsFlag:
       for catalogName, errorMessage in failedCatalogs:
         for lfn in allLfns:
           failed.setdefault( lfn, {} )[catalogName] = errorMessage
+      # Restore original lfns if they were changed by normalization
+      if lfnMapDict:
+        for lfn in failed:
+          failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
+        for lfn in successful:
+          successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
       resDict = {'Failed':failed, 'Successful':successful}
       return S_OK( resDict )
     else:
@@ -152,8 +173,8 @@ class FileCatalog( object ):
     failed = {}
     for catalogName, oCatalog, _master in self.readCatalogs:
 
-      # Skip if metadata related method on pure File Catalog
-      if self.call in FileCatalog.ro_meta_methods and not catalogName in self.metaCatalogs:
+      # Skip if the method is not implemented in this catalog
+      if not oCatalog.hasMethod( self.call ):
         continue
 
       method = getattr( oCatalog, self.call )
@@ -243,9 +264,7 @@ class FileCatalog( object ):
     if fileCatalogs:
       operationsFlag = True
     else:
-      fileCatalogs = self.opHelper.getSections( '/Services/Catalogs' )
       result = self.opHelper.getSections( '/Services/Catalogs' )
-      fileCatalogs = []
       operationsFlag = False
       if result['OK']:
         fileCatalogs = result['Value']
