@@ -224,6 +224,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # These are the get/set methods for use within the client
   #
 
+  def hasMethod( self, methodName ):
+    """
+    :param methodName: the name of the method to check
+    :return: bollean if the method is implemented
+    """
+    return hasattr( self, methodName )
+
   def isOK( self ):
     return self.valid
 
