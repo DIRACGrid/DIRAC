@@ -57,9 +57,10 @@ def checkArgumentFormat( path, generateMap = False ):
       uList = mUrl.split('/')
       if len( uList ) >= 2 and uList[1] == 'grid':  
         mUrl = mUrl[5:] 
-    normpath = os.path.normpath( mUrl )
-    urls[normpath] = pathDict[url]
-    urlMap[normpath] = url
+    normPath = os.path.normpath( mUrl )
+    urls[normPath] = pathDict[url]
+    if normPath != url:
+      urlMap[normPath] = url
   if generateMap:
     return S_OK( ( urls, urlMap ) )
   else:
@@ -70,27 +71,33 @@ def checkCatalogArguments( f ):
   """
   def processWithCheckingArguments(*args, **kwargs):
 
-    argList = list( args )
-    lfnArgument = argList[1]
-    result = checkArgumentFormat( lfnArgument, generateMap = True )
-    if not result['OK']:
-      return result
-    checkedLFNDict, lfnMap = result['Value']
-    argList[1] = checkedLFNDict
-    argTuple = tuple( argList )
+    checkFlag = kwargs.pop( 'NoLFNChecking', True )
+    if checkFlag:
+      argList = list( args )
+      lfnArgument = argList[1]
+      result = checkArgumentFormat( lfnArgument, generateMap = True )
+      if not result['OK']:
+        return result
+      checkedLFNDict, lfnMap = result['Value']
+      argList[1] = checkedLFNDict
+      argTuple = tuple( argList )
+    else:
+      argTuple = args
     result = f(*argTuple, **kwargs)
     if not result['OK']:
       return result
 
+    if not checkFlag:
+      return result
+
     # Restore original paths
     argList[1] = lfnArgument
-    args = tuple( argList )
     failed = {}
     successful = {}
     for lfn in result['Value']['Failed']:
-      failed[lfnMap[lfn]] = result['Value']['Failed'][lfn]
+      failed[lfnMap.get( lfn, lfn )] = result['Value']['Failed'][lfn]
     for lfn in result['Value']['Successful']:
-      successful[lfnMap[lfn]] = result['Value']['Successful'][lfn]
+      successful[lfnMap.get( lfn, lfn )] = result['Value']['Successful'][lfn]
 
     result['Value'].update( { "Successful": successful, "Failed": failed } )
     return result
