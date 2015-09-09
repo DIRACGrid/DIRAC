@@ -122,7 +122,7 @@ class FileCatalog( object ):
     for catalogName, oCatalog, master in self.writeCatalogs:
 
       # Skip if the method is not implemented in this catalog
-      if not oCatalog.hasMethod( self.call ):
+      if not oCatalog.hasCatalogMethod( self.call ):
         continue
 
       method = getattr( oCatalog, self.call )
@@ -174,7 +174,7 @@ class FileCatalog( object ):
     for catalogName, oCatalog, _master in self.readCatalogs:
 
       # Skip if the method is not implemented in this catalog
-      if not oCatalog.hasMethod( self.call ):
+      if not oCatalog.hasCatalogMethod( self.call ):
         continue
 
       method = getattr( oCatalog, self.call )
