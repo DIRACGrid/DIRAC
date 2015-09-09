@@ -63,7 +63,7 @@ class FileCatalogClient( Client ):
         self.available = True
     return S_OK( self.available )
 
-  def hasMethod( self, methodName ):
+  def hasCatalogMethod( self, methodName ):
     """ Check of a method with the given name is implemented
     :param str methodName: the name of the method to check
     :return: boolean Flag
