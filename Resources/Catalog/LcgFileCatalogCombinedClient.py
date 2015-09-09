@@ -118,6 +118,14 @@ class LcgFileCatalogCombinedClient( object ):
     """
     return self.name
 
+  def hasCatalogMethod( self, methodName ):
+    """ Check if the method with the given name is implemented
+    :param methodName: name of the method
+    :return: boolean id the method is implemented
+    """
+    return methodName in LcgFileCatalogCombinedClient.ro_methods or \
+           methodName in LcgFileCatalogCombinedClient.write_methods
+
   def __getattr__( self, name ):
     self.call = name
     if name in LcgFileCatalogCombinedClient.write_methods:
