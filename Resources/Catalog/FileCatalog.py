@@ -35,13 +35,13 @@ class FileCatalog( object ):
   write_methods += write_meta_methods
 
   lfn_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
-                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID',
-                'createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
-                'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
-                'changePathOwner', 'changePathGroup']
+                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                 'resolveDataset', 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID',
+                 'createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
+                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
+                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
+                 'changePathOwner', 'changePathGroup']
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
