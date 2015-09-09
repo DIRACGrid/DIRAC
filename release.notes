@@ -24,6 +24,7 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
 BUGFIX: small bug fixed in dirac-install-component, dirac-uninstall-component
 BUGFIX: VOMS - remove the temporary file created when issuing getVOMSProxyInfo
 FIX: FileHelper - support unicode file names
+FIX: DictCache - purges all the entry of the DictCache when deleting the DictCache object 
 
 *Framework
 BUGFIX: dirac-populate-component-db - avoid return statement out of scope
