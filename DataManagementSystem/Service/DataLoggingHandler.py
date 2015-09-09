@@ -1,86 +1,160 @@
-# """
-# :mod: DataLoggingHandler
-#
-# .. module: DataLoggingHandler
-#
-# :synopsis: DataLoggingHandler is the implementation of the Data Logging service in the DISET framework.
-#
-# The following methods are available in the Service interface:
-#
-# - addFileRecord()
-# - addFileRecords()
-# - getFileLoggingInfo()
-#
-# """
-#
-# __RCSID__ = "$Id$"
-#
-# ## imports
-# from types import StringType, ListType, TupleType
-# ## from DIRAC
-# from DIRAC import S_OK
-# from DIRAC.Core.DISET.RequestHandler import RequestHandler
-# from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
-#
-# ## global instance of the DataLoggingDB
-# gDataLoggingDB = False
-#
-# def initializeDataLoggingHandler( serviceInfo ):
-#   """ handler initialisation """
-#   global gDataLoggingDB
-#   gDataLoggingDB = DataLoggingDB()
-#
-#   res = gDataLoggingDB._connect()
-#   if not res['OK']:
-#     return res
-#   res = gDataLoggingDB._checkTable()
-#   if not res['OK'] and not res['Message'] == 'The requested table already exist':
-#     return res
-#   return S_OK()
-#
-# class DataLoggingHandler( RequestHandler ):
-#   """
-#   .. class:: DataLoggingClient
-#
-#   Request handler for DataLogging service.
-#   """
-#
-#   types_addFileRecord = [ [StringType, ListType], StringType, StringType, StringType, StringType ]
-#   @staticmethod
-#   def export_addFileRecord( lfn, status, minor, date, source ):
-#     """ Add a logging record for the given file
-#
-#     :param self: self reference
-#     :param mixed lfn: list of strings or a string with LFN
-#     :param str status: file status
-#     :param str minor: minor status (additional information)
-#     :param mixed date: datetime.datetime or str(datetime.datetime) or ""
-#     :param str source: source setting a new status
-#     """
-#     if type( lfn ) == StringType:
-#       lfns = [ lfn ]
-#     else:
-#       lfns = lfn
-#     return gDataLoggingDB.addFileRecord( lfns, status, minor, date, source )
-#
-#   types_addFileRecords = [ [ ListType, TupleType ] ]
-#   @staticmethod
-#   def export_addFileRecords( fileTuples ):
-#     """ Add a group of logging records
-#     """
-#     return gDataLoggingDB.addFileRecords( fileTuples )
-#
-#   types_getFileLoggingInfo = [ StringType ]
-#   @staticmethod
-#   def export_getFileLoggingInfo( lfn ):
-#     """ Get the file logging information
-#     """
-#     return gDataLoggingDB.getFileLoggingInfo( lfn )
-#
-#   types_getUniqueStates = []
-#   @staticmethod
-#   def export_getUniqueStates():
-#     """ Get all the unique states
-#     """
-#     return gDataLoggingDB.getUniqueStates()
-#
+'''
+Created on May 5, 2015
+
+@author: Corentin Berger
+'''
+import zlib
+import json
+
+from types import StringTypes, NoneType, BooleanType
+
+from DIRAC      import S_OK, gConfig, gLogger, S_ERROR
+
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.DataManagementSystem.private.DLDecoder import DLDecoder
+from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
+
+class DataLoggingHandler( RequestHandler ):
+
+  @classmethod
+  def initializeHandler( cls, serviceInfoDict ):
+    """ initialize handler
+    """
+    csSection = PathFinder.getServiceSection( 'DataManagement/DataLogging' )
+    # maxSequenceToMove is the maximum number of sequences that we can move in the moveSequences method
+    cls.maxSequenceToMove = gConfig.getValue( '%s/MaxSequenceToMove' % csSection, 100 )
+    # expirationTime is the maximum time for a Compressed Sequence to has its status at Ongoing, the time is in minutes
+    cls.expirationTime = gConfig.getValue( '%s/ExpirationTime' % csSection, 3600 )
+    # period between each call of moveSequences method, in second
+    cls.moveSequencesPeriod = gConfig.getValue( '%s/MoveSequencesPeriod' % csSection, 10 )
+    # period between each call of cleanExpiredCompressedSequence method, in second
+    cls.cleanExpiredPeriod = gConfig.getValue( '%s/CleanExpiredPeriod' % csSection, 10800 )
+    # period between each call of deleteCompressedSequences method, in second
+    cls.deleteCompressedSequencesPeriod = gConfig.getValue( '%s/DeleteCompressedSequencesPeriod' % csSection, 10800 )
+    try:
+      cls.__dataLoggingDB = DataLoggingDB()
+      cls.__dataLoggingDB.createTables()
+    except RuntimeError, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+    # we set the minimum Valid period at 1 second
+    gThreadScheduler.setMinValidPeriod( 10 )
+    # method moveSequences will be call each 10 seconds
+    gThreadScheduler.addPeriodicTask( cls.moveSequencesPeriod, cls.moveSequences )
+    # method deleteCompressedSequences will be call each 10800 seconds or 3 hours
+    gThreadScheduler.addPeriodicTask( cls.deleteCompressedSequencesPeriod, cls.deleteCompressedSequences )
+    # method cleanExpiredCompressedSequence will be call each 10800 seconds or 3 hours
+    gThreadScheduler.addPeriodicTask( cls.cleanExpiredPeriod, cls.cleanExpiredCompressedSequence )
+
+    return S_OK()
+
+
+  @classmethod
+  def moveSequences( cls ):
+    """ this method call the moveSequences method of DataLoggingDB"""
+    res = cls.__dataLoggingDB.moveSequences( cls.maxSequenceToMove )
+    return res
+
+  @classmethod
+  def cleanExpiredCompressedSequence( cls ):
+    """ this method call the cleanExpiredCompressedSequence method of DataLoggingDB"""
+    res = cls.__dataLoggingDB.cleanExpiredCompressedSequence( cls.expirationTime )
+    return res
+
+  @classmethod
+  def deleteCompressedSequences( cls ):
+    """ this method call the deleteCompressedSequences method of DataLoggingDB"""
+    res = cls.__dataLoggingDB.deleteCompressedSequences()
+    return res
+
+
+  types_insertSequence = [StringTypes, BooleanType]
+  @classmethod
+  def export_insertSequence( cls, sequenceCompressed, directInsert = False ):
+    """
+      this method call the insertSequenceDirectly method of DataLoggingDB if directInsert = True
+      else call insertCompressedSequence method of DataLoggingDB
+
+      :param sequence, the sequence to insert
+      :param directInsert, a boolean, if we want to insert directly as a DLSequence and not a DLCompressedSequence
+    """
+    if directInsert :
+      # if the compressed sequence has been inserted by the RequestManager,
+      # the value is just a JSON DLSequence object representation which is not compressed
+      try :
+        sequenceJSON = zlib.decompress( sequenceCompressed )
+      except zlib.error :
+        sequenceJSON = sequenceCompressed
+      sequence = json.loads( sequenceJSON , cls = DLDecoder )
+      res = cls.__dataLoggingDB.insertSequenceDirectly( sequence )
+    else :
+      res = cls.__dataLoggingDB.insertCompressedSequence( sequenceCompressed )
+    return res
+
+
+  types_getSequence = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                       ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                       ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                       ( list( StringTypes ) + [NoneType] )]
+  @classmethod
+  def export_getSequence( cls, fileName = None, callerName = None, before = None, after = None, status = None, extra = None,
+                          userName = None, hostName = None, group = None, errorCode = None ):
+    """
+      this method call the getSequence method of DataLoggingDB
+
+      :param fileName, name of a file
+      :param callerName, a caller name
+      :param before, a date
+      :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+      :param extra, a list of tuple [ ( extraArgsName1, value1 ), ( extraArgsName2, value2 ) ]
+      :param userName, a DIRAC user name
+      :param hostName, an host name
+      :param group, a DIRAC group
+
+      :return sequences, a list of sequence
+    """
+    res = cls.__dataLoggingDB.getSequence( fileName, callerName, before, after, status, extra, userName, hostName, group, errorCode )
+    if not res["OK"]:
+      return res
+    sequences = [seq.toJSON()['Value'] for seq in res['Value']]
+    return S_OK( sequences )
+
+
+  types_getSequenceByID = [StringTypes]
+  @classmethod
+  def export_getSequenceByID( cls, IDSeq ):
+    """
+      this method call the getSequenceByID method of DataLoggingDB
+
+      :param IDSeq, ID of the sequence
+
+      :return sequence, a list with one sequence
+    """
+    res = cls.__dataLoggingDB.getSequenceByID( IDSeq )
+    if not res["OK"]:
+      return res
+    sequences = [seq.toJSON()['Value'] for seq in res['Value']]
+    return S_OK( sequences )
+
+  types_getMethodCall = [( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ),
+                         ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] ), ( list( StringTypes ) + [NoneType] )]
+  @classmethod
+  def export_getMethodCall( cls, fileName = None, name = None, before = None, after = None, status = None, errorCode = None ):
+    """
+      this method call the getMethodCallOnFile method of DataLoggingDB
+
+      :param fileName, name of the file
+      :param before, a date
+      :param after, a date
+      :param status, a str in [ Failed, Successful, Unknown ], can be None
+
+      :return methodCalls, a list of method call
+    """
+    res = cls.__dataLoggingDB.getMethodCall( fileName, name, before, after, status, errorCode )
+    if not res["OK"]:
+      return res
+    methodCalls = [call.toJSON()['Value'] for call in res['Value']]
+    return S_OK( methodCalls )
