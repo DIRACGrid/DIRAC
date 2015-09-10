@@ -304,12 +304,12 @@ class FileCatalogClient( Client ):
 
   def getUsers( self, timeout = 120 ):
     """ Get all the users defined in the File Catalog """
-    return self._getRPC( timeout = timeout ).getUsers( self.getRemoteCredentials() )
+    return self._getRPC( timeout = timeout ).getUsers()
 
 
   def getGroups( self, timeout = 120 ):
     """ Get all the groups defined in the File Catalog """
-    return self._getRPC( timeout = timeout ).getGroups( self.getRemoteCredentials() )
+    return self._getRPC( timeout = timeout ).getGroups()
 
   ########################################################################
   #

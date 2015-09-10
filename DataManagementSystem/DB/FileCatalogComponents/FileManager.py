@@ -8,6 +8,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase  import
 from DIRAC.Core.Utilities.List                                            import stringListToString, \
                                                                                  intListToString, \
                                                                                  breakListIntoChunks
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities        import getIDSelectString
 
 DEBUG = 0
 
@@ -187,6 +188,27 @@ class FileManager( FileManagerBase ):
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
 
+  def _getDirectoryFileIDs( self, dirID, requestString = False ):
+    """ Get a list of IDs for all the files stored in given directories or their
+        subdirectories
+    :param mixt dirID: single directory ID or a list of directory IDs
+    :param boolean requestString: if True return result as a SQL SELECT string
+    :return: list of file IDs or SELECT string
+    """
+
+    result = getIDSelectString( dirID )
+    if not result['OK']:
+      return result
+    dirListString = result['Value']
+
+    if requestString:
+      req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s )" % dirListString
+      return S_OK( req )
+
+    req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
+    result = self.db._query( req )
+    return result
+
   def _getFileMetadataByID( self, fileIDs, connection=False ):
     """ Get standard file metadata for a list of files specified by FileID
     """
@@ -301,9 +323,6 @@ class FileManager( FileManagerBase ):
     for fileID,guid in res['Value']:
       guidDict[guid] = fileID
     return S_OK(guidDict)
-
-
-
 
   def getLFNForGUID( self, guids, connection = False ):
     """ Returns the lfns matching given guids"""
@@ -617,20 +636,27 @@ class FileManager( FileManagerBase ):
 
   def _setFileParameter( self, fileID, paramName, paramValue, connection = False ):
     connection = self._getConnection(connection)
-    if type(fileID) not in [TupleType,ListType]:
-      fileID = [fileID]
-      
+
+    result = getIDSelectString( fileID )
+    if not result['OK']:
+      return result
+    fileIDString = result['Value']
+
     if paramName in ['UID','GID','Status','Size']:
       # Treat primary file attributes specially
-      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % ( paramName, paramValue, intListToString( fileID ) )
+      if 'select' in fileIDString.lower():
+        tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
+      else:
+        tmpreq = "UPDATE FC_Files %%s WHERE FileID IN (%s)" % fileIDString
+      req = tmpreq % "SET %s='%s'" % ( paramName, paramValue )
       result = self.db._update(req,connection)
       if not result['OK']:
         return result
-      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % intListToString( fileID )
+      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % fileIDString
     else:  
       req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % ( paramName, paramValue,
-                                                                                                       intListToString( fileID ) )
-    return self.db._update(req,connection)
+                                                                                                        fileIDString )
+    return self.db._update( req, connection )
     
   def __getRepIDForReplica( self, fileID, seID, connection = False ):
     connection = self._getConnection(connection)
@@ -655,7 +681,8 @@ class FileManager( FileManagerBase ):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'], allStatus = False, connection = False ):
+  def _getFileReplicas( self, fileIDs, fields_input = ['PFN'],
+                        allStatus = False, connection = False ):
     """ Get replicas for the given list of files specified by their fileIDs
     """
     fields = list(fields_input)
@@ -670,22 +697,22 @@ class FileManager( FileManagerBase ):
       repIDDict = {}  
       if fields:  
         req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % \
-              (intListToString(fields),intListToString(fileIDDict.keys()))
-        res = self.db._query(req,connection)
+              ( intListToString( fields ), intListToString( fileIDDict.keys() ) )
+        res = self.db._query( req, connection )
         if not res['OK']:
           return res
         for tuple_ in res['Value']:
           repID = tuple_[0]
-          repIDDict[repID] = dict(zip(fields,tuple_[1:])) 
+          repIDDict[repID] = dict( zip( fields, tuple_[1:] ) )
           statusID = fileIDDict[repID][2]
-          res = self._getIntStatus(statusID,connection=connection)
+          res = self._getIntStatus( statusID, connection = connection )
           if not res['OK']:
             continue
           repIDDict[repID]['Status'] = res['Value']
       else:
         for repID in fileIDDict:
           statusID = fileIDDict[repID][2]
-          res = self._getIntStatus(statusID,connection=connection)
+          res = self._getIntStatus( statusID, connection = connection )
           if not res['OK']:
             continue
           repIDDict[repID] = {'Status' : res['Value'] }  
