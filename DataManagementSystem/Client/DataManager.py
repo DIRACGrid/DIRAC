@@ -13,10 +13,14 @@ This module consists of DataManager and related classes.
 __RCSID__ = "$Id$"
 # # imports
 from datetime import datetime, timedelta
-import fnmatch, os, time
+import fnmatch
+import os
+import time
+import errno
+
 # # from DIRAC
 import DIRAC
-from DIRAC import S_OK, S_ERROR, DError, DErrno, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DError, DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -27,11 +31,11 @@ from DIRAC.Core.Utilities.List import randomize
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
+
 
 def _isOlderThan( stringTime, days ):
   timeDelta = timedelta( days = days )
@@ -344,7 +348,6 @@ class DataManager( object ):
       else:
         successful[lfn] = res['Value']
 
-    gDataStoreClient.commit()
     return S_OK( { 'Successful': successful, 'Failed' : failed } )
 
   def __getFile( self, lfn, replicas, metadata, destinationDir ):
@@ -363,47 +366,29 @@ class DataManager( object ):
     for storageElementName in res['Value']:
       se = StorageElement( storageElementName, vo = self.vo )
 
-      oDataOperation = _initialiseAccountingObject( 'getFile', storageElementName, 1 )
-      oDataOperation.setStartTime()
-      startTime = time.time()
-
       res = returnSingleResult( se.getFile( lfn, localPath = os.path.realpath( destinationDir ) ) )
-
-      getTime = time.time() - startTime
-      oDataOperation.setValueByKey( 'TransferTime', getTime )
 
       if not res['OK']:
         errTuple = ( "Error getting file from storage:", "%s from %s, %s" % ( lfn, storageElementName, res['Message'] ) )
         errToReturn = res
-        oDataOperation.setValueByKey( 'TransferOK', 0 )
-        oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-        oDataOperation.setEndTime()
-
       else:
-        oDataOperation.setValueByKey( 'TransferSize', res['Value'] )
-
-
         localFile = os.path.realpath( os.path.join( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
 
         if metadata['Size'] != res['Value']:
-          oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
           errToReturn = DError( DErrno.EFILESIZE, errTuple[1] )
 
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
-          oDataOperation.setValueByKey( 'FinalStatus', 'FinishedDirty' )
           errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
           errToReturn = DError( DErrno.EBADCKS, errTuple[1] )
         else:
-          oDataOperation.setEndTime()
-          gDataStoreClient.addRegister( oDataOperation )
           return S_OK( localFile )
       # If we are here, there was an error, log it debug level
       log.debug( errTuple[0], errTuple[1] )
 
-    gDataStoreClient.addRegister( oDataOperation )
+
     log.verbose( "Failed to get local copy from any replicas:", "\n%s %s" % errTuple )
 
 
@@ -506,14 +491,17 @@ class DataManager( object ):
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
-      errStr = "Failed to put file to Storage Element."
-      oDataOperation.setValueByKey( 'TransferOK', 0 )
-      oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-      oDataOperation.setEndTime()
-      gDataStoreClient.addRegister( oDataOperation )
-      startTime = time.time()
-      gDataStoreClient.commit()
-      log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      
+      # We don't consider it a failure if the SE is not valid
+      if not DErrno.cmpError( res, errno.EACCES ):
+        errStr = "Failed to put file to Storage Element."
+        oDataOperation.setValueByKey( 'TransferOK', 0 )
+        oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
+        oDataOperation.setEndTime()
+        gDataStoreClient.addRegister( oDataOperation )
+        gDataStoreClient.commit()
+        startTime = time.time()
+        log.debug( 'putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
       log.debug( errStr, "%s: %s" % ( fileName, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
