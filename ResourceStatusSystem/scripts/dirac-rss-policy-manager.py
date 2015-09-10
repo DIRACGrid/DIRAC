@@ -9,7 +9,9 @@
           (one of the aforementioned options is needed)
         - update/add a policy to a given dirac cfg file (no option needed)
         - remove a policy from a given dirac cfg file ('policy' option needed)
-
+        - restore the last backup of the diarc config file, to undo last changes (no option needed) 
+        
+        
     Usage:
         dirac-rss-policy-manager [option] <command>
 
@@ -21,7 +23,7 @@
         --element=            Element family (either 'Site' or 'Resource') 
         --elementType=        ElementType narrows the search (string, list); None by default
         --setup=              Setup where the policy section should be retrieved from; 'Defaults' by default
-        --file=               Fullpath config file location; 'dirac.cfg' by default
+        --file=               Fullpath config file location other then the default one (but for testing use only the original)
         --policy=             Policy name to be removed        
 
     Verbosity:
@@ -40,7 +42,8 @@ import datetime
 from DIRAC.ConfigurationSystem.private.ConfigurationData    import CFG
 from DIRAC.ResourceStatusSystem.Policy                      import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
-import json, pprint
+from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers
+import json, shutil
 
 __RCSID__ = '$Id:$'
 
@@ -58,7 +61,7 @@ def registerSwitches():
     ( 'element=', 'Element family ( Site, Resource )' ),
     ( 'name=', 'ElementName; None if default' ),
     ( 'setup=', "Setup where the policy section should be retrieved from; 'Defaults' by default" ),
-    ( 'file=', "Fullpath config file location; 'dirac.cfg' by default" ),
+    ( 'file=', "Fullpath config file location other then the default one (but for testing use only the original)" ),
     ( 'policy=', "Policy name to be removed" )
     #( 'statusType=', 'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default' ),
     #( 'status=', 'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default' ),
@@ -87,18 +90,19 @@ def parseSwitches():
   Script.parseCommandLine( ignoreErrors = True )
   args = Script.getPositionalArgs()
   if len( args ) == 0:
-    error( "Argument is missing, you should enter either 'test', 'update' or 'view'" )
+    error( "Argument is missing, you should enter either 'test', 'update', 'view', 'remove', 'restore'" )
   else:
     cmd = args[0].lower()
 
   switches = dict( Script.getUnprocessedSwitches() )
+  diracConfigFile = CSHelpers.gConfig.diracConfigFilePath
 
   # Default values
   switches.setdefault( 'name', None )
   switches.setdefault( 'element', None )
   switches.setdefault( 'elementType', None )
   switches.setdefault( 'setup', "Defaults" )
-  switches.setdefault( 'file', "dirac.cfg" )
+  switches.setdefault( 'file', diracConfigFile )
   #switches.setdefault( 'statusType', None )
   #switches.setdefault( 'status', None )
 
@@ -119,10 +123,10 @@ def parseSwitches():
   elif cmd == 'remove' :
     if 'policy' not in switches or switches['policy'] is None:
       error( "to remove, you should enter a policy" )    
-  elif cmd == 'update' or cmd == 'view':
+  elif cmd == 'update' or cmd == 'view' or cmd == 'restore':
     pass
   else:
-    error( "Incorrect argument: you should enter either 'test' or 'update' or 'view' or 'remove'" )
+    error( "Incorrect argument: you should enter either 'test', 'update', 'view', 'remove', 'restore'" )
 
 
   subLogger.debug( "The switches used are:" )
@@ -177,26 +181,55 @@ def getToken( key ):
 
 #...............................................................................
 
-def listOperationPolicies( setup = "Defaults" ):
+def listCSPolicies( setup = "Defaults" ):
+  '''
+    to get the list of the policies from the dirac config file
+  '''
+  
   policies = getPolicySection( setup )
   for p in policies:
     print " "*3, p, " || matchParams: ", policies[p]['matchParams'], " || policyType: ", policies[p]['policyType']
 
 def listAvailablePolicies():
+  '''
+    to get the list of the policies available in the RSS.Policy.Configurations
+  '''
+  
   policiesMeta = Configurations.POLICIESMETA
   for pm in policiesMeta:
     print " "*3, pm, " || args: ", policiesMeta[pm]['args'], " || description: ", policiesMeta[pm]['description']
 
 def getPolicySection( cfg, setup = "Defaults" ):
+  '''
+    to get the Policy section from the dirac config file, and within a given setup
+  '''
+
   return cfg['Operations'][setup]['ResourceStatus']['Policies']
 
 
-def getPoliciesThatApply( params = None ):
+def getPoliciesThatApply( params ):
+  '''
+    to get all the policies that apply to the given list of params
+  '''
+  
+  paramsClone = dict( params )
+  for param in paramsClone:
+    if params[param] is None:
+      del params[param]
+  
   ig = InfoGetter()
-  return ig.getPoliciesThatApply( params )
+  result = ig.getPoliciesThatApply( params )
+  if result['OK']:
+    return result['Value'] 
+  else:
+    error( "It wasn't possible to execute getPoliciesThatApply, check this: %s" % str(result) )
 
 
 def updatePolicy( policySection ):
+  '''
+    to interactively update/add policies inside the dirac config file
+  ''' 
+  
   headLine( "3 steps to update/add a policy: enter a policy name, then its match params, then a policyType" )
   while True:
       #setting policyName
@@ -243,21 +276,34 @@ def updatePolicy( policySection ):
   return S_OK( policySection )                                  
 
 
-def removePolicy( policySection, policy ):
-  if policy in policySection:
-    del policySection[ policy ]
-  else:
-    print "\t WARNING: No policy named %s was found in the Policy section!" % policy
-  return S_OK( policySection )
+
+def removePolicy( policySection, policies ):
+  '''
+    to remove some policies from the dirac config file
+  ''' 
+    
+  for policy in policies.split(','):
+    if policy == '':
+      continue 
+    if policy in policySection:
+      del policySection[ policy ]
+    else:
+      print "\n\t WARNING: No policy named %s was found in the Policy section!" % policy   
+    
+  return policySection
+
 
 def dumpPolicy( cfgDict, fileName ):
+  '''
+    to copy updates and removals to the dirac config file (it creates a backup copy, if needed for restoring)
+  '''   
   
   fileCFG = CFG()
-  
   #update cfg policy section
   confirmation = raw_input("Do you want to dump your changes? (replay 'yes' or 'y' to confirm): ").strip()
   if confirmation == 'yes' or confirmation == 'y':
     fileCFG.loadFromDict( cfgDict )
+    shutil.copyfile( fileName, fileName + ".bkp" ) #creates a backup copy of the dirac config file
     dumpedSucccessfully = fileCFG.writeToFile( fileName )
     if dumpedSucccessfully:
       print "Your update has been dumped successfully!"
@@ -265,12 +311,32 @@ def dumpPolicy( cfgDict, fileName ):
       print "It was not possible to dump your update. Something went wrong!"
 
 def viewPolicyDict( policyDict ):
+  '''
+    to "prettyprint" a python dictionary
+  '''
+  
   print json.dumps( policyDict, indent=2, sort_keys=True )
 
+def restoreCfgFile( fileName ):
+  '''
+    to restore the last backup copy of the dirac config file before the latest updates/removals
+  '''  
+  
+  shutil.copyfile( fileName + ".bkp", fileName )
+  print "\n\tWARNING: dirac config file was restored!"
+
 def headLine( text ):
+  '''
+    to create a pretty printout headline 
+  ''' 
+  
   print "\n\t*** %s ***\n" % text
 
 def run( cmd, params):
+  '''
+    to execute a command among view, test, update, remove, restore 
+  ''' 
+  
   cmd = cmd.pop()
   fileCFG = CFG()
   fileName = params[ 'file' ]
@@ -283,13 +349,8 @@ def run( cmd, params):
     viewPolicyDict( policySection )
     
   elif cmd == 'test':
-    params = [ params[k] for k in params if params[k] ]
-    result = getPoliciesThatApply( params )
-    if result['OK']:
-      policiesThatApply = result['Value']
-      viewPolicyDict( policiesThatApply )
-    else:
-      error( "It was not possible to execute the test: %s" % str(result) )
+    policiesThatApply = getPoliciesThatApply( params ) 
+    viewPolicyDict( policiesThatApply )
       
   elif cmd == 'update':
     result = updatePolicy( policySection )
@@ -299,22 +360,21 @@ def run( cmd, params):
       headLine( "A preview of your policy section after the update" )
       viewPolicyDict( policySection )      
       dumpPolicy( cfgDict, fileName )
-      
+        
   elif cmd == 'remove':
     policies = params[ 'policy' ]
-    for policy in policies.split(','):
-      if policy == '':
-        continue     
-      result = removePolicy( policySection, policy )
-      if result['OK']:
-        policySection = result['Value']
-        cfgDict['Operations'][setup]['ResourceStatus']['Policies'] = policySection
-        headLine( "A preview of your policy section after the removal" )
-        viewPolicyDict( policySection )      
-        dumpPolicy( cfgDict, fileName )
-        
-      else:
-        error( "It was not possible to execute the test: %s" % str(result) )
+    policySection = removePolicy( policySection, policies )
+    cfgDict['Operations'][setup]['ResourceStatus']['Policies'] = policySection
+    headLine( "A preview of your policy section after the removal" )
+    viewPolicyDict( policySection )      
+    dumpPolicy( cfgDict, fileName )
+  
+  elif cmd == 'restore':
+    restoreCfgFile( fileName )
+    fileCFG.loadFromFile( fileName )
+    cfgDict = fileCFG.getAsDict()
+    policySection = getPolicySection( cfgDict )
+    viewPolicyDict( policySection )
          
 #...............................................................................
 
