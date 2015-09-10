@@ -15,7 +15,6 @@ _readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
 _writeMethods = ['changePathOwner', 'changePathGroup', 'changePathMode',
                  'addFile','setFileStatus','removeFile','addReplica',
                  'removeReplica','setReplicaStatus','setReplicaHost',
-                 'setFileOwner','setFileGroup','setFileMode',
                  'addFileAncestors','createDirectory','removeDirectory',
                  'setMetadata', '__removeMetadata']
 
