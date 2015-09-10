@@ -54,7 +54,19 @@ class SystemAdministratorIntegrator( object ):
     self.__kwargs = dict( kwargs )  
     self.__pool = ThreadPool( len( self.__hosts ) )  
     self.__resultDict = {}
-      
+
+  def getSilentHosts( self ):
+    """ Get a list of non-responding hosts
+    :return: list of hosts
+    """
+    return self.silentHosts
+
+  def getRespondingHosts( self ):
+    """ Get a list of responding hosts
+    :return: list of hosts
+    """
+    return self.__hosts
+
   def __getattr__( self, name ):
     self.call = name
     return self.execute
@@ -86,6 +98,5 @@ class SystemAdministratorIntegrator( object ):
                                          oCallback = self.__processResult )
     
     self.__pool.processAllResults()
-    result = S_OK( self.__resultDict )
-    result['SilentHosts'] = self.silentHosts
-    return result
+    return S_OK( self.__resultDict )
+
