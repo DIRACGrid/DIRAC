@@ -481,6 +481,8 @@ class DirectoryTreeBase:
           failed[path] = result['Message']
         else:
           successful[path] = True
+      else:
+        successful[path] = True
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
