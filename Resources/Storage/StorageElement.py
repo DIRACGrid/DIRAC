@@ -5,9 +5,12 @@ from types import ListType
 __RCSID__ = "$Id$"
 # # custom duty
 import re
+import time
+import datetime
+import copy
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DErrno
+from DIRAC import gLogger, gConfig, DError, DErrno, siteName
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -17,6 +20,10 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+
 
 class StorageElementCache( object ):
 
@@ -695,7 +702,14 @@ class StorageElementItem( object ):
         for url in urlDict:
           urlsToUse[url] = lfnDict[urlDict[url]]
 
+        startDate = datetime.datetime.utcnow()
+        startTime = time.time()
         res = fcn( urlsToUse, *args, **kwargs )
+        elapsedTime = time.time() - startTime
+        
+
+        self.addAccountingOperation( urlsToUse, startDate, elapsedTime, storageParameters, res )
+
         if not res['OK']:
           errStr = "Completely failed to perform %s." % self.methodName
           log.debug( errStr, 'with plugin %s: %s' % ( pluginName, res['Message'] ) )
@@ -703,6 +717,7 @@ class StorageElementItem( object ):
             if lfn not in failed:
               failed[lfn] = ''
             failed[lfn] = "%s %s" % ( failed[lfn], res['Message'] ) if failed[lfn] else res['Message']
+
         else:
           for url, lfn in urlDict.items():
             if url not in res['Value']['Successful']:
@@ -720,6 +735,12 @@ class StorageElementItem( object ):
                 failed.pop( lfn )
               lfnDict.pop( lfn )
 
+
+
+    gDataStoreClient.commit()
+
+
+
     return S_OK( { 'Failed': failed, 'Successful': successful } )
 
 
@@ -732,6 +753,104 @@ class StorageElementItem( object ):
       return self.__executeMethod
 
     raise AttributeError( "StorageElement does not have a method '%s'" % name )
+  
+
+      
+
+  def addAccountingOperation( self, lfns, startDate, elapsedTime, storageParameters, callRes ):
+    """
+        Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
+
+        :param lfns : list of lfns on which we attempted the operation
+        :param startDate : datetime, start of the operation
+        :param elapsedTime : time (seconds) the operation took
+        :param storageParameters : the parameters of the plugins used to perform the operation
+        :param callRes : the return of the method call, S_OK or S_ERROR
+
+        The operation is generated with the OperationType "se.methodName"
+        The TransferSize and TransferTotal for directory methods actually take into
+        account the files inside the directory, and not the amount of directory given
+        as parameter
+
+
+    """
+  
+    if self.methodName not in ( self.readMethods + self.writeMethods + self.removeMethods ):
+      return
+  
+    baseAccountingDict = {}
+    baseAccountingDict['OperationType'] = 'se.%s' % self.methodName
+    baseAccountingDict['User'] = getProxyInfo().get( 'Value', {} ).get( 'username', 'unknown' )
+    baseAccountingDict['RegistrationTime'] = 0.0
+    baseAccountingDict['RegistrationOK'] = 0
+    baseAccountingDict['RegistrationTotal'] = 0
+
+    # if it is a get method, then source and destination of the transfer should be inverted
+    if self.methodName in ( 'putFile', 'getFile' ):
+      baseAccountingDict['Destination'] = siteName()
+      baseAccountingDict[ 'Source'] = self.name
+    else:
+      baseAccountingDict['Destination'] = self.name
+      baseAccountingDict['Source'] = siteName()
+
+    baseAccountingDict['TransferTotal'] = 0
+    baseAccountingDict['TransferOK'] = 0
+    baseAccountingDict['TransferSize'] = 0
+    baseAccountingDict['TransferTime'] = 0.0
+    baseAccountingDict['FinalStatus'] = 'Successful'
+
+    oDataOperation = DataOperation()
+    oDataOperation.setValuesFromDict( baseAccountingDict )
+    oDataOperation.setStartTime( startDate )
+    oDataOperation.setEndTime( startDate + datetime.timedelta( seconds = elapsedTime ) )
+    oDataOperation.setValueByKey( 'TransferTime', elapsedTime )
+    oDataOperation.setValueByKey( 'Protocol', storageParameters.get( 'Protocol', 'unknown' ) )
+  
+    if not callRes['OK']:
+      # Everything failed
+      oDataOperation.setValueByKey( 'TransferTotal', len( lfns ) )
+      oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
+    else:
+
+      succ = callRes.get( 'Value', {} ).get( 'Successful', {} )
+      failed = callRes.get( 'Value', {} ).get( 'Failed', {} )
+
+      totalSize = 0
+      # We don't take len(lfns) in order to make two
+      # separate entries in case of few failures
+      totalSucc = len( succ )
+
+      if self.methodName in ( 'putFile', 'getFile' ):
+        # putFile and getFile return for each entry
+        # in the successful dir the size of the corresponding file
+        totalSize = sum( succ.values() )
+
+      elif self.methodName in ( 'putDirectory', 'getDirectory' ):
+        # putDirectory and getDirectory return for each dir name
+        # a dictionnary with the keys 'Files' and 'Size'
+        totalSize = sum( val.get( 'Size', 0 ) for val in succ.values() if isinstance( val, dict ) )
+        totalSucc = sum( val.get( 'Files', 0 ) for val in succ.values() if isinstance( val, dict ) )
+        oDataOperation.setValueByKey( 'TransferOK', len( succ ) )
+
+      oDataOperation.setValueByKey( 'TransferSize', totalSize )
+      oDataOperation.setValueByKey( 'TransferTotal', totalSucc )
+      oDataOperation.setValueByKey( 'TransferOK', totalSucc )
+      
+      if callRes['Value']['Failed']:
+        oDataOperationFailed = copy.deepcopy( oDataOperation )
+        oDataOperationFailed.setValueByKey( 'TransferTotal', len( failed ) )
+        oDataOperationFailed.setValueByKey( 'TransferOK', 0 )
+        oDataOperationFailed.setValueByKey( 'TransferSize', 0 )
+        oDataOperationFailed.setValueByKey( 'FinalStatus', 'Failed' )
+
+        accRes = gDataStoreClient.addRegister( oDataOperationFailed )
+        if not accRes['OK']:
+          self.log.error( "Could not send failed accounting report", accRes['Message'] )
+
+
+    accRes = gDataStoreClient.addRegister( oDataOperation )
+    if not accRes['OK']:
+      self.log.error( "Could not send accounting report", accRes['Message'] )
 
 
 

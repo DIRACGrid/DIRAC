@@ -703,7 +703,7 @@ class DirectoryMetadata:
       return result
 
     dirList = result['Value']
-    return self.db.dtree.getFileIDsInDirectory( dirList, credDict, startItem, maxItems )
+    return self.db.dtree.getFileIDsInDirectoryWithLimits( dirList, credDict, startItem, maxItems )
 
 ################################################################################################
 #

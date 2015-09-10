@@ -37,8 +37,7 @@ import fts3.rest.client.easy as fts3
 
 ########################################################################
 class FTSJob( object ):
-  """
-  class describing one FTS job
+  """ Class describing one FTS job
   """
 
   # # initial states
