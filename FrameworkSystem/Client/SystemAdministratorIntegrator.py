@@ -31,11 +31,24 @@ class SystemAdministratorIntegrator( object ):
 
     # Ping the hosts to remove those that don't have a SystemAdministrator service
     sysAdminHosts = []
+    self.silentHosts = []
+    self.__resultDict = {}
+    self.__kwargs = {}
+    pool = ThreadPool( len( self.__hosts ) )
     for host in self.__hosts:
-      client = SystemAdministratorClient( host )
-      result = client.ping()
-      if result[ 'OK' ]:
+      pool.generateJobAndQueueIt( self.__executeClient,
+                                         args = [ host, "ping" ],
+                                         kwargs = {},
+                                         oCallback = self.__processResult )
+
+    pool.processAllResults()
+    for host, result in self.__resultDict.items():
+      if result['OK']:
         sysAdminHosts.append( host )
+      else:
+        self.silentHosts.append( host )
+    del pool
+
     self.__hosts = sysAdminHosts
       
     self.__kwargs = dict( kwargs )  
@@ -73,4 +86,6 @@ class SystemAdministratorIntegrator( object ):
                                          oCallback = self.__processResult )
     
     self.__pool.processAllResults()
-    return S_OK( self.__resultDict )    
+    result = S_OK( self.__resultDict )
+    result['SilentHosts'] = self.silentHosts
+    return result
