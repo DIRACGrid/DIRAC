@@ -49,7 +49,8 @@ def registerSwitches():
     ( 'elementType=', 'ElementType narrows the search; None if default' ),
     ( 'element=', 'Element family ( Site, Resource )' ),
     ( 'name=', 'ElementName; None if default' ),
-    ( 'setup=', "Setup where the policy section should be retrieved from; 'Defaults' by default" )
+    ( 'setup=', "Setup where the policy section should be retrieved from; 'Defaults' by default" ),
+    ( 'file=', "Fullpath config file location; 'dirac.cfg' by default" )
     #( 'statusType=', 'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default' ),
     #( 'status=', 'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default' ),
              )
@@ -77,7 +78,7 @@ def parseSwitches():
   Script.parseCommandLine( ignoreErrors = True )
   args = Script.getPositionalArgs()
   if len( args ) == 0:
-    error( "argument is missing, you should enter either 'test', 'update' or 'view'" )
+    error( "Argument is missing, you should enter either 'test', 'update' or 'view'" )
   else:
     cmd = args[0].lower()
 
@@ -88,6 +89,7 @@ def parseSwitches():
   switches.setdefault( 'element', None )
   switches.setdefault( 'elementType', None )
   switches.setdefault( 'setup', "Defaults" )
+  switches.setdefault( 'file', "dirac.cfg" )
   #switches.setdefault( 'statusType', None )
   #switches.setdefault( 'status', None )
 
@@ -103,6 +105,8 @@ def parseSwitches():
           error( "you should enter either 'Site' or 'Resource' for switch 'elementType'" )    
       if switches[ 'elementType' ] != None:
          switches[ 'elementType' ] = switches[ 'elementType' ].title()
+      if switches[ 'file' ] == None:
+        error("Enter a fullpath config file location when using 'file' option")
       
   elif cmd == 'update' or cmd == 'view':
     pass
@@ -183,7 +187,7 @@ def getPoliciesThatApply( params = None ):
 
 def updatePolicy( policySection ):
   print ""
-  print "\t*** 3 steps to update each policy: enter a policy name, then its match params, then a policyType ***"
+  print "\t*** 3 steps to add/update a policy: enter a policy name, then its match params, then a policyType ***"
   while True:
       print ""
       #setting policyName
@@ -208,29 +212,40 @@ def updatePolicy( policySection ):
  
       print ""
       #setting policy type
+      print "\t*** LIST OF AVAILABLE POLICIES ***"
       print listAvailablePolicies()
-      policy = raw_input("STEP3 - Enter a policyType (see the policy listed above, leave empty otherwise): ").strip()
+      policy = raw_input("STEP3 - Enter a policyType (see one of the the policies listed above, leave empty otherwise): ").strip()
       if policy == "":
           break  
       policySection[name]['policyType'] = policy
       
-      print ""          
+      print "" 
+      print "\t*** Enter another policy, if you like ***"         
     
   return S_OK( policySection )                                  
 
-def updateCfgPolicy( cfg, policySection, setup = 'Defaults' ):
-  cfg['Operations'][setup]['ResourceStatus']['Policies'] = policySection
-  return cfg 
-
-
+def dumpPolicy( cfgDict, fileName ):
+  
+  fileCFG = CFG()
+  
+  #update cfg policy section
+  confirmation = raw_input("Do you want to dump? (replay 'yes' to confirm): ").strip()
+  if confirmation == 'yes':
+    fileCFG.loadFromDict( cfgDict )
+    dumpedSucccessfully = fileCFG.writeToFile( fileName )
+    if dumpedSucccessfully:
+      print "Your update has been dumped successfully!"
+    else:
+      print "It was not possible to dump your update. Something went wrong!"
 
 def run( cmd, params):
   cmd = cmd.pop()
   fileCFG = CFG()
-  fileName = "dirac.cfg"
+  fileName = params[ 'file' ]
+  setup = params[ 'setup' ]
   fileCFG.loadFromFile( fileName )
-  cfg  = fileCFG.getAsDict()
-  policySection = getPolicySection( cfg )
+  cfgDict = fileCFG.getAsDict()
+  policySection = getPolicySection( cfgDict )
 
   if cmd == 'view':
     print json.dumps( policySection, indent=2, sort_keys=True )
@@ -244,7 +259,14 @@ def run( cmd, params):
   elif cmd == 'update':
     result = updatePolicy( policySection )
     if result['OK']:
-      print json.dumps( result['Value'], indent=2, sort_keys=True )
+      policySection = result['Value']
+      cfgDict['Operations'][setup]['ResourceStatus']['Policies'] = policySection
+      print ""
+      print "\t*** This a preview of your update ***"
+      print json.dumps( policySection, indent=2, sort_keys=True )
+      print ""
+      
+      dumpPolicy( cfgDict, fileName )
     else:
       print result    
 #...............................................................................
