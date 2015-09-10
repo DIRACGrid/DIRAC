@@ -2,19 +2,27 @@
 """
   dirac-rss-policy-manager
 
-    Script that helps manage the Policy section in the CS setup 
+    Script to manage the Policy section within a given CS setup of a given dirac cfg file. 
+    It allows you to:
+        - view the policy current section (no option needed)
+        - test all the policies that apply for a given 'element', 'elementType' or element 'name' 
+          (one of the aforementioned options is needed)
+        - update/add a policy to a given dirac cfg file (no option needed)
+        - remove a policy from a given dirac cfg file ('policy' option needed)
 
     Usage:
         dirac-rss-policy-manager [option] <command>
 
     Commands:
-        [test|view|update]
+        [test|view|update|remove]
 
     Options:
         --name=               ElementName (it admits a comma-separated list of element names); None by default
         --element=            Element family (either 'Site' or 'Resource') 
         --elementType=        ElementType narrows the search (string, list); None by default
-        --setup=              Setup where the policy section should be retrieved from; 'Defaults' by default        
+        --setup=              Setup where the policy section should be retrieved from; 'Defaults' by default
+        --file=               Fullpath config file location; 'dirac.cfg' by default
+        --policy=             Policy name to be removed        
 
     Verbosity:
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
@@ -50,7 +58,8 @@ def registerSwitches():
     ( 'element=', 'Element family ( Site, Resource )' ),
     ( 'name=', 'ElementName; None if default' ),
     ( 'setup=', "Setup where the policy section should be retrieved from; 'Defaults' by default" ),
-    ( 'file=', "Fullpath config file location; 'dirac.cfg' by default" )
+    ( 'file=', "Fullpath config file location; 'dirac.cfg' by default" ),
+    ( 'policy=', "Policy name to be removed" )
     #( 'statusType=', 'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default' ),
     #( 'status=', 'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default' ),
              )
@@ -96,22 +105,24 @@ def parseSwitches():
   # when it's a add/modify query and status/reason/statusType are not specified 
   #then some specific defaults are set up
   if cmd == 'test':
-    if 'elementType' is None and 'element' is None and 'name' is None:
-      return error("to check, you should enter at least one switch: either element, elmentType, or name")
+    if switches['elementType'] is None and switches['element'] is None and switches['name'] is None:
+      error( "to test, you should enter at least one switch: either element, elmentType, or name" )
     else:
       if switches[ 'element' ] != None:
         switches[ 'element' ] = switches[ 'element' ].title()
         if switches[ 'element' ] not in ( 'Resource', 'Site' ):
-          error( "you should enter either 'Site' or 'Resource' for switch 'elementType'" )    
+          error( "you should enter either 'Site' or 'Resource' for switch 'element'" )    
       if switches[ 'elementType' ] != None:
          switches[ 'elementType' ] = switches[ 'elementType' ].title()
       if switches[ 'file' ] == None:
-        error("Enter a fullpath config file location when using 'file' option")
-      
+        error("Enter a fullpath dirac config file location when using 'file' option")
+  elif cmd == 'remove' :
+    if 'policy' not in switches or switches['policy'] is None:
+      error( "to remove, you should enter a policy" )    
   elif cmd == 'update' or cmd == 'view':
     pass
   else:
-    error( "Incorrect argument: you should enter either 'test' or 'update' or 'view'" )
+    error( "Incorrect argument: you should enter either 'test' or 'update' or 'view' or 'remove'" )
 
 
   subLogger.debug( "The switches used are:" )
@@ -186,57 +197,78 @@ def getPoliciesThatApply( params = None ):
 
 
 def updatePolicy( policySection ):
-  print ""
-  print "\t*** 3 steps to add/update a policy: enter a policy name, then its match params, then a policyType ***"
+  headLine( "3 steps to update/add a policy: enter a policy name, then its match params, then a policyType" )
   while True:
-      print ""
       #setting policyName
       name = raw_input("STEP1 - Enter a policy name (leave empty otherwise): ").strip()
       if name == "":
           break
       policySection[name] = {}
-      policySection[name]['matchParams'] = {}  
-
+      policySection[name]['matchParams'] = {}
+      
+      params = ['element', 'name', 'elementType']
       while True:
-          #setting match params
-          param = raw_input("STEP2 - Enter a match param (either 'element', 'name', 'elementType', leave empty otherwise): ").strip()
-          if param == "":
-              break
-          if param not in ['element', 'name', 'elementType']:
-              print "WARNING: you should enter either 'element', 'name', 'elementType', or leave it empty otherwise"
-              continue 
-          value = raw_input("STEP2 - Enter a value for match param " + param + " or a comma separated list of values (leave empty otherwise):").strip()
-          if value == "":
-              break
-          policySection[name]['matchParams'][param] = value
+        print ""
+        print "\t WARNING:"
+        print "\t if you enter 'element' as param then you should enter 'Site' or 'Resource' as a value"
+        print "\t if you enter 'name' as param then you should enter either a name or a comma-separated list of names\n"
+        
+        #setting match params
+        param = raw_input("STEP2 - Enter a match param (among %s), or leave empty otherwise: " % str( params )).strip()
+        if param == "":
+            break
+        if param not in params:
+            print "\t WARNING: you should enter a match param (among %s), or leave it empty otherwise" % str( params )
+            continue 
+        value = raw_input("STEP2 - Enter a value for match param '" + param + "', leave it empty otherwise:").strip()
+        if value == "":
+            break
+        if param == 'element':
+          value = value.title()
+          if value != 'Site' and value != 'Resource':
+            error( "You didn't provide either 'Site' or 'Resource' as a value for match param 'element'" )
+        policySection[name]['matchParams'][param] = value
+        params.remove( param )
  
-      print ""
       #setting policy type
-      print "\t*** LIST OF AVAILABLE POLICIES ***"
+      headLine( "LIST OF AVAILABLE POLICIES" )
       print listAvailablePolicies()
       policy = raw_input("STEP3 - Enter a policyType (see one of the the policies listed above, leave empty otherwise): ").strip()
       if policy == "":
           break  
       policySection[name]['policyType'] = policy
       
-      print "" 
-      print "\t*** Enter another policy, if you like ***"         
+      headLine( " Enter another policy, if you like" )        
     
   return S_OK( policySection )                                  
+
+
+def removePolicy( policySection, policy ):
+  if policy in policySection:
+    del policySection[ policy ]
+  else:
+    print "\t WARNING: No policy named %s was found in the Policy section!" % policy
+  return S_OK( policySection )
 
 def dumpPolicy( cfgDict, fileName ):
   
   fileCFG = CFG()
   
   #update cfg policy section
-  confirmation = raw_input("Do you want to dump? (replay 'yes' to confirm): ").strip()
-  if confirmation == 'yes':
+  confirmation = raw_input("Do you want to dump your changes? (replay 'yes' or 'y' to confirm): ").strip()
+  if confirmation == 'yes' or confirmation == 'y':
     fileCFG.loadFromDict( cfgDict )
     dumpedSucccessfully = fileCFG.writeToFile( fileName )
     if dumpedSucccessfully:
       print "Your update has been dumped successfully!"
     else:
       print "It was not possible to dump your update. Something went wrong!"
+
+def viewPolicyDict( policyDict ):
+  print json.dumps( policyDict, indent=2, sort_keys=True )
+
+def headLine( text ):
+  print "\n\t*** %s ***\n" % text
 
 def run( cmd, params):
   cmd = cmd.pop()
@@ -248,27 +280,42 @@ def run( cmd, params):
   policySection = getPolicySection( cfgDict )
 
   if cmd == 'view':
-    print json.dumps( policySection, indent=2, sort_keys=True )
+    viewPolicyDict( policySection )
+    
   elif cmd == 'test':
     params = [ params[k] for k in params if params[k] ]
     result = getPoliciesThatApply( params )
     if result['OK']:
-      print json.dumps( result['Value'], indent=2, sort_keys=True )
+      policiesThatApply = result['Value']
+      viewPolicyDict( policiesThatApply )
     else:
-      print result
+      error( "It was not possible to execute the test: %s" % str(result) )
+      
   elif cmd == 'update':
     result = updatePolicy( policySection )
     if result['OK']:
       policySection = result['Value']
       cfgDict['Operations'][setup]['ResourceStatus']['Policies'] = policySection
-      print ""
-      print "\t*** This a preview of your update ***"
-      print json.dumps( policySection, indent=2, sort_keys=True )
-      print ""
-      
+      headLine( "A preview of your policy section after the update" )
+      viewPolicyDict( policySection )      
       dumpPolicy( cfgDict, fileName )
-    else:
-      print result    
+      
+  elif cmd == 'remove':
+    policies = params[ 'policy' ]
+    for policy in policies.split(','):
+      if policy == '':
+        continue     
+      result = removePolicy( policySection, policy )
+      if result['OK']:
+        policySection = result['Value']
+        cfgDict['Operations'][setup]['ResourceStatus']['Policies'] = policySection
+        headLine( "A preview of your policy section after the removal" )
+        viewPolicyDict( policySection )      
+        dumpPolicy( cfgDict, fileName )
+        
+      else:
+        error( "It was not possible to execute the test: %s" % str(result) )
+         
 #...............................................................................
 
 if __name__ == "__main__":
