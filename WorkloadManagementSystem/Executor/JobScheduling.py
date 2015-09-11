@@ -93,9 +93,11 @@ class JobScheduling( OptimizerExecutor ):
         sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
         if not sites:
           if len( userSites ) > 1:
-            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
+            self.jobLog.info( "Requested sites %s are inactive" % ",".join( userSites ) )
+            return self.__holdJob( jobState, "Requested sites are inactive" )
           else:
-            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
+            self.jobLog.info( "Requested site %s is inactive" % userSites[0] )
+            return self.__holdJob( jobState, "Requested site is inactive" )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -181,7 +183,8 @@ class JobScheduling( OptimizerExecutor ):
     # Is any site active?
     stageSites = self.__applySiteFilter( siteCandidates, wmsActiveSites, wmsBannedSites )
     if not stageSites:
-      return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
+      self.JobLog.info( "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
+      return self.__holdJob( jobState, "Sites are inactive or banned" )
 
     # If no staging is required send to TQ
     if not stageRequired:
