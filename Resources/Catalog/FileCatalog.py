@@ -115,7 +115,8 @@ class FileCatalog( object ):
       if not res['OK']:
         return res
       fileInfo, lfnMapDict = res['Value']
-      kws['NoLFNChecking'] = True
+      # No need to check the LFNs again in the clients
+      kws['LFNChecking'] = False
       allLfns = fileInfo.keys()
       parms1 = parms[1:]
 
