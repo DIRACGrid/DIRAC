@@ -530,10 +530,12 @@ class FTSAgent( AgentModule ):
                        [f for f in op if f.LFN == ftsFile.LFN]]
               if not regOp:
                 ftsFilesDict['toReschedule'].append( ftsFile )
-              else:
-                # If all transfers are finished and there is already a registration operation, set it Done
+
+            # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
+            for lfn in missingReplicas:
+              if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
                 for opFile in operation:
-                  if opFile.LFN == ftsFile.LFN:
+                  if opFile.LFN == lfn:
                     opFile.Status = 'Done'
                     break
 
