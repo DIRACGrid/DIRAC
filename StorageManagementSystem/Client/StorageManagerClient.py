@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 import random
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
