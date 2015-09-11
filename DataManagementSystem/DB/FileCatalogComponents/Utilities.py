@@ -71,7 +71,7 @@ def checkCatalogArguments( f ):
   """
   def processWithCheckingArguments(*args, **kwargs):
 
-    checkFlag = kwargs.pop( 'NoLFNChecking', True )
+    checkFlag = kwargs.pop( 'LFNChecking', True )
     if checkFlag:
       argList = list( args )
       lfnArgument = argList[1]
