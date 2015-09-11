@@ -23,7 +23,7 @@ def getFilesToStage( lfnList ):
 
   dm = DataManager()
 
-  lfnListReplicas = dm.getActiveReplicas( lfnList )
+  lfnListReplicas = dm.getActiveReplicas( lfnList, getUrl = False )
   if not lfnListReplicas['OK']:
     return lfnListReplicas
 
