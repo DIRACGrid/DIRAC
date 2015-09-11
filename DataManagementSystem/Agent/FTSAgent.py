@@ -521,6 +521,10 @@ class FTSAgent( AgentModule ):
               if finishedFiles:
                 log.warn( "%s is %s while replication was Finished to %s, update" % ( ftsFile.LFN, ftsFile.Status, targetSE ) )
                 ftsFilesDict['toUpdate'] += finishedFiles
+            # identify Active transfers for which there is no FTS job any longer and reschedule them
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Active' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
+              if not [ftsJob for ftsJob in ftsJobs if ftsJob.FTSGUID == ftsFile.FTSGUID]:
+                ftsFilesDict['toReschedule'].append( ftsFile )
             # identify Finished transfer for which the replica is still missing
             for ftsFile in [f for f in ftsFiles if f.Status == 'Finished' and f.TargetSE in missingReplicas.get( f.LFN, [] ) and f not in ftsFilesDict['toRegister'] ]:
               # Check if there is a registration operation for that file and that target
