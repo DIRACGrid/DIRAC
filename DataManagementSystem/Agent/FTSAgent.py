@@ -535,6 +535,12 @@ class FTSAgent( AgentModule ):
               if not regOp:
                 ftsFilesDict['toReschedule'].append( ftsFile )
 
+            # Recover files that are Failed but were not spotted
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Failed' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
+              _r, _s, fail = self.__checkFailed( ftsFile )
+              if fail:
+                ftsFilesDict['toFail'].append( ftsFile )
+
             # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
             for lfn in missingReplicas:
               if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
