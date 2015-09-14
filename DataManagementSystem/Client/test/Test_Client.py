@@ -43,14 +43,11 @@ class UtilitiesTestCase( unittest.TestCase ):
     self.dmMock.getReplicas.return_value = {'OK': True, 'Value':{'Successful':{'bb.raw':'metadataPippo'},
                                                                   'Failed':{}}}
 
-    self.cc = ConsistencyChecks( transClient = Mock(), dm = self.dmMock, bkClient = self.bkClientMock )
+    self.cc = ConsistencyChecks( transClient = Mock(), dm = self.dmMock )
     self.cc.fileType = ['SEMILEPTONIC.DST', 'LOG', 'RAW']
     self.cc.fileTypesExcluded = ['LOG']
     self.cc.prod = 0
     self.maxDiff = None
-
-  def tearDown( self ):
-    pass
 
 class ConsistencyChecksSuccess( UtilitiesTestCase ):
 
@@ -74,6 +71,8 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
                        'cc.raw':
                        {'dd.raw': {'RunNumber': 97019, 'FileType': 'RAW'},
                         '/lhcb/1_1.semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'}}}
+    print res
+    print lfnDictExpected
     self.assertEqual( res, lfnDictExpected )
 
     lfnDict = {'aa.raw': {'/bb/pippo/aa.dst':{'FileType': 'LOG'},
@@ -122,8 +121,6 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
     resExpected = {'aa.raw': {'DST':1, 'LOG':1}}
     self.assertEqual( res, resExpected )
     
-    print res
-    
     lfnDict = {'aa.raw': {'bb.log':{'FileType': 'LOG'},
                           '/bb/pippo/aa.dst':{'FileType': 'DST'},
                           '/bb/pippo/cc.dst':{'FileType': 'DST'}}}
@@ -131,17 +128,20 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
     resExpected = {'aa.raw': {'DST':2, 'LOG':1}}
     self.assertEqual( res, resExpected )
 
-#   def test_getDescendants( self ):
-#     res = self.cc.getDescendants( ['aa.raw'] )
-#     filesWithDescendants, filesWithoutDescendants, filesWitMultipleDescendants, descendants, inFCNotInBK, inBKNotInFC, removedFiles = res
-#     self.assertEqual( filesWithDescendants, {'aa.raw':['bb.raw']} )
-#     self.assertEqual( filesWithoutDescendants, {} )
-#     self.assertEqual( filesWitMultipleDescendants, {} )
-#     self.assertEqual( descendants, ['bb.raw'] )
-#     self.assertEqual( inFCNotInBK, [] )
-#     self.assertEqual( inBKNotInFC, [] )
-#     self.assertEqual( removedFiles, [] )
-
+        
+  def test__catalogDirectoryToSE(self):
+    lfnDict = {'aa.raw': {'bb.raw':{'FileType': 'RAW', 'RunNumber': 97019},
+                          'bb.log':{'FileType': 'LOG'},
+                          '/bb/pippo/aa.dst':{'FileType': 'DST'},
+                          '/lhcb/1_2_1.Semileptonic.dst':{'FileType': 'SEMILEPTONIC.DST'}},
+               'cc.raw': {'dd.raw':{'FileType': 'RAW', 'RunNumber': 97019},
+                          'bb.log':{'FileType': 'LOG'},
+                          '/bb/pippo/aa.dst':{'FileType': 'LOG'},
+                          '/lhcb/1_1.semileptonic.dst':{'FileType': 'SEMILEPTONIC.DST'}}
+               }
+    
+    res = self.cc.catalogDirectoryToSE(lfnDict)   
+    print "compareChecksum", res
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UtilitiesTestCase )
