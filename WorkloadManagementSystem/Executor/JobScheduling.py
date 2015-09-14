@@ -90,14 +90,12 @@ class JobScheduling( OptimizerExecutor ):
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
+        sites = self._applySiteFilter( userSites, active = wmsActiveSites, banned = wmsBannedSites )
         if not sites:
           if len( userSites ) > 1:
-            self.jobLog.info( "Requested sites %s are inactive" % ",".join( userSites ) )
-            return self.__holdJob( jobState, "Requested sites are inactive" )
+            return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
           else:
-            self.jobLog.info( "Requested site %s is inactive" % userSites[0] )
-            return self.__holdJob( jobState, "Requested site is inactive" )
+            return self.__holdJob( jobState, "Requested site %s is inactive" % userSites[0] )
 
     # Check if there is input data
     result = jobState.getInputData()
@@ -155,7 +153,7 @@ class JobScheduling( OptimizerExecutor ):
     siteCandidates = list( opData[ 'SiteCandidates' ] )
     self.jobLog.info( "Site candidates are %s" % siteCandidates )
 
-    siteCandidates = self.__applySiteFilter( siteCandidates, userSites, userBannedSites )
+    siteCandidates = self._applySiteFilter( siteCandidates, active = userSites, banned = userBannedSites )
     if not siteCandidates:
       return S_ERROR( "Impossible InputData * Site requirements" )
 
@@ -181,10 +179,9 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( "No destination sites available" )
 
     # Is any site active?
-    stageSites = self.__applySiteFilter( siteCandidates, wmsActiveSites, wmsBannedSites )
+    stageSites = self._applySiteFilter( siteCandidates, active = wmsActiveSites, banned = wmsBannedSites )
     if not stageSites:
-      self.JobLog.info( "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
-      return self.__holdJob( jobState, "Sites are inactive or banned" )
+      return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
 
     # If no staging is required send to TQ
     if not stageRequired:
@@ -224,17 +221,18 @@ class JobScheduling( OptimizerExecutor ):
 
     return self.__setJobSite( jobState, stageSites )
 
-  def __applySiteFilter( self, sites, active = False, banned = False ):
-    filtered = list( sites )
-    if active:
-      for site in sites:
-        if site not in active:
-          filtered.remove( site )
-    if banned:
-      for site in banned:
-        if site in filtered:
-          filtered.remove( site )
-    return filtered
+  def _applySiteFilter( self, sites, active = False, banned = False ):
+    """ Filters out banned sites
+    """
+    if not sites:
+      return sites
+
+    filtered = set( sites )
+    if active and isinstance( active, ( list, set, dict ) ):
+      filtered = filtered - set( active ) | filtered
+    if banned and isinstance( banned, ( list, set, dict ) ):
+      filtered -= set( banned )
+    return list( filtered )
 
   def __holdJob( self, jobState, holdMsg, delay = 0 ):
     if delay:
@@ -264,12 +262,12 @@ class JobScheduling( OptimizerExecutor ):
     # TODO: Only accept known sites after removing crap like ANY set in the original manifest
     sites = [ site for site in sites if site.strip().lower() not in ( "any", "" ) ]
 
-    if len( sites ) == 1:
-      self.jobLog.info( "Single chosen site %s specified" % ( sites[0] ) )
-
     if sites:
-      self.jobLog.info( "Multiple sites requested: %s" % ','.join( sites ) )
-      sites = self.__applySiteFilter( sites, banned = bannedSites )
+      if len( sites ) == 1:
+        self.jobLog.info( "Single chosen site %s specified" % ( sites[0] ) )
+      else:
+        self.jobLog.info( "Multiple sites requested: %s" % ','.join( sites ) )
+      sites = self._applySiteFilter( sites, banned = bannedSites )
       if not sites:
         return S_ERROR( "Impossible site requirement" )
 
