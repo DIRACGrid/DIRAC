@@ -6,7 +6,6 @@
 """
 
 import os
-import copy
 import time
 import sys
 import types
@@ -14,24 +13,27 @@ import re
 
 import DIRAC
 
-from DIRAC                                         import S_OK, S_ERROR, gLogger
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Storage.StorageElement        import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog           import FileCatalog
-from DIRAC.Core.Utilities.List                     import breakListIntoChunks
-from DIRAC.Interfaces.API.Dirac                    import Dirac
-from DIRAC.Core.Utilities.List                     import sortList
-
+from DIRAC                                                  import S_OK, S_ERROR, gLogger
+from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
+from DIRAC.Resources.Storage.StorageElement                 import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
+from DIRAC.Core.Utilities.List                              import breakListIntoChunks
+from DIRAC.Interfaces.API.Dirac                             import Dirac
+from DIRAC.DataManagementSystem.Client.DataIntegrityClient  import DataIntegrityClient
+from DIRAC.Resources.Utilities                              import checkArgumentFormat
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
 
 class ConsistencyChecks( object ):
-  """ A class for handling some consistency check
+  """ A class for handling some consistency checks
   """
   def __init__( self, interactive = True, transClient = None, dm = None, fc = None ):
     """ c'tor
-
-        One object for every production/BkQuery/directoriesList...
+        interactive: Data Manager (True) or DIRAC Agente (False)
+        transClient: TransformationClient() if None, else transClient params
+        dm: DataManager() if None, else dm params
+        fc: FileCatalog() if None, else fc params
+        One object for every production/directoriesList...
     """
     self.interactive = interactive
     self.transClient = TransformationClient() if transClient is None else transClient
@@ -80,6 +82,7 @@ class ConsistencyChecks( object ):
   def getReplicasPresence( self, lfns ):
     """ get the replicas using the standard DataManager.getReplicas()
     """
+    lfns = checkArgumentFormat(lfns)
     present = set()
     notPresent = set()
 
@@ -111,7 +114,8 @@ class ConsistencyChecks( object ):
   def getReplicasPresenceFromDirectoryScan( self, lfns ):
     """ Get replicas scanning the directories. Might be faster.
     """
-
+    
+    lfns = checkArgumentFormat(lfns)
     dirs = {}
     present = []
     notPresent = []
@@ -151,6 +155,7 @@ class ConsistencyChecks( object ):
   def __compareLFNLists( lfns, lfnsFound ):
     """ return files in both lists and files in lfns and not in lfnsFound
     """
+    lfns = checkArgumentFormat(lfns)
     present = []
     notPresent = lfns
     startTime = time.time()
@@ -236,6 +241,7 @@ class ConsistencyChecks( object ):
     if self.interactive:
       sys.stdout.write( text )
       sys.stdout.flush()
+      print text
 
   ################################################################################
 
@@ -251,7 +257,7 @@ class ConsistencyChecks( object ):
     else:
       fileTypesExcluded += [ft for ft in self.fileTypesExcluded if ft not in fileTypesExcluded]
     # lfnDict is a dictionary of dictionaries including the metadata, create a deep copy to get modified
-    ancDict = copy.deepcopy( lfnDict )
+    ancDict = dict( lfnDict )
     if fileTypes == ['']:
       fileTypes = []
     # and loop on the original dictionaries
@@ -260,7 +266,7 @@ class ConsistencyChecks( object ):
         ft = lfnDict[ancestor][desc]['FileType']
         if ft in fileTypesExcluded or ( fileTypes and ft not in fileTypes ):
           ancDict[ancestor].pop( desc )
-      if len( ancDict[ancestor] ) == 0:
+      if not len( ancDict[ancestor] ):
         ancDict.pop( ancestor )
     return ancDict
 
@@ -316,7 +322,7 @@ class ConsistencyChecks( object ):
         replicasRes = self.dm.getReplicas( lfnChunk )
         if not replicasRes['OK']:
           gLogger.error( "error:  %s" % replicasRes['Message'] )
-          raise RuntimeError( "error:  %s" % replicasRes['Message'] )
+          S_ERROR("error:  %s" % replicasRes['Message'])          # raise RuntimeError( "error:  %s" % replicasRes['Message'] )
         replicasRes = replicasRes['Value']
         if replicasRes['Failed']:
           retDict['NoReplicas'].update( replicasRes['Failed'] )
@@ -328,8 +334,9 @@ class ConsistencyChecks( object ):
     for lfnChunk in breakListIntoChunks( replicas.keys(), chunkSize ):
       self.__write( '.' )
       res = self.fc.getFileMetadata( lfnChunk )
+      print "res", res
       if not res['OK']:
-        raise RuntimeError( "error %s" % res['Message'] )
+        S_ERROR("error %s" % res['Message'])        # raise RuntimeError( "error %s" % res['Message'] )
       metadata.update( res['Value']['Successful'] )
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
@@ -376,8 +383,8 @@ class ConsistencyChecks( object ):
     startTime = time.time()
     self.__write( 'Verifying checksum of %d files (chunks of %d) ' % ( len( replicas ), chunkSize ) )
     for num, lfn in enumerate( replicas ):
-      # get the lfn checksum from the LFC
-      if num % chunkSize == 0:
+      # get the file catalog checksum   #lfn checksum from the LFC
+      if not num % chunkSize:
         self.__write( '.' )
 
       replicaDict = replicas[ lfn ]
@@ -427,7 +434,7 @@ class ConsistencyChecks( object ):
       value = int( value )
       res = self.transClient.getTransformation( value, extraParams = False )
       if not res['OK']:
-        raise RuntimeError( "Couldn't find transformation %d: %s" % ( value, res['Message'] ) )
+        S_ERROR("Couldn't find transformation %d: %s" % ( value, res['Message'] ))     #raise RuntimeError( "Couldn't find transformation %d: %s" % ( value, res['Message'] ) )
       else:
         self.transType = res['Value']['Type']
       if self.interactive:
@@ -442,8 +449,8 @@ class ConsistencyChecks( object ):
 
   def set_fileType( self, value ):
     """ Setter """
-    fts = [ft.upper() for ft in value]
-    self._fileType = fts
+    self._fileType = [ft.upper() for ft in value]
+    
   def get_fileType( self ):
     """ Getter """
     return self._fileType
@@ -451,8 +458,8 @@ class ConsistencyChecks( object ):
 
   def set_fileTypesExcluded( self, value ):
     """ Setter """
-    fts = [ft.upper() for ft in value]
-    self._fileTypesExcluded = fts
+    self._fileTypesExcluded = [ft.upper() for ft in value]
+    
   def get_fileTypesExcluded( self ):
     """ Getter """
     return self._fileTypesExcluded
@@ -474,14 +481,14 @@ class ConsistencyChecks( object ):
   #  This part was backported from DataIntegrityClient
   #
   #
-  #  This section contains the specific methods for LFC->SE checks
+  #  This section contains the specific methods for File Catalog->SE checks
   #
 
   def catalogDirectoryToSE( self, lfnDir ):
     """ This obtains the replica and metadata information from the catalog for the supplied directory and checks against the storage elements.
     """
     gLogger.info( "-" * 40 )
-    gLogger.info( "Performing the LFC->SE check" )
+    gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
     if type( lfnDir ) in types.StringTypes:
       lfnDir = [lfnDir]
@@ -500,7 +507,7 @@ class ConsistencyChecks( object ):
     """ This obtains the replica and metadata information from the catalog and checks against the storage elements.
     """
     gLogger.info( "-" * 40 )
-    gLogger.info( "Performing the LFC->SE check" )
+    gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
     if type( lfns ) in types.StringTypes:
       lfns = [lfns]
@@ -518,7 +525,7 @@ class ConsistencyChecks( object ):
     resDict = {'CatalogMetadata':catalogMetadata, 'CatalogReplicas':replicas}
     return S_OK( resDict )
 
-  def checkPhysicalFiles( self, replicas, catalogMetadata, ses = [] ):
+  def checkPhysicalFiles( self, replicas, catalogMetadata, ses = None ):
     """ This obtains takes the supplied replica and metadata information obtained from the catalog and checks against the storage elements.
     """
     gLogger.info( "-" * 40 )
@@ -526,7 +533,7 @@ class ConsistencyChecks( object ):
     gLogger.info( "-" * 40 )
     return self.__checkPhysicalFiles( replicas, catalogMetadata, ses = ses )
 
-  def __checkPhysicalFiles( self, replicas, catalogMetadata, ses = [] ):
+  def __checkPhysicalFiles( self, replicas, catalogMetadata, ses = None ):
     """ This obtains the physical file metadata and checks the metadata against the catalog entries
     """
     seLfns = {}
@@ -539,7 +546,7 @@ class ConsistencyChecks( object ):
 
 
 
-    for se in sortList( seLfns ):
+    for se in sorted( seLfns ):
       files = len( seLfns[se] )
       gLogger.info( '%s %s' % ( se.ljust( 20 ), str( files ).rjust( 20 ) ) )
 
@@ -551,7 +558,7 @@ class ConsistencyChecks( object ):
         return res
       for lfn, metadata in res['Value'].items():
         if lfn in catalogMetadata:
-          if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ) and ( metadata['Size'] != 0 ):
+          if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ):                # and ( metadata['Size'] != 0 ):
             sizeMismatch.append( ( lfn, 'deprecatedUrl', se, 'CatalogPFNSizeMismatch' ) )
       if sizeMismatch:
         self.__reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
@@ -585,7 +592,7 @@ class ConsistencyChecks( object ):
         lostReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNLost' ) )
       if lfnMetadata['Unavailable']:
         unavailableReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNUnavailable' ) )
-      if lfnMetadata['Size'] == 0:
+      if not lfnMetadata['Size']:
         zeroSizeReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNZeroSize' ) )
     if lostReplicas:
       self.__reportProblematicReplicas( lostReplicas, se, 'PFNLost' )
@@ -598,18 +605,18 @@ class ConsistencyChecks( object ):
 
   ##########################################################################
   #
-  # This section contains the specific methods for SE->LFC checks
+  # This section contains the specific methods for SE->File Catalog checks
   #
 
   def storageDirectoryToCatalog( self, lfnDir, storageElement ):
     """ This obtains the file found on the storage element in the supplied directories and determines whether they exist in the catalog and checks their metadata elements
     """
     gLogger.info( "-" * 40 )
-    gLogger.info( "Performing the SE->LFC check at %s" % storageElement )
+    gLogger.info( "Performing the SE->FC check at %s" % storageElement )
     gLogger.info( "-" * 40 )
     if type( lfnDir ) in types.StringTypes:
       lfnDir = [lfnDir]
-    res = self.__getStorageDirectoryContents( lfnDir, storageElement )
+    res = self.getStorageDirectoryContents( lfnDir, storageElement )
     if not res['OK']:
       return res
     storageFileMetadata = res['Value']
@@ -661,11 +668,6 @@ class ConsistencyChecks( object ):
 
   def getStorageDirectoryContents( self, lfnDir, storageElement ):
     """ This obtains takes the supplied lfn directories and recursively obtains the files in the supplied storage element
-    """
-    return self.__getStorageDirectoryContents( lfnDir, storageElement )
-
-  def __getStorageDirectoryContents( self, lfnDir, storageElement ):
-    """ Obtians the contents of the supplied directory on the storage
     """
     gLogger.info( 'Obtaining the contents for %s directories at %s' % ( len( lfnDir ), storageElement ) )
 
@@ -722,7 +724,7 @@ class ConsistencyChecks( object ):
         allFiles.pop( lfn )
       else:
         metadata = allFiles[lfn]
-        if metadata['Size'] == 0:
+        if not metadata['Size']:
           zeroSizeFiles.append( ( lfn, 'deprecatedUrl', storageElement, 'PFNZeroSize' ) )
     if zeroSizeFiles:
       self.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
@@ -763,12 +765,14 @@ class ConsistencyChecks( object ):
         zeroReplicaFiles.append( lfn )
       allReplicaDict[lfn] = lfnReplicas
       allMetadataDict[lfn] = lfnDict['MetaData']
-      if lfnDict['MetaData']['Size'] == 0:
+      if not lfnDict['MetaData']['Size']:
         zeroSizeFiles.append( lfn )
     if zeroReplicaFiles:
-      self.__reportProblematicFiles( zeroReplicaFiles, 'LFNZeroReplicas' )
+      if not self.interactive:
+        self.__reportProblematicFiles( zeroReplicaFiles, 'LFNZeroReplicas' )
     if zeroSizeFiles:
-      self.__reportProblematicFiles( zeroSizeFiles, 'LFNZeroSize' )
+      if not self.interactive:
+        self.__reportProblematicFiles( zeroSizeFiles, 'LFNZeroSize' )
     gLogger.info( 'Obtained at total of %s files for the supplied directories' % len( allMetadataDict ) )
     resDict = {'Metadata':allMetadataDict, 'Replicas':allReplicaDict}
     return S_OK( resDict )
@@ -788,7 +792,8 @@ class ConsistencyChecks( object ):
       if re.search( 'File has zero replicas', error ):
         zeroReplicaFiles.append( lfn )
     if zeroReplicaFiles:
-      self.__reportProblematicFiles( zeroReplicaFiles, 'LFNZeroReplicas' )
+      if not self.interactive:
+        self.__reportProblematicFiles( zeroReplicaFiles, 'LFNZeroReplicas' )
     gLogger.info( 'Obtaining the replicas for files complete' )
     return S_OK( allReplicas )
 
@@ -810,21 +815,23 @@ class ConsistencyChecks( object ):
       if re.search( 'No such file or directory', error ):
         missingCatalogFiles.append( lfn )
     if missingCatalogFiles:
-      self.__reportProblematicFiles( missingCatalogFiles, 'LFNCatalogMissing' )
+      if not self.interactive:
+        self.__reportProblematicFiles( missingCatalogFiles, 'LFNCatalogMissing' )
     for lfn, metadata in allMetadata.items():
       if metadata['Size'] == 0:
         zeroSizeFiles.append( lfn )
     if zeroSizeFiles:
-      self.__reportProblematicFiles( zeroSizeFiles, 'LFNZeroSize' )
+      if not self.interactive:
+        self.__reportProblematicFiles( zeroSizeFiles, 'LFNZeroSize' )
     gLogger.info( 'Obtaining the catalog metadata complete' )
     return S_OK( allMetadata )
 
   def __reportProblematicFiles( self, lfns, reason ):
     """ Simple wrapper function around setFileProblematic """
     gLogger.info( 'The following %s files were found with %s' % ( len( lfns ), reason ) )
-    for lfn in sortList( lfns ):
+    for lfn in sorted( lfns ):
       gLogger.info( lfn )
-    res = self.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
+    res = DataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
     if not res['OK']:
       gLogger.info( 'Failed to update integrity DB with files', res['Message'] )
     else:
