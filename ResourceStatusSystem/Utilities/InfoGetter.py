@@ -185,7 +185,7 @@ class InfoGetter:
     
     #some policies may apply or not also depending on the VO's domain
     # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
-    if decissionParams['elementType'] and decissionParams['name']:
+    if 'elementType' in decissionParams and 'name' in decissionParams:
       elementType = decissionParams['elementType']
       name = decissionParams['name']
       if elementType.lower() == 'computingelement' and 'domain' in policyMatchParams:
@@ -251,7 +251,7 @@ class InfoGetter:
       #policyConfigParams = policySetup.get( 'configParams', {} )
       policyMatch = Utils.configMatch( decissionParams, policyMatchParams )
       policyFilter = self.__filterPolicies( decissionParams, policyMatchParams )
-      
+            
       #WARNING: we need an additional filtering function when the matching
       #is not straightforward (e.g. when the policy specify a 'domain', while
       #the decisionParams has only the name of the element)  

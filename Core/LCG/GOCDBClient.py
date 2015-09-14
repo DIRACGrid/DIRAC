@@ -169,6 +169,26 @@ class GOCDBClient( object ):
 
 #############################################################################
 
+  def getCurrentDTLinkList(self):
+    """
+    Get the list of all current DTs' links
+    """
+    
+    gDTPage = self._downTimeCurlDownload() # xml format
+    gResourceDT = self._downTimeXMLParsing( gDTPage, "Resource" ) # python dictionary format
+    gSiteDT = self._downTimeXMLParsing( gDTPage, "Site" ) # python dictionary format
+    
+    currentDTLinkList = []
+    for dt in gResourceDT:
+      currentDTLinkList.append(gResourceDT[dt]['GOCDB_PORTAL_URL'])
+      
+    for dt in gSiteDT:
+      currentDTLinkList.append(gSiteDT[dt]['GOCDB_PORTAL_URL'])
+      
+    return S_OK(currentDTLinkList)
+    
+#############################################################################
+
 #  def getSiteInfo(self, site):
 #    """
 #    Get site info (in a dictionary)
