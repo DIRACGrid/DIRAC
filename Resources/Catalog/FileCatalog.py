@@ -1,8 +1,57 @@
 """ File catalog class. This is a simple dispatcher for the file catalog plug-ins.
     It ensures that all operations are performed on the desired catalogs.
+
+    The File Catalog plug-ins are supposed to implement all or some of the
+    methods described below. In all the methods the LFNs argument can have one
+    of the following forms:
+
+    - string: just a single LFN itself
+    - list: a list of LFN strings
+    - dictionary: the keys are LFN strings, the values are LFN specific parameters
+                  needed by the method
+
+    All the methods are returning a standard DIRAC bulk result structure. If the
+    call is successful, the Successful and Failed dictionaries have LFNs as keys
+    and specific results of operation as values.
+
+    The FileCatalog methods:
+
+    exists( LFNs ) - check the existence of the LFNs
+
+    addFile( LFNs )
+    removeFile
+    isFile( LFNs )
+    setFileStatus
+    getFileMetadata
+    getFileSize
+
+    createDirectory
+    removeDirectory
+    isDirectory
+    setDirectoryStatus
+    listDirectory
+    getDirectoryMetadata
+    getDirectorySize
+    getDirectoryContents
+
+    addReplica
+    removeReplica
+    setReplicaStatus
+    setReplicaHost
+    setReplicaProblematic
+    getReplicas
+    getReplicaStatus
+    getDirectoryReplicas
+
+    createLink
+    removeLink
+    isLink
+    readLink
+
+
 """
 
-import types, re
+import re
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
@@ -15,33 +64,11 @@ class FileCatalog( object ):
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID']
-
-  ro_meta_methods = ['getFileUserMetadata', 'getMetadataFields', 'findFilesByMetadata',
-                     'getDirectoryUserMetadata', 'findDirectoriesByMetadata', 'getReplicasByMetadata',
-                     'findFilesByMetadataDetailed', 'findFilesByMetadataWeb', 'getCompatibleMetadata',
-                     'getMetadataSet']
-
-  ro_methods += ro_meta_methods
+                'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
-                   'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
-                   'changePathOwner', 'changePathGroup']
-
-  write_meta_methods = ['addMetadataField', 'deleteMetadataField', 'setMetadata', 'setMetadataBulk',
-                        'removeMetadata', 'addMetadataSet']
-
-  write_methods += write_meta_methods
-
-  lfn_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
-                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                 'resolveDataset', 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getUsers', 'getGroups', 'getLFNForGUID',
-                 'createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory', 'setDirectoryStatus',
-                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset', 'changePathMode',
-                 'changePathOwner', 'changePathGroup']
+                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
+                   'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup']
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
@@ -50,7 +77,6 @@ class FileCatalog( object ):
     self.timeout = 180
     self.readCatalogs = []
     self.writeCatalogs = []
-    self.metaCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
 
@@ -103,22 +129,16 @@ class FileCatalog( object ):
     successful = {}
     failed = {}
     failedCatalogs = []
-    fileInfo = {}
-    lfnMapDict = {}
 
-    # For methods that pass an LFN argument first do the check and get the
-    # changed LFN mapping
-    lfnsFlag = self.call in FileCatalog.lfn_methods
-    if lfnsFlag:
-      fileInfo = parms[0]
-      res = checkArgumentFormat( fileInfo, generateMap = True )
-      if not res['OK']:
-        return res
-      fileInfo, lfnMapDict = res['Value']
-      # No need to check the LFNs again in the clients
-      kws['LFNChecking'] = False
-      allLfns = fileInfo.keys()
-      parms1 = parms[1:]
+    fileInfo = parms[0]
+    res = checkArgumentFormat( fileInfo, generateMap = True )
+    if not res['OK']:
+      return res
+    fileInfo, lfnMapDict = res['Value']
+    # No need to check the LFNs again in the clients
+    kws['LFNChecking'] = False
+    allLfns = fileInfo.keys()
+    parms1 = parms[1:]
 
     for catalogName, oCatalog, master in self.writeCatalogs:
 
@@ -127,11 +147,7 @@ class FileCatalog( object ):
         continue
 
       method = getattr( oCatalog, self.call )
-      if lfnsFlag:
-        res = method( fileInfo, *parms1, **kws )
-      else:
-        res = method( *parms, **kws )
-
+      res = method( fileInfo, *parms1, **kws )
       if not res['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs
@@ -141,31 +157,27 @@ class FileCatalog( object ):
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
           failedCatalogs.append( ( catalogName, res['Message'] ) )
-      elif lfnsFlag:
-        for lfn, message in res['Value']['Failed'].items():
-          # Save the error message for the failed operations
-          failed.setdefault( lfn, {} )[catalogName] = message
-          if master:
-            # If this is the master catalog then we should not attempt the operation on other catalogs
-            fileInfo.pop( lfn, None )
-        for lfn, result in res['Value']['Successful'].items():
-          # Save the result return for each file for the successful operations
-          successful.setdefault( lfn, {} )[catalogName] = result
+      for lfn, message in res['Value']['Failed'].items():
+        # Save the error message for the failed operations
+        failed.setdefault( lfn, {} )[catalogName] = message
+        if master:
+          # If this is the master catalog then we should not attempt the operation on other catalogs
+          fileInfo.pop( lfn, None )
+      for lfn, result in res['Value']['Successful'].items():
+        # Save the result return for each file for the successful operations
+        successful.setdefault( lfn, {} )[catalogName] = result
     # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
-    if lfnsFlag:
-      for catalogName, errorMessage in failedCatalogs:
-        for lfn in allLfns:
-          failed.setdefault( lfn, {} )[catalogName] = errorMessage
-      # Restore original lfns if they were changed by normalization
-      if lfnMapDict:
-        for lfn in failed:
-          failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
-        for lfn in successful:
-          successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
-      resDict = {'Failed':failed, 'Successful':successful}
-      return S_OK( resDict )
-    else:
-      return res
+    for catalogName, errorMessage in failedCatalogs:
+      for lfn in allLfns:
+        failed.setdefault( lfn, {} )[catalogName] = errorMessage
+    # Restore original lfns if they were changed by normalization
+    if lfnMapDict:
+      for lfn in failed:
+        failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
+      for lfn in successful:
+        successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
+    resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
 
   def r_execute( self, *parms, **kws ):
     """ Read method executor.
@@ -260,7 +272,6 @@ class FileCatalog( object ):
 
     # Get the eligible catalogs first
     # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
-    operationsFlag = False
     fileCatalogs = self.opHelper.getValue( '/Services/Catalogs/CatalogList', [] )
     if fileCatalogs:
       operationsFlag = True
