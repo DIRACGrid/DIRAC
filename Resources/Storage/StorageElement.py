@@ -7,7 +7,8 @@ __RCSID__ = "$Id$"
 import re
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DErrno
+from DIRAC import gLogger, gConfig
+from DIRAC.Core.Utilities import DErrno, DError
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse

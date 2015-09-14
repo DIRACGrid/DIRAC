@@ -16,3 +16,4 @@ from DIRAC.Core.Utilities.ExitCallback       import gCallbackList, registerSigna
 from DIRAC.Core.Utilities.ThreadSafe         import Synchronizer, WORM
 from DIRAC.Core.Utilities.DEncode            import encode, decode
 from DIRAC.Core.Utilities                    import List
+from DIRAC.Core.Utilities.DErrno             import DError

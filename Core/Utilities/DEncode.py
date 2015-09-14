@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 
 import types
 import datetime
-from DErrno import DError
+from DIRAC.Core.Utilities.DErrno import DError
 
 _dateTimeObject = datetime.datetime.utcnow()
 _dateTimeType = type( _dateTimeObject )
