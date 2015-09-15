@@ -57,7 +57,6 @@
     - S_ERROR:        ERROR return structure
     - gLogger:        global Logger object
     - gConfig:        global Config object
-    - gMonitor:       global Monitor object
 
     It defines the following functions:
     - abort:          aborts execution
@@ -129,9 +128,6 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 #Configuration client
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-
-#Monitoring client
-#from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()
