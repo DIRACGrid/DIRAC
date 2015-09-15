@@ -44,10 +44,12 @@ class UtilitiesTestCase( unittest.TestCase ):
                                                                   'Failed':{}}}
 
     self.cc = ConsistencyChecks( transClient = Mock(), dm = self.dmMock )
+    self.cc = ConsistencyChecks( transClient = Mock(), dm = self.dmMock, bkClient = self.bkClientMock )
     self.cc.fileType = ['SEMILEPTONIC.DST', 'LOG', 'RAW']
     self.cc.fileTypesExcluded = ['LOG']
     self.cc.prod = 0
     self.maxDiff = None
+
 
 class ConsistencyChecksSuccess( UtilitiesTestCase ):
 
@@ -71,8 +73,7 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
                        'cc.raw':
                        {'dd.raw': {'RunNumber': 97019, 'FileType': 'RAW'},
                         '/lhcb/1_1.semileptonic.dst': {'FileType': 'SEMILEPTONIC.DST'}}}
-    print res
-    print lfnDictExpected
+
     self.assertEqual( res, lfnDictExpected )
 
     lfnDict = {'aa.raw': {'/bb/pippo/aa.dst':{'FileType': 'LOG'},
@@ -128,7 +129,6 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
     resExpected = {'aa.raw': {'DST':2, 'LOG':1}}
     self.assertEqual( res, resExpected )
 
-        
   def test__catalogDirectoryToSE(self):
     lfnDict = {'aa.raw': {'bb.raw':{'FileType': 'RAW', 'RunNumber': 97019},
                           'bb.log':{'FileType': 'LOG'},
@@ -142,6 +142,7 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
     
     res = self.cc.catalogDirectoryToSE(lfnDict)   
     print "compareChecksum", res
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UtilitiesTestCase )
