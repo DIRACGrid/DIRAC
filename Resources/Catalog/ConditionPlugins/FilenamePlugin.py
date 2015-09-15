@@ -1,12 +1,56 @@
-# Plugin that test string method on the lfn
-from DIRAC.Resources.Catalog.FCConditionParser import bcolors
+"""
+  Defines the plugin to perform evaluation on the lfn name
+"""
+__RCSID__ = "$Id $"
 
-class FilenamePlugin( object ):
+from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin
+
+
+class FilenamePlugin( FCConditionBasePlugin ):
+  """
+     This plugin is to be used when filtering based on the LFN name
+  """
+
   def __init__( self, conditions ):
-    self.conditions = conditions
+    """ the condition can be any method of the python string object that can be evaluated
+        as True or False:
+
+          * endswith
+          * find
+          * isalnum
+          * isalpha
+          * isdigit
+          * islower
+          * isspace
+          * istitle
+          * isupper
+          * startswith
+
+      It should be written just like if you were calling the python call yourself.
+      For example:
+        Filename=startswith('/lhcb')
+        Filename=istitle()
+
+    """
+    super( FilenamePlugin, self ).__init__( conditions )
+
 
   def eval( self, **kwargs ):
-    test = "'%s'.%s" % ( kwargs.get( 'lfn', '' ), self.conditions )
-    ret = eval( test )
-    print bcolors.WARNING + "\t\ttesting %s : %s" % ( test, ret ) + bcolors.ENDC
+    """ evaluate the parameters. The lfn argument is mandatory
+        An exception will be thrown if not.
+    """
+
+    lfn = kwargs['lfn']
+
+    evalStr = "'%s'.%s" % ( lfn, self.conditions )
+    ret = eval( evalStr )
+    
+    # Special case of 'find' which returns -1 if the pattern does not exist
+    if self.conditions.startswith('find('):
+      ret = False if ret == -1 else True
+
+    print "evaluating %s -> %s" % ( evalStr, ret )
+
+
     return ret
+      

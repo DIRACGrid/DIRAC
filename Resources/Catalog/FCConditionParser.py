@@ -1,29 +1,46 @@
-from pyparsing import infixNotation, opAssoc, Keyword, Word, alphas, alphanums, printables, Literal, Suppress
+from pyparsing import infixNotation, opAssoc, Word, printables, Literal, Suppress
 
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-
-import sys
-
-
-# Just to print nicely
-class bcolors( object ):
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 
 class FCConditionParser(object):
+  """
+    This objects allows to evaluate conditions on whether or not
+    a given operation should be evaluated on a given catalog
+    for a given lfn (be glad so many things are given to you !).
+
+    The conditions are expressed as boolean logic, where the basic bloc has
+    the form "pluginName=whateverThatWillBePassedToThePlugin".
+    The basic blocs will be evaluated by the respective plugins, and the result can
+    be combined using the standard boolean operators:
+      * ! for not
+      * & for and
+      * | for or
+      * [ ] for prioritizing the operations
+
+    All these characters, as well as the '=' symbol cannot be used in any expression to be
+    evaluated by a plugin.
+
+    The rule to evaluate can either be given at calling time, or can be retrieved
+    from the CS depending on the context (see doc of __call__ and __getConditionFromCS)
+
+
+    Example of rules are:
+
+      FilenamePlugin=startswith('/lhcb') & ProxyPlugin=voms.has(/lhcb/Role->production)
+      [FilenamePlugin=startswith('/lhcb') & !FilenamePlugin=find('/user/')] | ProxyPlugin=group.in(lhcb_mc, lhcb_data)
+
+  """
   
   
   # Some characters are reserved for the grammar
-  __forbidenChars = ( '[', ']', '!', '&', '|', '=' , ' ' )
-  __allowedChars = ''.join( set( printables ) - set( __forbidenChars ) )
+  __forbidenChars = ( '[', ']', '!', '&', '|', '=' )
+  __allowedChars = ''.join( set( printables ) - set( __forbidenChars ) ) + ' '
+
 
   # Defines the basic shape of a rule : pluginName=whateverThatWillBePassedToThePlugin
   __pluginOperand = Word( __allowedChars ) + Literal( '=' ) + Word( __allowedChars )
@@ -49,8 +66,9 @@ class FCConditionParser(object):
            :param token : the token matching a binary operator
                          it is a list with only one element which itself is a list
                          [ [ Arg1, Operator, Arg2] ]
-                         The arguments themselves can be of any type, but one need
-                         to be able to evaluate them as bool
+                         The arguments themselves can be of any type, but they need to
+                         provide an "eval" method that takes **kwargs as input,
+                         and return a boolean
       """
 
       # Keep the two arguments
@@ -63,15 +81,16 @@ class FCConditionParser(object):
       return "(" + sep.join( map( str, self.args ) ) + ")"
 
 
-    def __bool__( self ):
-      """ Perform the evaluation of the boolean value"""
-      return self.evalop( bool( a ) for a in self.args )
 
     def eval( self, **kwargs ):
-      """ Perform the evaluation of the boolean value"""
-      return self.evalop( a.eval( **kwargs ) for a in self.args )
+      """ Perform the evaluation of the boolean logic
+          by applying the operator between the two arguments
 
-    __nonzero__ = __bool__
+          :param **kwargs whatever information is given to plugin (typically lfn)
+      """
+
+      return self.evalop( arg.eval( **kwargs ) for arg in self.args )
+
     __repr__ = __str__
 
 
@@ -94,26 +113,28 @@ class FCConditionParser(object):
          :param token : the token matching a unitary operator
                        it is a list with only one element which itself is a list
                        [ [ !, Arg1] ]
-                       The argument itself can be of any type, but one need
-                      to be able to evaluate it as bool
+                       The argument itself can be of any type, but it needs to
+                       provide an "eval" method that takes **kwargs as input,
+                       and return a boolean
+
       """
 
       # We just keep the argument
       self.arg = t[0][1]
 
-    def __bool__( self ):
-      """ Perform the evaluation of the boolean value"""
-      return not bool( self.arg )
 
     def eval( self, **kwargs ):
-      """ Perform the evaluation of the boolean value"""
+      """ Perform the evaluation of the boolean logic
+          by returning the negation of the evaluation of the argument
+
+          :param **kwargs whatever information is given to plugin (typically lfn)
+      """
       return not self.arg.eval( **kwargs )
 
     def __str__( self ):
       return "!" + str( self.arg )
 
     __repr__ = __str__
-    __nonzero__ = __bool__
 
 
   # We can combine the pluginOperand with boolean expression,
@@ -137,20 +158,18 @@ class FCConditionParser(object):
 
     """
 
-    def __init__( self, tokens, **kwargs ):
+    def __init__( self, tokens ):
       """
           :param tokens [ pluginName, =, conditions ]
-          :param kwargs contains all the information given to the plugin
-                        namely the lfns
+
       """
 
-      self.pluginName = tokens[0]
-      self.conditions = tokens[2]
+      self.pluginName = tokens[0].strip( ' ' )
+      self.conditions = tokens[2].strip( ' ' )
 
       # Load the plugin, and give it the condition
       objLoader = ObjectLoader()
-      _class = objLoader.loadObject( 'Resources.Catalog.ConditionPlugins.%s' % self.pluginName, self.pluginName,
-                                       hideExceptions = False )
+      _class = objLoader.loadObject( 'Resources.Catalog.ConditionPlugins.%s' % self.pluginName, self.pluginName )
 
       if not _class['OK']:
         raise Exception( _class['Message'] )
@@ -158,43 +177,118 @@ class FCConditionParser(object):
 
       self._pluginInst = _class['Value']( self.conditions )
 
-      # call the plugin and evaluate it
-      self.value = self._pluginInst.eval( **kwargs )
-
-    def __bool__( self ):
-      return self.value
-
 
     def eval( self, **kwargs ):
+      """Forward the evaluation call to the plugin
+        :param kwargs contains all the information given to the plugin
+                namely the lfns
+        :return True or False
+      """
+
       return self._pluginInst.eval( **kwargs )
 
     def __str__( self ):
       return  self.pluginName
 
     __repr__ = __str__
-    __nonzero__ = __bool__
 
 
 
+  def __init__(self):
 
-  def testConditions( self, lfn, conditionString ):
-    print bcolors.OKBLUE + "Testing %s against %s" % ( conditionString, lfn ) + bcolors.ENDC
+    # Whenever we parse text matching the __pluginOperand grammar, create a PluginOperand object
+    self.__pluginOperand.setParseAction( lambda tokens : self.PluginOperand( tokens ) )
+
+
+
+  def __evaluateCondition( self, conditionString, **kwargs ):
+    """Evaluate a condition against attributes, typically lfn.
+       CAUTION: lfns are here given one by one
+
+    """
+
+    gLogger.debug( "Testing %s against %s" % ( conditionString, kwargs ) )
   
-    # Parse the various plugins and give as attribute the lfn, and whatever else (method name, catalog name...)
-    self.__pluginOperand.setParseAction( lambda tokens : self.PluginOperand( tokens, lfn = lfn ) )
-    # Parse all the condition and evaluate it
-    res0 = self.__boolExpr.parseString( conditionString )
-    print "type %s" % type( res0[0] )
-    res = bool( res0[0] )
-    res2 = res0[0].eval( lfn = lfn )
-    print "%s" % ( bcolors.OKGREEN if res else bcolors.FAIL ) + "\t--> %s" % res + bcolors.ENDC
-    print "%s" % ( bcolors.OKGREEN if res2 else bcolors.FAIL ) + "\t--> %s" % res2 + bcolors.ENDC
 
-  def __call__(self, lfns, catalogName, operationName):
-    tests = [ "[ FilenamePlugin=startswith('/lhcb') ] & ![ LenPlugin= >8 ] ",
-              "FilenamePlugin=endswith('lfn')",
-            ]
-    lfns = [ '/nogood/lfn', '/lhcb/lfn', '/lhcb/a' ]
-    for t in tests:
+    # Parse all the condition and evaluate it
+    # res is a tuple whose first and only element is either
+    # one of the bool operator defined above, or a PluginOperand
+    res = self.__boolExpr.parseString( conditionString )
+    res = res[0].eval( **kwargs )
+
+    gLogger.debug( "Evaluated to %s" % res )
+
+    return res
+
+
+
+  @staticmethod
+  def __getConditionFromCS( catalogName, operationName ):
+    """ Retrieves the appropriate condition from the CS
+        The base path is in Operation/[Setup/Default]/DataManagement/FCConditions/[CatalogName]
+        If there are no condition defined for the method, we check the global READ/WRITE condition.
+        If this does not exist either, we check the global ALL condition.
+        If none is defined, we return None
+
+        :param catalogName : the catalog we want to work on
+        :param operationName : the operation we want to perform
+                              The operationName must be in the read or write method from FileCatalog
+
+        :returns a condition string or None
+
+
+    """
+    basePath = 'DataManagement/FCConditions/%s/' % catalogName
+    pathList = [basePath + '%s' % operationName,
+                basePath + '%s' % ( 'READ' if operationName in FileCatalog.ro_methods else 'WRITE' ),
+                basePath + 'ALL']
+
+    for path in pathList:
+      condVal = Operations().getValue( path )
+      if condVal:
+        return condVal
+    
+
+
+
+
+  def __call__( self, catalogName, operationName, lfns, condition = None, **kwargs ):
+    """
+        Makes a boolean evaluation of a condition, for a given catalog,
+        a given operation, and a list of lfns. Extra parameters might be given,
+        and will be forwarded to each plugin.
+        If the 'condition' attribute is not specified (general case), it is fetched from the CS
+        (see __getConditionFromCS)
+
+        If there are no condition at all, return True for everything.
+        A programming error in the plugins will lead to the evaluation being False
+
+        :param catalogName: name of the catalog we want to work on
+        :param operationName: name of the operation we want to perform
+                              The operationName must be in the read or write method from FileCatalog
+                              if it should be retrieve from the CS
+        :param lfns: list/dict of lfns
+        :param condition: condition string. If not specified, will be fetched from the CS
+        :param kwargs: extra params forwarded to the plugins
+
+        :return S_OK with a dict {lfn:True/False} where the value is the evaluation of the
+                condition against the given lfn key
+
+
+    """
+
+    
+    conditionStr = condition if condition else self.__getConditionFromCS( catalogName, operationName )
+
+    evaluatedLfns = {}
+
+    if conditionStr :
       for lfn in lfns:
-        self.testConditions( lfn, t )
+        try:
+          evaluatedLfns[lfn] = self.__evaluateCondition( conditionStr, lfn = lfn, **kwargs )
+        except:
+          evaluatedLfns[lfn] = False
+    else:
+      evaluatedLfns = dict.fromkeys( lfns, True )
+
+    return S_OK( evaluatedLfns )
