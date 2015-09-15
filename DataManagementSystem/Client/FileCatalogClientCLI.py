@@ -2074,7 +2074,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
       listToPrint = None
       if dirsOnly:
-        listToPrint = set( self.getPath(fullpath) for fullpath in result['Value'] )
+        listToPrint = set( os.path.dirname(fullpath) for fullpath in result['Value'] )
       else:
         listToPrint = result['Value']
 
