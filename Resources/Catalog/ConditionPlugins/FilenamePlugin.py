@@ -37,20 +37,23 @@ class FilenamePlugin( FCConditionBasePlugin ):
 
   def eval( self, **kwargs ):
     """ evaluate the parameters. The lfn argument is mandatory
-        An exception will be thrown if not.
     """
 
-    lfn = kwargs['lfn']
+    lfn = kwargs.get( 'lfn' )
+
+    if not lfn:
+      return False
 
     evalStr = "'%s'.%s" % ( lfn, self.conditions )
-    ret = eval( evalStr )
+    try:
+      ret = eval( evalStr )
+      # Special case of 'find' which returns -1 if the pattern does not exist
+      if self.conditions.startswith( 'find(' ):
+        ret = False if ret == -1 else True
+
+      return ret
+    except:
+      return False
     
-    # Special case of 'find' which returns -1 if the pattern does not exist
-    if self.conditions.startswith('find('):
-      ret = False if ret == -1 else True
 
-    print "evaluating %s -> %s" % ( evalStr, ret )
-
-
-    return ret
       
