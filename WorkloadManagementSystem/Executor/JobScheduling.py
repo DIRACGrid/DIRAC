@@ -77,11 +77,7 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( "Could not retrieve job type" )
     jobType = result[ 'Value' ]
 
-    # Get active and banned sites from DIRAC
-    result = self.__jobDB.getSiteMask( 'Active' )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Cannot retrieve active sites from JobDB" )
-    wmsActiveSites = result[ 'Value' ]
+    # Get banned sites from DIRAC
     result = self.__jobDB.getSiteMask( 'Banned' )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot retrieve banned sites from JobDB" )
@@ -90,7 +86,7 @@ class JobScheduling( OptimizerExecutor ):
     # If the user has selected any site, filter them and hold the job if not able to run
     if userSites:
       if jobType not in self.ex_getOption( 'ExcludedOnHoldJobTypes', [] ):
-        sites = self._applySiteFilter( userSites, active = wmsActiveSites, banned = wmsBannedSites )
+        sites = self._applySiteFilter( userSites, banned = wmsBannedSites )
         if not sites:
           if len( userSites ) > 1:
             return self.__holdJob( jobState, "Requested sites %s are inactive" % ",".join( userSites ) )
@@ -153,7 +149,7 @@ class JobScheduling( OptimizerExecutor ):
     siteCandidates = list( opData[ 'SiteCandidates' ] )
     self.jobLog.info( "Site candidates are %s" % siteCandidates )
 
-    siteCandidates = self._applySiteFilter( siteCandidates, active = userSites, banned = userBannedSites )
+    siteCandidates = self._applySiteFilter( list( set( siteCandidates ) & set( userSites ) ), banned = userBannedSites )
     if not siteCandidates:
       return S_ERROR( "Impossible InputData * Site requirements" )
 
@@ -179,7 +175,7 @@ class JobScheduling( OptimizerExecutor ):
       return S_ERROR( "No destination sites available" )
 
     # Is any site active?
-    stageSites = self._applySiteFilter( siteCandidates, active = wmsActiveSites, banned = wmsBannedSites )
+    stageSites = self._applySiteFilter( siteCandidates, banned = wmsBannedSites )
     if not stageSites:
       return self.__holdJob( jobState, "Sites %s are inactive or banned" % ", ".join( siteCandidates ) )
 
@@ -221,15 +217,13 @@ class JobScheduling( OptimizerExecutor ):
 
     return self.__setJobSite( jobState, stageSites )
 
-  def _applySiteFilter( self, sites, active = False, banned = False ):
+  def _applySiteFilter( self, sites, banned = False ):
     """ Filters out banned sites
     """
     if not sites:
       return sites
 
     filtered = set( sites )
-    if active and isinstance( active, ( list, set, dict ) ):
-      filtered = filtered - set( active ) | filtered
     if banned and isinstance( banned, ( list, set, dict ) ):
       filtered -= set( banned )
     return list( filtered )
