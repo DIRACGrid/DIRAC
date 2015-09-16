@@ -31,6 +31,8 @@ from DIRAC.Core.Utilities.List                             import fromChar
 import os, base64, bz2, tempfile, random, socket, types
 import DIRAC
 
+from collections import defaultdict
+
 __RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
@@ -62,7 +64,7 @@ class SiteDirector( AgentModule ):
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
-    self.failedQueues = {}
+    self.failedQueues = defaultdict( int )
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
@@ -386,7 +388,7 @@ class SiteDirector( AgentModule ):
     for queue in queues:
 
       # Check if the queue failed previously
-      failedCount = self.failedQueues.setdefault( queue, 0 ) % self.failedQueueCycleFactor
+      failedCount = self.failedQueues[ queue ] % self.failedQueueCycleFactor
       if failedCount != 0:
         self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
         self.failedQueues[queue] += 1
