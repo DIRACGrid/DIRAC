@@ -9,7 +9,8 @@ import os
 import tempfile
 
 from GSI import crypto
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK
+from DIRAC.Core.Utilities import DError, DErrno
 
 class X509CRL( object ):
 
@@ -44,8 +45,9 @@ class X509CRL( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, str( e ) ) )
-      return S_ERROR( "Can't open file" )
+      return DError(DErrno., "%s: %s" % ( crlLocation, str( e ) ) )
+#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, str( e ) ) )
+#       return S_ERROR( "Can't open file" )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
@@ -57,10 +59,12 @@ class X509CRL( object ):
     try:
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      gLogger.error( "Can't load pem data", "%s" % str( e ) )
-      return S_ERROR( "Can't load pem data" )
+      return DError(DErrno., "%s" % str( e ))
+#       gLogger.error( "Can't load pem data", "%s" % str( e ) )
+#       return S_ERROR( "Can't load pem data" )
     if not self.__revokedCert:
-      return S_ERROR( "No certificates in the contents" )
+      return DError(DErrno.)
+#       return S_ERROR( "No certificates in the contents" )
     self.__loadedCert = True
     self.__pemData = pemData
 
@@ -77,8 +81,9 @@ class X509CRL( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, str( e ) ) )
-      return S_ERROR( "Can't open file" )
+      return DError(DErrno., "%s: %s" % ( crlLocation, str( e ) ) )
+#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, str( e ) ) )
+#       return S_ERROR( "Can't open file" )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
@@ -94,8 +99,9 @@ class X509CRL( object ):
     Dump all to string
     """
     if not self.__loadedCert:
-      gLogger.error( "No certificate loaded" )
-      return S_ERROR( "No certificate loaded" )
+      return DError(DErrno.)
+#       gLogger.error( "No certificate loaded" )
+#       return S_ERROR( "No certificate loaded" )
 
     return S_OK( self.__pemData )
 
@@ -117,13 +123,15 @@ class X509CRL( object ):
         fd.write( pemData )
         fd.close()
     except Exception as e:
-      gLogger.error( "Cannot write to file", "%s: %s" % ( filename, str( e ) ) )
-      return S_ERROR( "Cannot write to file" )
+      return DError(DErrno., "%s: %s" % ( filename, str( e ) ))
+#       gLogger.error( "Cannot write to file", "%s: %s" % ( filename, str( e ) ) )
+#       return S_ERROR( "Cannot write to file" )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      gLogger.error( "Cannot set permissions to file", "%s: %s" % ( filename, str( e ) ) )
-      return S_ERROR( "Cannot set permissions to file" )
+      return DError(DErrno.,"%s: %s" % ( filename, str( e ) ) )
+#       gLogger.error( "Cannot set permissions to file", "%s: %s" % ( filename, str( e ) ) )
+#       return S_ERROR( "Cannot set permissions to file" )
     return S_OK( filename )
 
   def __str__( self ):
