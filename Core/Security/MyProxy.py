@@ -1,11 +1,13 @@
-# $HeadURL$
+""" Utility class for dealing with MyProxy
+"""
+
 __RCSID__ = "$Id$"
 
 import re
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-import DIRAC.Core.Security.File as File
+from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 
@@ -19,7 +21,7 @@ class MyProxy( BaseSecurity ):
         : string -> upload file specified as proxy
         : X509Chain -> use chain
     """
-    retVal = File.multiProxyArgument( proxy )
+    retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -39,7 +41,7 @@ class MyProxy( BaseSecurity ):
     else:
       retVal = self._getUsername( chain )
       if not retVal[ 'OK' ]:
-        File.deleteMultiProxy( proxyDict )
+        deleteMultiProxy( proxyDict )
         return retVal
       mpUsername = retVal[ 'Value' ]
       cmdArgs.append( '-l "%s"' % mpUsername )
@@ -51,13 +53,13 @@ class MyProxy( BaseSecurity ):
     cmd = "myproxy-init %s" % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd, env = mpEnv )
 
-    File.deleteMultiProxy( proxyDict )
+    deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       errMsg = "Call to myproxy-init failed: %s" % retVal[ 'Message' ]
       return S_ERROR( errMsg )
 
-    status, output, error = result['Value']
+    status, _, error = result['Value']
 
     # Clean-up files
     if status:
@@ -75,7 +77,7 @@ class MyProxy( BaseSecurity ):
     #TODO: Set the proxy coming in proxyString to be the proxy to use
 
     #Get myproxy username diracgroup:diracuser
-    retVal = File.multiProxyArgument( proxyChain )
+    retVal = multiProxyArgument( proxyChain )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -84,7 +86,7 @@ class MyProxy( BaseSecurity ):
 
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return retVal
     newProxyLocation = retVal[ 'Value' ]
 
@@ -108,7 +110,7 @@ class MyProxy( BaseSecurity ):
     else:
       retVal = self._getUsername( chain )
       if not retVal[ 'OK' ]:
-        File.deleteMultiProxy( proxyDict )
+        deleteMultiProxy( proxyDict )
         return retVal
       mpUsername = retVal[ 'Value' ]
       cmdArgs.append( '-l "%s"' % mpUsername )
@@ -118,29 +120,29 @@ class MyProxy( BaseSecurity ):
 
     result = shellCall( self._secCmdTimeout, cmd, env = cmdEnv )
 
-    File.deleteMultiProxy( proxyDict )
+    deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       errMsg = "Call to myproxy-logon failed: %s" % result[ 'Message' ]
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return S_ERROR( errMsg )
 
-    status, output, error = result['Value']
+    status, _, error = result['Value']
 
     # Clean-up files
     if status:
       errMsg = "Call to myproxy-logon failed"
       extErrMsg = 'Command: %s; StdOut: %s; StdErr: %s' % ( cmd, result, error )
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return S_ERROR( "%s %s" % ( errMsg, extErrMsg ) )
 
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( newProxyLocation )
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return S_ERROR( "myproxy-logon failed when reading delegated file: %s" % retVal[ 'Message' ] )
 
-    File.deleteMultiProxy( proxyDict )
+    deleteMultiProxy( proxyDict )
     return S_OK( chain )
 
   def getInfo( self, proxyChain, useDNAsUserName = False ):
@@ -153,7 +155,7 @@ class MyProxy( BaseSecurity ):
     #TODO: Set the proxy coming in proxyString to be the proxy to use
 
     #Get myproxy username diracgroup:diracuser
-    retVal = File.multiProxyArgument( proxyChain )
+    retVal = multiProxyArgument( proxyChain )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -177,7 +179,7 @@ class MyProxy( BaseSecurity ):
     else:
       retVal = self._getUsername( chain )
       if not retVal[ 'OK' ]:
-        File.deleteMultiProxy( proxyDict )
+        deleteMultiProxy( proxyDict )
         return retVal
       mpUsername = retVal[ 'Value' ]
       cmdArgs.append( '-l "%s"' % mpUsername )
@@ -187,11 +189,11 @@ class MyProxy( BaseSecurity ):
 
     result = shellCall( self._secCmdTimeout, cmd, env = cmdEnv )
 
-    File.deleteMultiProxy( proxyDict )
+    deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       errMsg = "Call to myproxy-info failed: %s" % result[ 'Message' ]
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return S_ERROR( errMsg )
 
     status, output, error = result['Value']

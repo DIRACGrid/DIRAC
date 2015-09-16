@@ -1,4 +1,4 @@
-""" Utility for dealing with files
+""" Collection of utilities for dealing with security files (i.e. proxy files)
 """
 
 __RCSID__ = "$Id$"
@@ -31,12 +31,12 @@ def writeToProxyFile( proxyContents, fileName = False ):
     fd.write( proxyContents )
     fd.close()
   except Exception as e:
-    gLogger.error( "Cannot write to file", " %s: %s" % ( fileName, str( e ) ) )
+    gLogger.error( "Cannot write to file", " %s: %s" % ( fileName, e ) )
     return S_ERROR( "Cannot write to file" )
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception as e:
-    gLogger.error( "Cannot set permissions to file", "%s: %s" % ( fileName, str( e ) ) )
+    gLogger.error( "Cannot set permissions to file", "%s: %s" % ( fileName, e ) )
     return S_ERROR( "Cannot set permissions to file" )
   return S_OK( fileName )
 

@@ -8,9 +8,8 @@ import stat
 import tempfile
 import shutil
 
-
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
-import DIRAC.Core.Security.File as File
+from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -110,7 +109,7 @@ class VOMS( BaseSecurity ):
       if option not in validOptions:
         S_ERROR( 'Non valid option %s' % option )
 
-    retVal = File.multiProxyArgument( proxy )
+    retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -225,7 +224,7 @@ class VOMS( BaseSecurity ):
     if not vo:
       return S_ERROR( "No vo specified, and can't get default in the configuration" )
 
-    retVal = File.multiProxyArgument( proxy )
+    retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -240,7 +239,7 @@ class VOMS( BaseSecurity ):
 
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return retVal
     newProxyLocation = retVal[ 'Value' ]
 
@@ -268,7 +267,7 @@ class VOMS( BaseSecurity ):
     if tmpDir:
       shutil.rmtree( tmpDir )
 
-    File.deleteMultiProxy( proxyDict )
+    deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
