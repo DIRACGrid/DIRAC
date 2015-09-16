@@ -7,8 +7,10 @@ import os
 import stat
 import tempfile
 import types
+import errno
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK
+from DIRAC.Core.Utilities import DError, DErrno
 from DIRAC.Core.Security.X509Chain import g_X509ChainType, X509Chain
 from DIRAC.Core.Security.Locations import getProxyLocation
 
@@ -23,21 +25,23 @@ def writeToProxyFile( proxyContents, fileName = False ):
       fd, proxyLocation = tempfile.mkstemp()
       os.close( fd )
     except IOError:
-      gLogger.error( "Failed to create temporary file" )
-      return S_ERROR( "Failed to create temporary file" )
+      return DError( DErrno. )
+#       return S_ERROR( "Failed to create temporary file" )
     fileName = proxyLocation
   try:
     fd = open( fileName, 'w' )
     fd.write( proxyContents )
     fd.close()
   except Exception as e:
-    gLogger.error( "Cannot write to file", " %s: %s" % ( fileName, e ) )
-    return S_ERROR( "Cannot write to file" )
+    return DError(DErrno., " %s: %s" % ( fileName, e ))
+#     gLogger.error( "Cannot write to file", " %s: %s" % ( fileName, e ) )
+#     return S_ERROR( "Cannot write to file" )
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception as e:
-    gLogger.error( "Cannot set permissions to file", "%s: %s" % ( fileName, e ) )
-    return S_ERROR( "Cannot set permissions to file" )
+    return DError(DErrno., "%s: %s" % ( fileName, e ) )
+#     gLogger.error( "Cannot set permissions to file", "%s: %s" % ( fileName, e ) )
+#     return S_ERROR( "Cannot set permissions to file" )
   return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
@@ -61,8 +65,8 @@ def writeChainToTemporaryFile( proxyChain ):
     fd, proxyLocation = tempfile.mkstemp()
     os.close( fd )
   except IOError:
-    gLogger.error( "Failed to create temporary file" )
-    return S_ERROR( "Failed to create temporary file" )
+    return DError(DErrno.)
+#     return S_ERROR( "Failed to create temporary file" )
   retVal = writeChainToProxyFile( proxyChain, proxyLocation )
   if not retVal[ 'OK' ]:
     try:
@@ -108,16 +112,17 @@ def multiProxyArgument( proxy = False ):
     if not proxy:
       proxyLoc = getProxyLocation()
       if not proxyLoc:
-        gLogger.error( "Can't find proxy" )
-        return S_ERROR( "Can't find proxy" )
+        return DError(DErrno.)
+#         return S_ERROR( "Can't find proxy" )
     if type( proxy ) == types.StringType:
       proxyLoc = proxy
     #Load proxy
     proxy = X509Chain()
     retVal = proxy.loadProxyFromFile( proxyLoc )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Can't load proxy at %s" % proxyLoc )
-      return S_ERROR( "Can't load proxy" )
+      return DError(DErrno., "ProxyLocation: %s" % proxyLoc)
+#       gLogger.error( "Can't load proxy at %s" % proxyLoc )
+#       return S_ERROR( "Can't load proxy" )
   return S_OK( { 'file' : proxyLoc,
                  'chain' : proxy,
                  'tempFile' : tempFile } )
