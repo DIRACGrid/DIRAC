@@ -289,8 +289,8 @@ class FCConditionParser(object):
         :param condition: condition string. If not specified, will be fetched from the CS
         :param kwargs: extra params forwarded to the plugins
 
-        :return S_OK with a dict {lfn:True/False} where the value is the evaluation of the
-                condition against the given lfn key
+        :return S_OK with a 'Successful' dict {lfn:True/False} where the value is the evaluation of the
+                condition against the given lfn key. Failed dict is always empty
 
 
     """
@@ -309,4 +309,4 @@ class FCConditionParser(object):
     else:
       evaluatedLfns = dict.fromkeys( lfns, True )
 
-    return S_OK( evaluatedLfns )
+    return S_OK( {'Successful' : evaluatedLfns, 'Failed' : {}} )
