@@ -29,7 +29,7 @@ def getMachineFeatures():
     try:
       val = urllib.urlopen( fname ).read()
     except:
-      val = None
+      val = 0
     features[item] = val
   return features
 
