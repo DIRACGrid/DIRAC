@@ -36,11 +36,12 @@ def getMachineFeatures():
 def getPowerFromMJF():
   features = getMachineFeatures()
   totalPower = features.get( 'hs06' )
-  logCores = features.get( 'log_cores' )
-  jobSlots = features.get( 'jobslots' )
-  denom = min( logCores, jobSlots ) if logCores and jobSlots else None
+  logCores = float( features.get( 'log_cores', 0 ) )
+  physCores = float( features.get( 'phys_cores', 0 ) )
+  jobSlots = float( features.get( 'jobslots', 0 ) )
+  denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
   if totalPower and denom:
-    return int( 10. * float( totalPower ) / float( denom ) ) / 10.
+    return int( 10. * float( totalPower ) / denom ) / 10.
   else:
     return None
 
