@@ -26,88 +26,65 @@ class JobSchedulingSuccess( ExecutorTestCase ):
     self.assertEqual( set( filtered ), set( sites ) )
 
     sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = []
-    banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
-    self.assertEqual( set( filtered ), set( sites ) )
-
-    sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = ['MY.Site1.org', 'MY.Site2.org']
-    banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
-    self.assertEqual( set( filtered ), set( sites ) )
-
-    sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = []
     banned = ['MY.Site1.org', 'MY.Site2.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( filtered, [] )
 
     sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = []
     banned = ['MY.Site2.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( filtered, ['MY.Site1.org'] )
 
     sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = []
     banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set( sites ) )
 
     sites = []
-    active = []
     banned = ['MY.Site1.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set( sites ) )
 
     sites = []
-    active = ['MY.Site1.org']
     banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set( sites ) )
 
     sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = ['MY.Site3.org']
-    banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
-    self.assertEqual( set( filtered ), set( sites ) )
-
-    sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = ['MY.Site3.org', 'MY.Site1.org']
-    banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
-    self.assertEqual( set( filtered ), set( sites ) )
-
-    sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = ['MY.Site3.org', 'MY.Site1.org', 'MY.Site2.org']
-    banned = []
-    filtered = js._applySiteFilter( sites, active, banned )
-    self.assertEqual( set( filtered ), set( sites ) )
-
-    sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = ['MY.Site3.org']
     banned = ['MY.Site1.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set( ['MY.Site2.org'] ) )
 
     sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = ['MY.Site3.org']
     banned = ['MY.Site1.org', 'MY.Site3.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set( ['MY.Site2.org'] ) )
 
     sites = []
-    active = ['MY.Site3.org']
     banned = ['MY.Site1.org', 'MY.Site3.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set() )
 
     sites = ['MY.Site1.org', 'MY.Site2.org']
-    active = []
     banned = ['MY.Site1.org', 'MY.Site3.org']
-    filtered = js._applySiteFilter( sites, active, banned )
+    filtered = js._applySiteFilter( sites, banned )
     self.assertEqual( set( filtered ), set( ['MY.Site2.org'] ) )
+
+    sites = ['MY.Site1.org', 'MY.Site2.org']
+    banned = ['MY.Site4.org']
+    filtered = js._applySiteFilter( sites, banned )
+    self.assertEqual( set( filtered ), set( sites ) )
+
+    sites = ['MY.Site1.org', 'MY.Site2.org', 'MY.Site3.org']
+    banned = ['MY.Site4.org']
+    filtered = js._applySiteFilter( sites, banned )
+    self.assertEqual( set( filtered ), set( sites ) )
+
+    sites = ['MY.Site1.org', 'MY.Site2.org']
+    banned = ['MY.Site4.org']
+    filtered = js._applySiteFilter( sites, banned )
+    self.assertEqual( set( filtered ), set( sites ) )
+
 
 #############################################################################
 # Test Suite run
