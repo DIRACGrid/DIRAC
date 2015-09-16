@@ -1,3 +1,9 @@
+"""
+   Contains the mechanism to evaluate whether to use or not a catalog
+"""
+
+__RCSID__ = "$Id $"
+
 from pyparsing import infixNotation, opAssoc, Word, printables, Literal, Suppress
 
 from DIRAC import S_OK, gLogger
@@ -31,8 +37,8 @@ class FCConditionParser(object):
 
     Example of rules are:
 
-      FilenamePlugin=startswith('/lhcb') & ProxyPlugin=voms.has(/lhcb/Role->production)
-      [FilenamePlugin=startswith('/lhcb') & !FilenamePlugin=find('/user/')] | ProxyPlugin=group.in(lhcb_mc, lhcb_data)
+      Filename=startswith('/lhcb') & Proxy=voms.has(/lhcb/Role->production)
+      [Filename=startswith('/lhcb') & !Filename=find('/user/')] | Proxy=group.in(lhcb_mc, lhcb_data)
 
   """
   
@@ -161,10 +167,12 @@ class FCConditionParser(object):
     def __init__( self, tokens ):
       """
           :param tokens [ pluginName, =, conditions ]
+                 the pluginName is automatically prepended with 'Plugin'
+
 
       """
 
-      self.pluginName = tokens[0].strip( ' ' )
+      self.pluginName = "%sPlugin" % tokens[0].strip( ' ' )
       self.conditions = tokens[2].strip( ' ' )
 
       # Load the plugin, and give it the condition
@@ -194,10 +202,15 @@ class FCConditionParser(object):
 
 
 
-  def __init__(self):
+  def __init__( self, vo = None, ):
+    """
+        :param vo : name of the VO
+    """
 
     # Whenever we parse text matching the __pluginOperand grammar, create a PluginOperand object
     self.__pluginOperand.setParseAction( lambda tokens : self.PluginOperand( tokens ) )
+
+    self.opHelper = Operations( vo = vo )
 
 
 
@@ -222,8 +235,7 @@ class FCConditionParser(object):
 
 
 
-  @staticmethod
-  def __getConditionFromCS( catalogName, operationName ):
+  def __getConditionFromCS( self, catalogName, operationName ):
     """ Retrieves the appropriate condition from the CS
         The base path is in Operation/[Setup/Default]/DataManagement/FCConditions/[CatalogName]
         If there are no condition defined for the method, we check the global READ/WRITE condition.
@@ -238,17 +250,16 @@ class FCConditionParser(object):
 
 
     """
-    basePath = 'DataManagement/FCConditions/%s/' % catalogName
+    basePath = 'Services/Catalogs/%s/' % catalogName
     pathList = [basePath + '%s' % operationName,
                 basePath + '%s' % ( 'READ' if operationName in FileCatalog.ro_methods else 'WRITE' ),
                 basePath + 'ALL']
 
     for path in pathList:
-      condVal = Operations().getValue( path )
+      condVal = self.opHelper.getValue( path )
       if condVal:
         return condVal
     
-
 
 
 
@@ -263,11 +274,18 @@ class FCConditionParser(object):
         If there are no condition at all, return True for everything.
         A programming error in the plugins will lead to the evaluation being False
 
+        Note: if the CS can't be contacted, the conditions will be evaluated to None
+              (courtesy of the Operation helper), so everything will be evaluated to True.
+              Ultimately, it does not really matter, since you will not be able to find
+              any catalog beforehand if you can't contact the CS...
+
         :param catalogName: name of the catalog we want to work on
         :param operationName: name of the operation we want to perform
                               The operationName must be in the read or write method from FileCatalog
                               if it should be retrieve from the CS
         :param lfns: list/dict of lfns
+                     CAUTION: lfns is expected to have been through the normalizing process, so it
+                              should not be a string
         :param condition: condition string. If not specified, will be fetched from the CS
         :param kwargs: extra params forwarded to the plugins
 
@@ -278,7 +296,7 @@ class FCConditionParser(object):
     """
 
     
-    conditionStr = condition if condition else self.__getConditionFromCS( catalogName, operationName )
+    conditionStr = condition if condition is not None else self.__getConditionFromCS( catalogName, operationName )
 
     evaluatedLfns = {}
 
