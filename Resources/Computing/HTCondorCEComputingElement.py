@@ -96,7 +96,6 @@ Queue %(nJobs)s
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, 0755 )
 
-
     subName = self.__writeSub( executableFile, numberOfJobs )
 
     jobStamps = []
@@ -120,12 +119,12 @@ Queue %(nJobs)s
     if not pilotJobReferences:
       return S_ERROR( 'No pilot reference returned from the htcondor job submission command' )
 
-    self.log.info( "JobStamps: %s " % jobStamps )
-    self.log.info( "pilotRefs: %s " % pilotJobReferences )
+    self.log.verbose( "JobStamps: %s " % jobStamps )
+    self.log.verbose( "pilotRefs: %s " % pilotJobReferences )
 
     result = S_OK( pilotJobReferences )
     result['PilotStampDict'] = { pilotRef: stamp for (pilotRef, stamp) in zip(pilotJobReferences, jobStamps) }
-    self.log.info( "Result for submission: %s " % result )
+    self.log.verbose( "Result for submission: %s " % result )
     return result
 
   def killJob( self, jobIDList ):
@@ -134,7 +133,7 @@ Queue %(nJobs)s
     if isinstance( jobIDList, basestring ):
       jobList = [ jobIDList ]
 
-    self.log.info( "KillJob jobIDList: %s" % jobIDList )
+    self.log.verbose( "KillJob jobIDList: %s" % jobIDList )
 
     for jobRef in jobIDList:
       job,jobID = self.__condorIDFromJobRef( jobRef )
@@ -177,8 +176,10 @@ Queue %(nJobs)s
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
-    self.log.info( "Job ID List for status: %s " % jobIDList )
-    jobIDs = list ( jobIDList )
+    self.log.verbose( "Job ID List for status: %s " % jobIDList )
+    if isinstance( jobIDList, basestring ):
+      jobList = [ jobIDList ]
+
     resultDict = {}
 
     for jobRef in jobIDList:
@@ -192,17 +193,17 @@ Queue %(nJobs)s
       if status_history == 0:
         stdout = '\n'.join( [stdout_q,stdout_history] )
 
-      lines = stdout.split( '\n' ) if len(stdout) else []
+      lines = stdout.split( '\n' )
 
-      status = self.__parseCondorStatus( lines, jobID )
-      resultDict[job] = status
+      pilotStatus = self.__parseCondorStatus( lines, jobID )
+      resultDict[job] = pilotStatus
 
     if len( resultDict ) != len( jobIDList ):
       for jobRef in jobIDList:
         job = jobRef.split(":::")[0]
-        if not job in resultDict:
+        if job not in resultDict:
           resultDict[job] = 'Unknown'
-    self.log.info( "CE Status: %s " % resultDict )
+    self.log.verbose( "Pilot Statuses: %s " % resultDict )
     return S_OK( resultDict )
 
   def getJobOutput( self, jobID, _localDir = None ):
@@ -210,7 +211,7 @@ Queue %(nJobs)s
     submission, so we just need to pick it up from the proper folder
     FIXME: When do we clean the log and out/err files?
     """
-    self.log.info( "Getting job output for jobID: %s " % jobID )
+    self.log.verbose( "Getting job output for jobID: %s " % jobID )
     job,condorID = self.__condorIDFromJobRef( jobID )
     ## FIXME: the WMSAdministrator does not know about the
     ## SiteDirector WorkingDirectory, it might not even run on the
@@ -223,12 +224,18 @@ Queue %(nJobs)s
 
     outputfilename = os.path.join( workingDirectory, '%s.out' % condorID )
     errorfilename = os.path.join( workingDirectory, '%s.err' % condorID )
-    with open( outputfilename ) as outputfile:
-      output = outputfile.read()
-    with open( errorfilename ) as errorfile:
-      error = errorfile.read()
-    if not error:
-      error = "No Error for this pilot"
+    try:
+      with open( outputfilename ) as outputfile:
+        output = outputfile.read()
+    except IOError as e:
+      self.log.error( "Failed to open outputfile", str(e) )
+      return S_ERROR( "Failed to get pilot output" )
+    try:
+      with open( errorfilename ) as errorfile:
+        error = errorfile.read()
+    except IOError as e:
+      self.log.error( "Failed to open errorfile", str(e) )
+      return S_ERROR( "Failed to get pilot error" )
 
     return S_OK( ( output, error ) )
 
@@ -237,11 +244,11 @@ Queue %(nJobs)s
     """get the jobReferences from the condor_submit output
     cluster ids look like " 107.0 - 107.0 "
     """
-    self.log.info( "Getting job references" )
-    self.log.info( jobString )
+    self.log.verbose( "Getting job references" )
+    self.log.verbose( jobString )
     clusterIDs = jobString.split('-')
     clusterIDs = [ clu.strip() for clu in clusterIDs ]
-    self.log.info ( "Cluster IDs parsed: %s " % str(clusterIDs) )
+    self.log.verbose( "Cluster IDs parsed: %s " % str(clusterIDs) )
     clusterID = clusterIDs[0].split('.')[0]
     numJobs = clusterIDs[1].split('.')[1]
     cePrefix = "htcondorce://%s/" % self.ceName
