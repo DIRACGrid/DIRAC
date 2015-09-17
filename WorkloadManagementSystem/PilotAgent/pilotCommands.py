@@ -460,8 +460,8 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
     # Generic JOB_ID
     elif os.environ.has_key( 'JOB_ID' ):
-       self.pp.flavour = 'Generic'
-       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
+      self.pp.flavour = 'Generic'
+      pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
     if os.environ.has_key( 'CONDOR_JOBID' ):
