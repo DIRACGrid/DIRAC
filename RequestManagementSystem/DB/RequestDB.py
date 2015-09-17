@@ -203,7 +203,7 @@ class RequestDB( object ):
                                  )
                        )
       session.commit()
-      
+
       # No row was changed
       if not updateRet.rowcount:
         return S_ERROR( "No such request %s" % requestID )
@@ -223,7 +223,7 @@ class RequestDB( object ):
 
     :param Request request: Request instance
     """
-    
+
     session = self.DBSession( expire_on_commit = False )
     try:
 
@@ -247,7 +247,7 @@ class RequestDB( object ):
       session.add( request )
       session.commit()
       session.expunge_all()
-  
+
       return S_OK( request.RequestID )
 
     except Exception, e:
@@ -313,7 +313,7 @@ class RequestDB( object ):
                           .one()
         except NoResultFound, e:
           return S_ERROR( "getRequest: request '%s' not exists" % reqID )
-  
+
         if status and status == "Assigned" and assigned:
           return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % reqID )
 
@@ -344,7 +344,7 @@ class RequestDB( object ):
 
         if not reqIDs:
           return S_OK()
-  
+
         reqIDs = list( reqIDs )
         random.shuffle( reqIDs )
         requestID = reqIDs[0]
@@ -356,11 +356,11 @@ class RequestDB( object ):
                        .options( joinedload_all( '__operations__.__files__' ) )\
                        .filter( Request.RequestID == requestID )\
                        .one()
-  
+
       if not reqID:
         log.verbose( "selected request %s('%s')%s" % ( request.RequestID, request.RequestName, ' (Assigned)' if assigned else '' ) )
-  
-  
+
+
       if assigned:
         session.execute( update( Request )\
                          .where( Request.RequestID == requestID )\
@@ -390,7 +390,7 @@ class RequestDB( object ):
     :returns a dictionary of Request objects indexed on the RequestID
 
     """
-    
+
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.DBSession( expire_on_commit = False )
     log = self.log.getSubLogger( 'getBulkRequest' if assigned else 'peekBulkRequest' )
@@ -411,7 +411,7 @@ class RequestDB( object ):
       # No Waiting requests
       except NoResultFound, e:
         pass
-      
+
       if assigned and requestDict:
         session.execute( update( Request )\
                          .where( Request.RequestID.in_( requestDict.keys() ) )\
@@ -476,7 +476,7 @@ class RequestDB( object ):
     :param str requestID: request.RequestID
     :param mixed connection: connection to use if any
     """
-    
+
     session = self.DBSession()
 
     try:
@@ -496,9 +496,9 @@ class RequestDB( object ):
     """ get db summary """
     # # this will be returned
     retDict = { "Request" : {}, "Operation" : {}, "File" : {} }
- 
+
     session = self.DBSession()
- 
+
     try:
       requestQuery = session.query( Request._Status, func.count( Request.RequestID ) )\
                             .group_by( Request._Status )\
@@ -506,22 +506,22 @@ class RequestDB( object ):
 
       for status, count in requestQuery:
         retDict["Request"][status] = count
- 
+
       operationQuery = session.query(Operation.Type, Operation._Status, func.count(Operation.OperationID))\
                               .group_by( Operation.Type, Operation._Status )\
                               .all()
 
       for oType, status, count in operationQuery:
         retDict['Operation'].setdefault( oType, {} )[status] = count
-      
-      
+
+
       fileQuery = session.query( File._Status, func.count( File.FileID ) )\
                          .group_by( File._Status )\
                          .all()
 
       for status, count in fileQuery:
         retDict["File"][status] = count
- 
+
     except Exception, e:
       self.log.exception( "getDBSummary: unexpected exception", lException = e )
       return S_ERROR( "getDBSummary: unexpected exception : %s" % e )
@@ -583,13 +583,13 @@ class RequestDB( object ):
 
       if sortList:
         summaryQuery = summaryQuery.order_by( eval( 'Request.%s.%s()' % ( sortList[0][0], sortList[0][1].lower() ) ) )
-        
+
       try:
         requestLists = summaryQuery.all()
       except NoResultFound, e:
         resultDict['ParameterNames'] = parameterList
         resultDict['Records'] = []
-        
+
         return S_OK( resultDict )
       except Exception, e:
         return S_ERROR( 'Error getting the webSummary %s' % e )

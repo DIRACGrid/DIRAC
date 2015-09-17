@@ -2,8 +2,8 @@
 # $HeadURL $
 # File: StorageElementHandler.py
 ########################################################################
-""" 
-:mod: StorageElementHandler 
+"""
+:mod: StorageElementHandler
 
 .. module: StorageElementHandler
   :synopsis: StorageElementHandler is the implementation of a simple StorageElement
