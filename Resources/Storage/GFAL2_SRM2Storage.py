@@ -35,13 +35,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     self.gfal2requestLifetime = gConfig.getValue( '/Resources/StorageElements/RequestLifeTime', 100 )
 
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
-    self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-
-# Setting the TURL protocol to gsiftp because with other protocols we have authorisation problems
-#    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
+    self.__setSRMOptionsToDefault()
 
     if self.checksumType:
       self.gfal2.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
@@ -53,6 +47,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     '''
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
+    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
+    # Setting the TURL protocol to gsiftp because with other protocols we have authorisation problems
 #    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
     self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
 
@@ -73,7 +69,20 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     self.__setSRMOptionsToDefault()
     return res
 
+  def _updateMetadataDict( self, metadataDict, attributeDict ):
+    """ Updating the metadata dictionary with srm specific attributes
 
+    :param self: self reference
+    :param dict: metadataDict we want add the SRM specific attributes to
+    :param dict: attributeDict contains 'user.status' which we then fill in the metadataDict
+
+    """
+    # 'user.status' is the extended attribute we are interested in
+    user_status = attributeDict.get( 'user.status', '' )
+    metadataDict['Cached'] = int( 'ONLINE' in user_status )
+    metadataDict['Migrated'] = int( 'NEARLINE' in user_status )
+    metadataDict['Lost'] = int( user_status == 'LOST' )
+    metadataDict['Unavailable'] = int( user_status == 'UNAVAILABLE' )
 
   def getTransportURL( self, path, protocols = False ):
     """ obtain the tURLs for the supplied path and protocols

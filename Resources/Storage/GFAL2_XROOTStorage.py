@@ -57,6 +57,12 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     res = super( GFAL2_XROOTStorage, self )._getExtendedAttributes( path, attributes )
     return res
 
+  def _updateMetadataDict( self, metadataDict, attributeDict = None ):
+    # Add metadata expected in some places if not provided by itself
+    metadataDict['Lost'] = metadataDict.get( 'Lost', 0 )
+    metadataDict['Cached'] = metadataDict.get( 'Cached', 1 )
+    metadataDict['Unavailable'] = metadataDict.get( 'Unavailable', 0 )
+
   def _getSingleFile( self, src_url, dest_file ):
     """ Some XROOT StorageElements have problems with the checksum at the moment so to still be able to copy
     files from XROOT we disable the checksum check for this operation.

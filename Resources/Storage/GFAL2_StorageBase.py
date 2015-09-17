@@ -399,6 +399,9 @@ class GFAL2_StorageBase( StorageBase ):
     :param self: self reference
     :param str src_url: SE url that is to be copied (srm://...)
     :param str dest_file: local fs path
+    :param bool disableChecksum: There are problems with xroot comparing checksums after
+                                 copying a file so with this parameter we can disable checksum
+                                 checks for xroot
     :returns: S_ERROR( errStr ) in case of an error
               S_OK( size of file ) if copying is successful
     """
@@ -434,10 +437,7 @@ class GFAL2_StorageBase( StorageBase ):
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
     params.src_spacetoken = self.spaceToken
 
-    if disableChecksum:
-      params.checksum_check = False
-    else:
-      params.checksum_check = True if self.checksumType else False
+    params.checksum_check = bool( self.checksumType and not disableChecksum )
 
     # Params set, copying file now
     try:
@@ -639,10 +639,6 @@ class GFAL2_StorageBase( StorageBase ):
       return res  # res is S_ERROR ( errStr )
 
     metaDict = res['Value']
-    # Add metadata expected in some places if not provided by itself
-    metaDict['Lost'] = metaDict.get( 'Lost', 0 )
-    metaDict['Cached'] = metaDict.get( 'Cached', 1 )
-    metaDict['Unavailable'] = metaDict.get( 'Unavailable', 0 )
 
     if not metaDict['File']:
       errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
@@ -679,13 +675,6 @@ class GFAL2_StorageBase( StorageBase ):
         return S_ERROR( errStr )
 
     metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
-    res = self._getExtendedAttributes( path )
-    # add extended attributes to the dict if available
-    if res['OK']:
-      attributeDict = res['Value']
-    else:
-      # no extendted attributes could be retrieved. Ignore it
-      attributeDict = {}
 
     if metadataDict['File']:
       if self.checksumType:
@@ -695,27 +684,15 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         metadataDict['Checksum'] = ""
 
-      # 'user.status' is the extended attribute we are interested in
-      if 'user.status' in attributeDict.keys():
-        if attributeDict['user.status'] == 'ONLINE':
-          metadataDict['Cached'] = 1
-        else:
-          metadataDict['Cached'] = 0
-        if attributeDict['user.status'] == 'NEARLINE':
-          metadataDict['Migrated'] = 1
-        else:
-          metadataDict['Migrated'] = 0
-        if attributeDict['user.status'] == 'LOST':
-          metadataDict['Lost'] = 1
-        else:
-          metadataDict['Lost'] = 0
-        if attributeDict['user.status'] == 'UNAVAILABLE':
-          metadataDict['Unavailable'] = 1
-        else:
-          metadataDict['Unavailable'] = 0
-        if attributeDict['user.status'] == 'ONLINE_AND_NEARLINE':
-          metadataDict['Cached'] = 1
-          metadataDict['Migrated'] = 1
+    res = self._getExtendedAttributes( path )
+    # add extended attributes to the dict if available
+    if res['OK']:
+      attributeDict = res['Value']
+    else:
+      # no extendted attributes could be retrieved. Ignore it
+      attributeDict = {}
+
+    self._updateMetadataDict( metadataDict, attributeDict )
 
     return S_OK ( metadataDict )
 
@@ -1237,6 +1214,9 @@ class GFAL2_StorageBase( StorageBase ):
     """ List the content of the single directory provided
     :param self: self reference
     :param str path: single path on storage (srm://...)
+    :param bool internalCall: if we call this method from another internal method we want
+                              to work with the full pfn. Used for __getSingleDirectory and
+                              __removeSingleDirectory
     :returns S_ERROR( errStr ) if there is an error
              S_OK( dictionary ): Key: SubDirs and Files
                                  The values of the Files are dictionaries with filename as key and metadata as value
