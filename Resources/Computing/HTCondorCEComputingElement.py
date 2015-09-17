@@ -208,9 +208,28 @@ Queue %(nJobs)s
   def getJobOutput( self, jobID, _localDir = None ):
     """ TODO: condor can copy the output automatically back to the
     submission, so we just need to pick it up from the proper folder
+    FIXME: When do we clean the log and out/err files?
     """
+    self.log.info( "Getting job output for jobID: %s " % jobID )
+    job,condorID = self.__condorIDFromJobRef( jobID )
+    ## FIXME: the WMSAdministrator does not know about the
+    ## SiteDirector WorkingDirectory, it might not even run on the
+    ## same machine
+    workingDirectory = self.ceParameters.get( 'WorkingDirectory',
+                                              '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT' )
+
     output = ''
     error = ''
+
+    outputfilename = os.path.join( workingDirectory, '%s.out' % condorID )
+    errorfilename = os.path.join( workingDirectory, '%s.err' % condorID )
+    with open( outputfilename ) as outputfile:
+      output = outputfile.read()
+    with open( errorfilename ) as errorfile:
+      error = errorfile.read()
+    if not error:
+      error = "No Error for this pilot"
+
     return S_OK( ( output, error ) )
 
 
