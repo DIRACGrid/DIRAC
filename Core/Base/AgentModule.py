@@ -141,7 +141,8 @@ class AgentModule:
     self.__configDefaults[ 'shifterProxy' ] = ''
     self.__configDefaults[ 'shifterProxyLocation' ] = os.path.join( self.__configDefaults[ 'WorkDirectory' ],
                                                                         '.shifterCred' )
-    os.environ['AGENTNAME'] = agentName
+
+    os.environ['AGENT_NAME'] = agentName
 
     if type( properties ) == types.DictType:
       for key in properties:

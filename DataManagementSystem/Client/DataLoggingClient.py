@@ -39,9 +39,9 @@ class DataLoggingClient( Client ):
       :param directInsert, a boolean, if we want to insert directly as a DLSequence and not a DLCompressedSequence
     """
     # we get some informations from os environement
-    extraArgsToGetFromEnviron = ['JOBID', 'AGENTNAME']
+    extraArgsToGetFromEnviron = ['JOBID', 'AGENT_NAME']
     for arg in extraArgsToGetFromEnviron :
-      if os.environ.has_key( arg ):
+      if arg in os.environ:
         sequence.addExtraArg( arg, os.environ[ arg ] )
 
     # we get some infos from proxy
