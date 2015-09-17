@@ -131,16 +131,17 @@ Queue %(nJobs)s
   def killJob( self, jobIDList ):
     """ Kill the specified jobs
     """
-    # jobList = list( jobIDList )
-    # if isinstance(jobIDList, basestring):
-    #   jobList = [ jobIDList ]
-    # for jobID in jobList:
-    #   cmd = ['globus-job-clean', '-f', jobID]
-    #   result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-    #   if not result['OK']:
-    #     return result
-    #   if result['Value'][0] != 0:
-    #     return S_ERROR( 'Failed kill job: %s' % result['Value'][1].strip() )
+    if isinstance( jobIDList, basestring ):
+      jobList = [ jobIDList ]
+
+    self.log.info( "KillJob jobIDList: %s" % jobIDList )
+
+    for jobRef in jobIDList:
+      job,jobID = self.__condorIDFromJobRef( jobRef )
+      self.log.verbose( "Killing pilot %s " % job )
+      status,stdout = commands.getstatusoutput( 'condor_rm %s' % jobID )
+      if status != 0:
+        return S_ERROR( "Failed to kill pilot %s: %s" %( job, stdout ) )
 
     return S_OK()
 
