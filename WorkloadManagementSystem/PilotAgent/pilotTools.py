@@ -412,7 +412,7 @@ class PilotParams( object ):
                      ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
                      ( 'N:', 'Name=', 'CE Name' ),
                      ( 'Q:', 'Queue=', 'Queue name' ),
-                     ( 'y:', 'CEType=', 'CE Type (normally InProcess)' )
+                     ( 'y:', 'CEType=', 'CE Type (normally InProcess)' ),
                      ( 'S:', 'setup=', 'DIRAC Setup to use' ),
                      ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
                      ( 'T:', 'CPUTime', 'Requested CPU Time' ),

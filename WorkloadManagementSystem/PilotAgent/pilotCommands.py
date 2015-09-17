@@ -391,7 +391,7 @@ class ConfigureSite( CommandBase ):
     self.cfg.append( '-N "%s"' % self.pp.ceName )
     self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
     self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
-    if self.ceType:
+    if self.pp.ceType:
       self.cfg.append( '-o /LocalSite/LocalCE=%s' % self.pp.ceType )
 
     for o, v in self.pp.optList:
