@@ -6,10 +6,7 @@
 """ HTCondorCE Computing Element
 
    Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
-
    Needs the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
-
-   Cannot use LocalComputingElement because authentication is done via x509 and need a proxy
 
 """
 
@@ -19,8 +16,6 @@ from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
 from DIRAC                                               import S_OK, S_ERROR
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getGroupOption
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
 from DIRAC.Core.Utilities.File import makeGuid
@@ -104,7 +99,7 @@ Queue %(nJobs)s
 
     cmd = ['condor_submit', '-terse', subName ]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
-    self.log.verbose(result)
+    self.log.verbose( result )
     #os.unlink( subName )
     if not result['OK']:
       self.log.error( "Failed to submit jobs to htcondor", result['Message'] )
@@ -115,15 +110,16 @@ Queue %(nJobs)s
       errorString = result['Value'][2] if result['Value'][2] else result['Value'][1]
       return S_ERROR( 'Pilot submission failed with error: %s ' % errorString.strip() )
 
-    pilotJobReferences = self.__getJobReferences( result['Value'][1].strip() )
-    if not pilotJobReferences:
-      return S_ERROR( 'No pilot reference returned from the htcondor job submission command' )
+    pilotJobReferences = self.__getPilotReferences( result['Value'][1].strip() )
+    if not pilotJobReferences['OK']:
+      return pilotJobReferences
+    pilotJobReferences = pilotJobReferences['Value']
 
     self.log.verbose( "JobStamps: %s " % jobStamps )
     self.log.verbose( "pilotRefs: %s " % pilotJobReferences )
 
     result = S_OK( pilotJobReferences )
-    result['PilotStampDict'] = { pilotRef: stamp for (pilotRef, stamp) in zip(pilotJobReferences, jobStamps) }
+    result['PilotStampDict'] = dict( zip( pilotJobReferences, jobStamps ) )
     self.log.verbose( "Result for submission: %s " % result )
     return result
 
@@ -131,7 +127,7 @@ Queue %(nJobs)s
     """ Kill the specified jobs
     """
     if isinstance( jobIDList, basestring ):
-      jobList = [ jobIDList ]
+      jobIDList = [ jobIDList ]
 
     self.log.verbose( "KillJob jobIDList: %s" % jobIDList )
 
@@ -178,7 +174,7 @@ Queue %(nJobs)s
     """
     self.log.verbose( "Job ID List for status: %s " % jobIDList )
     if isinstance( jobIDList, basestring ):
-      jobList = [ jobIDList ]
+      jobIDList = [ jobIDList ]
 
     resultDict = {}
 
@@ -200,7 +196,7 @@ Queue %(nJobs)s
 
     if len( resultDict ) != len( jobIDList ):
       for jobRef in jobIDList:
-        job = jobRef.split(":::")[0]
+        job = jobRef.split( ":::" )[0]
         if job not in resultDict:
           resultDict[job] = 'Unknown'
     self.log.verbose( "Pilot Statuses: %s " % resultDict )
@@ -212,7 +208,7 @@ Queue %(nJobs)s
     FIXME: When do we clean the log and out/err files?
     """
     self.log.verbose( "Getting job output for jobID: %s " % jobID )
-    job,condorID = self.__condorIDFromJobRef( jobID )
+    _job,condorID = self.__condorIDFromJobRef( jobID )
     ## FIXME: the WMSAdministrator does not know about the
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
@@ -240,20 +236,24 @@ Queue %(nJobs)s
     return S_OK( ( output, error ) )
 
 
-  def __getJobReferences( self, jobString ):
-    """get the jobReferences from the condor_submit output
-    cluster ids look like " 107.0 - 107.0 "
+  def __getPilotReferences( self, jobString ):
+    """get the references from the condor_submit output
+    cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
     """
-    self.log.verbose( "Getting job references" )
-    self.log.verbose( jobString )
-    clusterIDs = jobString.split('-')
+    self.log.verbose( "getPilotReferences: %s" % jobString )
+    clusterIDs = jobString.split( '-' )
+    if len(clusterIDs) != 2:
+      return S_ERROR( "Something wrong with the condor_submit output: %s" % jobString )
     clusterIDs = [ clu.strip() for clu in clusterIDs ]
-    self.log.verbose( "Cluster IDs parsed: %s " % str(clusterIDs) )
-    clusterID = clusterIDs[0].split('.')[0]
-    numJobs = clusterIDs[1].split('.')[1]
+    self.log.verbose( "Cluster IDs parsed: %s " % clusterIDs )
+    try:
+      clusterID = clusterIDs[0].split( '.' )[0]
+      numJobs = clusterIDs[1].split( '.' )[1]
+    except IndexError:
+      return S_ERROR( "Something wrong with the condor_submit output: %s" % jobString )
     cePrefix = "htcondorce://%s/" % self.ceName
-    jobReferences = [ "%s%s.%s" % ( cePrefix, clusterID, i ) for i in range(int(numJobs)+1)  ]
-    return jobReferences
+    jobReferences = [ "%s%s.%s" % ( cePrefix, clusterID, i ) for i in range( int( numJobs ) + 1 ) ]
+    return S_OK( jobReferences )
 
   def __condorIDFromJobRef( self, jobRef ):
     """return tuple of "jobURL" and condorID from the jobRef string"""
@@ -264,8 +264,7 @@ Queue %(nJobs)s
   def __parseCondorStatus( self, lines, jobID ):
     """parse the condor_q or condor_history output for the job status"""
     for line in lines:
-      l = line.strip()
-      if l.startswith( jobID ):
+      if line.strip().startswith( jobID ):
         if " I " in line:
           return 'Waiting'
         elif " R " in line:
