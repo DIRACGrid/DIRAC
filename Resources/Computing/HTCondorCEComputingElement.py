@@ -162,44 +162,39 @@ Queue %(nJobs)s
     else:
       self.log.warn( "Failure getting pilot count for %s: %s " % ( self.ceName, res['Message'] ) )
 
+    ##getRunningPilots
+    condDict = { 'DestinationSite': self.ceName,
+                 'Status': 'Running' }
+    res = PilotAgentsDB().countPilots( condDict )
+    if res['OK']:
+      result[ 'RunningJobs' ] = int( res['Value'] )
+    else:
+      self.log.warn( "Failure getting pilot count for %s: %s " % ( self.ceName, res['Message'] ) )
+
     return result
 
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
-    FIXME: Instead of the complete condor_q and condor_history just call them for individual IDs
-
     """
     self.log.info( "Job ID List for status: %s " % jobIDList )
     jobIDs = list ( jobIDList )
     resultDict = {}
 
-    status,stdout_q = commands.getstatusoutput( 'condor_q' )
-    if status != 0:
-      return S_ERROR( stdout_q )
+    for jobRef in jobIDList:
+      job,jobID = self.__condorIDFromJobRef( jobRef )
 
-    status_history,stdout_history = commands.getstatusoutput( 'condor_history' )
+      status,stdout_q = commands.getstatusoutput( 'condor_q %s' % jobID )
+      if status != 0:
+        return S_ERROR( stdout_q )
 
-    stdout = stdout_q
-    if status_history == 0:
-      stdout = '\n'.join( [stdout_q,stdout_history] )
+      status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % jobID )
+      if status_history == 0:
+        stdout = '\n'.join( [stdout_q,stdout_history] )
 
-    if len( stdout ):
-      lines = stdout.split( '\n' )
-      for line in lines:
-        l = line.strip()
-        for jobRef in jobIDList:
-          job,jobID = self.__condorIDFromJobRef( jobRef )
-          if l.startswith( jobID ):
-            if " I " in line:
-              resultDict[job] = 'Waiting'
-            elif " R " in line:
-              resultDict[job] = 'Running'
-            elif " C " in line:
-              resultDict[job] = 'Done'
-            elif " X " in line:
-              resultDict[job] = 'Aborted'
-            elif " H " in line:
-              resultDict[job] = 'Aborted'
+      lines = stdout.split( '\n' ) if len(stdout) else []
+
+      status = self.__parseCondorStatus( lines, jobID )
+      resultDict[job] = status
 
     if len( resultDict ) != len( jobIDList ):
       for jobRef in jobIDList:
@@ -238,5 +233,22 @@ Queue %(nJobs)s
     jobURL = jobRef.split(":::")[0]
     condorID = jobURL.split("/")[-1]
     return jobURL,condorID
+
+  def __parseCondorStatus( self, lines, jobID ):
+    """parse the condor_q or condor_history output for the job status"""
+    for line in lines:
+      l = line.strip()
+      if l.startswith( jobID ):
+        if " I " in line:
+          return 'Waiting'
+        elif " R " in line:
+          return 'Running'
+        elif " C " in line:
+          return 'Done'
+        elif " X " in line:
+          return 'Aborted'
+        elif " H " in line:
+          return 'Aborted'
+    return 'Unknown'
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
