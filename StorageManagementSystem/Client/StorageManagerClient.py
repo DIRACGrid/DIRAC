@@ -58,7 +58,7 @@ def getFilesToStage( lfnList ):
       if not failed[se]:
         failed.pop( se )
     if failed:
-      return S_ERROR( 'Could not get metadata for %d files: %s' % \
+      return S_ERROR( 'Could not get metadata for %d files' % \
                       len( set( [lfn for lfnList in failed.values() for lfn in lfnList] ) ) )
   offlineLFNs = set( lfnList ) - onlineLFNs
 
