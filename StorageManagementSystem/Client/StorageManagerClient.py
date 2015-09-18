@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 import random
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
@@ -39,20 +39,27 @@ def getFilesToStage( lfnList ):
   for se, lfnsInSEList in seToLFNs.iteritems():
     fileMetadata = StorageElement( se ).getFileMetadata( lfnsInSEList )
     if not fileMetadata['OK']:
-      failed.update( dict.fromkeys( lfnsInSEList, fileMetadata['Message'] ) )
+      failed[se] = dict.fromkeys( lfnsInSEList, fileMetadata['Message'] )
     else:
-      failed.update( fileMetadata['Value']['Failed'] )
+      failed[se] = fileMetadata['Value']['Failed']
       # is there at least one online?
       for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
         if mDict['Cached']:
           onlineLFNs.add( lfn )
 
-  # If the file was found staged, ignore possible errors
-  for lfn in set( failed ) & onlineLFNs:
-    failed.pop( lfn )
+  # If the file was found staged, ignore possible errors, but print out errors
   if failed:
-    reasons = sorted( set( failed.values() ) )
-    return S_ERROR( 'Could not get metadata for %d files: %s' % ( len( failed ), ','.join( reasons ) ) )
+    for se, seFailed in failed.items():
+      gLogger.error( "Errors when getting files metadata", 'at %s' % se )
+      for lfn, reason in seFailed.items():
+        gLogger.info( '%s: %s' % ( lfn, reason ) )
+        if lfn in onlineLFNs:
+          failed[se].pop( lfn )
+      if not failed[se]:
+        failed.pop( se )
+    if failed:
+      return S_ERROR( 'Could not get metadata for %d files: %s' % \
+                      len( set( [lfn for lfnList in failed.values() for lfn in lfnList] ) ) )
   offlineLFNs = set( lfnList ) - onlineLFNs
 
 
