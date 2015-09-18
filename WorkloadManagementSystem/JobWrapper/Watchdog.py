@@ -170,7 +170,6 @@ class Watchdog( object ):
     """ The main agent execution method of the Watchdog.
     """
     if not self.exeThread.isAlive():
-      # print self.parameters
       self.__getUsageSummary()
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
       return S_OK( "Ended" )
@@ -587,7 +586,6 @@ class Watchdog( object ):
     """Checks whether the CS defined minimum disk space is available.
     """
     if self.parameters.has_key( 'DiskSpace' ):
-      print self.parameters
       availSpace = self.parameters['DiskSpace'][-1]
       if availSpace >= 0 and availSpace < self.minDiskSpace:
         self.log.info( 'Not enough local disk space for job to continue, defined in CS as %s MB' % ( self.minDiskSpace ) )
