@@ -289,7 +289,8 @@ class GFAL2_StorageBase( StorageBase ):
           errStr = "GFAL2_StorageBase.__putFile: The local source file does not exist or is a directory"
           self.log.error( errStr, src_file )
           return S_ERROR( errStr )
-        src_url = 'file://%s' % os.path.abspath( src_file )
+        if not src_file.startswith( 'file://' ):
+          src_url = 'file://%s' % os.path.abspath( src_file )
         sourceSize = getSize( src_file )
         if sourceSize == -1:
           errStr = "GFAL2_StorageBase.__putFile: Failed to get file size"
@@ -442,7 +443,8 @@ class GFAL2_StorageBase( StorageBase ):
     # Params set, copying file now
     try:
       # gfal2 needs a protocol to copy local which is 'file:'
-      dest = 'file://%s' % os.path.abspath( dest_file )
+      if not dest_file.startswith( 'file://' ):
+        dest = 'file://%s' % os.path.abspath( dest_file )
       self.gfal2.filecopy( params, src_url, dest )
       if params.checksum_check:
         # gfal2 did a checksum check, so we should be good
