@@ -19,15 +19,16 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import time
+
+from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities                               import Time
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
-from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
-
-import os, time
 
 class Watchdog( object ):
 
@@ -141,18 +142,18 @@ class Watchdog( object ):
 
     result = self.initialize()
     if not result['OK']:
-      gLogger.always( 'Can not start watchdog for the following reason' )
-      gLogger.always( result['Message'] )
+      self.log.always( 'Can not start watchdog for the following reason' )
+      self.log.always( result['Message'] )
       return result
 
     try:
       while True:
-        gLogger.debug( 'Starting watchdog loop # %d' % self.count )
+        self.log.debug( 'Starting watchdog loop # %d' % self.count )
         start_cycle_time = time.time()
         result = self.execute()
         exec_cycle_time = time.time() - start_cycle_time
         if not result[ 'OK' ]:
-          gLogger.error( "Watchdog error during execution", result[ 'Message' ] )
+          self.log.error( "Watchdog error during execution", result[ 'Message' ] )
           break
         elif result['Value'] == "Ended":
           break
@@ -161,7 +162,7 @@ class Watchdog( object ):
           time.sleep( self.pollingTime - exec_cycle_time )
       return S_OK()
     except Exception:
-      gLogger.exception()
+      self.log.exception()
       return S_ERROR( 'Exception' )
 
   #############################################################################
@@ -245,15 +246,20 @@ class Watchdog( object ):
       msg += "Job Vsize: %.1f kb " % vsize
       msg += "Job RSS: %.1f kb " % rss
     result = self.getDiskSpace()
-    msg += 'DiskSpace: %.1f MB ' % ( result['Value'] )
+    if not result['OK']:
+      self.log.warn( "Could not establish DiskSpace", result['Message'] )
+    else:
+      msg += 'DiskSpace: %.1f MB ' % ( result['Value'] )
     if not self.parameters.has_key( 'DiskSpace' ):
       self.parameters['DiskSpace'] = []
-    self.parameters['DiskSpace'].append( result['Value'] )
-    heartBeatDict['AvailableDiskSpace'] = result['Value']
+    if result['OK']:
+      self.parameters['DiskSpace'].append( result['Value'] )
+      heartBeatDict['AvailableDiskSpace'] = result['Value']
     
     cpu = self.__getCPU()
     if not cpu['OK']:
       msg += 'CPU: ERROR '
+      hmsCPU = 0
     else:
       cpu = cpu['Value']
       msg += 'CPU: %s (h:m:s) ' % ( cpu )
@@ -266,9 +272,12 @@ class Watchdog( object ):
         heartBeatDict['CPUConsumed'] = rawCPU['Value']
     
     result = self.__getWallClockTime()
-    msg += 'WallClock: %.2f s ' % ( result['Value'] )
-    self.parameters['WallClockTime'].append( result['Value'] )
-    heartBeatDict['WallClockTime'] = result['Value']
+    if not result['OK']:
+      self.log.warn( "Failed determining wall clock time", result['Message'] )
+    else:
+      msg += 'WallClock: %.2f s ' % ( result['Value'] )
+      self.parameters.setdefault( 'WallClockTime', list() ).append( result['Value'] )
+      heartBeatDict['WallClockTime'] = result['Value']
     self.log.info( msg )
 
     result = self._checkProgress()
@@ -578,6 +587,7 @@ class Watchdog( object ):
     """Checks whether the CS defined minimum disk space is available.
     """
     if self.parameters.has_key( 'DiskSpace' ):
+      print self.parameters
       availSpace = self.parameters['DiskSpace'][-1]
       if availSpace >= 0 and availSpace < self.minDiskSpace:
         self.log.info( 'Not enough local disk space for job to continue, defined in CS as %s MB' % ( self.minDiskSpace ) )
@@ -676,13 +686,10 @@ class Watchdog( object ):
     self.parameters['Vsize'] = []
     self.parameters['RSS'] = []
 
-    result = self. getDiskSpace()
+    result = self.getDiskSpace()
     self.log.verbose( 'DiskSpace: %s' % ( result ) )
     if not result['OK']:
-      msg = 'Could not establish DiskSpace'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+      self.log.warn( "Could not establish DiskSpace" )
 
     self.initialValues['DiskSpace'] = result['Value']
     self.parameters['DiskSpace'] = []
@@ -690,10 +697,7 @@ class Watchdog( object ):
     result = self.getNodeInformation()
     self.log.verbose( 'NodeInfo: %s' % ( result ) )
     if not result['OK']:
-      msg = 'Could not establish static system information'
-      self.log.warn( msg )
-#      result = S_ERROR(msg)
-#      return result
+      self.log.warn( "Could not establish static system information" )
 
     if os.environ.has_key( 'LSB_JOBID' ):
       result['LocalJobID'] = os.environ['LSB_JOBID']
@@ -778,8 +782,12 @@ class Watchdog( object ):
         summary['LoadAverage'] = 'Could not be estimated'
 
     result = self.__getWallClockTime()
-    wallClock = result['Value']
-    summary['WallClockTime(s)'] = wallClock
+    if not result['OK']:
+      self.log.warn( "Failed determining wall clock time", result['Message'] )
+      summary['WallClockTime(s)'] = 0
+    else:
+      wallClock = result['Value']
+      summary['WallClockTime(s)'] = wallClock
 
     self.__reportParameters( summary, 'UsageSummary', True )
     self.currentStats = summary
