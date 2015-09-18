@@ -62,8 +62,8 @@ class X509Chain( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( chainLocation, str( e ) ))
-#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, str( e ) ) )
+      return DError(DErrno., "%s: %s" % ( chainLocation, e ))
+#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, e ) )
 #       return S_ERROR( "Can't open file" )
     return self.loadChainFromString( pemData )
 
@@ -76,8 +76,8 @@ class X509Chain( object ):
     try:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, data )
     except Exception as e:
-      return DError(DErrno., "%s" % str( e ))
-#       gLogger.error( "Can't load pem data", "%s" % str( e ) )
+      return DError(DErrno., "%s" % e)
+#       gLogger.error( "Can't load pem data", "%s" % e )
 #       return S_ERROR( "Can't load pem data" )
     if not self.__certList:
       return DError(DErrno.)
@@ -107,8 +107,8 @@ class X509Chain( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( chainLocation, str( e ) ))
-#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, str( e ) ) )
+      return DError(DErrno., "%s: %s" % ( chainLocation, e ))
+#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, e ) )
 #       return S_ERROR( "Can't open file" )
     return self.loadKeyFromString( pemData, password )
 
@@ -121,8 +121,8 @@ class X509Chain( object ):
     try:
       self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception as e:
-      return DError(DErrno.,  "%s (Probably bad pass phrase?)" % str( e ) )
-#       gLogger.error( "Can't load key file", "%s (Probably bad pass phrase?)" % str( e ) )
+      return DError(DErrno.,  "%s (Probably bad pass phrase?)" % e )
+#       gLogger.error( "Can't load key file", "%s (Probably bad pass phrase?)" % e )
 #       return S_ERROR( "Can't load key file" )
     self.__loadedPKey = True
     return S_OK()
@@ -146,8 +146,8 @@ class X509Chain( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( chainLocation, str( e ) ))
-#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, str( e ) ) )
+      return DError(DErrno., "%s: %s" % ( chainLocation, e ))
+#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, e ) )
 #       return S_ERROR( "Can't open file" )
     return self.loadProxyFromString( pemData )
 
@@ -311,14 +311,14 @@ class X509Chain( object ):
       fd.write( retVal['Value'] )
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s :%s" % ( filePath, str( e ) ))
-#       gLogger.error( "Cannot write to file", "%s :%s" % ( filePath, str( e ) ) )
+      return DError(DErrno., "%s :%s" % ( filePath, e ))
+#       gLogger.error( "Cannot write to file", "%s :%s" % ( filePath, e ) )
 #       return S_ERROR( "Cannot write to file" )
     try:
       os.chmod( filePath, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return DError(DErrno.,"%s :%s" % ( filePath, str( e ) ) )
-#       gLogger.error( "Cannot set permissions to file", "%s :%s" % ( filePath, str( e ) ) )
+      return DError(DErrno.,"%s :%s" % ( filePath, e ) )
+#       gLogger.error( "Cannot set permissions to file", "%s :%s" % ( filePath, e ) )
 #       return S_ERROR( "Cannot set permissions to file" )
     return S_OK()
 
@@ -559,8 +559,8 @@ class X509Chain( object ):
     try:
       req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return DError(DErrno., "Can't load request data: %s" % str( e ))
-#       return S_ERROR( "Can't load request data: %s" % str( e ) )
+      return DError(DErrno., "Can't load request data: %s" % e)
+#       return S_ERROR( "Can't load request data: %s" % e )
     limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
     return self.generateProxyToString( lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey() )
 
@@ -611,14 +611,14 @@ class X509Chain( object ):
         fd.write( pemData )
         fd.close()
     except Exception as e:
-      return DError(DErrno., "%s :%s" % ( filename, str( e ) ))
-#       gLogger.error( "Cannot write to file", "%s :%s" % ( filename, str( e ) ) )
+      return DError(DErrno., "%s :%s" % ( filename, e ))
+#       gLogger.error( "Cannot write to file", "%s :%s" % ( filename, e ) )
 #       return S_ERROR( "Cannot write to file" )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return DError(DErrno., "%s :%s" % ( filename, str( e ) ))
-#       gLogger.error( "Cannot set permissions to file", "%s :%s" % ( filename, str( e ) ) )
+      return DError(DErrno., "%s :%s" % ( filename, e ))
+#       gLogger.error( "Cannot set permissions to file", "%s :%s" % ( filename, e ) )
 #       return S_ERROR( "Cannot set permissions to file" )
     return S_OK( filename )
 

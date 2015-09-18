@@ -46,7 +46,7 @@ class X509CRL( object ):
       fd.close()
     except Exception as e:
       return DError(DErrno., "%s: %s" % ( crlLocation, e ) )
-#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, str( e ) ) )
+#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, e ) )
 #       return S_ERROR( "Can't open file" )
     return self.loadChainFromString( pemData )
 
@@ -60,7 +60,7 @@ class X509CRL( object ):
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
       return DError(DErrno., "%s" % e)
-#       gLogger.error( "Can't load pem data", "%s" % str( e ) )
+#       gLogger.error( "Can't load pem data", "%s" % e )
 #       return S_ERROR( "Can't load pem data" )
     if not self.__revokedCert:
       return DError(DErrno.)
@@ -82,7 +82,7 @@ class X509CRL( object ):
       fd.close()
     except Exception as e:
       return DError(DErrno., "%s: %s" % ( crlLocation, e ) )
-#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, str( e ) ) )
+#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, e ) )
 #       return S_ERROR( "Can't open file" )
     return self.loadProxyFromString( pemData )
 
@@ -124,13 +124,13 @@ class X509CRL( object ):
         fd.close()
     except Exception as e:
       return DError(DErrno., "%s: %s" % ( filename, e ))
-#       gLogger.error( "Cannot write to file", "%s: %s" % ( filename, str( e ) ) )
+#       gLogger.error( "Cannot write to file", "%s: %s" % ( filename, e ) )
 #       return S_ERROR( "Cannot write to file" )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
       return DError(DErrno.,"%s: %s" % ( filename, e ) )
-#       gLogger.error( "Cannot set permissions to file", "%s: %s" % ( filename, str( e ) ) )
+#       gLogger.error( "Cannot set permissions to file", "%s: %s" % ( filename, e ) )
 #       return S_ERROR( "Cannot set permissions to file" )
     return S_OK( filename )
 
