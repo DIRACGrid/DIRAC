@@ -38,23 +38,23 @@ Send notification about changes
 
 """
 
-
 __RCSID__ = "$Id$"
-__VERSION__ = "$Revision: $"
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from collections import defaultdict
+import time
+import itertools
+
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.Time import dateTime
-from DIRAC.Core.Workflow.Workflow import fromXMLString
+
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-import datetime
+from DIRAC.TransformationSystem.Utilities import TransformationInfo
 
 AGENT_NAME = 'ILCTransformation/DataRecoveryAgent'
 
@@ -65,383 +65,297 @@ class DataRecoveryAgent(AgentModule):
     AgentModule.__init__(self, *args, **kwargs)
     self.name = 'DataRecoveryAgent'
     self.log = gLogger.getSubLogger("DataRecoveryAgent")
-    self.enableFlag = False
-    self.transClient = None
-    self.requestClient = None
-    self.taskIDName = ''
-    self.externalStatus = ''
-    self.externalID = ''
-    self.ops = None
-    self.removalOKFlag = False
+    self.enabled = False
 
-    self.fileSelectionStatus = ['Assigned', 'MaxReset']
-    self.updateStatus = 'Unused'
-    self.wmsStatusList = ['Failed']
     #only worry about files > 12hrs since last update
-    self.selectDelay = self.am_getOption("Delay", 12)  # hours
-    self.ignoreLessThan = self.ops.getValue("Transformations/IgnoreLessThan", '724')
-    self.transformationTypes = self.am_getOption(
-        "TransformationTypes", [
-            'MCReconstruction', 'MCSimulation', 'MCReconstruction_Overlay', 'Merge'])
+    self.transformationTypes = self.am_getOption("TransformationTypes",
+                                                 ['MCReconstruction',
+                                                  'MCSimulation',
+                                                  'MCReconstruction_Overlay',
+                                                  'MCGenerations'])
     self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
+    self.jobStatus = self.am_getOption("JobStatus", ['Failed', 'Done'])
+
+    self.dMan = DataManager()
+    self.jobMon = JobMonitoringClient()
+    self.fcClient = FileCatalogClient()
+    self.tClient = TransformationClient()
+    self.reqClient = ReqClient()
+    self.inputFilesProcessed = set()
+    self.todo = {'MCGeneration':
+                 [dict(Message="MCGeneration: OutputExists: Job 'Done'",
+                       ShortMessage="MCGeneration: job 'Done' ",
+                       Counter=0,
+                       Check=lambda job: job.allFilesExist() and job.status == 'Failed',
+                       Actions=lambda job, tInfo: [job.setJobDone(tInfo)]
+                       ),
+                  dict(Message="MCGeneration: OutputMissing: Job 'Failed'",
+                       ShortMessage="MCGeneration: job 'Failed' ",
+                       Counter=0,
+                       Check=lambda job: job.allFilesMissing() and job.status == 'Done',
+                       Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
+                       ),
+                  # dict( Message="MCGeneration, job 'Done': OutputExists: Task 'Done'",
+                  #       ShortMessage="MCGeneration: job already 'Done' ",
+                  #       Counter=0,
+                  #       Check=lambda job: job.allFilesExist() and job.status=='Done',
+                  #       Actions=lambda job,tInfo: [ tInfo._TransformationInfo__setTaskStatus(job, 'Done') ]
+                  #     ),
+                  ],
+                 'OtherProductions':
+                 [ \
+                     dict(Message="One of many Successful: clean others",
+                          ShortMessage="Other Tasks --> Keep",
+                          Counter=0,
+                          Check=lambda job: job.allFilesExist() and job.otherTasks,
+                          Actions=lambda job, tInfo: [self.inputFilesProcessed.add(
+                              job.inputFile), job.setJobDone(tInfo), job.setInputProcessed(tInfo)]
+                          ),
+                     dict(Message="Other Task processed Input, no Output: Fail",
+                          ShortMessage="Other Tasks --> Fail",
+                          Counter=0,
+                          Check=lambda job: job.inputFile in self.inputFilesProcessed and job.allFilesMissing(),
+                          Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
+                          ),
+                     dict(Message="Other Task processed Input: Fail and clean",
+                          ShortMessage="Other Tasks --> Cleanup",
+                          Counter=0,
+                          Check=lambda job: job.inputFile in self.inputFilesProcessed and not job.allFilesMissing(),
+                          Actions=lambda job, tInfo: [job.setJobFailed(tInfo), job.cleanOutputs(tInfo)]
+                          ),
+                     dict(Message="InputFile missing: mark job 'Failed', mark input 'Deleted', clean",
+                          ShortMessage="Input Missing --> Job 'Failed, Input 'Deleted', Cleanup",
+                          Counter=0,
+                          Check=lambda job: job.inputFile and not job.inputFileExists and job.fileStatus != "Deleted",
+                          Actions=lambda job, tInfo: [
+                              job.cleanOutputs(tInfo), job.setJobFailed(tInfo), job.setInputDeleted(tInfo)]
+                          ),
+                     dict(Message="InputFile Deleted, output Exists: mark job 'Failed', clean",
+                          ShortMessage="Input Deleted --> Job 'Failed, Cleanup",
+                          Counter=0,
+                          Check=lambda job: job.inputFile and not job.inputFileExists and job.fileStatus == "Deleted" and not job.allFilesMissing(),
+                          Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setJobFailed(tInfo)]
+                          ),
+                     ## All Output Exists
+                     dict(Message="Output Exists, job Failed, input not Processed --> Job Done, Input Processed",
+                          ShortMessage="Output Exists --> Job Done, Input Processed",
+                          Counter=0,
+                          Check=lambda job: job.allFilesExist(
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus != "Processed" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [job.setJobDone(tInfo), job.setInputProcessed(tInfo)]
+                          ),
+                     dict(Message="Output Exists, job Failed, input Processed --> Job Done",
+                          ShortMessage="Output Exists --> Job Done",
+                          Counter=0,
+                          Check=lambda job: job.allFilesExist(
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Processed" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [job.setJobDone(tInfo)]
+                          ),
+                     dict(Message="Output Exists, job Done, input not Processed --> Input Processed",
+                          ShortMessage="Output Exists --> Input Processed",
+                          Counter=0,
+                          Check=lambda job: job.allFilesExist(
+                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus != "Processed" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [job.setInputProcessed(tInfo)]
+                          ),
+                     ## outputmissing
+                     dict(Message="Output Missing, job Failed, input Assigned --> Input Unused",
+                          ShortMessage="Output Missing --> Input Unused",
+                          Counter=0,
+                          Check=lambda job: job.allFilesMissing(
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [job.setInputUnused(tInfo)]
+                          ),
+                     dict(Message="Output Missing, job Done, input Assigned --> Job Failed, Input Unused",
+                          ShortMessage="Output Missing --> Job Failed, Input Unused",
+                          Counter=0,
+                          Check=lambda job: job.allFilesMissing(
+                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
+                          ),
+                     # some files missing, needing cleanup. Only checking for assigned, because
+                     # processed could mean an earlier job was succesful and this one is just
+                     # the duplucate that needed to be removed!
+                     dict(Message="Some missing, job Failed, input Assigned --> cleanup, Input 'Unused'",
+                          ShortMessage="Output Missing --> Cleanup, Input Unused",
+                          Counter=0,
+                          Check=lambda job: job.someFilesMissing(
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setInputUnused(tInfo)]
+                          ),
+                     dict(Message="Some missing, job Done, input Assigned --> cleanup, job Failed, Input 'Unused'",
+                          ShortMessage="Output Missing --> Cleanup, Job Failed, Input Unused",
+                          Counter=0,
+                          Check=lambda job: job.someFilesMissing(
+                          ) and not job.otherTasks and job.status == 'Done' and job.fileStatus == "Assigned" and job.inputFileExists,
+                          Actions=lambda job, tInfo: [
+                              job.cleanOutputs(tInfo), job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
+                          ),
+                     dict(Message="Something Strange",
+                          ShortMessage="Strange",
+                          Counter=0,
+                          Check=lambda job: job.status not in ("Failed", "Done"),
+                          Actions=lambda job, tInfo: []
+                          ),
+                 ]
+                 }
+
+    ##Notification
+    self.notesToSend = ""
+    self.addressTo = self.am_getOption('MailTo', "andre.philippe.sailer@cern.ch")
+    self.addressFrom = self.am_getOption('MailFrom', self.addressTo)
+    self.subject = "DataRecoveryAgent"
+
 
     #############################################################################
   def initialize(self):
     """Sets defaults
     """
-    self.transClient = TransformationClient()
-    self.requestClient = ReqClient()
-    self.taskIDName = 'TaskID'
-    self.externalStatus = 'ExternalStatus'
     self.externalID = 'ExternalID'
-    self.am_setOption('PollingTime', 2 * 60 * 60)  # no stalled jobs are considered so can be frequent
-    self.enableFlag = self.am_getOption('EnableFlag', False)
+    self.am_setOption('PollingTime', 10 * 60 * 60)  # takes forever to run...
+    self.enabled = self.am_getOption('EnableFlag', False)
     self.am_setModuleParam("shifterProxy", "ProductionManager")
-    self.ops = Operations()
+
     return S_OK()
   #############################################################################
 
   def execute(self):
     """ The main execution method.
     """
-    self.log.info('Enable flag is %s' % self.enableFlag)
-    self.removalOKFlag = False
+    transformations = self.getEligibleTransformations(self.transformationStatus, self.transformationTypes)
+    for prodID, values in transformations['Value'].iteritems():
+      transType, transName = values
+      if transType == "MCGeneration":
+        self.treatMCGeneration(int(prodID), transName, transType)
+      else:
+        self.treatProduction(int(prodID), transName, transType)
 
-    transformationDict = {}
-    for transStatus in self.transformationStatus:
-      result = self.getEligibleTransformations(transStatus, self.transformationTypes)
-      if not result['OK']:
-        self.log.error(result)
-        return S_ERROR('Could not obtain eligible transformations for status "%s"' % (transStatus))
+  # def selectTransformationFiles( self, tInfo, statusList ):
+  #   """ Select files, production jobIDs in specified file status for a given transformation.
+  #   returns dictionary of lfn -> jobID
+  #   """
+  #   #Until a query for files with timestamp can be obtained must rely on the
+  #   #WMS job last update
+  #   res = self.tClient.getTransformationFiles( condDict = {'TransformationID' : tInfo.tID, 'Status' : statusList} )
+  #   self.log.debug(res)
+  #   if not res['OK']:
+  #     return res
+  #   resDict = {}
+  #   for fileDict in res['Value']:
+  #     if not 'LFN' in fileDict or not 'TaskID' in fileDict or not 'LastUpdate' in fileDict:
+  #       self.log.info( "LFN, %s, and LastUpdate are mandatory, >=1 are missing for:\n%s" % ('TaskID', fileDict) )
+  #       continue
+  #     taskID = fileDict['TaskID']
+  #     resDict[taskID] = FileInformation( fileDict['LFN'],
+  #                                        fileDict['FileID'],
+  #                                        fileDict['Status'],
+  #                                        taskID,
+  #                                      )
+  #   if resDict:
+  #     self.log.notice( "Selected %s files overall for transformation %s" % (len(resDict), tInfo.tID))
+  #   return S_OK(resDict)
 
-      if not result['Value']:
-        self.log.info('No "%s" transformations of types %s to process.' %
-                      (transStatus, ", ".join(self.transformationTypes)))
-        continue
-
-      transformationDict.update(result['Value'])
-    transformationTypesString = ', '.join(self.transformationTypes)
-    self.log.info('Selected %s transformations of types %s' %
-                  (len(transformationDict.keys()), transformationTypesString))
-    self.log.verbose('The following transformations were selected out of %s:\n%s' %
-                     (transformationTypesString, ', '.join(transformationDict.keys())))
-
-    #initially this was useful for restricting the considered list
-    #now we use the DataRecoveryAgent in setups where IDs are low
-    tDict = transformationDict
-    if self.ignoreLessThan:
-      for trafo in tDict:
-        if int(trafo) < int(self.ignoreLessThan):
-          del transformationDict[trafo]
-          self.log.verbose(
-              'Ignoring transformation %s ( is less than specified limit %s )' %
-              (trafo, self.ignoreLessThan))
-
-    for transformation, typeName in transformationDict.items():
-      res = self.treatTransformation(transformation, typeName)
-      if not res['OK'] and res['Message']:
-        self.log.error("treatTransformation error", res['Message'])
-
-    return S_OK()
-
-  #############################################################################
   def getEligibleTransformations(self, status, typeList):
     """ Select transformations of given status and type.
     """
-    res = self.transClient.getTransformations(condDict={'Status': status, 'Type': typeList})
+    res = self.tClient.getTransformations(condDict={'Status': status, 'Type': typeList})
     if not res['OK']:
       return res
     transformations = {}
     for prod in res['Value']:
       prodID = prod['TransformationID']
-      transformations[str(prodID)] = prod['Type']
+      prodName = prod['TransformationName']
+      transformations[str(prodID)] = (prod['Type'], prodName)
     return S_OK(transformations)
 
-  #############################################################################
-  def selectTransformationFiles(self, transformation, statusList):
-    """ Select files, production jobIDs in specified file status for a given transformation.
-    """
-    #Until a query for files with timestamp can be obtained must rely on the
-    #WMS job last update
-    res = self.transClient.getTransformationFiles(condDict={'TransformationID': transformation, 'Status': statusList})
-    self.log.debug(res)
-    if not res['OK']:
-      return res
-    resDict = {}
-    for fileDict in res['Value']:
-      if 'LFN' not in fileDict or self.taskIDName not in fileDict or 'LastUpdate' not in fileDict:
-        self.log.info('LFN, %s and LastUpdate are mandatory, >=1 are missing for:\n%s' % (self.taskIDName, fileDict))
-        continue
-      lfn = fileDict['LFN']
-      jobID = fileDict[self.taskIDName]
-      resDict[lfn] = jobID
-    if resDict:
-      self.log.info('Selected %s files overall for transformation %s' % (len(resDict.keys()), transformation))
-    return S_OK(resDict)
+  def treatMCGeneration(self, prodID, transName, transType):
+    """deal with MCGeneration jobs, where there is no inputFile"""
+    tInfo = TransformationInfo(prodID, transName, transType, self.enabled,
+                               self.tClient, self.dMan, self.fcClient, self.jobMon)
+    jobs = tInfo.getJobs(statusList=self.jobStatus)
+    #jobs = tInfo.getJobs(statusList=['Failed'])
+    ## try until all jobs have been treated
+    self.checkAllJobs(jobs, tInfo)
+    self.printSummary()
 
-  #############################################################################
-  def obtainWMSJobIDs(self, transformation, fileDict, selectDelay, wmsStatusList):
-    """ Group files by the corresponding WMS jobIDs, check the corresponding
-        jobs have not been updated for the delay time.  Can't get into any
-        mess because we start from files only in MaxReset / Assigned and check
-        corresponding jobs.  Mixtures of files for jobs in MaxReset and Assigned
-        statuses only possibly include some files in Unused status (not Processed
-        for example) that will not be touched.
-    """
-    prodJobIDs = uniqueElements(fileDict.values())
-    self.log.info('The following %s production jobIDs apply to the selected files:\n%s' % (len(prodJobIDs), prodJobIDs))
+  def treatProduction( self, prodID, transName, transType ):
+    """run this thing for given production"""
 
-    jobFileDict = {}
-    condDict = {'TransformationID': transformation, self.taskIDName: prodJobIDs}
-    olderThan = dateTime() - datetime.timedelta(hours=selectDelay)
+    tInfo = TransformationInfo( prodID, transName, transType, self.enabled,
+                                self.tClient, self.dMan, self.fcClient, self.jobMon )
+    jobs = tInfo.getJobs(statusList=self.jobStatus)
 
-    res = self.transClient.getTransformationTasks(condDict=condDict, older=olderThan,
-                                                  timeStamp='LastUpdateTime', inputVector=True)
-    self.log.debug(res)
-    if not res['OK']:
-      self.log.error('getTransformationTasks returned an error:\n%s' % res['Message'])
-      return res
+    self.log.notice( "Getting tasks...")
+    tasksDict = tInfo.checkTasksStatus()
+    lfnTaskDict = dict( [ ( tasksDict[taskID]['LFN'],taskID ) for taskID in tasksDict ] )
 
-    for jobDict in res['Value']:
-      missingKey = False
-      for key in [self.taskIDName, self.externalID, 'LastUpdateTime', self.externalStatus, 'InputVector']:
-        if key not in jobDict:
-          self.log.info('Missing key %s for job dictionary, the following is available:\n%s' % (key, jobDict))
-          missingKey = True
-          continue
-
-      if missingKey:
-        continue
-
-      job = jobDict[self.taskIDName]
-      wmsID = jobDict[self.externalID]
-      lastUpdate = jobDict['LastUpdateTime']
-      wmsStatus = jobDict[self.externalStatus]
-      jobInputData = jobDict['InputVector']
-      jobInputData = [lfn.replace('LFN:', '') for lfn in jobInputData.split(';')]
-
-      if not int(wmsID):
-        self.log.info('Prod job %s status is %s (ID = %s) so will not recheck with WMS' % (job, wmsStatus, wmsID))
-        continue
-
-      self.log.info(
-          'Job %s, prod job %s last update %s, production management system status %s' %
-          (wmsID, job, lastUpdate, wmsStatus))
-      #Exclude jobs not having appropriate WMS status - have to trust that production management status is correct
-      if wmsStatus not in wmsStatusList:
-        self.log.info('Job %s is in status %s, not %s so will be ignored' %
-                      (wmsID, wmsStatus, ', '.join(wmsStatusList)))
-        continue
-
-      finalJobData = []
-      #Must map unique files -> jobs in expected state
-      for lfn, prodID in fileDict.items():
-        if int(prodID) == int(job):
-          finalJobData.append(lfn)
-
-      self.log.info('Found %s files for job %s' % (len(finalJobData), job))
-      jobFileDict[wmsID] = finalJobData
-
-    return S_OK(jobFileDict)
-
-  #############################################################################
-  def checkOutstandingRequests(self, jobFileDict):
-    """ Before doing anything check that no outstanding requests are pending
-        for the set of WMS jobIDs.
-    """
-    jobs = jobFileDict.keys()
-
-    result = self.requestClient.readRequestsForJobs(jobs)
-    if not result['OK']:
-      return result
-
-    if not result['Value']:
-      self.log.info('None of the jobs have pending requests')
-      return S_OK(jobFileDict)
-
-    for jobID, reqVal in result['Value']['Successful'].iteritems():
-      if not reqVal:  # if reqVal is empty there is no request
-        del jobFileDict[str(jobID)]
-      self.log.info('Removing jobID %s from consideration until requests are completed' % (jobID))
-
-    return S_OK(jobFileDict)
-
-  ############################################################################
-  def checkDescendents(self, transformation, filedict, jobFileDict):
-    """ look that all jobs produced, or not output
-    """
-    res = self.transClient.getTransformationParameters(transformation, ['Body'])
-    if not res['OK']:
-      self.log.error('Could not get Body from TransformationDB')
-      return res
-    body = res['Value']
-    workflow = fromXMLString(body)
-    workflow.resolveGlobalVars()
-
-    olist = []
-    for step in workflow.step_instances:
-      param = step.findParameter('listoutput')
-      if not param:
-        continue
-      olist.extend(param.value)
-    expectedlfns = []
-    contactfailed = []
-    fileprocessed = []
-    files = []
-    tasks_to_be_checked = {}
-    for files in jobFileDict.values():
-      for myFile in files:
-        if myFile in filedict:
-          tasks_to_be_checked[myFile] = filedict[myFile]  # get the tasks that need to be checked
-    for filep, task in tasks_to_be_checked.items():
-      commons = {'outputList': olist,
-                 'PRODUCTION_ID': transformation,
-                 'JOB_ID': task,
-                 }
-      out = constructProductionLFNs(commons)
-      expectedlfns = out['Value']['ProductionOutputData']
-      fcClient = FileCatalogClient()
-      res = fcClient.getFileMetadata(expectedlfns)
-      if not res['OK']:
-        self.log.error('Getting metadata failed')
-        contactfailed.append(filep)
-        continue
-      if filep not in files:
-        files.append(filep)
-      success = res['Value']['Successful'].keys()
-      failed = res['Value']['Failed'].keys()
-      if len(success) and not len(failed):
-        fileprocessed.append(filep)
-
-    final_list_unused = [unusedFile for unusedFile in files if unusedFile not in fileprocessed]
-
-    result = {'filesprocessed': fileprocessed, 'filesToMarkUnused': final_list_unused}
-    return S_OK(result)
-
-  #############################################################################
-  def updateFileStatus(self, transformation, fileList, fileStatus):
-    """ Update file list to specified status.
-    """
-    if not self.enableFlag:
-      self.log.info(
-          'Enable flag is False, would update  %s files to "%s" status for %s' %
-          (len(fileList), fileStatus, transformation))
-      return S_OK()
-
-    self.log.info('Updating %s files to "%s" status for %s' % (len(fileList), fileStatus, transformation))
-    result = self.transClient.setFileStatusForTransformation(int(transformation), fileStatus, fileList, force = True)
-    self.log.debug(result)
-    if not result['OK']:
-      self.log.error(result['Message'])
-      return result
-    if result['Value'] and 'Failed' in result['Value']:
-      self.log.error(result['Value']['Failed'])
-      return result
-
-    msg = result['Value']
-    for lfn, message in msg.items():
-      self.log.info('%s => %s' % (lfn, message))
-
-    return S_OK()
-
-  def treatTransformation(self, transformation, typeName):
-    """treat the transformation"""
-    self.log.info('=' * len('Looking at transformation %s type %s:' % (transformation, typeName)))
-    self.log.info('Looking at transformation %s:' % (transformation))
-
-    result = self.selectTransformationFiles(transformation, self.fileSelectionStatus)
-    if not result['OK']:
-      self.log.error("Could not select files for transformation", str(transformation))
-      self.log.error(result['Message'])
-      return S_ERROR()
-
-    if not result['Value']:
-      self.log.info('No files in status %s selected for transformation %s' %
-                    (', '.join(self.fileSelectionStatus), transformation))
-      return S_OK()
-
-    fileDict = result['Value']
-    result = self.obtainWMSJobIDs(transformation, fileDict, self.selectDelay, self.wmsStatusList)
-    if not result['OK']:
-      self.log.error(result['Message'])
-      self.log.error('Could not obtain WMS jobIDs for files of transformation', str(transformation))
-      return S_ERROR()
-
-    if not result['Value']:
-      self.log.info('No eligible WMS jobIDs found for %s files in list:\n%s ...' %
-                    (len(fileDict.keys()), fileDict.keys()[0]))
-      return S_OK()
-
-    jobFileDict = result['Value']
-
-    for job, lfns in jobFileDict.iteritems():
-      res = self.treatJobFile(job, lfns, transformation)
-      if not res['OK']:
-        self.log.error('TreatJobFile Error', res['Message'])
-
-  def treatJobFile(self, wmsID, lfns, transformation):
-    """deal with individual jobs, if a failed job did indeed process a file, set the job to Done"""
-    jobFileDict = {wmsID: lfns}
-    fileCount = 0
-    for lfnList in jobFileDict.values():
-      fileCount += len(lfnList)
-
-    if not fileCount:
-      self.log.info('No files were selected for transformation %s after examining WMS jobs.' % transformation)
-      return S_OK()
-
-    self.log.info('%s files are selected after examining related WMS jobs' % (fileCount))
-    result = self.checkOutstandingRequests(jobFileDict)
-    if not result['OK']:
-      self.log.error(result['Message'])
-      return S_ERROR()
-
-    if not result['Value']:
-      self.log.info('No WMS jobs without pending requests to process.')
-      return S_OK()
-
-    jobFileNoRequestsDict = result['Value']
-    fileCount = 0
-    for lfnList in jobFileNoRequestsDict.values():
-      fileCount += len(lfnList)
-
-    self.log.info('%s files are selected after removing any relating to jobs with pending requests' % (fileCount))
-    result = self.checkDescendents(transformation, fileDict, jobFileNoRequestsDict)
-    if not result['OK']:
-      self.log.error(result['Message'])
-      return S_ERROR()
-
-    jobsWithFilesOKToUpdate = result['Value']['filesToMarkUnused']
-    jobsWithFilesProcessed = result['Value']['filesprocessed']
-    self.log.info('====> Transformation %s total files that can be updated now: %s' %
-                  (transformation, len(jobsWithFilesOKToUpdate)))
-
-    filesToUpdateUnused = []
-    for fileList in jobsWithFilesOKToUpdate:
-      filesToUpdateUnused.append(fileList)
-
-    filesToUpdateProcessed = []
-    for fileList in jobsWithFilesProcessed:
-      filesToUpdateProcessed.append(fileList)
-
-    if not self.removalOKFlag:
-      self.log.info("Will not change file status: RemovalOK False")
-      self.log.info("Files to processed %s " % ", ".join(filesToUpdateProcessed))
-      self.log.info("Files to unused %s " % ", ".join(filesToUpdateUnused))
-      return S_OK()
-
-    if filesToUpdateUnused and self.removalOKFlag:
-      result = self.updateFileStatus(transformation, filesToUpdateUnused, self.updateStatus)
+    self.checkAllJobs( jobs, tInfo, tasksDict, lfnTaskDict )
+    if self.notesToSend:
+      notification = NotificationClient()
+      result = notification.sendMail( self.addressTo, self.subject, self.notesToSend, self.addressFrom, localAttempt = False )
       if not result['OK']:
-        self.log.error('Recoverable files were not updated with result:\n%s' % (result['Message']))
-        return S_ERROR()
-    else:
-      self.log.info('There are no files with failed jobs to update for production %s in this cycle' % transformation)
+        self.log.error('Cannot send notification mail', result['Message'])
+      self.notesToSend = ""
+    self.printSummary()
 
-    if filesToUpdateProcessed and self.removalOKFlag:
-      result = self.updateFileStatus(transformation, filesToUpdateProcessed, 'Processed')
-      if not result['OK']:
-        self.log.error('Recoverable files were not updated with result:\n%s' % (result['Message']))
-        return S_ERROR()
-    else:
-      self.log.info('There are no files processed to update for production %s in this cycle' % transformation)
+  def checkJob(self, job, tInfo):
+    """ deal with the job """
+    checks = self.todo['MCGeneration'] if job.tType == 'MCGeneration' else self.todo['OtherProductions']
+    for do in checks:
+      if do['Check'](job):
+        do['Counter'] += 1
+        self.log.notice(do['Message'])
+        self.log.notice(job)
+        self.notesToSend += do['Message'] + '\n'
+        self.notesToSend += str(job) + '\n'
+        do['Actions'](job, tInfo)
+        return
+
+  def checkAllJobs(self, jobs, tInfo, tasksDict=None, lfnTaskDict=None):
+    """run over all jobs and do checks"""
+    fileJobDict = defaultdict(list)
+    counter = 0
+    startTime = time.time()
+    nJobs = len(jobs)
+    self.log.notice("Running over all the jobs")
+    for job in jobs.values():
+      counter += 1
+      if counter % 200 == 0:
+        self.log.notice("%d/%d: %3.1fs " % (counter, nJobs, float(time.time() - startTime)))
+      # if job.jobID < self.firstJob:
+      #   continue
+      while True:
+        try:
+          job.checkRequests(self.reqClient)
+          if job.pendingRequest:
+            self.log.warn("Job has Pending requests:\n%s" % job)
+            break
+          job.getJobInformation(self.jobMon)
+          job.checkFileExistance(self.fcClient)
+          if tasksDict and lfnTaskDict:
+            job.getTaskInfo(tasksDict, lfnTaskDict)
+            fileJobDict[job.inputFile].append(job.jobID)
+          self.checkJob(job, tInfo)
+          break  # get out of the while loop
+        except RuntimeError as e:
+          self.log.error("+++++ Failure for job: %d " % job.jobID)
+          self.log.error("+++++ Exception: ", str(e))
+          # runs these again because of RuntimeError
+    self.log.notice('Checking Jobs Done: %d/%d: %3.1fs' % (counter, nJobs, float(time.time() - jobCheckStart)))
+
+  def printSummary(self):
+    """print summary of changes"""
+    self.log.notice("Summary:")
+    for do in itertools.chain.from_iterable(self.todo.values()):
+      self.log.notice("%s: %s" % (do['ShortMessage'].ljust(52), str(do['Counter']).rjust(5)))
+
+# if __name__ == "__main__":
+#   PARAMS = Params()
+#   PARAMS.registerSwitches()
+#   Script.parseCommandLine( ignoreErrors = True )
+#   DRA = DRA()
+#   DRA.enabled = PARAMS.enabled
+#   DRA.prodID = PARAMS.prodID
+#   DRA.jobStatus = PARAMS.jobStatus
+#   DRA.firstJob = PARAMS.firstJob
+#   DRA.execute()

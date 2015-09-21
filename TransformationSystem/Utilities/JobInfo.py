@@ -1,8 +1,6 @@
 """Job Information"""
 __RCSID__ = "$Id$"
 
-ENABLED = False
-
 from itertools import izip_longest
 import re
 
