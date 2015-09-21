@@ -44,7 +44,7 @@ from collections import defaultdict
 import time
 import itertools
 
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -211,8 +211,6 @@ class DataRecoveryAgent(AgentModule):
   def initialize(self):
     """Sets defaults
     """
-    self.externalID = 'ExternalID'
-    self.am_setOption('PollingTime', 10 * 60 * 60)  # takes forever to run...
     self.enabled = self.am_getOption('EnableFlag', False)
     self.am_setModuleParam("shifterProxy", "ProductionManager")
 
@@ -223,37 +221,15 @@ class DataRecoveryAgent(AgentModule):
     """ The main execution method.
     """
     transformations = self.getEligibleTransformations(self.transformationStatus, self.transformationTypes)
+    if not transformations['OK']:
+      self.log.error("Failure to get transformations", transformations['Message'])
+      return S_ERROR("Failure to get transformations")
     for prodID, values in transformations['Value'].iteritems():
       transType, transName = values
       if transType == "MCGeneration":
         self.treatMCGeneration(int(prodID), transName, transType)
       else:
         self.treatProduction(int(prodID), transName, transType)
-
-  # def selectTransformationFiles( self, tInfo, statusList ):
-  #   """ Select files, production jobIDs in specified file status for a given transformation.
-  #   returns dictionary of lfn -> jobID
-  #   """
-  #   #Until a query for files with timestamp can be obtained must rely on the
-  #   #WMS job last update
-  #   res = self.tClient.getTransformationFiles( condDict = {'TransformationID' : tInfo.tID, 'Status' : statusList} )
-  #   self.log.debug(res)
-  #   if not res['OK']:
-  #     return res
-  #   resDict = {}
-  #   for fileDict in res['Value']:
-  #     if not 'LFN' in fileDict or not 'TaskID' in fileDict or not 'LastUpdate' in fileDict:
-  #       self.log.info( "LFN, %s, and LastUpdate are mandatory, >=1 are missing for:\n%s" % ('TaskID', fileDict) )
-  #       continue
-  #     taskID = fileDict['TaskID']
-  #     resDict[taskID] = FileInformation( fileDict['LFN'],
-  #                                        fileDict['FileID'],
-  #                                        fileDict['Status'],
-  #                                        taskID,
-  #                                      )
-  #   if resDict:
-  #     self.log.notice( "Selected %s files overall for transformation %s" % (len(resDict), tInfo.tID))
-  #   return S_OK(resDict)
 
   def getEligibleTransformations(self, status, typeList):
     """ Select transformations of given status and type.
