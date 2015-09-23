@@ -1,3 +1,34 @@
+[v6r14p4]
+
+*Core
+FIX: DictCache - fix the exception in the destructor preventing the final
+     cache cleaning
+
+*Framework
+FIX: SystemAdministratorClientCLI - corrected info line inviting to update
+     the pilot version after the software update
+
+*DMS
+FIX: FTSAgent - Add recovery of FTS files that can be left in weird statuses 
+     when the agent dies
+CHANGE: DataManager - allow to not get URLs of the replicas
+CHANGE: FTSJob - keep and reuse the FTS3 Context object
+
+*Storage
+CHANGE: StorageManagerClient - don't fail getting metadata for staging if at 
+        least one staged replica found
+
+*WMS
+FIX: CPUNormalization - protect MJF from 0 logical cores
+FIX: JobScheduling - fix printout that was saying "single site" and "multiple sites" 
+     in two consecutive lines
+NEW: pilotTools,Commands - added CEType argument, e.g. to specify Pool CE usage 
+FIX: WatchDog - added checks of function return status, added hmsCPU initialization to 0,
+     removed extra printout     
+     
+*Resources
+FIX: GFAL2 plugins - multiple bug fixes     
+
 [v6r14p3]
 
 *Core
