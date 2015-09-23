@@ -64,7 +64,6 @@ class DataRecoveryAgent(AgentModule):
   def __init__(self, *args, **kwargs):
     AgentModule.__init__(self, *args, **kwargs)
     self.name = 'DataRecoveryAgent'
-    self.log = gLogger.getSubLogger("DataRecoveryAgent")
     self.enabled = False
 
     #only worry about files > 12hrs since last update
