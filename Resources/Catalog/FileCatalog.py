@@ -56,7 +56,7 @@ import re
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
-from DIRAC.Resources.Utilities                              import checkArgumentFormat
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 
 class FileCatalog( object ):
@@ -144,7 +144,11 @@ class FileCatalog( object ):
 
       # Skip if the method is not implemented in this catalog
       if not oCatalog.hasCatalogMethod( self.call ):
-        continue
+        if master:
+          gLogger.error( "Master catalog does not implement the write method", self.call )
+          return S_ERROR( "Master catalog does not implement the write method %s" % self.call )
+        else:
+          continue
 
       method = getattr( oCatalog, self.call )
       res = method( fileInfo, *parms1, **kws )
@@ -264,8 +268,6 @@ class FileCatalog( object ):
       oCatalog = res['Value']
       self.readCatalogs.append( ( catalogName, oCatalog, True ) )
       self.writeCatalogs.append( ( catalogName, oCatalog, True ) )
-      if catalogConfig.get( 'MetaCatalog' ) == 'True':
-        self.metaCatalogs.append( catalogName )
     return S_OK()
 
   def _getCatalogs( self ):
@@ -318,8 +320,6 @@ class FileCatalog( object ):
             self.writeCatalogs.insert( 0, ( catalogName, oCatalog, master ) )
           else:
             self.writeCatalogs.append( ( catalogName, oCatalog, master ) )
-      if catalogConfig.get( 'MetaCatalog' ) == 'True':
-        self.metaCatalogs.append( catalogName )
     return S_OK()
 
   def _getCatalogConfigDetails( self, catalogName ):
