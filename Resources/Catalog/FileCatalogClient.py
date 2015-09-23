@@ -19,7 +19,7 @@ class FileCatalogClient( object ):
     """ Constructor function.
     """
     self.__kwargs = kwargs
-    self.server( 'DataManagement/FileCatalog' )
+    self.server = 'DataManagement/FileCatalog'
     if url:
       self.server = url
     self.available = False
