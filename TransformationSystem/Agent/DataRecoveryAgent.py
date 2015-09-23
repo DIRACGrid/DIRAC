@@ -51,7 +51,7 @@ class DataRecoveryAgent(AgentModule):
     self.name = 'DataRecoveryAgent'
     self.enabled = False
 
-    #only worry about files > 12hrs since last update
+    self.productionsToIgnore = self.am_getOption("ProductionsToIgnore", [])
     self.transformationTypes = self.am_getOption("TransformationTypes",
                                                  ['MCReconstruction',
                                                   'MCSimulation',
@@ -211,7 +211,10 @@ class DataRecoveryAgent(AgentModule):
       self.log.error("Failure to get transformations", transformations['Message'])
       return S_ERROR("Failure to get transformations")
     for prodID, values in transformations['Value'].iteritems():
-      self.resetCounters()
+      if prodID in self.productionsToIgnore:
+        self.log.notice("Ignoring Production: %s " % prodID)
+        continue
+      self.__resetCounters()
       transType, transName = values
       self.log.notice("Running over Production: %s " % prodID)
       if transType == "MCGeneration":
@@ -314,7 +317,7 @@ class DataRecoveryAgent(AgentModule):
       if self.notesToSend:
         self.notesToSend += str(message) + '\n'
 
-  def resetCounters(self):
+  def __resetCounters(self):
     for name, checks in self.todo.iteritems():
       for do in checks:
         do['Counter'] = 0
