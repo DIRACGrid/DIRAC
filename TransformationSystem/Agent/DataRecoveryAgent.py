@@ -224,7 +224,9 @@ class DataRecoveryAgent(AgentModule):
       self.log.error("Failure to get transformations", transformations['Message'])
       return S_ERROR("Failure to get transformations")
     for prodID, values in transformations['Value'].iteritems():
+      self.resetCounters()
       transType, transName = values
+      self.log.notice("Running over Production: %s " % prodID)
       if transType == "MCGeneration":
         self.treatMCGeneration(int(prodID), transName, transType)
       else:
@@ -265,13 +267,15 @@ class DataRecoveryAgent(AgentModule):
     lfnTaskDict = dict( [ ( tasksDict[taskID]['LFN'],taskID ) for taskID in tasksDict ] )
 
     self.checkAllJobs( jobs, tInfo, tasksDict, lfnTaskDict )
+    self.printSummary()
+
     if self.notesToSend:
       notification = NotificationClient()
-      result = notification.sendMail( self.addressTo, self.subject, self.notesToSend, self.addressFrom, localAttempt = False )
+      result = notification.sendMail(self.addressTo, "%s: %s" %
+                                     (self.subject, prodID), self.notesToSend, self.addressFrom, localAttempt=False)
       if not result['OK']:
         self.log.error('Cannot send notification mail', result['Message'])
       self.notesToSend = ""
-    self.printSummary()
 
   def checkJob(self, job, tInfo):
     """ deal with the job """
@@ -322,7 +326,15 @@ class DataRecoveryAgent(AgentModule):
     """print summary of changes"""
     self.log.notice("Summary:")
     for do in itertools.chain.from_iterable(self.todo.values()):
-      self.log.notice("%s: %s" % (do['ShortMessage'].ljust(52), str(do['Counter']).rjust(5)))
+      message = "%s: %s" % (do['ShortMessage'].ljust(56), str(do['Counter']).rjust(5))
+      self.log.notice(message)
+      if self.notesToSend:
+        self.notesToSend += str(message) + '\n'
+
+  def resetCounters(self):
+    for name, checks in self.todo.iteritems():
+      for do in checks:
+        do['Counter'] = 0
 
 # if __name__ == "__main__":
 #   PARAMS = Params()
