@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   AgentReactor.py
 # Author : Adria Casajus
 ########################################################################
@@ -28,15 +27,13 @@
 __RCSID__ = "$Id$"
 
 import time
-import os
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Utilities import ThreadScheduler
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 from DIRAC.Core.Base.AgentModule import AgentModule
 
-class AgentReactor:
+class AgentReactor( object ):
   """
     Main interface to DIRAC Agents. It allows to :
     - define a Agents modules to be executed

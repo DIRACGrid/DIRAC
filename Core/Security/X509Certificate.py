@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ X509Certificate is a class for managing X509 certificates alone
 """
 __RCSID__ = "$Id$"
@@ -15,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 # def _proxyExtensionList( ):
 #   return [ GSI.crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) ]
 
-class X509Certificate:
+class X509Certificate( object ):
 
   def __init__( self, x509Obj = None ):
     self.__valid = False
@@ -53,7 +50,7 @@ class X509Certificate:
     try:
       self.__certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return S_ERROR( "Can't load pem data: %s" % str( e ) )
+      return S_ERROR( "Can't load pem data: %s" % e )
     self.__valid = True
     return S_OK()
 

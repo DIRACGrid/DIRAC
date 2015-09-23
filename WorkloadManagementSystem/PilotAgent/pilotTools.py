@@ -11,7 +11,6 @@ import os
 import pickle
 import getopt
 import imp
-import types
 import urllib2
 import signal
 
@@ -146,7 +145,7 @@ class ObjectLoader( object ):
   def __recurseImport( self, modName, parentModule = None, hideExceptions = False ):
     """ Internal function to load modules
     """
-    if type( modName ) in types.StringTypes:
+    if isinstance( modName, basestring ):
       modName = modName.split( '.' )
     try:
       if parentModule:

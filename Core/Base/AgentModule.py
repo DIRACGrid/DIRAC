@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    AgentModule.py
 # Author :  Adria Casajus
 ########################################################################
@@ -29,7 +28,7 @@ def _checkDir( path ):
   if not os.path.isdir( path ):
     raise Exception( 'Can not create %s' % path )
 
-class AgentModule:
+class AgentModule( object ):
   """ Base class for all agent modules
 
       This class is used by the AgentReactor Class to steer the execution of

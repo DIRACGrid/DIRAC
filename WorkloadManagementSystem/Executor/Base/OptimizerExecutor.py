@@ -1,3 +1,6 @@
+""" Base class for all the executor modules for Jobs Optimization
+"""
+
 import threading
 #Because eval(valenc) might require it
 import datetime
