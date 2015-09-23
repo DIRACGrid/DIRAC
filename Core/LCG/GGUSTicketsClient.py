@@ -82,13 +82,13 @@ class GGUSTicketsClient:
     
     for ticket in ticketList:
       
-      _id               = ticket.GHD_Request_ID
-      _status           = ticket.GHD_Status
-      _shortDescription = ticket.GHD_Short_Description
-      _priority         = ticket.GHD_Priority
+      _id               = str( ticket.GHD_Request_ID )
+      _status           = str( ticket.GHD_Status )
+      _shortDescription = str( ticket.GHD_Short_Description )
+      _priority         = str( ticket.GHD_Priority )
       if not hasattr( ticket, 'GHD_Affected_Site' ):
         continue
-      _site             = ticket.GHD_Affected_Site
+      _site             = str( ticket.GHD_Affected_Site )
         
       # We do not want closed tickets
       if _status in terminalStates:
@@ -100,7 +100,7 @@ class GGUSTicketsClient:
       if not _priority in selectedTickets[ _site ]:
         selectedTickets[ _site ][ _priority ] = []  
        
-      selectedTickets[ _site ][ _priority ].append( ( _id, _shortDescription ) ) 
+      selectedTickets[ _site ][ _priority ].append( ( _id, _shortDescription, _status ) ) 
     
     return S_OK( selectedTickets )
         
