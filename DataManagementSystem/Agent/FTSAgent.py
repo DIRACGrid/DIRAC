@@ -521,6 +521,10 @@ class FTSAgent( AgentModule ):
               if finishedFiles:
                 log.warn( "%s is %s while replication was Finished to %s, update" % ( ftsFile.LFN, ftsFile.Status, targetSE ) )
                 ftsFilesDict['toUpdate'] += finishedFiles
+            # identify Active transfers for which there is no FTS job any longer and reschedule them
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Active' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
+              if not [ftsJob for ftsJob in ftsJobs if ftsJob.FTSGUID == ftsFile.FTSGUID]:
+                ftsFilesDict['toReschedule'].append( ftsFile )
             # identify Finished transfer for which the replica is still missing
             for ftsFile in [f for f in ftsFiles if f.Status == 'Finished' and f.TargetSE in missingReplicas.get( f.LFN, [] ) and f not in ftsFilesDict['toRegister'] ]:
               # Check if there is a registration operation for that file and that target
@@ -530,6 +534,20 @@ class FTSAgent( AgentModule ):
                        [f for f in op if f.LFN == ftsFile.LFN]]
               if not regOp:
                 ftsFilesDict['toReschedule'].append( ftsFile )
+
+            # Recover files that are Failed but were not spotted
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Failed' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
+              _r, _s, fail = self.__checkFailed( ftsFile )
+              if fail:
+                ftsFilesDict['toFail'].append( ftsFile )
+
+            # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
+            for lfn in missingReplicas:
+              if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
+                for opFile in operation:
+                  if opFile.LFN == lfn:
+                    opFile.Status = 'Done'
+                    break
 
       toFail = ftsFilesDict.get( "toFail", [] )
       toReschedule = ftsFilesDict.get( "toReschedule", [] )
