@@ -113,7 +113,7 @@ class DataRecoveryAgent(AgentModule):
                      dict(Message="Other Task processed Input, no Output: Fail",
                           ShortMessage="Other Tasks --> Fail",
                           Counter=0,
-                          Check=lambda job: job.inputFile in self.inputFilesProcessed and job.allFilesMissing(),
+                          Check=lambda job: job.inputFile in self.inputFilesProcessed and job.allFilesMissing() and job.status != 'Failed',
                           Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
                           ),
                      dict(Message="Other Task processed Input: Fail and clean",
