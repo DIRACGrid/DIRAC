@@ -32,6 +32,9 @@ class SRM2Storage( StorageBase ):
   SRM v2 interface to StorageElement using lcg_util and gfal
   """
 
+  _InputProtocols = ['file', 'srm']
+  _OutputProtocols = ['file', 'srm']
+
   def __init__( self, storageName, parameters ):
     """ c'tor
 
