@@ -81,6 +81,7 @@ class FTSJob( object ):
     self.__files__ = TypedList( allowedTypes = FTSFile )
 
     self._fc = FileCatalog()
+    self._fts3context = None
 
     self._states = tuple( set( self.INITSTATES + self.TRANSSTATES + self.FAILEDSTATES + self.FINALSTATES ) )
 
@@ -177,6 +178,12 @@ class FTSJob( object ):
   def FTSServer( self, url ):
     """ FTSServer getter """
     self.__data__["FTSServer"] = url
+
+    # I REALLY don't see that happening
+    # but in case we change the server after the
+    # context was created, I reset it
+    # (I don't initialize because maybe we are in FTS2 mode...)
+    self._fts3context = None
 
   @property
   def Completeness( self ):
@@ -600,7 +607,9 @@ class FTSJob( object ):
             bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
 
     try:
-      context = fts3.Context( self.FTSServer )
+      if not self._fts3context:
+        self._fts3context = fts3.Context( endpoint = self.FTSServer )
+      context = self._fts3context
       self.FTSGUID = fts3.submit( context, job )
 
     except Exception, e:
@@ -620,7 +629,9 @@ class FTSJob( object ):
 
     jobStatusDict = None
     try:
-      context = fts3.Context( endpoint = self.FTSServer )
+      if not self._fts3context:
+        self._fts3context = fts3.Context( endpoint = self.FTSServer )
+      context = self._fts3context
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
     except Exception, e:
       return S_ERROR( "Error getting the job status %s" % e )
