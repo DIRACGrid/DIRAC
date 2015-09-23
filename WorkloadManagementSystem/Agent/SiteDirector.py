@@ -30,6 +30,8 @@ from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
 
+from collections import defaultdict
+
 __RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
@@ -61,7 +63,7 @@ class SiteDirector( AgentModule ):
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
-    self.failedQueues = {}
+    self.failedQueues = defaultdict( int )
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
@@ -408,7 +410,7 @@ class SiteDirector( AgentModule ):
     for queue in queues:
 
       # Check if the queue failed previously
-      failedCount = self.failedQueues.setdefault( queue, 0 ) % self.failedQueueCycleFactor
+      failedCount = self.failedQueues[ queue ] % self.failedQueueCycleFactor
       if failedCount != 0:
         self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
         self.failedQueues[queue] += 1
@@ -532,7 +534,11 @@ class SiteDirector( AgentModule ):
 
         executable, pilotSubmissionChunk = result['Value']
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
-        os.unlink( executable )
+        ### FIXME: The condor thing only transfers the file with some
+        ### delay, so when we unlink here the script is gone
+        ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
+        if ceType != 'HTCondorCE':
+          os.unlink( executable )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
           pilotsToSubmit = 0

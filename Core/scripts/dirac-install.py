@@ -1310,7 +1310,7 @@ def createBashrc():
                      'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
                      'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
                      'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                     'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ),
+                     'export TERMINFO=%s' % __getTerminfoLocations( os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ),
                      'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
@@ -1365,7 +1365,7 @@ def createCshrc():
                      'setenv DIRACBIN %s' % os.path.join( proPath, cliParams.platform, 'bin' ),
                      'setenv DIRACSCRIPTS %s' % os.path.join( proPath, 'scripts' ),
                      'setenv DIRACLIB %s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                     'setenv TERMINFO %s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ] )
+                     'setenv TERMINFO %s' % __getTerminfoLocations( os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                     'setenv PYTHONPATH',
@@ -1411,6 +1411,16 @@ def writeDefaultConfiguration():
   except Exception, excp:
     logERROR( "Could not write %s: %s" % ( filePath, excp ) )
   logNOTICE( "Defaults written to %s" % filePath )
+
+def __getTerminfoLocations( defaultLocation=None ):
+  """returns the terminfo locations as a colon separated string"""
+  terminfoLocations = [ defaultLocation ] if defaultLocation else []
+
+  for termpath in [ '/usr/share/terminfo', '/etc/terminfo' ]:
+    if os.path.exists( termpath ):
+      terminfoLocations.append( termpath )
+
+  return ":".join( terminfoLocations )
 
 if __name__ == "__main__":
   logNOTICE( "Processing installation requirements" )
