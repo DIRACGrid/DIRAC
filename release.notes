@@ -1,3 +1,7 @@
+[v6r13p15]
+
+Included patches from v6r12p50 release 
+
 [v6r13p14]
 
 *DMS
@@ -303,6 +307,24 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p50]
+
+*Core
+FIX: dirac-install - define TERMINFO variable to include local sources as well
+
+*Framework
+FIX: SystemAdministratorHandler - show also executors in the log overview
+
+*DMS
+FIX: FileCatalogClientCLI - use getPath utility systematically to normalize the
+     paths passed by users
+
+*WMS
+FIX: PilotStatusAgent - split dynamic and static parts in the log error message
+
+*Resources
+NEW: HTCondorCEComputingElement class
 
 [v6r12p49]
 

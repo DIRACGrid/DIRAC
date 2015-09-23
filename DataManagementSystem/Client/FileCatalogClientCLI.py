@@ -63,7 +63,7 @@ File Catalog Client $Revision: 1.17 $Date:
       path = apath
     else:
       path = self.cwd+'/'+apath
-      path = path.replace('//','/')
+    path = path.replace('//','/')
 
     return os.path.normpath(path)
   
@@ -918,7 +918,7 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       newdir = self.cwd + '/' + path
       
-    newdir = newdir.replace(r'//','/')
+    newdir = self.getPath(newdir)
     
     result =  self.fc.createDirectory(newdir)    
     if result['OK']:
@@ -1093,11 +1093,7 @@ File Catalog Client $Revision: 1.17 $Date:
         path = argss[0]       
         if path[0] != '/':
           path = self.cwd+'/'+path      
-    path = path.replace(r'//','/')
-
-    # remove last character if it is "/"    
-    if path[-1] == '/' and path != '/':
-      path = path[:-1]
+    path = self.getPath(path)
     
     # Check if the target path is a file
     result =  self.fc.isFile(path)          
@@ -1460,6 +1456,7 @@ File Catalog Client $Revision: 1.17 $Date:
       print self.do_guid.__doc__
       return
     path = argss[0]
+    path = self.getPath(path)
     try:
       result =  self.fc.getFileMetadata(path)
       if result['OK']:
@@ -1609,6 +1606,7 @@ File Catalog Client $Revision: 1.17 $Date:
       path = self.cwd
     elif path[0] != '/':
       path = self.cwd+'/'+path  
+    path = self.getPath(path)
     meta = argss[1]
     value = argss[2]
     print path,meta,value
@@ -1880,7 +1878,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if result['Value']:
 
       if dirsOnly:
-        listToPrint = set( "/".join(fullpath.split("/")[:-1]) for fullpath in result['Value'] )
+        listToPrint = set( os.path.dirname(fullpath) for fullpath in result['Value'] )
       else:
         listToPrint = result['Value']
 
