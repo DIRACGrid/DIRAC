@@ -6,35 +6,20 @@ Data recovery agent: sets as unused files that are really undone.
 
     For all above cases the following procedure should be used to achieve 100%:
 
-    - Starting from the data in the Production DB for each transformation
-      look for files in the following status:
-         Assigned
-         MaxReset
-      some of these will correspond to the final WMS status 'Failed'.
 
-    For files in MaxReset and Assigned:
-    - Discover corresponding job WMS ID
-    - Check that there are no outstanding requests for the job
-      o wait until all are treated before proceeding
-    - Check that none of the job input data has BK descendants for the current production
-      o if the data has a replica flag it means all was uploaded successfully - should be investigated by hand
-      o if there is no replica flag can proceed with file removal from LFC / storage (can be disabled by flag)
-    - Mark the recovered input file status as 'Unused' in the ProductionDB
-
-
-New Plan:
 
 getTransformations
-getFailedJobsOfTheTransformation
+getFailed/DoneJobsOfTheTransformation
 - makeSureNoPendingRequests
-getInputFilesForthejobs
+getInputFilesForthejobs (if not MCGeneration)
 - checkIfInputFile Assigned or MaxReset
 getOutputFilesForTheJobs
 - Make Sure no Descendents of the outputfiles?
 - Check if _all_ or _no_ outputfiles exist
-Send notification about changes
 
-??Cache the jobs for 24hours, will depend on performance
+Depending on what is the status of the job, input and outputfiles we do different things.
+
+Send notification about changes
 
 """
 
@@ -73,7 +58,7 @@ class DataRecoveryAgent(AgentModule):
                                                   'MCReconstruction_Overlay',
                                                   'MCGenerations'])
     self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
-    self.jobStatus = self.am_getOption("JobStatus", ['Failed', 'Done'])
+    self.jobStatus = ['Failed', 'Done']  # This needs to be both otherwise we cannot account for all cases
 
     self.dMan = DataManager()
     self.jobMon = JobMonitoringClient()
@@ -219,6 +204,8 @@ class DataRecoveryAgent(AgentModule):
   def execute(self):
     """ The main execution method.
     """
+    self.log.notice("Will ignore the following productions: %s" % self.productionsToIgnore)
+
     transformations = self.getEligibleTransformations(self.transformationStatus, self.transformationTypes)
     if not transformations['OK']:
       self.log.error("Failure to get transformations", transformations['Message'])
@@ -250,8 +237,6 @@ class DataRecoveryAgent(AgentModule):
     tInfo = TransformationInfo(prodID, transName, transType, self.enabled,
                                self.tClient, self.dMan, self.fcClient, self.jobMon)
     jobs = tInfo.getJobs(statusList=self.jobStatus)
-    #jobs = tInfo.getJobs(statusList=['Failed'])
-    ## try until all jobs have been treated
     self.checkAllJobs(jobs, tInfo)
     self.printSummary()
 
@@ -301,8 +286,6 @@ class DataRecoveryAgent(AgentModule):
       counter += 1
       if counter % 200 == 0:
         self.log.notice("%d/%d: %3.1fs " % (counter, nJobs, float(time.time() - startTime)))
-      # if job.jobID < self.firstJob:
-      #   continue
       while True:
         try:
           job.checkRequests(self.reqClient)
@@ -335,14 +318,3 @@ class DataRecoveryAgent(AgentModule):
     for name, checks in self.todo.iteritems():
       for do in checks:
         do['Counter'] = 0
-
-# if __name__ == "__main__":
-#   PARAMS = Params()
-#   PARAMS.registerSwitches()
-#   Script.parseCommandLine( ignoreErrors = True )
-#   DRA = DRA()
-#   DRA.enabled = PARAMS.enabled
-#   DRA.prodID = PARAMS.prodID
-#   DRA.jobStatus = PARAMS.jobStatus
-#   DRA.firstJob = PARAMS.firstJob
-#   DRA.execute()
