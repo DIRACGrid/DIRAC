@@ -57,6 +57,15 @@ class StorageBase( object ):
 
     self.__updateParameters( parameterDict )
 
+    for protocolType in ['InputProtocols', 'OutputProtocols']:
+      if hasattr( self, '_%s' % protocolType ):
+        self.protocolParameters[protocolType] = getattr( self, '_%s' % protocolType )
+      else:
+        self.protocolParameters[protocolType] = [ self.protocolParameters['Protocol']]
+
+
+    
+    
     self.basePath = parameterDict['Path']
     self.cwd = self.basePath
     self.se = None
@@ -384,3 +393,23 @@ class StorageBase( object ):
     commonMetadata.update( metadataDict )
 
     return commonMetadata
+
+  
+  def _isInputURL(self, url):
+    """ Check if the given url can be taken as input
+
+    :param self: self reference
+    :param str url: URL
+    """
+    res = pfnparse( url )
+    if not res['OK']:
+      return res
+    urlDict = res['Value']
+
+    # Special case of 'file' protocol which can be just a URL
+    if not urlDict['Protocol'] and 'file' in self.protocolParameters['InputProtocols']:
+      return S_OK(True)
+    
+    return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
+  
+
