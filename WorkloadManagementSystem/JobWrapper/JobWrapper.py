@@ -545,7 +545,7 @@ class JobWrapper( object ):
     optReplicas = {}
     if self.optArgs:
       try:
-        optDict, length = DEncode.decode( self.optArgs['InputData'] )
+        optDict, _length = DEncode.decode( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
         self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
