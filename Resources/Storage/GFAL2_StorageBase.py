@@ -689,10 +689,7 @@ class GFAL2_StorageBase( StorageBase ):
     res = self._getExtendedAttributes( path )
     # add extended attributes to the dict if available
     if res['OK']:
-      attributeDict = res['Value']
-    else:
-      # no extendted attributes could be retrieved. Ignore it
-      attributeDict = {}
+      attributeDict = res.get( 'Value', {} )
 
     self._updateMetadataDict( metadataDict, attributeDict )
 
