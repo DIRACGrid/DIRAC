@@ -1139,6 +1139,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
     
     client = SystemAdministratorIntegrator()
+    silentHosts = client.getSilentHosts()
+    respondingHosts = client.getRespondingHosts()
     resultAll = client.getOverallStatus()
     resultInfo = client.getInfo()
     
@@ -1181,6 +1183,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                 record += [str( rDict[compType][system][component]['Timeup'] )]
                 records.append(record)  
       printTable( fields, records, sortOption )        
+      if silentHosts:
+        print "\n %d out of %d hosts did not respond" % ( len( silentHosts ), len( respondingHosts ) )
 
   def default( self, args ):
 
