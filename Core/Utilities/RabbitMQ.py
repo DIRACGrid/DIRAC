@@ -4,7 +4,10 @@ Class for management of RabbitMQ connections
 
 __RCSID__ = "$Id$"
 
-import datetime, threading, json, stomp
+import datetime
+import json
+import threading
+import stomp
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class RabbitInterface( object ):
@@ -74,7 +77,7 @@ class RabbitInterface( object ):
     password = result[ 'Value' ]
 
     try:
-      self.connection = stomp.Connection( [ ( host, int( port ) ) ], user, password, vhost = vHost )
+      self.connection = stomp.Connection( [ ( host, int( port ) ) ], vhost = vHost )
       self.connection.start()
       self.connection.connect( username = user, passcode = password )
 
@@ -94,7 +97,7 @@ class RabbitInterface( object ):
     message contains the body of the message
     """
     try:
-      if type( message ) == list:
+      if isinstance( message, list ):
         for msg in message:
           self.connection.send( body = json.dumps( msg ), destination = '/topic/%s' % self.exchange )
       else:
@@ -113,7 +116,7 @@ class RabbitInterface( object ):
       return S_ERROR( 'Instance not configured to receive messages' )
 
     with self.lock:
-      if len( self.msgList ) > 0:
+      if self.msgList:
         msg = self.msgList.pop( 0 )
       else:
         return S_ERROR( 'No messages in queue' )
@@ -127,6 +130,6 @@ class RabbitInterface( object ):
     try:
       self.connection.disconnect()
     except Exception, e:
-      return S_ERROR( 'Failed to send message: %s' % e )
+      return S_ERROR( 'Failed to disconnect: %s' % e )
 
     return S_OK( 'Disconnection successful' )
