@@ -925,7 +925,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     else:
       gLogger.notice( "Software successfully updated." )
       gLogger.notice( "You should restart the services to use the new software version." )
-      gLogger.notice( "Think of updating /Operation/<vo>/<setup>/Versions section in the CS" )
+      gLogger.notice( "Think of updating /Operations/<vo>/<setup>/Pilot/Versions section in the CS" )
 
   def do_revert( self, args ):
     """ Revert the last installed version of software to the previous one
