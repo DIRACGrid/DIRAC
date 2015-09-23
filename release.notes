@@ -1,4 +1,6 @@
-[v6r15-pre3]
+[v6r15-pre4]
+
+Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
 *Core
 NEW: New class DError for reporting errors in output results of DIRAC functions 
@@ -7,6 +9,14 @@ CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems 
 NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
 NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
+FIX: BaseClient - only give warning log message "URL banned" when one of the
+     service URLs is really banned
+NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
+     policy section of Dirac.cfg     
+
+*Framework
+CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
+        to speed up the operation
 
 *RSS
 NEW: CE Availability policy, closing #2373
@@ -19,6 +29,7 @@ CHANGE: FileCatalog - added recursive changePathXXX operations
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
+FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 
 [v6r14p3]
 
