@@ -36,7 +36,7 @@ from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Resources.Utilities import checkArgumentFormat
 
 import os
-PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
+PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ]
 
 class StorageBase( object ):
   """
@@ -51,6 +51,15 @@ class StorageBase( object ):
     self.protocolParameters = {}
     
     self.__updateParameters( parameterDict )
+
+    for protocolType in ['InputProtocols', 'OutputProtocols']:
+      if hasattr( self, '_%s' % protocolType ):
+        self.protocolParameters[protocolType] = getattr( self, '_%s' % protocolType )
+      else:
+        self.protocolParameters[protocolType] = [ self.protocolParameters['Protocol']]
+
+
+    
     
     self.basePath = parameterDict['Path']
     self.cwd = self.basePath
@@ -350,5 +359,22 @@ class StorageBase( object ):
     if not res['OK']:
       return res
     urlDict = res['Value']
+    return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
+  
+  def _isInputURL(self, url):
+    """ Check if the given url can be taken as input
+
+    :param self: self reference
+    :param str url: URL
+    """
+    res = pfnparse( url )
+    if not res['OK']:
+      return res
+    urlDict = res['Value']
+
+    # Special case of 'file' protocol which can be just a URL
+    if not urlDict['Protocol'] and 'file' in self.protocolParameters['InputProtocols']:
+      return S_OK(True)
+    
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
   

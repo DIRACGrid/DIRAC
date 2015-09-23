@@ -291,6 +291,7 @@ class StorageFactory( object ):
     # This is a temporary for backward compatibility: move ProtocolName to PluginName
     protocolDict.setdefault( 'PluginName', protocolDict.pop( 'ProtocolName', None ) )
 
+
     # Evaluate the base path taking into account possible VO specific setting
     if self.vo:
       result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )

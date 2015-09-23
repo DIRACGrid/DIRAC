@@ -33,6 +33,9 @@ class SRM2Storage( StorageBase ):
   SRM v2 interface to StorageElement using lcg_util and gfal
   """
 
+  _InputProtocols = ['file', 'srm']
+  _OutputProtocols = ['file', 'srm']
+
   def __init__( self, storageName, parameters ):
     """ c'tor
 
@@ -41,6 +44,7 @@ class SRM2Storage( StorageBase ):
     :param dict parameters: dictionary of protocol parameters
     """
     StorageBase.__init__( self, storageName, parameters )
+
     self.spaceToken = self.protocolParameters['SpaceToken']
 
     self.log = gLogger.getSubLogger( "SRM2Storage", True )
@@ -347,7 +351,7 @@ class SRM2Storage( StorageBase ):
           self.log.debug( "getTransportURL: Obtained tURL for file. %s" % pathSURL )
           successful[pathSURL] = urlDict['turl']
         elif urlDict['status'] == 2:
-          errMessage = "getTransportURL: File does not exist."
+          errMessage = "File does not exist"
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
@@ -715,6 +719,7 @@ class SRM2Storage( StorageBase ):
     :param str dest_url: destination url on storage
     :param int sourceSize: :src_file: size in B
     """
+
     if checkExists:
       # Pre-transfer check
       res = self.__executeOperation( dest_url, 'exists' )
