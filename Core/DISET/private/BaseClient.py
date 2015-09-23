@@ -56,6 +56,7 @@ class BaseClient:
       result = initFunc()
       if not result[ 'OK' ] and self.__initStatus[ 'OK' ]:
         self.__initStatus = result
+    self.numberOfURLs = 0
     self._initialize()
     #HACK for thread-safety:
     self.__allowedThreadID = False
@@ -202,6 +203,7 @@ class BaseClient:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
     
     urls = List.fromChar( urls, "," )
+    self.numberOfURLs = len( urls )
       
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
@@ -252,9 +254,10 @@ and this is thread %s
       if not retVal[ 'OK' ]:
         if self.__retry < 5:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
-          if url not in self.__bannedUrls: 
-            gLogger.notice( "URL banned", "%s" % url )
-            self.__bannedUrls += [url]   
+          if url not in self.__bannedUrls:
+            self.__bannedUrls += [url]
+            if len( self.__bannedUrls ) < self.numberOfURLs:
+              gLogger.notice( "Non-responding URL temporarily banned", "%s" % url )
           self.__retry += 1
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
           time.sleep( self.__retryDelay )

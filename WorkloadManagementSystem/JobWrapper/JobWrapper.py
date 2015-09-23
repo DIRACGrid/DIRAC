@@ -544,18 +544,15 @@ class JobWrapper( object ):
     # Now doing the real stuff
     optReplicas = {}
     if self.optArgs:
-      optDict = None
       try:
-        optDict = eval( self.optArgs['InputData'] )
+        optDict, _length = DEncode.decode( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
         self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
       except Exception, x:
-        optDict = None
         self.log.warn( str( x ) )
         self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
-    resolvedData = {}
     result = self.__checkFileCatalog( lfns, optReplicas )
     if not result['OK']:
       self.log.info( 'Could not obtain replica information from Optimizer File Catalog information' )

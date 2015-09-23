@@ -1,4 +1,6 @@
-[v6r15-pre3]
+[v6r15-pre4]
+
+Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
 *Core
 NEW: New class DError for reporting errors in output results of DIRAC functions 
@@ -7,6 +9,14 @@ CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems 
 NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
 NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
+FIX: BaseClient - only give warning log message "URL banned" when one of the
+     service URLs is really banned
+NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
+     policy section of Dirac.cfg     
+
+*Framework
+CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
+        to speed up the operation
 
 *RSS
 NEW: CE Availability policy, closing #2373
@@ -19,6 +29,38 @@ CHANGE: FileCatalog - added recursive changePathXXX operations
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
+FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
+
+[v6r14p4]
+
+*Core
+FIX: DictCache - fix the exception in the destructor preventing the final
+     cache cleaning
+
+*Framework
+FIX: SystemAdministratorClientCLI - corrected info line inviting to update
+     the pilot version after the software update
+
+*DMS
+FIX: FTSAgent - Add recovery of FTS files that can be left in weird statuses 
+     when the agent dies
+CHANGE: DataManager - allow to not get URLs of the replicas
+CHANGE: FTSJob - keep and reuse the FTS3 Context object
+
+*Storage
+CHANGE: StorageManagerClient - don't fail getting metadata for staging if at 
+        least one staged replica found
+
+*WMS
+FIX: CPUNormalization - protect MJF from 0 logical cores
+FIX: JobScheduling - fix printout that was saying "single site" and "multiple sites" 
+     in two consecutive lines
+NEW: pilotTools,Commands - added CEType argument, e.g. to specify Pool CE usage 
+FIX: WatchDog - added checks of function return status, added hmsCPU initialization to 0,
+     removed extra printout     
+     
+*Resources
+FIX: GFAL2 plugins - multiple bug fixes     
 
 [v6r14p3]
 
@@ -131,6 +173,10 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p15]
+
+Included patches from v6r12p50 release 
 
 [v6r13p14]
 
@@ -437,6 +483,24 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p50]
+
+*Core
+FIX: dirac-install - define TERMINFO variable to include local sources as well
+
+*Framework
+FIX: SystemAdministratorHandler - show also executors in the log overview
+
+*DMS
+FIX: FileCatalogClientCLI - use getPath utility systematically to normalize the
+     paths passed by users
+
+*WMS
+FIX: PilotStatusAgent - split dynamic and static parts in the log error message
+
+*Resources
+NEW: HTCondorCEComputingElement class
 
 [v6r12p49]
 

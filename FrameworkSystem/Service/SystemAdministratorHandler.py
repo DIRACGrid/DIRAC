@@ -387,7 +387,7 @@ class SystemAdministratorHandler( RequestHandler ):
       if component == '*':
         result = InstallTools.getSetupComponents()
         if result['OK']:
-          for ctype in ['Services', 'Agents']:
+          for ctype in ['Services', 'Agents', 'Executors']:
             if ctype in result['Value']:
               for sname in result['Value'][ctype]:
                 for cname in result['Value'][ctype][sname]:
