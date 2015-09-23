@@ -109,7 +109,7 @@ class DataManager( object ):
     """
     self.accountingClient = client
 
-  def __hasAccess(self, opType, path):
+  def __hasAccess( self, opType, path ):
     """  Check if we have permission to execute given operation on the given file (if exists) or its directory
     """
     if isinstance( path, basestring ):
@@ -1077,7 +1077,7 @@ class DataManager( object ):
         failed.update( dict.fromkeys( res['Value']['Failed'], errStr ) )
 
       lfns = res['Value']['Successful']
-    
+
       if lfns:
         log.debug( "Attempting to remove %s files from Storage and Catalogue. Get replicas first" % len( lfns ) )
         res = self.fc.getReplicas( lfns, True )
@@ -1498,10 +1498,10 @@ class DataManager( object ):
   # def putReplica(self,lfn,storageElementName,singleFile=False):
   # def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
 
-  def getActiveReplicas( self, lfns ):
+  def getActiveReplicas( self, lfns, getUrl = True ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    res = self.getReplicas( lfns, allStatus = False )
+    res = self.getReplicas( lfns, allStatus = False, getUrl = getUrl )
     if not res['OK']:
       return res
     replicas = res['Value']

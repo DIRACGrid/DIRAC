@@ -161,6 +161,7 @@ class DictCache( object ):
   def purgeAll( self, useLock = True ):
     """
     Purge all entries
+    CAUTION: useLock parameter should ALWAYS be True except when called from __del__
     """
     if useLock:
       self.lock.acquire()
