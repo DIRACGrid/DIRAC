@@ -47,7 +47,7 @@ class SGETimeLeft:
     result = runCommand( cmd )
     if not result['OK']:
       return result
-    example = """ Example of output from qstat -f -j $JOB_ID
+    _example = """ Example of output from qstat -f -j $JOB_ID
 ==============================================================
 job_number:                 620685
 exec_file:                  job_scripts/620685
@@ -129,12 +129,6 @@ scheduling info:            (Collecting of scheduler job information is turned o
 
     if cpuLimit or wallClockLimit:
       # We have got a partial result from SGE
-      if not cpuLimit:
-        consumed['CPULimit'] = wallClockLimit
-      if not wallClockLimit:
-        consumed['WallClockLimit'] = cpuLimit
-      if not cpu:
-        consumed['CPU'] = time.time() - self.startTime
       if not wallClock:
         consumed['WallClock'] = time.time() - self.startTime
       self.log.debug( "TimeLeft counters restored: " + str( consumed ) )

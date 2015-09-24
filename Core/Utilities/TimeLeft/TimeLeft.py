@@ -60,8 +60,12 @@ class TimeLeft:
 
     resourceDict = self.batchPlugin.getResourceUsage()
 
-    if 'Value' in resourceDict and resourceDict['Value']['CPU']:
-      return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
+    if 'Value' in resourceDict:
+      if resourceDict['Value']['CPU']:
+        return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
+      elif resourceDict['Value']['WallClock']:
+        # build a reasonable CPU value from WallClock
+        return S_OK( resourceDict['Value']['WallClock'] * self.scaleFactor )
 
     return S_OK( 0.0 )
 
@@ -84,8 +88,20 @@ class TimeLeft:
 
     resources = resourceDict['Value']
     self.log.verbose( resources )
-    if not resources['CPULimit'] or not resources['WallClockLimit']:
+    if not resources['CPULimit'] and not resources['WallClockLimit']:
       return S_ERROR( 'No CPU / WallClock limits obtained' )
+
+    # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
+    if not resources['CPULimit']:
+      resources['CPULimit'] = resources['WallClockLimit']
+    elif not resources['WallClockLimit']:
+      resources['WallClockLimit'] = resources['CPULimit']
+
+    # if one of CPU or WallClock is missing, compute a reasonable value
+    if not resources['CPU']:
+      resources['CPU'] = resources['WallClock']
+    elif not resources['WallClock']:
+      resources['WallClock'] = resources['CPU']
 
     cpu = float( resources['CPU'] )
     cpuFactor = 100 * float( resources['CPU'] ) / float( resources['CPULimit'] )
