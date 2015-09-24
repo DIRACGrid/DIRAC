@@ -29,16 +29,19 @@ def getMachineFeatures():
     try:
       val = urllib.urlopen( fname ).read()
     except:
-      val = None
+      val = 0
     features[item] = val
   return features
 
 def getPowerFromMJF():
   features = getMachineFeatures()
   totalPower = features.get( 'hs06' )
-  logCores = features.get( 'log_cores' )
-  if totalPower and logCores:
-    return int( 10. * float( totalPower ) / float( logCores ) ) / 10.
+  logCores = float( features.get( 'log_cores', 0 ) )
+  physCores = float( features.get( 'phys_cores', 0 ) )
+  jobSlots = float( features.get( 'jobslots', 0 ) )
+  denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
+  if totalPower and denom:
+    return int( 10. * float( totalPower ) / denom ) / 10.
   else:
     return None
 

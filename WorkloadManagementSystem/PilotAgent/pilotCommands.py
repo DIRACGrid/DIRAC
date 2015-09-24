@@ -391,6 +391,8 @@ class ConfigureSite( CommandBase ):
     self.cfg.append( '-N "%s"' % self.pp.ceName )
     self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
     self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
+    if self.pp.ceType:
+      self.cfg.append( '-o /LocalSite/LocalCE=%s' % self.pp.ceType )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
@@ -654,7 +656,9 @@ class ConfigureCPURequirements( CommandBase ):
       self.exitWithError( retCode )
 
     # HS06 benchmark
-    cpuNormalizationFactor = float( cpuNormalizationFactorOutput.replace( "Normalization for current CPU is ", '' ).replace( " HS06", '' ) )
+    # FIXME: this is a hack!
+    cpuNormalizationFactor = float( cpuNormalizationFactorOutput.split( '\n' )[0].replace( "Estimated CPU power is ",
+                                                                                           '' ).replace( " HS06", '' ) )
     self.log.info( "Current normalized CPU as determined by 'dirac-wms-cpu-normalization' is %f" % cpuNormalizationFactor )
 
     configFileArg = ''

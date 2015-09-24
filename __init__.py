@@ -57,7 +57,6 @@
     - S_ERROR:        ERROR return structure
     - gLogger:        global Logger object
     - gConfig:        global Config object
-    - gMonitor:       global Monitor object
 
     It defines the following functions:
     - abort:          aborts execution
@@ -115,7 +114,9 @@ rootPath = os.path.dirname( pythonPath )
 
 # Import DIRAC.Core.Utils modules
 
-from DIRAC.Core.Utilities import *
+#from DIRAC.Core.Utilities import *
+from DIRAC.Core.Utilities.Network import getFQDN
+import DIRAC.Core.Utilities.ExitCallback as ExitCallback
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -125,9 +126,6 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 #Configuration client
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-
-#Monitoring client
-#from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()

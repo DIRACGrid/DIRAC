@@ -12,13 +12,13 @@ __RCSID__ = "58c42fc (2013-07-07 22:54:57 +0200) Andrei Tsaregorodtsev <atsareg@
 
 import os
 import stat
-from types import StringTypes
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger, shellCall
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -45,6 +45,7 @@ class ARCComputingElement( ComputingElement ):
     self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.ceHost = self.ceName
+    self.usercfg = arc.common.UserConfig()
     if 'Host' in self.ceParameters:
       self.ceHost = self.ceParameters['Host']
     if 'GridEnv' in self.ceParameters:
@@ -82,9 +83,8 @@ class ARCComputingElement( ComputingElement ):
     j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
     j.ServiceInformationURL = j.JobManagementURL
     j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
-    userCfg = arc.UserConfig()
-    j.PrepareHandler( userCfg )
-    return j, userCfg
+    j.PrepareHandler( self.usercfg )
+    return j
 
   def __getXRSLExtraString( self ):
     # For the XRSL additional string from configuration - only done at initialisation time
@@ -181,6 +181,7 @@ class ARCComputingElement( ComputingElement ):
     """
 
     result = self._prepareProxy()
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
@@ -192,7 +193,6 @@ class ARCComputingElement( ComputingElement ):
     batchIDList = []
     stampDict = {}
 
-    usercfg = arc.UserConfig()
     endpoint = arc.Endpoint( self.ceHost + ":2811/jobs", arc.Endpoint.JOBSUBMIT,
                             "org.nordugrid.gridftpjob")
 
@@ -207,9 +207,9 @@ class ARCComputingElement( ComputingElement ):
         break
       # Submit the job
       jobs = arc.JobList() # filled by the submit process
-      submitter = arc.Submitter(usercfg)
+      submitter = arc.Submitter(self.usercfg)
       result = submitter.Submit(endpoint, jobdescs, jobs)
-      # Save info or else ...
+      # Save info or else ..else.
       if ( result == arc.SubmissionStatus.NONE ):
         # Job successfully submitted
         pilotJobReference = jobs[0].JobID
@@ -218,24 +218,23 @@ class ARCComputingElement( ComputingElement ):
         gLogger.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
         message = "Failed to submit job because "
-        if (result == arc.SubmissionStatus.NOT_IMPLEMENTED ):
+        if (result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED) ):
           gLogger.warn( "%s feature not implemented on CE? (weird I know - complain to site admins" % message )
-        elif ( result == arc.SubmissionStatus.NO_SERVICES ):
+        if ( result.isSet(arc.SubmissionStatus.NO_SERVICES) ):
           gLogger.warn( "%s no services are running on CE? (open GGUS ticket to site admins" % message )
-        elif ( result == arc.SubmissionStatus.ENDPOINT_NOT_QUERIED ):
+        if ( result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED) ):
           gLogger.warn( "%s endpoint was not even queried. (network ..?)" % message )
-        elif ( result == arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED ):
+        if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        elif ( result == arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED ):
+        if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ):
           gLogger.warn( "%s no job description was there (Should not happen, but horses can fly (in a plane))" % message )
-        elif ( result == arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED ):
+        if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        elif ( result == arc.SubmissionStatus.AUTHENTICATION_ERROR ):
+        if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ):
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
-        elif ( result == arc.SubmissionStatus.ERROR_FROM_ENDPOINT ):
+        if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ):
           gLogger.warn( "%s some error from the CE - ask site admins for more information ..." % message )
-        else:
-          gLogger.warn( "%s I do not know why. Check everything." % message )
+        gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
 
     if batchIDList:
@@ -251,19 +250,19 @@ class ARCComputingElement( ComputingElement ):
     """
     
     result = self._prepareProxy()
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
 
-    usercfg = arc.UserConfig()
-    js = arc.compute.JobSupervisor(usercfg)
+    js = arc.compute.JobSupervisor(self.usercfg)
 
     jobList = list( jobIDList )
-    if type( jobIDList ) in StringTypes:
+    if isinstance( jobIDList, basestring ):
       jobList = [ jobIDList ]
 
     for jobID in jobList:
-      job, _userCfg = self.__getARCJob( jobID )
+      job = self.__getARCJob( jobID )
       js.AddJob( job )
 
     result = js.Cancel() # Cancel all jobs at once
@@ -281,25 +280,30 @@ class ARCComputingElement( ComputingElement ):
   def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
-
-    result = self._prepareProxy()
-    if not result['OK']:
-      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
-      return result
-
-    usercfg = arc.UserConfig()
-    endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
-                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
-    retriever = arc.ComputingServiceRetriever(usercfg, endpoints)
-    retriever.wait() # Takes a bit of time to get and parse the ldap information
-    targets = retriever.GetExecutionTargets()
-    ceStats = targets[0].ComputingShare
-    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
-    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
-
+    vo = ''
+    res = getVOfromProxyGroup()
+    if res['OK']:
+      vo = res['Value']
+    else: # A backup solution which may work
+      vo = self.ceParameters['VO']
+    cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
+    res = shellCall( 0, cmd )
+    if not res['OK']:
+      gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
+      return res
     result = S_OK()
-    result['RunningJobs'] = ceStats.RunningJobs
-    result['WaitingJobs'] = ceStats.WaitingJobs
+    try:
+      ldapValues = res['Value'][1].split("\n")
+      running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
+      waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
+      result['RunningJobs'] = int(running[0].split(":")[1])
+      result['WaitingJobs'] = int(waiting[0].split(":")[1])
+    except IndexError:
+      result = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
+      result['RunningJobs'] = 0
+      result['WaitingJobs'] = 0
+    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, result['RunningJobs']))
+    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, result['WaitingJobs']))
     result['SubmittedJobs'] = 0
     return result
 
@@ -309,12 +313,13 @@ class ARCComputingElement( ComputingElement ):
     """
 
     result = self._prepareProxy()
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
 
     jobTmpList = list( jobIDList )
-    if type( jobIDList ) in StringTypes:
+    if isinstance( jobIDList, basestring ):
       jobTmpList = [ jobIDList ]
 
     # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
@@ -329,7 +334,7 @@ class ARCComputingElement( ComputingElement ):
     resultDict = {}
     for jobID in jobList:
       gLogger.debug("Retrieving status for job %s" % jobID)
-      job, _userCfg = self.__getARCJob( jobID )
+      job = self.__getARCJob( jobID )
       job.Update()
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
@@ -339,7 +344,7 @@ class ARCComputingElement( ComputingElement ):
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
       if (resultDict[jobID] == "Done"):
-        exitCode = int( jobID.ExitCode )
+        exitCode = int( job.ExitCode )
         if exitCode:
           resultDict[jobID] = "Failed"
       gLogger.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
@@ -356,6 +361,7 @@ class ARCComputingElement( ComputingElement ):
         as strings. 
     """
     result = self._prepareProxy()
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
@@ -368,7 +374,7 @@ class ARCComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    job, userCfg = self.__getARCJob( pilotRef )
+    job = self.__getARCJob( pilotRef )
 
     arcID = os.path.basename(pilotRef)
     gLogger.debug("Retrieving pilot logs for %s" % pilotRef)
@@ -380,7 +386,7 @@ class ARCComputingElement( ComputingElement ):
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
     gLogger.debug("Working directory for pilot output %s" % workingDirectory)
 
-    isItOkay = job.Retrieve( userCfg, arc.URL( workingDirectory ), False )
+    isItOkay = job.Retrieve( self.usercfg, arc.URL( workingDirectory ), False )
     if ( isItOkay ):
       outFile = open( outFileName, 'r' )
       output = outFile.read()

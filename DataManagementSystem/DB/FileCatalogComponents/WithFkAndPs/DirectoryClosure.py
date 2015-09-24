@@ -483,7 +483,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     return S_OK( rowDict )
 
 
-  def _setDirectoryParameter( self, path, pname, pvalue ):
+  def _setDirectoryParameter( self, path, pname, pvalue, recursive = False ):
     """ Set a numerical directory parameter
 
 
@@ -507,6 +507,10 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     psName = psNames.get( pname, None )
 
+    # If we have a recursive procedure and it is wanted, call it
+    if recursive and pname in ['UID', 'GID', 'Mode'] and psName:
+      psName += '_recursive'
+
     # If there is an associated procedure, we go for it
     if psName:
       result = self.db.executeStoredProcedureWithCursor( psName, ( path, pvalue ) )
@@ -528,9 +532,10 @@ class DirectoryClosure( DirectoryTreeBase ):
     else:
       return DirectoryTreeBase._setDirectoryParameter( self, path, pname, pvalue )
 
+  
 
 
-  def setDirectoryGroup( self, path, gname ):
+  def _setDirectoryGroup( self, path, gname, recursive = False ):
     """ Set the directory owner
     """
 
@@ -541,9 +546,9 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     gid = result['Value']
 
-    return self._setDirectoryParameter( path, 'GID', gid )
+    return self._setDirectoryParameter( path, 'GID', gid, recursive = recursive )
 
-  def setDirectoryOwner( self, path, owner ):
+  def _setDirectoryOwner( self, path, owner, recursive = False ):
     """ Set the directory owner
     """
 
@@ -553,9 +558,16 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     uid = result['Value']
 
-    return self._setDirectoryParameter( path, 'UID', uid )
-  
-  
+    return self._setDirectoryParameter( path, 'UID', uid, recursive = recursive )
+
+  def _setDirectoryMode( self, path, mode, recursive = False ):
+    """ set the directory mode
+
+        :param mixed path: directory path as a string or int or list of ints or select statement
+        :param int mode: new mode
+    """
+    return self._setDirectoryParameter( path, 'Mode', mode, recursive = recursive )
+
   def __getLogicalSize( self, lfns, ps_name, connection ):
     paths = lfns.keys()
     successful = {}
@@ -653,3 +665,27 @@ class DirectoryClosure( DirectoryTreeBase ):
     """ Get the total size of the requested directories
     """
     return self.__getPhysicalSize( lfns, 'ps_calculate_dir_physical_size', connection )
+  
+  def _changeDirectoryParameter( self, paths,
+                                 directoryFunction,
+                                 _fileFunction,
+                                 recursive = False ):
+    """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
+
+        :param dictionary paths : dictionary < lfn : value >, where value is the value of parameter to be set
+        :param function directoryFunction: function to change directory(ies) parameter
+        :param function fileFunction: function to change file(s) parameter
+        :param bool recursive: flag to apply the operation recursively
+    """
+
+    arguments = paths
+    successful = {}
+    failed = {}
+    for path, attribute in arguments.items():
+      result = directoryFunction( path, attribute, recursive = recursive )
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        successful[path] = True
+
+    return S_OK( {'Successful':successful, 'Failed':failed} )

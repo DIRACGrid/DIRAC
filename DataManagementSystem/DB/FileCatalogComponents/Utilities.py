@@ -14,8 +14,8 @@ except:
   import md5
 
 import random, os, time
-from types import StringTypes, ListType, DictType
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.List import intListToString
 
 def checkArgumentFormat( path ):
   """ Bring the various possible form of arguments to FileCatalog methods to
@@ -24,13 +24,13 @@ def checkArgumentFormat( path ):
   
   def checkArgumentDict( path ):
     """ Check and process format of the arguments to FileCatalog methods """
-    if type( path ) in StringTypes:
+    if isinstance( path, basestring ):
       urls = {path:True}
-    elif type( path ) == ListType:
+    elif isinstance( path, list ):
       urls = {}
       for url in path:
         urls[url] = True
-    elif type( path ) == DictType:
+    elif isinstance( path, dict ):
       urls = path
     else:
       return S_ERROR( "checkArgumentDict: Supplied path is not of the correct format" )
@@ -106,3 +106,20 @@ def queryTime(f):
       result['QueryTime'] = time.time() - start
     return result
   return measureQueryTime
+
+def getIDSelectString( ids ):
+  """
+  :param ids: input IDs - can be single int, list or tuple or a SELECT string
+  :return: Select string
+  """
+  if isinstance( ids, basestring ) and ids.lower().startswith( 'select' ):
+    idString = ids
+  elif isinstance( ids, ( int, long ) ):
+    idString = '%d' % ids
+  elif isinstance( ids, ( tuple, list) ):
+    idString = intListToString( ids )
+  else:
+    return S_ERROR( 'Illegal fileID' )
+
+  return S_OK( idString )
+

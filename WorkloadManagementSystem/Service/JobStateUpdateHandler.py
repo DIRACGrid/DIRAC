@@ -17,6 +17,7 @@ from types import StringType, IntType, LongType, ListType, DictType
 # from types import *
 import time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities import Time
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -157,7 +158,6 @@ class JobStateUpdateHandler( RequestHandler ):
     if not result['OK']:
       return result
     lastTime = max( [float( t ) for s, t in result['Value'].items() if s != 'LastTime'] )
-    from DIRAC import Time
     lastTime = Time.toString( Time.fromEpoch( lastTime ) )
 
     # Get the last status values

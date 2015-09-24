@@ -320,10 +320,7 @@ class WorkingProcess( multiprocessing.Process ):
       self.__working.value = 0
    
 class ProcessTask( object ):
-  """ 
-  .. class:: ProcessTask
-
-  Defines task to be executed in WorkingProcess together with its callbacks.
+  """ Defines task to be executed in WorkingProcess together with its callbacks.
   """
   ## taskID
   taskID = 0

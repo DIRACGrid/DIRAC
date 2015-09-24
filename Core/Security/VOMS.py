@@ -1,9 +1,15 @@
-# $HeadURL$
+""" Module for dealing with VOMS (Virtual Organization Membership Service)
+"""
+
 __RCSID__ = "$Id$"
 
-import os, stat, tempfile, shutil
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
-import DIRAC.Core.Security.Locations as Locations
+import os
+import stat
+import tempfile
+import shutil
+
+
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
@@ -81,6 +87,24 @@ class VOMS( BaseSecurity ):
     return self.getVOMSProxyInfo( proxy, "fqan" )
 
   def getVOMSProxyInfo( self, proxy, option = False ):
+    """ Returns information about a proxy certificate (both grid and voms).
+        Available information is:
+          1. Full (grid)voms-proxy-info output
+          2. Proxy Certificate Timeleft in seconds (the output is an int)
+          3. DN
+          4. voms group (if any)
+        @type  proxy: a string
+        @param proxy: the proxy certificate location.
+        @type  option: a string
+        @param option: None is the default value. Other option available are:
+          - timeleft
+          - actimeleft
+          - identity
+          - fqan
+          - all
+        @rtype:   tuple
+        @return:  status, output, error, pyerror.
+    """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option:
       if option not in validOptions:
@@ -146,73 +170,7 @@ class VOMS( BaseSecurity ):
 
     finally:
       if proxyDict[ 'tempFile' ]:
-        self._unlinkFiles( proxyDict[ 'tempFile' ] )
-
-  def OLDgetVOMSProxyInfo( self, proxy, option = False ):
-    """ Returns information about a proxy certificate (both grid and voms).
-        Available information is:
-          1. Full (grid)voms-proxy-info output
-          2. Proxy Certificate Timeleft in seconds (the output is an int)
-          3. DN
-          4. voms group (if any)
-        @type  proxy: a string
-        @param proxy: the proxy certificate location.
-        @type  option: a string
-        @param option: None is the default value. Other option available are:
-          - timeleft
-          - actimeleft
-          - identity
-          - fqan
-          - all
-        @rtype:   tuple
-        @return:  status, output, error, pyerror.
-    """
-
-    validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
-    if option:
-      if option not in validOptions:
-        S_ERROR( 'Non valid option %s' % option )
-
-    retVal = File.multiProxyArgument( proxy )
-    if not retVal[ 'OK' ]:
-      return retVal
-    proxyDict = retVal[ 'Value' ]
-    # chain = proxyDict[ 'chain' ]
-    proxyLocation = proxyDict[ 'file' ]
-    if not Os.which("voms-proxy-info"):
-      return S_ERROR("Missing voms-proxy-info")
-    cmd = 'voms-proxy-info -file %s' % proxyLocation
-    if option:
-      cmd += ' -%s' % option
-
-    result = shellCall( self._secCmdTimeout, cmd )
-
-    if proxyDict[ 'tempFile' ]:
-      self._unlinkFiles( proxyLocation )
-
-    if not result['OK']:
-      return S_ERROR( 'Failed to call voms-proxy-info' )
-
-    status, output, error = result['Value']
-    # FIXME: if the local copy of the voms server certificate is not up to date the command returns 0.
-    # the stdout needs to be parsed.
-    if status:
-      gLogger.warn( 'Failed to execute:', cmd )
-      gLogger.warn( 'Exit code:', status )
-      gLogger.warn( 'StdOut' , output )
-      gLogger.warn( 'StdErr' , error )
-      if error.find( 'VOMS extension not found' ) == -1 and \
-         not error.find( 'WARNING: Unable to verify signature! Server certificate possibly not installed.' ) == 0:
-        return S_ERROR( 'Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
-
-    if option == 'fqan':
-      if output:
-        output = output.split( '/Role' )[0]
-      else:
-        output = '/lhcb'
-
-    return S_OK( output )
-
+        self._unlinkFiles( proxyDict[ 'file' ] )
 
   def getVOMSESLocation( self ):
     #755
@@ -340,7 +298,7 @@ class VOMS( BaseSecurity ):
     result = shellCall( self._secCmdTimeout, cmd )
     if not result['OK']:
       return False
-    status, output, error = result['Value']
+    status, _output, _error = result['Value']
     if status:
       return False
     return True

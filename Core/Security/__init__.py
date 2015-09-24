@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import GSI
 
-requiredGSIVersion = "0.6.2"
+requiredGSIVersion = "0.6.3"
 if GSI.version.__version__ < requiredGSIVersion:
   raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
 

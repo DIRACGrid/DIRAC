@@ -294,8 +294,8 @@ class PluginUtilities( object ):
 
   @timeThis
   def _getFileSizeFromCatalog( self, lfns, fileSizes ):
-    """ 
-    Get file size from the catalog 
+    """
+    Get file size from the catalog
     """
     lfns = list( lfns )
     fileSizes = dict( fileSizes )
@@ -330,34 +330,34 @@ class PluginUtilities( object ):
     # First look at a generic value...
     optionPath = "TransformationPlugins/%s" % ( name )
     value = Operations().getValue( optionPath, None )
-    self.logDebug( "Default plugin param %s: '%s'" % ( optionPath, value ) )
+    self.logVerbose( "Default plugin param %s: '%s'" % ( optionPath, value ) )
     # Then look at a plugin-specific value
     optionPath = "TransformationPlugins/%s/%s" % ( self.plugin, name )
     value = Operations().getValue( optionPath, value )
-    self.logDebug( "Specific plugin param %s: '%s'" % ( optionPath, value ) )
+    self.logVerbose( "Specific plugin param %s: '%s'" % ( optionPath, value ) )
     if value != None:
       default = value
     # Finally look at a transformation-specific parameter
     value = self.params.get( name, default )
-    self.logDebug( "Transformation plugin param %s: '%s'" % ( name, value ) )
-    if valueType and type( value ) != valueType:
-      if valueType == type( [] ):
+    self.logVerbose( "Transformation plugin param %s: '%s'. Convert to %s" % ( name, value, str( valueType ) ) )
+    if valueType and type( value ) is not valueType:
+      if valueType is list:
         try:
-          value = ast.literal_eval( value )
-        except ValueError:
-          value = value.replace( ' ', '' ).split( ',' )
-      elif valueType == type( 0 ):
+          value = ast.literal_eval( value ) if value and value != 'None' else []
+        except Exception:
+          value = [val for val in value.replace( ' ', '' ).split( ',' ) if val]
+      elif valueType is int:
         value = int( value )
-      elif valueType == type( 0. ):
+      elif valueType is float:
         value = float( value )
-      elif valueType == type( True ):
-        if value in ( 'False', 'No' ):
+      elif valueType is bool:
+        if value in ( 'False', 'No', 'None', None, 0 ):
           value = False
         else:
           value = bool( value )
-      elif valueType != type( '' ):
+      elif valueType is not str:
         self.logWarn( "Unknown parameter type (%s) for %s, passed as string" % ( str( valueType ), name ) )
-    self.logDebug( "Final plugin param %s: '%s'" % ( name, value ) )
+    self.logVerbose( "Final plugin param %s: '%s'" % ( name, value ) )
     return value
 
   @staticmethod
