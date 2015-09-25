@@ -33,7 +33,8 @@ from DIRAC.Core.Utilities.Version                                   import getCu
 from DIRAC.Core.Utilities.Adler                                     import fileAdler
 from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Utilities                                           import DEncode
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
+from DIRAC.Core.Utilities                                           import Time
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
 import DIRAC
 
