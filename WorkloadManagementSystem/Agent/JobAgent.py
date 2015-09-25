@@ -12,6 +12,7 @@ from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
 from DIRAC.Core.Utilities.CFG                               import CFG
+from DIRAC.Core.Utilities.Os                                import getNumberOfCores
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
@@ -622,7 +623,12 @@ class JobAgent( AgentModule ):
 
     # look for a pattern like "12345Cores" in tag list
     m = re.match( r'^(.*\D)?(?P<cores>\d+)Cores([ \t,].*)?$', tag )
-    if m: return int( m.group( 'cores' ) )
+    if m:
+      return int( m.group( 'cores' ) )
+
+    # In WhileNode case, detect number of cores from the host
+    if re.match( r'^(.*,\s*)?WholeNode([ \t,].*)?$', tag ):
+      return getNumberOfCores()
 
     return 1
 
