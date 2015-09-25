@@ -690,8 +690,7 @@ class GFAL2_StorageBase( StorageBase ):
     # add extended attributes to the dict if available
     if res['OK']:
       attributeDict = res.get( 'Value', {} )
-
-    self._updateMetadataDict( metadataDict, attributeDict )
+      self._updateMetadataDict( metadataDict, attributeDict )
 
     return S_OK ( metadataDict )
 
@@ -1806,7 +1805,7 @@ class GFAL2_StorageBase( StorageBase ):
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError, e:
       if e.code == errno.ENOENT:
-        errStr = 'GFAL2_StorageBase._getExtendedAttributesPath does not exist.'
+        errStr = 'GFAL2_StorageBase._getExtendedAttributes: Path does not exist.'
         self.log.error( errStr, e.message )
         return S_ERROR( errStr )
       else:
