@@ -175,6 +175,12 @@ class DataRecoveryAgent(AgentModule):
                           Actions=lambda job, tInfo: [
                               job.cleanOutputs(tInfo), job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
                           ),
+                     dict(Message="Some missing, job Done --> job Failed",
+                          ShortMessage="Output Missing, Done --> Job Failed",
+                          Counter=0,
+                          Check=lambda job: not job.allFilesExist() and job.status == 'Done',
+                          Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
+                          ),
                      dict(Message="Something Strange",
                           ShortMessage="Strange",
                           Counter=0,
@@ -186,7 +192,7 @@ class DataRecoveryAgent(AgentModule):
 
     ##Notification
     self.notesToSend = ""
-    self.addressTo = self.am_getOption('MailTo', "andre.philippe.sailer@cern.ch")
+    self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
     self.addressFrom = self.am_getOption('MailFrom', self.addressTo)
     self.subject = "DataRecoveryAgent"
 
