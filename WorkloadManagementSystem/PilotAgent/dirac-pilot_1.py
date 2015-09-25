@@ -17,9 +17,9 @@ import imp
 import re
 import time
 
-#Check PYTHONPATH and LD_LIBARY_PATH
+#Check PYTHONPATH and LD_LIBRARY_PATH
 try:
-  os.umask( 0o22 )
+  os.umask( 18 ) # 022
 
   pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
   newpythonpath = []
