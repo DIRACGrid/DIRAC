@@ -604,6 +604,16 @@ class X509Chain( object ):
                  'validGroup' : False }
     if self.__isProxy:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
+
+      # Check if we have a subproxy
+      trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
+      numEntries = trialSubidentity.num_entries()
+      lastEntry = trialSubidentity.get_entry( numEntries - 1 )
+      if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
+        # In case of subproxy, take the first proxy as identity
+        credDict['identity'] = trialSubidentity.one_line()
+        credDict['subproxyUser'] = lastEntry[1].split( ':' )[1]
+
       credDict[ 'rfc' ] = self.__isRFC
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
       if not retVal[ 'OK' ]:
