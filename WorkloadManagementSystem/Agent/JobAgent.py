@@ -138,6 +138,10 @@ class JobAgent( AgentModule ):
     if result['OK']:
       requirementsDict = result['Value']
       ceDict.update( requirementsDict )
+      self.log.info( 'Requirements:', requirementsDict )
+
+    cores = self.__getCores()
+    self.log.info( 'Configured number of cores: ', cores )
 
     self.log.verbose( ceDict )
     start = time.time()
@@ -281,7 +285,7 @@ class JobAgent( AgentModule ):
     utime, stime, cutime, cstime, _elapsed = currentTimes
     cpuTime = utime + stime + cutime + cstime
 
-    result = self.timeLeftUtil.getTimeLeft( cpuTime )
+    result = self.timeLeftUtil.getTimeLeft( cpuTime, cores )
     if result['OK']:
       self.timeLeft = result['Value']
     else:
@@ -292,7 +296,7 @@ class JobAgent( AgentModule ):
           # if the batch system is not defined used the CPUNormalizationFactor
           # defined locally
           self.timeLeft = self.__getCPUTimeLeft()
-    scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
+    scaledCPUTime = self.timeLeftUtil.getScaledCPU( cores )['Value']
 
     self.__setJobParam( jobID, 'ScaledCPUTime', str( scaledCPUTime - self.scaledCPUTime ) )
     self.scaledCPUTime = scaledCPUTime
@@ -604,6 +608,23 @@ class JobAgent( AgentModule ):
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
     return self.__finish( 'Job Rescheduled', stop )
+
+  #############################################################################
+  def __getCores( self ):
+    """
+    Resturn number of cores from gConfig
+    """
+    tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
+
+    if tag is None: return 1
+
+    self.log.verbose( "__getCores: /Resources/Computing/CEDefaults/Tag", repr( tag ) )
+
+    # look for a pattern like "12345Cores" in tag list
+    m = re.match( r'^(.*\D)?(?P<cores>\d+)Cores([ \t,].*)?$', tag )
+    if m: return int( m.group( 'cores' ) )
+
+    return 1
 
   #############################################################################
   def finalize( self ):
