@@ -117,6 +117,7 @@ rootPath = os.path.dirname( pythonPath )
 #from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities.Network import getFQDN
 import DIRAC.Core.Utilities.ExitCallback as ExitCallback
+import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
