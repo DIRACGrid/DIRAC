@@ -626,7 +626,7 @@ class JobAgent( AgentModule ):
     if m:
       return int( m.group( 'cores' ) )
 
-    # In WhileNode case, detect number of cores from the host
+    # In WholeNode case, detect number of cores from the host
     if re.match( r'^(.*,\s*)?WholeNode([ \t,].*)?$', tag ):
       return getNumberOfCores()
 
