@@ -193,7 +193,7 @@ class DataRecoveryAgent(AgentModule):
     ##Notification
     self.notesToSend = ""
     self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
-    self.addressFrom = self.am_getOption('MailFrom', self.addressTo)
+    self.addressFrom = self.am_getOption('MailFrom', "ilcdirac-admin@cern.ch")
     self.subject = "DataRecoveryAgent"
 
 
@@ -265,10 +265,17 @@ class DataRecoveryAgent(AgentModule):
 
     if self.notesToSend:
       notification = NotificationClient()
-      result = notification.sendMail(self.addressTo, "%s: %s" %
-                                     (self.subject, prodID), self.notesToSend, self.addressFrom, localAttempt=False)
-      if not result['OK']:
-        self.log.error('Cannot send notification mail', result['Message'])
+      for address in self.addressTo:
+        result = notification.sendMail(
+            address,
+            "%s: %s" %
+            (self.subject,
+             prodID),
+            self.notesToSend,
+            self.addressFrom,
+            localAttempt=False)
+        if not result['OK']:
+          self.log.error('Cannot send notification mail', result['Message'])
       self.notesToSend = ""
 
   def checkJob(self, job, tInfo):
