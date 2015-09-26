@@ -1,4 +1,4 @@
-[v6r15-pre4]
+[v6r15-pre5]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
