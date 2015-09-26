@@ -202,8 +202,11 @@ class X509Certificate:
           if extBundle[0] == "VOMS attribute":
             attr = GSI.crypto.asn1_loads( str(extBundle[1]) ).get_value()
             attr = attr[0][0][1][0]
-            data[ 'attribute' ] = "%s = %s (%s)" % attr
-            data[ 'vo' ] = attr[2]
+            try:
+              data[ 'attribute' ] = "%s = %s (%s)" % attr
+              data[ 'vo' ] = attr[2]
+            except Exception as ex:
+              data[ 'attribute' ] = "Cannot decode VOMS attribute"
         if not 'vo' in data and 'fqan' in data:
           data['vo'] = data['fqan'][0].split( '/' )[1]
         return S_OK( data )
