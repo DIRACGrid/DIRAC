@@ -31,6 +31,20 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 
+[v6r14p5]
+
+*Core
+FIX: X509Certificate - protect from VOMS attributes that are not decodable
+
+
+*Resources
+FIX: GFAL2_StorageBase - fixed indentation and a debug log typo
+
+*WMS
+BUGFIX: Matcher - only the first job was associated with the given pilot
+FIX: pilotTools - 0o22 is only a valid int for recent python interpreters, 
+     replaced by 18
+
 [v6r14p4]
 
 *Core
