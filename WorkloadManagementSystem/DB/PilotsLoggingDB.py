@@ -69,7 +69,6 @@ class PilotsLoggingDB( object ):
   def __initializeDB( self ):
     """DB initialization - creating tables if not existing"""
 
-    tablesInDB = self.inspector.get_table_names( )
 
     if 'PilotsLogging' not in tablesInDB:
       try:
