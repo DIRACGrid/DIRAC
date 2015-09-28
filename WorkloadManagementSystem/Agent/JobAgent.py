@@ -152,8 +152,10 @@ class JobAgent( AgentModule ):
       ceDict.update( requirementsDict )
       self.log.info( 'Requirements:', requirementsDict )
 
-    cores = self.__getCores()
-    self.log.info( 'Configured number of cores: ', cores )
+    cores, wholeNode = self.__getCores()
+    ceDict['Cores'] = cores
+    ceDict['WholeNode'] = wholeNode
+    self.log.info( 'Configured number of cores: %d, WholeNode: %s' % ( cores, wholeNode ) )
 
     self.log.verbose( ceDict )
     start = time.time()
@@ -597,24 +599,24 @@ class JobAgent( AgentModule ):
   #############################################################################
   def __getCores( self ):
     """
-    Return number of cores from gConfig
+    Return number of cores from gConfig and a boolean indicating corresponding to WholeNode option
     """
     tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
 
-    if tag is None: return 1
+    if tag is None: return 1, False
 
     self.log.verbose( "__getCores: /Resources/Computing/CEDefaults/Tag", repr( tag ) )
 
     # look for a pattern like "12345Cores" in tag list
     m = re.match( r'^(.*\D)?(?P<cores>\d+)Cores([ \t,].*)?$', tag )
     if m:
-      return int( m.group( 'cores' ) )
+      return int( m.group( 'cores' ) ), False
 
     # In WholeNode case, detect number of cores from the host
     if re.match( r'^(.*,\s*)?WholeNode([ \t,].*)?$', tag ):
-      return getNumberOfCores()
+      return getNumberOfCores(), True
 
-    return 1
+    return 1, False
 
   #############################################################################
   def finalize( self ):
