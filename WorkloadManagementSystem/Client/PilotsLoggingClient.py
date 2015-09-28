@@ -7,34 +7,34 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client                         import Client
 
-class PilotAgentsClient( Client ):
-  
+class PilotsLoggingClient( Client ):
+
   def __init__( self, **kwargs ):
     Client.__init__( self, **kwargs )
-    self.setServer( 'WorkloadManagement/PilotAgents' )
-    self.pilotAgenstHandler = self._getRPC()
-    
+    self.setServer( 'WorkloadManagement/PilotsLogging' )
+    self.pilotsLoggingHandler = self._getRPC()
+
   def addPilotsLogging( self, pilotUUID, status, minorStatus, timeStamp, source, pilotID ):
-    
-    resp = self.pilotAgenstHandler.addPilotsUUID( pilotUUID )
+
+    resp = self.pilotsLoggingHandler.addPilotsUUID( pilotUUID )
     if not resp['OK']:
       return resp
-    
+
     if pilotID:
-      resp = self.pilotAgenstHandler.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
+      resp = self.pilotsLoggingHandler.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
       if not resp['OK']:
         return resp
-    
-    return self.pilotAgenstHandler.addPilotsLogging(pilotUUID, status, minorStatus, timeStamp, source)
-  
+
+    return self.pilotsLoggingHandler.addPilotsLogging(pilotUUID, status, minorStatus, timeStamp, source)
+
   def setPilotsUUIDtoIDMapping( self, pilotUUID, pilotID ):
-    
-    return self.pilotAgenstHandler.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
-  
+
+    return self.pilotsLoggingHandler.setPilotsUUIDtoIDMapping( pilotUUID, pilotID )
+
   def deletePilotsLogging( self, pilotID ):
-    
-    return self.pilotAgenstHandler.detelePilotsLogging( pilotID )
-  
+
+    return self.pilotsLoggingHandler.detelePilotsLogging( pilotID )
+
   def getPilotsLogging( self, pilotID ):
-    
-    return self.pilotAgenstHandler.getPilotsLogging( pilotID )
+
+    return self.pilotsLoggingHandler.getPilotsLogging( pilotID )
