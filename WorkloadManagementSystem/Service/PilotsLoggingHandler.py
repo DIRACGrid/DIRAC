@@ -14,9 +14,11 @@ __RCSID__ = "$Id: $"
 
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 
+import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
+# from DIRAC.WorkloadManagementSystem.DB import PilotAgentsDB
 
 class PilotsLoggingHandler( RequestHandler ):
   """Server side functions for Pilots Logging service"""
@@ -69,7 +71,8 @@ class PilotsLoggingHandler( RequestHandler ):
 
     return self.pilotsLogging.addPilotsUUID( pilotUUID )
 
-  types_deletePilotsLogging = [ [int, long,  list] ]
-  def export_deletePilotsLogging( self, pilotID ):
+  auth_detelePilotsLogging = [ 'all' ]
+  types_detelePilotsLogging = [ types.IntType ]
+  def export_detelePilotsLogging( self, pilotID ):
 
     return self.pilotsLogging.deletePilotsLogging( pilotID )
