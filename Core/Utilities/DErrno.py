@@ -270,8 +270,12 @@ def __recurseImport( modName, parentModule = None, fullName = False ):
     return  impModule
   return __recurseImport( modName[1:], impModule,fullName = fullName )
 
+
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 allExtensions = CSGlobals.getCSExtensions()
+print "ALL EXTENSIONS %s" % allExtensions
+for line in traceback.format_stack():
+  print line.strip()
 for extension in allExtensions:
   ext_derrno = None
   try:
@@ -294,6 +298,6 @@ for extension in allExtensions:
 
   except:
     pass
-  finally:
-    if ext_derrno:
-      ext_derrno.close()
+#   finally:
+#     if ext_derrno:
+#       ext_derrno.close()
