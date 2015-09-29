@@ -80,7 +80,7 @@ def getDIRACSesForSRM( srmService ):
   for se in diracSEs:
     seSection = "/Resources/StorageElements/%s" % se
     result = gConfig.getSections( seSection )
-    if not result['OK']:\
+    if not result['OK']:
       continue
     accesses = result['Value']
     for access in accesses:
@@ -95,7 +95,7 @@ def getDIRACSesForSRM( srmService ):
 def getDIRACGOCDictionary():
   """
   Create a dictionary containing DIRAC site names and GOCDB site names
-  using configuration provided by CS.
+  using a configuration provided by CS.
 
   :return:  A dictionary of DIRAC site names (key) and GOCDB site names (value).
   """
@@ -105,7 +105,7 @@ def getDIRACGOCDictionary():
   result = gConfig.getConfigurationTree( '/Resources/Sites', 'Name' )
   if not result['OK']:
     gLogger.error( __functionName, "getConfigurationTree() failed with message: %s" % result['Message'] )
-    return S_ERROR( 'CS path is corrupted' )
+    return S_ERROR( 'Configuration is corrupted' )
   siteNamesTree = result['Value']
 
   dictionary = dict()
@@ -113,13 +113,13 @@ def getDIRACGOCDictionary():
                       #    /Resource/Sites/<GRID NAME>/<DIRAC SITE NAME>/Name
                       # [0]/[1]     /[2]  /[3]        /[4]              /[5]
 
-  for path, value in siteNamesTree.iteritems():
+  for path, gocdbSiteName in siteNamesTree.iteritems():
     elements = path.split( '/' )
     if len( elements ) <> PATHELEMENTS:
       continue
 
-    siteName = elements[PATHELEMENTS - 2]
-    dictionary[siteName] = value
+    diracSiteName = elements[PATHELEMENTS - 2]
+    dictionary[diracSiteName] = gocdbSiteName
     
   gLogger.debug( __functionName, 'End function.' )
   return S_OK( dictionary )

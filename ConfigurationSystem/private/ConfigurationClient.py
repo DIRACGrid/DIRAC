@@ -168,9 +168,9 @@ class ConfigurationClient:
 
     :param:`filters` - string(s):
             Select results that contain given substrings
-            (checks full path, i.e. with option name)
+            (check full path, i.e. with option name)
 
-    :return: Returns a dictionary where keys are paths taken from
+    :return: Return a dictionary where keys are paths taken from
              the configuration (e.g. /Systems/Configuration/...).
              Value is "None" when path points to a section
              or not "None" if path points to an option.
@@ -219,8 +219,8 @@ class ConfigurationClient:
       for section in sections['Value']:
         subtree = self.getConfigurationTree( "%s/%s" % ( root, section ), *filters )
         if not subtree['OK']:
-          gLogger.error(__functionName, "getSection() failed with message: %s" % sections['Message'] )
-          return S_ERROR( 'CS content was altered during the operation' )
+          gLogger.error(__functionName, "getConfigurationTree() failed with message: %s" % sections['Message'] )
+          return S_ERROR( 'Configuration was altered during the operation' )
         result.update( subtree['Value'] )  
     
     return S_OK( result )

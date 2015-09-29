@@ -119,7 +119,7 @@ class GOCDB2CSAgent ( AgentModule ):
     __functionName = '[__preparePerfSONARConfiguration]'
     gLogger.debug( __functionName, 'Begin function ...' )
 
-    # static elements of path
+    # static elements of a path
     rootPath = '/Resources/Sites'
     extPath = 'Network/perfSONAR'
     optionName = 'Enabled'
@@ -161,9 +161,11 @@ class GOCDB2CSAgent ( AgentModule ):
     '''
     Extend given list of GOCDB endpoints with DIRAC site name, i.e.
     add an entry "DIRACSITENAME" in dictionaries that describe endpoints.
+    If given site name could not be found "DIRACSITENAME" is set to 'None'.
 
 
-    :return: List of perfSONAR endpoints (dictionary).
+    :return: List of perfSONAR endpoints (dictionaries).
+              
     '''
     __functionName = '[__addDIRACSiteName]'
     gLogger.debug( __functionName, 'Begin function ...' )
@@ -196,7 +198,7 @@ class GOCDB2CSAgent ( AgentModule ):
     Update configuration stored by CS.
     '''
 
-    __functionName = '[__updateConfigurationInCS]'
+    __functionName = '[__updateConfiguration]'
     gLogger.debug( __functionName, 'Begin function ...' )
 
     # assure existence and proper value of a section or an option
@@ -217,27 +219,27 @@ class GOCDB2CSAgent ( AgentModule ):
         if not result['OK']:
           gLogger.error( __functionName, "setOption() failed with message: %s" % result['Message'] )
 
-    # delete elements in configuration
+    # delete elements in the configuration
     for path in delElements:
       result = self.csAPI.delOption( path )
       if not result['OK']:
-        gLogger.warn( __functionName, "csAPI.delOption() failed with message: %s" % result['Message'] )
+        gLogger.warn( __functionName, "delOption() failed with message: %s" % result['Message'] )
 
         result = self.csAPI.delSection( path )
         if not result['OK']:
-          gLogger.warn( __functionName, "csAPI.delSection() failed with message: %s" % result['Message'] )
+          gLogger.warn( __functionName, "delSection() failed with message: %s" % result['Message'] )
 
     # update configuration stored by CS
     result = self.csAPI.commit()
     if not result['OK']:
-      gLogger.error( "csAPI.commit() failed with message: %s" % result['Message'] )
+      gLogger.error( "commit() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Could not commit changes to CS.' )
 
     gLogger.debug( __functionName, 'End function.' )
     return S_OK()
 
 
-  # define mapping between agent option in CS and functionCall
+  # define mapping between an agent option in the configuration and a function call
   __functionMap = {
                     'UpdatePerfSONARS': updatePerfSONARConfiguration,
 
