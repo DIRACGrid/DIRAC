@@ -58,6 +58,8 @@ class DataRecoveryAgent(AgentModule):
                                                   'MCReconstruction_Overlay',
                                                   'MCGenerations'])
     self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
+    self.shifterProxy = self.am_setOption('shifterProxy', 'DataManager')
+
     self.jobStatus = ['Failed', 'Done']  # This needs to be both otherwise we cannot account for all cases
 
     self.dMan = DataManager()
@@ -202,7 +204,7 @@ class DataRecoveryAgent(AgentModule):
     """Sets defaults
     """
     self.enabled = self.am_getOption('EnableFlag', False)
-    self.am_setModuleParam("shifterProxy", "ProductionManager")
+    #self.am_setModuleParam("shifterProxy", "ProductionManager")
 
     return S_OK()
   #############################################################################
@@ -227,6 +229,7 @@ class DataRecoveryAgent(AgentModule):
         self.treatMCGeneration(int(prodID), transName, transType)
       else:
         self.treatProduction(int(prodID), transName, transType)
+    return S_OK()
 
   def getEligibleTransformations(self, status, typeList):
     """ Select transformations of given status and type.
