@@ -2,6 +2,7 @@ from DIRAC import S_ERROR, S_OK, gLogger
 
 from DIRAC.DataManagementSystem.private.FTSAbstractPlacement import FTSAbstractPlacement, FTSRoute
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 import random
 
@@ -31,6 +32,8 @@ class FTS3Placement( FTSAbstractPlacement ):
 
     self.__serverList = srvList.get( 'Value', [] )
     self.maxAttempts = len( self.__serverList )
+
+    self.rssClient = ResourceStatus()
 
 
 
@@ -152,12 +155,31 @@ class FTS3Placement( FTSAbstractPlacement ):
     return S_OK( route )
 
   def isRouteValid( self, route ):
-    """ In FTS3, all routes are valid a priori.
+    """
+        FIXME: until RSS is ready, I check manually the status
+        In FTS3, all routes are valid a priori.
         If a route was not valid for some reason, then FTS would know it
         thanks to the blacklist sent by RSS, and would deal with it itself.
        :param route : FTSRoute
 
        :returns S_OK or S_ERROR(reason)
     """
+    
+    rAccess = self.rssClient.getStorageElementStatus( route.sourceSE, "ReadAccess" )
+    self.log.debug( "se read %s %s" % ( route.sourceSE, rAccess ) )
+    if not rAccess["OK"]:
+      self.log.error( rAccess["Message"] )
+      return rAccess
+
+    if rAccess["Value"][route.sourceSE]["ReadAccess"] not in ( "Active", "Degraded" ):
+      return S_ERROR( "Source SE is not readable" )
+
+    wAccess = self.rssClient.getStorageElementStatus( route.targetSE, "WriteAccess" )
+    self.log.debug( "se write %s %s" % ( route.targetSE, wAccess ) )
+    if not wAccess["OK"]:
+      self.log.error( wAccess["Message"] )
+      return wAccess
+    if wAccess["Value"][route.targetSE]["WriteAccess"] not in ( "Active", "Degraded" ):
+      return S_ERROR( "Target SE is not writable" )
 
     return S_OK()
