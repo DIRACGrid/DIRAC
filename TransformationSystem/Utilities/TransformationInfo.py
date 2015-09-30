@@ -3,10 +3,11 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Workflow.Workflow import fromXMLString
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
 from collections import OrderedDict
@@ -17,13 +18,12 @@ class TransformationInfo(object):
   """ hold information about transformations """
 
   def __init__(self, transformationID, transName, transType, enabled,
-               tClient, dMan, fcClient, jobMon):
+               tClient, fcClient, jobMon):
     self.log = gLogger.getSubLogger("TInfo")
     self.enabled = enabled
     self.tID = transformationID
     self.transName = transName
     self.tClient = tClient
-    self.dMan = dMan
     self.jobMon = jobMon
     self.fcClient = fcClient
     self.olist = self.__getOutputList()
@@ -192,7 +192,9 @@ class TransformationInfo(object):
     successfullyRemoved = 0
 
     for lfnList in breakListIntoChunks(filesToDelete, 200):
-      result = self.dMan.removeFile(lfnList)
+      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
+      result = DataManager().removeFile(lfnList)
+      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
       if not result['OK']:
         self.log.error("Failed to remove LFNs", result['Message'])
         raise RuntimeError("Failed to remove LFNs: %s" % result['Message'])

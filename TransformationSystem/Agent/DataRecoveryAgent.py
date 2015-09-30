@@ -32,7 +32,6 @@ import itertools
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -62,7 +61,6 @@ class DataRecoveryAgent(AgentModule):
 
     self.jobStatus = ['Failed', 'Done']  # This needs to be both otherwise we cannot account for all cases
 
-    self.dMan = DataManager()
     self.jobMon = JobMonitoringClient()
     self.fcClient = FileCatalogClient()
     self.tClient = TransformationClient()
@@ -247,7 +245,7 @@ class DataRecoveryAgent(AgentModule):
   def treatMCGeneration(self, prodID, transName, transType):
     """deal with MCGeneration jobs, where there is no inputFile"""
     tInfo = TransformationInfo(prodID, transName, transType, self.enabled,
-                               self.tClient, self.dMan, self.fcClient, self.jobMon)
+                               self.tClient, self.fcClient, self.jobMon)
     jobs = tInfo.getJobs(statusList=self.jobStatus)
     self.checkAllJobs(jobs, tInfo)
     self.printSummary()
@@ -256,7 +254,7 @@ class DataRecoveryAgent(AgentModule):
     """run this thing for given production"""
 
     tInfo = TransformationInfo( prodID, transName, transType, self.enabled,
-                                self.tClient, self.dMan, self.fcClient, self.jobMon )
+                                self.tClient, self.fcClient, self.jobMon)
     jobs = tInfo.getJobs(statusList=self.jobStatus)
 
     self.log.notice( "Getting tasks...")
