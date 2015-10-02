@@ -186,9 +186,9 @@ Queue %(nJobs)s
 
       status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % jobID )
       if status_history == 0:
-        stdout = '\n'.join( [stdout_q,stdout_history] )
+        stdout_q = '\n'.join( [stdout_q,stdout_history] )
 
-      lines = stdout.split( '\n' )
+      lines = stdout_q.split( '\n' )
 
       pilotStatus = self.__parseCondorStatus( lines, jobID )
       resultDict[job] = pilotStatus
