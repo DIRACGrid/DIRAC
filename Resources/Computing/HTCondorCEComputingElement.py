@@ -62,8 +62,7 @@ use_x509userproxy = true
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
-environment = CONDOR_JOBID=$(Cluster).$(Process)
-Getenv = True
+environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
 WhenToTransferOutput = ON_EXIT
