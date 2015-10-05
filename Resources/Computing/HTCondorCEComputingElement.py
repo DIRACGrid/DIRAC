@@ -52,6 +52,7 @@ class HTCondorCEComputingElement( ComputingElement ):
     """
 
     workingDirectory = self.ceParameters['WorkingDirectory']
+    initialDir = '/'.join( workingDirectory.split('/')[:-1] )
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = workingDirectory )
     subFile = os.fdopen( fd, 'w' )
 
@@ -63,6 +64,7 @@ output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
 environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
+initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
 WhenToTransferOutput = ON_EXIT
@@ -71,6 +73,7 @@ Queue %(nJobs)s
 """ % dict( executable=executable,
             nJobs=nJobs,
             ceName=self.ceName,
+            initialDir=initialDir,
           )
     subFile.write( sub )
     subFile.close()
