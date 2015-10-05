@@ -15,7 +15,8 @@ __RCSID__ = "$Id: $"
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
 
 class PilotsLoggingHandler( RequestHandler ):
   """Server side functions for Pilots Logging service"""
