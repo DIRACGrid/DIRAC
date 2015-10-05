@@ -99,7 +99,7 @@ Queue %(nJobs)s
     cmd = ['condor_submit', '-terse', subName ]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     self.log.verbose( result )
-    #os.unlink( subName )
+    os.unlink( subName )
     if not result['OK']:
       self.log.error( "Failed to submit jobs to htcondor", result['Message'] )
       return result
