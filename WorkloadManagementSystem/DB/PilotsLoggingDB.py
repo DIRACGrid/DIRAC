@@ -5,7 +5,13 @@
 
     Available methods are:
 
-
+    addPilotsLogging()
+    getPilotsLogging()
+    deletePilotsLoggin()
+    addPilotsUUID()
+    setPilotsUUIDtoIDMapping()
+    addPilotsUUIDtoIDmapping()
+    
 """
 
 __RCSID__ = "$Id$"
