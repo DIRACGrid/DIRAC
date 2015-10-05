@@ -33,14 +33,10 @@ Base = declarative_base( )
 
 
 #############################################################################
-<<<<<<< d4361d92ad81fa80c6e537349fe3577773fe76d8
-class PilotsLoggingDB(  ):
-
-=======
 class PilotsLoggingDB( object ):
   """Class for manipulation on Pilots Logging DB
   """
->>>>>>> More fixes for pylint
+
   def __init__( self ):
 
     result = getDBParameters( 'WorkloadManagement/PilotsLoggingDB' )
