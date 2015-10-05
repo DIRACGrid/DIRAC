@@ -179,19 +179,23 @@ Queue %(nJobs)s
       jobIDList = [ jobIDList ]
 
     resultDict = {}
-
+    condorIDs = {}
+    ##Get all condorIDs so we can just call condor_q and condor_history once
     for jobRef in jobIDList:
       job,jobID = self.__condorIDFromJobRef( jobRef )
+      condorIDs[job] = jobID
 
-      status,stdout_q = commands.getstatusoutput( 'condor_q %s' % jobID )
-      if status != 0:
-        return S_ERROR( stdout_q )
+    status,stdout_q = commands.getstatusoutput( 'condor_q %s' % ' '.join(condorIDs.values()) )
+    if status != 0:
+      return S_ERROR( stdout_q )
 
-      status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % jobID )
-      if status_history == 0:
-        stdout_q = '\n'.join( [stdout_q,stdout_history] )
+    status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % ' '.join(condorIDs.values()) )
+    if status_history == 0:
+      stdout_q = '\n'.join( [stdout_q,stdout_history] )
 
-      lines = stdout_q.split( '\n' )
+    lines = stdout_q.split( '\n' )
+
+    for job,jobID in condorIDs.iteritems():
 
       pilotStatus = self.__parseCondorStatus( lines, jobID )
       resultDict[job] = pilotStatus
