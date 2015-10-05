@@ -18,7 +18,6 @@ import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-# from DIRAC.WorkloadManagementSystem.DB import PilotAgentsDB
 
 class PilotsLoggingHandler( RequestHandler ):
 
