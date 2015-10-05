@@ -201,10 +201,14 @@ class PilotAgentsDB( DB ):
     if type( pilotIDs ) != type( [] ):
       return S_ERROR( 'Input argument is not a List' )
 
+    failed = []
+
+    from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
+    pilotsLoggingDB = PilotsLoggingDB()
     for pilotID in pilotIDs:
-      resp = self.deletePilotsLogging(pilotID)
+      resp = pilotsLoggingDB.deletePilotsLogging(pilotID)
       if not resp['OK']:
-        pass
+        failed.append( 'PilotsLogging' )
 
     failed = []
 
