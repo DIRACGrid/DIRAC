@@ -378,13 +378,20 @@ class PilotAgentsDB( DB ):
     if type( pilotIDs ) != type( [] ):
       return S_ERROR( 'Input argument is not a List' )
 
-    for pilotID in pilotIDs:
-      resp = self.deletePilotsLogging(pilotID)
-      if not resp['OK']:
-        pass
-
     failed = []
 
+    from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
+    pilotsLoggingDB = PilotsLoggingDB()
+    for pilotID in pilotIDs:
+      resp = pilotsLoggingDB.deletePilotsLogging(pilotID)
+      if not resp['OK']:
+        failed.append( 'PilotsLogging' )
+
+<<<<<<< b33f510cc57820d20695d0070e5323c97662ec22
+    failed = []
+
+=======
+>>>>>>> Deleting PilotsLogging when deleting pilot - updated + error handling
     for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
