@@ -1,4 +1,4 @@
-""" Class that contains client access to the PilotAgents handler. """
+""" Class that contains client access to the PilotsLogging handler. """
 ########################################################################
 # $Id$
 # $HeadURL$
