@@ -22,7 +22,6 @@ from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
 
-
 # # RCSID
 __RCSID__ = "$Id$"
 
@@ -33,7 +32,7 @@ class SRM2Storage( StorageBase ):
   """
 
   _InputProtocols = ['file', 'srm']
-  _OutputProtocols = ['file', 'srm']
+  _OutputProtocols = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm']
 
   def __init__( self, storageName, parameters ):
     """ c'tor
