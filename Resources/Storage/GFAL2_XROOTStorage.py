@@ -18,6 +18,11 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
   Xroot interface to StorageElement using gfal2
   """
+  
+
+  _InputProtocols = ['file', 'root']
+  _OutputProtocols = ['root']
+
 
   def __init__( self, storageName, parameters ):
     """ c'tor

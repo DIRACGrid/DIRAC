@@ -141,6 +141,7 @@ class StorageElementItem( object ):
       self.vo = result['Value']
     self.opHelper = Operations( vo = self.vo )
 
+    # These things will soon have to go as well. 'AccessProtocol.1' is all but flexible.
     proxiedProtocols = gConfig.getValue( '/LocalSite/StorageElements/ProxyProtocols', "" ).split( ',' )
     useProxy = ( gConfig.getValue( "/Resources/StorageElements/%s/AccessProtocol.1/Protocol" % name, "UnknownProtocol" )
                 in proxiedProtocols )
@@ -172,20 +173,25 @@ class StorageElementItem( object ):
       for storage in self.storages:
         storage.setStorageElement( self )
 
+
+    self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
+    self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
+    self.log.debug( "useCatalogURL: %s" % self.useCatalogURL )
+
+
     self.__dmsHelper = DMSHelpers( vo = vo )
 
     # Allow SE to overwrite general operation config
     accessProto = gConfig.getValue( '/Resources/StorageElements/%s/AccessProtocols' )
     self.localAccessProtocolList = accessProto if accessProto else self.__dmsHelper.getAccessProtocols()
+    self.log.debug( "localAccessProtocolList %s" % self.localAccessProtocolList )
 
     writeProto = gConfig.getValue( '/Resources/StorageElements/%s/WriteProtocols' )
     self.localWriteProtocolList = writeProto if writeProto else self.__dmsHelper.getWriteProtocols()
+    self.log.debug( "localWriteProtocolList %s" % self.localWriteProtocolList )
 
 
 
-
-    self.log = gLogger.getSubLogger( "SE[%s]" % self.name )
-    self.useCatalogURL = gConfig.getValue( '/Resources/StorageElements/%s/UseCatalogURL' % self.name, False )
 
     #                         'getTransportURL',
     self.readMethods = [ 'getFile',
@@ -468,11 +474,19 @@ class StorageElementItem( object ):
 
     """
 
+    log = self.log.getSubLogger( 'negociateProtocolWithOtherSE', child = True )
+    
+    log.debug( "Negociating protocols between %s and %s (protocols %s)" % ( sourceSE.name, self.name, protocols ) )
+
     # Take all the protocols the destination can accept as input
     destProtocols = self._getAllInputProtocols()
 
+    log.debug( "Destination input protocols %s" % destProtocols )
+
     # Take all the protocols the source can provide
     sourceProtocols = sourceSE._getAllOutputProtocols()
+
+    log.debug( "Source output protocols %s" % sourceProtocols )
 
     commonProtocols = destProtocols & sourceProtocols
 
@@ -481,6 +495,8 @@ class StorageElementItem( object ):
     if protocols:
       protocolList = list( protocols )
       commonProtocols = sorted( commonProtocols & set( protocolList ), key = lambda x : protocolList )
+
+    log.debug( "Common protocols %s" % commonProtocols )
 
     return S_OK( list( commonProtocols ) )
 
@@ -560,6 +576,9 @@ class StorageElementItem( object ):
     self.log.getSubLogger( 'getURL' ).verbose( "Getting accessUrl %s for lfn in %s." % ( "(%s)" % protocol if protocol else "", self.name ) )
 
     if not protocol:
+      # This turlProtocols seems totally useless.
+      # Get ride of it when gfal2 is totally ready
+      # and replace it with the localAccessProtocol list
       protocols = self.turlProtocols
     elif type( protocol ) is ListType:
       protocols = protocol
@@ -639,7 +658,7 @@ class StorageElementItem( object ):
     return res
 
 
-  def __filterPlugins( self, methodName, protocol = None, inputProtocol = None ):
+  def __filterPlugins( self, methodName, protocols = None, inputProtocol = None ):
     """ Determine the list of plugins that
         can be used for a particular action
 
@@ -649,10 +668,12 @@ class StorageElementItem( object ):
                               the protocol given as source
     """
 
-    log = self.log.getSubLogger( '__filterPlugins' )
+    log = self.log.getSubLogger( '__filterPlugins', child = True )
 
-    if isinstance( protocol, basestring ):
-      protocol = [protocol]
+    log.debug( "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % ( methodName, protocols, inputProtocol ) )
+
+    if isinstance( protocols, basestring ):
+      protocols = [protocols]
 
     pluginsToUse = []
     
@@ -667,21 +688,22 @@ class StorageElementItem( object ):
       # OK methods
       # If a protocol or protocol list is specified, we only use the plugins that
       # can generate such protocol
-      if protocol:
-        setProtocol = set( protocol )
+      # otherwise we return them all
+      if protocols:
+        setProtocol = set( protocols )
         for plugin in self.storages:
-          if set( plugin.pluginParameters.get( "OutputProtocols", [] ) ) & setProtocol:
+          if set( plugin.protocolParameters.get( "OutputProtocols", [] ) ) & setProtocol:
             pluginsToUse.append( plugin )
-        log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in pluginsToUse] ) )
-        return pluginsToUse
+      else:
+        pluginsToUse = self.storages
 
       log.debug( "Plugins to be used for %s: %s" % ( methodName, [p.pluginName for p in self.storages] ) )
       return self.storages
 
     
     # if a list of protocol is specified, take it into account
-    if protocol:
-      potentialProtocols = list( set( allowedProtocols ) & set( protocol ) )
+    if protocols:
+      potentialProtocols = list( set( allowedProtocols ) & set( protocols ) )
     else:
       potentialProtocols = allowedProtocols
       
@@ -795,7 +817,7 @@ class StorageElementItem( object ):
     successful = {}
     failed = {}
     # Try all of the storages one by one
-    for storage in self.__filterPlugins( self.methodName, kwargs.get( 'protocol' ), inputProtocol ):
+    for storage in self.__filterPlugins( self.methodName, kwargs.get( 'protocols' ), inputProtocol ):
       # Determine whether to use this storage object
       storageParameters = storage.getParameters()
       pluginName = storageParameters['PluginName']

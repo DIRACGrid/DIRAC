@@ -310,18 +310,18 @@ class DMSHelpers( object ):
 
   def getRegistrationProtocols( self ):
     """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
-    return S_OK( self.__opsHelper.getValue( 'DataManagement/RegistrationProtocols', ['srm', 'dips'] ) )
+    return self.__opsHelper.getValue( 'DataManagement/RegistrationProtocols', ['srm', 'dips'] )
 
   def getThirdPartyProtocols( self ):
     """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-    return S_OK( self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm', 'dips'] ) )
+    return self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm', 'dips'] )
 
   def getAccessProtocols( self ):
     """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
-    return S_OK( self.__opsHelper.getValue( 'DataManagement/AccessProtocols', ['srm', 'dips'] ) )
+    return self.__opsHelper.getValue( 'DataManagement/AccessProtocols', ['srm', 'dips'] )
 
 
   def getWriteProtocols( self ):
     """ Returns the Favorite Write protocol defined in the CS, or 'srm' as default """
-    return S_OK( self.__opsHelper.getValue( 'DataManagement/WriteProtocols', ['srm', 'dips'] ) )
+    return self.__opsHelper.getValue( 'DataManagement/WriteProtocols', ['srm', 'dips'] )
 

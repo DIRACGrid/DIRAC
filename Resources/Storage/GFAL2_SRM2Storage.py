@@ -20,6 +20,11 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
   """ SRM2 SE class that inherits from GFAL2StorageBase
   """
 
+  _InputProtocols = ['file', 'root', 'srm']
+  _OutputProtocols = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm']
+
+
+
   def __init__( self, storageName, parameters ):
     """ """
     self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
@@ -98,6 +103,13 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       listProtocols = protocols
     else:
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
+
+    # Compatibility because of castor returning a castor: url if you ask
+    # for a root URL, and a root: url if you ask for a xroot url...
+    if 'root' in listProtocols and 'xroot' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'root' ), 'xroot' )
+    elif 'xroot' in listProtocols and 'root' not in listProtocols:
+      listProtocols.insert( listProtocols.index( 'xroot' ) + 1, 'root' )
 
     if self.protocolParameters['Protocol'] in listProtocols:
       successful = {}
