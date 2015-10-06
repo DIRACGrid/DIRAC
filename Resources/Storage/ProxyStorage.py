@@ -14,6 +14,9 @@ import os
 
 class ProxyStorage( StorageBase ):
 
+  _InputProtocols = ['file', 'dip', 'dips']
+  _OutputProtocols = ['dip', 'dips']
+
   def __init__( self, storageName, parameters ):
 
     StorageBase.__init__( self, storageName, parameters )
