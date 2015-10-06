@@ -193,11 +193,11 @@ class StorageElementItem( object ):
     self.__dmsHelper = DMSHelpers( vo = vo )
 
     # Allow SE to overwrite general operation config
-    accessProto = gConfig.getValue( '/Resources/StorageElements/%s/AccessProtocols' )
+    accessProto = self.options.get( 'AccessProtocols' )
     self.localAccessProtocolList = accessProto if accessProto else self.__dmsHelper.getAccessProtocols()
     self.log.debug( "localAccessProtocolList %s" % self.localAccessProtocolList )
 
-    writeProto = gConfig.getValue( '/Resources/StorageElements/%s/WriteProtocols' )
+    writeProto = self.options.get( 'WriteProtocols' )
     self.localWriteProtocolList = writeProto if writeProto else self.__dmsHelper.getWriteProtocols()
     self.log.debug( "localWriteProtocolList %s" % self.localWriteProtocolList )
 
@@ -733,6 +733,7 @@ class StorageElementItem( object ):
     else:
       potentialProtocols = allowedProtocols
       
+    log.debug( 'Potential protocols %s' % potentialProtocols )
 
     localSE = self.__isLocalSE()['Value']
 
