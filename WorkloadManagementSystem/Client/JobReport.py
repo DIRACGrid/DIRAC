@@ -5,8 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, Time, gLogger
-from DIRAC.Core.Utilities import DEncode
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 

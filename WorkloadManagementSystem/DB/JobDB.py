@@ -46,7 +46,8 @@ import sys
 import operator
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
-from DIRAC                                                   import S_OK, S_ERROR, Time
+from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
+from DIRAC.Core.Utilities                                    import Time
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.Core.Base.DB                                      import DB
