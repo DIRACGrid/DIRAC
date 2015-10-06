@@ -18,12 +18,12 @@ from DIRAC                                               import S_OK, S_ERROR
 
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
-from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Utilities.Subprocess                     import Subprocess
 
 import os
 import tempfile
 import commands
-import subprocess
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
@@ -47,8 +47,22 @@ def parseCondorStatus( lines, jobID ):
       elif " X " in line:
         return 'Aborted'
       elif " H " in line:
-        return 'Aborted'
+        return 'HELD'
   return 'Unknown'
+
+def findFile( workingDir, fileName ):
+  """ find a pilot out, err, log file """
+  res = Subprocess().systemCall("find %s -name '%s'" % (workingDir, fileName), shell=True)
+  if not res['OK']:
+    return res
+  paths = res['Value'].splitlines()
+  return S_OK(paths)
+
+def getCondorLogFile( pilotRef ):
+  """ return the location of the logFile belonging to the pilot reference """
+  _jobUrl, condorID = condorIDFromJobRef( pilotRef )
+  resLog = findFile( '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT/', '%s.log' % condorID )
+  return resLog
 
 class HTCondorCEComputingElement( ComputingElement ):
   """HTCondorCE computing element class
@@ -256,7 +270,6 @@ Queue %(nJobs)s
   def getJobOutput( self, jobID, _localDir = None ):
     """ TODO: condor can copy the output automatically back to the
     submission, so we just need to pick it up from the proper folder
-    FIXME: When do we clean the log and out/err files?
     """
     self.log.verbose( "Getting job output for jobID: %s " % jobID )
     _job,condorID = condorIDFromJobRef( jobID )
@@ -269,8 +282,17 @@ Queue %(nJobs)s
 
     output = ''
     error = ''
-    outputfilename = self.__findFile( workingDirectory, '%s.out' % condorID )[0]
-    errorfilename = self.__findFile( workingDirectory, '%s.err' % condorID )[0]
+    resOut = findFile( workingDirectory, '%s.out' % condorID )
+    if not resOut['OK']:
+      self.log.error("Failed to find output file for condor job", jobID )
+      return resOut
+    outputfilename = resOut['Value'][0]
+
+    resErr = findFile( workingDirectory, '%s.err' % condorID )
+    if not resErr['OK']:
+      self.log.error("Failed to find error file for condor job", jobID )
+      return resErr
+    errorfilename = resErr['Value'][0]
 
     try:
       with open( outputfilename ) as outputfile:
@@ -330,12 +352,5 @@ Queue %(nJobs)s
     status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.err" -type f -delete ' % workingDirectory )
     if status != 0:
       self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
-
-  def __findFile( self, workingDir, fileName ):
-    """ find a pilot out, err, log file """
-    paths = [line for line in subprocess.check_output("find %s -name '%s'" % (workingDir, fileName),
-                                                      shell=True).splitlines()]
-    self.log.debug("Found files?: %s " % paths )
-    return paths
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
