@@ -27,6 +27,29 @@ import subprocess
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
+
+def condorIDFromJobRef( jobRef ):
+  """return tuple of "jobURL" and condorID from the jobRef string"""
+  jobURL = jobRef.split(":::")[0]
+  condorID = jobURL.split("/")[-1]
+  return jobURL,condorID
+
+def parseCondorStatus( lines, jobID ):
+  """parse the condor_q or condor_history output for the job status"""
+  for line in lines:
+    if line.strip().startswith( jobID ):
+      if " I " in line:
+        return 'Waiting'
+      elif " R " in line:
+        return 'Running'
+      elif " C " in line:
+        return 'Done'
+      elif " X " in line:
+        return 'Aborted'
+      elif " H " in line:
+        return 'Aborted'
+  return 'Unknown'
+
 class HTCondorCEComputingElement( ComputingElement ):
   """HTCondorCE computing element class
   implementing the functions jobSubmit, getJobOutput """
@@ -148,7 +171,7 @@ Queue %(nJobs)s
     self.log.verbose( "KillJob jobIDList: %s" % jobIDList )
 
     for jobRef in jobIDList:
-      job,jobID = self.__condorIDFromJobRef( jobRef )
+      job,jobID = condorIDFromJobRef( jobRef )
       self.log.verbose( "Killing pilot %s " % job )
       status,stdout = commands.getstatusoutput( 'condor_rm %s' % jobID )
       if status != 0:
@@ -198,7 +221,7 @@ Queue %(nJobs)s
     condorIDs = {}
     ##Get all condorIDs so we can just call condor_q and condor_history once
     for jobRef in jobIDList:
-      job,jobID = self.__condorIDFromJobRef( jobRef )
+      job,jobID = condorIDFromJobRef( jobRef )
       condorIDs[job] = jobID
 
     status,stdout_q = commands.getstatusoutput( 'condor_q %s' % ' '.join(condorIDs.values()) )
@@ -213,7 +236,7 @@ Queue %(nJobs)s
 
     for job,jobID in condorIDs.iteritems():
 
-      pilotStatus = self.__parseCondorStatus( lines, jobID )
+      pilotStatus = parseCondorStatus( lines, jobID )
       if pilotStatus == 'Held':
         #make sure the pilot stays dead and gets taken out of the condor_q
         _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
@@ -236,7 +259,7 @@ Queue %(nJobs)s
     FIXME: When do we clean the log and out/err files?
     """
     self.log.verbose( "Getting job output for jobID: %s " % jobID )
-    _job,condorID = self.__condorIDFromJobRef( jobID )
+    _job,condorID = condorIDFromJobRef( jobID )
     ## FIXME: the WMSAdministrator does not know about the
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
@@ -283,28 +306,6 @@ Queue %(nJobs)s
     cePrefix = "htcondorce://%s/" % self.ceName
     jobReferences = [ "%s%s.%s" % ( cePrefix, clusterID, i ) for i in range( int( numJobs ) + 1 ) ]
     return S_OK( jobReferences )
-
-  def __condorIDFromJobRef( self, jobRef ):
-    """return tuple of "jobURL" and condorID from the jobRef string"""
-    jobURL = jobRef.split(":::")[0]
-    condorID = jobURL.split("/")[-1]
-    return jobURL,condorID
-
-  def __parseCondorStatus( self, lines, jobID ):
-    """parse the condor_q or condor_history output for the job status"""
-    for line in lines:
-      if line.strip().startswith( jobID ):
-        if " I " in line:
-          return 'Waiting'
-        elif " R " in line:
-          return 'Running'
-        elif " C " in line:
-          return 'Done'
-        elif " X " in line:
-          return 'Aborted'
-        elif " H " in line:
-          return 'Held'
-    return 'Unknown'
 
   def __cleanup( self ):
     """ clean the working directory of old jobs"""
