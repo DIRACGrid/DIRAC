@@ -17,16 +17,17 @@ def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
   resolvedName = storageName
   return S_OK( resolvedName )
 
-def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName ):
+def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None ):
   """ Get the options associated to the StorageElement as defined in the CS
   """
   optionsDict = {'BackendType': 'local',
                  'ReadAccess': 'Active',
-                 'WriteAccess': 'Active'}
-
+                 'WriteAccess': 'Active',
+                 'AccessProtocols' : ['file'],
+                 'WriteProtocols' : ['file'], }
   return S_OK( optionsDict )
 
-def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName ):
+def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None ):
   """ Protocol specific information is present as sections in the Storage configuration
   """
   protocolDetails = [{'Host': '',
@@ -153,7 +154,7 @@ class TestBase( unittest.TestCase ):
     # wrong size
     res = localPutFile( self.existingFile, size = -1 )
     self.assert_( res['OK'], res )
-    self.assert_( self.existingFile in res['Value']['Failed'] )
+    self.assert_( self.existingFile in res['Value']['Failed'], res )
     self.assert_( 'not match' in res['Value']['Failed'][self.existingFile], res )
     self.assert_( not os.path.exists( self.basePath + self.existingFile ) )
 
