@@ -30,6 +30,17 @@ def getSystemSection( serviceName, serviceTuple = False, instance = False, setup
     instance = getSystemInstance( serviceTuple[0], setup = setup )
   return "/Systems/%s/%s" % ( serviceTuple[0], instance )
 
+#wk
+def getEntitySection (entityName, entityTuple = False, setup = False, entityString ="Services"):
+  if not entityTuple:
+    entityTuple = divideFullName( entityName )
+  systemSection = getSystemSection( entityName, entityTuple, setup = setup )
+  return "%s/%s/%s" % ( systemSection,entityString,  entityTuple[1] )
+
+#wk
+def getConsumerSection(consumerName, consumerTuple = False, setup = False):
+  return getEntitySection(consumerName, consumerTuple, setup , "Consumers")
+
 def getServiceSection( serviceName, serviceTuple = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
