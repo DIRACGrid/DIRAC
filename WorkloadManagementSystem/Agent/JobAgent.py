@@ -266,8 +266,11 @@ class JobAgent( AgentModule ):
         return self.__finish( submission['Message'] )
       elif 'PayloadFailed' in submission:
         # Do not keep running and do not overwrite the Payload error
-        return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'],
-                              self.stopOnApplicationFailure )
+        message = 'Payload execution failed with error code %s' % submission['PayloadFailed']
+        if self.stopOnApplicationFailure:
+          return self.__finish( message, self.stopOnApplicationFailure )
+        else:
+          self.log.info( message )
 
       self.log.debug( 'After %sCE submitJob()' % ( self.ceName ) )
     except Exception:
@@ -570,8 +573,8 @@ class JobAgent( AgentModule ):
   def __finish( self, message, stop = True ):
     """Force the JobAgent to complete gracefully.
     """
-    self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
     if stop:
+      self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
       self.am_stopExecution()
       return S_ERROR( message )
     else:
