@@ -537,3 +537,48 @@ def getDBParameters( fullname ):
   parameters[ 'DBName' ] = dbName
 
   return S_OK( parameters )
+
+def getElasticDBParameters( fullname ):
+  """
+  Retrieve Database parameters from CS
+  fullname should be of the form <System>/<DBname>
+  
+  """
+
+  cs_path = getDatabaseSection( fullname )
+  parameters = {}
+
+  result = gConfig.getOption( cs_path + '/Host' )
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/Host' )
+    if not result['OK']:
+      return S_ERROR( 'Failed to get the configuration parameter: Host' )
+  dbHost = result['Value']
+  # Check if the host is the local one and then set it to 'localhost' to use
+  # a socket connection
+  if dbHost != 'localhost':
+    localHostName = socket.getfqdn()
+    if localHostName == dbHost:
+      dbHost = 'localhost'
+  parameters[ 'Host' ] = dbHost
+
+  # Elasticsearch standard port
+  dbPort = 9200
+  result = gConfig.getOption( cs_path + '/Port' )
+  if not result['OK']:
+    # No individual port number found, try at the common place
+    result = gConfig.getOption( '/Systems/Databases/Port' )
+    if result['OK']:
+      dbPort = int( result['Value'] )
+  else:
+    dbPort = int( result['Value'] )
+  parameters[ 'Port' ] = dbPort
+
+  result = gConfig.getOption( cs_path + '/DBName' )
+  if not result['OK']:
+    return S_ERROR( 'Failed to get the configuration parameter: DBName' )
+  dbName = result['Value']
+  parameters[ 'DBName' ] = dbName
+
+  return S_OK( parameters )
