@@ -12,6 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from types import StringType
 
 class ReportGeneratorHandler( RequestHandler ):
@@ -20,7 +21,7 @@ class ReportGeneratorHandler( RequestHandler ):
   
   @classmethod
   def initializeHandler( cls, serviceInfo ):
-    cls.__db = None
+    cls.__db = MonitoringDB()
     return S_OK()
   
   types_echo = [StringType]

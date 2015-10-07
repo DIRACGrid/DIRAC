@@ -8,6 +8,7 @@ Elasticsearch database.
 
 from DIRAC                      import gLogger
 from elasticsearch              import Elasticsearch
+from elasticsearch.exceptions   import ConnectionError
 
 class ElasticSearchDB:
   
@@ -31,10 +32,19 @@ class ElasticSearchDB:
         pass
       
     self.client = Elasticsearch( self.__url )
+    self.__tryToConnect()
     
   def query( self, query ):
     """It exexutes a query and it returns the result
     query is a dictionary. More info: search for elasticsearch dsl
     """
     return self.client.search( query )
-    
+  
+  def __tryToConnect(self):
+    try:
+      result = self.client.info()
+      self.log.info("Database info", result)
+      self._connected = True
+    except ConnectionError as e:
+      self.log.error( e )
+      self._connected = False 
