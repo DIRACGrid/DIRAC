@@ -315,7 +315,7 @@ class DMSHelpers( object ):
 
   def getThirdPartyProtocols( self ):
     """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-    return self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm', 'dips'] )
+    return self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm'] )
 
   def getAccessProtocols( self ):
     """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
