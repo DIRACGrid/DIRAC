@@ -123,7 +123,7 @@ def getSetOfRemoteDirectoriesAndFiles(path):
   res = getFileCatalog()
   if not res['OK']:
     return S_ERROR(res['Message'])
-
+  
   fc = res['Value']
    
   directories = set()
@@ -134,7 +134,7 @@ def getSetOfRemoteDirectoriesAndFiles(path):
     return S_ERROR('Could not list remote directory: ' + res['Massage'])
 
   return_directories = set()
-  return_files = set()  
+  return_files = set()
 
   for myfile in files:
     return_files.add((myfile[0].replace(path,'').lstrip('/'),myfile[1]))
@@ -148,8 +148,68 @@ def getSetOfRemoteDirectoriesAndFiles(path):
   
   return S_OK(tree)
 
+def isInFileCatalog(fc, path ):
+  """
+    Check if the file is in the File Catalog
+  """
+  
+  result = fc.listDirectory(path) 
+  if result['OK']:
+    if result['Value']['Successful']:
+      return S_OK()
+    else:
+      return S_ERROR()
+  else:
+    return S_ERROR()
+
+def getContentToSync(upload,source_dir,dest_dir):
+
+  if upload:
+    res = getSetOfRemoteDirectoriesAndFiles(dest_dir)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    to_dirs = res['Value']['Directories']
+    to_files =  res['Value']['Files']
+    
+    res = getSetOfLocalDirectoriesAndFiles(source_dir)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    from_dirs = res['Value']['Directories']
+    from_files =  res['Value']['Files']
+    
+  else:
+    res = getSetOfLocalDirectoriesAndFiles(dest_dir)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    to_dirs = res['Value']['Directories']
+    to_files =  res['Value']['Files']
+    
+    res = getSetOfRemoteDirectoriesAndFiles(source_dir)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    from_dirs = res['Value']['Directories']
+    from_files =  res['Value']['Files']
+    
+  print 'to_dirs'
+  print to_dirs
+  print 'from_dirs'
+  print from_dirs
+  print 'to_files'
+  print to_files
+  print 'from_files'
+  print from_files
+  
+    
+  dirs_delete = list(to_dirs - from_dirs)
+  dirs_delete.sort(key = lambda s: -s.count('/'))
+  dirs_create = list(from_dirs - to_dirs)
+  dirs_create.sort(key = lambda s: s.count('/'))
+  
+  files_delete = list(to_files - from_files)
+  files_create = list(from_files - to_files)
+    
+  return [dirs_delete, dirs_create, files_delete, files_create]
 
 
 
-
-print getSetOfRemoteDirectoriesAndFiles('/ilc/user/p/petric')
+print getContentToSync(True,'.','/ilc/user/p/petric')
