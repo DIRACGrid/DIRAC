@@ -43,16 +43,24 @@ class JobAgent( AgentModule ):
       self.log.info( 'Defining CE from local configuration = %s' % localCE )
       ceType = localCE
 
+    # Create backend Computing Element
     ceFactory = ComputingElementFactory()
     self.ceName = ceType
     ceInstance = ceFactory.getCE( ceType )
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
+    self.computingElement = ceInstance['Value']
+
+    result = self.computingElement.getDescription()
+    if not result['OK']:
+      self.log.warn( "Can not get the CE description" )
+      return result
+    ceDict = result['Value']
+    self.timeLeft = ceDict.get( 'CPUTime', 0.0 )
+    self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft )
 
     self.initTimes = os.times()
-
-    self.computingElement = ceInstance['Value']
     # Localsite options
     self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
     self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
@@ -70,7 +78,6 @@ class JobAgent( AgentModule ):
     self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', '' )
     # Timeleft
     self.timeLeftUtil = TimeLeft()
-    self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
     self.pilotInfoReportedFlag = False
