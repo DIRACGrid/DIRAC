@@ -111,23 +111,23 @@ class FileCatalogHandler( RequestHandler ):
   """
 
   ########################################################################
-  # Path operations (not updated)
+  # Path operations
   #  
-  types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ) ]
+  types_changePathOwner = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
   def export_changePathOwner( self, lfns, recursive = False ):
-    """ Get replica info for the given list of LFNs
+    """ Change Owner for the given list of LFNs
     """
     return gFileCatalogDB.changePathOwner( lfns, self.getRemoteCredentials(), recursive )
 
-  types_changePathGroup = [ [ ListType, DictType ] + list( StringTypes ) ]
+  types_changePathGroup = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
   def export_changePathGroup( self, lfns, recursive = False ):
-    """ Get replica info for the given list of LFNs
+    """ Change Group for the given list of LFNs
     """
     return gFileCatalogDB.changePathGroup( lfns, self.getRemoteCredentials(), recursive )
 
-  types_changePathMode = [ [ ListType, DictType ] + list( StringTypes ) ]
+  types_changePathMode = [ [ ListType, DictType ] + list( StringTypes ), BooleanType ]
   def export_changePathMode( self, lfns, recursive = False ):
-    """ Get replica info for the given list of LFNs
+    """ Change Mode for the given list of LFNs
     """
     return gFileCatalogDB.changePathMode( lfns, self.getRemoteCredentials(), recursive )
 
