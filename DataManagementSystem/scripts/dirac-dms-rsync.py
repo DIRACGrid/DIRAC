@@ -35,6 +35,10 @@ Script.parseCommandLine( ignoreErrors = False )
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig, exit as dexit
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
+from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 def getSetOfLocalDirectoriesAndFiles( path ):
   """
@@ -190,16 +194,7 @@ def getContentToSync(upload,source_dir,dest_dir):
     from_dirs = res['Value']['Directories']
     from_files =  res['Value']['Files']
     
-  print 'to_dirs'
-  print to_dirs
-  print 'from_dirs'
-  print from_dirs
-  print 'to_files'
-  print to_files
-  print 'from_files'
-  print from_files
   
-    
   dirs_delete = list(to_dirs - from_dirs)
   dirs_delete.sort(key = lambda s: -s.count('/'))
   dirs_create = list(from_dirs - to_dirs)
@@ -207,9 +202,68 @@ def getContentToSync(upload,source_dir,dest_dir):
   
   files_delete = list(to_files - from_files)
   files_create = list(from_files - to_files)
+
+  create = {}
+  create["Directories"] = dirs_create
+  create["Files"] = files_create
+
+  delete = {}
+  delete["Directories"] = dirs_delete
+  delete["Files"] = files_delete
+
+  tree = {}
+  tree["Create"]=create
+  tree["Delete"]=delete
+  
+  return S_OK(tree)
+  
+  
+def removeRemoteFiles(dm,lfns):
+  """
+    Remove file from the catalog
+  """
+  for lfnList in breakListIntoChunks( lfns, 100 ):
+    res = dm.removeFile( lfnList )
+    if not res['OK']:
+      return S_ERROR( "Failed to remove data", res['Message'] )
+    else:
+      return S_OK()
+  
+def removeStorageDirectoryFromSE( directory, storageElement ):
+  """
+    delete directory on selected storage element
+  """
+  
+  se = StorageElement( storageElement, False )
+  res = returnSingleResult( se.exists( directory ) )
+
+  if not res['OK']:
+    return S_ERROR( "Failed to obtain existance of directory", res['Message'] )
+
+  exists = res['Value']
+  if not exists:
+    return S_ERROR( "The directory %s does not exist at %s " % ( directory, storageElement ) )
+
+  res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
+  if not res['OK']:
+    return S_ERROR( "Failed to remove storage directory", res['Message'] )
+  
+  return S_OK()
     
-  return [dirs_delete, dirs_create, files_delete, files_create]
+def removeRemoteDirectory(fc,lfn):
+  """
+    Remove file from the catalog
+  """  
+  storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
+  
+  for storageElement in sorted( storageElements ):
+    res = removeStorageDirectoryFromSE( lfn, storageElement )
+    if not res['OK']:
+      return S_ERROR( "Failed to clean storage directory at all SEs" )
+  res = returnSingleResult( fc.removeDirectory( lfn, recursive = True ) )
+  if not res['OK']:
+    return S_ERROR( "Failed to clean storage directory at all SEs" ) 
+  return S_OK()
 
-
-
+    
 print getContentToSync(True,'.','/ilc/user/p/petric')
