@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 This class is a helper to create the proper index and insert the proper values....
 """
 
-from DIRAC.Monitoring.Client.Types.BaseType import BaseType
+from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 class WMSMonitorType( BaseType ):
 
