@@ -817,8 +817,13 @@ class StorageElementItem( object ):
 
     successful = {}
     failed = {}
+    filteredPlugins = self.__filterPlugins( self.methodName, kwargs.get( 'protocols' ), inputProtocol )
+    if not filteredPlugins:
+      return DError( errno.EPROTONOSUPPORT, "No storage plugins matching the requirements\
+                                           (operation %s protocols %s inputProtocol %s)"\
+                                            % ( self.methodName, kwargs.get( 'protocols' ), inputProtocol ) )
     # Try all of the storages one by one
-    for storage in self.__filterPlugins( self.methodName, kwargs.get( 'protocols' ), inputProtocol ):
+    for storage in filteredPlugins:
       # Determine whether to use this storage object
       storageParameters = storage.getParameters()
       pluginName = storageParameters['PluginName']

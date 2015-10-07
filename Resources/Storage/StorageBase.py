@@ -57,6 +57,8 @@ class StorageBase( object ):
         self.protocolParameters[protocolType] = getattr( self, '_%s' % protocolType )
       else:
         self.protocolParameters[protocolType] = [ self.protocolParameters['Protocol']]
+        if protocolType == 'InputProtocols':
+          self.protocolParameters[protocolType].append( 'file' )
 
 
     
