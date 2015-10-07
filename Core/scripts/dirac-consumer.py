@@ -7,28 +7,19 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC import gLogger
 from DIRAC.Core.Base.ConsumerReactor import ConsumerReactor
 
-localCfg = LocalConfiguration()
+def main():
+  localCfg = LocalConfiguration()
+  positionalArgs = localCfg.getPositionalArguments()
+  if len( positionalArgs ) == 0:
+    gLogger.fatal( "You must specify which consumer to run!" )
+    sys.exit( 1 )
+  consumerReactor = ConsumerReactor()
+  result = consumerReactor.loadModules( positionalArgs )
+  if not result[ 'OK' ]:
+    gLogger.error( "Error while loading consumer module", result[ 'Message' ] )
+  result  = consumerReactor.go()
+  if not result[ 'OK' ]:
+    gLogger.error( "Error while executing  consumer module", result[ 'Message' ] )
 
-positionalArgs = localCfg.getPositionalArguments()
-if len( positionalArgs ) == 0:
-  gLogger.fatal( "You must specify which consumer to run!" )
-  sys.exit( 1 )
-
-consumerName = positionalArgs[0]
-resultDict = localCfg.loadUserData()
-if not resultDict[ 'OK' ]:
-  gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
-  sys.exit( 1 )
-
-if len( positionalArgs ) == 1:
-  mainName = positionalArgs[0]
-else:
-  gLogger.error( "More than one consumer name given", resultDict[ 'Message' ] )
-  sys.exit( 1 )
-
-consumerReactor = ConsumerReactor( )
-#result = consumerReactor.loadAgentModules( positionalArgs )
-#if result[ 'OK' ]:
-  #consumerReactor.go()
-#else:
-  #gLogger.error( "Error while loading consumer module", result[ 'Message' ] )
+if __name__ == '__main__':
+  main()

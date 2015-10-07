@@ -4,7 +4,7 @@
   All DIRAC consumers must inherit from the basic class ConsumerModule
 """
 
-class ConsumerModule:
+class ConsumerModule(object):
   """ Base class for all consumer modules
 
       This class is used by the ConsumertReactor class to steer the execution of
