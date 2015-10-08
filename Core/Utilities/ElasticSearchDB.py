@@ -68,10 +68,13 @@ class ElasticSearchDB( object ):
          
     """
     try:
-      result = self.client.info()
-      self.setClusterName ( result.get( "cluster_name", " " ) )
-      self.log.info( "Database info", result )
-      self._connected = True
+      if self.client.ping():
+        result = self.client.info()
+        self.setClusterName ( result.get( "cluster_name", " " ) )
+        self.log.info( "Database info", result )
+        self._connected = True
+      else:
+        self.log.error( "Cannot connect to the database!" )
     except ConnectionError as e:
       self.log.error( e )
       self._connected = False 
@@ -82,3 +85,23 @@ class ElasticSearchDB( object ):
     It returns the available indexes...
     """
     return [ index for index in self.client.indices.get_aliases() ]
+  
+  ########################################################################
+  def getDocTypes(self, indexes):
+    try:
+      result = self.client.indices.get_mapping(indexes)
+    except Exception as e:
+      print e
+    doctype = ''
+    for i in result:
+      doctype = result[i]['mappings'].keys()[0]
+      break
+    return doctype 
+  
+  ########################################################################
+  def checkIndex(self, indexName):
+    """
+    it checks the existance of an index
+    :param str indexName: the name of the index
+    """
+    return self.client.indices.exists(indexName)

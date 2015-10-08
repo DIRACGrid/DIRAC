@@ -84,6 +84,13 @@ class BaseType( object ):
       doctype = self.__doc_type
     return doctype
   
+  def setDocType(self, doctype):
+    """
+    It sets the doctype of the documents. Each document belong to a doctype
+    :param str doctype: name of the doctype
+    """
+    self.__doc_type = doctype
+    
   ########################################################################  
   def getDataToKeep( self ):
     """
