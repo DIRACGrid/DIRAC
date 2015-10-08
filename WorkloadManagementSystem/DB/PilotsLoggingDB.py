@@ -81,6 +81,8 @@ class PilotsLoggingDB( object ):
 
     return S_OK( )
 
+    return S_OK()
+
 ##########################################################################################
   def addPilotsLogging( self, pilotRef, status, minorStatus, timeStamp, source ):
     """Add new pilot logging entry"""
