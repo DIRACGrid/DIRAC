@@ -228,6 +228,18 @@ def removeRemoteFiles(dm,lfns):
       return S_ERROR( "Failed to remove data", res['Message'] )
     else:
       return S_OK()
+    
+  
+def uploadRemoteFiles(dm, lfn, localfile, storage):
+  """
+    Remove file from the catalog
+  """
+  res = dm.putAndRegister( lfn, localfile, storage, None )
+  if not res['OK']:
+    return S_ERROR( 'Error: failed to upload %s to %s' % ( lfn, storage ) )
+  else:
+    return S_OK( 'Successfully uploaded file to %s' % storage )
+
   
 def removeStorageDirectoryFromSE( directory, storageElement ):
   """
