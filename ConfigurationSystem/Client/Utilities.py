@@ -575,10 +575,4 @@ def getElasticDBParameters( fullname ):
     dbPort = int( result['Value'] )
   parameters[ 'Port' ] = dbPort
 
-  result = gConfig.getOption( cs_path + '/DBName' )
-  if not result['OK']:
-    return S_ERROR( 'Failed to get the configuration parameter: DBName' )
-  dbName = result['Value']
-  parameters[ 'DBName' ] = dbName
-
   return S_OK( parameters )
