@@ -1,7 +1,8 @@
 """
-  DIRAC class which is the interface for the Consumers
+  DIRAC class which is the abstract class for the consumers
 
   All DIRAC consumers must inherit from the basic class ConsumerModule
+  and override its methods
 """
 
 class ConsumerModule(object):
@@ -12,7 +13,11 @@ class ConsumerModule(object):
   """
 
   def __init__( self ):
-    pass
+    """  Abstract class
+    """
+    raise NotImplementedError('That should be implemented')
 
   def execute( self ):
-    pass
+    """ Function should be overriden in the implementation
+    """
+    raise NotImplementedError('That should be implemented')

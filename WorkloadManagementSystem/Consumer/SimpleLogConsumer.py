@@ -1,29 +1,43 @@
+"""
+  Example implementation of a concreta consumer module
+  which can be loaded by ConsumerReactor.
+"""
+import time
 from DIRAC.Core.Base.ConsumerModule import ConsumerModule
 from DIRAC.Core.Utilities.RabbitMQ import RabbitInterface
+from DIRAC import gConfig
+from DIRAC import S_ERROR
 
-import time
-import sys
-
-import stomp
-
-class MyListener(stomp.ConnectionListener):
-    def on_error(self, headers, message):
-        print('received an error "%s"' % message)
-    def on_message(self, headers, message):
-        print('received a message "%s"' % message)
-
-
-
-
-class SimpleLogConsumer( ConsumerModule):
+def getCurrentWMSystem():
+  """Returns the current system name for WorkloadManagement
   """
+  setup = gConfig.getValue( '/DIRAC/Setup', '' )
+  return gConfig.getValue('DIRAC/Setups/' + setup +'/WorkloadManagement', '')
+
+class SimpleLogConsumer( ConsumerModule ):
+  """Just a simple example of the consumer implementation
+     SimpleLogConsumer uses RabbitInterface object
+     to connect to the queue.
+     See RabbitInterface class for more info.
   """
   def __init__ ( self ):
-    self.conn = stomp.Connection()
-    self.conn.set_listener('', MyListener())
-    self.conn.start()
-    self.conn.connect('ala', 'ala', wait=True)
+    """ Method creates rabbitConnector
+    """
+    self.rabbitConnector = RabbitInterface()
+    self.rabbitSystem = "MyRabbitSystem" #in this system all rabbit related options must be placed
 
   def execute( self ):
-    self.conn.subscribe(destination='/queue/test', id=1, ack='auto')
-    time.sleep(50)
+    """ Methods establishes the connection with rabbitMQ server
+        sleeps for 50 seconds and checks if there is a message in the queue.
+        It prints it on the screen and after that just disconnects.
+    """
+    result = self.rabbitConnector.setupConnection("MyRabbitSystem", "testQueue", True)
+    if not result[ 'OK' ]:
+      print result['Message']
+      return S_ERROR( 'Failed to established connection to RabbitMQ server: %s' % result[ 'Message' ] )
+    time.sleep(30)
+    result = self.rabbitConnector.receive()
+    if not result[ 'OK' ]:
+      return S_ERROR( 'Failed to receive any message from the queue' % result[ 'Message' ] )
+    print result['Value']
+    self.rabbitConnector.unsetupConnection()
