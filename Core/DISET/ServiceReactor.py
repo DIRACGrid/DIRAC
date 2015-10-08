@@ -1,5 +1,20 @@
+"""
+  DIRAC class to execute services
 
-import types
+  In the most common case, DIRAC services are executed using the dirac-service command.
+  dirac-service accepts a list positional arguments. These arguments have the form:
+  [DIRAC System Name]/[DIRAC Service Name]
+  dirac-service then:
+  - produces a instance of ServiceReactor
+  - loads the required modules using the ServiceReactor.loadAgentModules method
+  - starts the execution loop using the ServiceReactor.serve() method
+
+  Service modules must be placed under the Service directory of a DIRAC System.
+  DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
+  must inherit from the base class RequestHandler
+
+"""
+
 import select
 import time
 import socket
@@ -13,13 +28,13 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.private.GatewayService import GatewayService
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Network, Time
+from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-class ServiceReactor:
+class ServiceReactor( object ):
 
   __transportExtraKeywords = { 'SSLSessionTimeout' : False, 
                                'IgnoreCRLs': False, 
@@ -139,7 +154,7 @@ class ServiceReactor:
     sockets = self.__getListeningSocketsList( svcName )
     while self.__alive:
       try:
-        inList, outList, exList = select.select( sockets, [], [], 10 )
+        inList, _outList, _exList = select.select( sockets, [], [], 10 )
         if len( inList ) == 0:
           return
         for inSocket in inList:
@@ -166,11 +181,11 @@ class ServiceReactor:
       now = time.time()
       renewed = False
       for svcName in self.__listeningConnections:
-         tr = self.__listeningConnections[ svcName ][ 'transport' ]
-         if now - tr.latestServerRenewTime() > self.__services[ svcName ].getConfig().getContextLifeTime():
-           result = tr.renewServerContext()
-           if result[ 'OK' ]:
-             renewed = True
+        tr = self.__listeningConnections[ svcName ][ 'transport' ]
+        if now - tr.latestServerRenewTime() > self.__services[ svcName ].getConfig().getContextLifeTime():
+          result = tr.renewServerContext()
+          if result[ 'OK' ]:
+            renewed = True
       if renewed:
         sockets = self.__getListeningSocketsList()
 
