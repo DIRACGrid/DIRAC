@@ -17,7 +17,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
+from DIRAC.ConfigurationSystem.Client.Utilities  import getDBParameters
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -43,12 +43,20 @@ metadata = MetaData()
 Base = declarative_base()
 
 #############################################################################
-class PilotsLoggingDB( DB ):
+class PilotsLoggingDB(  ):
 
   def __init__( self ):
 
-    DB.__init__( self, 'PilotAgentsDB', 'WorkloadManagement/PilotsLoggingDB' )
-    self.lock = threading.Lock()
+    result = getDBParameters( 'WorkloadManagement/PilotsLoggingDB' )
+    if not result['OK'] :
+      raise RuntimeError( 'Cannot get database parameters: %s' % result['Message'] )
+
+    dbParameters = result[ 'Value' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
     self.__initializeConnection('WorkloadManagement/PilotsLoggingDB')
     resp = self.__initializeDB()
@@ -85,6 +93,8 @@ class PilotsLoggingDB( DB ):
         return S_ERROR(e)
     else:
       gLogger.debug("Table PilotsLogging exists")
+
+    return S_OK()
 
 ##########################################################################################
   def addPilotsLogging(self, pilotUUID, status, minorStatus, timeStamp, source):
