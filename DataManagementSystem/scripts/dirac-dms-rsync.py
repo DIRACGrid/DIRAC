@@ -242,7 +242,7 @@ def removeStorageDirectoryFromSE( directory, storageElement ):
 
   exists = res['Value']
   if not exists:
-    return S_ERROR( "The directory %s does not exist at %s " % ( directory, storageElement ) )
+    return S_OK( "The directory %s does not exist at %s " % ( directory, storageElement ) )
 
   res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
   if not res['OK']:
@@ -253,17 +253,49 @@ def removeStorageDirectoryFromSE( directory, storageElement ):
 def removeRemoteDirectory(fc,lfn):
   """
     Remove file from the catalog
-  """  
+  """
   storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
   
   for storageElement in sorted( storageElements ):
     res = removeStorageDirectoryFromSE( lfn, storageElement )
     if not res['OK']:
-      return S_ERROR( "Failed to clean storage directory at all SEs" )
+      return S_ERROR( "Failed to clean storage directory at all SE:" + res['Message'] )
   res = returnSingleResult( fc.removeDirectory( lfn, recursive = True ) )
   if not res['OK']:
-    return S_ERROR( "Failed to clean storage directory at all SEs" ) 
-  return S_OK()
+    return S_ERROR( "Failed to clean storage directory at all SE:" + res['Message'] )
+  
+  return S_OK("Sucefully removed directory")
 
-    
-print getContentToSync(True,'.','/ilc/user/p/petric')
+
+def createRemoteDirectory(fc,newdir):
+  """
+    Create directory in file catalog
+  """
+  result = fc.createDirectory(newdir)
+  if result['OK']:
+    if result['Value']['Successful']:
+      if result['Value']['Successful'].has_key(newdir):
+        return S_OK("Successfully created directory:" + newdir)
+    elif result['Value']['Failed']:
+      if result['Value']['Failed'].has_key(newdir):
+        return S_ERROR('Failed to create directory:',result['Value']['Failed'][newdir])
+  else:
+    return S_ERROR('Failed to create directory:' + result['Message'])
+
+
+
+
+def run():
+  """doc"""
+  res = getFileCatalog()
+  fc = res['Value']
+  print createRemoteDirectory(fc,'/ilc/user/p/petric/remove')
+
+if __name__ == "__main__":
+  run()
+ 
+
+
+
+  
+
