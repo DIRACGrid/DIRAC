@@ -1,9 +1,13 @@
-# $HeadURL$
-__RCSID__ = "b7db10b (2013-03-06 01:10:41 +0100) Andrei Tsaregorodtsev <atsareg@in2p3.fr>"
+""" Exposes singleton object gMonitor, which is instance of MonitoringClient class
 
-#import threading
+    Uses RPC Framework/Monitoring service. Calls registerActivities exposed function
+"""
+
+__RCSID__ = "$Id"
+
 import time
 import types
+
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
@@ -13,30 +17,30 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class MonitoringClientActivityNotDefined( Exception ):
   def __init__( self, message ):
-    self.message = str(message)
+    self.message = str( message )
   def __str__( self ):
     return self.message
 
 class MonitoringClientActivityValueTypeError( Exception ):
   def __init__( self, message ):
-    self.message = message 
+    self.message = message
   def __str__( self ):
     return self.message
 
 class MonitoringClientUnknownParameter( Exception ):
   def __init__( self, message ):
-    self.message = message 
+    self.message = message
   def __str__( self ):
     return self.message
-    
-class MonitoringFlusher:
+
+class MonitoringFlusher( object ):
   """
   This class flushes all monitoring clients registered
   """
   def __init__( self ):
     self.__mcList = []
     ThreadScheduler.gThreadScheduler.addPeriodicTask( 300, self.flush )
-    #HACK: Avoid exiting while the thread is starting
+    # HACK: Avoid exiting while the thread is starting
     time.sleep( 0.1 )
 
   def flush( self, allData = False ):
@@ -49,15 +53,17 @@ class MonitoringFlusher:
 
 gMonitoringFlusher = MonitoringFlusher()
 
-class MonitoringClient(object):
+class MonitoringClient( object ):
+  """ It accumulates monitoring info from components before flushing using gMonitoringFlusher
+  """
 
-  #Different types of operations
+  # Different types of operations
   OP_MEAN = "mean"
   OP_ACUM = "acum"
   OP_SUM = "sum"
   OP_RATE = "rate"
 
-  #Predefined components that can be registered
+  # Predefined components that can be registered
   COMPONENT_SERVICE = "service"
   COMPONENT_AGENT = "agent"
   COMPONENT_WEB = "web"
@@ -77,8 +83,8 @@ class MonitoringClient(object):
     self.marksToSend = {}
     self.__compRegistrationExtraDict = {}
     self.__compCommitExtraDict = {}
-    self.__activitiesLock = None #threading.Lock()
-    self.__flushingLock = None #threading.Lock()
+    self.__activitiesLock = None  # threading.Lock()
+    self.__flushingLock = None  # threading.Lock()
     self.timeStep = 60
     self.__initialized = False
     self.__enabled = True
@@ -94,7 +100,7 @@ class MonitoringClient(object):
     if not self.__flushingLock:
       self.__flushingLock = LockRing().getLock( "flushingLock" )
     return self.__flushingLock
-  
+
   def disable( self ):
     self.__enabled = False
 
@@ -108,7 +114,7 @@ class MonitoringClient(object):
       self.__compCommitExtraDict[ name ] = str( value )
     else:
       raise MonitoringClientUnknownParameter( "Unknown parameter %s" % name )
-      #raise Exception( "Unknown parameter %s" % name )
+      # raise Exception( "Unknown parameter %s" % name )
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
@@ -129,7 +135,7 @@ class MonitoringClient(object):
     else:
       raise Exception( "Component type has not been defined" )
     gMonitoringFlusher.registerMonitoringClient( self )
-    #ExitCallback.registerExitCallback( self.forceFlush )
+    # ExitCallback.registerExitCallback( self.forceFlush )
     self.__initialized = True
 
   def setComponentLocation( self, componentLocation = False ):
@@ -219,10 +225,10 @@ class MonitoringClient(object):
       return
     if name not in self.activitiesDefinitions:
       raise MonitoringClientActivityNotDefined( "You must register activity %s before adding marks to it" % name )
-      #raise Exception( "You must register activity %s before adding marks to it" % name )
+      # raise Exception( "You must register activity %s before adding marks to it" % name )
     if type( value ) not in self.__validMonitoringValues:
-      raise MonitoringClientActivityValueTypeError( "Activity '%s' value's type (%s) is not valid" % ( name, type(value) ) )
-      #raise Exception( "Value's type %s is not valid" % value )
+      raise MonitoringClientActivityValueTypeError( "Activity '%s' value's type (%s) is not valid" % ( name, type( value ) ) )
+      # raise Exception( "Value's type %s is not valid" % value )
     self.activitiesLock.acquire()
     try:
       self.logger.debug( "Adding mark to %s" % name )
@@ -254,7 +260,7 @@ class MonitoringClient(object):
           remainderMarks[ key ][ markTime ] = markValue
         else:
           consolidatedMarks[ key ][ markTime ] = markValue
-          #Consolidate the copied ones
+          # Consolidate the copied ones
           totalValue = 0
           for mark in consolidatedMarks[ key ][ markTime ]:
             totalValue += mark
@@ -278,7 +284,7 @@ class MonitoringClient(object):
         self.__appendMarksToSend( self.__consolidateMarks( allData ) )
       finally:
         self.activitiesLock.release()
-      #Commit new activities
+      # Commit new activities
       if self.__dataToSend():
         if not self.__disabled():
           self.__sendData()
@@ -311,10 +317,10 @@ class MonitoringClient(object):
     else:
       self.logger.debug( "Creating RPC client" )
       rpcClient = RPCClient( "Framework/Monitoring", timeout = secsTimeout )
-    #Send registrations
+    # Send registrations
     if not self.__sendRegistration( rpcClient ):
       return False
-    #Send marks
+    # Send marks
     maxIteration = 5
     if self.__sendMarks( rpcClient ) and maxIteration:
       maxIteration -= 1
@@ -401,10 +407,10 @@ class MonitoringClient(object):
       for cType in compDict[ setup ]:
         for name in compDict[ setup ][ cType ]:
           for component in compDict[ setup ][ cType ][ name ]:
-            #How here we are. Now we need to filter the components
+            # How here we are. Now we need to filter the components
             if not self.__filterComponent( component, condDict ):
               continue
-            #Add to tabledData!
+            # Add to tabledData!
             row = []
             for field in fields:
               if field not in component:
@@ -412,8 +418,8 @@ class MonitoringClient(object):
               else:
                 row.append( component[ field ] )
             tabledData.append( row )
-    #We've got the data in table form
-    #Now it's time to sort it
+    # We've got the data in table form
+    # Now it's time to sort it
     if sortingList:
       sortingData = []
       sortField = sortingList[0][0]
@@ -431,7 +437,7 @@ class MonitoringClient(object):
       if sortDirection == "DESC":
         sortingData.reverse()
       tabledData = [ row[1] for row in sortingData ]
-    #Now need to limit
+    # Now need to limit
     numRows = len( tabledData )
     tabledData = tabledData[ startItem: ]
     if maxItems:
