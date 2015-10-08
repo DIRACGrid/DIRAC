@@ -125,7 +125,10 @@
 """
 __RCSID__ = "$Id$"
 
-import random, time, threading
+import random
+import time
+import threading
+
 from DIRAC                                                       import S_OK, S_ERROR, gConfig, abort
 from DIRAC.Core.Utilities                                        import List, Time
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
