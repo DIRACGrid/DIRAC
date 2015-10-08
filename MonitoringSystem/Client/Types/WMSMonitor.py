@@ -29,6 +29,8 @@ class WMSMonitor( BaseType ):
     
     self.setIndex( 'wmshistory_index' )  # overwrite the index name
     
+    self.setDocType("WMSHistory")
+    
     self.setDataToKeep ( 86400 * 30 )
     
     self.checkType()
