@@ -529,30 +529,6 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   # FIXME: this is not called anywhere...?
-  def __reportPilotInfo( self, jobID ):
-    """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
-       service.
-    """
-
-    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
-
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    if gridCE != 'Unknown':
-      result = wmsAdmin.setJobForPilot( int( jobID ), str( self.pilotReference ), gridCE )
-    else:
-      result = wmsAdmin.setJobForPilot( int( jobID ), str( self.pilotReference ) )
-
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
-    result = wmsAdmin.setPilotBenchmark( str( self.pilotReference ), float( self.cpuFactor ) )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
-    return S_OK()
-
-  #############################################################################
-  # FIXME: this is not called anywhere...?
   def __setJobSite( self, jobID, site ):
     """Wraps around setJobSite of state update client
     """
