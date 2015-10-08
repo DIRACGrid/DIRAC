@@ -42,15 +42,15 @@ class PilotsLoggingDB( object ):
     if not result['OK']:
       raise RuntimeError( 'Cannot get database parameters: %s' % result['Message'] )
 
-    dbParameters = result['Value']
-    self.dbHost = dbParameters['Host']
-    self.dbPort = dbParameters['Port']
-    self.dbUser = dbParameters['User']
-    self.dbPass = dbParameters['Password']
-    self.dbName = dbParameters['DBName']
+    dbParameters = result[ 'Value' ]
+    self.dbHost = dbParameters[ 'Host' ]
+    self.dbPort = dbParameters[ 'Port' ]
+    self.dbUser = dbParameters[ 'User' ]
+    self.dbPass = dbParameters[ 'Password' ]
+    self.dbName = dbParameters[ 'DBName' ]
 
-    self.__initializeConnection( 'WorkloadManagement/PilotsLoggingDB' )
-    resp = self.__initializeDB( )
+    self.__initializeConnection('WorkloadManagement/PilotsLoggingDB')
+    resp = self.__initializeDB()
     if not resp['OK']:
       raise Exception( "Couldn't create tables: " + resp['Message'] )
 
