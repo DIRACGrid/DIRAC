@@ -29,8 +29,9 @@ class WMSMonitor( BaseType ):
     
     self.setIndex( 'wmshistory_index' )  # overwrite the index name
     
-    self.setDocType("WMSHistory")
+    self.setDocType( "WMSHistory" )
     
+    self.setMapping( {'_all': {'enabled': 'false'}, 'properties': {'Site': {'index': 'not_analyzed', 'type': 'string'}}} )
     self.setDataToKeep ( 86400 * 30 )
     
     self.checkType()

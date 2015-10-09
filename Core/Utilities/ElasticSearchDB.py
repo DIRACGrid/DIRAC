@@ -10,9 +10,10 @@ Elasticsearch database.
 
 __RCSID__ = "$Id$"
 
-from DIRAC                      import gLogger
+from DIRAC                      import gLogger, S_OK, S_ERROR
 from elasticsearch              import Elasticsearch
 from elasticsearch.exceptions   import ConnectionError
+from datetime                   import datetime
 
 class ElasticSearchDB( object ):
   
@@ -46,7 +47,7 @@ class ElasticSearchDB( object ):
       except IOError as e:
         self.log.error( e )
       
-    self.client = Elasticsearch( self.__url )
+    self.__client = Elasticsearch( self.__url )
     self.__tryToConnect()
   
   ########################################################################  
@@ -58,7 +59,7 @@ class ElasticSearchDB( object ):
     :param dict query: It is the query in ElasticSerach DSL language
      
     """
-    return self.client.search( query )
+    return self.__client.search( query )
   
   ########################################################################
   def __tryToConnect( self ):
@@ -68,8 +69,8 @@ class ElasticSearchDB( object ):
          
     """
     try:
-      if self.client.ping():
-        result = self.client.info()
+      if self.__client.ping():
+        result = self.__client.info()
         self.setClusterName ( result.get( "cluster_name", " " ) )
         self.log.info( "Database info", result )
         self._connected = True
@@ -80,16 +81,16 @@ class ElasticSearchDB( object ):
       self._connected = False 
 
   ########################################################################
-  def getIndexes(self):
+  def getIndexes( self ):
     """
     It returns the available indexes...
     """
-    return [ index for index in self.client.indices.get_aliases() ]
+    return [ index for index in self.__client.indices.get_aliases() ]
   
   ########################################################################
-  def getDocTypes(self, indexes):
+  def getDocTypes( self, indexes ):
     try:
-      result = self.client.indices.get_mapping(indexes)
+      result = self.__client.indices.get_mapping( indexes )
     except Exception as e:
       print e
     doctype = ''
@@ -99,9 +100,34 @@ class ElasticSearchDB( object ):
     return doctype 
   
   ########################################################################
-  def checkIndex(self, indexName):
+  def checkIndex( self, indexName ):
     """
     it checks the existance of an index
     :param str indexName: the name of the index
     """
-    return self.client.indices.exists(indexName)
+    return self.__client.indices.exists( indexName )
+  
+  ########################################################################
+  def createFullIndexName( self, indexName ):
+    """
+    Given an index perfix we create the actual index name.
+    :param str indexName: it is the name of the index
+    """
+    today = datetime.today().strftime( "%Y-%m-%d" )
+    return "%s-%s" % ( indexName, today )
+  
+  def createIndex( self, indexPrefix, mapping ):
+    """
+    :param str indexPrefix: it is the index name. 
+    :param dict mapping: the configuration of the index.
+    
+    """
+    result = S_OK( "Index created" )
+    fullIndex = self.createFullIndexName( indexPrefix )  # we have to create the an index in each day...
+    try:
+      self.log.info( "Create index: ", fullIndex + str( mapping ) )
+      self.__client.indices.create( fullIndex, body = mapping )
+    except Exception as e:
+      result = S_ERROR( e )
+    return result
+    
