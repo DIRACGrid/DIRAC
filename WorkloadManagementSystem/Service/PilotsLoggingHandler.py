@@ -52,8 +52,8 @@ class PilotsLoggingHandler( RequestHandler ):
 
     return self.pilotsLogging.addPilotsUUID( pilotUUID )
 
-  types_detelePilotsLogging = [ types.IntType ]
   auth_detelePilotsLogging = [ 'Operator' ]
+  types_detelePilotsLogging = [ [ types.IntType, types.ListType ] ]
   def export_detelePilotsLogging( self, pilotID ):
 
     return self.pilotsLogging.deletePilotsLogging( pilotID )
