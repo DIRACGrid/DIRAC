@@ -33,7 +33,7 @@ Script.parseCommandLine( ignoreErrors = False )
 
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC import gConfig, exit as dexit
+from DIRAC import gConfig
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -103,7 +103,7 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
   """
     Recusivly traverses all the subdirectories of a directory and returns a set of directories and files
   """
-  result =  fc.listDirectory(path)
+  result = fc.listDirectory(path)
   if result['OK']:
     if result['Value']['Successful']:
       for entry in result['Value']['Successful'][path]['Files']:
@@ -230,9 +230,9 @@ def removeRemoteFiles(dm,lfns):
       return S_OK()
     
   
-def uploadRemoteFiles(dm, lfn, localfile, storage):
+def uploadLocalFiles(dm, lfn, localfile, storage):
   """
-    Remove file from the catalog
+    Upload a local file to a storage element
   """
   res = dm.putAndRegister( lfn, localfile, storage, None )
   if not res['OK']:
@@ -294,15 +294,41 @@ def createRemoteDirectory(fc,newdir):
   else:
     return S_ERROR('Failed to create directory:' + result['Message'])
 
+def createLocalDirectory(directory):
+  """
+  Create local directory
+  """
+  os.makedirs(directory)
+  if not os.path.exists(directory):
+    return S_ERROR('Directory creation failed')
+  return S_OK('Created directory sucefully')
+  
+def removeLocalDirectory(directory):
+  """
+  Remove local directory
+  """
+  os.rmdir(directory)
+  if os.path.exists(directory):
+    return S_ERROR('Directory deleting failed')
+  return S_OK('Removed directory sucefully')
 
+def removeLocalFile(path):
+  """
+  Remove local file
+  """
+  os.remove(path)
+  if os.path.isfile(path):
+    return S_ERROR('File deleting failed')
+  return S_OK('Removed file sucefully')
 
 
 def run():
   """doc"""
-  res = getFileCatalog()
-  fc = res['Value']
-  print createRemoteDirectory(fc,'/ilc/user/p/petric/remove')
-
+#  res = getFileCatalog()
+#  fc = res['Value']
+  dm = DataManager()
+  print removeRemoteFiles(dm, '/ilc/user/p/petric/test.txt')
+  
 if __name__ == "__main__":
   run()
  
