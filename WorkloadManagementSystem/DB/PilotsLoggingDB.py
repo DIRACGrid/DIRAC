@@ -141,10 +141,13 @@ class PilotsLoggingDB(  ):
   def deletePilotsLogging(self, pilotID):
     """Delete all logging entries for pilot"""
 
+    if type(pilotID) is IntType:
+      pilotID = [pilotID, ]
+
     session = self.sqlalchemySession()
 
     #session.query(PilotsLogging).join(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete(synchronize_session = 'fetch')
-    session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID == pilotID).delete()
+    session.query(PilotsUUIDtoID).filter(PilotsUUIDtoID.pilotID.in_(pilotID)).delete(synchronize_session='fetch')
 
     try:
       session.commit()
