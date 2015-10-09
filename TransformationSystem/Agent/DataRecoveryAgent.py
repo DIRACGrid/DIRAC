@@ -227,6 +227,16 @@ class DataRecoveryAgent(AgentModule):
         self.treatMCGeneration(int(prodID), transName, transType)
       else:
         self.treatProduction(int(prodID), transName, transType)
+
+      if self.notesToSend:
+        notification = NotificationClient()
+        for address in self.addressTo:
+          result = notification.sendMail(address, "%s: %s" %
+                                         (self.subject, prodID), self.notesToSend, self.addressFrom, localAttempt=False)
+          if not result['OK']:
+            self.log.error('Cannot send notification mail', result['Message'])
+        self.notesToSend = ""
+
     return S_OK()
 
   def getEligibleTransformations(self, status, typeList):
@@ -264,20 +274,6 @@ class DataRecoveryAgent(AgentModule):
     self.checkAllJobs( jobs, tInfo, tasksDict, lfnTaskDict )
     self.printSummary()
 
-    if self.notesToSend:
-      notification = NotificationClient()
-      for address in self.addressTo:
-        result = notification.sendMail(
-            address,
-            "%s: %s" %
-            (self.subject,
-             prodID),
-            self.notesToSend,
-            self.addressFrom,
-            localAttempt=False)
-        if not result['OK']:
-          self.log.error('Cannot send notification mail', result['Message'])
-      self.notesToSend = ""
 
   def checkJob(self, job, tInfo):
     """ deal with the job """
