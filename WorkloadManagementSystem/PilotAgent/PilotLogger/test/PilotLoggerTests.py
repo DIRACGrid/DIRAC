@@ -1,15 +1,10 @@
 """ Unit tests for PilotLogger
 """
 
-__RCSID__ = "$Id$"
-
-# imports
 import unittest
-# sut
 import os
-from PilotLogger import PilotLogger, getPilotUUIDFromFile
-from PilotLogger import eraseFileContent
-from PilotLoggerTools import generateUniqueIDAndSaveToFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import PilotLogger, getPilotUUIDFromFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
 
 class TestPilotLogger( unittest.TestCase ):
 

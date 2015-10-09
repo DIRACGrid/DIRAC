@@ -1,4 +1,4 @@
-""" A set of tools for the remote pilot agent logging system
+"""A set of tools for the remote pilot agent logging system
 """
 
 __RCSID__ = "$Id$"
@@ -9,10 +9,10 @@ from uuid import uuid1
 import sys
 
 def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
-  """
-  Helper function that returs a dictionnary based on the
-  set of input values
-  @return : dict
+  """Helper function that returs a dictionnary based on the
+     set of input values.
+  Returns
+    dict:
   """
 
   keys = [
@@ -34,41 +34,49 @@ def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
   return dict( zip( keys, values ) )
 
 def encodeMessage( content ):
-  """
-  Method encodes the message in form of the serialized JSON string
-  see https://docs.python.org/2/library/json.html#py-to-json-table
-  @type input : dict
-  @return : string in the JSON format or rise TypeError exception
+  """Method encodes the message in form of the serialized JSON string
+     see https://docs.python.org/2/library/json.html#py-to-json-table
+  Args:
+    content(dict):
+  Returns:
+    str: in the JSON format.
+  Raises:
+    TypeError:if cannont encode json properly
   """
   return json.dumps( content )
 
 def decodeMessage( msgJSON ):
-  """
-  Method decodes the message from the serialized JSON string
-  See https://docs.python.org/2/library/json.html#py-to-json-table
-  @type input : string in JSON format
-  @return : decoded object or raises TypeError exception
+  """Decodes the message from the serialized JSON string
+     See https://docs.python.org/2/library/json.html#py-to-json-table.
+  Args:
+    msgJSON(str):in the JSON format.
+  Returns:
+    str: decoded objecst.
+  Raises:
+    TypeError: if cannot decode JSON properly.
   """
   return json.loads( msgJSON )
 
 def isMessageFormatCorrect( content ):
-  """
-  Function checks if the input format is a dictionnary
-  in the following format:
-  0) content is a dictionary
-  1) it contains only those keys of string types:
-  'pilotUUID', 'pilotId', 'status', 'minorStatus', 'timestamp', 'source'
-  2) it contains only values of string types
-  e.g.
-  {"status": "DIRAC Installation",
-   "timestamp": "1427121370.7",
-    "minorStatus": "Uname = Linux localhost 3.10.64-85.cernvm.x86_64",
-    "pilotID": "1",
-    "pilotUUID": "eda78924-d169-11e4-bfd2-0800275d1a0a",
-    "source": "pilot"
-    }
-  3)pilotID can be empty, other values must be non-empty
-  @return : True if message format is correct, False otherwise
+  """Checks if input format is correct.
+     Function checks if the input format is a dictionnary
+     in the following format:
+     0) content is a dictionary,
+     1) it contains only those keys of string types:
+     'pilotUUID', 'pilotId', 'status', 'minorStatus', 'timestamp', 'source',
+     2) it contains only values of string types.
+  Args:
+    content(dict): pilotID can be empty, other values must be non-empty
+  Returns:
+    bool: True if message format is correct, False otherwise
+  Example:
+    {"status": "DIRAC Installation",
+     "timestamp": "1427121370.7",
+      "minorStatus": "Uname = Linux localhost 3.10.64-85.cernvm.x86_64",
+      "pilotID": "1",
+      "pilotUUID": "eda78924-d169-11e4-bfd2-0800275d1a0a",
+      "source": "pilot"
+      }
   """
   if not isinstance( content, dict ):
     return False
@@ -98,26 +106,24 @@ def isMessageFormatCorrect( content ):
   return True
 
 def generateTimeStamp():
+  """Generates the current timestamp in Epoch format.
+  Returns:
+    str: with number of seconds since the Epoch.
   """
-  Function generates the current timestamp in Epoch format
-  @return : string with number of seconds since the Epoch
-  """
-
   return str( time.time() )
 
 def generateUniqueID():
+  """Generates a unique identifier based on uuid1 function
+  Returns:
+    str: containing uuid
   """
-  Function generates a unique identifier based on uuid1 function
-  @return : string containing uuid
-  """
-
   return str( uuid1() )
 
 def generateUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
-  """
-  Function generates the unique id and writes it to a file
-  of given name: filename
-  @return: True if everything went ok False if there was an error with the file
+  """Generates the unique id and writes it to a file
+     of given name: filename
+  Returns:
+    bool: True if everything went ok False if there was an error with the file
   """
   myId = generateUniqueID()
   try:
@@ -131,9 +137,9 @@ def generateUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
     return True
 
 def main():
-  """ main() function is used to generate the pilot uuid
-  and save it to a file even
-  before any DIRAC related part is installed
+  """Is used to generate the pilot uuid
+     and save it to a file even
+     before any DIRAC related part is installed.
   """
   filename = ' '.join( sys.argv[1:] )
   if not filename:

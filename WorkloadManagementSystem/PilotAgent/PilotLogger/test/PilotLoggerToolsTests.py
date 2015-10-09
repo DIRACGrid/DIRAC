@@ -1,15 +1,12 @@
-# imports
+"""Unit tests for PilotLoggerTools
+"""
 import unittest
-# sut
 import json
 import os
-from PilotLoggerTools import ( 
-    generateDict,
-    encodeMessage,
-    decodeMessage,
-    isMessageFormatCorrect,
-    generateUniqueIDAndSaveToFile
-    )
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import decodeMessage, isMessageFormatCorrect
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
+
 
 class TestPilotLoggerTools( unittest.TestCase ):
 
@@ -33,7 +30,7 @@ class TestPilotLoggerTools( unittest.TestCase ):
 class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
 
   def test_success( self ):
-    result = generateDict( 
+    result = generateDict(
         'eda78924-d169-11e4-bfd2-0800275d1a0a',
         '1',
         'Installing',
@@ -43,7 +40,7 @@ class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
         )
     self.assertEqual( result, self.msg )
   def test_failure( self ):
-    result = generateDict( 
+    result = generateDict(
         'eda78924-d169-11e4-bfd2-0800275d1a0a',
         '1',
         'AAA Installation',
@@ -82,7 +79,7 @@ class TestPilotLoggerIsMessageFormatCorrect( TestPilotLoggerTools ):
 
   def test_success( self ):
     self.assertTrue( isMessageFormatCorrect( self.msg ) )
-    
+
   def test_successEvenThatpilotIDEmpty( self ):
     goodDict = self.msg.copy()
     goodDict['pilotID'] = ''
@@ -122,4 +119,3 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerIsMessageFormatCorrect ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerGenerateUniqueIDAndSaveToFile ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

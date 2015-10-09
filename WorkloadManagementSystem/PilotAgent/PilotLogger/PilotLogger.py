@@ -5,20 +5,17 @@ __RCSID__ = "$Id$"
 
 import pika
 import sys
-from PilotLoggerTools import (
-    generateDict,
-    encodeMessage,
-    generateTimeStamp,
-    isMessageFormatCorrect
-    )
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateTimeStamp
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import isMessageFormatCorrect
 
 import Queue
 
 
 def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
-  """
-  Function retrives Pilot UUID from the file of given name
-  @return : string or empty string in case of errors
+  """ Retrives Pilot UUID from the file of given name.
+  Returns:
+    str: empty string in case of errors.
   """
   try:
     myFile = open( filename, 'r' )
@@ -31,27 +28,26 @@ def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
     return uniqueId
 
 def eraseFileContent( filename ):
-  """
-  Function erases the content of a given file
+  """ Erases the content of a given file.
   """
 
   with open(filename, 'r+') as myFile:
     myFile.truncate()
 
 def saveMessageToFile( msg, filename = 'myLocalQueueOfMessages' ):
-  """ Method adds the message to a file appended as a next line.
+  """ Adds the message to a file appended as a next line.
   """
 
   with open(filename, 'a+') as myFile:
     print >>myFile, msg
 
 def readMessagesFromFileAndEraseFileContent( filename = 'myLocalQueueOfMessages' ):
-  """
-  Method generates the queue FIFO and fills it
-  with values from the file, assuming that one line
-  corresponds to one message.
-  Finallym the file content is erased.
-  @return: Queue
+  """ Generates the queue FIFO and fills it
+      with values from the file, assuming that one line
+      corresponds to one message.
+      Finallym the file content is erased.
+  Returns:
+    Queue:
   """
 
   queue = Queue.Queue()
@@ -62,11 +58,11 @@ def readMessagesFromFileAndEraseFileContent( filename = 'myLocalQueueOfMessages'
   return queue
 
 class PilotLogger( object ):
-  """ Base pilot logger class
+  """ Base pilot logger class.
   """
 
   def __init__( self, fileWithID = 'PilotAgentUUID' ):
-    """ctr
+    """ ctr
     """
     self.FLAGS = ['info', 'warning', 'error', 'debug']
     self.STATUSES = [
@@ -88,9 +84,8 @@ class PilotLogger( object ):
 
 
   def _isCorrectFlag( self, flag ):
-    """
-    Method checks if the flag corresponds to one of the predefined
-    FLAGS, check constructor for current set
+    """ Checks if the flag corresponds to one of the predefined
+        FLAGS, check constructor for current set.
     """
 
     if flag in self.FLAGS:
@@ -99,9 +94,8 @@ class PilotLogger( object ):
 
   def _isCorrectStatus( self, status ):
 
-    """
-    Method checks if the flag corresponds to one of the predefined
-    STATUSES, check constructor for current set
+    """ Checks if the flag corresponds to one of the predefined
+        STATUSES, check constructor for current set.
     """
 
     if status in self.STATUSES:
@@ -109,8 +103,8 @@ class PilotLogger( object ):
     return False
 
   def _connect(self):
-    """ Methods connects to RabbitMQ and returns connection
-    handler or None in case of connection down
+    """ Connects to RabbitMQ and returns connection
+        handler or None in case of connection down.
     """
     try:
       connection = pika.BlockingConnection(
@@ -124,9 +118,8 @@ class PilotLogger( object ):
 
 
   def _sendAllLocalMessages(self, connect_handler, flag = 'info' ):
-    """
-    Method retrives all messages from the local storage
-    and sends it.
+    """ Retrives all messages from the local storage
+        and sends it.
     """
 
     channel = connect_handler.channel()
@@ -146,15 +139,16 @@ class PilotLogger( object ):
 
 
   def _sendMessage( self, msg, flag ):
-    """Method first copies the message content to the
-       local storage, then itchecks if the connection
-       to RabbitMQ server is up,
-       If it is the case it sends all messages stored
-       locally.  The string flag can be used as routing_key,
-       it can contain:  'info', 'warning', 'error',
-       'debug'. If the connection is down, the method
-       does nothing and returns False
-       @return: False in case of any errors, True otherwise
+    """ Method first copies the message content to the
+        local storage, then it checks if the connection
+        to RabbitMQ server is up,
+        If it is the case it sends all messages stored
+        locally.  The string flag can be used as routing_key,
+        it can contain:  'info', 'warning', 'error',
+        'debug'. If the connection is down, the method
+        does nothing and returns False
+    Returns:
+      bool: False in case of any errors, True otherwise
     """
 
     if not self._isCorrectFlag( flag ):
@@ -168,12 +162,12 @@ class PilotLogger( object ):
     return True
 
   def sendMessage( self, minorStatus, flag = 'info', status='Installing' ):
-    """
-    Method sends the message after
-    creating the correct format:
-    including content, timestamp, status, minor status and the uuid
-    of the pilot
-    @return : False in case of any errors, True otherwise
+    """ Sends the message after
+        creating the correct format:
+        including content, timestamp, status, minor status and the uuid
+        of the pilot
+    Returns:
+      bool: False in case of any errors, True otherwise
     """
     print "im sending"
     if not self._isCorrectFlag( flag ):
@@ -198,9 +192,8 @@ class PilotLogger( object ):
     return self._sendMessage( encodedMsg, flag )
 
 def main():
-
   """ main() function  is used to send a message
-  before any DIRAC related part is installed
+      before any DIRAC related part is installed.
   """
   message = ' '.join( sys.argv[1:] ) or "Something wrong no message to send!"
   logger = PilotLogger()
