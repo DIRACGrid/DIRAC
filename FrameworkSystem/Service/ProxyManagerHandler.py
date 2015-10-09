@@ -5,12 +5,16 @@
 __RCSID__ = "$Id$"
 
 import types
+import urllib
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForDN, getVOOption, getVOForGroup
 
 class ProxyManagerHandler( RequestHandler ):
 
@@ -357,3 +361,41 @@ class ProxyManagerHandler( RequestHandler ):
       return result
     self.__proxyDB.logAction( "download voms proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True )
+
+  types_getPUSProxy = [ types.StringTypes, types.StringTypes, ( types.IntType, types.LongType ) ]
+  def export_getPUSProxy( self, userDN, userGroup, requiredLifetime ):
+
+    result = getGroupsForDN( userDN )
+    if not result['OK']:
+      return result
+
+    validGroups = result['Value']
+    if not userGroup in validGroups:
+      return S_ERROR( 'Invalid group %s for user' % userGroup )
+
+    voName = getVOForGroup( userGroup )
+    if not voName:
+      return S_ERROR( 'Can not determine VO for group %s' % userGroup )
+    vomsVOName = getVOOption( voName, 'VOMSName' )
+    if not vomsVOName:
+      return S_ERROR( 'Can not determine VOMS VO for group %s' % userGroup )
+
+    puspServiceURL = getVOOption( voName, 'PUSPServiceURL' )
+    if not puspServiceURL:
+      return S_ERROR( 'Can not determine PUSP service URL for VO %s' % voName )
+
+    user = userDN.split(":")[-1]
+
+    puspURL = "%s?voms=%s:/%s&proxy-renewal=false&disable-voms-proxy=false" \
+              "&rfc-proxy=true&cn-label=user:%s" % ( puspServiceURL, vomsVOName, vomsVOName, user )
+    try:
+      proxy = urllib.urlopen( puspURL ).read()
+    except Exception as e:
+      gLogger.error( "Exception while getting the PUSP proxy", str( e ) )
+
+    chain = X509Chain()
+    chain.loadChainFromString( proxy )
+    chain.loadKeyFromString( proxy )
+
+    result = chain.generateProxyToString( requiredLifetime, diracGroup = userGroup )
+    return result
