@@ -448,7 +448,10 @@ class X509Chain( object ):
     #  retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
     #  if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
     #    return retVal
-    return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
+    if self.isPUSP()['Value']:
+      return self.getCertInChain( self.__firstProxyStep - 2 )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
+    else:
+      return self.getCertInChain( self.__firstProxyStep )[ 'Value' ].getDIRACGroup( ignoreDefault = ignoreDefault )
 
   def hasExpired( self ):
     """
@@ -592,6 +595,17 @@ class X509Chain( object ):
   def __repr__( self ):
     return self.__str__()
 
+  def isPUSP( self ):
+    if self.__isProxy:
+      # Check if we have a subproxy
+      trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
+      numEntries = trialSubidentity.num_entries()
+      lastEntry = trialSubidentity.get_entry( numEntries - 1 )
+      if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
+        return S_OK( True )
+
+    return S_OK( False )
+
   def getCredentials( self, ignoreDefault = False ):
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
@@ -605,7 +619,7 @@ class X509Chain( object ):
     if self.__isProxy:
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
 
-      # Check if we have a subproxy
+      # Check if we have the PUSP case
       trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
       numEntries = trialSubidentity.num_entries()
       lastEntry = trialSubidentity.get_entry( numEntries - 1 )
