@@ -52,18 +52,13 @@ class TimeLeft:
     """
     # Quit if no scale factor available
     if not self.scaleFactor:
-      return S_OK( 0.0 )
+      return 0
 
     # Quit if Plugin is not available
     if not self.batchPlugin:
-      return S_OK( 0.0 )
+      return 0
 
-    resourceDict = self.batchPlugin.getResourceUsage()
-
-    if 'Value' in resourceDict and resourceDict['Value']['CPU']:
-      return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
-
-    return S_OK( 0.0 )
+    return self.batchPlugin.getResourceUsage().get( 'Value', {} ).get( 'CPU', 0.0 ) * self.scaleFactor
 
   #############################################################################
   def getTimeLeft( self, cpuConsumed = 0.0 ):
@@ -83,46 +78,53 @@ class TimeLeft:
       return resourceDict
 
     resources = resourceDict['Value']
-    self.log.verbose( resources )
     if not resources['CPULimit'] or not resources['WallClockLimit']:
-      return S_ERROR( 'No CPU / WallClock limits obtained' )
+      # This should never happen
+      return S_ERROR( 'No CPU or WallClock limit obtained' )
 
+    timeLeft = 0.
     cpu = float( resources['CPU'] )
-    cpuFactor = 100 * float( resources['CPU'] ) / float( resources['CPULimit'] )
-    cpuRemaining = 100 - cpuFactor
     cpuLimit = float( resources['CPULimit'] )
-    wcFactor = 100 * float( resources['WallClock'] ) / float( resources['WallClockLimit'] )
-    wcRemaining = 100 - wcFactor
+    cpuUsedFraction = cpu / cpuLimit
+    cpuRemainingFraction = 1. - cpuUsedFraction
+    wc = float( resources['WallClock'] )
     wcLimit = float( resources['WallClockLimit'] )
-    self.log.verbose( 'Used CPU is %.02f%%, Used WallClock is %.02f%%.' % ( cpuFactor, wcFactor ) )
-    self.log.verbose( 'Remaining WallClock %.02f%%, Remaining CPU %.02f%%, margin %s%%' %
-                      ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+    wcUsedFraction = wc / wcLimit
+    wcRemainingFraction = 1. - wcUsedFraction
+    marginFraction = self.cpuMargin / 100.
+    fractionTuple = ( 100. * cpuRemainingFraction, 100. * wcRemainingFraction, self.cpuMargin )
+    self.log.verbose( 'Used CPU is %.1f s out of %.1f, Used WallClock is %.1f s out of %.1f.' % ( cpu, cpuLimit, wc, wcLimit ) )
+    self.log.verbose( 'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin %s%%' % fractionTuple )
 
-    timeLeft = None
-    if wcRemaining > cpuRemaining and ( wcRemaining - cpuRemaining ) > self.cpuMargin:
-      self.log.verbose( 'Remaining WallClock %.02f%% > Remaining CPU %.02f%% and difference > margin %s%%' %
-                        ( wcRemaining, cpuRemaining, self.cpuMargin ) )
-      timeLeft = True
+    validTimeLeft = False
+    if wcRemainingFraction > cpuRemainingFraction and ( wcRemainingFraction - cpuRemainingFraction ) > marginFraction:
+      # FIXME: I have no idea why this test is done (PhC)
+      self.log.verbose( 'Remaining CPU %.02f%% < Remaining WallClock  %.02f%% and difference > margin %s%%' % fractionTuple )
+      validTimeLeft = True
     else:
-      if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
-        self.log.verbose( 'Remaining WallClock %.02f%% and Remaining CPU %.02f%% both > margin %s%%' %
-                          ( wcRemaining, cpuRemaining, self.cpuMargin ) )
-        timeLeft = True
+      if cpuRemainingFraction > marginFraction and wcRemainingFraction > marginFraction:
+        self.log.verbose( 'Remaining CPU %.02f%% and Remaining WallClock %.02f%% both > margin %s%%' % fractionTuple )
+        validTimeLeft = True
       else:
-        self.log.verbose( 'Remaining CPU %.02f%% < margin %s%% and WallClock %.02f%% < margin %s%% so no time left' %
-                          ( cpuRemaining, self.cpuMargin, wcRemaining, self.cpuMargin ) )
-    if timeLeft:
+        self.log.verbose( 'Remaining CPU %.02f%% or WallClock %.02f%% < margin %s%% so no time left' % fractionTuple )
+    if validTimeLeft:
       if cpu and cpuConsumed > 3600. and self.normFactor:
         # If there has been more than 1 hour of consumed CPU and
         # there is a Normalization set for the current CPU
         # use that value to renormalize the values returned by the batch system
-        cpuWork = cpuConsumed * self.normFactor
-        timeLeft = ( cpuLimit - cpu ) * cpuWork / cpu
+        # NOTE: cpuConsumed is non-zero for call by the JobAgent and 0 for call by the watchdog
+        # cpuLimit and cpu may be in the units of the batch system, not real seconds... (in this case the other case won't work)
+        # therefore renormalise it using cpuConsumed (which is in real seconds)
+        timeLeft = ( cpuLimit - cpu ) * self.normFactor * cpuConsumed / cpu
+      elif self.normFactor:
+        # FIXME: this is always used by the watchdog... Also used by the JobAgent
+        #        if consumed less than 1 hour of CPU
+        # It was using self.scaleFactor but this is inconsistent: use the same as above
+        # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
+        timeLeft = ( cpuLimit - cpu ) * self.normFactor
       else:
-        # In some cases cpuFactor might be 0
-        # timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
-        # We need time left in the same units used by the Matching
-        timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
+        # Last resort recovery...
+        timeLeft = ( cpuLimit - cpu ) * self.scaleFactor
 
       self.log.verbose( 'Remaining CPU in normalized units is: %.02f' % timeLeft )
       return S_OK( timeLeft )

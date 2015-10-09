@@ -181,7 +181,7 @@ class JobAgent( AgentModule ):
     jobID = matcherInfo['JobID']
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
-      if not matcherInfo.has_key( param ):
+      if param not in matcherInfo:
         self.__report( jobID, 'Failed', 'Matcher did not return %s' % ( param ) )
         return self.__finish( 'Matcher Failed' )
       elif not matcherInfo[param]:
@@ -195,10 +195,9 @@ class JobAgent( AgentModule ):
     ownerDN = matcherInfo['DN']
 
     optimizerParams = {}
-    for key in matcherInfo.keys():
-      if not key in matcherParams:
-        value = matcherInfo[key]
-        optimizerParams[key] = value
+    for key in matcherInfo:
+      if key not in matcherParams:
+        optimizerParams[key] = matcherInfo[key]
 
     parameters = self.__getJDLParameters( jobJDL )
     if not parameters['OK']:
@@ -207,7 +206,7 @@ class JobAgent( AgentModule ):
       return self.__finish( 'JDL Problem' )
 
     params = parameters['Value']
-    if not params.has_key( 'JobID' ):
+    if 'JobID' not in params:
       msg = 'Job has not JobID defined in JDL parameters'
       self.__report( jobID, 'Failed', msg )
       self.log.warn( msg )
@@ -215,20 +214,20 @@ class JobAgent( AgentModule ):
     else:
       jobID = params['JobID']
 
-    if not params.has_key( 'JobType' ):
+    if 'JobType' not in params:
       self.log.warn( 'Job has no JobType defined in JDL parameters' )
       jobType = 'Unknown'
     else:
       jobType = params['JobType']
 
-    if not params.has_key( 'CPUTime' ):
+    if 'CPUTime' not in params:
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
 
     if self.extraOptions:
-      params['Arguments'] = params['Arguments'] + ' ' + self.extraOptions
+      params['Arguments'] += ' ' + self.extraOptions
       params['ExtraOptions'] = self.extraOptions
 
-    self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
+    self.log.verbose( 'Job request successful: \n', jobRequest['Value'] )
     self.log.info( 'Received JobID=%s, JobType=%s' % ( jobID, jobType ) )
     self.log.info( 'OwnerDN: %s JobGroup: %s' % ( ownerDN, jobGroup ) )
     self.jobCount += 1
@@ -236,17 +235,16 @@ class JobAgent( AgentModule ):
       jobReport = JobReport( jobID, 'JobAgent@%s' % self.siteName )
       jobReport.setJobParameter( 'MatcherServiceTime', str( matchTime ), sendFlag = False )
 
-      if os.environ.has_key( 'BOINC_JOB_ID' ):
+      if 'BOINC_JOB_ID' in os.environ:
         # Report BOINC environment
-        for p in ['BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName']:
+        for p in ( 'BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName' ):
           jobReport.setJobParameter( p, gConfig.getValue( '/LocalSite/%s' % p, 'Unknown' ), sendFlag = False )
 
       jobReport.setJobStatus( 'Matched', 'Job Received by Agent' )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
         return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
-      if 'Value' in result and result[ 'Value' ]:
-        proxyChain = result[ 'Value' ]
+      proxyChain = result.get( 'Value' )
 
       # Save the job jdl for external monitoring
       self.__saveJobJDLRequest( jobID, jobJDL )
@@ -274,12 +272,8 @@ class JobAgent( AgentModule ):
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
-    currentTimes = list( os.times() )
-    for i in range( len( currentTimes ) ):
-      currentTimes[i] -= self.initTimes[i]
-
-    utime, stime, cutime, cstime, _elapsed = currentTimes
-    cpuTime = utime + stime + cutime + cstime
+    # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
+    cpuTime = sum( os.times()[:-1] ) - sum( self.initTimes[:-1] )
 
     result = self.timeLeftUtil.getTimeLeft( cpuTime )
     if result['OK']:
@@ -288,12 +282,10 @@ class JobAgent( AgentModule ):
       if result['Message'] != 'Current batch system is not supported':
         self.timeLeftError = result['Message']
       else:
-        if self.cpuFactor:
-          # if the batch system is not defined used the CPUNormalizationFactor
-          # defined locally
-          self.timeLeft = self.__getCPUTimeLeft()
-    scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
+        # if the batch system is not defined, use the process time and the CPU normalization defined locally
+        self.timeLeft = self.__getCPUTimeLeft()
 
+    scaledCPUTime = self.timeLeftUtil.getScaledCPU()
     self.__setJobParam( jobID, 'ScaledCPUTime', str( scaledCPUTime - self.scaledCPUTime ) )
     self.scaledCPUTime = scaledCPUTime
 
@@ -315,10 +307,11 @@ class JobAgent( AgentModule ):
   def __getCPUTimeLeft( self ):
     """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
     """
-    utime, stime, cutime, _cstime, _elapsed = os.times()
-    cpuTime = utime + stime + cutime
+    cpuTime = sum( os.times()[:-1] )
     self.log.info( 'Current raw CPU time consumed is %s' % cpuTime )
-    timeleft = self.timeLeft - cpuTime * self.cpuFactor
+    timeleft = self.timeLeft
+    if self.cpuFactor:
+      timeleft -= cpuTime * self.cpuFactor
     return timeleft
 
   #############################################################################
@@ -391,7 +384,7 @@ class JobAgent( AgentModule ):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
-    if not jobParams.has_key( 'SoftwareDistModule' ):
+    if 'SoftwareDistModule' not in jobParams:
       msg = 'Job has no software installation requirement'
       self.log.verbose( msg )
       return S_OK( msg )

@@ -6,7 +6,7 @@
     current CPU consumed and CPU limit.
 """
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR, siteName
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
@@ -20,12 +20,12 @@ class BQSTimeLeft:
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger( 'BQSTimeLeft' )
-    self.jobID = None
-    if os.environ.has_key( 'QSUB_REQNAME' ):
-      self.jobID = os.environ['QSUB_REQNAME']
+    self.jobID = os.environ.get( 'QSUB_REQNAME' )
 
     self.log.verbose( 'QSUB_REQNAME=%s' % ( self.jobID ) )
-    self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 0.0 )
+    self.normFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
+    if not self.normFactor:
+      self.log.warn( '/LocalSite/CPUNormalizationFactor not defined for site %s' % siteName() )
 
   #############################################################################
   def getResourceUsage( self ):
@@ -35,20 +35,18 @@ class BQSTimeLeft:
     if not self.jobID:
       return S_ERROR( 'Could not determine batch jobID from QSUB_REQNAME env var.' )
 
-    if not self.scaleFactor:
-      return S_ERROR( 'CPU scala factor is not defined' )
+    if not self.normFactor:
+      return S_ERROR( 'CPU normalization factor is not defined' )
 
     cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
     result = runCommand( cmd )
     if not result['OK']:
       return result
 
-    self.log.verbose( result['Value'] )
-
     cpu = None
     cpuLimit = None
     try:
-      cpuItems = result['Value'].split()
+      cpuItems = str( result['Value'] ).split()
       if cpuItems[5][-1] == '/':
         cpu = float( cpuItems[5][:-1] )
         cpuLimit = float( cpuItems[6] )
@@ -59,28 +57,18 @@ class BQSTimeLeft:
     except Exception:
       self.log.warn( 'Problem parsing "%s" for CPU usage' % ( result['Value'] ) )
 
-    #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
-    wallClock = cpu
-    wallClockLimit = cpuLimit
+    # BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
     # Divide the numbers by 5 to bring it to HS06 units from the CC UI units
     # and remove HS06 normalization factor
-    consumed = {'CPU':cpu / 5. / self.scaleFactor,
-                'CPULimit':cpuLimit / 5. / self.scaleFactor,
-                'WallClock':wallClock / 5. / self.scaleFactor,
-                'WallClockLimit':wallClockLimit / 5. / self.scaleFactor}
-    self.log.debug( consumed )
-    failed = False
-    for key, val in consumed.items():
-      if val == None:
-        failed = True
-        self.log.warn( 'Could not determine %s' % key )
-
-    if not failed:
+    if None not in ( cpu, cpuLimit ):
+      cpu /= 5. * self.normFactor
+      cpuLimit /= 5. * self.normFactor
+      consumed = {'CPU':cpu , 'CPULimit':cpuLimit, 'WallClock':cpu , 'WallClockLimit':cpuLimit }
+      self.log.debug( "TimeLeft counters complete:", str( consumed ) )
       return S_OK( consumed )
-    else:
-      msg = 'Could not determine some parameters,' \
-            ' this is the stdout from the batch system call\n%s' % ( result['Value'] )
-      self.log.info( msg )
-      return S_ERROR( 'Could not determine some parameters' )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+    msg = 'Could not determine some parameters'
+    self.log.info( msg, ':\nThis is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+    return S_ERROR( msg )
+
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
