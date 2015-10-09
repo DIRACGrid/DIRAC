@@ -401,23 +401,36 @@ class RequestDB( object ):
       # If we are here, the request MUST exist, so no try catch
       # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
       try:
-        requests = session.query( Request )\
-                          .options( joinedload_all( '__operations__.__files__' ) )\
+        now = datetime.datetime.utcnow().replace( microsecond = 0 )
+        requestIDs = session.query( Request.RequestID )\
+                          .with_for_update()\
                           .filter( Request._Status == 'Waiting' )\
+                          .filter( Request._NotBefore < now )\
                           .order_by( Request._LastUpdate )\
                           .limit( numberOfRequest )\
                           .all()
+
+        requestIDs = [ridTuple[0] for ridTuple in requestIDs]
+        log.debug( "Got request ids %s" % requestIDs )
+
+        requests = session.query( Request )\
+                          .options( joinedload_all( '__operations__.__files__' ) )\
+                          .filter( Request.RequestID.in_( requestIDs ) )\
+                          .all()
+        log.debug( "Got %s Request objects " % len( requests ) )
         requestDict = dict((req.RequestID, req) for req in requests)
       # No Waiting requests
       except NoResultFound, e:
         pass
-      
+
       if assigned and requestDict:
         session.execute( update( Request )\
                          .where( Request.RequestID.in_( requestDict.keys() ) )\
-                         .values( {Request._Status : 'Assigned'} )
+                         .values( {Request._Status : 'Assigned',
+                                   Request._LastUpdate : datetime.datetime.utcnow()\
+                                                        .strftime( Request._datetimeFormat )} )
                        )
-        session.commit()
+      session.commit()
 
       session.expunge_all()
 
