@@ -113,6 +113,8 @@ class FTSAgent( AgentModule ):
   SUBMIT_COMMAND = 'glite-transfer-submit'
   # # FTS monitoring command
   MONITOR_COMMAND = 'glite-transfer-status'
+  # Max number of requests fetched from the RMS
+  MAX_REQUESTS = 100
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -297,6 +299,9 @@ class FTSAgent( AgentModule ):
     log.info( "ThreadPool min threads         = ", str( self.MIN_THREADS ) )
     log.info( "ThreadPool max threads         = ", str( self.MAX_THREADS ) )
 
+    self.MAX_REQUESTS = self.am_getOption( "MaxRequests", self.MAX_REQUESTS )
+    log.info( "Max Requests fetched           = ", str( self.MAX_REQUESTS ) )
+
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
     log.info( "initialize: creation of FTSPlacement..." )
@@ -384,7 +389,7 @@ class FTSAgent( AgentModule ):
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    requestIDs = self.requestClient().getRequestIDsList( [ "Scheduled" ] )
+    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = self.MAX_REQUESTS )
     if not requestIDs["OK"]:
       log.error( "unable to read scheduled request ids: %s" % requestIDs["Message"] )
       return requestIDs

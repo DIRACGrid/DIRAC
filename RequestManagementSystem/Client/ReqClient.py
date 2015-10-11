@@ -9,6 +9,8 @@
 import os
 import time
 import random
+import json
+
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -452,7 +454,7 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
 
   if full:
     output = ''
-    prettyPrint( request.toJSON()['Value'] )
+    prettyPrint( json.loads( request.toJSON()['Value'] ) )
     gLogger.always( output )
   else:
     if not status:
