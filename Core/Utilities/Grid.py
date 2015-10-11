@@ -386,53 +386,54 @@ def getBdiiCEInfo( vo, host = None ):
   queueDict = {}
   
   for queue in result['Value']:
-    ceID = queue.get('GlueForeignKey','').replace('GlueClusterUniqueID=','')
+    clusterID = queue.get('GlueForeignKey','').replace('GlueClusterUniqueID=','')
+    ceID = queue.get('GlueCEUniqueID','').split(':')[0]
     queueDict[queue['GlueCEUniqueID']] = queue
     queueDict[queue['GlueCEUniqueID']]['CE'] = ceID
     if not ceID in ceDict:
-      result = ldapCluster( ceID, host = host )
+      result = ldapCluster( clusterID, host = host )
       if not result['OK']:
         continue
       if not result['Value']:
         continue
-  
+
       ce = result['Value'][0]
       ceDict[ceID] = ce
-  
+
       fKey = ce['GlueForeignKey']
       siteID = ''
       for key in fKey:
         if key.startswith('GlueSiteUniqueID'):
           siteID = key.replace('GlueSiteUniqueID=','')
       ceDict[ceID]['Site'] = siteID
-  
-      result = ldapCE( ceID, host = host )
+
+      result = ldapCE( clusterID, host = host )
       ce = {}
       if result['OK'] and result['Value']:
-        ce = result['Value'][0]  
+        ce = result['Value'][0]
       ceDict[ceID].update( ce )
-  
+
       if not siteID in siteDict:
         site = {}
         result = ldapSite( siteID, host = host )
         if result['OK'] and result['Value']:
           site = result['Value'][0]
         siteDict[siteID] = site
-  
+
   for ceID in ceDict:
     siteID = ceDict[ceID]['Site']
     if siteID in siteDict:
       siteDict[siteID].setdefault('CEs',{})
       siteDict[siteID]['CEs'][ceID] = ceDict[ceID]
-  
+
   for queueID in queueDict:
     ceID = queueDict[queueID]['CE']
     siteID = ceDict[ceID]['Site']
     siteDict[siteID]['CEs'][ceID].setdefault('Queues',{})
     queueName = re.split( ':\d+/', queueDict[queueID]['GlueCEUniqueID'] )[1]
     siteDict[siteID]['CEs'][ceID]['Queues'][queueName] = queueDict[queueID]
-    
-  return S_OK( siteDict )  
+
+  return S_OK( siteDict )
 
 def getBdiiSEInfo( vo, host = None ):
   """ Get information for all the SEs for a given VO
