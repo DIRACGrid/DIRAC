@@ -179,6 +179,10 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+[v6r13p16]
+
+FIX: changes incorporated from v6r12p51 patch
+
 [v6r13p15]
 
 Included patches from v6r12p50 release 
@@ -488,6 +492,17 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p51]
+
+*Core
+FIX: dirac-install - fix to work with python version prior to 2.5
+
+*DMS
+CHANGE: FileCatalogClientCLI - possibility to set multiple metadata with one command
+
+*Resources
+FIX: HTCondorComputingElement - multiple improvements
 
 [v6r12p50]
 

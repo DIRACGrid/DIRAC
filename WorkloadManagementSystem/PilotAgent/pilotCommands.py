@@ -466,6 +466,11 @@ class ConfigureSite( CommandBase ):
       self.pp.flavour = 'SSHCondor'
       pilotRef = 'sshcondor://' + self.pp.ceName + '/' + os.environ['CONDOR_JOBID']
 
+    # HTCondor
+    if os.environ.has_key( 'HTCONDOR_JOBID' ):
+      self.pp.flavour = 'HTCondorCE'
+      pilotRef = 'htcondorce://' + self.pp.ceName + '/' + os.environ['HTCONDOR_JOBID']
+
     # LSF
     if os.environ.has_key( 'LSB_BATCH_JID' ):
       self.pp.flavour = 'SSHLSF'
