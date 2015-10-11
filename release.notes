@@ -1,3 +1,25 @@
+[v6r14p6]
+
+*Configuration
+FIX: Bdii2CSAgent - refresh configuration from Master before updating
+FIX: Bdii2CSAgent - distinguish the CE and the Cluster in the Glue 1.0 schema
+
+*DMS
+CHANGE: FTSAgent - make the amount of scheduled requests fetched by the 
+        FTSAgent a parameter in the CS 
+CHANGE: RMS Operations - check whether the always banned policy is applied for SEs
+        to a given access type
+
+*RMS
+FIX: RequestClient(DB,Manager) - fix bulk requests, lock the lines when selecting 
+     the requests to be assigned, update the LastUpdate time, and expose the 
+     assigned flag to the client
+
+*WMS
+FIX: JobAgent - when the application finishes with errors but the agent continues 
+     to take jobs, the timeLeft was not evaluated
+FIX: JobAgent - the initial timeLeft value was always set to 0.0     
+
 [v6r14p5]
 
 *Core
