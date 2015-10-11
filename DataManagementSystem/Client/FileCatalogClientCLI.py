@@ -1696,8 +1696,8 @@ File Catalog Client $Revision: 1.17 $Date:
                                                          -d  directory metadata
                                                          -f  file metadata
                                                          -r  remove the specified metadata index
-          meta set <path> <metaname> <metavalue> - set metadata value for directory or file
-          meta remove <path> <metaname>  - remove metadata value for directory or file
+          meta set <path> <metaname> <metavalue> [<metaname> <metavalue> ...]- set metadata values for directory or file
+          meta remove <path> <metaname> [<metaname> ...] - remove metadata values for directory or file
           meta get [-e] [<path>] - get metadata for the given directory or file
           meta tags <path> <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
                                                         the metadata selection
@@ -1711,7 +1711,7 @@ File Catalog Client $Revision: 1.17 $Date:
     option = argss[0]
     del argss[0]
     if option == 'set':
-      if (len(argss) != 3):
+      if (len(argss) < 3 or len(argss)%2 != 1):
         print self.do_meta.__doc__
         return
       return self.setMeta(argss)
@@ -1737,7 +1737,7 @@ File Catalog Client $Revision: 1.17 $Date:
     elif option == 'show':
       return self.showMeta()
     elif option == 'remove' or option == "rm":
-      if (len(argss) != 2):
+      if (len(argss) < 2):
         print self.do_meta.__doc__
         return
       return self.removeMeta(argss) 
@@ -1797,8 +1797,8 @@ File Catalog Client $Revision: 1.17 $Date:
   def setMeta(self,argss):
     """ Set metadata value for a directory
     """      
-    if len(argss) != 3:
-      print "Error: command requires 3 arguments, %d given" % len(argss)
+    if (len(argss) < 3 or len(argss)%2 != 1):
+      print "Error: command requires at least 3 arguments (or odd number of arguments > 3), %d given" % len(argss)
       return
     path = argss[0]
     if path == '.':
@@ -1806,11 +1806,11 @@ File Catalog Client $Revision: 1.17 $Date:
     elif path[0] != '/':
       path = self.cwd+'/'+path  
     path = self.getPath(path)
-    meta = argss[1]
-    value = argss[2]
-    print path,meta,value
-    metadict = {}
-    metadict[meta]=value
+    del argss[0]
+    meta = argss[::2]
+    value = argss[1::2]
+    metadict = {meta[n]:value[n] for n in range(len(meta))}
+    print path,metadict
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
       print ("Error: %s" % result['Message'])     
