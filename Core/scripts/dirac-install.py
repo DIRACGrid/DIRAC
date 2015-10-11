@@ -1407,7 +1407,10 @@ def writeDefaultConfiguration():
 
 def __getTerminfoLocations( defaultLocation=None ):
   """returns the terminfo locations as a colon separated string"""
-  terminfoLocations = [ defaultLocation ] if defaultLocation else []
+
+  terminfoLocations = []
+  if defaultLocation:
+    terminfoLocations = [ defaultLocation ]
 
   for termpath in [ '/usr/share/terminfo', '/etc/terminfo' ]:
     if os.path.exists( termpath ):
