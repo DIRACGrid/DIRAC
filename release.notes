@@ -1,3 +1,14 @@
+[v6r12p51]
+
+*Core
+FIX: dirac-install - fix to work with python version prior to 2.5
+
+*DMS
+CHANGE: FileCatalogClientCLI - possibility to set multiple metadata with one command
+
+*Resources
+FIX: HTCondorComputingElement - multiple improvements
+
 [v6r12p50]
 
 *Core
