@@ -40,16 +40,18 @@ class VOMS2CSAgent( AgentModule ):
 
     return S_OK()
 
-  def __getVOMSVOs( self ):
+  def __getVOMSVOs( self, voList = [] ):
     """ Get all VOs that have VOMS correspondence
 
-    :return: dictionary of the VO -> VOMSName correspondence
+    :return: dictonary of the VO -> VOMSName correspondence
     """
     voDict = {}
-    result = gConfig.getSections( '/Registry/VO' )
-    if not result['OK']:
-      return result
-    voList = result['Value']
+    if not voList:
+      result = gConfig.getSections( '/Registry/VO' )
+      if not result['OK']:
+        return result
+      voList = result['Value']
+
     for vo in voList:
       vomsName = getVOOption( vo, 'VOMSName' )
       if vomsName:
@@ -93,7 +95,7 @@ class VOMS2CSAgent( AgentModule ):
 
       result = self.__syncCSWithVOMS( vo )
       if not result['OK']:
-        self.log.error( 'Failed to perform VOMS to CS synchronization. ', "VO: %s" % vo )
+        self.log.error( 'Failed to perform VOMS to CS synchronization. ', result["Message"] )
         continue
 
       mailMsg = ""
@@ -106,16 +108,20 @@ class VOMS2CSAgent( AgentModule ):
                                      self.am_getOption( 'mailFrom', "DIRAC system" ) )
 
     # We have accumulated all the changes, commit them now
-    result = self.csapi.commitChanges()
-    if not result[ 'OK' ]:
-      self.log.error( "Could not commit configuration changes", result[ 'Message' ] )
-      return result
-    self.log.info( "Configuration committed" )
+#    result = self.csapi.commitChanges()
+#    if not result[ 'OK' ]:
+#      self.log.error( "Could not commit configuration changes", result[ 'Message' ] )
+#      return result
+#    self.log.info( "Configuration committed" )
     return S_OK()
 
 
   def __syncCSWithVOMS( self, vo ):
     self.__adminMsgs = { 'Errors' : [], 'Info' : [] }
+
+    voAdminUser = getVOOption( vo, "VOAdmin", [] )[0]
+    voAdminGroup = getVOOption( vo, "VOAdminGroup", getVOOption( vo, "DefaultGroup" ) )
+
 
     # Get DIRAC group vs VOMS Role Mappings
     result = getVOMSRoleGroupMapping( vo )
@@ -133,11 +139,11 @@ class VOMS2CSAgent( AgentModule ):
     if not result['OK']:
       self.log.error( 'Could not retrieve VOMS VO name', "for %s" % vo )
       return result
-    vomsVOName = result[ 'Value' ]
+    vomsVOName = result[ 'Value' ].lstrip( '/' )
     self.log.info( "VOMS VO Name for %s is %s" % ( vo, vomsVOName ) )
 
     # Get VOMS user info
-    result = vomsSrv.getUsers()
+    result = vomsSrv.getUsers( proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup )
     if not result['OK']:
       self.log.error( 'Could not retrieve user information from VOMS', result['Message'] )
       return result
@@ -191,7 +197,7 @@ class VOMS2CSAgent( AgentModule ):
             diracName = user
         # We have a real new user
         if not diracName:
-          result = vomsSrv.getUserNickname( dn, vomsUserDict[dn]['CA'], vomsUserDict[dn]['mail'] )
+          result = vomsSrv.getUserNickname( dn, vomsUserDict[dn]['CA'], vomsUserDict[dn]['mail'], proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup )
           if not result['OK']:
             self.log.error( 'Failed to evaluate nickname for DN', dn )
             continue
