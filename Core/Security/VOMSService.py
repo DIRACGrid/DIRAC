@@ -1,8 +1,12 @@
-# $HeadURL$
+""" VOMSService class encapsulated connection to the VOMS service for a given VO
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SOAPFactory import getSOAPClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 
 def _processListReturn( soapReturn ):
   data = []
@@ -15,32 +19,53 @@ def _processListDictReturn( soapReturn ):
   for entry in soapReturn:
     entryData = {}
     for info in entry:
-      entryData[ info[0] ] = str( info[1] )
+
+      try:
+        entryData[ info[0] ] = str( info[1] )
+      except:
+        pass
     data.append( entryData )
   return data
 
 class VOMSService:
 
-  def __init__( self, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
+  def __init__( self, vo, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
+
+    self.vo = vo
+    self.vomsVO = getVOOption( vo, "VOMSName" )
+    if not self.vomsVO:
+      raise Exception( "Can not get VOMS name for VO %s" % vo )
     self.__soapClients = {}
     for key, url in ( ( 'Admin', adminUrl ), ( 'Attributes', attributesUrl ), ( 'Certificates', certificatesUrl ) ):
+      urls = []
       if not url:
-        url = gConfig.getValue( "/Registry/VOMS/URLs/VOMS%s" % key, "" )
+        url = gConfig.getValue( "/Registry/VO/%s/VOMSServices/VOMS%s" % ( self.vo, key ), "" )
       if not url:
-        raise Exception( "No URL defined for VOMS%s" % key )
-      retries = 3
-      while retries:
-        retries -= 1
-        try:
-          client = getSOAPClient( "%s?wsdl" % url )
-          client.set_options(headers={"X-VOMS-CSRF-GUARD":"1"})
-          self.__soapClients[ key ] = client
-          break
-        except Exception:
-          if retries:
+        result = gConfig.getSections( '/Registry/VO/%s/VOMSServers' % self.vo )
+        if result['OK']:
+          vomsServers = result['Value']
+          for server in vomsServers:
+            urls.append( 'https://%s:8443/voms/%s/services/VOMS%s' % ( server, self.vomsVO, key ) )
+      else:
+        urls = [url]
+
+      gotURL = False
+      for url in urls:
+        retries = 3
+        while retries:
+          retries -= 1
+          try:
+            client = getSOAPClient( "%s?wsdl" % url )
+            client.set_options(headers={"X-VOMS-CSRF-GUARD":"1"})
+            self.__soapClients[ key ] = client
+            gotURL = True
+            break
+          except Exception:
             pass
-          else:
-            raise
+        if gotURL:
+          break
+      if not gotURL:
+        raise Exception( 'Could not connect to the %s service for VO %s' % ( key, self.vo ) )
 
   def admListMembers( self ):
     try:
@@ -105,3 +130,101 @@ class VOMSService:
     else:
       return S_ERROR( result )
 
+  @executeWithUserProxy
+  def getUsers( self ):
+    """ Get all the users of the VOMS VO with their detailed information
+
+    :return: user dictionary keyed by the user DN
+    """
+
+    vomsUsers = {}
+
+    result = self.admListMembers()
+    if not result['OK']:
+      return result
+    members = result['Value']
+
+    result = self.admListRoles()
+    if not result['OK']:
+      return result
+    roles = result['Value']
+
+    roleMembers = {}
+    for role in roles:
+      result = self.admListUsersWithRole( '/%s' % self.vomsVO, role )
+      if not result['OK']:
+        return result
+      roleMembers[role] = result['Value']
+
+    for member in members:
+      member['Roles'] = []
+      if "DN" in member:
+        DN = member.pop( 'DN' )
+        for role in roles:
+          for rm in roleMembers[role]:
+            if DN == rm['DN']:
+              member['Roles'].append( role )
+
+        vomsUsers[ DN ] = member
+
+    return S_OK( vomsUsers )
+
+  @executeWithUserProxy
+  def getUserNickname( self, dn, ca, mail ):
+    """ Get the best guess user name
+
+    :param str dn: user certificate DN
+    :param str ca: user certificate CA
+    :param str mail: user mail
+    :return: the best guess for the user nickname
+    """
+    result = self.attGetUserNickname( dn, ca )
+    if result['OK']:
+      return result
+
+    # The Nickname is not defined in the VOMS server, try to guess one
+
+    # Email name can be a good guess
+    mailName = mail.split( '@' )[0].lower()
+
+    if '.' in mailName:
+      # Most likely the mail contains the full user name
+      names = mailName.split( '.' )
+      nname = ''.join( [ x[0].lower() for x in names[:-1] ] + [names[-1].lower()] )
+      return S_OK( nname )
+
+    if mailName in dn.lower():
+      return S_OK( mailName)
+
+    for entry in dn.split( '/' ):
+      if entry:
+        key, value = entry.split( '=' )
+        if key == 'CN':
+          names = value.split()
+          if len( names ) == 1:
+            nname = names[0].lower()
+            if '.' in nname:
+              names = nname.split( '.' )
+              nname = ''.join( [ x[0].lower() for x in names[:-1] ] + [names[-1].lower()] )
+            if '-' in nname:
+              names = nname.split( '-' )
+              nname = ''.join( [ x[0].lower() for x in names[:-1] ] + [names[-1].lower()] )
+            return S_OK( nname )
+          else:
+            robot = False
+            if names[0].lower().startswith( "robot" ):
+              names.pop( 0 )
+              robot = True
+            for name in list( names ):
+              if name.isdigit() or "@" in name:
+                names.pop( names.index( name ) )
+            if robot:
+              nname = "robot-%s" % names[-1].lower()
+            else:
+              nname = ''.join( [ x[0].lower() for x in names[:-1] ] + [names[-1].lower()] )
+              if '.' in nname:
+                names = nname.aplit( '.' )
+                nname = ''.join( [ x[0].lower() for x in names[:-1] ] + [names[-1].lower()] )
+            return S_OK( nname )
+
+    return S_OK( mailName )
