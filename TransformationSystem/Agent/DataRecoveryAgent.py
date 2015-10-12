@@ -1,21 +1,19 @@
 """
 Data recovery agent: sets as unused files that are really undone.
 
-    In general for data processing productions we need to completely abandon the 'by hand'
-    reschedule operation such that accidental reschedulings don't result in data being processed twice.
+In general for data processing productions we need to completely abandon the 'by hand'
+reschedule operation such that accidental reschedulings don't result in data being processed twice.
 
-    For all above cases the following procedure should be used to achieve 100%:
+For all above cases the following procedure should be used to achieve 100%:
 
-
-
-getTransformations
-getFailed/DoneJobsOfTheTransformation
-- makeSureNoPendingRequests
-getInputFilesForthejobs (if not MCGeneration)
-- checkIfInputFile Assigned or MaxReset
-getOutputFilesForTheJobs
-- Make Sure no Descendents of the outputfiles?
-- Check if _all_ or _no_ outputfiles exist
+  - getTransformations
+  - getFailed/DoneJobsOfTheTransformation
+      - makeSureNoPendingRequests
+  - getInputFilesForthejobs (if not MCGeneration)
+      - checkIfInputFile Assigned or MaxReset
+  - getOutputFilesForTheJobs
+      - Make Sure no Descendents of the outputfiles?
+      - Check if _all_ or _no_ outputfiles exist
 
 Depending on what is the status of the job, input and outputfiles we do different things.
 
