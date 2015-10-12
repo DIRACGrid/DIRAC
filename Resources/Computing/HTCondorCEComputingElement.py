@@ -119,6 +119,7 @@ initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
 WhenToTransferOutput = ON_EXIT_OR_EVICT
+kill_sig=SIGTERM
 Queue %(nJobs)s
 
 """ % dict( executable=executable,
