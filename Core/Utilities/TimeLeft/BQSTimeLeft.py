@@ -59,21 +59,20 @@ class BQSTimeLeft:
     except Exception:
       self.log.warn( 'Problem parsing "%s" for CPU usage' % ( result['Value'] ) )
 
-    #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
-    wallClock = cpu
-    wallClockLimit = cpuLimit
     # Divide the numbers by 5 to bring it to HS06 units from the CC UI units
     # and remove HS06 normalization factor
     consumed = {'CPU':cpu / 5. / self.scaleFactor,
-                'CPULimit':cpuLimit / 5. / self.scaleFactor,
-                'WallClock':wallClock / 5. / self.scaleFactor,
-                'WallClockLimit':wallClockLimit / 5. / self.scaleFactor}
+                'CPULimit':cpuLimit / 5. / self.scaleFactor}
     self.log.debug( consumed )
     failed = False
     for key, val in consumed.items():
       if val == None:
         failed = True
         self.log.warn( 'Could not determine %s' % key )
+
+    # BQS has no wallclock limit so will simply return None
+    consumed.update( {'WallClock':None,
+                     'WallClockLimit':None} )
 
     if not failed:
       return S_OK( consumed )

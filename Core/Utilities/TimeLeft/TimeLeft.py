@@ -46,7 +46,7 @@ class TimeLeft:
       self.batchPlugin = None
       self.batchError = result['Message']
 
-  def getScaledCPU( self ):
+  def getScaledCPU( self, cores = 1 ):
     """Returns the current CPU Time spend (according to batch system) scaled according
        to /LocalSite/CPUScalingFactor
     """
@@ -60,13 +60,17 @@ class TimeLeft:
 
     resourceDict = self.batchPlugin.getResourceUsage()
 
-    if 'Value' in resourceDict and resourceDict['Value']['CPU']:
-      return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
+    if 'Value' in resourceDict:
+      if resourceDict['Value']['CPU']:
+        return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
+      elif resourceDict['Value']['WallClock']:
+        # When CPU value missing, guess from WallClock and number of cores
+        return S_OK( resourceDict['Value']['WallClock'] * self.scaleFactor * cores )
 
     return S_OK( 0.0 )
 
   #############################################################################
-  def getTimeLeft( self, cpuConsumed = 0.0 ):
+  def getTimeLeft( self, cpuConsumed = 0.0, cores = 1 ):
     """Returns the CPU Time Left for supported batch systems.  The CPUConsumed
        is the current raw total CPU.
     """
@@ -84,8 +88,20 @@ class TimeLeft:
 
     resources = resourceDict['Value']
     self.log.verbose( resources )
-    if not resources['CPULimit'] or not resources['WallClockLimit']:
+    if not resources['CPULimit'] and not resources['WallClockLimit']:
       return S_ERROR( 'No CPU / WallClock limits obtained' )
+
+    # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
+    if not resources['CPULimit']:
+      resources['CPULimit'] = resources['WallClockLimit'] * cores
+    elif not resources['WallClockLimit']:
+      resources['WallClockLimit'] = resources['CPULimit']
+
+    # if one of CPU or WallClock is missing, compute a reasonable value
+    if not resources['CPU']:
+      resources['CPU'] = resources['WallClock'] * cores
+    elif not resources['WallClock']:
+      resources['WallClock'] = resources['CPU']
 
     cpu = float( resources['CPU'] )
     cpuFactor = 100 * float( resources['CPU'] ) / float( resources['CPULimit'] )
