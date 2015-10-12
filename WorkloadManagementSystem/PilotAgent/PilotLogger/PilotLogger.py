@@ -3,7 +3,7 @@
 
 __RCSID__ = "$Id$"
 
-import pika
+import stomp
 import sys
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateTimeStamp
@@ -76,11 +76,12 @@ class PilotLogger( object ):
         ]
     self.pilotID = getPilotUUIDFromFile( fileWithID )
     self.networkCfg = {
-    'host':'10.0.2.2',
-    #'host':'192.245.169.39',
-    #'host':'localhost',
-    'exchangeName': 'myExchanger',
-    'exchangeType': 'direct'}
+    'host':'127.0.0.1',
+    'port':61614,
+    'key_file':'/home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
+    'cert_file' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
+    'ca_certs' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem'
+    }
 
 
   def _isCorrectFlag( self, flag ):
@@ -107,34 +108,26 @@ class PilotLogger( object ):
         handler or None in case of connection down.
     """
     try:
-      connection = pika.BlockingConnection(
-      pika.ConnectionParameters( self.networkCfg['host'] )
-        )
-    except pika.exceptions.AMQPConnectionError, argument:
-      print 'Connection error: %r' %(argument,)
+      connection = stomp.Connection(host_and_ports=self.networkCfg['host_port'], use_ssl = True)
+      connection.set_ssl(for_hosts=self.networkCfg['host_port'], key_file = self.networkCfg['key_file']
+                        ,cert_file = self.networkCfg['cert_file'], ca_certs=self.networkCfg['ca_certs'])
+      connection.start()
+      connection.connect()
+    except stomp.exception.ConnectFailedException:
+      print 'Connection error:'
       return None
     else:
       return connection
-
 
   def _sendAllLocalMessages(self, connect_handler, flag = 'info' ):
     """ Retrives all messages from the local storage
         and sends it.
     """
 
-    channel = connect_handler.channel()
-    channel.exchange_declare(
-                exchange = self.networkCfg['exchangeName'],
-                type = self.networkCfg['exchangeType']
-                )
     queue =readMessagesFromFileAndEraseFileContent()
     while not queue.empty():
       msg = queue.get()
-      channel.basic_publish(
-                          exchange = self.networkCfg['exchangeName'],
-                          routing_key = flag,
-                          body = msg,
-                          )
+      connect_handler.send(body=msg, destination='/queue/test')
       print " [x] Sent %r %r" % ( type, msg )
 
 
@@ -158,7 +151,7 @@ class PilotLogger( object ):
     if not connection:
       return False
     self._sendAllLocalMessages(connection, flag)
-    connection.close()
+    connection.disconnect()
     return True
 
   def sendMessage( self, minorStatus, flag = 'info', status='Installing' ):
@@ -169,14 +162,10 @@ class PilotLogger( object ):
     Returns:
       bool: False in case of any errors, True otherwise
     """
-    print "im sending"
     if not self._isCorrectFlag( flag ):
       return False
-    print "really?"
-    print status
     if not self._isCorrectStatus( status ):
       return False
-    print "really?"
     myUUID = getPilotUUIDFromFile()
     message = generateDict(
         myUUID,
