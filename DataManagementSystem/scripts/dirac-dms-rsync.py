@@ -199,9 +199,9 @@ def getContentToSync(upload,source_dir,dest_dir):
   dirs_delete.sort(key = lambda s: -s.count('/'))
   dirs_create = list(from_dirs - to_dirs)
   dirs_create.sort(key = lambda s: s.count('/'))
-  
-  files_delete = list(to_files - from_files)
-  files_create = list(from_files - to_files)
+
+  files_delete = [pair[0] for pair in list(to_files - from_files)]
+  files_create = [pair[0] for pair in list(from_files - to_files)]
 
   create = {}
   create["Directories"] = dirs_create
@@ -240,15 +240,15 @@ def uploadLocalFile(dm, lfn, localfile, storage):
   else:
     return S_OK( 'Successfully uploaded file to %s' % storage )
 
-def downloadRemoteFile(dm, lfn, localfile, storage):
+def downloadRemoteFile(dm, lfn, destination):
   """
-    Download a file from the system
+  Download a file from the system
   """
-  res = dm.putAndRegister( lfn, localfile, storage, None )
+  res = dm.getFile( lfn, destination )
   if not res['OK']:
-    return S_ERROR( 'Error: failed to upload %s to %s' % ( lfn, storage ) )
+    return S_ERROR( 'Error: failed to download %s ' % lfn )
   else:
-    return S_OK( 'Successfully uploaded file to %s' % storage )
+    return S_OK( 'Successfully uploaded file %s' % lfn )
   
 def removeStorageDirectoryFromSE( directory, storageElement ):
   """
@@ -336,7 +336,7 @@ def run():
 #  res = getFileCatalog()
 #  fc = res['Value']
   dm = DataManager()
-  print removeRemoteFiles(dm, '/ilc/user/p/petric/test.txt')
+  print getContentToSync(False, '/ilc/user/p/petric','/afs/cern.ch/user/p/petric/grid/DIRAC/DataManagementSystem/scripts')
   
 if __name__ == "__main__":
   run()
