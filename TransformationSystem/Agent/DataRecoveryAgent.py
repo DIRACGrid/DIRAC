@@ -198,11 +198,20 @@ class DataRecoveryAgent(AgentModule):
 
 
     #############################################################################
-  def initialize(self):
-    """Sets defaults
+
+  def beginExecution(self):
+    """Resets defaults after one cycle
     """
     self.enabled = self.am_getOption('EnableFlag', False)
-    #self.am_setModuleParam("shifterProxy", "ProductionManager")
+    self.productionsToIgnore = self.am_getOption("ProductionsToIgnore", [])
+    self.transformationTypes = self.am_getOption("TransformationTypes",
+                                                 ['MCReconstruction',
+                                                  'MCSimulation',
+                                                  'MCReconstruction_Overlay',
+                                                  'MCGenerations'])
+    self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
+    self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
+    self.addressFrom = self.am_getOption('MailFrom', "ilcdirac-admin@cern.ch")
 
     return S_OK()
   #############################################################################
