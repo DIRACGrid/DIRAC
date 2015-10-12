@@ -118,7 +118,8 @@ class Matcher( object ):
 
     pilotInfoReportedFlag = resourceDict.get( 'PilotInfoReportedFlag', False )
     if not pilotInfoReportedFlag:
-      self._updatePilotInfo( resourceDict, jobID )
+      self._updatePilotInfo( resourceDict )
+    self._updatePilotJobMapping( resourceDict, jobID )
 
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
@@ -243,11 +244,8 @@ class Matcher( object ):
 
     return True
 
-  def _updatePilotInfo( self, resourceDict, jobID ):
+  def _updatePilotInfo( self, resourceDict ):
     """ Update pilot information - do not fail if we don't manage to do it
-
-        FIXME:  this part should not be done here, by the matcher. Instead, it should be done by the pilot itself.
-                Also, updating the job for pilot should be done by the JobAgent, since the jobAgent knows what job is running
     """
     pilotReference = resourceDict.get( 'PilotReference', '' )
     if pilotReference:
@@ -261,6 +259,12 @@ class Matcher( object ):
       if not result['OK']:
         self.log.error( "Problem updating pilot information",
                         "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
+
+  def _updatePilotJobMapping( self, resourceDict, jobID ):
+    """ Update pilot to job mapping information
+    """
+    pilotReference = resourceDict.get( 'PilotReference', '' )
+    if pilotReference:
       result = self.pilotAgentsDB.setCurrentJobID( pilotReference, jobID )
       if not result['OK']:
         self.log.error( "Problem updating pilot information",

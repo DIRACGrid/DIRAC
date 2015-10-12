@@ -43,16 +43,24 @@ class JobAgent( AgentModule ):
       self.log.info( 'Defining CE from local configuration = %s' % localCE )
       ceType = localCE
 
+    # Create backend Computing Element
     ceFactory = ComputingElementFactory()
     self.ceName = ceType
     ceInstance = ceFactory.getCE( ceType )
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
+    self.computingElement = ceInstance['Value']
+
+    result = self.computingElement.getDescription()
+    if not result['OK']:
+      self.log.warn( "Can not get the CE description" )
+      return result
+    ceDict = result['Value']
+    self.timeLeft = ceDict.get( 'CPUTime', 0.0 )
+    self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft )
 
     self.initTimes = os.times()
-
-    self.computingElement = ceInstance['Value']
     # Localsite options
     self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
     self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
@@ -70,7 +78,6 @@ class JobAgent( AgentModule ):
     self.extraOptions = gConfig.getValue( '/AgentJobRequirements/ExtraOptions', '' )
     # Timeleft
     self.timeLeftUtil = TimeLeft()
-    self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
     self.pilotInfoReportedFlag = False
@@ -266,8 +273,11 @@ class JobAgent( AgentModule ):
         return self.__finish( submission['Message'] )
       elif 'PayloadFailed' in submission:
         # Do not keep running and do not overwrite the Payload error
-        return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'],
-                              self.stopOnApplicationFailure )
+        message = 'Payload execution failed with error code %s' % submission['PayloadFailed']
+        if self.stopOnApplicationFailure:
+          return self.__finish( message, self.stopOnApplicationFailure )
+        else:
+          self.log.info( message )
 
       self.log.debug( 'After %sCE submitJob()' % ( self.ceName ) )
     except Exception:
@@ -519,30 +529,6 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   # FIXME: this is not called anywhere...?
-  def __reportPilotInfo( self, jobID ):
-    """Sends back useful information for the pilotAgentsDB via the WMSAdministrator
-       service.
-    """
-
-    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
-
-    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    if gridCE != 'Unknown':
-      result = wmsAdmin.setJobForPilot( int( jobID ), str( self.pilotReference ), gridCE )
-    else:
-      result = wmsAdmin.setJobForPilot( int( jobID ), str( self.pilotReference ) )
-
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
-    result = wmsAdmin.setPilotBenchmark( str( self.pilotReference ), float( self.cpuFactor ) )
-    if not result['OK']:
-      self.log.warn( result['Message'] )
-
-    return S_OK()
-
-  #############################################################################
-  # FIXME: this is not called anywhere...?
   def __setJobSite( self, jobID, site ):
     """Wraps around setJobSite of state update client
     """
@@ -570,8 +556,8 @@ class JobAgent( AgentModule ):
   def __finish( self, message, stop = True ):
     """Force the JobAgent to complete gracefully.
     """
-    self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
     if stop:
+      self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
       self.am_stopExecution()
       return S_ERROR( message )
     else:

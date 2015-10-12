@@ -31,7 +31,7 @@ def printVersion( log ):
 def pythonPathCheck():
 
   try:
-    os.umask( 0o22 )
+    os.umask( 18 ) # 022
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
     print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:

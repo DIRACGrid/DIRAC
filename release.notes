@@ -1,4 +1,4 @@
-[v6r15-pre4]
+[v6r15-pre6]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -30,6 +30,42 @@ CHANGE: FileCatalog - added recursive changePathXXX operations
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
+
+[v6r14p6]
+
+*Configuration
+FIX: Bdii2CSAgent - refresh configuration from Master before updating
+FIX: Bdii2CSAgent - distinguish the CE and the Cluster in the Glue 1.0 schema
+
+*DMS
+CHANGE: FTSAgent - make the amount of scheduled requests fetched by the 
+        FTSAgent a parameter in the CS 
+CHANGE: RMS Operations - check whether the always banned policy is applied for SEs
+        to a given access type
+
+*RMS
+FIX: RequestClient(DB,Manager) - fix bulk requests, lock the lines when selecting 
+     the requests to be assigned, update the LastUpdate time, and expose the 
+     assigned flag to the client
+
+*WMS
+FIX: JobAgent - when the application finishes with errors but the agent continues 
+     to take jobs, the timeLeft was not evaluated
+FIX: JobAgent - the initial timeLeft value was always set to 0.0     
+
+[v6r14p5]
+
+*Core
+FIX: X509Certificate - protect from VOMS attributes that are not decodable
+
+
+*Resources
+FIX: GFAL2_StorageBase - fixed indentation and a debug log typo
+
+*WMS
+BUGFIX: Matcher - only the first job was associated with the given pilot
+FIX: pilotTools - 0o22 is only a valid int for recent python interpreters, 
+     replaced by 18
 
 [v6r14p4]
 
@@ -173,6 +209,10 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p16]
+
+FIX: changes incorporated from v6r12p51 patch
 
 [v6r13p15]
 
@@ -483,6 +523,17 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p51]
+
+*Core
+FIX: dirac-install - fix to work with python version prior to 2.5
+
+*DMS
+CHANGE: FileCatalogClientCLI - possibility to set multiple metadata with one command
+
+*Resources
+FIX: HTCondorComputingElement - multiple improvements
 
 [v6r12p50]
 

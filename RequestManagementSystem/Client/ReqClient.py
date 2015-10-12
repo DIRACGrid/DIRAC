@@ -9,6 +9,8 @@
 import os
 import time
 import random
+import json
+
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -145,7 +147,7 @@ class ReqClient( Client ):
       return getRequest
     return S_OK( Request( getRequest["Value"] ) )
 
-  def getBulkRequests( self, numberOfRequest = 10 ):
+  def getBulkRequests( self, numberOfRequest = 10, assigned = True ):
     """ get bulk requests from RequestDB
 
     :param self: self reference
@@ -154,7 +156,7 @@ class ReqClient( Client ):
     :return: S_OK( Successful : { requestID, RequestInstance }, Failed : message  ) or S_ERROR
     """
     self.log.debug( "getRequests: attempting to get request." )
-    getRequests = self.requestManager().getBulkRequests( numberOfRequest )
+    getRequests = self.requestManager().getBulkRequests( numberOfRequest, assigned )
     if not getRequests["OK"]:
       self.log.error( "getRequests: unable to get '%s' requests: %s" % ( numberOfRequest, getRequests["Message"] ) )
       return getRequests
@@ -452,7 +454,7 @@ def printRequest( request, status = None, full = False, verbose = True, terse = 
 
   if full:
     output = ''
-    prettyPrint( request.toJSON()['Value'] )
+    prettyPrint( json.loads( request.toJSON()['Value'] ) )
     gLogger.always( output )
   else:
     if not status:
