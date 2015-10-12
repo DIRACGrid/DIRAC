@@ -1,15 +1,53 @@
 """ Pilot logger module for the remote loggin system
+    Only functions send and connect are depended on the client library used.
+    The current implementation uses stomp.
 """
 
 __RCSID__ = "$Id$"
 
 import stomp
 import sys
+import Queue
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateTimeStamp
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import isMessageFormatCorrect
 
-import Queue
+
+def connect(host_and_port, ssl_cfg):
+  """ Connects to RabbitMQ and returns connection
+      handler or None in case of connection down.
+      Stomp-depended function.
+  """
+  try:
+    connection = stomp.Connection(host_and_ports=host_and_port, use_ssl = True)
+    connection.set_ssl(for_hosts=host_and_port,
+                       key_file = ssl_cfg['key_file'],
+                       cert_file = ssl_cfg['cert_file'],
+                       ca_certs = ssl_cfg['ca_certs'])
+    connection.start()
+    connection.connect()
+  except stomp.exception.ConnectFailedException:
+    print 'Connection error:'
+    return None
+  else:
+    return connection
+
+def send(msg ,destination, connect_handler):
+  """Sends a message and prints info on the screen.
+     Stomp-depended function.
+  """
+  if not connect_handler:
+    return False
+  connect_handler.send(destination=destination,
+                       body=msg)
+  print " [x] Sent %r %r" % ( type, msg )
+  return True
+
+def disconnect(connect_handler):
+  """Disconnects.
+     Stomp-depended function.
+  """
+  connect_handler.disconnect()
 
 
 def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
@@ -61,8 +99,10 @@ class PilotLogger( object ):
   """ Base pilot logger class.
   """
 
-  def __init__( self, fileWithID = 'PilotAgentUUID' ):
+  def __init__( self, fileWithID = 'PilotAgentUUID', host_port=[('127.0.0.1',61614)] ):
     """ ctr
+    Args:
+    
     """
     self.FLAGS = ['info', 'warning', 'error', 'debug']
     self.STATUSES = [
@@ -74,10 +114,10 @@ class PilotLogger( object ):
         'Done',
         'Failed'
         ]
-    self.pilotID = getPilotUUIDFromFile( fileWithID )
-    self.networkCfg = {
-    'host':'127.0.0.1',
-    'port':61614,
+    self.fileWithUUID = fileWithID
+    self.networkCfg= host_port
+    self.queuePath = '/queue/test'
+    self.sslCfg = {
     'key_file':'/home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
     'cert_file' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
     'ca_certs' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem'
@@ -103,32 +143,18 @@ class PilotLogger( object ):
       return True
     return False
 
-  def _connect(self):
-    """ Connects to RabbitMQ and returns connection
-        handler or None in case of connection down.
-    """
-    try:
-      connection = stomp.Connection(host_and_ports=self.networkCfg['host_port'], use_ssl = True)
-      connection.set_ssl(for_hosts=self.networkCfg['host_port'], key_file = self.networkCfg['key_file']
-                        ,cert_file = self.networkCfg['cert_file'], ca_certs=self.networkCfg['ca_certs'])
-      connection.start()
-      connection.connect()
-    except stomp.exception.ConnectFailedException:
-      print 'Connection error:'
-      return None
-    else:
-      return connection
+
+
 
   def _sendAllLocalMessages(self, connect_handler, flag = 'info' ):
     """ Retrives all messages from the local storage
         and sends it.
     """
-
     queue =readMessagesFromFileAndEraseFileContent()
     while not queue.empty():
       msg = queue.get()
-      connect_handler.send(body=msg, destination='/queue/test')
-      print " [x] Sent %r %r" % ( type, msg )
+
+      send(msg, self.queuePath, connect_handler)
 
 
   def _sendMessage( self, msg, flag ):
@@ -147,11 +173,11 @@ class PilotLogger( object ):
     if not self._isCorrectFlag( flag ):
       return False
     saveMessageToFile(msg)
-    connection = self._connect()
+    connection = connect(self.networkCfg, self.sslCfg)
     if not connection:
       return False
     self._sendAllLocalMessages(connection, flag)
-    connection.disconnect()
+    disconnect(connection)
     return True
 
   def sendMessage( self, minorStatus, flag = 'info', status='Installing' ):
@@ -166,7 +192,7 @@ class PilotLogger( object ):
       return False
     if not self._isCorrectStatus( status ):
       return False
-    myUUID = getPilotUUIDFromFile()
+    myUUID = getPilotUUIDFromFile(self.fileWithUUID)
     message = generateDict(
         myUUID,
         '',  # pilotID is unknown for a moment
@@ -175,6 +201,7 @@ class PilotLogger( object ):
         generateTimeStamp(),
         "pilot"
         )
+    print message
     if not isMessageFormatCorrect( message ):
       return False
     encodedMsg = encodeMessage( message )
