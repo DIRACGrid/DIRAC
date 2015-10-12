@@ -20,15 +20,11 @@ class PBSTimeLeft:
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger( 'PBSTimeLeft' )
-    self.jobID = None
-    if os.environ.has_key( 'PBS_JOBID' ):
-      self.jobID = os.environ['PBS_JOBID']
-    self.queue = None
-    if os.environ.has_key( 'PBS_O_QUEUE' ):
-      self.queue = os.environ['PBS_O_QUEUE']
-    if os.environ.has_key( 'PBS_O_PATH' ):
-      pbsPath = os.environ['PBS_O_PATH']
-      os.environ['PATH'] = os.environ['PATH'] + ':' + pbsPath
+    self.jobID = os.environ.get( 'PBS_JOBID' )
+    self.queue = os.environ.get( 'PBS_O_QUEUE' )
+    pbsPath = os.environ.get( 'PBS_O_PATH' )
+    if pbsPath:
+      os.environ['PATH'] += ':' + pbsPath
 
     self.cpuLimit = None
     self.wallClockLimit = None
@@ -50,7 +46,7 @@ class PBSTimeLeft:
     wallClock = None
     wallClockLimit = None
 
-    lines = result['Value'].split( '\n' )
+    lines = str( result['Value'] ).split( '\n' )
     for line in lines:
       info = line.split()
       if re.search( '.*resources_used.cput.*', line ):
@@ -68,7 +64,7 @@ class PBSTimeLeft:
           if not cpu or newcpu > cpu:
             cpu = newcpu
         else:
-          self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )    
+          self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )
       if re.search( '.*resources_used.walltime.*', line ):
         if len( info ) >= 3:
           wcList = info[2].split( ':' )
@@ -100,13 +96,9 @@ class PBSTimeLeft:
 
     consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
     self.log.debug( consumed )
-    failed = False
-    for key, val in consumed.items():
-      if val == None:
-        failed = True
-        self.log.warn( 'Could not determine %s' % key )
 
-    if not failed:
+    if None not in consumed.values():
+      self.log.debug( "TimeLeft counters complete:", str( consumed ) )
       return S_OK( consumed )
 
     if cpuLimit or wallClockLimit:
@@ -114,17 +106,18 @@ class PBSTimeLeft:
       if not cpuLimit:
         consumed['CPULimit'] = wallClockLimit
       if not wallClockLimit:
-        consumed['WallClockLimit'] = cpuLimit  
-      if not cpu:          
+        consumed['WallClockLimit'] = cpuLimit
+      if not cpu:
         consumed['CPU'] = int( time.time() - self.startTime )
-      if not wallClock:  
+      if not wallClock:
         consumed['WallClock'] = int( time.time() - self.startTime )
-      self.log.debug( "TimeLeft counters restored: " + str( consumed ) )  
+      self.log.debug( "TimeLeft counters restored:", str( consumed ) )
       return S_OK( consumed )
     else:
-      self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
-      retVal = S_ERROR( 'Could not determine some parameters' )
+      msg = 'Could not determine some parameters'
+      self.log.info( msg, ':\nThis is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+      retVal = S_ERROR( msg )
       retVal['Value'] = consumed
       return retVal
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -43,8 +43,8 @@ class LSFTimeLeft:
     if not result['OK']:
       return
 
-    self.log.debug( 'From %s' % cmd, result['Value'] )
     lines = str( result['Value'] ).split( '\n' )
+    self.log.debug( 'From %s' % cmd, '\n'.join( [line if len( line ) <= 128 else line[:128] + ' [...]' for line in lines] ) )
     for i in xrange( len( lines ) ):
       if re.search( '.*CPULIMIT.*', lines[i] ):
         info = lines[i + 1].split()
@@ -54,12 +54,13 @@ class LSFTimeLeft:
         else:
           self.log.warn( 'Problem parsing "%s" for CPU limit' % lines[i + 1] )
           self.cpuLimit = -1
-      if re.search( '.*RUNLIMIT.*', lines[i] ):
+      elif re.search( '.*RUNLIMIT.*', lines[i] ):
         info = lines[i + 1].split()
         if len( info ) >= 1:
           self.wallClockLimit = float( info[0] ) * 60
         else:
           self.log.warn( 'Problem parsing "%s" for wall clock limit' % lines[i + 1] )
+          self.wallClockLimit = -1
 
     modelMaxNorm = 0
     if self.cpuRef:
@@ -169,12 +170,18 @@ class LSFTimeLeft:
                 self.hostNorm = float( l2[i] )
                 self.log.info( 'Host Normalization', '%s: %s' % ( self.host, self.hostNorm ) )
               except ValueError as e:
-                self.log.exception( 'Exception parsing lshosts output', '', e )
+                self.log.exception( 'Exception parsing lshosts output', l1, e )
+              finally:
+                break
 
       if self.hostNorm and self.normRef:
         self.hostNorm /= self.normRef
-        self.log.info( 'CPU Normalization', self.hostNorm )
+        self.log.info( 'CPU power w.r.t. batch unit', self.hostNorm )
 
+      if self.hostNorm:
+        # Set the limits in real seconds
+        self.cpuLimit /= self.hostNorm
+        self.wallClockLimit /= self.hostNorm
 
   #############################################################################
   def getResourceUsage( self ):
@@ -220,27 +227,17 @@ class LSFTimeLeft:
         except ValueError:
           pass
 
-    if cpu == None or wallClock == None:
+    if cpu is None or wallClock is None:
       return S_ERROR( 'Failed to parse LSF output' )
 
-    # This is the normalised CPU in the LSF sense
-    cpu *= self.hostNorm
-    wallClock *= self.hostNorm
-
     consumed = {'CPU':cpu, 'CPULimit':self.cpuLimit, 'WallClock':wallClock, 'WallClockLimit':self.wallClockLimit}
-    self.log.debug( consumed )
-    failed = False
-    for key, val in consumed.items():
-      if val == None:
-        failed = True
-        self.log.warn( 'Could not determine %s' % key )
 
-    if not failed:
+    if None not in consumed.values():
       return S_OK( consumed )
     else:
-      msg = 'Could not determine some parameters,' \
-            ' this is the stdout from the batch system call\n%s' % ( result['Value'] )
-      self.log.info( msg )
-      return S_ERROR( 'Could not determine some parameters' )
+      missed = [key for key, val in consumed.items() if val is None]
+      msg = 'Could not determine some parameters'
+      self.log.info( msg, ': %s\nThis is the stdout from the batch system call\n%s' % ( ','.join( missed ), result['Value'] ) )
+      return S_ERROR( msg )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

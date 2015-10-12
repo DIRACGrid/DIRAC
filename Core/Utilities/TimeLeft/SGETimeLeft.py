@@ -23,15 +23,11 @@ class SGETimeLeft:
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger( 'SGETimeLeft' )
-    self.jobID = None
-    if os.environ.has_key( 'JOB_ID' ):
-      self.jobID = os.environ['JOB_ID']
-    self.queue = None
-    if os.environ.has_key( 'QUEUE' ):
-      self.queue = os.environ['QUEUE']
-    if os.environ.has_key( 'SGE_BINARY_PATH' ):
-      pbsPath = os.environ['SGE_BINARY_PATH']
-      os.environ['PATH'] = os.environ['PATH'] + ':' + pbsPath
+    self.jobID = os.environ.get( 'JOB_ID' )
+    self.queue = os.environ.get( 'QUEUE' )
+    pbsPath = os.environ.get( 'SGE_BINARY_PATH' )
+    if pbsPath:
+      os.environ['PATH'] += ':' + pbsPath
 
     self.cpuLimit = None
     self.wallClockLimit = None
@@ -47,7 +43,7 @@ class SGETimeLeft:
     result = runCommand( cmd )
     if not result['OK']:
       return result
-    example = """ Example of output from qstat -f -j $JOB_ID
+    _example = """ Example of output from qstat -f -j $JOB_ID
 ==============================================================
 job_number:                 620685
 exec_file:                  job_scripts/620685
@@ -86,7 +82,7 @@ scheduling info:            (Collecting of scheduler job information is turned o
     wallClock = None
     wallClockLimit = None
 
-    lines = result['Value'].split( '\n' )
+    lines = str( result['Value'] ).split( '\n' )
     for line in lines:
       if re.search( 'usage.*cpu.*', line ):
         match = re.search( 'cpu=([\d,:]*),', line )
@@ -97,12 +93,12 @@ scheduling info:            (Collecting of scheduler job information is turned o
           if len( cpuList ) == 3:
             newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
           elif len( cpuList ) == 4:
-            newcpu = ( ( float( cpuList[0] ) * 24 + float( cpuList[1] ) ) * 60 + float( cpuList[2] ) ) * 60 + float( cpuList[3] )              
+            newcpu = ( ( float( cpuList[0] ) * 24 + float( cpuList[1] ) ) * 60 + float( cpuList[2] ) ) * 60 + float( cpuList[3] )
           if not cpu or newcpu > cpu:
             cpu = newcpu
         except ValueError:
           self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )
-      if re.search( 'hard resource_list.*cpu.*', line ):
+      elif re.search( 'hard resource_list.*cpu.*', line ):
         match = re.search( '_cpu=(\d*)', line )
         if match:
           cpuLimit = float( match.groups()[0] )
@@ -112,19 +108,15 @@ scheduling info:            (Collecting of scheduler job information is turned o
 
     # Some SGE batch systems apply CPU scaling factor to the CPU consumption figures
     if cpu:
-      factor = self.__getCPUScalingFactor()
+      factor = __getCPUScalingFactor()
       if factor:
-        cpu = cpu/factor
+        cpu = cpu / factor
 
     consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
-    self.log.debug( consumed )
-    failed = False
-    for key, val in consumed.items():
-      if val == None:
-        failed = True
-        self.log.warn( 'Could not determine %s' % key )
 
-    if not failed:
+    if None not in consumed.values():
+      # This cannot happen as we can't get wallClock from anywhere
+      self.log.debug( "TimeLeft counters complete:", str( consumed ) )
       return S_OK( consumed )
 
     if cpuLimit or wallClockLimit:
@@ -137,33 +129,69 @@ scheduling info:            (Collecting of scheduler job information is turned o
         consumed['CPU'] = time.time() - self.startTime
       if not wallClock:
         consumed['WallClock'] = time.time() - self.startTime
-      self.log.debug( "TimeLeft counters restored: " + str( consumed ) )
+      self.log.debug( "TimeLeft counters restored:", str( consumed ) )
       return S_OK( consumed )
     else:
-      self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
-      retVal = S_ERROR( 'Could not determine some parameters' )
+      msg = 'Could not determine some parameters'
+      self.log.info( msg, ':\nThis is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+      retVal = S_ERROR( msg )
       retVal['Value'] = consumed
       return retVal
 
-  def __getCPUScalingFactor(self):
+def __getCPUScalingFactor():
 
-    host = socket.getfqdn()
-    cmd = 'qconf -se %s' % host
-    result = runCommand( cmd )
-    if not result['OK']:
-      return None
-    lines = result['Value'].split( '\n' )
-    for line in lines:
-      if re.search( 'usage_scaling', line ):
-        match = re.search('cpu=([\d,\.]*),',line)
-        if match:
-          return float( match.groups()[0] )
+  host = socket.getfqdn()
+  cmd = 'qconf -se %s' % host
+  result = runCommand( cmd )
+  if not result['OK']:
     return None
+  _example = """Example of output for qconf -se ccwsge0640
+hostname              ccwsge0640.in2p3.fr
+load_scaling          NONE
+complex_values        m_mem_free=131022.000000M,m_mem_free_n0=65486.613281M, \
+                      m_mem_free_n1=65536.000000M,os=sl6
+load_values           arch=lx-amd64,cpu=89.400000,fsize_used_rate=0.089, \
+                      load_avg=36.300000,load_long=36.020000, \
+                      load_medium=36.300000,load_short=35.960000, \
+                      m_cache_l1=32.000000K,m_cache_l2=256.000000K, \
+                      m_cache_l3=25600.000000K,m_core=20, \
+                      m_mem_free=72544.000000M,m_mem_free_n0=18696.761719M, \
+                      m_mem_free_n1=22139.621094M,m_mem_total=131022.000000M, \
+                      m_mem_total_n0=65486.613281M, \
+                      m_mem_total_n1=65536.000000M,m_mem_used=58478.000000M, \
+                      m_mem_used_n0=46789.851562M,m_mem_used_n1=43396.378906M, \
+                      m_numa_nodes=2,m_socket=2,m_thread=40, \
+                      m_topology=SCTTCTTCTTCTTCTTCTTCTTCTTCTTCTTSCTTCTTCTTCTTCTTCTTCTTCTTCTTCTT, \
+                      m_topology_inuse=SCTTCTTCTTCTTCTTCTTCTTCTTCTTCTTSCTTCTTCTTCTTCTTCTTCTTCTTCTTCTT, \
+                      m_topology_numa=[SCTTCTTCTTCTTCTTCTTCTTCTTCTTCTT][SCTTCTTCTTCTTCTTCTTCTTCTTCTTCTT], \
+                      mem_free=70513.675781M,mem_total=129001.429688M, \
+                      mem_used=58487.753906M,memory_used_rate=0.468, \
+                      np_load_avg=0.907500,np_load_long=0.900500, \
+                      np_load_medium=0.907500,np_load_short=0.899000, \
+                      num_proc=40,swap_free=0.000000M,swap_total=266.699219M, \
+                      swap_used=266.699219M,virtual_free=70513.675781M, \
+                      virtual_total=129268.128906M,virtual_used=58754.453125M
+processors            40
+user_lists            NONE
+xuser_lists           NONE
+projects              NONE
+xprojects             NONE
+usage_scaling         cpu=11.350000,acct_cpu=11.350000
+report_variables      NONE
+
+"""
+  lines = str( result['Value'] ).split( '\n' )
+  for line in lines:
+    if re.search( 'usage_scaling', line ):
+      match = re.search( 'cpu=([\d,\.]*),', line )
+      if match:
+        return float( match.groups()[0] )
+  return None
 
 if __name__ == '__main__':
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   print SGETimeLeft().getResourceUsage()
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
 
