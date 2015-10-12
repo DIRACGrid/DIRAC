@@ -230,7 +230,7 @@ def removeRemoteFiles(dm,lfns):
       return S_OK()
     
   
-def uploadLocalFiles(dm, lfn, localfile, storage):
+def uploadLocalFile(dm, lfn, localfile, storage):
   """
     Upload a local file to a storage element
   """
@@ -240,6 +240,15 @@ def uploadLocalFiles(dm, lfn, localfile, storage):
   else:
     return S_OK( 'Successfully uploaded file to %s' % storage )
 
+def downloadRemoteFile(dm, lfn, localfile, storage):
+  """
+    Download a file from the system
+  """
+  res = dm.putAndRegister( lfn, localfile, storage, None )
+  if not res['OK']:
+    return S_ERROR( 'Error: failed to upload %s to %s' % ( lfn, storage ) )
+  else:
+    return S_OK( 'Successfully uploaded file to %s' % storage )
   
 def removeStorageDirectoryFromSE( directory, storageElement ):
   """
