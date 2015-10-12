@@ -4,21 +4,32 @@ Class for management of RabbitMQ connections
 
 __RCSID__ = "$Id$"
 
-import datetime
 import json
-import threading
 import stomp
+import threading
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-class RabbitInterface( object ):
+class RabbitConnection( object ):
   """
   Class for management of RabbitMQ connections
   Allows to both send and receive messages from a queue
   The class also implements callback functions to be able to act as a listener and receive messages
   """
 
-  msgList = []
-  lock = threading.Lock()
+  def __init__( self ):
+    self.host = None
+    self.port = None
+    self.user = None
+    self.vH = None
+    self.exchangeName = None
+    self.password = None
+
+    self.receiver = False
+    self.msgList = []
+    self.lock = threading.Lock()
+    self.connection = None
+
+  # Callback functions for message receiving mode
 
   def on_error( self, headers, message ):
     """
@@ -34,13 +45,36 @@ class RabbitInterface( object ):
     with self.lock:
       self.msgList.append( dictionary )
 
+  # Rest of functions
+
+  def __setQueueParameter( self, system, queueName, parameter ):
+    """
+    Reads a given MessageQueueing parameter from the CS and sets the appropriate variable in the class with its value
+    system is the DIRAC system where the queue works
+    queueName is the name of the queue
+    parameter is the name of the parameter to be read and set
+    """
+
+    # Utility function to lowercase the first letter of a string ( to create valid variable names )
+    toLowerFirst = lambda s: s[:1].lower() + s[1:] if s else ''
+
+    setup = gConfig.getValue( '/DIRAC/Setup', '' )
+
+    # Get the parameter from the CS and set it
+    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/%s' % ( system, setup, queueName, parameter ) )
+    if not result[ 'OK' ]:
+      return S_ERROR( 'Failed to get the parameter \'%s\' for RabbitMQ: %s' % ( parameter, result[ 'Message' ] ) )
+    setattr( self, toLowerFirst( parameter ), result[ 'Value' ] )
+
+    return S_OK( 'Queue parameters set successfully' )
+
   def setupConnection( self, system, queueName, receive = False, messageCallback = None ):
     """
     Establishes a new connection to RabbitMQ
     system indicates in which System the queue works
     queueName is the name of the queue to read from/write to
     receive indicates whether this object will read from the queue or read from it
-    messageCallback is the function to be called when a new message is received from the queue (only receiver mode).
+    messageCallback is the function to be called when a new message is received from the queue ( only receiver mode ).
     If None, the defaultCallback method is used instead
     """
     self.receiver = receive
@@ -51,49 +85,28 @@ class RabbitInterface( object ):
       else:
         self.on_message = self.defaultCallback
 
-    self.queueName = queueName
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-
-    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/Host' % ( system, setup, queueName ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the host for RabbitMQ: %s' % result[ 'Message' ] )
-    host = result[ 'Value' ]
-
-    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/Port' % ( system, setup, queueName ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the port for RabbitMQ: %s' % result[ 'Message' ] )
-    port = result[ 'Value' ]
-
-    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/User' % ( system, setup, queueName ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the user for RabbitMQ: %s' % result[ 'Message' ] )
-    user = result[ 'Value' ]
-
-    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/VH' % ( system, setup, queueName ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the virtual host for RabbitMQ: %s' % result[ 'Message' ] )
-    vHost = result[ 'Value' ]
-
-    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/ExchangeName' % ( system, setup, queueName ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the exchange for RabbitMQ: %s' % result[ 'Message' ] )
-    self.exchange = result[ 'Value' ]
+    # Read parameters from CS
+    for parameter in [ 'Host', 'Port', 'User', 'VH', 'ExchangeName' ]:
+      result = self.__setQueueParameter( system, queueName, parameter )
+      if not result[ 'OK' ]:
+        return result
 
     result = gConfig.getOption( '/LocalInstallation/MessageQueueing/Password' )
     if not result[ 'OK' ]:
       return S_ERROR( 'Failed to get the password for RabbitMQ: %s' % result[ 'Message' ] )
-    password = result[ 'Value' ]
+    self.password = result[ 'Value' ]
 
+    # Make the actual connection
     try:
-      self.connection = stomp.Connection( [ ( host, int( port ) ) ], vhost = vHost )
+      self.connection = stomp.Connection( [ ( self.host, int( self.port ) ) ], vhost = self.vH )
       self.connection.start()
-      self.connection.connect( username = user, passcode = password )
+      self.connection.connect( username = self.user, passcode = self.password )
 
       if self.receiver:
         self.connection.set_listener( '', self )
-        self.connection.subscribe( destination = '/topic/%s' % self.exchange, id = self.queueName, headers = { 'persistent': 'true' } )
+        self.connection.subscribe( destination = '/topic/%s' % self.exchangeName, id = queueName, headers = { 'persistent': 'true' } )
       else:
-        self.connection.subscribe( destination = '/topic/%s' % self.exchange, id = self.queueName )
+        self.connection.subscribe( destination = '/topic/%s' % self.exchangeName, id = queueName )
     except Exception, e:
       return S_ERROR( 'Failed to setup connection: %s' % e )
 
@@ -107,9 +120,9 @@ class RabbitInterface( object ):
     try:
       if isinstance( message, list ):
         for msg in message:
-          self.connection.send( body = json.dumps( msg ), destination = '/topic/%s' % self.exchange )
+          self.connection.send( body = json.dumps( msg ), destination = '/topic/%s' % self.exchangeName )
       else:
-        self.connection.send( body = json.dumps( message ), destination = '/topic/%s' % self.exchange )
+        self.connection.send( body = json.dumps( message ), destination = '/topic/%s' % self.exchangeName )
     except Exception, e:
       return S_ERROR( 'Failed to send message: %s' % e )
 
@@ -119,7 +132,7 @@ class RabbitInterface( object ):
     """
     Retrieves a message from the queue ( if any )
     Returns S_ERROR if there are no messages in the queue
-    This method is only useful if the default behavior for the message callback is being used
+    This method is only useful if the default behaviour for the message callback is being used
     """
     if not self.receiver:
       return S_ERROR( 'Instance not configured to receive messages' )
