@@ -1,3 +1,15 @@
+[v6r14p7]
+
+*Core
+CHANGE: XXXTimeLeft utilities revisited - all return real seconds,
+        code refactoring - use consistently always the same CPU power 
+
+*WMS
+FIX: JobAgent - code refactoring for the timeLeft logic part
+
+*Resources
+BUGFIX: ComputingElement - get rid of legacy getResourcesDict() call
+
 [v6r14p6]
 
 *Configuration
