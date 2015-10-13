@@ -120,16 +120,10 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
   else:
     return S_ERROR("Error:" + result['Message'])
 
-def getSetOfRemoteDirectoriesAndFiles(path):
+def getSetOfRemoteDirectoriesAndFiles(fc, path):
   """
     Return a set of all directories and subdirectories and the therein contained files for a given LFN
   """
-  res = getFileCatalog()
-  if not res['OK']:
-    return S_ERROR(res['Message'])
-  
-  fc = res['Value']
-   
   directories = set()
   files = set()
 
@@ -166,10 +160,10 @@ def isInFileCatalog(fc, path ):
   else:
     return S_ERROR()
 
-def getContentToSync(upload,source_dir,dest_dir):
+def getContentToSync(upload, fc, source_dir, dest_dir):
 
   if upload:
-    res = getSetOfRemoteDirectoriesAndFiles(dest_dir)
+    res = getSetOfRemoteDirectoriesAndFiles(fc, dest_dir)
     if not res['OK']:
       return S_ERROR(res['Message'])
     to_dirs = res['Value']['Directories']
@@ -188,7 +182,7 @@ def getContentToSync(upload,source_dir,dest_dir):
     to_dirs = res['Value']['Directories']
     to_files =  res['Value']['Files']
     
-    res = getSetOfRemoteDirectoriesAndFiles(source_dir)
+    res = getSetOfRemoteDirectoriesAndFiles(fc, source_dir)
     if not res['OK']:
       return S_ERROR(res['Message'])
     from_dirs = res['Value']['Directories']
@@ -311,15 +305,6 @@ def createLocalDirectory(directory):
   if not os.path.exists(directory):
     return S_ERROR('Directory creation failed')
   return S_OK('Created directory sucefully')
-  
-def removeLocalDirectory(directory):
-  """
-  Remove local directory
-  """
-  os.rmdir(directory)
-  if os.path.exists(directory):
-    return S_ERROR('Directory deleting failed')
-  return S_OK('Removed directory sucefully')
 
 def removeLocalFile(path):
   """
@@ -330,13 +315,54 @@ def removeLocalFile(path):
     return S_ERROR('File deleting failed')
   return S_OK('Removed file sucefully')
 
-
+def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
+  """
+  Top level wrapper to execute functions
+  """
+  
+  result = getFileCatalog()
+  if not result['OK']:
+    return S_ERROR(result['Message'])
+  fc = result['Value']
+    
+  dm = DataManager()
+  
+  result = getContentToSync(upload,fc,source_dir,dest_dir)
+  if not result['OK']:
+    return S_ERROR(result['Message'])
+  
+  if upload:
+    for _file in result['Value']['Delete']['Files']:
+      print dest_dir+"/"+ _file
+    for _directory in result['Value']['Delete']['Directories']:
+      print dest_dir + "/" + _directory
+      
+    for _directory in result['Value']['Create']['Directories']:
+      res = createRemoteDirectory(fc, dest_dir+"/"+ _directory)
+      if not res['OK']:
+        return S_ERROR('Directory creation failed: ' + res['Message'])
+        
+    for _file in result['Value']['Create']['Files']:
+      res = uploadLocalFile(dm, dest_dir+"/"+_file, source_dir+"/"+_file, storage)
+      if not res['OK']:
+        return S_ERROR('Upload of file: ' + _file + ' failed ' + res['Message'])
+      
+  else:
+    for _file in result['Value']['Delete']['Files']:
+      print dest_dir+"/"+ _file
+    for _directory in result['Value']['Delete']['Directories']:
+      print dest_dir + "/" + _directory
+    for _file in result['Value']['Create']['Files']:
+      print dest_dir+"/"+ _file
+    for _directory in result['Value']['Create']['Directories']:
+      print dest_dir + "/" + _directory
+  
 def run():
   """doc"""
 #  res = getFileCatalog()
 #  fc = res['Value']
-  dm = DataManager()
-  print getContentToSync(False, '/ilc/user/p/petric','/afs/cern.ch/user/p/petric/grid/DIRAC/DataManagementSystem/scripts')
+  #dm = DataManager()
+  syncDestinations(True, '/afs/cern.ch/user/p/petric/grid/DIRAC/DataManagementSystem/scripts', '/ilc/user/p/petric')
   
 if __name__ == "__main__":
   run()
