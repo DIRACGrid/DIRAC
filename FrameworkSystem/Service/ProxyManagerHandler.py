@@ -5,16 +5,12 @@
 __RCSID__ = "$Id$"
 
 import types
-import urllib
-
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForDN, getVOOption, getVOForGroup
 
 class ProxyManagerHandler( RequestHandler ):
 
@@ -145,7 +141,7 @@ class ProxyManagerHandler( RequestHandler ):
         return S_ERROR( "You can't download proxies for that group" )
       return S_OK( True )
     # Not authorized!
-    return S_ERROR( "Not authorized to get proxy" )
+    return S_ERROR( "You can't get proxies! Bad boy!" )
 
   types_getProxy = [ types.StringType, types.StringType, types.StringType, ( types.IntType, types.LongType ) ]
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
@@ -208,19 +204,10 @@ class ProxyManagerHandler( RequestHandler ):
     return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited )
 
   def __getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited ):
-    """ Get the requested proxy either from ProxyDB or from the PUSP server
-    """
-
-    # Check if the requested user DN is a PUSP one
-    lastEntry = userDN.split( '/' )[-1].split( '=' )
-    if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
-      return self.__getPUSProxy( userDN, userGroup, requiredLifetime, vomsAttribute, forceLimited )
-
-    # A conventional proxy is requested
     retVal = self.__proxyDB.getVOMSProxy( userDN,
-                                          userGroup,
-                                          requiredLifeTime = requiredLifetime,
-                                          requestedVOMSAttr = vomsAttribute )
+                                    userGroup,
+                                    requiredLifeTime = requiredLifetime,
+                                    requestedVOMSAttr = vomsAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
@@ -370,49 +357,3 @@ class ProxyManagerHandler( RequestHandler ):
       return result
     self.__proxyDB.logAction( "download voms proxy with token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return self.__getVOMSProxy( userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True )
-
-  def __getPUSProxy( self, userDN, userGroup, requiredLifetime, vomsAttribute, limited ):
-
-    result = getGroupsForDN( userDN )
-    if not result['OK']:
-      return result
-
-    validGroups = result['Value']
-    if not userGroup in validGroups:
-      return S_ERROR( 'Invalid group %s for user' % userGroup )
-
-    voName = getVOForGroup( userGroup )
-    if not voName:
-      return S_ERROR( 'Can not determine VO for group %s' % userGroup )
-    vomsVOName = getVOOption( voName, 'VOMSName' )
-    if not vomsVOName:
-      return S_ERROR( 'Can not determine VOMS VO for group %s' % userGroup )
-
-    puspServiceURL = getVOOption( voName, 'PUSPServiceURL' )
-    if not puspServiceURL:
-      return S_ERROR( 'Can not determine PUSP service URL for VO %s' % voName )
-
-    user = userDN.split(":")[-1]
-
-    puspURL = "%s?voms=%s&proxy-renewal=false&disable-voms-proxy=false" \
-              "&rfc-proxy=true&cn-label=user:%s" % ( puspServiceURL, vomsAttribute, user )
-    try:
-      proxy = urllib.urlopen( puspURL ).read()
-    except Exception as e:
-      return S_ERROR( 'Failed to get proxy from the PUSP server' )
-
-    chain = X509Chain()
-    chain.loadChainFromString( proxy )
-    chain.loadKeyFromString( proxy )
-
-    result = chain.getCredentials()
-    if not result['OK']:
-      return S_ERROR( 'Failed to get a valid proxy' )
-    credDict = result['Value']
-    if credDict['identity'] != userDN:
-      return S_ERROR( 'Requested DN does not match the obtained one in the PUSP proxy' )
-
-    result = chain.generateProxyToString( lifeTime = requiredLifetime,
-                                          diracGroup = userGroup,
-                                          limited = limited )
-    return result
