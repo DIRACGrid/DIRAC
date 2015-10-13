@@ -11,7 +11,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import sys
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -355,9 +354,15 @@ def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
       
   else:
     for _file in result['Value']['Delete']['Files']:
-      print dest_dir+"/"+ _file
+      res = removeLocalFile(dest_dir+"/"+ _file)
+      if not res['OK']:
+        return S_ERROR('Deleting of file: ' + _file + ' failed ' + res['Message'])
+      
     for _directory in result['Value']['Delete']['Directories']:
-      print dest_dir + "/" + _directory
+      res = createLocalDirectory( dest_dir + "/" + _directory )
+      if not res['OK']:
+        return S_ERROR('Deleting of directory: ' + _directory + ' failed ' + res['Message'])
+    
     for _file in result['Value']['Create']['Files']:
       print dest_dir+"/"+ _file
     for _directory in result['Value']['Create']['Directories']:
