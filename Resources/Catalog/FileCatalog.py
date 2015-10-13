@@ -64,11 +64,21 @@ class FileCatalog( object ):
   ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID']
+                'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID',
+                'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
+                'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
+                'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
-                   'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup']
+                   'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
+                   'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
+                   'addMetadataSet']
+
+  no_lfn_methods = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
+                    'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
+                    'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
+                    'getCompatibleMetadata','addMetadataSet','getMetadataSet']
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
