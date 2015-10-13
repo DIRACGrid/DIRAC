@@ -252,14 +252,10 @@ class ProxyManagerClient:
                                        long( cacheTime + requiredTimeLeft ), requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
-    chain = X509Chain()
-    result = chain.loadChainFromString( retVal[ 'Value' ] )
-    if not result[ 'OK' ]:
-      return result
-    result = chain.loadKeyFromString( retVal[ 'Value' ] )
-    if not result['OK']:
-      chain.setPKey( req.getPKey() )
-
+    chain = X509Chain( keyObj = req.getPKey() )
+    retVal = chain.loadChainFromString( retVal[ 'Value' ] )
+    if not retVal[ 'OK' ]:
+      return retVal
     self.__vomsProxiesCache.add( cacheKey, chain.getRemainingSecs()['Value'], chain )
     return S_OK( chain )
 
