@@ -1,4 +1,4 @@
-""" RabbitSync Service is an example of how to build services in the DIRAC framework
+""" RabbitMQSync Service is an example of how to build services in the DIRAC framework
 """
 
 __RCSID__ = "$Id: $"
@@ -9,7 +9,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC import gConfig
 from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
-class RabbitSyncHandler( RequestHandler ):
+class RabbitMQSyncHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfo ):
@@ -24,14 +24,14 @@ class RabbitSyncHandler( RequestHandler ):
   def initialize(self):
     """ Response initialization
     """
-    self.requestDefaultWhom = self.srv_getCSOption( "DefaultWhom", RabbitSyncHandler.defaultWhom )
+    self.requestDefaultWhom = self.srv_getCSOption( "DefaultWhom", RabbitMQSyncHandler.defaultWhom )
 
-  auth_sayRabbitSync = [ 'all' ]
-  types_sayRabbitSync = [ types.StringTypes ]
-  def export_sayRabbitSync( self, whom ):
+  auth_sayRabbitMQSync = [ 'all' ]
+  types_sayRabbitMQSync = [ types.StringTypes ]
+  def export_sayRabbitMQSync( self, whom ):
     """ Say hello to somebody
     """
     if not whom:
       whom = self.requestDefaultWhom
-    return S_OK( "RabbitSync " + whom )
+    return S_OK( "RabbitMQSync " + whom )
 
