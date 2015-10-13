@@ -214,7 +214,7 @@ class LSFTimeLeft( object ):
         lCPU = sCPU.split( ':' )
         try:
           cpu = float( lCPU[0] ) * 3600 + float( lCPU[1] ) * 60 + float( lCPU[2] )
-        except ValueError, IndexError:
+        except ( ValueError, IndexError ) as _e:
           pass
       elif l1[i] == 'START_TIME':
         sStart = l2[i]
@@ -229,6 +229,7 @@ class LSFTimeLeft( object ):
       return S_ERROR( 'Failed to parse LSF output' )
 
     consumed = {'CPU':cpu, 'CPULimit':self.cpuLimit, 'WallClock':wallClock, 'WallClockLimit':self.wallClockLimit}
+    self.log.debug( consumed )
 
     if None not in consumed.values():
       return S_OK( consumed )
