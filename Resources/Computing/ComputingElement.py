@@ -116,7 +116,12 @@ class ComputingElement(object):
     """
 
     # Collect global defaults first
-    for section in [ '/Resources/Computing/CEDefaults', '/Resources/Computing/%s' % self.ceName ]:
+    siteName = gConfig.getValue( '/LocalSite/Site' )
+    siteType = siteName.split( '.' )[0]
+    if not self.ceName:
+      self.ceName = gConfig.getValue( '/LocalSite/GridCE' )
+    for section in [ '/Resources/Computing/CEDefaults', '/Resources/Computing/%s' % self.ceName, '/Resources/Sites/%s/%s/CEs/%s' %
+                                                                                                 ( siteType, siteName, self.ceName )  ]:
       result = gConfig.getOptionsDict( section )
       if result['OK']:
         ceOptions = result['Value']
@@ -126,14 +131,15 @@ class ComputingElement(object):
           if key in FLOAT_PARAMETERS:
             ceOptions[key] = float( ceOptions[key] )
           if key in LIST_PARAMETERS:
-            ceOptions[key] = gConfig.getValue( os.path.join( section, key ), [] )  
+            print gConfig.getValue( os.path.join( section, key ), [] )
+            ceOptions[key] = gConfig.getValue( os.path.join( section, key ), '' )
+            print ceOptions[key]
         self.ceParameters.update( ceOptions )
-
     # Get local CE configuration
     localConfigDict = getCEConfigDict( self.ceName )
     self.ceParameters.update( localConfigDict )
 
-    # Adds site level parameters 
+    # Adds site level parameters
     section = '/LocalSite'
     result = gConfig.getOptionsDict( section )
     if result['OK'] and result['Value']:
@@ -149,6 +155,7 @@ class ComputingElement(object):
           self.ceParameters[option] = value
 
     self._addCEConfigDefaults()
+
 
   def isValid( self ):
     """ Check the sanity of the Computing Element definition
