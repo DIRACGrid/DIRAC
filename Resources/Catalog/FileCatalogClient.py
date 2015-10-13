@@ -422,7 +422,7 @@ class FileCatalogClient( object ):
     """ Get the status for the supplied replicas """
     return self.__getRPC( timeout = timeout ).getFileDescendents( lfns, depths )
 
-
+  @checkCatalogArguments
   def getLFNForGUID( self, guids, timeout = 120 ):
     """Get the matching lfns for given guids"""
     return self.__getRPC( timeout = timeout ).getLFNForGUID( guids )
