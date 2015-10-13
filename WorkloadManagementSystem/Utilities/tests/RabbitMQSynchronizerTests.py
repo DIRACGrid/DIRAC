@@ -3,7 +3,7 @@
 
 import unittest
 from DIRAC.WorkloadManagementSystem.Utilities.RabbitMQSynchronizer import RabbitMQSynchronizer
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import
+#from DIRAC.ConfigurationSystem.Client.Helpers.Registry import
 
 class TestRabbitMQSync( unittest.TestCase ):
 

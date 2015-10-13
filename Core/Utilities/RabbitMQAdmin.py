@@ -16,7 +16,7 @@ def deleteUser(user):
   pass
 
 def getAllUsers():
-  pass
+  return []
 
 def addUsers(users):
   pass
@@ -24,5 +24,5 @@ def addUsers(users):
 def deleteUsers(users):
   pass
 
-def setPermissions(user, permissions):
+def setUsersPermissions(users, permissions):
   pass 

@@ -5,9 +5,9 @@
 '''
 
 from DIRAC import S_OK
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsInGroup
-from subprocess import call
+from DIRAC.Core.Utilities.RabbitMQAdmin import getAllUsers, addUsers, deleteUsers
+from DIRAC.Core.Utilities.RabbitMQAdmin import setUsersPermissions
 
 class RabbitMQSynchronizer(object):
   pass
@@ -15,7 +15,10 @@ class RabbitMQSynchronizer(object):
   def __init__( self ):
 
     # Warm up local CS
+    # I am not sure whether it is needed but
+    # it was used in DIRAC.ResourceStatusSystem.Utilities.Synchronizer
     warmUp()
+    self._access_group = 'lhcb_pilot'
 
   def sync( self, _eventName, _params ):
     '''
@@ -28,33 +31,36 @@ class RabbitMQSynchronizer(object):
         this parameter is ignored, but needed by caller function.
       **_params** - any
         this parameter is ignored, but needed by caller function.
-
     :return: S_OK
     '''
-    valid_users = getDNsInGroup('lhcb_pilot')
-    updateRabbitMQUsers(valid_users)
-    #ret = call(['rabbitmqctl', 'list_users'])
-    #print ret
-    print valid_users 
+
+    valid_users = getDNsInGroup(self._access_group)
+    updateRabbitMQDatabase(valid_users)
     return S_OK()
 
-def updateRabbitMQUsers(users):
-  rabbitList = getCurrentUserList()
-  users_to_remove = compareLists(users, rabbitList)
-  users_to_add = compareLists(users, rabbitList)
-  #del_users
-  #add_users
-  #set_permissions
+def updateRabbitMQDatabase(newUsers):
+  print newUsers
+  currentUsers = getAllUsers()
+  usersToRemove = listDifference(currentUsers, newUsers)
+  usersToAdd = listDifference(newUsers, currentUsers)
+  if usersToAdd:
+    addUsers(usersToAdd)
+    setUsersPermissions(usersToAdd, None)
+  if usersToRemove:
+    deleteUsers(usersToRemove)
 
 def getCurrentUserList():
   return ['1','2']
 
-def compareLists(list1, list2):
+
+def listDifference(list1, list2):
   return list(set(list1) - set(list2))
 
 def warmUp():
   '''
     gConfig has its own dark side, it needs some warm up phase.
+    This function was copied from
+    from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
   '''
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   gRefresher.refreshConfigurationIfNeeded()
