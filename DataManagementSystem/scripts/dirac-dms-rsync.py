@@ -332,11 +332,17 @@ def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
     return S_ERROR(result['Message'])
   
   if upload:
-    for _file in result['Value']['Delete']['Files']:
-      print dest_dir+"/"+ _file
+    
+    lfns =  [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
+    res = removeRemoteFiles(dm,lfns)
+    if not res['OK']:
+      return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
+    
     for _directory in result['Value']['Delete']['Directories']:
-      print dest_dir + "/" + _directory
-      
+      res = removeRemoteDirectory(fc, dest_dir + "/" + _directory)
+      if not res['OK']:
+        return S_ERROR('Failed to remove directory: '+ _directory + res['Message'])
+        
     for _directory in result['Value']['Create']['Directories']:
       res = createRemoteDirectory(fc, dest_dir+"/"+ _directory)
       if not res['OK']:
