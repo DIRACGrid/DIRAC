@@ -314,6 +314,15 @@ def removeLocalFile(path):
     return S_ERROR('File deleting failed')
   return S_OK('Removed file sucefully')
 
+def removeLocaDirectory(path):
+  """
+  Remove local directory
+  """
+  os.rmdir(path)
+  if os.path.isdir(path):
+    return S_ERROR('Directory deleting failed')
+  return S_OK('Removed directory sucefully')
+
 def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
   """
   Top level wrapper to execute functions
