@@ -368,21 +368,26 @@ def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
         return S_ERROR('Deleting of file: ' + _file + ' failed ' + res['Message'])
       
     for _directory in result['Value']['Delete']['Directories']:
-      res = createLocalDirectory( dest_dir + "/" + _directory )
+      res = removeLocaDirectory( dest_dir + "/" + _directory )
       if not res['OK']:
         return S_ERROR('Deleting of directory: ' + _directory + ' failed ' + res['Message'])
     
-    for _file in result['Value']['Create']['Files']:
-      print dest_dir+"/"+ _file
     for _directory in result['Value']['Create']['Directories']:
-      print dest_dir + "/" + _directory
+      res = createLocalDirectory( dest_dir+"/"+ _directory )
+      if not res['OK']:
+        return S_ERROR('Creation of directory: ' + _directory + ' failed ' + res['Message'])
+        
+    for _file in result['Value']['Create']['Files']:
+      res = downloadRemoteFile(dm, source_dir + "/" + _file, dest_dir + ("/" + _file).rsplit("/", 1)[0])
+      if not res['OK']:
+        return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
   
 def run():
   """doc"""
 #  res = getFileCatalog()
 #  fc = res['Value']
   #dm = DataManager()
-  syncDestinations(True, '/afs/cern.ch/user/p/petric/grid/DIRAC/DataManagementSystem/scripts', '/ilc/user/p/petric')
+  syncDestinations(False, '/ilc/user/p/petric', '/afs/cern.ch/user/p/petric/grid/DIRAC/DataManagementSystem/scripts/test' )
   
 if __name__ == "__main__":
   run()
