@@ -326,7 +326,7 @@ def removeLocaDirectory(path):
     return S_ERROR('Directory deleting failed')
   return S_OK('Removed directory sucefully')
 
-def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
+def syncDestinations(upload, source_dir, dest_dir, storage):
   """
   Top level wrapper to execute functions
   """
