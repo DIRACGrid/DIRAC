@@ -11,6 +11,7 @@
 __RCSID__ = "$Id$"
 
 import os
+import sys
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -382,15 +383,42 @@ def syncDestinations(upload, source_dir, dest_dir, storage="CERN-DST-EOS"):
       if not res['OK']:
         return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
   
-def run():
-  """doc"""
-#  res = getFileCatalog()
-#  fc = res['Value']
-  #dm = DataManager()
-  syncDestinations(False, '/ilc/user/p/petric', '/afs/cern.ch/user/p/petric/grid/DIRAC/DataManagementSystem/scripts/test' )
+  return S_OK('Mirroring sucefully finished')
   
+def run( parameters ):
+  """
+  The main user interface
+  """
+  
+  source_dir = parameters[0]
+  dest_dir = parameters[1]
+  upload = False
+  storage = None
+  
+  if len( parameters ) == 3:
+    storage = parameters[2]
+    source_dir = os.path.abspath(source_dir)
+    dest_dir = dest_dir.rstrip('/')
+    upload = True
+    if not os.path.isdir(source_dir):
+      print "Source directory does not exist"
+      sys.exit(1)
+     
+  if len (parameters ) == 2:
+    dest_dir = os.path.abspath(dest_dir)
+    source_dir = source_dir.rstrip('/')
+    if not os.path.isdir(dest_dir):
+      print "Destination directory does not exist"
+      sys.exit(1)
+
+  res = syncDestinations(upload, source_dir, dest_dir, storage)
+  if not res['OK']:
+    print res['Message']
+  
+  print "Sucessfully mirrored " + source_dir + " into " + dest_dir
+    
 if __name__ == "__main__":
-  run()
+  run( args )
  
 
 
