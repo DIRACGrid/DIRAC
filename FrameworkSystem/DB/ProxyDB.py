@@ -12,13 +12,12 @@ import urllib
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security.X509Request import X509Request
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
 
 class ProxyDB( DB ):
 
@@ -537,17 +536,6 @@ class ProxyDB( DB ):
     self.logAction( "myproxy renewal", hostDN, "host", userDN, userGroup )
     return S_OK( mpChain )
 
-  def __isPUSPdn( self, userDN ):
-    """ Evaluate if the DN is of the PUSP type
-
-    :param str userDN: user DN string
-    :return: True or False
-    """
-    lastEntry = userDN.split( '/' )[-1].split( '=' )
-    if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
-      return True
-    return False
-
   def __getPUSProxy( self, userDN, userGroup, requiredLifetime, requestedVOMSAttr = None ):
 
     result = Registry.getGroupsForDN( userDN )
@@ -607,7 +595,7 @@ class ProxyDB( DB ):
     """
 
     # Get the Per User SubProxy if one is requested
-    if self.__isPUSPdn( userDN ):
+    if isPUSPdn( userDN ):
       result = self.__getPUSProxy( userDN, userGroup, requiredLifeTime )
       if not result['OK']:
         return result
@@ -677,7 +665,7 @@ class ProxyDB( DB ):
           if requiredLifeTime and requiredLifeTime <= vomsTime and requiredLifeTime <= remainingSecs:
             return S_OK( ( chain, min( vomsTime, remainingSecs ) ) )
 
-    if self.__isPUSPdn( userDN ):
+    if isPUSPdn( userDN ):
       # Get the Per User SubProxy if one is requested
       result = self.__getPUSProxy( userDN, userGroup, requiredLifeTime, requestedVOMSAttr )
       if not result['OK']:

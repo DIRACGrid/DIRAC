@@ -599,10 +599,13 @@ class X509Chain( object ):
     if self.__isProxy:
       # Check if we have a subproxy
       trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
-      numEntries = trialSubidentity.num_entries()
-      lastEntry = trialSubidentity.get_entry( numEntries - 1 )
-      if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
-        return S_OK( True )
+      dn = trialSubidentity.one_line()
+      subproxyUser = isPUSPdn( dn )
+      if subproxyUser:
+        result = S_OK( True )
+        result['Identity'] = dn
+        result['SubproxyUser'] = subproxyUser
+        return result
 
     return S_OK( False )
 
@@ -620,13 +623,10 @@ class X509Chain( object ):
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
 
       # Check if we have the PUSP case
-      trialSubidentity = self.__certList[ self.__firstProxyStep ].get_subject()
-      numEntries = trialSubidentity.num_entries()
-      lastEntry = trialSubidentity.get_entry( numEntries - 1 )
-      if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
-        # In case of subproxy, take the first proxy as identity
-        credDict['identity'] = trialSubidentity.one_line()
-        credDict['subproxyUser'] = lastEntry[1].split( ':' )[1]
+      result = self.isPUSP()
+      if result['OK'] and result['Value']:
+        credDict['identity'] = result['Identity']
+        credDict['subproxyUser'] = result['SubproxyUser']
 
       credDict[ 'rfc' ] = self.__isRFC
       retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
@@ -675,5 +675,15 @@ class X509Chain( object ):
     self.__hash = sha1.hexdigest()
     return S_OK( self.__hash )
 
+def isPUSPdn( userDN ):
+    """ Evaluate if the DN is of the PUSP type or not
+
+    :param str userDN: user DN string
+    :return: the subproxy user name or None
+    """
+    lastEntry = userDN.split( '/' )[-1].split( '=' )
+    if lastEntry[0] == "CN" and lastEntry[1].startswith( "user:" ):
+      return userDN.split( '/' )[-1].split( ':' )[1]
+    return None
 
 g_X509ChainType = type( X509Chain() )
