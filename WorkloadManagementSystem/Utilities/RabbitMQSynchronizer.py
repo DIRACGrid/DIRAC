@@ -6,8 +6,8 @@
 
 from DIRAC import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsInGroup
-from DIRAC.Core.Utilities.RabbitMQAdmin import getAllUsers, addUsers, deleteUsers
-from DIRAC.Core.Utilities.RabbitMQAdmin import setUsersPermissions
+from DIRAC.Core.Utilities.RabbitMQAdmin import getAllUsers, deleteUsers
+from DIRAC.Core.Utilities.RabbitMQAdmin import setUsersPermissions, addUsersWithoutPasswords
 
 class RabbitMQSynchronizer(object):
   pass
@@ -39,19 +39,24 @@ class RabbitMQSynchronizer(object):
     return S_OK()
 
 def updateRabbitMQDatabase(newUsers):
-  print newUsers
   currentUsers = getAllUsers()
+  #for a moment i dont want to remove users:
+  #ala, admin, 
+  currentUsers.remove('ala')
+  currentUsers.remove('admin')
+  currentUsers.remove('O=client,CN=kamyk')
+  print currentUsers 
   usersToRemove = listDifference(currentUsers, newUsers)
+  print usersToRemove
   usersToAdd = listDifference(newUsers, currentUsers)
   if usersToAdd:
-    addUsers(usersToAdd)
-    setUsersPermissions(usersToAdd, None)
+    addUsersWithoutPasswords(usersToAdd)
+    setUsersPermissions(usersToAdd)
   if usersToRemove:
     deleteUsers(usersToRemove)
 
 def getCurrentUserList():
   return ['1','2']
-
 
 def listDifference(list1, list2):
   return list(set(list1) - set(list2))

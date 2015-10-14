@@ -1,28 +1,60 @@
 """RabbitMQAdmin module serves for the management of the internal RabbitMQ
    users database. It uses rabbitmqctl command. Only the user with the right
-   permissions can execute those commands
+   permissions can execute those commands.
 """
-from subprocess import call
+import subprocess
+import re
 
-def executeCommand(command, args):
-  #ret = call(['rabbitmqctl', 'list_users'])
-  #print ret
+def hasPermissionsToAdmin():
   pass 
 
-def addUser(user):
-  pass 
+def executeRabbitmqctl(arg, *argv):
+  command =['sudo','/usr/sbin/rabbitmqctl','-q', arg] + list(argv)
+  res = subprocess.Popen(command, stdout = subprocess.PIPE)
+  cmd_out, cmd_err = res.communicate()
+  return cmd_out 
+
+def addUserWithoutPassword(user):
+  addUser(user)
+  clearUserPassword(user)
+def addUser(user, password = 'password'):
+  ret = executeRabbitmqctl('add_user', user, password) 
 
 def deleteUser(user):
-  pass
+  ret = executeRabbitmqctl('delete_user', user) 
 
 def getAllUsers():
-  return []
+  users = executeRabbitmqctl('list_users')
+  users = users.split('\n')
+  # the rabbitMQ user list is given in the format:
+  # user_name [usr_tag] 
+  # I remove [usr_tag] part.
+  # Also only non-empty users are proceeded further.
+  # Empty users can appear, cause every new line was
+  # treated as a new user.
+  users = [ re.sub('\\t\[\w*\]$','',u) for u in users if u]
+  return users
+
+def setUserPermission(user):
+  ret = executeRabbitmqctl('set_permissions','-p','/', user, '\".*\"','\".*\"','\".*\"') 
+
+def clearUserPassword(user):
+  ret = executeRabbitmqctl('clear_password', user)
+
+
+def setUsersPermissions(users):
+  for u in users:
+    setUserPermission(u)
+  
+def addUsersWithoutPasswords(users):
+  for u in users:
+    addUserWithoutPassword(u)
 
 def addUsers(users):
-  pass
+  for u in users:
+    addUser(u)
 
 def deleteUsers(users):
-  pass
+  for u in users:
+    deleteUser(u)
 
-def setUsersPermissions(users, permissions):
-  pass 
