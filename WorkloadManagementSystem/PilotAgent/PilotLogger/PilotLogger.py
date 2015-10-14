@@ -8,9 +8,16 @@ __RCSID__ = "$Id$"
 import stomp
 import sys
 import Queue
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateTimeStamp
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import isMessageFormatCorrect
+#Since PilotLogger can be used without DIRAC relaying only on PilotLoggerTools, we
+#check two possiblities:
+try:
+  from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
+  from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateTimeStamp
+  from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import isMessageFormatCorrect
+except ImportError:
+  from PilotLoggerTools import generateDict, encodeMessage
+  from PilotLoggerTools import generateTimeStamp
+  from PilotLoggerTools import isMessageFormatCorrect
 
 
 def connect(host_and_port, ssl_cfg):
@@ -210,6 +217,8 @@ class PilotLogger( object ):
 def main():
   """ main() function  is used to send a message
       before any DIRAC related part is installed.
+      Remember that it is assumed that the PilotUUID was 
+      already generated and stored into some file.
   """
   message = ' '.join( sys.argv[1:] ) or "Something wrong no message to send!"
   logger = PilotLogger()
