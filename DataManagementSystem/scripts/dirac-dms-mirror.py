@@ -30,12 +30,20 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  SE:       DIRAC Storage Element' ]
                                  )
                       )
+
+Script.registerSwitch( "s" , "sync" , "     Make target directory identical to source. Files in target directory will be deleted" )
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
 if len( args ) < 1 or len( args ) > 3:
   Script.showHelp()
 
+sync = False
+for switch in Script.getUnprocessedSwitches():
+  if switch[0].lower() == "s" or switch[0].lower() == "sync":
+    sync = True
+
+  
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
