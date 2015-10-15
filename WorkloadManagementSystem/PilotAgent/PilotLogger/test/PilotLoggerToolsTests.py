@@ -36,7 +36,7 @@ class TestPilotLoggerToolsCreatePilotLoggerConfigFile( TestPilotLoggerTools ):
     host = '127.0.0.1'
     port = 61614
     queuePath = '/queue/test_queue'
-    key_file  = ' certificates/client/key.pem'
+    key_file  = 'certificates/client/key.pem'
     cert_file = 'certificates/client/cert.pem'
     ca_certs = 'certificates/testca/cacert.pem'
     fileWithID = 'PilotAgentUUID_test'

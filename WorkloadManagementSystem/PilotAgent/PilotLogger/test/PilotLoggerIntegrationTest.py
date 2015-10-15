@@ -3,13 +3,14 @@
     modules enabled and listening at the server_ip:61614 socket. In the RabbitMQ server there must be a queue
     available: /queue/test .
     For a moment server_ip will be set
-    to 127.0.0.1. The TestStompConsumer class is provided.
+    to 127.0.0.1:61614 - check TestPilotLogger.cfg for details
+    The TestStompConsumer class is provided.
 """
 
 import unittest
 import os
 import json
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import PilotLogger, getPilotUUIDFromFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import PilotLogger
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import send, connect
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.TestStompConsumer  import TestStompConsumer

@@ -51,7 +51,7 @@ def send(msg ,destination, connect_handler):
     return False
   connect_handler.send(destination=destination,
                        body=msg)
-  print " [x] Sent %r %r" % ( type, msg )
+  print " [x] Sent %r " % (  msg )
   return True
 
 def disconnect(connect_handler):
@@ -225,7 +225,6 @@ class PilotLogger( object ):
         generateTimeStamp(),
         "pilot"
         )
-    print message
     if not isMessageFormatCorrect( message ):
       return False
     encodedMsg = encodeMessage( message )
