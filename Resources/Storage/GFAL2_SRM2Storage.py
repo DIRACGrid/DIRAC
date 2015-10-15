@@ -9,7 +9,7 @@ from types import StringType, ListType
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkArgumentFormat
 
 
 
