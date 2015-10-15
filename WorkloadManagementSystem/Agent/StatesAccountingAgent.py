@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    StatesAccountingAgent.py
 # Author :  A.T.
 ########################################################################
@@ -72,7 +71,7 @@ class StatesAccountingAgent( AgentModule ):
     #Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
-    if not result[ 'OK' ] and not self.retry:
+    if not result[ 'OK' ]:
       self.log.error( "Can't get the JobDB summary", "%s: won't commit at this cycle" % result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
