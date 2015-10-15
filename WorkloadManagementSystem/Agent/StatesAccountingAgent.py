@@ -10,7 +10,7 @@
 __RCSID__ = "$Id$"
 
 
-from DIRAC  import gLogger, gConfig, S_OK
+from DIRAC  import gConfig, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
@@ -47,6 +47,8 @@ class StatesAccountingAgent( AgentModule ):
     """
     self.dsClients = {}
     self.jobDB = JobDB()
+    self.retryOnce = False
+    self.retryValues = []
 
     self.reportPeriod = 850
     self.am_setOption( "PollingTime", self.reportPeriod )
@@ -66,21 +68,26 @@ class StatesAccountingAgent( AgentModule ):
     if not result[ 'OK' ]:
       return result
     validSetups = result[ 'Value' ]
-    gLogger.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
+    self.log.info( "Valid setups for this cycle are %s" % ", ".join( validSetups ) )
     #Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot( self.__jobDBFields )
     now = Time.dateTime()
-    if not result[ 'OK' ]:
-      gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
+    if not result[ 'OK' ] and not self.retry:
+      self.log.error( "Can't get the JobDB summary", "%s: won't commit at this cycle" % result[ 'Message' ] )
     else:
       values = result[ 'Value' ][1]
+
+      if self.retryOnce:
+        self.log.verbose( "Adding to records to commit those not committed within the previous cycle" )
+      acWMSListAdded = []
+
       for record in values:
         recordSetup = record[0]
         if recordSetup not in validSetups:
-          gLogger.error( "Setup %s is not valid" % recordSetup )
+          self.log.error( "Setup %s is not valid" % recordSetup )
           continue
         if recordSetup not in self.dsClients:
-          gLogger.info( "Creating DataStore client for %s" % recordSetup )
+          self.log.info( "Creating DataStore client for %s" % recordSetup )
           self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup, retryGraceTime = 900 )
         record = record[1:]
         rD = {}
@@ -98,15 +105,36 @@ class StatesAccountingAgent( AgentModule ):
         acWMS.setValuesFromDict( rD )
         retVal = acWMS.checkValues()
         if not retVal[ 'OK' ]:
-          gLogger.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
+          self.log.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
         else:
           self.dsClients[ recordSetup ].addRegister( acWMS )
+          acWMSListAdded.append( acWMS )
+
+      if self.retryOnce and self.retryValues:
+        for acWMSComulated in self.retryValues:
+          retVal = acWMSComulated.checkValues()
+          if not retVal[ 'OK' ]:
+            self.log.error( "Invalid accounting record ", "%s" % ( retVal[ 'Message' ] ) )
+          else:
+            self.dsClients[ recordSetup ].addRegister( acWMSComulated )
+
       for setup in self.dsClients:
-        gLogger.info( "Sending records for setup %s" % setup )
+        self.log.info( "Sending records for setup %s" % setup )
         result = self.dsClients[ setup ].commit()
         if not result[ 'OK' ]:
-          gLogger.error( "Couldn't commit wms history for setup %s" % setup, result[ 'Message' ] )
+          self.log.error( "Couldn't commit wms history for setup %s" % setup, result[ 'Message' ] )
+          # Re-creating the client: for new connection, and for avoiding accumulating too large of a backlog
+          self.dsClients[ setup ] = DataStoreClient( setup = setup, retryGraceTime = 900 )
+          if not self.retryOnce:
+            self.log.info( "Will try again at next cycle" )
+            self.retryOnce = True
+            self.retryValues = acWMSListAdded
+          else:
+            self.log.warn( "Won't retry one more time" )
+            self.retryOnce = False
+            self.retryValues = []
         else:
-          gLogger.info( "Sent %s records for setup %s" % ( result[ 'Value' ], setup ) )
+          self.log.info( "Sent %s records for setup %s" % ( result[ 'Value' ], setup ) )
+          self.retryOnce = False
     return S_OK()
 
