@@ -32,7 +32,7 @@ Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
 if len( args ) < 1 or len( args ) > 3:
-    Script.showHelp()
+  Script.showHelp()
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig
