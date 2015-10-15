@@ -25,6 +25,12 @@ def getDNForUsername( username ):
     return S_OK( dnList )
   return S_ERROR( "No DN found for user %s" % username )
 
+def getDNForHost( host ):
+  dnList = gConfig.getValue( "%s/Hosts/%s/DN" % ( gBaseRegistrySection, host ), [] )
+  if dnList:
+    return S_OK( dnList )
+  return S_ERROR( "No DN found for host %s" % host )
+
 def getGroupsForDN( dn ):
   retVal = getUsernameForDN( dn )
   if not retVal[ 'OK' ]:
