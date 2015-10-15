@@ -31,7 +31,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                  )
                       )
 
-Script.registerSwitch( "s" , "sync" , "     Make target directory identical to source. Files in target directory will be deleted" )
+Script.registerSwitch( "D" , "sync" , "     Make target directory identical to source. Files in target directory will be deleted" )
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
@@ -77,7 +77,9 @@ def getSetOfLocalDirectoriesAndFiles( path ):
       fullFilename = os.path.join(dirname,filename)
       fullFilename = os.path.abspath(fullFilename)
       fullFilename = fullFilename.replace(fullPath,'').lstrip('/')
-      files.add((fullFilename,long(os.path.getsize(fullPath + "/" +  fullFilename))))
+      fileSize = os.path.getsize(fullPath + "/" +  fullFilename)
+      if fileSize > 0:
+        files.add((fullFilename,long(fileSize)))
 
   tree = {}
   tree["Directories"]=directories
