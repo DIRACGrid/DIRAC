@@ -471,14 +471,14 @@ def run( parameters , delete ):
     dest_dir = dest_dir.rstrip('/')
     upload = True
     if not os.path.isdir(source_dir):
-      print "Source directory does not exist"
+      gLogger.fatal("Source directory does not exist")
       sys.exit(1)
 
   if len (parameters ) == 2:
     dest_dir = os.path.abspath(dest_dir)
     source_dir = source_dir.rstrip('/')
     if not os.path.isdir(dest_dir):
-      print "Destination directory does not exist"
+      gLogger.fatal("Destination directory does not exist")
       sys.exit(1)
 
   res = syncDestinations( upload, source_dir, dest_dir, storage, delete )
@@ -489,4 +489,4 @@ def run( parameters , delete ):
 
 if __name__ == "__main__":
   message = run( args , sync )
-  print message['Value']
+  gLogger.notice(message['Value'])
