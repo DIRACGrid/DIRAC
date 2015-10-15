@@ -92,7 +92,7 @@ class FCConditionParser(object):
       """ Perform the evaluation of the boolean logic
           by applying the operator between the two arguments
 
-          :param **kwargs whatever information is given to plugin (typically lfn)
+          :param **kwargs: whatever information is given to plugin (typically lfn)
       """
 
       return self.evalop( arg.eval( **kwargs ) for arg in self.args )
@@ -133,7 +133,7 @@ class FCConditionParser(object):
       """ Perform the evaluation of the boolean logic
           by returning the negation of the evaluation of the argument
 
-          :param **kwargs whatever information is given to plugin (typically lfn)
+          :param **kwargs: whatever information is given to plugin (typically lfn)
       """
       return not self.arg.eval( **kwargs )
 
@@ -166,7 +166,7 @@ class FCConditionParser(object):
 
     def __init__( self, tokens ):
       """
-          :param tokens [ pluginName, =, conditions ]
+          :param tokens: [ pluginName, =, conditions ]
                  the pluginName is automatically prepended with 'Plugin'
 
 
