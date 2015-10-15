@@ -353,10 +353,11 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
   Wrapper for uploading files
   """
   if delete:
-    lfns =  [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
-    res = removeRemoteFiles(dm,lfns)
-    if not res['OK']:
-      return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
+    lfns = [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
+    if len(lfns)>0:
+      res = removeRemoteFiles(dm,lfns)
+      if not res['OK']:
+        return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
     
     for _directory in result['Value']['Delete']['Directories']:
       res = removeRemoteDirectory(fc, dest_dir + "/" + _directory)
