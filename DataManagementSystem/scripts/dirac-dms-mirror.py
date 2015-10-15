@@ -54,8 +54,8 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 def getSetOfLocalDirectoriesAndFiles( path ):
-  """
-  Return a set of all directories and subdirectories and a set of files contained therein for a given local path
+  """Return a set of all directories and subdirectories and a set of
+  files contained therein for a given local path
   """
 
   fullPath = os.path.abspath(path)
@@ -317,7 +317,7 @@ def createLocalDirectory(directory):
   try:
     os.makedirs(directory)
   except OSError as e:
-    S_ERROR('Directory creation failed: ' + e.strerror)
+    return S_ERROR('Directory creation failed: ' + e.strerror)
 
   if not os.path.exists(directory):
     return S_ERROR('Directory creation failed')
@@ -330,7 +330,7 @@ def removeLocalFile(path):
   try:
     os.remove(path)
   except OSError as e:
-    S_ERROR('Directory creation failed:' + e.strerror)
+    return S_ERROR('Directory creation failed:' + e.strerror)
 
   if os.path.isfile(path):
     return S_ERROR('File deleting failed')
@@ -343,7 +343,7 @@ def removeLocaDirectory(path):
   try:
     os.rmdir(path)
   except OSError as e:
-    S_ERROR('Deleting directory failed: ' + e.strerror)
+    return S_ERROR('Deleting directory failed: ' + e.strerror)
 
   if os.path.isdir(path):
     return S_ERROR('Directory deleting failed')
