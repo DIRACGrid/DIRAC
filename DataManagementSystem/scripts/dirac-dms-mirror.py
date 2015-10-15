@@ -185,13 +185,13 @@ def getContentToSync(upload, fc, source_dir, dest_dir):
     if not res['OK']:
       return S_ERROR(res['Message'])
     to_dirs = res['Value']['Directories']
-    to_files =  res['Value']['Files']
+    to_files = res['Value']['Files']
 
     res = getSetOfLocalDirectoriesAndFiles(source_dir)
     if not res['OK']:
       return S_ERROR(res['Message'])
     from_dirs = res['Value']['Directories']
-    from_files =  res['Value']['Files']
+    from_files = res['Value']['Files']
 
   else:
     res = getSetOfLocalDirectoriesAndFiles(dest_dir)
@@ -204,14 +204,18 @@ def getContentToSync(upload, fc, source_dir, dest_dir):
     if not res['OK']:
       return S_ERROR(res['Message'])
     from_dirs = res['Value']['Directories']
-    from_files =  res['Value']['Files']
+    from_files = res['Value']['Files']
 
-
+  #Create list of directories to delete
   dirs_delete = list(to_dirs - from_dirs)
+  #Sort the list by depth of directory tree
   dirs_delete.sort(key = lambda s: -s.count('/'))
+  #Create list of directories to create
   dirs_create = list(from_dirs - to_dirs)
+  #Sort the list by depth of directory tree
   dirs_create.sort(key = lambda s: s.count('/'))
 
+  #Flatten the list of pairs (filename, size) to list of filename
   files_delete = [pair[0] for pair in list(to_files - from_files)]
   files_create = [pair[0] for pair in list(from_files - to_files)]
 
@@ -237,7 +241,7 @@ def removeRemoteFiles(dm,lfns):
   for lfnList in breakListIntoChunks( lfns, 100 ):
     res = dm.removeFile( lfnList )
     if not res['OK']:
-      return S_ERROR( "Failed to remove data", res['Message'] )
+      return S_ERROR( "Failed to remove files:" + lfnList + res['Message'] )
     else:
       return S_OK()
 
