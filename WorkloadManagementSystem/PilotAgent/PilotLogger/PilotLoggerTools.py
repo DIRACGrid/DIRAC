@@ -8,6 +8,56 @@ import json
 from uuid import uuid1
 import sys
 
+def createPilotLoggerConfigFile( filename = 'PilotLogger.cfg',
+                                 host = '127.0.0.1',
+                                 port = 61614,
+                                 queuePath = '/queue/test',
+                                 key_file  = ' /home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
+                                 cert_file = '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
+                                 ca_certs = '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem',
+                                 fileWithID = 'PilotAgentUUID'):
+  """Helper function that creates proper configuration file.
+     The format is json encoded file with the following options included
+  """
+  keys = [
+      'host',
+      'port',
+      'queuePath',
+      'key_file',
+      'cert_file',
+      'ca_certs',
+      'fileWithID'
+      ]
+  values = [
+      host,
+      port,
+      queuePath,
+      key_file,
+      cert_file,
+      ca_certs,
+      fileWithID
+      ]
+  config = dict( zip( keys, values ) )
+  config = json.dumps(config)
+  with open(filename, 'w') as myFile:
+    print >>myFile, config
+
+def readPilotLoggerConfigFile ( filename ):
+  """Helper function that loads configuration file.
+  Returns:
+    dict:
+  """
+  try:
+    myFile = open(filename, 'r')
+    config = myFile.read()
+    config = json.loads(config)
+  except IOError:
+    return None
+  except ValueError:
+    return None
+  else:
+    return config
+
 def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
   """Helper function that returs a dictionnary based on the
      set of input values.
