@@ -5,6 +5,8 @@
 ########################################################################
 """
 Provides basic rsync functionality for DIRAC
+Mirrors the source destination folder recursivly into the target destination
+If option --sync is used contend that is not in the source directory but is only in the target directory will be deleted.
 """
 
 __RCSID__ = "$Id$"
@@ -430,4 +432,4 @@ def run( parameters ):
   print "Successfully mirrored " + source_dir + " into " + dest_dir
     
 if __name__ == "__main__":
-  run( args )
+  run( args ) 
