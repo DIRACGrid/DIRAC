@@ -9,7 +9,7 @@ from types import ListType, DictType
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import checkCatalogArguments
+from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkCatalogArguments
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class FileCatalogClient( object ):
