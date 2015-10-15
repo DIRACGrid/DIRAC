@@ -49,7 +49,7 @@ for switch in Script.getUnprocessedSwitches():
 
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC import gConfig
+from DIRAC import gConfig, gLogger
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -363,25 +363,33 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
   if delete:
     lfns = [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
     if len(lfns)>0:
+      gLogger.notice("Deleting "+ ', '.join(lfns))
       res = removeRemoteFiles(dm,lfns)
       if not res['OK']:
         return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
+      gLogger.notice("[DONE]")
 
     for _directory in result['Value']['Delete']['Directories']:
+      gLogger.notice("Deleting "+ _directory)
       res = removeRemoteDirectory(fc, dest_dir + "/" + _directory)
       if not res['OK']:
         return S_ERROR('Failed to remove directory: '+ _directory + res['Message'])
+      gLogger.notice("[DONE]")
 
 
   for _directory in result['Value']['Create']['Directories']:
+    gLogger.notice("Creating " + _directory)
     res = createRemoteDirectory(fc, dest_dir+"/"+ _directory)
     if not res['OK']:
       return S_ERROR('Directory creation failed: ' + res['Message'])
+    gLogger.notice("[DONE]")
 
   for _file in result['Value']['Create']['Files']:
+    gLogger.notice("Uploading " + _file)
     res = uploadLocalFile(dm, dest_dir+"/"+_file, source_dir+"/"+_file, storage)
     if not res['OK']:
       return S_ERROR('Upload of file: ' + _file + ' failed ' + res['Message'])
+    gLogger.notice("[DONE]")
 
   return S_OK('Upload finished successfully')
 
@@ -391,24 +399,32 @@ def doDownload(dm, result, source_dir, dest_dir, delete):
   """
   if delete:
     for _file in result['Value']['Delete']['Files']:
+      gLogger.notice("Deleting "+ _file)
       res = removeLocalFile(dest_dir+"/"+ _file)
       if not res['OK']:
         return S_ERROR('Deleting of file: ' + _file + ' failed ' + res['Message'])
+      gLogger.notice("[DONE]")
 
     for _directory in result['Value']['Delete']['Directories']:
+      gLogger.notice("Deleting "+ _directory)
       res = removeLocaDirectory( dest_dir + "/" + _directory )
       if not res['OK']:
         return S_ERROR('Deleting of directory: ' + _directory + ' failed ' + res['Message'])
+      gLogger.notice("[DONE]")
 
   for _directory in result['Value']['Create']['Directories']:
+    gLogger.notice("Creating " + _directory)
     res = createLocalDirectory( dest_dir+"/"+ _directory )
     if not res['OK']:
       return S_ERROR('Creation of directory: ' + _directory + ' failed ' + res['Message'])
+    gLogger.notice("[DONE]")
 
   for _file in result['Value']['Create']['Files']:
+    gLogger.notice("Downloading " + _directory)
     res = downloadRemoteFile(dm, source_dir + "/" + _file, dest_dir + ("/" + _file).rsplit("/", 1)[0])
     if not res['OK']:
       return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
+    gLogger.notice("[DONE]")
 
   return S_OK('Upload finished successfully')
 
