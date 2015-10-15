@@ -27,7 +27,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Arguments:',
                                      '  LFN:      Logical File Name (Path to directory)',
                                      '  Path:     Local path to the file (Path to directory)',
-                                     '  SE:       DIRAC Storage Element' ]
+                                     '  SE:       DIRAC Storage Element',
+                                     '  --sync    Exact mirror of source to target (some files might be deleted)']
                                  )
                       )
 
