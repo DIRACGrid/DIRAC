@@ -346,7 +346,62 @@ def removeLocaDirectory(path):
     return S_ERROR('Directory deleting failed')
   return S_OK('Removed directory successfully')
 
-def syncDestinations(upload, source_dir, dest_dir, storage):
+def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
+  """
+  Wrapper for uploading files
+  """
+  if delete:
+    lfns =  [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
+    res = removeRemoteFiles(dm,lfns)
+    if not res['OK']:
+      return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
+    
+    for _directory in result['Value']['Delete']['Directories']:
+      res = removeRemoteDirectory(fc, dest_dir + "/" + _directory)
+      if not res['OK']:
+        return S_ERROR('Failed to remove directory: '+ _directory + res['Message'])
+        
+  
+  for _directory in result['Value']['Create']['Directories']:
+    res = createRemoteDirectory(fc, dest_dir+"/"+ _directory)
+    if not res['OK']:
+      return S_ERROR('Directory creation failed: ' + res['Message'])
+        
+  for _file in result['Value']['Create']['Files']:
+    res = uploadLocalFile(dm, dest_dir+"/"+_file, source_dir+"/"+_file, storage)
+    if not res['OK']:
+      return S_ERROR('Upload of file: ' + _file + ' failed ' + res['Message'])
+  
+  return S_OK('Upload finished successfully')
+
+def doDownload(dm, result, source_dir, dest_dir, delete):
+  """
+  Wrapper for downloading files
+  """
+  if delete:
+    for _file in result['Value']['Delete']['Files']:
+      res = removeLocalFile(dest_dir+"/"+ _file)
+      if not res['OK']:
+        return S_ERROR('Deleting of file: ' + _file + ' failed ' + res['Message'])
+      
+    for _directory in result['Value']['Delete']['Directories']:
+      res = removeLocaDirectory( dest_dir + "/" + _directory )
+      if not res['OK']:
+        return S_ERROR('Deleting of directory: ' + _directory + ' failed ' + res['Message'])
+    
+  for _directory in result['Value']['Create']['Directories']:
+    res = createLocalDirectory( dest_dir+"/"+ _directory )
+    if not res['OK']:
+      return S_ERROR('Creation of directory: ' + _directory + ' failed ' + res['Message'])
+        
+  for _file in result['Value']['Create']['Files']:
+    res = downloadRemoteFile(dm, source_dir + "/" + _file, dest_dir + ("/" + _file).rsplit("/", 1)[0])
+    if not res['OK']:
+      return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
+  
+  return S_OK('Upload finished successfully')
+
+def syncDestinations(upload, source_dir, dest_dir, storage, delete ):
   """
   Top level wrapper to execute functions
   """
@@ -363,51 +418,17 @@ def syncDestinations(upload, source_dir, dest_dir, storage):
     return S_ERROR(result['Message'])
   
   if upload:
-    
-    lfns =  [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
-    res = removeRemoteFiles(dm,lfns)
+    res = doUpload(fc, dm, result, source_dir, dest_dir, storage, delete)
     if not res['OK']:
-      return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
-    
-    for _directory in result['Value']['Delete']['Directories']:
-      res = removeRemoteDirectory(fc, dest_dir + "/" + _directory)
-      if not res['OK']:
-        return S_ERROR('Failed to remove directory: '+ _directory + res['Message'])
-        
-    for _directory in result['Value']['Create']['Directories']:
-      res = createRemoteDirectory(fc, dest_dir+"/"+ _directory)
-      if not res['OK']:
-        return S_ERROR('Directory creation failed: ' + res['Message'])
-        
-    for _file in result['Value']['Create']['Files']:
-      res = uploadLocalFile(dm, dest_dir+"/"+_file, source_dir+"/"+_file, storage)
-      if not res['OK']:
-        return S_ERROR('Upload of file: ' + _file + ' failed ' + res['Message'])
-      
+      return S_ERROR('Upload failed: ' + res['Message'])
   else:
-    for _file in result['Value']['Delete']['Files']:
-      res = removeLocalFile(dest_dir+"/"+ _file)
-      if not res['OK']:
-        return S_ERROR('Deleting of file: ' + _file + ' failed ' + res['Message'])
-      
-    for _directory in result['Value']['Delete']['Directories']:
-      res = removeLocaDirectory( dest_dir + "/" + _directory )
-      if not res['OK']:
-        return S_ERROR('Deleting of directory: ' + _directory + ' failed ' + res['Message'])
-    
-    for _directory in result['Value']['Create']['Directories']:
-      res = createLocalDirectory( dest_dir+"/"+ _directory )
-      if not res['OK']:
-        return S_ERROR('Creation of directory: ' + _directory + ' failed ' + res['Message'])
-        
-    for _file in result['Value']['Create']['Files']:
-      res = downloadRemoteFile(dm, source_dir + "/" + _file, dest_dir + ("/" + _file).rsplit("/", 1)[0])
-      if not res['OK']:
-        return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
+    res = doDownload(dm, result, source_dir, dest_dir, delete)
+    if not res['OK']:
+      return S_ERROR('Download failed: ' + res['Message'])
   
   return S_OK('Mirroring successfully finished')
   
-def run( parameters ):
+def run( parameters , delete ):
   """
   The main user interface
   """
@@ -433,11 +454,11 @@ def run( parameters ):
       print "Destination directory does not exist"
       sys.exit(1)
 
-  res = syncDestinations(upload, source_dir, dest_dir, storage)
+  res = syncDestinations( upload, source_dir, dest_dir, storage, delete )
   if not res['OK']:
     print res['Message']
   
   print "Successfully mirrored " + source_dir + " into " + dest_dir
     
 if __name__ == "__main__":
-  run( args ) 
+  run( args , sync )
