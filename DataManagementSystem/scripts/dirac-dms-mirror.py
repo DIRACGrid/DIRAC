@@ -459,9 +459,10 @@ def run( parameters , delete ):
 
   res = syncDestinations( upload, source_dir, dest_dir, storage, delete )
   if not res['OK']:
-    print res['Message']
+    return S_ERROR(res['Message'])
   
-  print "Successfully mirrored " + source_dir + " into " + dest_dir
+  return S_OK("Successfully mirrored " + source_dir + " into " + dest_dir)
     
 if __name__ == "__main__":
-  run( args , sync )
+  message = run( args , sync )
+  print message['Value']
