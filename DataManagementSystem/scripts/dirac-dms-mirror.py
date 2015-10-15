@@ -5,7 +5,7 @@
 # Author :  Marko Petric
 ########################################################################
 """
-  Porvides basic rsync funcionality for DIRAC
+  Provides basic rsync functionality for DIRAC
 """
 
 __RCSID__ = "$Id$"
@@ -25,7 +25,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '   %s Path LFN SE' % Script.scriptName,
                                      'Arguments:',
                                      '  LFN:      Logical File Name (Path to directory)',
-                                     '  Path:     Local path to the file (Path to direcotry)',
+                                     '  Path:     Local path to the file (Path to directory)',
                                      '  SE:       DIRAC Storage Element' ]
                                  )
                       )
@@ -103,7 +103,7 @@ def getFileCatalog():
 
 def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
   """
-    Recusivly traverses all the subdirectories of a directory and returns a set of directories and files
+    Recursively traverses all the subdirectories of a directory and returns a set of directories and files
   """
   result = fc.listDirectory(path)
   if result['OK']:
@@ -255,7 +255,7 @@ def removeStorageDirectoryFromSE( directory, storageElement ):
   res = returnSingleResult( se.exists( directory ) )
 
   if not res['OK']:
-    return S_ERROR( "Failed to obtain existance of directory", res['Message'] )
+    return S_ERROR( "Failed to obtain existence of directory", res['Message'] )
 
   exists = res['Value']
   if not exists:
@@ -281,7 +281,7 @@ def removeRemoteDirectory(fc,lfn):
   if not res['OK']:
     return S_ERROR( "Failed to clean storage directory at all SE:" + res['Message'] )
   
-  return S_OK("Sucefully removed directory")
+  return S_OK("Successfully removed directory")
 
 
 def createRemoteDirectory(fc,newdir):
@@ -306,7 +306,7 @@ def createLocalDirectory(directory):
   os.makedirs(directory)
   if not os.path.exists(directory):
     return S_ERROR('Directory creation failed')
-  return S_OK('Created directory sucefully')
+  return S_OK('Created directory successfully')
 
 def removeLocalFile(path):
   """
@@ -315,7 +315,7 @@ def removeLocalFile(path):
   os.remove(path)
   if os.path.isfile(path):
     return S_ERROR('File deleting failed')
-  return S_OK('Removed file sucefully')
+  return S_OK('Removed file successfully')
 
 def removeLocaDirectory(path):
   """
@@ -324,7 +324,7 @@ def removeLocaDirectory(path):
   os.rmdir(path)
   if os.path.isdir(path):
     return S_ERROR('Directory deleting failed')
-  return S_OK('Removed directory sucefully')
+  return S_OK('Removed directory successfully')
 
 def syncDestinations(upload, source_dir, dest_dir, storage):
   """
@@ -385,7 +385,7 @@ def syncDestinations(upload, source_dir, dest_dir, storage):
       if not res['OK']:
         return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
   
-  return S_OK('Mirroring sucefully finished')
+  return S_OK('Mirroring successfully finished')
   
 def run( parameters ):
   """
@@ -417,7 +417,7 @@ def run( parameters ):
   if not res['OK']:
     print res['Message']
   
-  print "Sucessfully mirrored " + source_dir + " into " + dest_dir
+  print "Successfully mirrored " + source_dir + " into " + dest_dir
     
 if __name__ == "__main__":
   run( args )
