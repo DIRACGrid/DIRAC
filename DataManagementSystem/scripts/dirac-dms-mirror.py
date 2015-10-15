@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
-# File :    dirac-dms-mirror
-# Author :  Marko Petric
+# :file:    dirac-dms-mirror
+# :author:  Marko Petric
 ########################################################################
 """
-  Provides basic rsync functionality for DIRAC
+Provides basic rsync functionality for DIRAC
 """
 
 __RCSID__ = "$Id$"
@@ -30,6 +29,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                  )
                       )
 Script.parseCommandLine( ignoreErrors = False )
+
 args = Script.getPositionalArgs()
 if len( args ) < 1 or len( args ) > 3:
     Script.showHelp()
@@ -103,7 +103,7 @@ def getFileCatalog():
 
 def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
   """
-    Recursively traverses all the subdirectories of a directory and returns a set of directories and files
+  Recursively traverses all the subdirectories of a directory and returns a set of directories and files
   """
   result = fc.listDirectory(path)
   if result['OK']:
@@ -115,7 +115,7 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
         directories.add(entry)
         res = getSetOfRemoteSubDirectoriesAndFiles(entry,fc,directories,files)
         if not res['OK']:
-          return S_ERROR('Error: ' + res['Massage'])
+          return S_ERROR('Error: ' + res['Message'])
       return S_OK()
     else:
       return S_ERROR("Error:" + result['Message'])
@@ -131,7 +131,7 @@ def getSetOfRemoteDirectoriesAndFiles(fc, path):
 
   res = getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files)
   if not res['OK']:
-    return S_ERROR('Could not list remote directory: ' + res['Massage'])
+    return S_ERROR('Could not list remote directory: ' + res['Message'])
 
   return_directories = set()
   return_files = set()
@@ -150,7 +150,7 @@ def getSetOfRemoteDirectoriesAndFiles(fc, path):
 
 def isInFileCatalog(fc, path ):
   """
-    Check if the file is in the File Catalog
+  Check if the file is in the File Catalog
   """
   
   result = fc.listDirectory(path) 
@@ -216,7 +216,7 @@ def getContentToSync(upload, fc, source_dir, dest_dir):
   
 def removeRemoteFiles(dm,lfns):
   """
-    Remove file from the catalog
+  Remove file from the catalog
   """
   for lfnList in breakListIntoChunks( lfns, 100 ):
     res = dm.removeFile( lfnList )
@@ -248,7 +248,7 @@ def downloadRemoteFile(dm, lfn, destination):
   
 def removeStorageDirectoryFromSE( directory, storageElement ):
   """
-    delete directory on selected storage element
+  Delete directory on selected storage element
   """
   
   se = StorageElement( storageElement, False )
@@ -269,7 +269,7 @@ def removeStorageDirectoryFromSE( directory, storageElement ):
     
 def removeRemoteDirectory(fc,lfn):
   """
-    Remove file from the catalog
+  Remove file from the catalog
   """
   storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
   
@@ -286,16 +286,14 @@ def removeRemoteDirectory(fc,lfn):
 
 def createRemoteDirectory(fc,newdir):
   """
-    Create directory in file catalog
+  Create directory in file catalog
   """
   result = fc.createDirectory(newdir)
   if result['OK']:
-    if result['Value']['Successful']:
-      if result['Value']['Successful'].has_key(newdir):
-        return S_OK("Successfully created directory:" + newdir)
-    elif result['Value']['Failed']:
-      if result['Value']['Failed'].has_key(newdir):
-        return S_ERROR('Failed to create directory:',result['Value']['Failed'][newdir])
+    if result['Value']['Successful'] and result['Value']['Successful'].has_key(newdir):
+      return S_OK("Successfully created directory:" + newdir)
+    elif result['Value']['Failed'] and result['Value']['Failed'].has_key(newdir):
+      return S_ERROR('Failed to create directory: ' + result['Value']['Failed'][newdir])
   else:
     return S_ERROR('Failed to create directory:' + result['Message'])
 
@@ -303,7 +301,11 @@ def createLocalDirectory(directory):
   """
   Create local directory
   """
-  os.makedirs(directory)
+  try:
+    os.makedirs(directory)
+  except OSError as e:
+    S_ERROR('Directory creation failed: ' + e.strerror)
+
   if not os.path.exists(directory):
     return S_ERROR('Directory creation failed')
   return S_OK('Created directory successfully')
@@ -312,7 +314,11 @@ def removeLocalFile(path):
   """
   Remove local file
   """
-  os.remove(path)
+  try:
+    os.remove(path)
+  except OSError as e:
+    S_ERROR('Directory creation failed:' + e.strerror)
+
   if os.path.isfile(path):
     return S_ERROR('File deleting failed')
   return S_OK('Removed file successfully')
@@ -321,7 +327,11 @@ def removeLocaDirectory(path):
   """
   Remove local directory
   """
-  os.rmdir(path)
+  try:
+    os.rmdir(path)
+  except OSError as e:
+    S_ERROR('Deleting directory failed: ' + e.strerror)
+
   if os.path.isdir(path):
     return S_ERROR('Directory deleting failed')
   return S_OK('Removed directory successfully')
