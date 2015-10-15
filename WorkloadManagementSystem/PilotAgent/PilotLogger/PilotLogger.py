@@ -14,11 +14,12 @@ try:
   from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
   from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateTimeStamp
   from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import isMessageFormatCorrect
+  from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import readPilotLoggerConfigFile
 except ImportError:
   from PilotLoggerTools import generateDict, encodeMessage
   from PilotLoggerTools import generateTimeStamp
   from PilotLoggerTools import isMessageFormatCorrect
-
+  from PilotLoggerTools import readPilotLoggerConfigFile
 
 def connect(host_and_port, ssl_cfg):
   """ Connects to RabbitMQ and returns connection
@@ -35,6 +36,9 @@ def connect(host_and_port, ssl_cfg):
     connection.connect()
   except stomp.exception.ConnectFailedException:
     print 'Connection error:'
+    return None
+  except IOError:
+    print 'Could not find files with ssl certificates'
     return None
   else:
     return connection
@@ -106,10 +110,10 @@ class PilotLogger( object ):
   """ Base pilot logger class.
   """
 
-  def __init__( self, fileWithID = 'PilotAgentUUID', host_port=[('127.0.0.1',61614)] ):
+  def __init__( self, configFile = 'PilotLogger.cfg'):
     """ ctr
     Args:
-    
+
     """
     self.FLAGS = ['info', 'warning', 'error', 'debug']
     self.STATUSES = [
@@ -121,15 +125,29 @@ class PilotLogger( object ):
         'Done',
         'Failed'
         ]
-    self.fileWithUUID = fileWithID
-    self.networkCfg= host_port
+    self.fileWithUUID = None
+    self.networkCfg= None
     self.queuePath = '/queue/test'
     self.sslCfg = {
     'key_file':'/home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
     'cert_file' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
     'ca_certs' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem'
     }
+    self._loadConfigurationFromFile(configFile)
 
+  def _loadConfigurationFromFile( self, filename ):
+    """ Add comment
+    """
+    config = readPilotLoggerConfigFile (filename)
+    if not config:
+      print 'Could not open or load configuration File! Pilot Logger will use some default values!!!'
+      return False
+    else:
+      self.fileWithUUID = config['fileWithID']
+      self.networkCfg= [(config['host'], int(config['port']))]
+      self.queuePath = config['queuePath']
+      self.sslCfg = { k: config[k] for k  in ('key_file', 'cert_file', 'ca_certs')}
+      return True
 
   def _isCorrectFlag( self, flag ):
     """ Checks if the flag corresponds to one of the predefined
@@ -160,7 +178,6 @@ class PilotLogger( object ):
     queue =readMessagesFromFileAndEraseFileContent()
     while not queue.empty():
       msg = queue.get()
-
       send(msg, self.queuePath, connect_handler)
 
 
@@ -217,7 +234,7 @@ class PilotLogger( object ):
 def main():
   """ main() function  is used to send a message
       before any DIRAC related part is installed.
-      Remember that it is assumed that the PilotUUID was 
+      Remember that it is assumed that the PilotUUID was
       already generated and stored into some file.
   """
   message = ' '.join( sys.argv[1:] ) or "Something wrong no message to send!"

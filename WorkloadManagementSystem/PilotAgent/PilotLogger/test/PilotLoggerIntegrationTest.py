@@ -13,25 +13,24 @@ from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import Pi
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import send, connect
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.TestStompConsumer  import TestStompConsumer
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import readPilotLoggerConfigFile
 
 
 class TestPilotLoggerIntegration( unittest.TestCase ):
 
   def setUp( self ):
-    self.networkCfg=[('127.0.0.1',int(61614))]
-    self.sslCfg = {
-    'key_file':'/home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
-    'cert_file' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
-    'ca_certs' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem'
-    }
     self.consumer = TestStompConsumer()
-    self.testFile = 'UUID_file_to_test'
-    generateUniqueIDAndSaveToFile( self.testFile )
-    self.logger = PilotLogger(self.testFile)
+    self.confFile = 'TestPilotLogger.cfg'
+    self.config = readPilotLoggerConfigFile(self.confFile)
+    generateUniqueIDAndSaveToFile( self.config['fileWithID'])
+    self.testUUID = self.config['fileWithID']
+    self.logger = PilotLogger(self.confFile)
+    self.sslCfg = { k: self.config[k] for k  in ('key_file', 'cert_file', 'ca_certs')}
+    self.networkCfg= [(self.config['host'], int(self.config['port']))]
   def tearDown( self ):
     pass
     try:
-      os.remove( self.testFile )
+      os.remove( self.testUUID)
     except OSError:
       pass
 
@@ -39,18 +38,24 @@ class TestPilotLoggerIntegration( unittest.TestCase ):
 class Test_connect( TestPilotLoggerIntegration ):
 
   def test_success( self ):
-    conn = connect(self.networkCfg, self.sslCfg)
+    networkCfg= self.networkCfg
+    sslCfg = self.sslCfg.copy()
+    print networkCfg
+    print sslCfg
+    conn = connect(networkCfg, sslCfg)
     self.assertTrue(conn)
 
   def test_failure_bad_port( self ):
     netCfg_bad = [('127.0.0.1',int(61666))]
-    conn = connect(netCfg_bad, self.sslCfg)
+    sslCfg = self.sslCfg
+    conn = connect(netCfg_bad, sslCfg)
     self.assertFalse(conn)
 
   def test_failure_bad_ssl_path( self ):
+    networkCfg= self.networkCfg
     sslCfg_bad = self.sslCfg.copy()
     sslCfg_bad['key_file'] = 'blabla'
-    conn = connect(self.networkCfg, sslCfg_bad)
+    conn = connect(networkCfg, sslCfg_bad)
     self.assertFalse(conn)
 
 class Test_send( TestPilotLoggerIntegration ):
