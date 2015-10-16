@@ -371,7 +371,6 @@ class CheckCECapabilities( CommandBase ):
   def execute( self ):
 
     retCode, self.pp.tags = self.executeAndGetOutput( 'dirac-get-ce-capabilities -N %s -S %s' % ( self.pp.ceName, self.pp.site ) )
-    print self.pp.tags
     if retCode:
       self.log.error( "Failed to determine CE capabilities [ERROR %d]" % retCode )
       self.exitWithError( retCode )
