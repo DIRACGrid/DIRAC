@@ -354,10 +354,11 @@ class PilotParams( object ):
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC',
-                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
+    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC', 'ConfigureBasics',
+                     'CheckCECapabilities', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
+    self.tags = ""
     self.site = ""
     self.setup = ""
     self.configServer = ""
