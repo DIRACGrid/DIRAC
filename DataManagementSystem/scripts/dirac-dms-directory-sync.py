@@ -15,7 +15,6 @@ only in the target directory will be deleted.
 __RCSID__ = "$Id$"
 
 import os
-import sys
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -530,14 +529,14 @@ def run( parameters , delete, nthreads ):
     upload = True
     if not os.path.isdir(source_dir):
       gLogger.fatal("Source directory does not exist")
-      sys.exit(1)
+      DIRAC.exit( 1 )
 
   if len (parameters ) == 2:
     dest_dir = os.path.abspath(dest_dir)
     source_dir = source_dir.rstrip('/')
     if not os.path.isdir(dest_dir):
       gLogger.fatal("Destination directory does not exist")
-      sys.exit(1)
+      DIRAC.exit( 1 )
 
   res = syncDestinations( upload, source_dir, dest_dir, storage, delete, nthreads )
   if not res['OK']:
