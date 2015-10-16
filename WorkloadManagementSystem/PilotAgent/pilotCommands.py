@@ -725,9 +725,6 @@ class ConfigureCPURequirements( CommandBase ):
       self.exitWithError( retCode )
 
 
-
-
-
 class LaunchAgent( CommandBase ):
   """ Prepare and launch the job agent
   """
