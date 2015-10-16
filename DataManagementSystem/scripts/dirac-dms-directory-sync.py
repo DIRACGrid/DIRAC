@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
-# :file:    dirac-dms-mirror
+# :file:    dirac-dms-directory-sync
 # :author:  Marko Petric
 ########################################################################
 """
 Provides basic rsync functionality for DIRAC
 
-Mirrors the source destination folder recursivly into the target destination
+Syncs the source destination folder recursivly into the target destination
 
 If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
@@ -31,7 +31,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  LFN:      Logical File Name (Path to directory)',
                                      '  Path:     Local path to the file (Path to directory)',
                                      '  SE:       DIRAC Storage Element',
-                                     '  --sync    Exact mirror of source to target (some files might be deleted)']
+                                     '  --sync    Exact sync of source to target (some files might be deleted)']
                                  )
                       )
 
