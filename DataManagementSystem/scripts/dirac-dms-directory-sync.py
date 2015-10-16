@@ -345,35 +345,58 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete, nthreads):
   if delete:
     lfns = [dest_dir+"/"+filename for filename in result['Value']['Delete']['Files']]
     if len(lfns)>0:
-      gLogger.notice("Deleting "+ ', '.join(lfns))
       res = removeRemoteFiles(dm,lfns)
       if not res['OK']:
-        return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
-      gLogger.notice("[DONE]")
+        gLogger.fatal('Deleting of files: ' + lfns + " -X- [FAILED]" +res['Message'])
+        DIRAC.exit( 1 )
+      else:
+        gLogger.notice("Deleting "+ ', '.join(lfns) + " -> [DONE]")
 
     for directoryname in result['Value']['Delete']['Directories']:
-      gLogger.notice("Deleting "+ directoryname)
       res = removeRemoteDirectory(fc, dest_dir + "/" + directoryname)
       if not res['OK']:
-        return S_ERROR('Failed to remove directory: '+ directoryname + res['Message'])
-      gLogger.notice("[DONE]")
+        gLogger.fatal('Deleting of directory: ' + directoryname + " -X- [FAILED] " + res['Message'])
+        DIRAC.exit( 1 )
+      else:
+        gLogger.notice("Deleting "+ directoryname + " -> [DONE]")
 
 
   for directoryname in result['Value']['Create']['Directories']:
-    gLogger.notice("Creating " + directoryname)
     res = createRemoteDirectory(fc, dest_dir+"/"+ directoryname)
     if not res['OK']:
-      return S_ERROR('Directory creation failed: ' + res['Message'])
-    gLogger.notice("[DONE]")
+      gLogger.fatal('Creation of directory: ' + directoryname + " -X- [FAILED] " + res['Message'])
+      DIRAC.exit( 1 )
+    else:
+      gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
-  for filename in result['Value']['Create']['Files']:
-    gLogger.notice("Uploading " + filename)
-    res = uploadLocalFile(dm, dest_dir+"/"+filename, source_dir+"/"+filename, storage)
-    if not res['OK']:
-      return S_ERROR('Upload of file: ' + filename + ' failed ' + res['Message'])
-    gLogger.notice("[DONE]")
+  listOfFiles = result['Value']['Create']['Files']
+  #Chech that we do not have to many threads
+  if nthreads > len(listOfFiles):
+    nthreads = len(listOfFiles)
+
+  if nthreads == 0:
+    return S_OK('Upload finished successfully')
+
+  listOfListOfFiles = chunkList( listOfFiles, nthreads )
+  res = runInParallel(arguments=[dm, source_dir, dest_dir, storage], listOfLists=listOfListOfFiles, function=uploadListOfFiles )
+  if not res['OK']:
+    return S_ERROR("Upload of files failed")
 
   return S_OK('Upload finished successfully')
+
+def uploadListOfFiles(dm, source_dir, dest_dir, storage, listOfFiles, tID):
+  """
+  Wrapper for multithreaded uploading of a list of files
+  """
+  log = gLogger.getSubLogger("[Thread %s] " % tID)
+  threadLine = "[Thread %s]" % tID
+  for filename in listOfFiles:
+    res = uploadLocalFile(dm, dest_dir+"/"+filename, source_dir+"/"+filename, storage)
+    if not res['OK']:
+      log.fatal(threadLine + ' Uploading ' + filename + ' -X- [FAILED] ' + res['Message'])
+      DIRAC.exit( 1 )
+    else:
+      log.notice(threadLine+ " Uploading " + filename + " -> [DONE]")
 
 def doDownload(dm, result, source_dir, dest_dir, delete, nthreads):
   """
@@ -384,27 +407,40 @@ def doDownload(dm, result, source_dir, dest_dir, delete, nthreads):
       res = removeLocalFile(dest_dir+"/"+ filename)
       if not res['OK']:
         gLogger.fatal('Deleting of file: ' + filename + ' -X- [FAILED] ' + res['Message'])
-      gLogger.notice("Deleting "+ filename + " -> [DONE]")
+        DIRAC.exit( 1 )
+      else:
+        gLogger.notice("Deleting "+ filename + " -> [DONE]")
 
     for directoryname in result['Value']['Delete']['Directories']:
       res = removeLocaDirectory( dest_dir + "/" + directoryname )
       if not res['OK']:
         gLogger.fatal('Deleting of directory: ' + directoryname + ' -X- [FAILED] ' + res['Message'])
-      gLogger.notice("Deleting "+ directoryname + " -> [DONE]")
+        DIRAC.exit( 1 )
+      else:
+        gLogger.notice("Deleting "+ directoryname + " -> [DONE]")
 
   for directoryname in result['Value']['Create']['Directories']:
     res = createLocalDirectory( dest_dir+"/"+ directoryname )
     if not res['OK']:
       gLogger.fatal('Creation of directory: ' + directoryname + ' -X- [FAILED] ' + res['Message'])
-    gLogger.notice("Creating " + directoryname + " -> [DONE]")
+      DIRAC.exit( 1 )
+    else:
+      gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
   listOfFiles = result['Value']['Create']['Files']
   #Chech that we do not have to many threads
   if nthreads > len(listOfFiles):
     nthreads = len(listOfFiles)
 
+  if nthreads==0:
+    return S_OK('Upload finished successfully')
+
   listOfListOfFiles = chunkList( listOfFiles, nthreads )
-  runInParallel(arguments=[dm, source_dir, dest_dir], listOfLists=listOfListOfFiles, function=downloadListOfFiles )
+  res = runInParallel(arguments=[dm, source_dir, dest_dir], listOfLists=listOfListOfFiles, function=downloadListOfFiles )
+
+  if not res['OK']:
+    return S_ERROR("Download of files failed")
+
   return S_OK('Upload finished successfully')
 
 def chunkList(alist, nchunks):
@@ -431,7 +467,9 @@ def downloadListOfFiles(dm, source_dir, dest_dir, listOfFiles, tID):
     res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
     if not res['OK']:
       log.fatal(threadLine + ' Downloading ' + filename + ' -X- [FAILED] ' + res['Message'])
-    log.notice(threadLine+ " Downloading " + filename + " -> [DONE]")
+      DIRAC.exit( 1 )
+    else:
+      log.notice(threadLine+ " Downloading " + filename + " -> [DONE]")
 
 def runInParallel(arguments, listOfLists, function):
   """
@@ -446,6 +484,11 @@ def runInParallel(arguments, listOfLists, function):
     processes.append(pro)
   for process in processes:
     process.join()
+
+  for process in processes:
+    if process.exitcode == 1:
+      return S_ERROR()
+  return S_OK()
 
 def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads ):
   """
@@ -503,5 +546,10 @@ def run( parameters , delete, nthreads ):
   return S_OK("Successfully mirrored " + source_dir + " into " + dest_dir)
 
 if __name__ == "__main__":
-  message = run( args , sync, parallel )
-  gLogger.notice(message['Value'])
+  returnValue = run( args , sync, parallel )
+  if not returnValue['OK']:
+    gLogger.fatal(returnValue['Message'])
+    DIRAC.exit( 1 )
+  else:
+    gLogger.notice(returnValue['Value'])
+    DIRAC.exit( 0 )
