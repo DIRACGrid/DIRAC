@@ -198,7 +198,7 @@ def getContentToSync(upload, fc, source_dir, dest_dir):
     if not res['OK']:
       return S_ERROR(res['Message'])
     to_dirs = res['Value']['Directories']
-    to_files =  res['Value']['Files']
+    to_files = res['Value']['Files']
 
     res = getSetOfRemoteDirectoriesAndFiles(fc, source_dir)
     if not res['OK']:
@@ -361,7 +361,7 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
   Wrapper for uploading files
   """
   if delete:
-    lfns = [dest_dir+"/"+_file for _file in result['Value']['Delete']['Files']]
+    lfns = [dest_dir+"/"+filename for filename in result['Value']['Delete']['Files']]
     if len(lfns)>0:
       gLogger.notice("Deleting "+ ', '.join(lfns))
       res = removeRemoteFiles(dm,lfns)
@@ -369,26 +369,26 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
         return S_ERROR('Failed to remove files: ' + lfns + res['Message'])
       gLogger.notice("[DONE]")
 
-    for _directory in result['Value']['Delete']['Directories']:
-      gLogger.notice("Deleting "+ _directory)
-      res = removeRemoteDirectory(fc, dest_dir + "/" + _directory)
+    for directoryname in result['Value']['Delete']['Directories']:
+      gLogger.notice("Deleting "+ directoryname)
+      res = removeRemoteDirectory(fc, dest_dir + "/" + directoryname)
       if not res['OK']:
-        return S_ERROR('Failed to remove directory: '+ _directory + res['Message'])
+        return S_ERROR('Failed to remove directory: '+ directoryname + res['Message'])
       gLogger.notice("[DONE]")
 
 
-  for _directory in result['Value']['Create']['Directories']:
-    gLogger.notice("Creating " + _directory)
-    res = createRemoteDirectory(fc, dest_dir+"/"+ _directory)
+  for directoryname in result['Value']['Create']['Directories']:
+    gLogger.notice("Creating " + directoryname)
+    res = createRemoteDirectory(fc, dest_dir+"/"+ directoryname)
     if not res['OK']:
       return S_ERROR('Directory creation failed: ' + res['Message'])
     gLogger.notice("[DONE]")
 
-  for _file in result['Value']['Create']['Files']:
-    gLogger.notice("Uploading " + _file)
-    res = uploadLocalFile(dm, dest_dir+"/"+_file, source_dir+"/"+_file, storage)
+  for filename in result['Value']['Create']['Files']:
+    gLogger.notice("Uploading " + filename)
+    res = uploadLocalFile(dm, dest_dir+"/"+filename, source_dir+"/"+filename, storage)
     if not res['OK']:
-      return S_ERROR('Upload of file: ' + _file + ' failed ' + res['Message'])
+      return S_ERROR('Upload of file: ' + filename + ' failed ' + res['Message'])
     gLogger.notice("[DONE]")
 
   return S_OK('Upload finished successfully')
@@ -398,32 +398,32 @@ def doDownload(dm, result, source_dir, dest_dir, delete):
   Wrapper for downloading files
   """
   if delete:
-    for _file in result['Value']['Delete']['Files']:
-      gLogger.notice("Deleting "+ _file)
-      res = removeLocalFile(dest_dir+"/"+ _file)
+    for filename in result['Value']['Delete']['Files']:
+      gLogger.notice("Deleting "+ filename)
+      res = removeLocalFile(dest_dir+"/"+ filename)
       if not res['OK']:
-        return S_ERROR('Deleting of file: ' + _file + ' failed ' + res['Message'])
+        return S_ERROR('Deleting of file: ' + filename + ' failed ' + res['Message'])
       gLogger.notice("[DONE]")
 
-    for _directory in result['Value']['Delete']['Directories']:
-      gLogger.notice("Deleting "+ _directory)
-      res = removeLocaDirectory( dest_dir + "/" + _directory )
+    for directoryname in result['Value']['Delete']['Directories']:
+      gLogger.notice("Deleting "+ directoryname)
+      res = removeLocaDirectory( dest_dir + "/" + directoryname )
       if not res['OK']:
-        return S_ERROR('Deleting of directory: ' + _directory + ' failed ' + res['Message'])
+        return S_ERROR('Deleting of directory: ' + directoryname + ' failed ' + res['Message'])
       gLogger.notice("[DONE]")
 
-  for _directory in result['Value']['Create']['Directories']:
-    gLogger.notice("Creating " + _directory)
-    res = createLocalDirectory( dest_dir+"/"+ _directory )
+  for directoryname in result['Value']['Create']['Directories']:
+    gLogger.notice("Creating " + directoryname)
+    res = createLocalDirectory( dest_dir+"/"+ directoryname )
     if not res['OK']:
-      return S_ERROR('Creation of directory: ' + _directory + ' failed ' + res['Message'])
+      return S_ERROR('Creation of directory: ' + directoryname + ' failed ' + res['Message'])
     gLogger.notice("[DONE]")
 
-  for _file in result['Value']['Create']['Files']:
-    gLogger.notice("Downloading " + _file)
-    res = downloadRemoteFile(dm, source_dir + "/" + _file, dest_dir + ("/" + _file).rsplit("/", 1)[0])
+  for filename in result['Value']['Create']['Files']:
+    gLogger.notice("Downloading " + filename)
+    res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
     if not res['OK']:
-      return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
+      return S_ERROR('Download of file: ' + filename + ' failed ' + res['Message'])
     gLogger.notice("[DONE]")
 
   return S_OK('Upload finished successfully')
