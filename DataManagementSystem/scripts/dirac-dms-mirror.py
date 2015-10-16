@@ -420,7 +420,7 @@ def doDownload(dm, result, source_dir, dest_dir, delete):
     gLogger.notice("[DONE]")
 
   for _file in result['Value']['Create']['Files']:
-    gLogger.notice("Downloading " + _directory)
+    gLogger.notice("Downloading " + _file)
     res = downloadRemoteFile(dm, source_dir + "/" + _file, dest_dir + ("/" + _file).rsplit("/", 1)[0])
     if not res['OK']:
       return S_ERROR('Download of file: ' + _file + ' failed ' + res['Message'])
