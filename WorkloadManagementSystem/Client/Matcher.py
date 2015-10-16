@@ -279,13 +279,16 @@ class Matcher( object ):
     """
     # Check credentials if not generic pilot
     if Properties.GENERIC_PILOT in credDict[ 'properties' ]:
-      # You can only match groups in the same VO
-      vo = Registry.getVOForGroup( credDict[ 'group' ] )
-      result = Registry.getGroupsForVO( vo )
-      if result[ 'OK' ]:
-        resourceDict[ 'OwnerGroup' ] = result[ 'Value' ]
+      if credDict[ 'group' ] != 'hosts':
+        # You can only match groups in the same VO
+        vo = Registry.getVOForGroup( credDict[ 'group' ] )
+        result = Registry.getGroupsForVO( vo )
+        if result[ 'OK' ]:
+          resourceDict[ 'OwnerGroup' ] = result[ 'Value' ]
+        else:
+          raise RuntimeError( result['Message'] )
       else:
-        raise RuntimeError( result['Message'] )
+        self.log.info( "host matching, matching only resource credentials: %s" % resourceDict )
     else:
       # If it's a private pilot, the DN has to be the same
       if Properties.PILOT in credDict[ 'properties' ]:
