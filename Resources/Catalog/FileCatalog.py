@@ -56,7 +56,7 @@ import re
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import checkArgumentFormat
+from DIRAC.DataManagementSystem.Utilities.CatalogUtilities  import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
 
 class FileCatalog( object ):
@@ -138,17 +138,22 @@ class FileCatalog( object ):
     """
     successful = {}
     failed = {}
-    failedCatalogs = []
+    failedCatalogs = {}
+    successfulCatalogs = {}
 
-    fileInfo = parms[0]
-    res = checkArgumentFormat( fileInfo, generateMap = True )
-    if not res['OK']:
-      return res
-    fileInfo, lfnMapDict = res['Value']
-    # No need to check the LFNs again in the clients
-    kws['LFNChecking'] = False
-    allLfns = fileInfo.keys()
-    parms1 = parms[1:]
+    allLfns = []
+    lfnMapDict = {}
+    masterResult = {}
+    if not self.call in FileCatalog.no_lfn_methods:
+      fileInfo = parms[0]
+      result = checkArgumentFormat( fileInfo, generateMap = True )
+      if not result['OK']:
+        return result
+      fileInfo, lfnMapDict = result['Value']
+      # No need to check the LFNs again in the clients
+      kws['LFNChecking'] = False
+      allLfns = fileInfo.keys()
+      parms1 = parms[1:]
 
     for catalogName, oCatalog, master in self.writeCatalogs:
 
@@ -161,37 +166,58 @@ class FileCatalog( object ):
           continue
 
       method = getattr( oCatalog, self.call )
-      res = method( fileInfo, *parms1, **kws )
-      if not res['OK']:
+      if self.call in FileCatalog.no_lfn_methods:
+        result = method( *parms, **kws )
+      else:
+        result = method( fileInfo, *parms1, **kws )
+      if master:
+        masterResult = result
+      if not result['OK']:
         if master:
           # If this is the master catalog and it fails we dont want to continue with the other catalogs
           gLogger.error( "FileCatalog.w_execute: Failed to execute call on master catalog",
-                         "%s on %s: %s" % ( self.call, catalogName, res['Message'] ) )
-          return res
+                         "%s on %s: %s" % ( self.call, catalogName, result['Message'] ) )
+          return result
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
-          failedCatalogs.append( ( catalogName, res['Message'] ) )
-      for lfn, message in res['Value']['Failed'].items():
-        # Save the error message for the failed operations
-        failed.setdefault( lfn, {} )[catalogName] = message
-        if master:
-          # If this is the master catalog then we should not attempt the operation on other catalogs
-          fileInfo.pop( lfn, None )
-      for lfn, result in res['Value']['Successful'].items():
-        # Save the result return for each file for the successful operations
-        successful.setdefault( lfn, {} )[catalogName] = result
-    # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
-    for catalogName, errorMessage in failedCatalogs:
-      for lfn in allLfns:
-        failed.setdefault( lfn, {} )[catalogName] = errorMessage
-    # Restore original lfns if they were changed by normalization
-    if lfnMapDict:
-      for lfn in failed:
-        failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
-      for lfn in successful:
-        successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+          failedCatalogs[catalogName] = result['Message']
+      else:
+        successfulCatalogs[catalogName] = result['Value']
+
+      if allLfns:
+        if result['OK']:
+          for lfn, message in result['Value']['Failed'].items():
+            # Save the error message for the failed operations
+            failed.setdefault( lfn, {} )[catalogName] = message
+            if master:
+              # If this is the master catalog then we should not attempt the operation on other catalogs
+              fileInfo.pop( lfn, None )
+          for lfn, result in result['Value']['Successful'].items():
+            # Save the result return for each file for the successful operations
+            successful.setdefault( lfn, {} )[catalogName] = result
+
+    if allLfns:
+      # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
+      for catalogName, errorMessage in failedCatalogs.items():
+        for lfn in allLfns:
+          failed.setdefault( lfn, {} )[catalogName] = errorMessage
+      # Restore original lfns if they were changed by normalization
+      if lfnMapDict:
+        for lfn in failed:
+          failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
+        for lfn in successful:
+          successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
+      resDict = {'Failed':failed, 'Successful':successful}
+      return S_OK( resDict )
+    else:
+      if failedCatalogs:
+        result = S_ERROR( 'Failed to execute on some catalogs' )
+        resDict = {'Failed':failedCatalogs, 'Successful':successfulCatalogs}
+        result['Value'] = resDict
+        return result
+      else:
+        return masterResult
+
 
   def r_execute( self, *parms, **kws ):
     """ Read method executor.
