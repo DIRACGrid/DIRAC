@@ -50,7 +50,7 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig, gLogger
-from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -90,32 +90,6 @@ def getSetOfLocalDirectoriesAndFiles( path ):
   tree["Files"]=files
 
   return S_OK(tree)
-
-def getFileCatalog():
-  """
-    Returns the DIRAC file catalog
-  """
-  fcType = gConfig.getValue("/LocalSite/FileCatalog","")
-
-  res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
-  if not res['OK']:
-    return S_ERROR(res['Message'])
-
-  if not fcType:
-    if res['OK']:
-      fcType = res['Value'][0]
-
-  if not fcType:
-    return S_ERROR("No file catalog given and defaults could not be obtained")
-
-  result = FileCatalogFactory().createCatalog(fcType)
-  if not result['OK']:
-    return S_ERROR(result['Message'])
-
-  fc = result['Value']
-
-  return S_OK(fc)
-
 
 def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
   """
@@ -433,11 +407,7 @@ def syncDestinations(upload, source_dir, dest_dir, storage, delete ):
   Top level wrapper to execute functions
   """
 
-  result = getFileCatalog()
-  if not result['OK']:
-    return S_ERROR(result['Message'])
-  fc = result['Value']
-
+  fc = FileCatalog()
   dm = DataManager()
 
   result = getContentToSync(upload,fc,source_dir,dest_dir)
