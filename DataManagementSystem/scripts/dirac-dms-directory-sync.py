@@ -29,14 +29,12 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Arguments:',
                                      '  LFN:           Logical File Name (Path to directory)',
                                      '  Path:          Local path to the file (Path to directory)',
-                                     '  SE:            DIRAC Storage Element',
-                                     '  -D --sync      Exact sync of source to target (some files might be deleted)',
-                                     '  -j --parallel  Multithreaded download and upload']
+                                     '  SE:            DIRAC Storage Element']
                                  )
                       )
 
 Script.registerSwitch( "D" , "sync" , "Make target directory identical to source" )
-Script.registerSwitch( "j" , "parallel" , "Multithreaded download and upload" )
+Script.registerSwitch( "j:" , "parallel=" , "Multithreaded download and upload" )
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
@@ -44,12 +42,12 @@ if len( args ) < 1 or len( args ) > 3:
   Script.showHelp()
 
 sync = False
-parallel = 4
+parallel = 1
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "s" or switch[0].lower() == "sync":
     sync = True
   if switch[0].lower() == "j" or switch[0].lower() == "parallel":
-    parallel = switch[1]
+    parallel = int(switch[1])
 
 
 from DIRAC import S_OK, S_ERROR
