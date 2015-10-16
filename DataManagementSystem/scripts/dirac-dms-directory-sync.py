@@ -28,14 +28,16 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  or Upload',
                                      '   %s Path LFN SE' % Script.scriptName,
                                      'Arguments:',
-                                     '  LFN:      Logical File Name (Path to directory)',
-                                     '  Path:     Local path to the file (Path to directory)',
-                                     '  SE:       DIRAC Storage Element',
-                                     '  --sync    Exact sync of source to target (some files might be deleted)']
+                                     '  LFN:           Logical File Name (Path to directory)',
+                                     '  Path:          Local path to the file (Path to directory)',
+                                     '  SE:            DIRAC Storage Element',
+                                     '  -D --sync      Exact sync of source to target (some files might be deleted)',
+                                     '  -j --parallel  Multithreaded download and upload']
                                  )
                       )
 
 Script.registerSwitch( "D" , "sync" , "Make target directory identical to source" )
+Script.registerSwitch( "j" , "parallel" , "Multithreaded download and upload" )
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
@@ -43,9 +45,12 @@ if len( args ) < 1 or len( args ) > 3:
   Script.showHelp()
 
 sync = False
+parallel = 4
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "s" or switch[0].lower() == "sync":
     sync = True
+  if switch[0].lower() == "j" or switch[0].lower() == "parallel":
+    parallel = switch[1]
 
 
 from DIRAC import S_OK, S_ERROR
@@ -333,7 +338,7 @@ def removeLocaDirectory(path):
     return S_ERROR('Directory deleting failed')
   return S_OK('Removed directory successfully')
 
-def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
+def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete, nthreads):
   """
   Wrapper for uploading files
   """
@@ -370,42 +375,79 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete):
 
   return S_OK('Upload finished successfully')
 
-def doDownload(dm, result, source_dir, dest_dir, delete):
+def doDownload(dm, result, source_dir, dest_dir, delete, nthreads):
   """
   Wrapper for downloading files
   """
   if delete:
     for filename in result['Value']['Delete']['Files']:
-      gLogger.notice("Deleting "+ filename)
       res = removeLocalFile(dest_dir+"/"+ filename)
       if not res['OK']:
-        return S_ERROR('Deleting of file: ' + filename + ' failed ' + res['Message'])
-      gLogger.notice("[DONE]")
+        gLogger.fatal('Deleting of file: ' + filename + ' -X- [FAILED] ' + res['Message'])
+      gLogger.notice("Deleting "+ filename + " -> [DONE]")
 
     for directoryname in result['Value']['Delete']['Directories']:
-      gLogger.notice("Deleting "+ directoryname)
       res = removeLocaDirectory( dest_dir + "/" + directoryname )
       if not res['OK']:
-        return S_ERROR('Deleting of directory: ' + directoryname + ' failed ' + res['Message'])
-      gLogger.notice("[DONE]")
+        gLogger.fatal('Deleting of directory: ' + directoryname + ' -X- [FAILED] ' + res['Message'])
+      gLogger.notice("Deleting "+ directoryname + " -> [DONE]")
 
   for directoryname in result['Value']['Create']['Directories']:
-    gLogger.notice("Creating " + directoryname)
     res = createLocalDirectory( dest_dir+"/"+ directoryname )
     if not res['OK']:
-      return S_ERROR('Creation of directory: ' + directoryname + ' failed ' + res['Message'])
-    gLogger.notice("[DONE]")
+      gLogger.fatal('Creation of directory: ' + directoryname + ' -X- [FAILED] ' + res['Message'])
+    gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
-  for filename in result['Value']['Create']['Files']:
-    gLogger.notice("Downloading " + filename)
-    res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
-    if not res['OK']:
-      return S_ERROR('Download of file: ' + filename + ' failed ' + res['Message'])
-    gLogger.notice("[DONE]")
+  listOfFiles = result['Value']['Create']['Files']
+  #Chech that we do not have to many threads
+  if nthreads > len(listOfFiles):
+    nthreads = len(listOfFiles)
 
+  listOfListOfFiles = chunkList( listOfFiles, nthreads )
+  runInParallel(arguments=[dm, source_dir, dest_dir], listOfLists=listOfListOfFiles, function=downloadListOfFiles )
   return S_OK('Upload finished successfully')
 
-def syncDestinations(upload, source_dir, dest_dir, storage, delete ):
+def chunkList(alist, nchunks):
+  """
+  Split a list into a list of equaliy sized lists
+  """
+  avg = len(alist) / float(nchunks)
+  out = []
+  last = 0.0
+
+  while last < len(alist):
+    out.append(alist[int(last):int(last + avg)])
+    last += avg
+
+  return out
+
+def downloadListOfFiles(dm, source_dir, dest_dir, listOfFiles, tID):
+  """
+  Wrapper for multithreaded downloading of a list of files
+  """
+  log = gLogger.getSubLogger("[Thread %s] " % tID)
+  threadLine = "[Thread %s]" % tID
+  for filename in listOfFiles:
+    res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
+    if not res['OK']:
+      log.fatal(threadLine + ' Downloading ' + filename + ' -X- [FAILED] ' + res['Message'])
+    log.notice(threadLine+ " Downloading " + filename + " -> [DONE]")
+
+def runInParallel(arguments, listOfLists, function):
+  """
+  Helper for execution of uploads and downloads in parallel
+  """
+  from multiprocessing import Process
+  processes = []
+  for tID, alist in enumerate(listOfLists):
+    argums = arguments+[alist]+[tID]
+    pro = Process(target=function, args=argums)
+    pro.start()
+    processes.append(pro)
+  for process in processes:
+    process.join()
+
+def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads ):
   """
   Top level wrapper to execute functions
   """
@@ -418,17 +460,17 @@ def syncDestinations(upload, source_dir, dest_dir, storage, delete ):
     return S_ERROR(result['Message'])
 
   if upload:
-    res = doUpload(fc, dm, result, source_dir, dest_dir, storage, delete)
+    res = doUpload(fc, dm, result, source_dir, dest_dir, storage, delete, nthreads)
     if not res['OK']:
       return S_ERROR('Upload failed: ' + res['Message'])
   else:
-    res = doDownload(dm, result, source_dir, dest_dir, delete)
+    res = doDownload(dm, result, source_dir, dest_dir, delete, nthreads)
     if not res['OK']:
       return S_ERROR('Download failed: ' + res['Message'])
 
   return S_OK('Mirroring successfully finished')
 
-def run( parameters , delete ):
+def run( parameters , delete, nthreads ):
   """
   The main user interface
   """
@@ -454,12 +496,12 @@ def run( parameters , delete ):
       gLogger.fatal("Destination directory does not exist")
       sys.exit(1)
 
-  res = syncDestinations( upload, source_dir, dest_dir, storage, delete )
+  res = syncDestinations( upload, source_dir, dest_dir, storage, delete, nthreads )
   if not res['OK']:
     return S_ERROR(res['Message'])
 
   return S_OK("Successfully mirrored " + source_dir + " into " + dest_dir)
 
 if __name__ == "__main__":
-  message = run( args , sync )
+  message = run( args , sync, parallel )
   gLogger.notice(message['Value'])
