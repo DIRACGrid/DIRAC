@@ -114,7 +114,7 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
 
 def getSetOfRemoteDirectoriesAndFiles(fc, path):
   """
-    Return a set of all directories and subdirectories and the therein contained files for a given LFN
+  Return a set of all directories and subdirectories and the therein contained files for a given LFN
   """
   directories = set()
   files = set()
@@ -153,6 +153,9 @@ def isInFileCatalog(fc, path ):
     return S_ERROR()
 
 def getContentToSync(upload, fc, source_dir, dest_dir):
+  """
+  Return list of files and directories to be create and deleted
+  """
 
   if upload:
     res = getSetOfRemoteDirectoriesAndFiles(fc, dest_dir)
@@ -222,7 +225,7 @@ def removeRemoteFiles(dm,lfns):
 
 def uploadLocalFile(dm, lfn, localfile, storage):
   """
-    Upload a local file to a storage element
+  Upload a local file to a storage element
   """
   res = dm.putAndRegister( lfn, localfile, storage, None )
   if not res['OK']:
