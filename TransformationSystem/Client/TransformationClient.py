@@ -6,7 +6,7 @@ from DIRAC                                                         import S_OK, 
 from DIRAC.Core.Base.Client                                        import Client
 from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import checkCatalogArguments
+from DIRAC.DataManagementSystem.Utilities.CatalogUtilities         import checkCatalogArguments
 
 # List of common File Catalog methods implemented by this client
 CATALOG_METHODS = [ "addFile", "removeFile" ]
