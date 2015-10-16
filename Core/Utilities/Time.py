@@ -236,6 +236,17 @@ class timeInterval:
       return False
     return True
 
+def queryTime(f):
+  """ Decorator to measure the function call time
+  """
+  def measureQueryTime(*args, **kwargs):
+    start = time.time()
+    result = f(*args, **kwargs)
+    if not 'QueryTime' in result:
+      result['QueryTime'] = time.time() - start
+    return result
+  return measureQueryTime
+
 _dateTimeType = type( dateTime() )
 _dateType = type( date() )
 _timeType = type( time() )
