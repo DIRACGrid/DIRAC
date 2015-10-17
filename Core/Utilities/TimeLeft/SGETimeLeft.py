@@ -108,7 +108,7 @@ scheduling info:            (Collecting of scheduler job information is turned o
 
     # Some SGE batch systems apply CPU scaling factor to the CPU consumption figures
     if cpu:
-      factor = __getCPUScalingFactor()
+      factor = _getCPUScalingFactor()
       if factor:
         cpu = cpu / factor
 
@@ -138,7 +138,7 @@ scheduling info:            (Collecting of scheduler job information is turned o
       retVal['Value'] = consumed
       return retVal
 
-def __getCPUScalingFactor():
+def _getCPUScalingFactor():
 
   host = socket.getfqdn()
   cmd = 'qconf -se %s' % host
