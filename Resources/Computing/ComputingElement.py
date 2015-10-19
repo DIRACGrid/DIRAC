@@ -130,7 +130,7 @@ class ComputingElement(object):
         self.ceParameters.update( ceOptions )
 
     # Get local CE configuration
-    localConfigDict = getLocalCEConfigDict( self.ceName )
+    localConfigDict = getCEConfigDict( self.ceName )
     self.ceParameters.update( localConfigDict )
 
     # Adds site level parameters 
@@ -453,14 +453,6 @@ class ComputingElement(object):
     name = 'getCEStatus()'
     self.log.error( 'ComputingElement should be implemented in a subclass', name )
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
-
-def getLocalCEConfigDict( ceName ):
-  """ Collect all the local settings relevant to the CE configuration
-  """
-  ceConfigDict = getCEConfigDict( ceName )
-  resourceDict = getResourceDict( ceName )
-  ceConfigDict.update( resourceDict )
-  return ceConfigDict
 
 def getCEConfigDict( ceName ):
   """Look into LocalSite for configuration Parameters for this CE
