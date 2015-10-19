@@ -32,10 +32,12 @@ class SystemAdministratorHandler( RequestHandler ):
     Handler class initialization
     """
 
+    hostMonitoring = True
+
     # Check the flag for monitoring of the state of the host
     hostMonitoring = gConfig.getValue( 'DIRAC/HostMonitoring', 'True' )
-    if hostMonitoring == 'True':
-        hostMonitoring = True
+    if hostMonitoring == 'False':
+      hostMonitoring = False
 
     if hostMonitoring:
       client = SystemAdministratorClient( 'localhost' )
