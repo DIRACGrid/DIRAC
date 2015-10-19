@@ -35,9 +35,7 @@ class SystemAdministratorHandler( RequestHandler ):
     hostMonitoring = True
 
     # Check the flag for monitoring of the state of the host
-    hostMonitoring = gConfig.getValue( 'DIRAC/HostMonitoring', 'True' )
-    if hostMonitoring == 'False':
-      hostMonitoring = False
+    hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
 
     if hostMonitoring:
       client = SystemAdministratorClient( 'localhost' )
