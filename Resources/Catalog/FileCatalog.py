@@ -67,13 +67,15 @@ class FileCatalog( object ):
                 'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID',
                 'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
                 'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
-                'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet']
+                'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
+                'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
 
   write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
                    'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
                    'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
                    'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
-                   'addMetadataSet']
+                   'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
+                   'freezeDataset', 'releaseDataset']
 
   no_lfn_methods = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
                     'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
