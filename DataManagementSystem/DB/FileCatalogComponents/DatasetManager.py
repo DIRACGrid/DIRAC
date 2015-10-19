@@ -7,11 +7,8 @@
 
 __RCSID__ = "$Id$"
 
-try:
-  import hashlib
-  md5 = hashlib
-except ImportError:
-  import md5
+import hashlib as md5
+
 from types import StringTypes, ListType, DictType
 import os
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -19,7 +16,7 @@ from DIRAC.Core.Utilities.List import stringListToString
 
 class DatasetManager:
 
-  _tables = {}
+  _tables = dict
   _tables["FC_MetaDatasets"] = { "Fields": {
                                              "DatasetID": "INT AUTO_INCREMENT",
                                              "DatasetName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
@@ -85,19 +82,30 @@ class DatasetManager:
       return res['Value']
     return connection
 
-  def addDataset( self, datasetName, metaQuery, credDict ):
+  def addDataset( self, datasets, credDict ):
+    """
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
 
     result = self.db.ugManager.getUserAndGroupID( credDict )
     if not result['OK']:
       return result
     uid, gid = result['Value']
 
-    result = self.__getMetaQueryParameters( metaQuery, credDict )
-    if not result['OK']:
-      return result
-    totalSize = result['Value']['TotalSize']
-    datasetHash = result['Value']['DatasetHash']
-    numberOfFiles = result['Value']['NumberOfFiles']
+    failed = dict
+    successful = dict
+    for datasetName, metaQuery in datasets.items():
+      result = self.__addDataset( datasetName, metaQuery, uid, gid )
+      if result['OK']:
+        successful[datasetName] = True
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  def __addDataset( self, datasetName, metaQuery, uid, gid ):
 
     result = self.db.fileManager._getStatusInt( 'Dynamic' )
     if not result['OK']:
