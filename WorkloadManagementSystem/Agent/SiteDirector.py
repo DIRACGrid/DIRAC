@@ -55,11 +55,10 @@ class SiteDirector( AgentModule ):
                  for the agent restart
   """
 
-  def initialize( self ):
-    """ Standard constructor
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
     """
-    self.am_setOption( "PollingTime", 60.0 )
-    self.am_setOption( "maxPilotWaitingHours", 6 )
+    AgentModule.__init__( self, *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -67,6 +66,12 @@ class SiteDirector( AgentModule ):
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+
+  def initialize( self ):
+    """ Standard constructor
+    """
+    self.am_setOption( "PollingTime", 60.0 )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
 
   def beginExecution( self ):
