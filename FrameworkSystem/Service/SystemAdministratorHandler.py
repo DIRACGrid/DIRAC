@@ -31,19 +31,15 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-    hostMonitoring = False
 
     # Check the flag for monitoring of the state of the host
-    result = gConfig.getOption( 'DIRAC/HostMonitoring' )
-    if not result[ 'OK' ]:
-      gLogger.error( result[ 'Message' ] )
-    else:
-      if result[ 'Value' ] == 'True':
+    hostMonitoring = gConfig.getValue( 'DIRAC/HostMonitoring', 'True' )
+    if hostMonitoring == 'True':
         hostMonitoring = True
 
     if hostMonitoring:
       client = SystemAdministratorClient( 'localhost' )
-      gThreadScheduler.addPeriodicTask( 80, client.storeHostInfo )
+      gThreadScheduler.addPeriodicTask( 60, client.storeHostInfo )
 
     return S_OK( 'Initialization went well' )
 

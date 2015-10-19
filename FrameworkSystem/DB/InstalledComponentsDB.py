@@ -1129,8 +1129,10 @@ class InstalledComponentsDB( object ):
   def addLog( self, newLog ):
     """
     Add a new log to the database
-    newComponent argument should be a dictionary with the log fields and
-    its values
+    newCLog argument should be a dictionary with the log fields and
+    its values.
+    Valid keys for newLog include fields that are present in a HostLogging object:
+    HostName, DIRACVersion, Load1, Load5, ... of which only HostName is mandatory
     """
     session = self.Session()
 
