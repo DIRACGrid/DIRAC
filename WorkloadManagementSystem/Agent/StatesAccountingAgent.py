@@ -110,12 +110,12 @@ class StatesAccountingAgent( AgentModule ):
           acWMSListAdded.append( acWMS )
 
       if self.retryOnce and self.retryValues:
-        for acWMSComulated in self.retryValues:
-          retVal = acWMSComulated.checkValues()
+        for acWMSCumulated in self.retryValues:
+          retVal = acWMSCumulated.checkValues()
           if not retVal[ 'OK' ]:
             self.log.error( "Invalid accounting record ", "%s" % ( retVal[ 'Message' ] ) )
           else:
-            self.dsClients[ recordSetup ].addRegister( acWMSComulated )
+            self.dsClients[ recordSetup ].addRegister( acWMSCumulated )
 
       for setup in self.dsClients:
         self.log.info( "Sending records for setup %s" % setup )
