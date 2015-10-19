@@ -320,11 +320,11 @@ class FileCatalogClient( object ):
 
   def getUsers( self, timeout = 120 ):
     """ Get all the users defined in the File Catalog """
-    return self._getRPC( timeout = timeout ).getUsers()
+    return self.__getRPC( timeout = timeout ).getUsers()
 
   def getGroups( self, timeout = 120 ):
     """ Get all the groups defined in the File Catalog """
-    return self._getRPC( timeout = timeout ).getGroups()
+    return self.__getRPC( timeout = timeout ).getGroups()
 
   ########################################################################
   #
@@ -578,71 +578,72 @@ class FileCatalogClient( object ):
 #  Dataset manipulation methods
 #
 
-  def addDataset( self, datasetName, metaQuery, timeout = 120 ):
+  @checkCatalogArguments
+  def addDataset( self, datasets, timeout = 120 ):
     """ Add a new dynamic dataset defined by its meta query
     """
-    return self.__getRPC( timeout = timeout ).addDataset( datasetName, metaQuery )
+    return self.__getRPC( timeout = timeout ).addDataset( datasets )
 
-
+  @checkCatalogArguments
   def addDatasetAnnotation( self, datasetDict, timeout = 120 ):
     """ Add annotation to an already created dataset
     """
     return self.__getRPC( timeout = timeout ).addDatasetAnnotation( datasetDict )
 
-
-  def removeDataset( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def removeDataset( self, datasets, timeout = 120 ):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return self.__getRPC( timeout = timeout ).removeDataset( datasetName )
+    return self.__getRPC( timeout = timeout ).removeDataset( datasets )
 
-
-  def checkDataset( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def checkDataset( self, datasets, timeout = 120 ):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return self.__getRPC( timeout = timeout ).checkDataset( datasetName )
+    return self.__getRPC( timeout = timeout ).checkDataset( datasets )
 
-
-  def updateDataset( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def updateDataset( self, datasets, timeout = 120 ):
     """ Update the given dynamic dataset for changes since its definition
     """
-    return self.__getRPC( timeout = timeout ).updateDataset( datasetName )
+    return self.__getRPC( timeout = timeout ).updateDataset( datasets )
 
-
-  def getDatasets( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def getDatasets( self, datasets, timeout = 120 ):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return self.__getRPC( timeout = timeout ).getDatasets( datasetName )
+    return self.__getRPC( timeout = timeout ).getDatasets( datasets )
 
-
-  def getDatasetParameters( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def getDatasetParameters( self, datasets, timeout = 120 ):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return self.__getRPC( timeout = timeout ).getDatasetParameters( datasetName )
+    return self.__getRPC( timeout = timeout ).getDatasetParameters( datasets )
 
-
-  def getDatasetAnnotation( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def getDatasetAnnotation( self, datasets, timeout = 120 ):
     """ Get annotation of the given datasets
     """
-    return self.__getRPC( timeout = timeout ).getDatasetAnnotation( datasetName )
+    return self.__getRPC( timeout = timeout ).getDatasetAnnotation( datasets )
 
-
-  def freezeDataset( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def freezeDataset( self, datasets, timeout = 120 ):
     """ Freeze the contents of the dataset making it effectively static
     """
-    return self.__getRPC( timeout = timeout ).freezeDataset( datasetName )
+    return self.__getRPC( timeout = timeout ).freezeDataset( datasets )
 
-
-  def releaseDataset( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def releaseDataset( self, datasets, timeout = 120 ):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
-    return self.__getRPC( timeout = timeout ).releaseDataset( datasetName )
+    return self.__getRPC( timeout = timeout ).releaseDataset( datasets )
 
-
-  def getDatasetFiles( self, datasetName, timeout = 120 ):
+  @checkCatalogArguments
+  def getDatasetFiles( self, datasets, timeout = 120 ):
     """ Get lfns in the given dataset
     two lines !
     """
-    return self.__getRPC( timeout = timeout ).getDatasetFiles( datasetName )
+    return self.__getRPC( timeout = timeout ).getDatasetFiles( datasets )
 
 
 

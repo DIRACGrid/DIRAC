@@ -132,13 +132,13 @@ class DatasetManager:
                'DatasetName': dsName,
                'MetaQuery': str(metaQuery),
                'DirID': dirID,
-               'TotalSize': totalSize,
-               'NumberOfFiles': numberOfFiles,
+               'TotalSize': 0,
+               'NumberOfFiles': 0,
                'UID': uid,
                'GID': gid,
                'CreationDate': 'UTC_TIMESTAMP()',
                'ModificationDate': 'UTC_TIMESTAMP()',
-               'DatasetHash': datasetHash,
+               'DatasetHash': '',
                'Status': intStatus
              }
     result = self.db.insertFields( 'FC_MetaDatasets', inDict = inDict )
@@ -348,7 +348,26 @@ class DatasetManager:
                      'LFNIDList': lfnIDList } )
     return result
 
-  def removeDataset( self, datasetName, credDict ):
+  def removeDataset( self, datasets, credDict ):
+    """ Remove the requested datasets
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__removeDataset( datasetName )
+      if result['OK']:
+        successful[datasetName] = True
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+
+  def __removeDataset( self, datasetName, credDict ):
     """ Remove existing dataset
     """
 
@@ -367,7 +386,25 @@ class DatasetManager:
 
     return result
 
-  def checkDataset( self, datasetName, credDict ):
+  def checkDataset( self, datasets, credDict ):
+    """ Check that the dataset parameters correspond to the actual state
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__checkDataset( datasetName )
+      if result['OK']:
+        successful[datasetName] = result['Value']
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  def __checkDataset( self, datasetName, credDict ):
     """ Check that the dataset parameters correspond to the actual state
     """
     req = "SELECT MetaQuery,DatasetHash,TotalSize,NumberOfFiles FROM FC_MetaDatasets"
@@ -402,7 +439,25 @@ class DatasetManager:
     result = S_OK( changeDict )
     return result
 
-  def updateDataset( self, datasetName, credDict, changeDict=None ):
+  def updateDataset( self, datasets, credDict ):
+    """
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName, changeDict in datasets:
+      result = self.__updateDataset( datasetName, changeDict, credDict )
+      if result['OK']:
+        successful[datasetName] = result['Value']
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+
+  def __updateDataset( self, datasetName, changeDict, credDict ):
     """ Update the dataset parameters
     """
 
@@ -424,28 +479,40 @@ class DatasetManager:
     result = self.db._update( req )
     return result
 
-  def getDatasets( self, datasetName, credDict ):
+  def getDatasets( self, datasets, credDict ):
+    """ Get dataset definitions
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__getDatasets( datasetName )
+      if result['OK']:
+        successful[datasetName] = result['Value']
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  def __getDatasets( self, datasetName ):
     """ Get information about existing datasets
     """
-    dsName = os.path.basename(datasetName)
-    
+
     parameterList = ['DatasetID','MetaQuery','DirID','TotalSize','NumberOfFiles',
                      'UID','GID','Status','CreationDate','ModificationDate',
                      'DatasetHash','Mode','DatasetName']
     parameterString = ','.join( parameterList )
 
     req = "SELECT %s FROM FC_MetaDatasets" % parameterString
-    if type( datasetName ) in StringTypes:
-      dsName = os.path.basename(datasetName)
-      if '*' in dsName:
-        dName = dsName.replace( '*', '%' )
-        req += " WHERE DatasetName LIKE '%s'" % dName
-      elif dsName:
-        req += " WHERE DatasetName='%s'" % dsName
-    elif type( datasetName ) == ListType:
-      dsNames = [ os.path.basename(d) for d in datasetName ]
-      datasetString = stringListToString( dsNames )
-      req += " WHERE DatasetName in (%s)" % datasetString
+    dsName = os.path.basename(datasetName)
+    if '*' in dsName:
+      dName = dsName.replace( '*', '%' )
+      req += " WHERE DatasetName LIKE '%s'" % dName
+    elif dsName:
+      req += " WHERE DatasetName='%s'" % dsName
 
     result = self.db._query( req )
     if not result['OK']:
@@ -546,7 +613,25 @@ class DatasetManager:
 
     return resultDict
 
-  def getDatasetParameters( self, datasetName, credDict ):
+  def getDatasetParameters( self, datasets, credDict ):
+    """ Get dataset definitions
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__getDatasetParameters( datasetName )
+      if result['OK']:
+        successful[datasetName] = result['Value']
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  def __getDatasetParameters( self, datasetName, credDict ):
     """ Get the currently stored dataset parameters
     """
     result = self._findDatasets( [datasetName] )
@@ -633,7 +718,25 @@ class DatasetManager:
     result['FileIDList'] = lfnDict.keys()
     return result
 
-  def getDatasetFiles( self, datasetName, credDict ):
+  def getDatasetFiles( self, datasets, credDict ):
+    """ Get dataset file contents
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__getDatasetFiles( datasetName )
+      if result['OK']:
+        successful[datasetName] = result['Value']
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  def __getDatasetFiles( self, datasetName, credDict ):
     """ Get dataset files
     """
     result = self.getDatasetParameters( datasetName, credDict )
@@ -646,7 +749,25 @@ class DatasetManager:
     else:
       return self.__getDynamicDatasetFiles( datasetID, credDict )
 
-  def freezeDataset( self, datasetName, credDict ):
+  def freezeDataset( self, datasets, credDict ):
+    """ Freeze the contents of datasets
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__freezeDataset( datasetName )
+      if result['OK']:
+        successful[datasetName] = True
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+  def __freezeDataset( self, datasetName, credDict ):
     """ Freeze the contents of the dataset
     """
     result = self.getDatasetParameters( datasetName, credDict )
@@ -677,7 +798,26 @@ class DatasetManager:
     result = self.setDatasetStatus( datasetName, 'Frozen' )
     return result
 
-  def releaseDataset( self, datasetName, credDict ):
+  def releaseDataset( self, datasets, credDict ):
+    """ Unfreeze datasets
+
+    :param dict datasets: dictionary describing dataset definitions
+    :param credDict:  dictionary of the caller credentials
+    :return: S_OK/S_ERROR bulk return structure
+    """
+    failed = dict
+    successful = dict
+    for datasetName in datasets:
+      result = self.__releaseDataset( datasetName )
+      if result['OK']:
+        successful[datasetName] = True
+      else:
+        failed[datasetName] = result['Message']
+
+    return S_OK( { "Successful": successful, "Failed": failed } )
+
+
+  def __releaseDataset( self, datasetName, credDict ):
     """ return the dataset to a dynamic state
     """
     result = self.getDatasetParameters( datasetName, credDict )
