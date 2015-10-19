@@ -1,21 +1,19 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
     current CPU and Wallclock consumed, as well as their limits.
 """
 __RCSID__ = "$Id$"
 
+import os
+import re
+import time
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 from DIRAC.Core.Utilities.Os import sourceEnv
 
-import os, re, time
 
-class LSFTimeLeft:
+class LSFTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
@@ -216,7 +214,7 @@ class LSFTimeLeft:
         lCPU = sCPU.split( ':' )
         try:
           cpu = float( lCPU[0] ) * 3600 + float( lCPU[1] ) * 60 + float( lCPU[2] )
-        except ValueError, IndexError:
+        except ( ValueError, IndexError ) as _e:
           pass
       elif l1[i] == 'START_TIME':
         sStart = l2[i]
@@ -231,6 +229,7 @@ class LSFTimeLeft:
       return S_ERROR( 'Failed to parse LSF output' )
 
     consumed = {'CPU':cpu, 'CPULimit':self.cpuLimit, 'WallClock':wallClock, 'WallClockLimit':self.wallClockLimit}
+    self.log.debug( consumed )
 
     if None not in consumed.values():
       return S_OK( consumed )

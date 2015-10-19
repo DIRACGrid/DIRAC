@@ -1,7 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The TimeLeft utility allows to calculate the amount of CPU time
     left for a given batch system slot.  This is essential for the 'Filling
     Mode' where several VO jobs may be executed in the same allocated slot.
@@ -15,14 +11,16 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import shellCall
+import os
 
 import DIRAC
 
-import os
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
-class TimeLeft:
+class TimeLeft( object ):
+  """ This generally does not run alone
+  """
 
   #############################################################################
   def __init__( self ):
@@ -133,8 +131,7 @@ class TimeLeft:
 
   #############################################################################
   def __getBatchSystemPlugin( self ):
-    """Using the name of the batch system plugin, will return an instance
-       of the plugin class.
+    """ Using the name of the batch system plugin, will return an instance of the plugin class.
     """
     batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME', 'SGE':'SGE_TASK_ID'}  # more to be added later
     name = None
