@@ -8,10 +8,9 @@ import commands
 import os.path
 import time
 import sys
-from types  import DictType, ListType
 
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
 from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
@@ -1989,7 +1988,7 @@ File Catalog Client $Revision: 1.17 $Date:
     metaDict = result['Value']
     datasetName = self.getPath( datasetName )
     
-    result = self.fc.addDataset( datasetName, metaDict )
+    result = returnSingleResult( self.fc.addDataset( { datasetName: metaDict } ) )
     if not result['OK']:
       print "ERROR: failed to add dataset:", result['Message']
     else:
@@ -2002,7 +2001,7 @@ File Catalog Client $Revision: 1.17 $Date:
     annotation = ' '.join( argss[1:] )
     datasetName = self.getPath( datasetName )
     
-    result = self.fc.addDatasetAnnotation( {datasetName: annotation} )
+    result = returnSingleResult( self.fc.addDatasetAnnotation( {datasetName: annotation} ) )
     if not result['OK']:
       print "ERROR: failed to add annotation:", result['Message']
     else:
@@ -2012,7 +2011,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Display the dataset status
     """
     datasetName = argss[0]
-    result = self.fc.getDatasetParameters( datasetName )
+    result = returnSingleResult( self.fc.getDatasetParameters( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to get status of dataset:", result['Message']
     else:
@@ -2024,7 +2023,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Remove the given dataset
     """
     datasetName = argss[0]
-    result = self.fc.removeDataset( datasetName )
+    result = returnSingleResult( self.fc.removeDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to remove dataset:", result['Message']
     else:
@@ -2034,7 +2033,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ check if the dataset parameters are still valid
     """
     datasetName = argss[0]
-    result = self.fc.checkDataset( datasetName )
+    result = returnSingleResult( self.fc.checkDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to check dataset:", result['Message']
     else:
@@ -2050,7 +2049,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Update the given dataset parameters
     """
     datasetName = argss[0]
-    result = self.fc.updateDataset( datasetName )
+    result = returnSingleResult( self.fc.updateDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to update dataset:", result['Message']
     else:
@@ -2060,7 +2059,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Freeze the given dataset
     """
     datasetName = argss[0]
-    result = self.fc.freezeDataset( datasetName )
+    result = returnSingleResult( self.fc.freezeDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to freeze dataset:", result['Message']
     else:
@@ -2070,7 +2069,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Release the given dataset
     """
     datasetName = argss[0]
-    result = self.fc.releaseDataset( datasetName )
+    result = returnSingleResult( self.fc.releaseDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to release dataset:", result['Message']
     else:
@@ -2080,7 +2079,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Get the given dataset files
     """
     datasetName = argss[0]
-    result = self.fc.getDatasetFiles( datasetName )
+    result = returnSingleResult( self.fc.getDatasetFiles( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to get files for dataset:", result['Message']
     else:
@@ -2099,7 +2098,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if len( argss ) > 0:
       datasetName = argss[0]
 
-    result = self.fc.getDatasets( datasetName )
+    result = returnSingleResult( self.fc.getDatasets( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to get datasets"
       return
@@ -2112,7 +2111,7 @@ File Catalog Client $Revision: 1.17 $Date:
       fields = ['Key','Value']
       datasets = datasetDict.keys()
       dsAnnotations = {}
-      resultAnno = self.fc.getDatasetAnnotation( datasets )
+      resultAnno = returnSingleResult( self.fc.getDatasetAnnotation( datasets ) )
       if resultAnno['OK']:
         dsAnnotations = resultAnno['Value']['Successful']
       for dName in datasets:
