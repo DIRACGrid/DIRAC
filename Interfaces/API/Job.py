@@ -105,27 +105,27 @@ class Job( API ):
 
        These can be either:
 
-        - Submission of a python or shell script to DIRAC
-           - Can be inline scripts e.g. C{'/bin/ls'}
-           - Scripts as executables e.g. python or shell script file
+       - Submission of a python or shell script to DIRAC
+          - Can be inline scripts e.g. C{'/bin/ls'}
+          - Scripts as executables e.g. python or shell script file
 
        Example usage:
 
        >>> job = Job()
        >>> job.setExecutable('myScript.py')
 
-       @param executable: Executable
-       @type executable: string
-       @param arguments: Optional arguments to executable
-       @type arguments: string
-       @param logFile: Optional log file name
-       @type logFile: string
-       @param modulesList: Optional list of modules (to be used mostly when extending this method)
-       @type modulesList: list
-       @param parameters: Optional list of parameters (to be used mostly when extending this method)
-       @type parameters: list of tuples
-       @param paramValues: Optional list of parameters values (to be used mostly when extending this method)
-       @type parameters: list of tuples
+       :param executable: Executable
+       :type executable: string
+       :param arguments: Optional arguments to executable
+       :type arguments: string
+       :param logFile: Optional log file name
+       :type logFile: string
+       :param modulesList: Optional list of modules (to be used mostly when extending this method)
+       :type modulesList: list
+       :param parameters: Optional list of parameters (to be used mostly when extending this method)
+       :type parameters: list of tuples
+       :param paramValues: Optional list of parameters values (to be used mostly when extending this method)
+       :type parameters: list of tuples
     """
     kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
     if not type( executable ) == type( ' ' ) or not type( arguments ) == type( ' ' ) or \
