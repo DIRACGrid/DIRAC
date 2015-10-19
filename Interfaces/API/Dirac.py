@@ -479,8 +479,6 @@ class Dirac( API ):
     localCfg.addDefaultEntry( '/LocalSite/OwnerGroup', self.__getCurrentGroup() )
     localCfg.addDefaultEntry( '/LocalSite/MaxRunningJobs', 1 )
     localCfg.addDefaultEntry( '/LocalSite/MaxTotalJobs', 1 )
-#    if os.environ.has_key('VO_LHCB_SW_DIR'):
-#      localCfg.addDefaultEntry('/LocalSite/SharedArea',os.environ['VO_LHCB_SW_DIR'])
     # Running twice in the same process, the second time it use the initial JobID.
     ( fd, jobidCfg ) = tempfile.mkstemp( '.cfg', 'DIRAC_JobId', text = True )
     os.write( fd, 'AgentJobRequirements\n {\n  JobID = %s\n }\n' % jobID )

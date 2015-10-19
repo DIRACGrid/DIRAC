@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -29,7 +28,6 @@ DIRAC_MODULES = [ os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSyst
                   os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py' ) ]
 DIRAC_VERSION = 'Integration'
 DIRAC_PROJECT = ''
-DIRAC_INSTALLATION = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
@@ -101,7 +99,6 @@ class PilotDirector( object ):
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
     self.installProject = DIRAC_PROJECT
-    self.installation = DIRAC_INSTALLATION
     self.pilotExtensionsList = []
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
@@ -138,7 +135,6 @@ class PilotDirector( object ):
     opsHelper = Operations()
     self.installVersion = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
     self.installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ), self.installProject )
-    self.installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
     self.pilotExtensionsList = opsHelper.getValue( "Pilot/Extensions", self.pilotExtensionsList )
 
     self.log.info( '===============================================' )
@@ -151,8 +147,6 @@ class PilotDirector( object ):
     self.log.info( ' Install Ver:    ', self.installVersion )
     if self.installProject:
       self.log.info( ' Project:        ', self.installProject )
-    if self.installation:
-      self.log.info( ' Installation:   ', self.installation )
     if self.extraPilotOptions:
       self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
@@ -182,7 +176,6 @@ class PilotDirector( object ):
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
     self.extraModules = gConfig.getValue( mySection + '/ExtraPilotModules'        , [] ) + self.extraModules
     self.installProject = gConfig.getValue( mySection + '/Project'        , self.installProject )
-    self.installation = gConfig.getValue( mySection + '/Installation'        , self.installation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
     self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
@@ -358,9 +351,6 @@ class PilotDirector( object ):
     installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ) , self.installProject )
     if installProject:
       pilotOptions.append( '-l %s' % installProject )
-    installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
-    if installation:
-      pilotOptions.append( "-V %s" % installation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 
