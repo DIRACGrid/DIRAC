@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.List import stringListToString
 
 class DatasetManager:
 
-  _tables = dict
+  _tables = dict()
   _tables["FC_MetaDatasets"] = { "Fields": {
                                              "DatasetID": "INT AUTO_INCREMENT",
                                              "DatasetName": "VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL",
