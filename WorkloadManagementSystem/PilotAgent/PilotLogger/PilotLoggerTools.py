@@ -51,26 +51,12 @@ def readPilotLoggerConfigFile ( filename ):
     myFile = open(filename, 'r')
     config = myFile.read()
     config = json.loads(config)
-  except IOError:
-    return None
-  except ValueError:
+  except (IOError, ValueError):
     return None
   else:
     return config
-
-def byteify(input):
-  """Changes all unicode strings to UTF-8 coded strings
-     Taken from:
-     http://stackoverflow.com/questions/956867/how-to-get-string-objects-instead-of-unicode-ones-from-json-in-python 
-  """
-  if isinstance(input, dict):
-      return {byteify(key):byteify(value) for key,value in input.iteritems()}
-  elif isinstance(input, list):
-      return [byteify(element) for element in input]
-  elif isinstance(input, unicode):
-      return input.encode('utf-8')
-  else:
-      return input
+  finally:
+    myFile.close()
 
 def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
   """Helper function that returs a dictionnary based on the
@@ -126,9 +112,9 @@ def isMessageFormatCorrect( content ):
      Function checks if the input format is a dictionnary
      in the following format:
      0) content is a dictionary,
-     1) it contains only those keys of string types:
+     1) it contains only those keys of basestring types:
      'pilotUUID', 'pilotId', 'status', 'minorStatus', 'timestamp', 'source',
-     2) it contains only values of string types.
+     2) it contains only values of basestring types.
   Args:
     content(dict): pilotID can be empty, other values must be non-empty
   Returns:
@@ -158,8 +144,8 @@ def isMessageFormatCorrect( content ):
   if not keys == refKeys:
     return False
   values = content.values()
-  # if any value is not of string type
-  if any( not isinstance( val, str ) for val in values ):
+  # if any value is not of basestring type
+  if any( not isinstance( val, basestring ) for val in values ):
     return False
   #checking if not empty for all except pilotID
   contentCopy = content.copy()
