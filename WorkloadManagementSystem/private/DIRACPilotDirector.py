@@ -203,20 +203,6 @@ class DIRACPilotDirector(PilotDirector):
 
       ceConfigDict = self.computingElementDict[CE]
 
-      if 'ClientPlatform' in ceConfigDict:
-        pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
-
-      if 'SharedArea' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
-
-#       if 'CPUScalingFactor' in ceConfigDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
-#
-#       if 'CPUNormalizationFactor' in ceConfigDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
-
-        self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
-
       httpProxy = ''
       if 'HttpProxy' in ceConfigDict:
         httpProxy = ceConfigDict['HttpProxy']
