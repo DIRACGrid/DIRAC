@@ -77,7 +77,11 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
   """
   if specialUsers is None:
     specialUsers = ['admin', 'ala', 'O=client,CN=kamyk']
-  currentUsersInRabbitMQ = getAllUsers()
+  ret = getAllUsers()
+  if not ret['OK']:
+    print "Some problem with getting all users from RabbitMQ DB"
+    return ret
+  currentUsersInRabbitMQ =  ret['Value']
   #special users should not be taken into account
   currentUsersInRabbitMQ = listDifference(currentUsersInRabbitMQ, specialUsers)
   usersToRemove = listDifference(currentUsersInRabbitMQ, newUsers)
@@ -87,6 +91,7 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
     setUsersPermissions(usersToAdd)
   if usersToRemove:
     deleteUsers(usersToRemove)
+  return S_OK()
 
 def listDifference(list1, list2):
   """Calculates differences between two lists.

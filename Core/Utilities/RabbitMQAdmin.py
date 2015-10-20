@@ -56,6 +56,8 @@ def deleteUser(user):
 
 def getAllUsers():
   '''Returns all existing users in the internal RabbitMQ database.
+  Returns:
+    S_OK: with a list of all users
   '''
 
   ret = executeRabbitmqctl('list_users')
