@@ -8,13 +8,12 @@
 __RCSID__ = "$Id$"
 
 import hashlib as md5
-
-from types import StringTypes, ListType, DictType
 import os
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import stringListToString
 
-class DatasetManager:
+class DatasetManager( object ):
 
   _tables = dict()
   _tables["FC_MetaDatasets"] = { "Fields": {
@@ -319,9 +318,9 @@ class DatasetManager:
     result = self.db.fmeta.findFilesByMetadata( findMetaQuery, path, credDict, extra=True )
     if not result['OK']:
       return S_ERROR( 'Failed to apply the metaQuery' )
-    if type( result['Value'] ) == ListType:
+    if isinstance( result['Value'], list ):
       lfnList = result['Value']
-    elif type( result['Value'] ) == DictType:
+    elif isinstance( result['Value'], dict ):
       # Process into the lfn list
       lfnList = []
       for dir_,fList in result['Value'].items():
