@@ -48,15 +48,12 @@ def readPilotLoggerConfigFile ( filename ):
     dict:
   """
   try:
-    myFile = open(filename, 'r')
-    config = myFile.read()
-    config = json.loads(config)
+    with open(filename, 'r') as myFile:
+      config = myFile.read()
+      config = json.loads(config)
+      return config
   except (IOError, ValueError):
     return None
-  else:
-    return config
-  finally:
-    myFile.close()
 
 def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
   """Helper function that returs a dictionnary based on the
