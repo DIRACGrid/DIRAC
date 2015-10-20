@@ -20,21 +20,19 @@ class RabbitMQSynchronizer(object):
     # I am not sure whether it is needed but
     # it was used in DIRAC.ResourceStatusSystem.Utilities.Synchronizer
     warmUp()
-    self._accessUserGroup = 'lhcb_pilot'
-    self._accessProperty = 'GenericPilot'
+    self._accessUserGroup = 'lhcb_pilot'  #only users belonging to group with this property are allowed to connect
+    self._accessProperty = 'GenericPilot' #only host with this property are allowed to connect
 
   def sync( self, _eventName, _params ):
-    '''
-    examples:
-      >>> s.sync( None, None )
-          S_OK()
+    '''Synchronizes the internal RabbitMQ user database with the current content of CS.
 
-    :Parameters:
-      **_eventName** - any
-        this parameter is ignored, but needed by caller function.
-      **_params** - any
-        this parameter is ignored, but needed by caller function.
-    :return: S_OK
+    Args:
+      _eventName: any value, this parameter is ignored, but needed by caller function.
+      _params: - any value, this parameter is ignored, but needed by caller function.
+    Returns:
+      S_OK:
+    Example:
+       s.sync( None, None )
     '''
 
     valid_users = getDNsInGroup(self._accessUserGroup)
@@ -50,6 +48,7 @@ def getDNsForValidHosts(accessProperty):
   Returns:
     list: of hosts with accessProperty set.
   """
+
   retVal = getHosts()
   if not retVal[ 'OK' ]:
     return []
@@ -58,9 +57,10 @@ def getDNsForValidHosts(accessProperty):
   for host in hosts:
     if hostHasProperties(host, [accessProperty]):
       retVal = getDNForHost(host)
-      if not retVal[ 'OK' ]:
-        return []
-      DNs.extend(retVal['Value'])
+      if retVal[ 'OK' ]:
+        DNs.extend(retVal['Value'])
+      else:
+        print 'Could not find a correct DN for host: %s. It will be ignored.'% host
   return DNs
 
 
@@ -76,7 +76,7 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
     specialUsers(list): special users that will not be processed.
   """
   if specialUsers is None:
-    specialUsers = ['ala', 'admin', 'O=client,CN=kamyk']
+    specialUsers = ['admin', 'ala', 'O=client,CN=kamyk']
   currentUsersInRabbitMQ = getAllUsers()
   #special users should not be taken into account
   currentUsersInRabbitMQ = listDifference(currentUsersInRabbitMQ, specialUsers)
