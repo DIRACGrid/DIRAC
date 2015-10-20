@@ -1,3 +1,18 @@
+[v6r14p8]
+
+*Core
+FIX: XXXTimeLeft - minor fixes plus added the corresponding Test case
+FIX: ReturnValues - fixes in the doc strings to comply with the sphinx syntax
+
+*Interfaces
+FIX: Job.py - fixes in the doc strings to comply with the sphinx syntax
+
+*WMS
+CHANGE: StatesAccountingAgent - retry once and empty the local messages cache
+        in case of failure to avoid large backlog of messages
+CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
+        invocation arguments        
+
 [v6r14p7]
 
 *Core
