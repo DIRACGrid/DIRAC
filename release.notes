@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [v6r15-pre6]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
@@ -31,6 +30,22 @@ CHANGE: FileCatalog - added recursive changePathXXX operations
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
+
+[v6r14p8]
+
+*Core
+FIX: XXXTimeLeft - minor fixes plus added the corresponding Test case
+FIX: ReturnValues - fixes in the doc strings to comply with the sphinx syntax
+
+*Interfaces
+FIX: Job.py - fixes in the doc strings to comply with the sphinx syntax
+
+*WMS
+CHANGE: StatesAccountingAgent - retry once and empty the local messages cache
+        in case of failure to avoid large backlog of messages
+CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
+        invocation arguments        
+
 
 [v6r14p7]
 
@@ -536,7 +551,7 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
-=======
+
 [v6r12p52]
 
 *DMS
@@ -547,7 +562,6 @@ FIX: DataManager - in removeFile() return successfully if empty input file list
 *TS
 NEW: TransformationCLI - getInputDataQuery command returning inputDataQuery 
      of a given transformation
->>>>>>> v6r12p52
 
 [v6r12p51]
 
