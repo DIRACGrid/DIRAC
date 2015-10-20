@@ -94,8 +94,8 @@ class DatasetManager:
       return result
     uid, gid = result['Value']
 
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName, metaQuery in datasets.items():
       result = self.__addDataset( datasetName, metaQuery, uid, gid )
       if result['OK']:
@@ -355,8 +355,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__removeDataset( datasetName )
       if result['OK']:
@@ -393,8 +393,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__checkDataset( datasetName )
       if result['OK']:
@@ -445,8 +445,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName, changeDict in datasets:
       result = self.__updateDataset( datasetName, changeDict, credDict )
       if result['OK']:
@@ -486,8 +486,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__getDatasets( datasetName )
       if result['OK']:
@@ -620,8 +620,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__getDatasetParameters( datasetName )
       if result['OK']:
@@ -725,8 +725,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__getDatasetFiles( datasetName )
       if result['OK']:
@@ -756,8 +756,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__freezeDataset( datasetName )
       if result['OK']:
@@ -805,8 +805,8 @@ class DatasetManager:
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
-    failed = dict
-    successful = dict
+    failed = dict()
+    successful = dict()
     for datasetName in datasets:
       result = self.__releaseDataset( datasetName )
       if result['OK']:
