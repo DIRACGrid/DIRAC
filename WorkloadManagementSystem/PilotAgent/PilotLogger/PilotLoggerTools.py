@@ -177,14 +177,12 @@ def generateUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
   """
   myId = generateUniqueID()
   try:
-    myFile = open( filename, 'w' )
-    myFile.write( myId )
+    with open ( filename, 'w' ) as myFile:
+      myFile.write( myId )
+    return True
   except IOError:
     print 'could not open file'
     return False
-  else:
-    myFile.close()
-    return True
 
 def main():
   """Is used to generate the pilot uuid
