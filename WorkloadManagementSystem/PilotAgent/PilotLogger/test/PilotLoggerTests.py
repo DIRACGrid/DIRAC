@@ -9,9 +9,10 @@ from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools impo
 class TestPilotLogger( unittest.TestCase ):
 
   def setUp( self ):
-    self.testFile = 'UUID_file_to_test'
+    self.testFile = 'UUID_to_store'
+    self.testCfgFile = 'TestPilotLogger.cfg'
     generateUniqueIDAndSaveToFile( self.testFile )
-    self.logger = PilotLogger(self.testFile)
+    self.logger = PilotLogger(self.testCfgFile)
     self.badFile = '////'
     self.nonExistentFile = 'abrakadabraToCzaryIMagia'
   def tearDown( self ):
