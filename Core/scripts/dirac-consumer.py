@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""  This is a script to launch DIRAC consumers
+"""  This is a script to launch DIRAC consumers.
 """
 
 import sys
@@ -8,15 +8,18 @@ from DIRAC import gLogger
 from DIRAC.Core.Base.ConsumerReactor import ConsumerReactor
 
 def main():
-  """It launches DIRAC consumers
+  """It launches DIRAC consumer
   """
   localCfg = LocalConfiguration()
-  consumerModuleNames = localCfg.getPositionalArguments()
-  if len( consumerModuleNames ) == 0:
+  args = localCfg.getPositionalArguments()
+  if not args:
     gLogger.fatal( "You must specify which consumer to run!" )
     sys.exit( 1 )
+  if len(args) > 1:
+    gLogger.warn( "You added more than one argument, only the first one will be used as consumer name!")
+  consumerModuleName = args[0]
   consumerReactor = ConsumerReactor()
-  result = consumerReactor.loadModules( consumerModuleNames )
+  result = consumerReactor.loadModule( consumerModuleName )
   if not result[ 'OK' ]:
     gLogger.error( "Error while loading consumer module", result[ 'Message' ] )
     sys.exit( 1 )

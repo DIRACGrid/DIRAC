@@ -9,7 +9,7 @@
   [DIRAC System Name]/[DIRAC Consumer Name]
   dirac-consumer then:
   - produces a instance of ConsumerReactor
-  - loads the required modules using the ConsumerReactor.loadConsumerModules method
+  - loads the required module using the ConsumerReactor.loadModule method
   - starts the execution loop using the ConsumerReactor.go method
 
 """
@@ -27,24 +27,27 @@ class ConsumerReactor(object):
 
   def __init__( self ):
     self.__loader = ModuleLoader( "Consumer", PathFinder.getConsumerSection, ConsumerModule )
-    self.__consumerModules={}
+    self.__consumerModule = None
 
   def go( self ):
     """
-      Main method to control the execution of all configured consumers
+      Main method to control the execution of the consumer.
     """
-    for name in self.__consumerModules:
-      instanceObj = self.__consumerModules[name]['classObj' ]()
-      instanceObj.execute()
+    instanceObj = self.__consumerModule['classObj']()
+    instanceObj.execute()
     return S_OK()
 
 
-  def loadModules( self, modulesList, hideExceptions = False):
+  def loadModule( self, consumerModuleName, hideExceptions = False):
+    """Loads the consumerModule.
     """
-      Return all modules required in moduleList
-    """
-    result = self.__loader.loadModules( modulesList, hideExceptions = hideExceptions )
+    #The function loadModules takes as the first argument, the list
+    #of modules to load. Even that we actually have only one consumer
+    #module we must transform it to a list.
+    moduleList = [ consumerModuleName ]
+    result = self.__loader.loadModules( moduleList, hideExceptions = hideExceptions )
     if not result[ 'OK' ]:
       return result
-    self.__consumerModules = self.__loader.getModules()
+    modules = self.__loader.getModules()
+    self.__consumerModule = modules[consumerModuleName]
     return S_OK()
