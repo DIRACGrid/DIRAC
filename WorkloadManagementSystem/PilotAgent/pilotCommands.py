@@ -278,7 +278,6 @@ class InstallDIRAC( CommandBase ):
     self._installDIRAC()
 
 
-
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
       - download, by default, the CAs
@@ -358,6 +357,39 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( '--UseServerCertificate' )
       self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
       self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+
+class CheckCECapabilities( CommandBase ):
+  """ Used to get  CE tags.
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( CheckCECapabilities, self ).__init__( pilotParams )
+    self.cfg = []
+
+
+  def execute( self ):
+
+    retCode, self.pp.tags = self.executeAndGetOutput( 'dirac-get-ce-capabilities -N %s -S %s' % ( self.pp.ceName, self.pp.site ) )
+    if retCode:
+      self.log.error( "Failed to determine CE capabilities [ERROR %d]" % retCode )
+      self.exitWithError( retCode )
+
+    self.cfg.append( '-FDMH' )
+    if self.pp.localConfigFile:
+      self.cfg.append( '-O %s' % self.pp.localConfigFile )
+      self.cfg.append( self.pp.localConfigFile )
+
+    if self.debugFlag:
+      self.cfg.append( '-ddd' )
+
+    if self.pp.tags:
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % self.pp.tags )
+
+    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+
+    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+
 
 
 class ConfigureSite( CommandBase ):
@@ -724,7 +756,7 @@ class LaunchAgent( CommandBase ):
     # To prevent a wayward agent picking up and failing many jobs.
     self.inProcessOpts.append( '-o MaxTotalJobs=%s' % 10 )
     self.jobAgentOpts= ['-o MaxCycles=%s' % self.pp.maxCycles]
-
+    
     if self.debugFlag:
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 
