@@ -344,6 +344,22 @@ class TransformationCLI( cmd.Cmd, API ):
       else:
         print "No files found"
 
+  def do_getInputDataQuery( self, args ):
+    """Get input data query for the transformation
+
+    usage: getInputDataQuery <transName|ID>
+    """
+    argss = args.split()
+    if not len( argss ) > 0:
+      print "no transformation supplied"
+      return
+    transName = argss[0]
+    res = self.server.getTransformationInputDataQuery( transName )
+    if not res['OK']:
+      print "Failed to get transformation input data query: %s" % res['Message']
+    else:
+      print res['Value']
+
   def do_setFileStatus( self, args ):
     """Set file status for the given transformation
 
