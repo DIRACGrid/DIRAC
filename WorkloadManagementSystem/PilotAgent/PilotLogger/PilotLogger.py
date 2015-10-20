@@ -67,14 +67,12 @@ def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
   """
 
   try:
-    myFile = open( filename, 'r' )
-    uniqueId = myFile.read()
-  except IOError:
-    print 'could not open file'
-    return ""
-  else:
-    myFile.close()
+    with open ( filename, 'r' ) as myFile:
+      uniqueId = myFile.read()
     return uniqueId
+  except IOError:
+    print 'Could not open the file!!!'
+    return ""
 
 def eraseFileContent( filename ):
   """ Erases the content of a given file.
