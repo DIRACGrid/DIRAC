@@ -251,6 +251,11 @@ def cmpError( inErr, candidate ):
 
 
 def includeExtensionErrors():
+  """ Merge all the errors of all the extensions into the errors of these modules
+      Should be called only at the initialization of DIRAC, so by the parseCommandLine,
+      dirac-agent.py, dirac-service.py, dirac-executor.py
+  """
+
   def __recurseImport( modName, parentModule = None, fullName = False ):
     """ Internal function to load modules
     """
@@ -275,7 +280,6 @@ def includeExtensionErrors():
 
   from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
   allExtensions = CSGlobals.getCSExtensions()
-  print "ALL EXTENSIONS %s" % allExtensions
   for line in traceback.format_stack():
     print line.strip()
   for extension in allExtensions:
@@ -300,6 +304,4 @@ def includeExtensionErrors():
 
     except:
       pass
-  #   finally:
-  #     if ext_derrno:
-  #       ext_derrno.close()
+
