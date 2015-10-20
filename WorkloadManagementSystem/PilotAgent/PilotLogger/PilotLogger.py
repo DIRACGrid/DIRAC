@@ -34,14 +34,13 @@ def connect(host_and_port, ssl_cfg):
                        ca_certs = ssl_cfg['ca_certs'])
     connection.start()
     connection.connect()
+    return connection
   except stomp.exception.ConnectFailedException:
-    print 'Connection error:'
+    print 'Connection error'
     return None
   except IOError:
     print 'Could not find files with ssl certificates'
     return None
-  else:
-    return connection
 
 def send(msg ,destination, connect_handler):
   """Sends a message and prints info on the screen.
@@ -66,6 +65,7 @@ def getPilotUUIDFromFile( filename = 'PilotAgentUUID' ):
   Returns:
     str: empty string in case of errors.
   """
+
   try:
     myFile = open( filename, 'r' )
     uniqueId = myFile.read()
@@ -125,14 +125,10 @@ class PilotLogger( object ):
         'Done',
         'Failed'
         ]
-    self.fileWithUUID = None
+    self.fileWithUUID = ''
     self.networkCfg= None
-    self.queuePath = '/queue/test'
-    self.sslCfg = {
-    'key_file':'/home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
-    'cert_file' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
-    'ca_certs' : '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem'
-    }
+    self.queuePath = ''
+    self.sslCfg = None
     self._loadConfigurationFromFile(configFile)
 
   def _loadConfigurationFromFile( self, filename ):
@@ -154,9 +150,7 @@ class PilotLogger( object ):
         FLAGS, check constructor for current set.
     """
 
-    if flag in self.FLAGS:
-      return True
-    return False
+    return flag in self.FLAGS
 
   def _isCorrectStatus( self, status ):
 
@@ -164,12 +158,7 @@ class PilotLogger( object ):
         STATUSES, check constructor for current set.
     """
 
-    if status in self.STATUSES:
-      return True
-    return False
-
-
-
+    return status in self.STATUSES
 
   def _sendAllLocalMessages(self, connect_handler, flag = 'info' ):
     """ Retrives all messages from the local storage
