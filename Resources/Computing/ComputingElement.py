@@ -428,8 +428,7 @@ class ComputingElement(object):
           tagList = []
           for i in range( 2, cores+1 ):
             tagList.append( '%dCore' % i )
-          ceDict.setdefault( 'Tag', [] )
-          ceDict['Tag'] += tagList
+          ceDict.setdefault( 'Tag', [] ).extend( tagList )
 
     return S_OK( ceDict )
 
