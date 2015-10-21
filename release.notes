@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v6r15-pre6]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
@@ -535,6 +536,17 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+=======
+[v6r12p52]
+
+*DMS
+NEW: dirac-dms-directory-sync - new command to synchronize the contents of a
+     local and remote directories
+
+*TS
+NEW: TransformationCLI - getInputDataQuery command returning inputDataQuery 
+     of a given transformation
+>>>>>>> v6r12p52
 
 [v6r12p51]
 
