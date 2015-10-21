@@ -6,10 +6,6 @@ from DIRAC                                                         import S_OK, 
 from DIRAC.Core.Base.Client                                        import Client
 from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities         import checkCatalogArguments
-
-# List of common File Catalog methods implemented by this client
-CATALOG_METHODS = [ "addFile", "removeFile" ]
 
 class TransformationClient( Client ):
 
@@ -70,13 +66,6 @@ class TransformationClient( Client ):
 
   def setServer( self, url ):
     self.serverURL = url
-
-  def hasCatalogMethod( self, methodName ):
-    """ Check of a method with the given name is implemented
-    :param str methodName: the name of the method to check
-    :return: boolean Flag
-    """
-    return methodName in CATALOG_METHODS
 
   def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None ):
     rpcClient = self._getRPC()
@@ -433,35 +422,10 @@ class TransformationClient( Client ):
     """
     return dictOfProposedstatus.values()[0]
 
-  #####################################################################
-  #
-  # These are the file catalog interface methods
-  #
-
   def isOK( self ):
     return self.valid
 
   def addDirectory( self, path, force = False ):
     rpcClient = self._getRPC()
     return rpcClient.addDirectory( path, force )
-
-  @checkCatalogArguments
-  def addFile( self, lfns, force = False ):
-    rpcClient = self._getRPC()
-    return rpcClient.addFile( lfns, force )
-
-  @checkCatalogArguments
-  def removeFile( self, lfns ):
-    rpcClient = self._getRPC()
-    successful = {}
-    failed = {}
-    listOfLists = breakListIntoChunks( lfns, 100 )
-    for fList in listOfLists:
-      res = rpcClient.removeFile( fList )
-      if not res['OK']:
-        return res
-      successful.update( res['Value']['Successful'] )
-      failed.update( res['Value']['Failed'] )
-    resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK( resDict )
 
