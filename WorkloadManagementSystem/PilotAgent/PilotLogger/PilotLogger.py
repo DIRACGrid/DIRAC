@@ -86,7 +86,7 @@ def saveMessageToFile( msg, filename = 'myLocalQueueOfMessages' ):
   """
 
   with open(filename, 'a+') as myFile:
-    print >>myFile, msg
+    myFile.write(msg)
 
 def readMessagesFromFileAndEraseFileContent( filename = 'myLocalQueueOfMessages' ):
   """ Generates the queue FIFO and fills it
