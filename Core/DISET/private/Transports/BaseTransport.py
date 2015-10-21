@@ -11,6 +11,7 @@ except:
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Utilities import DEncode
 
 class BaseTransport:
 
@@ -114,7 +115,6 @@ class BaseTransport:
     return S_OK( self.oSocket.send( buffer ) )
 
   def sendData( self, uData, prefix = False ):
-    from DIRAC.Core.Utilities import DEncode
     self.__updateLastActionTimestamp()
     sCodedData = DEncode.encode( uData )
     if prefix:

@@ -15,7 +15,7 @@
     compatibility reasons
 
     In order to add extension specific error, you need to create in your extension the file
-    Core/Utilities/DErrno.py, which will contains the following dictionnary:
+    Core/Utilities/DErrno.py, which will contain the following dictionary:
       * extra_dErrName: keys are the error name, values the number of it
       * extra_dErrorCode: same as dErrorCode. keys are the error code, values the name
                           (we don't simply revert the previous dict in case we do not
