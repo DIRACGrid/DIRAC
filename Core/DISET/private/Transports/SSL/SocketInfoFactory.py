@@ -57,8 +57,8 @@ class SocketInfoFactory:
   def __sockConnect( self, hostAddress, sockType, timeout, retries ):
     try:
       osSocket = socket.socket( sockType, socket.SOCK_STREAM )
-    except Exception as e:
-      gLogger.warn( "ipv6 can not be used! Rollback to ipv4! Please update your machine", e ) 
+    except socket.error as e:
+      gLogger.warn( "Exception while creating a socket:", str( e ) ) 
       return S_ERROR( e )
     #osSocket.setblocking( 0 )
     if timeout:
