@@ -16,13 +16,14 @@ import os, re, types, time
 lfc = None
 importedLFC = None
 
-_readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
-           'getReplicas', 'getReplicaStatus', 'listDirectory', 'isDirectory',
-           'getDirectoryReplicas', 'getDirectorySize']
+_readMethods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
+                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN']
 
-_writeMethods = ['addFile', 'removeFile', 'addReplica',
-            'removeReplica', 'setReplicaStatus', 'setReplicaHost',
-            'createDirectory', 'removeDirectory']
+_writeMethods = ['createLink', 'removeLink', 'addFile', 'addReplica', 'removeReplica',
+                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory',
+                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
 
 ####################################################################
 #
