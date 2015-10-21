@@ -142,12 +142,13 @@ class FileCatalogHandler( RequestHandler ):
     return gFileCatalogDB.getPathPermissions( lfns, self.getRemoteCredentials() )
   
   
-  types_hasAccess = [StringTypes, [ ListType, DictType ] + list( StringTypes ) ]
-  def export_hasAccess( self, opType, paths ):
+  types_hasAccess = [ dict, basestring ]
+  def export_hasAccess( self, paths, opType ):
     """ Determine if the given op can be performed on the paths
         The OpType is all the operations exported
     """
-    return gFileCatalogDB.hasAccess( opType, paths, self.getRemoteCredentials() )
+    lfns = paths.keys()
+    return gFileCatalogDB.hasAccess( opType, lfns, self.getRemoteCredentials() )
   
 
   ###################################################################
