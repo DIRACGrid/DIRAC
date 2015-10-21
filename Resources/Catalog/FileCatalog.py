@@ -1,53 +1,46 @@
 """ File catalog class. This is a simple dispatcher for the file catalog plug-ins.
     It ensures that all operations are performed on the desired catalogs.
 
-    The File Catalog plug-ins are supposed to implement all or some of the
-    methods described below. In all the methods the LFNs argument can have one
-    of the following forms:
+    The File Catalog plug-ins are supposed to implement a certain number of methods of
+    the File Catalog interface. The names of the implemented methods classified in
+    "read", "write" and "no_lfn" categories are reported by each plug-in using
+    getInterfaceMethods() call. The File Catalog collects and memorizes all the
+    method names from all the plug-ins and in each category. Only calls to these
+    methods will be attempted.
+
+    One plug-in can be declared to be a Master in the CS. If the Master plug-in is
+    declared it must implement all the methods collected in the "write" category.
+    When the FileCatalog is called with a given "write" method name, the Master plugin
+    is called first. If it fails, no other plug-in is called to preserve consistency
+    in the states of different catalogs. If no Master plug-in is declared, all the
+    plug-ins are called (in case they implement the method) for the "write" methods.
+
+    For the "read" methods plug-ins are called one by one, starting with the Master
+    plug-in if declared, until getting a successful result.
+
+    Most of the catalog plug-in methods are taking the first argument which represents
+    the required LFNS. The LFNs argument can have one of the following forms:
 
     - string: just a single LFN itself
     - list: a list of LFN strings
     - dictionary: the keys are LFN strings, the values are LFN specific parameters
                   needed by the method
 
-    All the methods are returning a standard DIRAC bulk result structure. If the
-    call is successful, the Successful and Failed dictionaries have LFNs as keys
-    and specific results of operation as values.
+    All the methods taking the first LFNs argument are returning a standard DIRAC
+    bulk result structure. If the call is successful, the Successful and Failed
+    dictionaries have LFNs as keys and specific results of operation as values.
+    The LFNs argument before calling these methods is checked to conform to the
+    convention above and modified to take the "dictionary" form. The original LFN names
+    are memorized and restored in the final result.
 
-    The FileCatalog methods:
+    Some methods implemented by plug-ins do not have LFNs as the first argument.
+    The names of those methods are reported by the plug-ins as "no_lfn" methods
+    in the getInterfaceMethods() call. For those methods there is obviously no
+    additional check of the structure of the LFNs argument and no corresponding
+    processing of the results.
 
-    exists( LFNs ) - check the existence of the LFNs
-
-    addFile( LFNs )
-    removeFile
-    isFile( LFNs )
-    setFileStatus
-    getFileMetadata
-    getFileSize
-
-    createDirectory
-    removeDirectory
-    isDirectory
-    setDirectoryStatus
-    listDirectory
-    getDirectoryMetadata
-    getDirectorySize
-    getDirectoryContents
-
-    addReplica
-    removeReplica
-    setReplicaStatus
-    setReplicaHost
-    setReplicaProblematic
-    getReplicas
-    getReplicaStatus
-    getDirectoryReplicas
-
-    createLink
-    removeLink
-    isLink
-    readLink
-
+    For the actual methods that can be called vie the File Catalog object, see
+    the documentation of the respective FileCatalog plug-ins ( client classes )
 
 """
 
@@ -61,26 +54,9 @@ from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFa
 
 class FileCatalog( object ):
 
-  ro_methods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
-                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID',
-                'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
-                'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
-                'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
-                'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
-
-  write_methods = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
-                   'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
-                   'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
-                   'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
-                   'freezeDataset', 'releaseDataset']
-
-  no_lfn_methods = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
-                    'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
-                    'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                    'getCompatibleMetadata','addMetadataSet','getMetadataSet']
+  ro_methods = set()
+  write_methods = set()
+  no_lfn_methods = set()
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
@@ -109,6 +85,34 @@ class FileCatalog( object ):
       self.valid = False
     elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
       self.valid = False
+
+    result = self.getMasterCatalogNames()
+    masterCatalogs = result['Value']
+    # There can not be more than one master catalog
+    haveMaster = False
+    if len( masterCatalogs ) > 1:
+      self.valid = False
+    elif len( masterCatalogs ) == 1:
+      haveMaster = True
+
+    # Get the list of write methods
+    if haveMaster:
+      # All the write methods must be present in the master
+      catalogName, oCatalog, master = self.writeCatalogs[0]
+      _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
+      FileCatalog.write_methods.update( writeList )
+      FileCatalog.no_lfn_methods.update( nolfnList )
+    else:
+      for catalogName, oCatalog, master in self.writeCatalogs:
+        _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
+        FileCatalog.write_methods.update( writeList )
+        FileCatalog.no_lfn_methods.update( nolfnList )
+
+    # Get the list of read methods
+    for catalogName, oCatalog, master in self.readCatalogs:
+      roList, _writeList, nolfnList = oCatalog.getInterfaceMethods()
+      FileCatalog.ro_methods.update( roList )
+      FileCatalog.no_lfn_methods.update( nolfnList )
 
   def isOK( self ):
     return self.valid
