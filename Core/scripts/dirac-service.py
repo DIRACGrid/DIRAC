@@ -11,6 +11,7 @@ import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.ServiceReactor import ServiceReactor
+from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
 
@@ -33,6 +34,7 @@ if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit( 1 )
 
+includeExtensionErrors()
 
 
 serverToLaunch = ServiceReactor()
