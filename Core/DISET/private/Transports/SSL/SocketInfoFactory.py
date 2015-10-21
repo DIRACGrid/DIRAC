@@ -57,7 +57,7 @@ class SocketInfoFactory:
     osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 1 ) # we retry 3 times, which is 3 sec + 5 times retry = 15 sec.
+      osSocket.settimeout( 0.5 ) # we retry 3 times, which is 3 sec + 5 times retry = 15 sec.
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
