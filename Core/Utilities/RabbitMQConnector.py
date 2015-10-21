@@ -7,9 +7,10 @@ __RCSID__ = "$Id$"
 import json
 import stomp
 import threading
+from MessagingQueueConnector import MessagingQueueConnector as MQConnector
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-class RabbitConnection( object ):
+class RabbitMQConnector( MQConnector ):
   """
   Class for management of RabbitMQ connections
   Allows to both send and receive messages from a queue
@@ -23,6 +24,7 @@ class RabbitConnection( object ):
     self.vH = None
     self.exchangeName = None
     self.password = None
+    self.queueName = None
 
     self.receiver = False
     self.msgList = []
@@ -30,12 +32,6 @@ class RabbitConnection( object ):
     self.connection = None
 
   # Callback functions for message receiving mode
-
-  def on_error( self, headers, message ):
-    """
-    Callback function called when an error happens
-    """
-    gLogger.error( message )
 
   def defaultCallback( self, headers, message ):
     """
@@ -58,6 +54,8 @@ class RabbitConnection( object ):
     # Utility function to lowercase the first letter of a string ( to create valid variable names )
     toLowerFirst = lambda s: s[:1].lower() + s[1:] if s else ''
 
+    self.queueName = queueName
+
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
 
     # Get the parameter from the CS and set it
@@ -74,6 +72,7 @@ class RabbitConnection( object ):
     system indicates in which System the queue works
     queueName is the name of the queue to read from/write to
     receive indicates whether this object will read from the queue or read from it
+    exchange indicates whether the destination will be a exchange (True) or a queue (False). Only taken into account if receive = True
     messageCallback is the function to be called when a new message is received from the queue ( only receiver mode ).
     If None, the defaultCallback method is used instead
     """
@@ -104,15 +103,13 @@ class RabbitConnection( object ):
 
       if self.receiver:
         self.connection.set_listener( '', self )
-        self.connection.subscribe( destination = '/topic/%s' % self.exchangeName, id = queueName, headers = { 'persistent': 'true' } )
-      else:
-        self.connection.subscribe( destination = '/topic/%s' % self.exchangeName, id = queueName )
+        self.connection.subscribe( destination = '/queue/%s' % self.queueName, id = self.queueName, headers = { 'persistent': 'true' } )
     except Exception, e:
       return S_ERROR( 'Failed to setup connection: %s' % e )
 
     return S_OK( 'Setup successful' )
 
-  def send( self, message ):
+  def put( self, message ):
     """
     Sends a message to the queue
     message contains the body of the message
@@ -120,15 +117,15 @@ class RabbitConnection( object ):
     try:
       if isinstance( message, list ):
         for msg in message:
-          self.connection.send( body = json.dumps( msg ), destination = '/topic/%s' % self.exchangeName )
+          self.connection.send( body = json.dumps( msg ), destination = '/queue/%s' % self.queueName )
       else:
-        self.connection.send( body = json.dumps( message ), destination = '/topic/%s' % self.exchangeName )
+        self.connection.send( body = json.dumps( message ), destination = '/queue/%s' % self.queueName )
     except Exception, e:
       return S_ERROR( 'Failed to send message: %s' % e )
 
     return S_OK( 'Message sent successfully' )
 
-  def receive( self ):
+  def get( self ):
     """
     Retrieves a message from the queue ( if any )
     Returns S_ERROR if there are no messages in the queue
