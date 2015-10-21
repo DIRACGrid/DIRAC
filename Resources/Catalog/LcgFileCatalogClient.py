@@ -229,6 +229,14 @@ class LcgFileCatalogClient( object ):
     """
     return hasattr( self, methodName )
 
+  def getInterfaceMethods( self ):
+    """ Get the methods implemented by the File Catalog client
+
+    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
+    """
+    global _readMethods, _writeMethods
+    return ( _readMethods, _writeMethods, [] )
+
   def isOK( self ):
     return self.valid
 
