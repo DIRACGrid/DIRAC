@@ -400,9 +400,13 @@ class Service:
     if not self._authMgr.authQuery( csAuthPath, credDict, hardcodedMethodAuth ):
       #Get the identity string
       identity = self._createIdentityString( credDict )
-      gLogger.warn( "Unauthorized query", "to %s:%s by %s" % ( self._name,
+      fromHost = "unknown host"
+      tr = self._transportPool.get( trid )
+      if tr:
+        fromHost = '/'.join( [ str( item ) for item in tr.getRemoteAddress() ] )
+      gLogger.warn( "Unauthorized query", "to %s:%s by %s from %s" % ( self._name,
                                                                "/".join( actionTuple ),
-                                                               identity ) )
+                                                               identity, fromHost ) )
       result = S_ERROR( "Unauthorized query" )
     else:
       result = S_OK()

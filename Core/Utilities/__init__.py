@@ -14,5 +14,6 @@ from DIRAC.Core.Utilities.ThreadPool         import WorkingThread, ThreadedJob, 
 from DIRAC.Core.Utilities.Tests              import run
 from DIRAC.Core.Utilities.ExitCallback       import gCallbackList, registerSignals, execute, registerExitCallback
 from DIRAC.Core.Utilities.ThreadSafe         import Synchronizer, WORM
-from DIRAC.Core.Utilities.DEncode            import encode, decode
+# from DIRAC.Core.Utilities.DEncode            import encode, decode
 from DIRAC.Core.Utilities                    import List
+from DIRAC.Core.Utilities.DErrno             import DError
