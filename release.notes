@@ -7,6 +7,9 @@ FIX: ReturnValues - fixes in the doc strings to comply with the sphinx syntax
 *Interfaces
 FIX: Job.py - fixes in the doc strings to comply with the sphinx syntax
 
+*RSS
+NEW: Configurations.py - new possible configuration options for Downtime Policies
+
 *WMS
 CHANGE: StatesAccountingAgent - retry once and empty the local messages cache
         in case of failure to avoid large backlog of messages
