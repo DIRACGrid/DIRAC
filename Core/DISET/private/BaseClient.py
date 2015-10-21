@@ -205,7 +205,7 @@ class BaseClient:
       
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
-      self.__retryDelay = 5 / len ( urls )  # we run only one service! In that case we increase the retry delay.
+      self.__retryDelay = 5 / len ( urls ) if len( urls ) > 1 else 0  # we run only one service! In that case we increase the retry delay.
       gLogger.debug( "Retrying again all URLs" )      
       
     if len( self.__bannedUrls ) > 0 and len( urls ) > 1 :
@@ -257,6 +257,7 @@ and this is thread %s
             self.__bannedUrls += [url]   
           self.__retry += 1
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
+          print 'Rerty delay::', self.__retryDelay
           time.sleep( self.__retryDelay )
           self.__discoverURL()
           return self._connect()
