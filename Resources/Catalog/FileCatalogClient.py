@@ -12,6 +12,31 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeFo
 from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkCatalogArguments
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
+# The list of methods below is defining the client interface
+READ_METHODS = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
+                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID',
+                'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
+                'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
+                'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
+                'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
+
+WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
+                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
+                 'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
+                 'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
+                 'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
+                 'freezeDataset', 'releaseDataset']
+
+NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
+                  'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
+                  'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
+                  'getCompatibleMetadata','addMetadataSet','getMetadataSet']
+
+ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
+                  'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
+
 class FileCatalogClient( object ):
   """ Client code to the DIRAC File Catalogue
   """
@@ -33,6 +58,13 @@ class FileCatalogClient( object ):
       self.__kwargs.setdefault( 'timeout', timeout )
       rpc = RPCClient( url, **self.__kwargs )
     return rpc  
+
+  def getInterfaceMethods( self ):
+    """ Get the methods implemented by the File Catalog client
+
+    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
+    """
+    return ( READ_METHODS, WRITE_METHODS, NO_LFN_METHODS )
 
   def isOK( self, timeout = 120 ):
     """ Check that the service is OK
@@ -284,7 +316,7 @@ class FileCatalogClient( object ):
     """ Determine if the given op can be performed on the paths
         The OpType is all the operations exported
     """
-    return self.__getRPC( timeout = timeout ).hasAccess( opType, paths )
+    return self.__getRPC( timeout = timeout ).hasAccess( paths, opType )
 
 
   ###################################################################
@@ -524,8 +556,6 @@ class FileCatalogClient( object ):
     """ Get all the metadata valid for the given directory path
     """
     return self.__getRPC( timeout = timeout ).dmeta.getDirectoryMetadata( path )
-
-
 
 
   def findDirectoriesByMetadata( self, metaDict, path = '/', timeout = 120 ):
