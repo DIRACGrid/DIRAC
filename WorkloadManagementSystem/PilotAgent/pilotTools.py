@@ -51,10 +51,10 @@ def pythonPathCheck():
     print "[EXCEPTION-info] sys.version:", sys.version
     print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
-  
+
 def alarmTimeoutHandler( *args ):
-  raise Exception( 'Timeout' )  
-  
+  raise Exception( 'Timeout' )
+
 def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
@@ -105,8 +105,8 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
       log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:
       signal.alarm( 0 )
-    raise x  
-  
+    raise x
+
 
 class ObjectLoader( object ):
   """ Simplified class for loading objects from a DIRAC installation.
@@ -187,17 +187,17 @@ class ObjectLoader( object ):
 def getCommand( params, commandName, log ):
   """ Get an instantiated command object for execution.
       Commands are looked in the following modules in the order:
-      
+
       1. <CommandExtension>Commands
       2. pilotCommands
       3. <Extension>.WorkloadManagementSystem.PilotAgent.<CommandExtension>Commands
       4. <Extension>.WorkloadManagementSystem.PilotAgent.pilotCommands
       5. DIRAC.WorkloadManagementSystem.PilotAgent.<CommandExtension>Commands
       6. DIRAC.WorkloadManagementSystem.PilotAgent.pilotCommands
-      
+
       Note that commands in 3.-6. can only be used of the the DIRAC installation
-      has been done. DIRAC extensions are taken from -e ( --extraPackages ) option 
-      of the pilot script.  
+      has been done. DIRAC extensions are taken from -e ( --extraPackages ) option
+      of the pilot script.
   """
   extensions = params.commandExtensions
   modules = [ m + 'Commands' for m in extensions + ['pilot'] ]
@@ -220,12 +220,12 @@ def getCommand( params, commandName, log ):
       if not ext.endswith( 'DIRAC' ):
         diracExtensions.append( ext + 'DIRAC' )
       else:
-        diracExtensions.append( ext )  
+        diracExtensions.append( ext )
     diracExtensions += ['DIRAC']
     ol = ObjectLoader( diracExtensions, log )
     for module in modules:
-      commandObject, modulePath = ol.loadObject( 'WorkloadManagementSystem.PilotAgent', 
-                                                 module, 
+      commandObject, modulePath = ol.loadObject( 'WorkloadManagementSystem.PilotAgent',
+                                                 module,
                                                  commandName )
       if commandObject:
         return commandObject( params ), modulePath
@@ -289,11 +289,11 @@ class ExtendedLogger( Logger ):
     """
     super(ExtendedLogger, self).__init__(name, debugFlag, pilotOutput)
     if isPilotLoggerOn:
-      #<the import here was suggest F.S cause PilotLogger imports pika 
+      #<the import here was suggest F.S cause PilotLogger imports pika
       #which is not yet in the DIRAC externals
       #so up to now we want to turn it off
-      from PilotLogger import PilotLogger  
-      self.pilotLogger = PilotLogger()
+      from PilotLogger import PilotLogger
+      self.pilotLogger = PilotLogger.PilotLogger()
     else:
       self.pilotLogger = None
     self.isPilotLoggerOn = isPilotLoggerOn
@@ -330,13 +330,12 @@ class CommandBase( object ):
 
         Defines the logger and the pilot parameters
     """
-
     self.pp = pilotParams
     self.log = ExtendedLogger(
-        self.__class__.__name__,
-        False,
-        'pilot.out',
-        self.pp.pilotLogging 
+        name = self.__class__.__name__,
+        debugFlag = False,
+        pilotOutput = 'pilot.out',
+        isPilotLoggerOn = self.pp.pilotLogging
         )
     #self.log = Logger( self.__class__.__name__ )
     self.debugFlag = False
@@ -360,11 +359,11 @@ class CommandBase( object ):
       outData = _p.stdout.read().strip()
       for line in outData:
         sys.stdout.write( line )
-      sys.stdout.write( '\n' )  
+      sys.stdout.write( '\n' )
 
       for line in _p.stderr:
         sys.stdout.write( line )
-      sys.stdout.write( '\n' )    
+      sys.stdout.write( '\n' )
 
       # return code
       returnCode = _p.wait()
@@ -443,7 +442,7 @@ class PilotParams( object ):
     self.certsLocation = '%s/etc/grid-security' % self.workingDir
     self.pilotCFGFile = 'pilot.json'
     self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
-    self.pilotLogging = False 
+    self.pilotLogging = False
 
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
@@ -506,7 +505,7 @@ class PilotParams( object ):
       elif o == '-y' or o == '--CEType':
         self.ceType = v
       elif o == '-Q' or o == '--Queue':
-        self.queueName = v  
+        self.queueName = v
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
       elif o == '-d' or o == '--debug':
@@ -553,5 +552,5 @@ class PilotParams( object ):
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
       elif o == '-z' or o == '--pilotLogging':
-        self.pilotLogging = True 
+        self.pilotLogging = True
 
