@@ -6,10 +6,10 @@
 __RCSID__ = "$Id"
 
 import time
-from types import StringTypes
 
-from DIRAC import gLogger, gMonitor
+from DIRAC import gLogger
 
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -150,7 +150,7 @@ class Matcher( object ):
     """
 
     resourceDict = {}
-    if type( resourceDescription ) in StringTypes:
+    if isinstance( resourceDescription, basestring ):
       classAdAgent = ClassAd( resourceDescription )
       if not classAdAgent.isOK():
         raise ValueError( 'Illegal Resource JDL' )
@@ -276,10 +276,14 @@ class Matcher( object ):
   def _checkCredentials( self, resourceDict, credDict ):
     """ Check if we can get a job given the passed credentials
     """
-    # Check credentials if not generic pilot
     if Properties.GENERIC_PILOT in credDict[ 'properties' ]:
       # You can only match groups in the same VO
-      vo = Registry.getVOForGroup( credDict[ 'group' ] )
+      if credDict[ 'group' ] == "hosts":
+        # for the host case the VirtualOrganization parameter
+        # is mandatory in resourceDict
+        vo = resourceDict.get( 'VirtualOrganization', '' )
+      else:
+        vo = Registry.getVOForGroup( credDict[ 'group' ] )
       result = Registry.getGroupsForVO( vo )
       if result[ 'OK' ]:
         resourceDict[ 'OwnerGroup' ] = result[ 'Value' ]
