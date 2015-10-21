@@ -41,7 +41,7 @@ def createPilotLoggerConfigFile( filename = 'PilotLogger.cfg',
   config = dict( zip( keys, values ) )
   config = json.dumps(config)
   with open(filename, 'w') as myFile:
-    print >>myFile, config
+    myFile.write(config)
 
 def readPilotLoggerConfigFile ( filename ):
   """Helper function that loads configuration file.
@@ -169,11 +169,17 @@ def generateUniqueID():
 
 def generateUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
   """Generates the unique id and writes it to a file
-     of given name: filename
+     of given name.
+     First, we try to receive the UUID from the OS, if that fails
+     the local uuid is generated.
+  Args:
+    filename(str): file to which the UUID will be saved
   Returns:
     bool: True if everything went ok False if there was an error with the file
   """
-  myId = generateUniqueID()
+  myId = getUniqueIDFromOS()
+  if not myId:
+    myId = generateUniqueID()
   try:
     with open ( filename, 'w' ) as myFile:
       myFile.write( myId )
