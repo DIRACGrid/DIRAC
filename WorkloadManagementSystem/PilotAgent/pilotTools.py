@@ -419,7 +419,7 @@ class PilotParams( object ):
                      ( 'G:', 'Group=', 'DIRAC Group to use' ),
                      ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
                      ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
-                     ( 'V:', 'VO=', 'Virtual Organization' ),
+                     ( 'V:', 'installation=', 'Installation configuration file' ),
                      ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
                      ( 's:', 'section=', 'Set base section for relative parsed options' ),
                      ( 'o:', 'option=', 'Option=value to add' ),
@@ -469,7 +469,6 @@ class PilotParams( object ):
         self.executeCmd = v
       elif o in ( '-O', '--OwnerDN' ):
         self.userDN = v
-
       elif o in ( '-V', '--installation' ):
         self.installation = v
       elif o == '-p' or o == '--platform':
