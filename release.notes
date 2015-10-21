@@ -1,3 +1,13 @@
+[v6r12p52]
+
+*DMS
+NEW: dirac-dms-directory-sync - new command to synchronize the contents of a
+     local and remote directories
+
+*TS
+NEW: TransformationCLI - getInputDataQuery command returning inputDataQuery 
+     of a given transformation
+
 [v6r12p51]
 
 *Core
