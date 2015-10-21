@@ -45,7 +45,6 @@ import re
 from DIRAC import S_OK, S_ERROR, gLogger
 # # from CS
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -63,6 +62,7 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.private.FTSPlacement import FTSPlacement
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -317,7 +317,7 @@ class FTSAgent( AgentModule ):
     self.am_setOption( 'shifterProxy', 'DataManager' )
     log.info( "will use DataManager proxy" )
 
-    self.registrationProtocols = getRegistrationProtocols()
+    self.registrationProtocols = DMSHelpers().getRegistrationProtocols()
 
 
     # # gMonitor stuff here

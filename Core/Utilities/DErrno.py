@@ -17,7 +17,7 @@
 
 import os
 import traceback
-
+import errno
 
 # To avoid conflict, the error numbers should be greater than 1000
 
@@ -56,7 +56,7 @@ dStrError = { ERRX : "A human readable error message for ERRX",
 # these strings are used to test the error. 
 compatErrorString = {
                      # ERRX : ['not found', 'X'],
-
+                       errno.ENOENT : ['File does not exist']
                      }
 
 def strerror(code):
@@ -144,7 +144,7 @@ class DError( object ):
   
   def __cmp__( self, errorStr ):
     """ For compatibility reasons.
-        Checks whether 'other', which should be a string, is equal to the human readable form of the error msg
+        Checks whether 'errorStr', which should be a string, is equal to the human readable form of the error msg
     """
     # !!! Caution, if there is equality, we have to return 0 (rules of __cmp__)
 
@@ -192,6 +192,10 @@ def cmpError( inErr, candidate ):
     return inErr == candidate
   elif isinstance( inErr, DError ):
     return inErr.errno == candidate
+  elif isinstance( inErr, dict ):  # S_ERROR object is given
+    # Create a DError object to represent the candidate
+    derr = DError( candidate )
+    return inErr.get( 'Message', '' ) == derr
 
   return False
 

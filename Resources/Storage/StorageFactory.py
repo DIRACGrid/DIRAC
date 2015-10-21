@@ -205,7 +205,7 @@ class StorageFactory( object ):
         return S_ERROR( errStr )
       for option in set( res['Value'] ) - set( ( 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess' ) ):
         optionConfigPath = cfgPath( storageConfigPath, option )
-        default = [] if option in [ 'VO' ] else ''
+        default = [] if option in [ 'VO', 'AccessProtocols', 'WriteProtocols' ] else ''
         optionsDict[option] = gConfig.getValue( optionConfigPath, default )
 
     # The status is that of the derived SE only
@@ -290,6 +290,7 @@ class StorageFactory( object ):
 
     # This is a temporary for backward compatibility: move ProtocolName to PluginName
     protocolDict.setdefault( 'PluginName', protocolDict.pop( 'ProtocolName', None ) )
+
 
     # Evaluate the base path taking into account possible VO specific setting
     if self.vo:

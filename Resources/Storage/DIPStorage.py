@@ -24,6 +24,10 @@ import os, random
 
 class DIPStorage( StorageBase ):
 
+  _InputProtocols = ['file', 'dip', 'dips']
+  _OutputProtocols = ['dip', 'dips']
+
+
   def __init__( self, storageName, parameters ):
     """
     """

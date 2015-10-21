@@ -126,7 +126,7 @@ class FileStorage( StorageBase ):
 
         fileSize = os.path.getsize( dest_url )
         successful[src_url] = fileSize
-      except OSError as ose:
+      except (IOError, OSError) as ose:
         failed[src_url] = str( ose )
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
@@ -167,8 +167,9 @@ class FileStorage( StorageBase ):
           failed[dest_url] = "Source and destination file sizes do not match (%s vs %s)." % ( sourceSize, fileSize )
         else:
           successful[dest_url] = fileSize
-      except OSError as ose:
+      except ( IOError, OSError ) as ose:
         failed[dest_url] = str( ose )
+
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
