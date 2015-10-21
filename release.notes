@@ -542,6 +542,7 @@ CHANGE: Task Manager plugins
 *DMS
 NEW: dirac-dms-directory-sync - new command to synchronize the contents of a
      local and remote directories
+FIX: DataManager - in removeFile() return successfully if empty input file list     
 
 *TS
 NEW: TransformationCLI - getInputDataQuery command returning inputDataQuery 
