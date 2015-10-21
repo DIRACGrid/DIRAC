@@ -7,6 +7,7 @@ import time
 import json
 from uuid import uuid1
 import sys
+import os
 
 def createPilotLoggerConfigFile( filename = 'PilotLogger.cfg',
                                  host = '127.0.0.1',
@@ -180,6 +181,20 @@ def generateUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
   except IOError:
     print 'could not open file'
     return False
+
+def getUniqueIDFromOS():
+  """Retrieves unique identifier based on specific OS.
+    The OS type is identified based on some predefined
+    environmental variables that should contain identifiers
+    for given node. Only the first found identifier is returned
+  Returns:
+    str: If a variable is found its content is returned. Empty
+          string is returned if all checks fails. If there are more than one
+          variables set, only the first one is returned.
+  """
+  environVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID', 'VM_UUID']
+  ids = ( os.environ.get(var) for var in environVars if os.environ.has_key(var))
+  return next(ids, '')
 
 def main():
   """Is used to generate the pilot uuid

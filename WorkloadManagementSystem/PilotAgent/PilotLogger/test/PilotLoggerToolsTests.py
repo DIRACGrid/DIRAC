@@ -1,6 +1,7 @@
 """Unit tests for PilotLoggerTools
 """
 import unittest
+import mock
 import json
 import os
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
@@ -8,6 +9,7 @@ from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools impo
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import createPilotLoggerConfigFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import readPilotLoggerConfigFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import getUniqueIDFromOS
 
 
 class TestPilotLoggerTools( unittest.TestCase ):
@@ -177,6 +179,37 @@ class TestPilotLoggerGenerateUniqueIDAndSaveToFile( TestPilotLoggerTools ):
   def test_fail( self ):
     self.assertFalse( generateUniqueIDAndSaveToFile( self.badFile ) )
 
+  #environVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID', 'VM_UUID']
+class TestPilotLoggerGetUniqueIDFromOS( TestPilotLoggerTools ):
+
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+              side_effect = lambda var: var =='CREAM_JOBID')
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
+              side_effect = lambda var: 'CREAM_uuid' if var =='CREAM_JOBID' else '')
+  def test_successCREAM( self, mock_environ_get, mock_environ_key):
+    self.assertEqual(getUniqueIDFromOS(), 'CREAM_uuid')
+
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+              side_effect = lambda var: var =='GRID_GLOBAL_JOBID')
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
+              side_effect = lambda var: 'GRID_uuid' if var =='GRID_GLOBAL_JOBID' else '')
+  def test_successGRID( self, mock_environ_get, mock_environ_key):
+    self.assertEqual(getUniqueIDFromOS(), 'GRID_uuid')
+
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+              side_effect = lambda var: var =='VM_UUID')
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
+              side_effect = lambda var: 'VM_uuid' if var =='VM_UUID' else '')
+  def test_successVM( self, mock_environ_get, mock_environ_key):
+    self.assertEqual(getUniqueIDFromOS(), 'VM_uuid')
+
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+              side_effect = lambda var: False)
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
+              side_effect = lambda var: None)
+  def test_failVM( self, mock_environ_get, mock_environ_key):
+    self.assertFalse(getUniqueIDFromOS()) 
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerTools )
 
@@ -187,4 +220,5 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerToolsDecodeMessage ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerIsMessageFormatCorrect ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerGenerateUniqueIDAndSaveToFile ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerGetUniqueIDFromOS ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
