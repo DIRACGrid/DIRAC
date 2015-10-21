@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
@@ -707,7 +707,7 @@ class StorageElementItem( object ):
         startTime = time.time()
         res = fcn( urlsToUse, *args, **kwargs )
         elapsedTime = time.time() - startTime
-        
+
 
         self.addAccountingOperation( urlsToUse, startDate, elapsedTime, storageParameters, res )
 

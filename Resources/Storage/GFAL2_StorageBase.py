@@ -14,7 +14,7 @@ from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities  import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup

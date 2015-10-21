@@ -33,7 +33,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 import os
 PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 

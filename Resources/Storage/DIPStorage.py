@@ -17,7 +17,7 @@ import os
 import random
 
 from DIRAC                                          import gLogger, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities  import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities              import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase            import StorageBase
 from DIRAC.Core.Utilities.Pfn                       import pfnparse, pfnunparse
 from DIRAC.Core.DISET.TransferClient                import TransferClient
