@@ -36,6 +36,8 @@ FIX: JobWrapper - the InputData optimizer parameters are now DEncoded
 *Core
 FIX: XXXTimeLeft - minor fixes plus added the corresponding Test case
 FIX: ReturnValues - fixes in the doc strings to comply with the sphinx syntax
+FIX: SocketInfoFactory - in __sockConnect() catch exception when creating a
+     socket
 
 *Interfaces
 FIX: Job.py - fixes in the doc strings to comply with the sphinx syntax
@@ -47,7 +49,8 @@ NEW: Configurations.py - new possible configuration options for Downtime Policie
 CHANGE: StatesAccountingAgent - retry once and empty the local messages cache
         in case of failure to avoid large backlog of messages
 CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
-        invocation arguments        
+        invocation arguments  
+CHANGE: Matcher - allow matching by hosts in multi-VO installations              
 
 
 [v6r14p7]
