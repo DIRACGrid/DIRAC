@@ -213,6 +213,21 @@ class DError( object ):
     elif key == 'Message':
       return "%s" % self
     raise KeyError( "{0} does not exist".format( key ) )
+  
+  def get(self, key, defaultValue = None):
+    """ method like the "get" of a dictionary.
+        Returns the value matching the key if exists,
+        otherwise the default value
+
+        :param key: item to lookup for
+        :param defaultValue": if the key does not exist, return this value
+
+        :return: the value matching the key or the default value
+    """
+    try:
+      return self.__getitem__( key )
+    except KeyError:
+      return defaultValue
 
 
 
@@ -280,8 +295,7 @@ def includeExtensionErrors():
 
   from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
   allExtensions = CSGlobals.getCSExtensions()
-  for line in traceback.format_stack():
-    print line.strip()
+
   for extension in allExtensions:
     ext_derrno = None
     try:
