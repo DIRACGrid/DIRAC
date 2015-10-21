@@ -1007,6 +1007,8 @@ class DataManager( object ):
 
         'lfn' is the file to be removed
     """
+    if not lfn:
+      return S_OK( { 'Successful': {}, 'Failed': {} } )
     if force == None:
       force = self.ignoreMissingInFC
     if type( lfn ) == ListType:
