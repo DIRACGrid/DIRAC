@@ -58,7 +58,7 @@ class SocketInfoFactory:
     try:
       osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     except Exception as e:
-      gLogger.error( "ipv6 can not be used! Rollback to ipv4! Please update your machine", e ) 
+      gLogger.warn( "ipv6 can not be used! Rollback to ipv4! Please update your machine", e ) 
       return S_ERROR( e )
     #osSocket.setblocking( 0 )
     if timeout:
