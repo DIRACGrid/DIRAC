@@ -59,8 +59,8 @@ class SocketInfoFactory:
       osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     except socket.error as e:
       gLogger.warn( "Exception while creating a socket:", str( e ) ) 
-      return S_ERROR( e )
-    #osSocket.setblocking( 0 )
+      return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
+    # osSocket.setblocking( 0 )
     if timeout:
       osSocket.settimeout( 5 )
     try:
