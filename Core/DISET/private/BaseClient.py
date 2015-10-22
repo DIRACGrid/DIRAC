@@ -49,6 +49,7 @@ class BaseClient:
     self.__retry = 0
     self.__retryDelay = 0
     self.__nbOfUrls = 1 #by default we always have 1 url for example: RPCClient('dips://volhcb38.cern.ch:9162/Framework/SystemAdministrator')
+    self.__nbOfRetry = 3 # by default we try try times 
     self.__bannedUrls = []
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
@@ -205,6 +206,7 @@ class BaseClient:
     
     urls = List.fromChar( urls, "," )
     self.__nbOfUrls = len( urls )
+    self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3 # we retry 2 times all services, if we run more than 2 services
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
       gLogger.debug( "Retrying again all URLs" )      
@@ -251,7 +253,7 @@ and this is thread %s
       transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs )
       retVal = transport.initAsClient()
       if not retVal[ 'OK' ]:
-        if self.__retry < 3 * self.__nbOfUrls - 1:
+        if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
           if url not in self.__bannedUrls:
             self.__bannedUrls += [url]
