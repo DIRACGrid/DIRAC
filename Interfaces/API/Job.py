@@ -468,7 +468,7 @@ class Job( API ):
       if not type( outputPath ) in types.StringTypes:
         return self._reportError( 'Expected string for OutputPath', **kwargs )
       # Remove leading "/" that might cause problems with os.path.join
-      # FIXME: this will prevent to set OutputPath outside the Home of the User
+      # This will prevent to set OutputPath outside the Home of the User
       while outputPath[0] == '/':
         outputPath = outputPath[1:]
       self._addParameter( self.workflow, 'OutputPath', 'JDL', outputPath, description )

@@ -764,7 +764,7 @@ class JobWrapper( object ):
         outputSE = [outputSE]
 
       outputPath = self.jobArgs.get( 'OutputPath', self.defaultOutputPath )
-      if isinstance( outputPath, basestring ):
+      if not isinstance( outputPath, basestring ):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
