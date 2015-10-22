@@ -6,7 +6,7 @@ from distutils.version import LooseVersion
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-from DIRAC.Core.Utilities.List                          import uniqueElements
+from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
 
 
 gBaseResourcesSection = "/Resources"
@@ -135,18 +135,33 @@ def getStorageElementOptions( seName ):
 def getQueue( site, ce, queue ):
   """ Get parameters of the specified queue
   """
+  Tags = []
   grid = site.split( '.' )[0]
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
   if not result['OK']:
     return result
   resultDict = result['Value']
+  ceTags = resultDict.get( 'Tag' )
+  if ceTags:
+    if isinstance( ceTags, basestring ):
+      Tags = fromChar( ceTags )
+    else:
+      Tags = ceTags
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
   if not result['OK']:
     return result
   resultDict.update( result['Value'] )
+  queueTags = resultDict.get( 'Tag' )
+  if queueTags:
+    if isinstance( queueTags , basestring ):
+      queueTags = fromChar( queueTags )
+    Tags = list( set( Tags + fromChar( queueTags ) ) )
+  if Tags:
+    resultDict['Tag'] = Tags
   resultDict['Queue'] = queue
-
   return S_OK( resultDict )
+
+
 
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
   """ Get CE/queue options according to the specified selection

@@ -370,25 +370,28 @@ class CheckCECapabilities( CommandBase ):
 
   def execute( self ):
 
-    retCode, self.pp.tags = self.executeAndGetOutput( 'dirac-get-ce-capabilities -N %s -S %s' % ( self.pp.ceName, self.pp.site ) )
+    retCode, resourceDict = self.executeAndGetOutput( 'dirac-resource-get-parameters -S %s -N %s -Q %s' %
+                                                       ( self.pp.site, self.pp.ceName, self.pp.queueName ) )
+    import json
+    resourceDict = json.loads( resourceDict )
     if retCode:
-      self.log.error( "Failed to determine CE capabilities [ERROR %d]" % retCode )
-      self.exitWithError( retCode )
+      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
+    elif resourceDict.get( 'Tag' ):
+      self.pp.tags = resourceDict['Tag']
+      self.cfg.append( '-FDMH' )
+      if self.pp.localConfigFile:
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )
+        self.cfg.append( self.pp.localConfigFile )
 
-    self.cfg.append( '-FDMH' )
-    if self.pp.localConfigFile:
-      self.cfg.append( '-O %s' % self.pp.localConfigFile )
-      self.cfg.append( self.pp.localConfigFile )
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
 
-    if self.debugFlag:
-      self.cfg.append( '-ddd' )
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ', '.join( self.pp.tags ) )
 
-    if self.pp.tags:
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % self.pp.tags )
-
-    configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
-
-    retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if retCode:
+        self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
 
 
 
