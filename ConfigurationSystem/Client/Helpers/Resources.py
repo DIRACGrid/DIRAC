@@ -155,7 +155,7 @@ def getQueue( site, ce, queue ):
   if queueTags:
     if isinstance( queueTags , basestring ):
       queueTags = fromChar( queueTags )
-    Tags = list( set( Tags + fromChar( queueTags ) ) )
+    Tags = list( set( Tags + queueTags ) )
   if Tags:
     resultDict['Tag'] = Tags
   resultDict['Queue'] = queue
