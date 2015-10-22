@@ -206,8 +206,8 @@ class ARCComputingElement( ComputingElement ):
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
       xrslString, diracStamp = self.__writeXRSL( executableFile )
-      gLogger.debug("XRSL string submitted : %S" %xrslString)
-      gLogger.debug("DIRAC stamp for job : %S" %diracStamp)
+      gLogger.debug("XRSL string submitted : %s" %xrslString)
+      gLogger.debug("DIRAC stamp for job : %s" %diracStamp)
       if not arc.JobDescription_Parse(xrslString, jobdescs):
         gLogger.error("Invalid job description")
         break
