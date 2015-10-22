@@ -7,10 +7,10 @@ __RCSID__ = "$Id$"
 import json
 import stomp
 import threading
-from MessagingQueueConnector import MessagingQueueConnector as MQConnector
+from MessageQueueConnector import MQConnector
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-class RabbitMQConnector( MQConnector ):
+class RabbitConnection( MQConnector ):
   """
   Class for management of RabbitMQ connections
   Allows to both send and receive messages from a queue
