@@ -158,12 +158,13 @@ class ARCComputingElement( ComputingElement ):
 (stdout="%(diracStamp)s.out")
 (stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
+(queue=%(queue)s)
 %(xrslExtraString)s
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'diracStamp':diracStamp,
-#            'queue':self.queue,
+            'queue':self.arcQueue,
             'xrslExtraString':self.xrslExtraString
            }
 
@@ -180,6 +181,9 @@ class ARCComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
+    # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+    # And none of our supported batch systems have a "-" in their name
+    self.arcQueue = self.queue.split("-",2)[2]
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
