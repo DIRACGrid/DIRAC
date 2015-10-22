@@ -14,8 +14,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+import DIRAC.Core.Utilities.InstallTools as InstallTools
 
 InstallTools.exitOnError = True
 
@@ -35,6 +34,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+if len( args ) == 1:
+  args = args[0].split( '/' )
 
 if len( args ) < 2:
   Script.showHelp()
