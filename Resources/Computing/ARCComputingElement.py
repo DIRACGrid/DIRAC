@@ -206,6 +206,8 @@ class ARCComputingElement( ComputingElement ):
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
       xrslString, diracStamp = self.__writeXRSL( executableFile )
+      gLogger.debug("XRSL string submitted : %S" %xrslString)
+      gLogger.debug("DIRAC stamp for job : %S" %diracStamp)
       if not arc.JobDescription_Parse(xrslString, jobdescs):
         gLogger.error("Invalid job description")
         break
@@ -231,13 +233,13 @@ class ARCComputingElement( ComputingElement ):
         if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
         if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ):
-          gLogger.warn( "%s no job description was there (Should not happen, but horses can fly (in a plane))" % message )
+          gLogger.warn( "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message )
         if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
         if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ):
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
         if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ):
-          gLogger.warn( "%s some error from the CE - ask site admins for more information ..." % message )
+          gLogger.warn( "%s some error from the CE - possibly CE problems?" % message )
         gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
 
