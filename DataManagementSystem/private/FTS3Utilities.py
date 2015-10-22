@@ -1,9 +1,12 @@
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno, DError
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DErrno import DError
+import json
+import datetime
 
-def __checkSourceReplicas( ftsFiles ):
+def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
   """
 
@@ -13,30 +16,6 @@ def __checkSourceReplicas( ftsFiles ):
   return res
 
 
-# def selectUniqueSourceforTransfers( multipleSourceTransfers ):
-#   """
-#       :param multipleSourceTransfers : { sourceSE : [transfer metadata] }
-#                            transfer metadata = { lfn, ftsFileID, sourceSURL, checksum, size}
-#
-#       :return { source SE : [ transfer metadata] } where each LFN appears only once
-#   """
-#   # the more an SE has files, the more likely it is that it is a big good old T1 site.
-#   # So we start packing with these SEs
-#   orderedSources = sorted( multipleSourceTransfers, key = lambda srcSE: len( multipleSourceTransfers[srcSE] ), reverse = True )
-#
-#   transfersBySource = {}
-#   usedLFNs = set()
-#
-#   for sourceSE in orderedSources:
-#     transferList = []
-#     for transfer in multipleSourceTransfers[sourceSE]:
-#       if transfer['lfn'] not in usedLFNs:
-#         transferList.append( transfer )
-#         usedLFNs.add( transfer['lfn'] )
-#     if transferList:
-#       transfersBySource[sourceSE] = transferList
-#
-#   return transfersBySource
 
 def selectUniqueSourceforTransfers( multipleSourceTransfers ):
   """
@@ -62,63 +41,8 @@ def selectUniqueSourceforTransfers( multipleSourceTransfers ):
     if transferList:
       transfersBySource[sourceSE] = transferList
 
-  return transfersBySource
+  return S_OK( transfersBySource )
 
-
-
-def generateTransfersByTarget( ftsFiles, allowedSources = None ):
-  """
-      For a list of FTS3files object, group the transfer by target
-      and all the possible sources
-      CAUTION ! for a given target, an LFN can be in multiple source
-                You still have to choose your source !
-
-      :param allowedSources : list of allowed sources
-      :param ftsFiles : list of FTS3File object
-      :return {targetSE : { sourceSE: [ <metadata dict>] } }
-              metadata dict : { lfn, ftsFileID, sourceSURl, checksum, size }
-
-  """
-
-  _log = gLogger.getSubLogger( "groupTransfersByTarget", True )
-
-
-  # destGroup will contain for each target SE a dict { possible source : transfer metadata }
-  destGroup = {}
-
-
-  # For all files, check which possible sources they have
-  res = __checkSourceReplicas( ftsFiles )
-  if not res['OK']:
-    return res
-
-  filteredReplicas = res['Value']
-
-
-  for ftsFile in ftsFiles:
-
-    if ftsFile.lfn in filteredReplicas['Failed']:
-      _log.error( "Failed to get active replicas", "%s,%s" % ( ftsFile.lfn , filteredReplicas['Failed'][ftsFile.LFN] ) )
-      continue
-
-    replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
-
-    for se in replicaDict:
-
-      # if we are imposed a source, respect it
-      if allowedSources and se not in allowedSources:
-        continue
-
-      transferDict = {'lfn' : ftsFile.lfn,
-                      'ftsFileID' : getattr( ftsFile, 'ftsFileID' ),
-                      'sourceSURL' : replicaDict[se],
-                      'checksum' : ftsFile.checksum,
-                      'size' : ftsFile.size
-                      }
-      destGroup.setdefault( ftsFile.targetSE, {} ).setdefault( se, [] ).append( transferDict )
-
-
-  return S_OK( destGroup )
 
 
 def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
@@ -129,20 +53,19 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
 
       :param allowedSources : list of allowed sources
       :param ftsFiles : list of FTS3File object
-      :return  { sourceSE: [ FTS3Files] }
+      :return  S_OK({ sourceSE: [ FTS3Files] })
 
 
   """
 
-  _log = gLogger.getSubLogger( "groupTransfersByTarget", True )
+  _log = gLogger.getSubLogger( "generatePossibleTransfersBySources", True )
 
 
   # destGroup will contain for each target SE a dict { possible source : transfer metadata }
   groupBySource = {}
 
-
   # For all files, check which possible sources they have
-  res = __checkSourceReplicas( ftsFiles )
+  res = _checkSourceReplicas( ftsFiles )
   if not res['OK']:
     return res
 
@@ -152,7 +75,7 @@ def generatePossibleTransfersBySources( ftsFiles, allowedSources = None ):
   for ftsFile in ftsFiles:
 
     if ftsFile.lfn in filteredReplicas['Failed']:
-      _log.error( "Failed to get active replicas", "%s,%s" % ( ftsFile.lfn , filteredReplicas['Failed'][ftsFile.LFN] ) )
+      _log.error( "Failed to get active replicas", "%s,%s" % ( ftsFile.lfn , filteredReplicas['Failed'][ftsFile.lfn] ) )
       continue
 
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
@@ -188,29 +111,129 @@ def groupFilesByTarget(ftsFiles):
 
   return S_OK( destGroup )
 
-def generateTransfersByTargetAndSource( ftsFiles, allowedSources = None ):
-  """ For a list of FTS3Files object, generate unique combination of
-      transfers by targets and sources
 
-      :param allowedSources : list of allowed sources
-      :param ftsFiles : list of FTS3File object
-      :return {targetSE : { sourceSE: [ <metadata dict>] } }
-              metadata dict : { lfn, ftsFileID, sourceSURl, checksum, size }
+class FTS3Serializable( object ):
+  """ This is the base class for all the FTS3 objects that
+      needs to be serialized, so FTS3Operation, FTS3File
+      and FTS3Job
+
+      The inheriting classes just have to define a class
+      attribute called _attrToSerialize, which is a list of
+      strings, which correspond to the name of the attribute
+      they want to serialize
+  """
+  _datetimeFormat = '%Y-%m-%d %H:%M:%S'
+
+  # MUST BE OVERWRITTEN IN THE CHILD CLASS
+  _attrToSerialize = []
+
+  def toJSON( self, forPrint = False ):
+    """ Returns the JSON formated string
+
+        :param forPrint: if set to True, we don't include
+               the 'magic' arguments used for rebuilding the
+               object
+    """
+
+    jsonStr = json.dumps( self, cls = FTS3JSONEncoder, forPrint = forPrint )
+    return jsonStr
+
+  def __str__( self ):
+    import pprint
+    js = json.loads( self.toJSON( forPrint = True ) )
+    return pprint.pformat( js )
+
+
+  def _getJSONData( self, forPrint = False ):
+    """ Returns the data that have to be serialized by JSON
+
+        :param forPrint: if set to True, we don't include
+               the 'magic' arguments used for rebuilding the
+               object
+
+        :return dictionary to be transformed into json
+    """
+    jsonData = {}
+    datetimeAttributes = []
+    for attrName in self._attrToSerialize :
+      value = getattr( self, attrName, None )
+      if isinstance( value, datetime.datetime ):
+        # We convert date time to a string
+        jsonData[attrName] = value.strftime( self._datetimeFormat )
+        datetimeAttributes.append( attrName )
+      else:
+        jsonData[attrName] = value
+
+    if not forPrint:
+      jsonData['__type__'] = self.__class__.__name__
+      jsonData['__module__'] = self.__module__
+      jsonData['__datetime__'] = datetimeAttributes
+
+
+    return jsonData
+
+
+class FTS3JSONEncoder( json.JSONEncoder ):
+  """ This class is an encoder for the FTS3 objects
   """
 
-  res = generateTransfersByTarget( ftsFiles, allowedSources = allowedSources )
-  if not res['OK']:
-    return res
+  def __init__( self, *args, **kwargs ):
+    if 'forPrint' in kwargs:
+      self._forPrint = kwargs.pop( 'forPrint' )
+    else:
+      self._forPrint = False
 
-  transferDict = {}
+    super( FTS3JSONEncoder, self ).__init__( *args, **kwargs )
 
-  destGroup = res['Value']
+  def default( self, obj ):
 
-  # We now have for each target SE possible source.
-  # make a choice !
-  for targetSE in destGroup:
+    if hasattr( obj, '_getJSONData' ):
+      return obj._getJSONData( forPrint = self._forPrint )
+    else:
+      return json.JSONEncoder.default( self, obj )
 
-    transferBySource = selectUniqueSourceforTransfers( destGroup[targetSE] )
 
-    if transferBySource:
-      transferDict[targetSE] = transferBySource
+
+class FTS3JSONDecoder( json.JSONDecoder ):
+  """ This class is an decoder for the FTS3 objects
+  """
+
+
+  def __init__( self, *args, **kargs ):
+    json.JSONDecoder.__init__( self, object_hook = self.dict_to_object,
+                         *args, **kargs )
+
+  def dict_to_object( self, dataDict ):
+    """ Convert the dictionary into an object """
+    import importlib
+    # If it is not an FTS3 object, just return the structure as is
+    if not ( '__type__' in dataDict and '__module__' in dataDict ):
+      return dataDict
+
+    # Get the class and module
+    className = dataDict.pop( '__type__' )
+    modName = dataDict.pop( '__module__' )
+    datetimeAttributes = dataDict.pop( '__datetime__', [] )
+    datetimeSet = set(datetimeAttributes)
+    try:
+      # Load the module
+      mod = importlib.import_module( modName )
+      # import the class
+      cl = getattr( mod, className )
+      # Instantiate the object
+      obj = cl()
+
+      # Set each attribute
+      for attrName, attrValue in dataDict.iteritems():
+        if attrName in datetimeSet:
+          attrValue = datetime.datetime.strptime( attrValue, FTS3Serializable._datetimeFormat )
+        setattr( obj, attrName, attrValue )
+
+      return obj
+
+    except Exception as e:
+      gLogger.error( 'exception in FTS3JSONDecoder %s for type %s' % ( e, className ) )
+      dataDict['__type__'] = className
+      dataDict['__module__'] = modName
+      dataDict['__datetime__'] = datetimeAttributes
+      return dataDict

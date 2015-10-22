@@ -1,13 +1,30 @@
 import datetime
+from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 
+class FTS3File( FTS3Serializable ):
 
-class FTS3File(object):
+  ALL_STATES = [ 'New',  # Nothing was attempted yet on this file
+                 'Submitted', # From FTS: Initial state of a file as soon it's dropped into the database
+                 'Ready', # From FTS: File is ready to become active
+                 'Active', # From FTS: File went active
+                 'Finished', # From FTS: File finished gracefully
+                 'Canceled', # From FTS: Canceled by the user
+                 'Staging', # From FTS: When staging of a file is requested
+                 'Failed', # From FTS: File failure
+                 'Defunct', # Totally fail, no more attempt will be made
+                 ]
+  
+  FINAL_STATES = ['Canceled', 'Finished', 'Defunct']
+  FTS_FINAL_STATES = ['Canceled', 'Finished', 'Done']
+  INIT_STATE = 'New'
 
-  FINAL_STATES = ['Canceled', 'Finished', 'Failed']
+  _attrToSerialize = ['fileID', 'operationID', 'status', 'attempt', 'creationTime',
+                      'lastUpdate', 'rmsFileID', 'checksum', 'size', 'lfn', 'error', 'targetSE']
+
 
   def __init__( self ):
 
-    self.status = None
+    self.status = FTS3File.INIT_STATE
     self.attempt = 0
 
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
@@ -24,3 +41,4 @@ class FTS3File(object):
     self.error = None
 
     self.targetSE = None
+
