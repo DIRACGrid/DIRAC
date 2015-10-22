@@ -1,3 +1,19 @@
+[v6r14p9]
+
+*Core
+FIX: BaseClient - enhance retry connection logic to minimize the overall delay
+FIX: MessageBroker - fix of calling private __remove() method from outside
+     of the class
+
+*Framework
+BUGFIX: dirac-(un)install-component - bug in importing InstallTools module
+
+*WMS:
+FIX: JobWrapper - fix in getting the OutputPath defined in the job
+
+*Resources
+FIX: ARCComputingElement - add queue to the XRSL string
+
 [v6r14p8]
 
 *Core
