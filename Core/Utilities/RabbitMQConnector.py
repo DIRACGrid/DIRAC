@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import json
 import stomp
 import threading
-from MessageQueueConnector import MQConnector
+from MQConnector import MQConnector
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class RabbitConnection( MQConnector ):
