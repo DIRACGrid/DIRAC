@@ -26,7 +26,6 @@ __RCSID__ = "$Id$"
 
 import re
 import os
-import types
 import urllib
 import StringIO
 
@@ -464,16 +463,16 @@ class Job( API ):
 
     if outputSE:
       description = 'User specified Output SE'
-      if type( outputSE ) in types.StringTypes:
+      if isinstance( outputSE, basestring ):
         outputSE = [outputSE]
-      elif type( outputSE ) != types.ListType:
+      elif not isinstance( outputSE, list ):
         return self._reportError( 'Expected string or list for OutputSE', **kwargs )
       outputSE = ';'.join( outputSE )
       self._addParameter( self.workflow, 'OutputSE', 'JDL', outputSE, description )
 
     if outputPath:
       description = 'User specified Output Path'
-      if not type( outputPath ) in types.StringTypes:
+      if not isinstance( outputPath, basestring ):
         return self._reportError( 'Expected string for OutputPath', **kwargs )
       # Remove leading "/" that might cause problems with os.path.join
       # FIXME: this will prevent to set OutputPath outside the Home of the User
@@ -514,7 +513,7 @@ class Job( API ):
     """
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
-    if not type( backend ) in types.StringTypes:
+    if not isinstance( backend, basestring ):
       return self._reportError( 'Expected string for SubmitPool', **kwargs )
 
     if not backend.lower() == 'any':
@@ -710,9 +709,9 @@ class Job( API ):
         :type tags: string or list
     """
     
-    if type( tags ) in types.StringTypes:
+    if isinstance( tags, basestring ):
       tagValue = tags
-    elif type( tags ) == types.ListType:
+    elif isinstance( tags, list ):
       tagValue = ";".join( tags )
     else:  
       return self._reportError( 'Expected string or list for job tags', tags = tags )
@@ -785,7 +784,7 @@ class Job( API ):
        :type logLevel: string
     """
     kwargs = {'logLevel':logLevel}
-    if type( logLevel ) in types.StringTypes:
+    if isinstance( logLevel, basestring ):
       if logLevel.upper() in gLogger._logLevels.getLevels():
         description = 'User specified logging level'
         self.logLevel = logLevel
