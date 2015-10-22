@@ -52,6 +52,7 @@ class HTCondorCEComputingElement( ComputingElement ):
     """
 
     workingDirectory = self.ceParameters['WorkingDirectory']
+    initialDir = '/'.join( workingDirectory.split('/')[:-1] )
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = workingDirectory )
     subFile = os.fdopen( fd, 'w' )
 
@@ -62,8 +63,8 @@ use_x509userproxy = true
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
-environment = CONDOR_JOBID=$(Cluster).$(Process)
-Getenv = True
+environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
+initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
 WhenToTransferOutput = ON_EXIT
@@ -72,6 +73,7 @@ Queue %(nJobs)s
 """ % dict( executable=executable,
             nJobs=nJobs,
             ceName=self.ceName,
+            initialDir=initialDir,
           )
     subFile.write( sub )
     subFile.close()
@@ -100,7 +102,7 @@ Queue %(nJobs)s
     cmd = ['condor_submit', '-terse', subName ]
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     self.log.verbose( result )
-    #os.unlink( subName )
+    os.unlink( subName )
     if not result['OK']:
       self.log.error( "Failed to submit jobs to htcondor", result['Message'] )
       return result
@@ -177,19 +179,23 @@ Queue %(nJobs)s
       jobIDList = [ jobIDList ]
 
     resultDict = {}
-
+    condorIDs = {}
+    ##Get all condorIDs so we can just call condor_q and condor_history once
     for jobRef in jobIDList:
       job,jobID = self.__condorIDFromJobRef( jobRef )
+      condorIDs[job] = jobID
 
-      status,stdout_q = commands.getstatusoutput( 'condor_q %s' % jobID )
-      if status != 0:
-        return S_ERROR( stdout_q )
+    status,stdout_q = commands.getstatusoutput( 'condor_q %s' % ' '.join(condorIDs.values()) )
+    if status != 0:
+      return S_ERROR( stdout_q )
 
-      status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % jobID )
-      if status_history == 0:
-        stdout = '\n'.join( [stdout_q,stdout_history] )
+    status_history,stdout_history = commands.getstatusoutput( 'condor_history %s ' % ' '.join(condorIDs.values()) )
+    if status_history == 0:
+      stdout_q = '\n'.join( [stdout_q,stdout_history] )
 
-      lines = stdout.split( '\n' )
+    lines = stdout_q.split( '\n' )
+
+    for job,jobID in condorIDs.iteritems():
 
       pilotStatus = self.__parseCondorStatus( lines, jobID )
       resultDict[job] = pilotStatus

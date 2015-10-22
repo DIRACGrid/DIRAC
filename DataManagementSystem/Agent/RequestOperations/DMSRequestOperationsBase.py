@@ -55,7 +55,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
     if bannedSEs:
       alwaysBannedSEs = []
       for seName in bannedSEs:
-        res = self.rssClient().isStorageElementAlwaysBanned(seName)
+        res = self.rssClient().isStorageElementAlwaysBanned( seName, access )
         if not res['OK']:
           continue
 

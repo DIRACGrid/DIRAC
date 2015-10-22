@@ -24,8 +24,8 @@ class ConfigurationClient:
   def loadCFG( self, cfg ):
     return gConfigurationData.mergeWithLocal( cfg )
 
-  def forceRefresh( self ):
-    return gRefresher.forceRefresh()
+  def forceRefresh( self, fromMaster = False ):
+    return gRefresher.forceRefresh( fromMaster = fromMaster )
 
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )

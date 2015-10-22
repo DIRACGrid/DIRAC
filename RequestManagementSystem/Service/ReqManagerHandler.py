@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 import json
 import datetime
 import math
-from types import DictType, IntType, LongType, ListType, StringTypes
+from types import DictType, IntType, LongType, ListType, StringTypes, BooleanType
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -157,15 +157,15 @@ class ReqManagerHandler( RequestHandler ):
     return S_OK()
 
 
-  types_getBulkRequests = [ IntType ]
+  types_getBulkRequests = [ IntType, BooleanType ]
   @classmethod
-  def export_getBulkRequests( cls, numberOfRequest = 10 ):
+  def export_getBulkRequests( cls, numberOfRequest, assigned ):
     """ Get a request of given type from the database
         :param numberOfRequest : size of the bulk (default 10)
 
         :return S_OK( {Failed : message, Successful : list of Request.toJSON()} )
     """
-    getRequests = cls.__requestDB.getBulkRequests( numberOfRequest )
+    getRequests = cls.__requestDB.getBulkRequests( numberOfRequest = numberOfRequest, assigned = assigned )
     if not getRequests["OK"]:
       gLogger.error( "getRequests: %s" % getRequests["Message"] )
       return getRequests

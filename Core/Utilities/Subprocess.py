@@ -45,7 +45,6 @@ import signal
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import DEncode
 
 USE_WATCHDOG = False
 
@@ -200,6 +199,9 @@ class Subprocess:
     execute function :funtion: using :stArgs: and :stKeyArgs:
 
     """
+
+    from DIRAC.Core.Utilities import DEncode
+
     try:
       os.write( writePipe, DEncode.encode( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
     except OSError, x:
@@ -293,7 +295,9 @@ class Subprocess:
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     """ call python function :function: with :stArgs: and :stKeyArgs: """
-    
+
+    from DIRAC.Core.Utilities import DEncode
+
     self.log.verbose( 'pythonCall:', function.__name__ )
     
     readFD, writeFD = os.pipe()
