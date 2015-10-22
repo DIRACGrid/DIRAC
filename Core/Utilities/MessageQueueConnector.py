@@ -7,9 +7,9 @@ __RCSID__ = "$Id$"
 import time
 from DIRAC import gLogger
 
-class MessagingQueueConnector( object ):
+class MQConnector( object ):
   """
-  Abstract class for management of messaging queue connections
+  Abstract class for management of message queue connections
   Allows to both send and receive messages from a queue
   """
 
@@ -28,7 +28,7 @@ class MessagingQueueConnector( object ):
 
   def setupConnection( self, system, queueName, receive = False, messageCallback = None ):
     """
-    Establishes a new non-blocking connection to the messaging queue
+    Establishes a new non-blocking connection to the message queue
     system indicates in which System the queue works
     queueName is the name of the queue to read from/write to
     receive indicates whether this object will read from the queue or read from it
@@ -39,7 +39,7 @@ class MessagingQueueConnector( object ):
 
   def blockingConnection( self, system, queueName, receive = False, messageCallback = None ):
     """
-    Establishes a new blocking connection to the messaging queue
+    Establishes a new blocking connection to the message queue
     system indicates in which System the queue works
     queueName is the name of the queue to read from/write to
     receive indicates whether this object will read from the queue or read from it
@@ -70,6 +70,6 @@ class MessagingQueueConnector( object ):
 
   def unsetupConnection( self ):
     """
-    Disconnects from the messaging queue server
+    Disconnects from the message queue server
     """
     raise NotImplementedError( 'This method should be implemented by child class' )
