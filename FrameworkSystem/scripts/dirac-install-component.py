@@ -3,6 +3,7 @@
 """
 Do the initial installation and configuration of a DIRAC component
 """
+
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
@@ -10,8 +11,7 @@ from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC import exit as DIRACexit
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+import DIRAC.Core.Utilities.InstallTools as InstallTools
 
 InstallTools.exitOnError = True
 
@@ -49,7 +49,7 @@ Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
 if len( args ) == 1:
-  args = args.split( '/' )
+  args = args[0].split( '/' )
 
 if len( args ) != 2:
   Script.showHelp()
