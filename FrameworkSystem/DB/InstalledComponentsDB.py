@@ -289,6 +289,9 @@ class HostLogging( Base ):
     """
     fields = dir( self )
 
+    if dictionary.get( 'DIRACVersion' ):
+      dictionary[ 'DIRAC' ] = dictionary.get( 'DIRACVersion' )
+
     try:
       for key, value in dictionary.iteritems():
         if key in fields and not re.match( '_.*', key ):
