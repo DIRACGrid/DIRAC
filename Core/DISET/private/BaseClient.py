@@ -48,6 +48,7 @@ class BaseClient:
     self.__enableThreadCheck = False
     self.__retry = 0
     self.__retryDelay = 0
+    self.__nbOfUrls = 1 #by default we always have 1 url for example: RPCClient('dips://volhcb38.cern.ch:9162/Framework/SystemAdministrator')
     self.__bannedUrls = []
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
@@ -202,10 +203,9 @@ class BaseClient:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
     
     urls = List.fromChar( urls, "," )
-      
+    self.__nbOfUrls = len( urls )
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
-      self.__retryDelay = 5 / len ( urls ) if len( urls ) > 1 else 3  # we run only one service! In that case we increase the retry delay.
       gLogger.debug( "Retrying again all URLs" )      
       
     if len( self.__bannedUrls ) > 0 and len( urls ) > 1 :
@@ -250,14 +250,17 @@ and this is thread %s
       transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs )
       retVal = transport.initAsClient()
       if not retVal[ 'OK' ]:
-        if self.__retry < 5:
+        if self.__retry < 3 * self.__nbOfUrls - 1:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
           if url not in self.__bannedUrls: 
             gLogger.notice( "URL banned", "%s" % url )
             self.__bannedUrls += [url]   
           self.__retry += 1
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
-          time.sleep( self.__retryDelay )
+          if (len(self.__bannedUrls) == self.__nbOfUrls):
+            self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 5  # we run only one service! In that case we increase the retry delay.
+            gLogger.info( "Waiting %f  second before retry all service(s)" % self.__retryDelay )
+            time.sleep( self.__retryDelay )
           self.__discoverURL()
           return self._connect()
         else:
