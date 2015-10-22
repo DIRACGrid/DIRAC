@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import json
 import stomp
 import threading
-from MQConnector import MQConnector
+from DIRAC.Core.Utilities.MQConnector import MQConnector
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class RabbitConnection( MQConnector ):
@@ -104,7 +104,7 @@ class RabbitConnection( MQConnector ):
       if self.receiver:
         self.connection.set_listener( '', self )
         self.connection.subscribe( destination = '/queue/%s' % self.queueName, id = self.queueName, headers = { 'persistent': 'true' } )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( 'Failed to setup connection: %s' % e )
 
     return S_OK( 'Setup successful' )
@@ -120,7 +120,7 @@ class RabbitConnection( MQConnector ):
           self.connection.send( body = json.dumps( msg ), destination = '/queue/%s' % self.queueName )
       else:
         self.connection.send( body = json.dumps( message ), destination = '/queue/%s' % self.queueName )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( 'Failed to send message: %s' % e )
 
     return S_OK( 'Message sent successfully' )
@@ -148,7 +148,7 @@ class RabbitConnection( MQConnector ):
     """
     try:
       self.connection.disconnect()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( 'Failed to disconnect: %s' % e )
 
     return S_OK( 'Disconnection successful' )
