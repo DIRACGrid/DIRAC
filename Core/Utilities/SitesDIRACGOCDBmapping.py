@@ -99,12 +99,13 @@ def getDIRACGOCDictionary():
 
   :return:  A dictionary of DIRAC site names (key) and GOCDB site names (value).
   """
-  __functionName = '[getDIRACGOCDictionary]'
-  gLogger.debug( __functionName, 'Begin function ...' )
+  
+  log = gLogger.getSubLogger( 'getDIRACGOCDictionary' )
+  log.debug( 'Begin function ...' )
 
   result = gConfig.getConfigurationTree( '/Resources/Sites', 'Name' )
   if not result['OK']:
-    gLogger.error( __functionName, "getConfigurationTree() failed with message: %s" % result['Message'] )
+    log.error( "getConfigurationTree() failed with message: %s" % result['Message'] )
     return S_ERROR( 'Configuration is corrupted' )
   siteNamesTree = result['Value']
 
@@ -121,7 +122,7 @@ def getDIRACGOCDictionary():
     diracSiteName = elements[PATHELEMENTS - 2]
     dictionary[diracSiteName] = gocdbSiteName
     
-  gLogger.debug( __functionName, 'End function.' )
+  log.debug( 'End function.' )
   return S_OK( dictionary )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

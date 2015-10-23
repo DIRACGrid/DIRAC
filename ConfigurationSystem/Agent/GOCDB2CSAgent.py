@@ -3,7 +3,7 @@
 Module provides GOCDB2CSAgent functionality.
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACGOCDictionary
@@ -20,7 +20,7 @@ class GOCDB2CSAgent ( AgentModule ):
   """
 
   def initialize( self ):
-
+    
     # client to connect to GOCDB
     self.GOCDBClient = GOCDBClient()
 
@@ -40,9 +40,9 @@ class GOCDB2CSAgent ( AgentModule ):
       if optionValue:
         result = functionCall( self )
         if not result['OK']:
-          gLogger.error( "%s() failed with message: %s" % ( functionCall.__name__, result['Message'] ) )
+          self.log.error( "%s() failed with message: %s" % ( functionCall.__name__, result['Message'] ) )
         else:
-          gLogger.info( "Successfully executed %s" % functionCall.__name__ )
+          self.log.info( "Successfully executed %s" % functionCall.__name__ )
 
     return S_OK()
 
@@ -51,35 +51,35 @@ class GOCDB2CSAgent ( AgentModule ):
     Get current status of perfSONAR endpoints from GOCDB
     and update CS configuration accordingly.
     '''
-    __functionName = '[updatePerfSONAREndpoints]'
-    gLogger.debug( __functionName, 'Begin function ...' )
+    log = self.log.getSubLogger( 'updatePerfSONAREndpoints' )
+    log.debug( 'Begin function ...' )
 
     # get endpoints
     result = self.__getPerfSONAREndpoints()
     if not result['OK']:
-      gLogger.error( __functionName, "__getPerfSONAREndpoints() failed with message: %s" % result['Message'] )
+      log.error( "__getPerfSONAREndpoints() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Unable to fetch perfSONAR endpoints from GOCDB.' )
     endpointList = result['Value']
 
     # add DIRAC site name
     result = self.__addDIRACSiteName( endpointList )
     if not result['OK']:
-      gLogger.error( __functionName, "__addDIRACSiteName() failed with message: %s" % result['Message'] )
+      log.error( "__addDIRACSiteName() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Unable to extend the list with DIRAC site names.' )
     extendedEndpointList = result['Value']
 
     # prepare dictionary with new configuration
     result = self.__preparePerfSONARConfiguration( extendedEndpointList )
     if not result['OK']:
-      gLogger.error( __functionName, "__preparePerfSONARConfiguration() failed with message: %s" % result['Message'] )
+      log.error( "__preparePerfSONARConfiguration() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Unable to prepare a new perfSONAR configuration.' )
     finalConfiguration = result['Value']
 
     # update configuration according to the final status of endpoints
     self.__updateConfiguration( finalConfiguration )
-    gLogger.debug( __functionName, "Configuration updated succesfully" )
+    log.debug( "Configuration updated succesfully" )
 
-    gLogger.debug( __functionName, 'End function.' )
+    log.debug( 'End function.' )
     return S_OK()
 
   def __getPerfSONAREndpoints( self ):
@@ -88,8 +88,9 @@ class GOCDB2CSAgent ( AgentModule ):
 
     :return: List of perfSONAR endpoints (dictionaries) as stored by GOCDB.
     '''
-    __functionName = '[__getPerfSONAREndpoints]'
-    gLogger.debug( __functionName, 'Begin function ...' )
+
+    log = self.log.getSubLogger( '__getPerfSONAREndpoints' )
+    log.debug( 'Begin function ...' )
 
     # get perfSONAR endpoints (latency and bandwidth) form GOCDB
     endpointList = []
@@ -97,14 +98,14 @@ class GOCDB2CSAgent ( AgentModule ):
       result = self.GOCDBClient.getServiceEndpointInfo( 'service_type', 'net.perfSONAR.%s' % endpointType )
 
       if not result['OK']:
-        gLogger.error( __functionName, "getServiceEndpointInfo() failed with message: %s" % result['Message'] )
+        log.error( "getServiceEndpointInfo() failed with message: %s" % result['Message'] )
         return S_ERROR( 'Could not fetch %s endpoints from GOCDB' % endpointType.lower() )
 
-      gLogger.debug( __functionName, 'Number of %s endpoints: %s' % ( endpointType.lower(), len( result['Value'] ) ) )
+      log.debug( 'Number of %s endpoints: %s' % ( endpointType.lower(), len( result['Value'] ) ) )
       endpointList.extend( result['Value'] )
 
-    gLogger.debug( __functionName, 'Number of perfSONAR endpoints: %s' % len( endpointList ) )
-    gLogger.debug( __functionName, 'End function.' )
+    log.debug( 'Number of perfSONAR endpoints: %s' % len( endpointList ) )
+    log.debug( 'End function.' )
     return S_OK( endpointList )
 
   def __preparePerfSONARConfiguration( self, endpointList ):
@@ -116,8 +117,8 @@ class GOCDB2CSAgent ( AgentModule ):
              or None in case of a path pointing to a section.
     '''
 
-    __functionName = '[__preparePerfSONARConfiguration]'
-    gLogger.debug( __functionName, 'Begin function ...' )
+    log = self.log.getSubLogger( '__preparePerfSONARConfiguration' )
+    log.debug( 'Begin function ...' )
 
     # static elements of a path
     rootPath = '/Resources/Sites'
@@ -137,7 +138,7 @@ class GOCDB2CSAgent ( AgentModule ):
     # get current configuration
     result = gConfig.getConfigurationTree( rootPath, extPath + '/', '/' + optionName )
     if not result['OK']:
-      gLogger.error( __functionName, "getConfigurationTree() failed with message: %s" % result['Message'] )
+      log.error( "getConfigurationTree() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Unable to fetch perfSONAR endpoints from CS.' )
     currentConfiguration = result['Value']
 
@@ -149,12 +150,12 @@ class GOCDB2CSAgent ( AgentModule ):
 
     # inform what will be changed
     if len( newElements ) > 0:
-      gLogger.info( "%s new perfSONAR endpoints will be added to the configuration" % len( newElements ) )
+      self.log.info( "%s new perfSONAR endpoints will be added to the configuration" % len( newElements ) )
 
     if len( removedElements ) > 0:
-      gLogger.info( "%s old perfSONAR endpoints will be disable in the configuration" % len( removedElements ) )
+      self.log.info( "%s old perfSONAR endpoints will be disable in the configuration" % len( removedElements ) )
 
-    gLogger.debug( __functionName, 'End function.' )
+    log.debug( 'End function.' )
     return S_OK( newConfiguration )
 
   def __addDIRACSiteName( self, inputList ):
@@ -163,17 +164,16 @@ class GOCDB2CSAgent ( AgentModule ):
     add an entry "DIRACSITENAME" in dictionaries that describe endpoints.
     If given site name could not be found "DIRACSITENAME" is set to 'None'.
 
-
     :return: List of perfSONAR endpoints (dictionaries).
-              
     '''
-    __functionName = '[__addDIRACSiteName]'
-    gLogger.debug( __functionName, 'Begin function ...' )
+
+    log = self.log.getSubLogger( '__addDIRACSiteName' )
+    log.debug( 'Begin function ...' )
 
     # get site name dictionary
     result = getDIRACGOCDictionary()
     if not result['OK']:
-      gLogger.error( __functionName, "getDIRACGOCDictionary() failed with message: %s" % result['Message'] )
+      log.error( "getDIRACGOCDictionary() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Could not get site name dictionary' )
 
     # reverse the dictionary (assume 1 to 1 relation)
@@ -186,11 +186,11 @@ class GOCDB2CSAgent ( AgentModule ):
       try:
         entry['DIRACSITENAME'] = GOCDIRACDict[entry['SITENAME']]
       except KeyError:
-          gLogger.warn( __functionName, "No dictionary entry for %s. " % entry['SITENAME'] )
+          self.log.warn( "No dictionary entry for %s. " % entry['SITENAME'] )
           entry['DIRACSITENAME'] = None
       outputList.append( entry )
 
-    gLogger.debug( __functionName, 'End function.' )
+    log.debug( 'End function.' )
     return S_OK( outputList )
 
   def __updateConfiguration( self, setElements = {}, delElements = [] ):
@@ -198,8 +198,8 @@ class GOCDB2CSAgent ( AgentModule ):
     Update configuration stored by CS.
     '''
 
-    __functionName = '[__updateConfiguration]'
-    gLogger.debug( __functionName, 'Begin function ...' )
+    log = self.log.getSubLogger( '__updateConfiguration' )
+    log.debug( 'Begin function ...' )
 
     # assure existence and proper value of a section or an option
     for path, value in setElements.iteritems():
@@ -212,30 +212,30 @@ class GOCDB2CSAgent ( AgentModule ):
 
       result = self.csAPI.createSection( section )
       if not result['OK']:
-        gLogger.error( __functionName, "createSection() failed with message: %s" % result['Message'] )
+        log.error( "createSection() failed with message: %s" % result['Message'] )
 
       if value is not None:
         result = self.csAPI.setOption( path, value )
         if not result['OK']:
-          gLogger.error( __functionName, "setOption() failed with message: %s" % result['Message'] )
+          log.error( "setOption() failed with message: %s" % result['Message'] )
 
     # delete elements in the configuration
     for path in delElements:
       result = self.csAPI.delOption( path )
       if not result['OK']:
-        gLogger.warn( __functionName, "delOption() failed with message: %s" % result['Message'] )
+        log.warn( "delOption() failed with message: %s" % result['Message'] )
 
         result = self.csAPI.delSection( path )
         if not result['OK']:
-          gLogger.warn( __functionName, "delSection() failed with message: %s" % result['Message'] )
+          log.warn( "delSection() failed with message: %s" % result['Message'] )
 
     # update configuration stored by CS
     result = self.csAPI.commit()
     if not result['OK']:
-      gLogger.error( "commit() failed with message: %s" % result['Message'] )
+      log.error( "commit() failed with message: %s" % result['Message'] )
       return S_ERROR( 'Could not commit changes to CS.' )
 
-    gLogger.debug( __functionName, 'End function.' )
+    log.debug( 'End function.' )
     return S_OK()
 
 
