@@ -6,7 +6,7 @@ import json
 import os
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateDict, encodeMessage
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import decodeMessage, isMessageFormatCorrect
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import getUniqueIDAndSaveToFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import createPilotLoggerConfigFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import readPilotLoggerConfigFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import getUniqueIDFromOS
@@ -28,10 +28,10 @@ class TestPilotLoggerTools( unittest.TestCase ):
     self.badFile = '////'
   def tearDown( self ):
     try:
-        os.remove( self.testFile )
-        os.remove( self.testFileCfg )
+      os.remove( self.testFile )
+      os.remove( self.testFileCfg )
     except OSError:
-        pass
+      pass
 
 class TestPilotLoggerToolsCreatePilotLoggerConfigFile( TestPilotLoggerTools ):
   def test_success( self ):
@@ -172,12 +172,12 @@ class TestPilotLoggerIsMessageFormatCorrect( TestPilotLoggerTools ):
     self.assertFalse( isMessageFormatCorrect( badDict ) )
 
 
-class TestPilotLoggerGenerateUniqueIDAndSaveToFile( TestPilotLoggerTools ):
+class TestPilotLoggerGetUniqueIDAndSaveToFile( TestPilotLoggerTools ):
   def test_success( self ):
-    self.assertTrue( generateUniqueIDAndSaveToFile( self.testFile ) )
+    self.assertTrue( getUniqueIDAndSaveToFile( self.testFile ) )
 
   def test_fail( self ):
-    self.assertFalse( generateUniqueIDAndSaveToFile( self.badFile ) )
+    self.assertFalse( getUniqueIDAndSaveToFile( self.badFile ) )
 
   #environVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID', 'VM_UUID']
 class TestPilotLoggerGetUniqueIDFromOS( TestPilotLoggerTools ):
@@ -219,6 +219,6 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerToolsEncodeMessage ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerToolsDecodeMessage ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerIsMessageFormatCorrect ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerGenerateUniqueIDAndSaveToFile ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerGetUniqueIDAndSaveToFile ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerGetUniqueIDFromOS ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

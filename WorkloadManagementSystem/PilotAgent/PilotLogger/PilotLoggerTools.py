@@ -167,7 +167,7 @@ def generateUniqueID():
   """
   return str( uuid1() )
 
-def generateUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
+def getUniqueIDAndSaveToFile( filename = 'PilotAgentUUID' ):
   """Generates the unique id and writes it to a file
      of given name.
      First, we try to receive the UUID from the OS, if that fails
@@ -209,9 +209,9 @@ def main():
   """
   filename = ' '.join( sys.argv[1:] )
   if not filename:
-    generateUniqueIDAndSaveToFile()
+    getUniqueIDAndSaveToFile()
   else:
-    generateUniqueIDAndSaveToFile( filename )
+    getUniqueIDAndSaveToFile( filename )
 
 if __name__ == '__main__':
   main()
