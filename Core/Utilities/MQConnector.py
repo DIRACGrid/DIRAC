@@ -5,7 +5,7 @@ Abstract class for management of MQ connections
 __RCSID__ = "$Id$"
 
 import time
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class MQConnector( object ):
   """
@@ -25,6 +25,34 @@ class MQConnector( object ):
     gLogger.error( message )
 
   # Rest of functions
+
+  def setQueueParameters( self, system, queueName ):
+    """
+    Reads the MessageQueue parameters from the CS and sets the appropriate variables in the class with their values
+    system is the DIRAC system where the queue works
+    queueName is the name of the queue
+    """
+
+    # Utility function to lowercase the first letter of a string ( to create valid variable names )
+    toLowerFirst = lambda s: s[:1].lower() + s[1:] if s else ''
+
+    self.queueName = queueName
+
+    setup = gConfig.getValue( '/DIRAC/Setup', '' )
+
+    # Get the parameters from the CS and set them
+    for parameter in [ 'Host', 'Port', 'User', 'VH', 'Type' ]:
+      result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/%s' % ( system, setup, queueName, parameter ) )
+      if not result[ 'OK' ]:
+        return S_ERROR( 'Failed to get the parameter \'%s\' for the queue: %s' % ( parameter, result[ 'Message' ] ) )
+      setattr( self, toLowerFirst( parameter ), result[ 'Value' ] )
+
+    result = gConfig.getOption( '/LocalInstallation/MessageQueueing/Password' )
+    if not result[ 'OK' ]:
+      return S_ERROR( 'Failed to get the password for RabbitMQ: %s' % result[ 'Message' ] )
+    self.password = result[ 'Value' ]
+
+    return S_OK( 'Queue parameters set successfully' )
 
   def setupConnection( self, system, queueName, receive = False, messageCallback = None ):
     """

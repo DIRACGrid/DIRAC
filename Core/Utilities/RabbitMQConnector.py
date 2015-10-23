@@ -22,9 +22,9 @@ class RabbitConnection( MQConnector ):
     self.port = None
     self.user = None
     self.vH = None
-    self.exchangeName = None
     self.password = None
     self.queueName = None
+    self.type = None
 
     self.receiver = False
     self.msgList = []
@@ -42,29 +42,6 @@ class RabbitConnection( MQConnector ):
       self.msgList.append( dictionary )
 
   # Rest of functions
-
-  def __setQueueParameter( self, system, queueName, parameter ):
-    """
-    Reads a given MessageQueueing parameter from the CS and sets the appropriate variable in the class with its value
-    system is the DIRAC system where the queue works
-    queueName is the name of the queue
-    parameter is the name of the parameter to be read and set
-    """
-
-    # Utility function to lowercase the first letter of a string ( to create valid variable names )
-    toLowerFirst = lambda s: s[:1].lower() + s[1:] if s else ''
-
-    self.queueName = queueName
-
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-
-    # Get the parameter from the CS and set it
-    result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/%s' % ( system, setup, queueName, parameter ) )
-    if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the parameter \'%s\' for RabbitMQ: %s' % ( parameter, result[ 'Message' ] ) )
-    setattr( self, toLowerFirst( parameter ), result[ 'Value' ] )
-
-    return S_OK( 'Queue parameters set successfully' )
 
   def setupConnection( self, system, queueName, receive = False, messageCallback = None ):
     """
@@ -85,15 +62,9 @@ class RabbitConnection( MQConnector ):
         self.on_message = self.defaultCallback
 
     # Read parameters from CS
-    for parameter in [ 'Host', 'Port', 'User', 'VH', 'ExchangeName' ]:
-      result = self.__setQueueParameter( system, queueName, parameter )
-      if not result[ 'OK' ]:
-        return result
-
-    result = gConfig.getOption( '/LocalInstallation/MessageQueueing/Password' )
+    result = self.setQueueParameters( system, queueName )
     if not result[ 'OK' ]:
-      return S_ERROR( 'Failed to get the password for RabbitMQ: %s' % result[ 'Message' ] )
-    self.password = result[ 'Value' ]
+      return result
 
     # Make the actual connection
     try:
