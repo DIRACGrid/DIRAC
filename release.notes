@@ -1,3 +1,8 @@
+[v6r13p18]
+
+*WMS
+FIX: JobWrapper - ported back from v6r14p9 the fix for getting OutputPath
+
 [v6r13p17]
 
 FIX: changes incorporated from v6r12p52 patch
