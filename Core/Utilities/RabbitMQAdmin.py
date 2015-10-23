@@ -2,10 +2,10 @@
    users database. It uses rabbitmqctl command. Only the user with the right
    permissions can execute those commands.
 """
-import subprocess
 import re
 from DIRAC import S_OK, DError
 import errno
+from DIRAC.Core.Utilities import Subprocess
 
 def executeRabbitmqctl(arg, *argv):
   """Executes RabbitMQ administration command.
@@ -22,13 +22,18 @@ def executeRabbitmqctl(arg, *argv):
 
   """
   command =['sudo','/usr/sbin/rabbitmqctl','-q', arg] + list(argv)
-  res = subprocess.Popen(command, stdout = subprocess.PIPE, stderr= subprocess.PIPE)
-  cmd_out, cmd_err = res.communicate()
-  if res.returncode != 0:
+  timeOut = 30
+  result = Subprocess.systemCall(timeout = timeOut, cmdSeq = command)
+  if result['OK']:
+    returncode, cmd_out, cmd_err = result['Value']
+  else:
+    return DError(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
+                                (command, returncode, cmd_out, cmd_err) )
+  if returncode != 0:
     # No idea what errno code should be used here.
     # Maybe we should define some specific for rabbitmqctl
     return DError(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
-                                (command, res.returncode, cmd_out, cmd_err) )
+                                (command, returncode, cmd_out, cmd_err) )
   return S_OK(cmd_out)
 
 def addUserWithoutPassword(user):
@@ -59,7 +64,6 @@ def getAllUsers():
   Returns:
     S_OK: with a list of all users
   '''
-
   ret = executeRabbitmqctl('list_users')
   if not ret['OK']:
     return ret
