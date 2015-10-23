@@ -56,7 +56,7 @@ def readPilotLoggerConfigFile ( filename ):
   except (IOError, ValueError):
     return None
 
-def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
+def generateDict( pilotUUID, status, minorStatus, timestamp, source ):
   """Helper function that returs a dictionnary based on the
      set of input values.
   Returns
@@ -65,7 +65,6 @@ def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
 
   keys = [
       'pilotUUID',
-      'pilotID',
       'status',
       'minorStatus',
       'timestamp',
@@ -73,7 +72,6 @@ def generateDict( pilotUUID, pilotID, status, minorStatus, timestamp, source ):
       ]
   values = [
       pilotUUID,
-      pilotID,
       status,
       minorStatus,
       timestamp,
@@ -111,17 +109,16 @@ def isMessageFormatCorrect( content ):
      in the following format:
      0) content is a dictionary,
      1) it contains only those keys of basestring types:
-     'pilotUUID', 'pilotId', 'status', 'minorStatus', 'timestamp', 'source',
+     'pilotUUID', 'status', 'minorStatus', 'timestamp', 'source',
      2) it contains only values of basestring types.
   Args:
-    content(dict): pilotID can be empty, other values must be non-empty
+    content(dict): all values must be non-empty
   Returns:
     bool: True if message format is correct, False otherwise
   Example:
     {"status": "DIRAC Installation",
      "timestamp": "1427121370.7",
       "minorStatus": "Uname = Linux localhost 3.10.64-85.cernvm.x86_64",
-      "pilotID": "1",
       "pilotUUID": "eda78924-d169-11e4-bfd2-0800275d1a0a",
       "source": "pilot"
       }
@@ -130,7 +127,6 @@ def isMessageFormatCorrect( content ):
     return False
   refKeys = [
       'pilotUUID',
-      'pilotID',
       'status',
       'minorStatus',
       'timestamp',
@@ -145,10 +141,8 @@ def isMessageFormatCorrect( content ):
   # if any value is not of basestring type
   if any( not isinstance( val, basestring ) for val in values ):
     return False
-  #checking if not empty for all except pilotID
-  contentCopy = content.copy()
-  contentCopy.pop('pilotID',None)
-  values = contentCopy.values()
+  #checking if not empty for all
+  values = content.values()
   if any( not val for val in values ):
     return False
   return True

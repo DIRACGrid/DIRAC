@@ -19,7 +19,6 @@ class TestPilotLoggerTools( unittest.TestCase ):
       'status': 'Installing',
       'timestamp': '1427121370.7',
       'minorStatus': 'Uname = Linux localhost 3.10.64-85.cernvm.x86_64',
-      'pilotID': '1',
       'pilotUUID': 'eda78924-d169-11e4-bfd2-0800275d1a0a',
       'source': 'pilot'
        }
@@ -100,7 +99,6 @@ class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
   def test_success( self ):
     result = generateDict(
         'eda78924-d169-11e4-bfd2-0800275d1a0a',
-        '1',
         'Installing',
         'Uname = Linux localhost 3.10.64-85.cernvm.x86_64',
         '1427121370.7',
@@ -110,7 +108,6 @@ class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
   def test_failure( self ):
     result = generateDict(
         'eda78924-d169-11e4-bfd2-0800275d1a0a',
-        '1',
         'AAA Installation',
         'Uname = Linux localhost 3.10.64-85.cernvm.x86_64',
         '1427121370.7',
@@ -148,11 +145,6 @@ class TestPilotLoggerIsMessageFormatCorrect( TestPilotLoggerTools ):
 
   def test_success( self ):
     self.assertTrue( isMessageFormatCorrect( self.msg ) )
-
-  def test_successEvenThatpilotIDEmpty( self ):
-    goodDict = self.msg.copy()
-    goodDict['pilotID'] = ''
-    self.assertTrue( isMessageFormatCorrect( goodDict ) )
 
   def test_notDict( self ):
     self.assertFalse( isMessageFormatCorrect( ['a', 2] ) )

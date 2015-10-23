@@ -206,7 +206,6 @@ class PilotLogger( object ):
     myUUID = getPilotUUIDFromFile(self.fileWithUUID)
     message = generateDict(
         myUUID,
-        '',  # pilotID is unknown for a moment
         status,
         minorStatus,
         generateTimeStamp(),
