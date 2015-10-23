@@ -5,6 +5,9 @@
   and override its methods
 """
 
+from DIRAC import S_ERROR
+from DIRAC.Core.Utilities.MQConnector import MQConnector
+
 class ConsumerModule(object):
   """ Base class for all consumer modules
 
@@ -13,11 +16,21 @@ class ConsumerModule(object):
   """
 
   def __init__( self ):
-    """  Abstract class
-    """
-    raise NotImplementedError('That should be implemented')
+    self._MQConnector = None
 
-  def execute( self ):
-    """ Function should be overriden in the implementation
+  def initialize( self ):
+    """
+    """
+    print "really?"
+    #based on some arguments decide what type of MQ and if the connection should be blocking or not?
+    from DIRAC.Core.Utilities.RabbitMQ import RabbitInterface
+    self._MQConnector = RabbitInterface()
+    self._MQConnector.connectBlocking(system ="MyRabbitSystem",
+                        queueName = "testQueue",
+                        receive = True,
+                        messageCallback = self.consume)
+
+  def consume( self, headers, message ):
+    """ Function must be overriden in the implementation
     """
     raise NotImplementedError('That should be implemented')

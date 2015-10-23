@@ -9,13 +9,24 @@ import json
 import threading
 import stomp
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-
-class RabbitInterface( object ):
+from DIRAC.Core.Utilities.MQConnector import MQConnector
+class RabbitInterface( MQConnector ):
   """
   Class for management of RabbitMQ connections
   Allows to both send and receive messages from a queue
   The class also implements callback functions to be able to act as a listener and receive messages
   """
+
+  def __init__( self ):
+    pass
+  def connectBlocking( self, system, queueName, receive = False, messageCallback = None ):
+    result = self.setupConnection(system ,queueName, receive ,messageCallback)
+    if not result[ 'OK' ]:
+      print result['Message']
+      return
+    while 1:
+      pass
+    self.unsetupConnection()
 
   msgList = []
   lock = threading.Lock()

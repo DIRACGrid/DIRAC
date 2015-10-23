@@ -34,7 +34,9 @@ class ConsumerReactor(object):
       Main method to control the execution of the consumer.
     """
     instanceObj = self.__consumerModule['classObj']()
-    instanceObj.execute()
+    print "im here"
+    instanceObj.initialize()
+    print "well will never be here"
     return S_OK()
 
 
