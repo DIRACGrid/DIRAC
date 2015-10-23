@@ -1046,6 +1046,8 @@ class DataManager( object ):
         'lfn' is the file to be removed
     """
     log = self.log.getSubLogger( 'removeFile' )
+    if not lfn:
+      return S_OK( { 'Successful': {}, 'Failed': {} } )
     if force == None:
       force = self.ignoreMissingInFC
     if isinstance( lfn, ( list, dict, set, tuple ) ):
