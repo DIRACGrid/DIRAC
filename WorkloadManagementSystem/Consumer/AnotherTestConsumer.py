@@ -12,8 +12,7 @@ class AnotherTestConsumer( ConsumerModule ):
      See RabbitInterface class for more info.
   """
   def __init__ ( self ):
-    #super(AnotherTestConsumer,self).__init__()
-    pass
+    super(AnotherTestConsumer,self).__init__()
 
   #or guarantee that it will never be overwritten
   def initialize( self ):
@@ -21,4 +20,3 @@ class AnotherTestConsumer( ConsumerModule ):
 
   def consume( self, headers, message ):
     print "I have just eatean a tasty message:%s" % message
-  
