@@ -118,6 +118,7 @@ class TestPilotLoggerToolsGenerateDict( TestPilotLoggerTools ):
         )
     self.assertNotEqual( result, self.msg )
 
+
 class TestPilotLoggerToolsEncodeMessage( TestPilotLoggerTools ):
 
   def test_success( self ):
@@ -179,6 +180,16 @@ class TestPilotLoggerGetUniqueIDAndSaveToFile( TestPilotLoggerTools ):
   def test_fail( self ):
     self.assertFalse( getUniqueIDAndSaveToFile( self.badFile ) )
 
+
+def helper_get(var):
+  if var =='VM_UUID':
+    return 'VM_uuid'
+  if var == 'CE_NAME':
+    return 'myCE'
+  if var == 'VMTYPE':
+    return 'myVMTYPE'
+  return ''
+
   #environVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID', 'VM_UUID']
 class TestPilotLoggerGetUniqueIDFromOS( TestPilotLoggerTools ):
 
@@ -196,19 +207,20 @@ class TestPilotLoggerGetUniqueIDFromOS( TestPilotLoggerTools ):
   def test_successGRID( self, mock_environ_get, mock_environ_key):
     self.assertEqual(getUniqueIDFromOS(), 'GRID_uuid')
 
+
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
-              side_effect = lambda var: var =='VM_UUID')
+              side_effect = lambda var: var =='VM_UUID' or var == 'CE_NAME' or var == 'VMTYPE' )
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
-              side_effect = lambda var: 'VM_uuid' if var =='VM_UUID' else '')
+              side_effect = helper_get)
   def test_successVM( self, mock_environ_get, mock_environ_key):
-    self.assertEqual(getUniqueIDFromOS(), 'VM_uuid')
+    self.assertEqual(getUniqueIDFromOS(), 'vm://myCE/myCE:myVMTYPE:VM_uuid')
 
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
               side_effect = lambda var: False)
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
               side_effect = lambda var: None)
   def test_failVM( self, mock_environ_get, mock_environ_key):
-    self.assertFalse(getUniqueIDFromOS()) 
+    self.assertFalse(getUniqueIDFromOS())
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotLoggerTools )

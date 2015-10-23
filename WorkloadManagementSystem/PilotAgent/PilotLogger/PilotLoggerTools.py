@@ -192,14 +192,22 @@ def getUniqueIDFromOS():
   """Retrieves unique identifier based on specific OS.
     The OS type is identified based on some predefined
     environmental variables that should contain identifiers
-    for given node. Only the first found identifier is returned
+    for given node. For VM the combination of 3 variables is used to
+    create the identifier. Only the first found identifier is returned
   Returns:
-    str: If a variable is found its content is returned. Empty
+    str: If variable(s)  found the generated identifier is returned. Empty
           string is returned if all checks fails. If there are more than one
-          variables set, only the first one is returned.
+          valid identifier, only the first one is returned.
   """
-  environVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID', 'VM_UUID']
-  ids = ( os.environ.get(var) for var in environVars if os.environ.has_key(var))
+  #VM case: vm://$CE_NAME/$CE_NAME:$VMTYPE:$VM_UUID
+  vmEnvVars = ['CE_NAME', 'VMTYPE', 'VM_UUID']
+  if all (os.environ.has_key(var) for var in vmEnvVars):
+    ce_name = os.environ.get('CE_NAME')
+    partial_id = ':'.join((os.environ.get(var) for var in vmEnvVars))
+    return  'vm://'+ ce_name + '/' + partial_id
+  #Other cases: $envVar
+  envVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID']
+  ids = ( os.environ.get(var) for var in envVars if os.environ.has_key(var))
   return next(ids, '')
 
 def main():
