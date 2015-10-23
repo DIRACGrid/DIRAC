@@ -9,7 +9,6 @@ from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ConfigurationClient:
 
@@ -157,8 +156,8 @@ class ConfigurationClient:
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
-  
-  def getConfigurationTree( self, root = '', *filters):
+
+  def getConfigurationTree( self, root = '', *filters ):
     """
     Create a dictionary with all sections, subsections and options
     starting from given root. Result can be filtered.
@@ -175,54 +174,55 @@ class ConfigurationClient:
              Value is "None" when path points to a section
              or not "None" if path points to an option.
     """
-    __functionName = '[getConfigurationTree]'
-    
+
+    log = DIRAC.gLogger.getSubLogger( 'getConfigurationTree' )
+
     # check if root is an option (special case)
-    option = self.getOption(root)
+    option = self.getOption( root )
     if option['OK']:
       result = {root: option['Value']}
-      
+
     else:
       result = {root: None}
       for substr in filters:
         if not substr in root:
           result = {}
           break
-        
+
       # remove slashes at the end
-      root = root.rstrip('/')
-      
+      root = root.rstrip( '/' )
+
       # get options of current root
-      options = self.getOptionsDict(root)
+      options = self.getOptionsDict( root )
       if not options['OK']:
-        gLogger.error(__functionName, "getOptionsDict() failed with message: %s" % options['Message'] )
+        log.error( "getOptionsDict() failed with message: %s" % options['Message'] )
         return S_ERROR( 'Invalid root path provided' )
-      
+
       for key, value in options['Value'].iteritems():
-        path = cfgPath(root, key)
+        path = cfgPath( root, key )
         addOption = True
         for substr in filters:
           if not substr in path:
             addOption = False
             break
-          
+
         if addOption:
-          result[path] = value   
-      
+          result[path] = value
+
       # get subsections of the root
       sections = self.getSections( root )
       if not sections['OK']:
-        gLogger.error(__functionName, "getSections() failed with message: %s" % sections['Message'] )
+        log.error( "getSections() failed with message: %s" % sections['Message'] )
         return S_ERROR( 'Invalid root path provided' )
-      
+
       # recursively go through subsections and get their subsections
       for section in sections['Value']:
         subtree = self.getConfigurationTree( "%s/%s" % ( root, section ), *filters )
         if not subtree['OK']:
-          gLogger.error(__functionName, "getConfigurationTree() failed with message: %s" % sections['Message'] )
+          log.error( "getConfigurationTree() failed with message: %s" % sections['Message'] )
           return S_ERROR( 'Configuration was altered during the operation' )
-        result.update( subtree['Value'] )  
-    
+        result.update( subtree['Value'] )
+
     return S_OK( result )
 
   def setOptionValue( self, optionPath, value ):
