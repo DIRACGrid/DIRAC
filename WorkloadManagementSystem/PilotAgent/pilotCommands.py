@@ -369,15 +369,18 @@ class CheckCECapabilities( CommandBase ):
 
 
   def execute( self ):
+    """ Setup CE/Queue Tags
+    """
+    from DIRAC.ConfigurationSystem.Client.Config import gConfig
+    gConfig.forceRefresh()
 
-    retCode, resourceDict = self.executeAndGetOutput( 'dirac-resource-get-parameters -S %s -N %s -Q %s' %
-                                                       ( self.pp.site, self.pp.ceName, self.pp.queueName ) )
-    import json
-    resourceDict = json.loads( resourceDict )
-    if retCode:
-      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
-    elif resourceDict.get( 'Tag' ):
-      self.pp.tags = resourceDict['Tag']
+    from DIRAC.ConfigurationSystem.Client.Helpers import Resources
+    result = Resources.getQueue( self.pp.site, self.pp.ceName, self.pp.queueName )
+    if not result['OK']:
+      self.log.error( "Could not retrieve resource parameters", ": " + result['Message'] )
+
+    if result['Value'].get('Tag'):
+      self.pp.tags = result['Value']['Tag']
       self.cfg.append( '-FDMH' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )
@@ -386,12 +389,13 @@ class CheckCECapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ', '.join( self.pp.tags ) )
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ', '.join(self.pp.tags) )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
-        self.log.error( "Could not configure DIRAC [ERROR %d]" % retCode )
+        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
+
 
 
 
