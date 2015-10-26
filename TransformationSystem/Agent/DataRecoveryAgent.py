@@ -333,7 +333,7 @@ class DataRecoveryAgent(AgentModule):
       message = "%s: %s" % (do['ShortMessage'].ljust(56), str(do['Counter']).rjust(5))
       self.log.notice(message)
       if self.notesToSend:
-        self.notesToSend += str(message) + '\n'
+        self.notesToSend = str(message) + '\n' + self.notesToSend
 
   def __resetCounters(self):
     for _name, checks in self.todo.iteritems():
