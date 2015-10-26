@@ -31,6 +31,44 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 
+[v6r14p9]
+
+*Core
+FIX: BaseClient - enhance retry connection logic to minimize the overall delay
+FIX: MessageBroker - fix of calling private __remove() method from outside
+     of the class
+
+*Framework
+BUGFIX: dirac-(un)install-component - bug in importing InstallTools module
+
+*WMS:
+FIX: JobWrapper - fix in getting the OutputPath defined in the job
+
+*Resources
+FIX: ARCComputingElement - add queue to the XRSL string
+
+[v6r14p8]
+
+*Core
+FIX: XXXTimeLeft - minor fixes plus added the corresponding Test case
+FIX: ReturnValues - fixes in the doc strings to comply with the sphinx syntax
+FIX: SocketInfoFactory - in __sockConnect() catch exception when creating a
+     socket
+
+*Interfaces
+FIX: Job.py - fixes in the doc strings to comply with the sphinx syntax
+
+*RSS
+NEW: Configurations.py - new possible configuration options for Downtime Policies
+
+*WMS
+CHANGE: StatesAccountingAgent - retry once and empty the local messages cache
+        in case of failure to avoid large backlog of messages
+CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
+        invocation arguments  
+CHANGE: Matcher - allow matching by hosts in multi-VO installations              
+
+
 [v6r14p7]
 
 *Core
@@ -535,6 +573,17 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p52]
+
+*DMS
+NEW: dirac-dms-directory-sync - new command to synchronize the contents of a
+     local and remote directories
+FIX: DataManager - in removeFile() return successfully if empty input file list     
+
+*TS
+NEW: TransformationCLI - getInputDataQuery command returning inputDataQuery 
+     of a given transformation
 
 [v6r12p51]
 

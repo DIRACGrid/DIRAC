@@ -3,7 +3,9 @@
 
 __RCSID__ = "$Id$"
 
-from  DIRAC import S_OK, DError
+from  DIRAC import S_OK
+from DIRAC.Core.Utilities import DError
+import errno
 
 
 def checkArgumentFormat( path ):

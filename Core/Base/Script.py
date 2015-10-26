@@ -6,6 +6,7 @@ import os.path
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
 
@@ -55,6 +56,7 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
     gMonitor.initialize()
   else:
     gMonitor.disable()
+  includeExtensionErrors()
 
   return True
 

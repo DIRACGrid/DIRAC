@@ -158,12 +158,13 @@ class ARCComputingElement( ComputingElement ):
 (stdout="%(diracStamp)s.out")
 (stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
+(queue=%(queue)s)
 %(xrslExtraString)s
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'diracStamp':diracStamp,
-#            'queue':self.queue,
+            'queue':self.arcQueue,
             'xrslExtraString':self.xrslExtraString
            }
 
@@ -180,6 +181,9 @@ class ARCComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
+    # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+    # And none of our supported batch systems have a "-" in their name
+    self.arcQueue = self.queue.split("-",2)[2]
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
@@ -202,6 +206,8 @@ class ARCComputingElement( ComputingElement ):
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
       xrslString, diracStamp = self.__writeXRSL( executableFile )
+      gLogger.debug("XRSL string submitted : %s" %xrslString)
+      gLogger.debug("DIRAC stamp for job : %s" %diracStamp)
       if not arc.JobDescription_Parse(xrslString, jobdescs):
         gLogger.error("Invalid job description")
         break
@@ -227,13 +233,13 @@ class ARCComputingElement( ComputingElement ):
         if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
         if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ):
-          gLogger.warn( "%s no job description was there (Should not happen, but horses can fly (in a plane))" % message )
+          gLogger.warn( "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message )
         if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
         if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ):
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
         if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ):
-          gLogger.warn( "%s some error from the CE - ask site admins for more information ..." % message )
+          gLogger.warn( "%s some error from the CE - possibly CE problems?" % message )
         gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
 

@@ -14,6 +14,7 @@ import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.ExecutorReactor import ExecutorReactor
+from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
 
@@ -37,6 +38,7 @@ if not resultDict[ 'OK' ]:
   gLogger.fatal( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit( 1 )
 
+includeExtensionErrors()
 executorReactor = ExecutorReactor()
 
 result = executorReactor.loadModules( positionalArgs )

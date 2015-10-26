@@ -10,7 +10,8 @@ import datetime
 import copy
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DErrno, siteName
+from DIRAC import gLogger, gConfig, siteName
+from DIRAC.Core.Utilities import DErrno, DError
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse

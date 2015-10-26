@@ -1,19 +1,17 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
     current CPU and Wallclock consumed, as well as their limits.
 """
 
+__RCSID__ = "$Id$"
+
+import os
+import re
+import time
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
-__RCSID__ = "$Id$"
-
-import os, re, time
-
-class PBSTimeLeft:
+class PBSTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
