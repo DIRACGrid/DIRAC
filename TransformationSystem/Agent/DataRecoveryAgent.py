@@ -187,7 +187,7 @@ class DataRecoveryAgent(AgentModule):
                           ),
                  ]
                  }
-    self.jobCache = {}
+    self.jobCache = defaultdict(lambda: (0, 0))
     ##Notification
     self.notesToSend = ""
     self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
