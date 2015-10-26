@@ -266,7 +266,7 @@ class JobManagerHandler( RequestHandler ):
         if not ret['OK']:
           return ret
 
-    return S_OK( )
+    return S_OK()
 
   def __killJob( self, jobID, sendKillCommand = True ):
     """  Kill one job
