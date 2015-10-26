@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule    import AgentModule
 from DIRAC                          import S_OK
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorHandler import WMSAdministratorHandler
 
 class PilotMonitorAgent( AgentModule ):
   """
@@ -33,7 +33,7 @@ class PilotMonitorAgent( AgentModule ):
     self.clearPilotsDelay = self.am_getOption( 'ClearPilotsDelay', 30 )
     self.clearAbortedDelay = self.am_getOption( 'ClearAbortedPilotsDelay', 7 )
 
-    self.pilotDB = PilotAgentsDB()
+    self.WMSAdministrator = WMSAdministratorHandler()
     return S_OK()
 
   #############################################################################
@@ -43,7 +43,7 @@ class PilotMonitorAgent( AgentModule ):
       - are older than self.clearPilotsDelay
       - are Aborted and older than self.clearAbortedDelay
     """
-    result = self.pilotDB.clearPilots( self.clearPilotsDelay, self.clearAbortedDelay )
+    result = self.WMSAdministrator.clearPilots( self.clearPilotsDelay, self.clearAbortedDelay )
     if not result['OK']:
       self.log.warn( 'Failed to clear old pilots in the PilotAgentsDB' )
 

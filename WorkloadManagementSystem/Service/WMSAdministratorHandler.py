@@ -23,6 +23,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getWMSPilotOutput, getGridEnv
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 import DIRAC.Core.Utilities.Time as Time
@@ -33,6 +34,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 jobDB = False
 pilotDB = False
 taskQueueDB = False
+pilotsLoggingDB = False
 
 FINAL_STATES = ['Done','Aborted','Cleared','Deleted','Stalled']
 
@@ -47,6 +49,7 @@ def initializeWMSAdministratorHandler( serviceInfo ):
   jobDB = JobDB()
   pilotDB = PilotAgentsDB()
   taskQueueDB = TaskQueueDB()
+  pilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
 
 class WMSAdministratorHandler(RequestHandler):
@@ -638,3 +641,32 @@ class WMSAdministratorHandler(RequestHandler):
           statistics[ status[attribute] ] = count
           
     return S_OK( statistics )
+
+  ##############################################################################
+  types_deletePilots = [ [ ListType, IntType ] ]
+  def export_deletePilots( self, pilotIDs ):
+
+    if type(pilotIDs) is IntType:
+      pilotIDs = [pilotIDs, ]
+
+    result = pilotDB.deletePilots( pilotIDs )
+    if not result['OK']:
+      return result
+    result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+    if not result['OK']:
+      return result
+
+    return S_OK()
+
+  ##############################################################################
+  types_clearPilots = [ IntType, IntType ]
+  def export_clearPilots( self, interval = 30, aborted_interval = 7 ):
+
+    result = pilotDB.clearPilots( interval, aborted_interval )
+    if not result[ 'OK' ]:
+      return result
+
+    pilotIDs = result[ 'Value' ]
+    result = pilotsLoggingDB.deletePilotsLogging( pilotIDs )
+
+    return S_OK()

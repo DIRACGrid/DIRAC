@@ -197,13 +197,6 @@ class PilotAgentsDB( DB ):
 
     failed = []
 
-    from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
-    pilotsLoggingDB = PilotsLoggingDB()
-    for pilotID in pilotIDs:
-      resp = pilotsLoggingDB.deletePilotsLogging(pilotID)
-      if not resp['OK']:
-        failed.append( 'PilotsLogging' )
-
     for table in ['PilotOutput', 'PilotRequirements', 'JobToPilotMapping', 'PilotAgents']:
       idString = ','.join( [ str( pid ) for pid in pilotIDs ] )
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % ( table, idString )
@@ -235,6 +228,8 @@ class PilotAgentsDB( DB ):
     reqList.append( "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % interval )
     reqList.append( "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval )
 
+    idList = None
+
     for req in reqList:
       result = self._query( req )
       if not result['OK']:
@@ -246,7 +241,7 @@ class PilotAgentsDB( DB ):
           if not result['OK']:
             gLogger.warn( 'Error while deleting pilots' )
 
-    return S_OK()
+    return S_OK( idList )
 
 ##########################################################################################
   def getPilotInfo( self, pilotRef = False, parentId = False, conn = False, paramNames = [], pilotID = False ):
