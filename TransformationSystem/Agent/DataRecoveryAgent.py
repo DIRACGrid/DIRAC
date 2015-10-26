@@ -27,7 +27,7 @@ from collections import defaultdict
 import time
 import itertools
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -348,6 +348,6 @@ class DataRecoveryAgent(AgentModule):
         self.notesToSend += str(message) + '\n'
 
   def __resetCounters(self):
-    for name, checks in self.todo.iteritems():
+    for _name, checks in self.todo.iteritems():
       for do in checks:
         do['Counter'] = 0
