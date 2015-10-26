@@ -18,6 +18,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
                                                              RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
@@ -31,6 +33,8 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageMan
 gJobDB = False
 gJobLoggingDB = False
 gtaskQueueDB = False
+gPilotAgentsDB = False
+gPilotsLoggingDB = False
 
 MAX_PARAMETRIC_JOBS = 20
 
@@ -40,6 +44,8 @@ def initializeJobManagerHandler( serviceInfo ):
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gtaskQueueDB = TaskQueueDB()
+  gPilotAgentsDB = PilotAgentsDB()
+  gPilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
 
 class JobManagerHandler( RequestHandler ):
@@ -292,6 +298,22 @@ class JobManagerHandler( RequestHandler ):
     result = gtaskQueueDB.deleteJob( jobID )
     if not result['OK']:
       gLogger.warn( 'Failed to delete job from the TaskQueue' )
+
+    # if it was the last job for the pilot, clear PilotsLogging about it
+    result = gPilotAgentsDB.getPilotsForJobID( jobID )
+    if not result['OK']:
+      return result
+    for pilot in result['Value']:
+        res = gPilotAgentsDB.getJobsForPilot( pilot[ 'PilotID' ] )
+        if not res['OK']:
+            return res
+        if not res['Value']: # if list of jobs for pilot is empty, delete pilot and pilotslogging
+            ret = gPilotAgentsDB.deletePilot( pilot[ 'PilotID' ] )
+            if not ret['OK']:
+                return ret
+            ret = gPilotsLoggingDB.deletePilotsLogging( pilot[ 'PilotID' ] )
+            if not ret['OK']:
+                return ret
 
     return S_OK()
 
