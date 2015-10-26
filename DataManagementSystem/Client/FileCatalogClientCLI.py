@@ -9,6 +9,7 @@ import commands
 import os.path
 import time
 import sys
+import getopt
 from types  import DictType, ListType
 from DIRAC  import gConfig
 from DIRAC.Core.Security import CS
@@ -178,7 +179,19 @@ class DirectoryListing:
       
     return pstring  
   
-  def printListing(self,reverse,timeorder):
+  def human_readable_size(self,num,suffix='B'):
+    """ Translate file size in bytes to human readable
+
+        Powers of 2 are used (1Mi = 2^20 = 1048576 bytes).
+    """
+    num = int(num)
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+      if abs(num) < 1024.0:
+        return "%3.1f%s%s" % (num, unit, suffix)
+      num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+    
+  def printListing(self,reverse,timeorder,sizeorder,humanread):
     """
     """
     if timeorder:
@@ -186,6 +199,11 @@ class DirectoryListing:
         self.entries.sort(key=lambda x: x[5]) 
       else:  
         self.entries.sort(key=lambda x: x[5],reverse=True) 
+    elif sizeorder:  
+      if reverse:
+        self.entries.sort(key=lambda x: x[4])
+      else:  
+        self.entries.sort(key=lambda x: x[4],reverse=True)
     else:  
       if reverse:
         self.entries.sort(key=lambda x: x[6],reverse=True) 
@@ -196,15 +214,23 @@ class DirectoryListing:
     wList = [0] * 7
     for d in self.entries:
       for i in range(7):
-        if len(str(d[i])) > wList[i]:
-          wList[i] = len(str(d[i]))
+        if humanread and i == 4:
+          humanread_len = len(str(self.human_readable_size(d[4])))
+          if humanread_len > wList[4]:
+            wList[4] = humanread_len
+        else:
+          if len(str(d[i])) > wList[i]:
+            wList[i] = len(str(d[i]))
         
     for e in self.entries:
+      size = e[4]
+      if humanread:
+        size = self.human_readable_size(e[4])
       print str(e[0]),
       print str(e[1]).rjust(wList[1]),
       print str(e[2]).ljust(wList[2]),
       print str(e[3]).ljust(wList[3]),
-      print str(e[4]).rjust(wList[4]),
+      print str(size).rjust(wList[4]),
       print str(e[5]).rjust(wList[5]),
       print str(e[6])
 
@@ -1265,7 +1291,15 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_ls(self,args):
     """ Lists directory entries at <path> 
 
-        usage: ls [-ltrn] <path>
+        usage: ls [-ltrnSh] <path>
+
+     -l  --long                : Long listing.
+     -t  --timeorder           : List ordering by time.
+     -r  --reverse             : Reverse list order.
+     -n  --numericid           : List with numeric value of UID and GID.
+     -S  --sizeorder           : List ordering by file size.
+     -h  --human-readable      : Print sizes in human readable format (e.g., 1Ki, 20Mi);
+                                 powers of 2 are used (1Mi = 2^20 B).
     """
     
     argss = args.split()
@@ -1274,24 +1308,58 @@ File Catalog Client $Revision: 1.17 $Date:
     reverse = False
     timeorder = False
     numericid = False
+    sizeorder = False
+    humanread = False
+    short_opts = 'ltrnSh'
+    long_opts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
     path = self.cwd
     if len(argss) > 0:
-      if argss[0][0] == '-':
-        if 'l' in argss[0]:
+      try:
+        optlist, arguments = getopt.getopt(argss,short_opts,long_opts)
+      except getopt.GetoptError, e:
+        print str(e)
+        print self.do_ls.__doc__
+        return
+      # Duplicated options are allowed: later options have precedence, e.g.,
+      # '-ltSt' will be order by time
+      # '-ltStS' will be order by size
+      options = [ opt for (opt, arg) in optlist]
+      for opt in options:
+        if opt in ['-l', '--long']:
           _long = True
-        if 'r' in  argss[0]:
+        elif opt in ['-r', '--reverse']:
           reverse = True
-        if 't' in argss[0]:
+        elif opt in ['-t', '--timeorder']:
           timeorder = True
-        if 'n' in argss[0]:
+        elif opt in ['-n', '--numericid']:
           numericid = True  
-        del argss[0]  
-          
+        elif opt in ['-S', '--sizeorder']:
+          sizeorder = True
+        elif opt in ['-h', '--human-readable']:
+          humanread = True
+
+      if timeorder and sizeorder:
+        options = [w.replace('--sizeorder','-S') for w in options]
+        options = [w.replace('--human-readable','-h') for w in options]
+        options.reverse()
+        # The last ['-S','-t'] provided is the one we use: reverse order
+        # means that the last provided has the smallest index.
+        if options.index('-S') < options.index('-t'):
+          timeorder = False
+        else:
+          sizeorder = False
+        
       # Get path    
-      if argss:        
-        path = argss[0]       
-        if path[0] != '/':
-          path = self.cwd+'/'+path      
+      if arguments:
+        input_path = False
+        while arguments or not input_path:
+          tmparg = arguments.pop()
+          # look for a non recognized option not starting with '-'
+          if tmparg[0] != '-':
+            path = tmparg
+            input_path = True
+            if path[0] != '/':
+              path = self.cwd+'/'+path
     path = self.getPath(path)
     
     # Check if the target path is a file
@@ -1304,7 +1372,7 @@ File Catalog Client $Revision: 1.17 $Date:
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
       dList.addFile(os.path.basename(path),fileDict,{},numericid)
-      dList.printListing(reverse,timeorder)
+      dList.printListing(reverse,timeorder,sizeorder,humanread)
       return         
     
     # Get directory contents now
@@ -1349,7 +1417,7 @@ File Catalog Client $Revision: 1.17 $Date:
                 dList.addSimpleFile(dname)
               
           if _long:
-            dList.printListing(reverse,timeorder)      
+            dList.printListing(reverse,timeorder,sizeorder,humanread)
           else:
             dList.printOrdered()
       else:
