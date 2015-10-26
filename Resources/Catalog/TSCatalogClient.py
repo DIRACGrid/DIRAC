@@ -7,12 +7,14 @@ __RCSID__ = "$Id$"
 from DIRAC                                                  import S_OK
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 from DIRAC.DataManagementSystem.Utilities.CatalogUtilities  import checkCatalogArguments
-from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Resources.Catalog.FileCatalogClientBase          import FileCatalogClientBase
 
 # List of common File Catalog methods implemented by this client
-CATALOG_METHODS = [ "addFile", "removeFile" ]
+READ_METHODS = []
+WRITE_METHODS = [ "addFile", "removeFile" ]
+NO_LFN_METHODS= []
 
-class TSCatalogClient( object ):
+class TSCatalogClient( FileCatalogClientBase ):
 
   """ Exposes the catalog functionality available in the DIRAC/TransformationHandler
 
@@ -25,41 +27,28 @@ class TSCatalogClient( object ):
     if url is not None:
       self.serverURL = url
 
-  def __getRPC( self, rpc = None, url = '', timeout = 600 ):
-    """ Return RPCClient object to url
-    """
-    if not rpc:
-      if not url:
-        url = self.serverURL
-      self.__kwargs.setdefault( 'timeout', timeout )
-      rpc = RPCClient( url, **self.__kwargs )
-    return rpc
-
-  def isOK( self ):
-    return self.valid
-
   def hasCatalogMethod( self, methodName ):
     """ Check of a method with the given name is implemented
     :param str methodName: the name of the method to check
     :return: boolean Flag
     """
-    return methodName in CATALOG_METHODS
+    return methodName in ( READ_METHODS + WRITE_METHODS + NO_LFN_METHODS )
 
   def getInterfaceMethods( self ):
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
     """
-    return ( [], CATALOG_METHODS, [] )
+    return ( READ_METHODS, WRITE_METHODS, NO_LFN_METHODS )
 
   @checkCatalogArguments
   def addFile( self, lfns, force = False ):
-    rpcClient = self.__getRPC()
+    rpcClient = self._getRPC()
     return rpcClient.addFile( lfns, force )
 
   @checkCatalogArguments
   def removeFile( self, lfns ):
-    rpcClient = self.__getRPC()
+    rpcClient = self._getRPC()
     successful = {}
     failed = {}
     listOfLists = breakListIntoChunks( lfns, 100 )
