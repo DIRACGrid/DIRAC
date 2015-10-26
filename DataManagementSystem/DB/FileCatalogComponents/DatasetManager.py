@@ -357,7 +357,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
     for datasetName in datasets:
-      result = self.__removeDataset( datasetName )
+      result = self.__removeDataset( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = True
       else:
@@ -395,7 +395,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
     for datasetName in datasets:
-      result = self.__checkDataset( datasetName )
+      result = self.__checkDataset( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = result['Value']
       else:
@@ -622,7 +622,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
     for datasetName in datasets:
-      result = self.__getDatasetParameters( datasetName )
+      result = self.__getDatasetParameters( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = result['Value']
       else:
@@ -727,7 +727,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
     for datasetName in datasets:
-      result = self.__getDatasetFiles( datasetName )
+      result = self.__getDatasetFiles( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = result['Value']
       else:
@@ -758,7 +758,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
     for datasetName in datasets:
-      result = self.__freezeDataset( datasetName )
+      result = self.__freezeDataset( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = True
       else:
@@ -807,7 +807,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
     for datasetName in datasets:
-      result = self.__releaseDataset( datasetName )
+      result = self.__releaseDataset( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = True
       else:
