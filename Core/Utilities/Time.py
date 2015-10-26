@@ -242,7 +242,7 @@ def queryTime(f):
   def measureQueryTime(*args, **kwargs):
     start = time.time()
     result = f(*args, **kwargs)
-    if not 'QueryTime' in result:
+    if result['OK'] and not 'QueryTime' in result:
       result['QueryTime'] = time.time() - start
     return result
   return measureQueryTime
