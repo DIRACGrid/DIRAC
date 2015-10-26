@@ -19,11 +19,18 @@ importedLFC = None
 READ_METHODS = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN']
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUserDirectory']
 
 WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'addReplica', 'removeReplica',
                  'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory',
-                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
+                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset',
+                 'changePathOwner', 'changePathMode']
+
+NO_LFN_METHODS = ['getUserDirectory', 'createUserDirectory', 'createUserMapping',
+                 'removeUserDirectory']
+
+ADMIN_METHODS = ['getUserDirectory', 'createUserDirectory', 'createUserMapping',
+                 'removeUserDirectory']
 
 ####################################################################
 #
@@ -1738,7 +1745,6 @@ class LcgFileCatalogClient( object ):
   # These are the methods required for the admin interface
   #
 
-  @checkCatalogArguments
   def getUserDirectory( self, usernames ):
     """ Takes a list of users and determines whether their directories already exist
     """
@@ -1818,7 +1824,7 @@ class LcgFileCatalogClient( object ):
     return S_OK( resDict )
 
   @checkCatalogArguments
-  def changeDirectoryOwner( self, directory ):
+  def changePathOwner( self, paths ):
     """ Change the ownership of the directory to the user associated to the supplied DN
     """
     successful = {}
@@ -1826,7 +1832,7 @@ class LcgFileCatalogClient( object ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
-    for dirPath, dn in directory.items():
+    for dirPath, dn in paths.items():
       res = getDNUserID( dn )
       if not res['OK']:
         failed[dirPath] = res['Message']
@@ -1843,6 +1849,25 @@ class LcgFileCatalogClient( object ):
     return S_OK( resDict )
 
   @checkCatalogArguments
+  def changePathMode( self, paths ):
+    """ Change the ownership of the directory to the user associated to the supplied DN
+    """
+    successful = {}
+    failed = {}
+    created = self.__openSession()
+    if created < 0:
+      return S_ERROR( "Error opening LFC session" )
+    for dirPath, mode in paths.items():
+      res = self.__changeMode( dirPath, mode )
+      if not res['OK']:
+        failed[dirPath] = res['Message']
+      else:
+        successful[dirPath] = True
+    if created:
+      self.__closeSession()
+    resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
+
   def createUserMapping( self, userDNs ):
     """ Create a user with the supplied DN and return the userID
     """
