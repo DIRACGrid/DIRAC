@@ -230,10 +230,7 @@ class DataRecoveryAgent(AgentModule):
       self.__resetCounters()
       transType, transName = values
       self.log.notice("Running over Production: %s " % prodID)
-      if transType == "MCGeneration":
-        self.treatMCGeneration(int(prodID), transName, transType)
-      else:
-        self.treatProduction(int(prodID), transName, transType)
+      self.treatProduction(int(prodID), transName, transType)
 
       if self.notesToSend:
         ##remove from the jobCache because something happened
@@ -261,20 +258,6 @@ class DataRecoveryAgent(AgentModule):
       transformations[str(prodID)] = (prod['Type'], prodName)
     return S_OK(transformations)
 
-  def treatMCGeneration(self, prodID, transName, transType):
-    """deal with MCGeneration jobs, where there is no inputFile"""
-    tInfo = TransformationInfo(prodID, transName, transType, self.enabled,
-                               self.tClient, self.fcClient, self.jobMon)
-    jobs, nDone, nFailed = tInfo.getJobs(statusList=self.jobStatus)
-
-    if self.jobCache[prodID][0] == nDone and self.jobCache[prodID][1] == nFailed:
-      self.log.notice("Skipping production %s because nothing changed" % prodID)
-      return
-    self.jobCache[prodID] = (nDone, nFailed)
-
-    self.checkAllJobs(jobs, tInfo)
-    self.printSummary()
-
   def treatProduction( self, prodID, transName, transType ):
     """run this thing for given production"""
 
@@ -285,11 +268,16 @@ class DataRecoveryAgent(AgentModule):
     if self.jobCache[prodID][0] == nDone and self.jobCache[prodID][1] == nFailed:
       self.log.notice("Skipping production %s because nothing changed" % prodID)
       return
+
     self.jobCache[prodID] = (nDone, nFailed)
 
-    self.log.notice( "Getting tasks...")
-    tasksDict = tInfo.checkTasksStatus()
-    lfnTaskDict = dict( [ ( tasksDict[taskID]['LFN'],taskID ) for taskID in tasksDict ] )
+    tasksDict = None
+    lfnTaskDict = None
+
+    if transType != "MCGeneration":
+      self.log.notice("Getting tasks...")
+      tasksDict = tInfo.checkTasksStatus()
+      lfnTaskDict = dict([(tasksDict[taskID]['LFN'], taskID) for taskID in tasksDict])
 
     self.checkAllJobs( jobs, tInfo, tasksDict, lfnTaskDict )
     self.printSummary()
