@@ -16,12 +16,12 @@ import os, re, types, time
 lfc = None
 importedLFC = None
 
-_readMethods = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
+READ_METHODS = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
                 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
                 'resolveDataset', 'getPathPermissions', 'getLFNForPFN']
 
-_writeMethods = ['createLink', 'removeLink', 'addFile', 'addReplica', 'removeReplica',
+WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'addReplica', 'removeReplica',
                  'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory',
                  'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset']
 
@@ -235,8 +235,8 @@ class LcgFileCatalogClient( object ):
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
     """
-    global _readMethods, _writeMethods
-    return ( _readMethods, _writeMethods, [] )
+    global READ_METHODS, WRITE_METHODS
+    return ( READ_METHODS, WRITE_METHODS, [] )
 
   def isOK( self ):
     return self.valid
@@ -350,9 +350,9 @@ class LcgFileCatalogClient( object ):
   @checkCatalogArguments
   def hasAccess(self, lfns, opType ):
 
-    if opType in _readMethods:
+    if opType in READ_METHODS:
       opType = 'Read'
-    elif opType in _writeMethods:
+    elif opType in WRITE_METHODS:
       opType = 'Write'
 
     res = self.getPathPermissions( lfns )
