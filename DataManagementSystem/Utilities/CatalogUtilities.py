@@ -11,8 +11,10 @@ import hashlib as md5
 
 import random
 import os
+import errno
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
+from DIRAC.Core.Utilities.DErrno import DError
 
 def checkArgumentFormat( path, generateMap = False ):
   """ Bring the various possible form of arguments to FileCatalog methods to
@@ -30,11 +32,11 @@ def checkArgumentFormat( path, generateMap = False ):
     elif isinstance( path, dict ):
       urls = path
     else:
-      return S_ERROR( "checkArgumentDict: Supplied path is not of the correct format" )
+      return DError( errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
     return S_OK( urls )
 
   if not path:
-    return S_ERROR( 'Empty input: %s' % str( path ) )
+    return DError( errno.EINVAL, 'Empty input: %s' % str( path ) )
 
   result = checkArgumentDict( path )
   if not result['OK']:
