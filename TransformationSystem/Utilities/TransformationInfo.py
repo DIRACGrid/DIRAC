@@ -237,7 +237,7 @@ class TransformationInfo(object):
 
     self.log.notice("Found %d Done Jobs " % len(done))
     self.log.notice("Found %d Failed Jobs " % len(failed))
-    return jobs
+    return jobs, len(done), len(failed)
 
   def __getJobs(self, status):
     """returns list of done jobs"""

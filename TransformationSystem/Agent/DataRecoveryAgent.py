@@ -187,7 +187,7 @@ class DataRecoveryAgent(AgentModule):
                           ),
                  ]
                  }
-
+    self.jobCache = {}
     ##Notification
     self.notesToSend = ""
     self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
@@ -218,7 +218,7 @@ class DataRecoveryAgent(AgentModule):
     """ The main execution method.
     """
     self.log.notice("Will ignore the following productions: %s" % self.productionsToIgnore)
-
+    self.log.notice(" Job Cache: %s " % self.jobCache)
     transformations = self.getEligibleTransformations(self.transformationStatus, self.transformationTypes)
     if not transformations['OK']:
       self.log.error("Failure to get transformations", transformations['Message'])
@@ -236,6 +236,8 @@ class DataRecoveryAgent(AgentModule):
         self.treatProduction(int(prodID), transName, transType)
 
       if self.notesToSend:
+        ##remove from the jobCache because something happened
+        self.jobCache.pop(prodID, None)
         notification = NotificationClient()
         for address in self.addressTo:
           result = notification.sendMail(address, "%s: %s" %
@@ -263,7 +265,13 @@ class DataRecoveryAgent(AgentModule):
     """deal with MCGeneration jobs, where there is no inputFile"""
     tInfo = TransformationInfo(prodID, transName, transType, self.enabled,
                                self.tClient, self.fcClient, self.jobMon)
-    jobs = tInfo.getJobs(statusList=self.jobStatus)
+    jobs, nDone, nFailed = tInfo.getJobs(statusList=self.jobStatus)
+
+    if self.jobCache[prodID][0] == nDone and self.jobCache[prodID][1] == nFailed:
+      self.log.notice("Skipping production %s because nothing changed" % prodID)
+      return
+    self.jobCache[prodID] = (nDone, nFailed)
+
     self.checkAllJobs(jobs, tInfo)
     self.printSummary()
 
@@ -272,7 +280,12 @@ class DataRecoveryAgent(AgentModule):
 
     tInfo = TransformationInfo( prodID, transName, transType, self.enabled,
                                 self.tClient, self.fcClient, self.jobMon)
-    jobs = tInfo.getJobs(statusList=self.jobStatus)
+    jobs, nDone, nFailed = tInfo.getJobs(statusList=self.jobStatus)
+
+    if self.jobCache[prodID][0] == nDone and self.jobCache[prodID][1] == nFailed:
+      self.log.notice("Skipping production %s because nothing changed" % prodID)
+      return
+    self.jobCache[prodID] = (nDone, nFailed)
 
     self.log.notice( "Getting tasks...")
     tasksDict = tInfo.checkTasksStatus()
