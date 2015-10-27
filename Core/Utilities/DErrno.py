@@ -71,15 +71,20 @@ ESPF = 1011
 # ## Core (11XX)
 # Certificates and Proxy: 0X
 EX509 = 1100
-ENOCERT = 1101
-EPROXYFIND = 1102
-EPROXYLOAD = 1103
-EPROXYREAD = 1104
-ECERTFIND = 1105
-ECERTLOAD = 1106
-ECERTREAD = 1107
-# 3rd party security: 1X
-EVOMS = 1110
+EPROXYFIND = 1101
+EPROXYLOAD = 1102
+EPROXYREAD = 1103
+ECERTFIND = 1104
+ECERTLOAD = 1105
+ECERTREAD = 1106
+ENOCERT = 1107
+ENOCHAIN = 1108
+ENOPKEY = 1109
+# DISET: 1X
+EDISET = 1110
+# 3rd party security: 2X
+E3RDPARTY = 1120
+EVOMS = 1121
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -101,16 +106,23 @@ dErrorCode = { 1001 : 'ERRX',
                1010 : 'EWF',
                1011 : 'ESPF',
 
-               # Core
+               # ## Core
+               # 110X: Certificates and Proxy
                1100 : 'EX509',
-               1101 : 'ENOCERT',
-               1102 : 'EPROXYFIND',
-               1103 : 'EPROXYLOAD',
-               1104 : 'EPROXYREAD',
-               1105 : 'ECERTFIND',
-               1106 : 'ECERTLOAD',
-               1107 : 'ECERTREAD',
-               1110 : 'EVOMS',
+               1101 : 'EPROXYFIND',
+               1102 : 'EPROXYLOAD',
+               1103 : 'EPROXYREAD',
+               1104 : 'ECERTFIND',
+               1105 : 'ECERTLOAD',
+               1106 : 'ECERTREAD',
+               1107 : 'ENOCERT',
+               1108 : 'ENOCHAIN',
+               1109 : 'ENOPKEY',
+               # 111X: DISET
+               1110 : 'EDISET',
+               # 112X: 3rd party security
+               1120 : 'E3RDPARTY',
+               1121 : 'EVOMS',
 
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
@@ -130,14 +142,22 @@ dStrError = { ERRX : "A human readable error message for ERRX",
               EWF : "Cannot write to file",
               ESPF : "Cannot set permissions to file",
 
+              # ## Core
+              # 110X: Certificates and Proxy
               EX509 : "Generic Error with X509",
-              ENOCERT : "Missing proxy of certificate",
               EPROXYFIND : "Can't find proxy",
               EPROXYLOAD : "Can't load proxy from file",
               EPROXYREAD : "Can't read proxy",
               ECERTFIND : "Can't find certificate",
               ECERTLOAD : "Can't load certificate from file",
               ECERTREAD : "Can't read certificate",
+              ENOCERT : "No certificate loaded",
+              ENOCHAIN : "No chain loaded",
+              ENOPKEY : "No private key loaded",
+              # 111X: DISET
+              EDISET : "DISET Error",
+              # 112X: 3rd party security
+              E3RDPARTY: "3rd party security service error",
               EVOMS : "VOMS Error",
 
               # DMS/StorageManagement

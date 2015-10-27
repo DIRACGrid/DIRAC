@@ -62,9 +62,7 @@ class X509Chain( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( chainLocation, e ))
-#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, e ) )
-#       return S_ERROR( "Can't open file" )
+      return DError( DErrno.EOF, "%s: %s" % ( chainLocation, e ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, data, dataFormat = crypto.FILETYPE_PEM ):
@@ -76,15 +74,11 @@ class X509Chain( object ):
     try:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, data )
     except Exception as e:
-      return DError(DErrno., "%s" % e)
-#       gLogger.error( "Can't load pem data", "%s" % e )
-#       return S_ERROR( "Can't load pem data" )
+      return DError( DErrno.ECERTLOAD, "%s" % e )
     if not self.__certList:
-      return DError(DErrno.)
-#       gLogger.error( "No certificates in the contents" )
-#       return S_ERROR( "No certificates in the contents" )
+      return DError( DErrno.EX509 )
     self.__loadedChain = True
-    #Update internals
+    # Update internals
     self.__checkProxyness()
     return S_OK()
 
@@ -107,9 +101,7 @@ class X509Chain( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( chainLocation, e ))
-#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, e ) )
-#       return S_ERROR( "Can't open file" )
+      return DError( DErrno.EOF, "%s: %s" % ( chainLocation, e ) )
     return self.loadKeyFromString( pemData, password )
 
   def loadKeyFromString( self, pemData, password = False ):
@@ -121,9 +113,7 @@ class X509Chain( object ):
     try:
       self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception as e:
-      return DError(DErrno.,  "%s (Probably bad pass phrase?)" % e )
-#       gLogger.error( "Can't load key file", "%s (Probably bad pass phrase?)" % e )
-#       return S_ERROR( "Can't load key file" )
+      return DError( DErrno.ECERTLOAD, "%s (Probably bad pass phrase?)" % e )
     self.__loadedPKey = True
     return S_OK()
 
@@ -146,9 +136,7 @@ class X509Chain( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( chainLocation, e ))
-#       gLogger.error( "Can't open file", "%s: %s" % ( chainLocation, e ) )
-#       return S_ERROR( "Can't open file" )
+      return DError( DErrno.EOF, "%s: %s" % ( chainLocation, e ) )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
@@ -175,7 +163,7 @@ class X509Chain( object ):
       asn1Obj = crypto.ASN1( blob )
       asn1Obj[0][0].convert_to_object()
       asn1dump = binascii.hexlify( asn1Obj.dump() )
-      extval = "critical,DER:" + ":".join( asn1dump[i:i+2] for i in range( 0,len(asn1dump),2) )
+      extval = "critical,DER:" + ":".join( asn1dump[i:i + 2] for i in range( 0, len( asn1dump ), 2 ) )
       ext = crypto.X509Extension( "proxyCertInfo", extval )
       extList.append( ext )
     return extList
@@ -185,9 +173,7 @@ class X509Chain( object ):
     Get a certificate in the chain
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( X509Certificate( self.__certList[ certPos ] ) )
 
   def getIssuerCert( self ):
@@ -195,9 +181,7 @@ class X509Chain( object ):
     Get a issuer cert in the chain
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if self.__isProxy:
       return S_OK( X509Certificate( self.__certList[ self.__firstProxyStep + 1 ] ) )
     else:
@@ -208,9 +192,7 @@ class X509Chain( object ):
     Get the pkey obj
     """
     if not self.__loadedPKey:
-      return DError(DErrno.)
-#       gLogger.error( "No pkey loaded" )
-#       return S_ERROR( "No pkey loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( self.__keyObj )
 
   def getCertList( self ):
@@ -218,9 +200,7 @@ class X509Chain( object ):
     Get the cert list
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( self.__certList )
 
   def getNumCertsInChain( self ):
@@ -228,9 +208,7 @@ class X509Chain( object ):
     Numbers of certificates in chain
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( len( self.__certList ) )
 
   def generateProxyToString( self, lifeTime, diracGroup = False, strength = 1024, limited = False, rfc = False, proxyKey = False ):
@@ -243,12 +221,9 @@ class X509Chain( object ):
         - limited : Create a limited proxy
     """
     if not self.__loadedChain:
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if not self.__loadedPKey:
-      return DError(DErrno.)
-#       gLogger.error( "No pkey loaded" )
-#       return S_ERROR( "No pkey loaded" )
+      return DError( DErrno.ENOPKEY )
 
     if self.__isProxy:
       rfc = self.isRFC().get( 'Value', False )
@@ -263,9 +238,9 @@ class X509Chain( object ):
 
 
     if rfc:
-      proxyCert.set_serial_number( str( int( random.random()*10**10 ) ) )
+      proxyCert.set_serial_number( str( int( random.random() * 10 ** 10 ) ) )
       cloneSubject = issuerCert.get_subject().clone()
-      cloneSubject.insert_entry( "CN", str( int( random.random()*10**10 ) ) )
+      cloneSubject.insert_entry( "CN", str( int( random.random() * 10 ** 10 ) ) )
       proxyCert.set_subject( cloneSubject )
       proxyCert.add_extensions( self.__getProxyExtensionList( diracGroup, rfc and not limited, rfc and limited ) )
     else:
@@ -311,15 +286,11 @@ class X509Chain( object ):
       fd.write( retVal['Value'] )
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s :%s" % ( filePath, e ))
-#       gLogger.error( "Cannot write to file", "%s :%s" % ( filePath, e ) )
-#       return S_ERROR( "Cannot write to file" )
+      return DError( DErrno.EWF, "%s :%s" % ( filePath, e ) )
     try:
       os.chmod( filePath, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return DError(DErrno.,"%s :%s" % ( filePath, e ) )
-#       gLogger.error( "Cannot set permissions to file", "%s :%s" % ( filePath, e ) )
-#       return S_ERROR( "Cannot set permissions to file" )
+      return DError( DErrno.ESPF, "%s :%s" % ( filePath, e ) )
     return S_OK()
 
   def isProxy( self ):
@@ -327,9 +298,7 @@ class X509Chain( object ):
     Check wether this chain is a proxy
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( self.__isProxy )
 
   def isLimitedProxy( self ):
@@ -337,9 +306,7 @@ class X509Chain( object ):
     Check wether this chain is a proxy
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( self.__isProxy and self.__isLimitedProxy )
 
   def isValidProxy( self, ignoreDefault = False ):
@@ -349,25 +316,17 @@ class X509Chain( object ):
       checks if its expired
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if not self.__isProxy:
-      return DError(DErrno.)
-      gLogger.error( "Chain is not a proxy" )
-      return S_ERROR( "Chain is not a proxy" )
+      return DError( DErrno.ENOCHAIN, "Chain is not a proxy" )
     elif self.hasExpired()['Value']:
-      return DError(DErrno.)
-#       gLogger.error( "Chain has expired" )
-#       return S_ERROR( "Chain has expired" )
+      return DError( DErrno.ENOCHAIN )
     elif ignoreDefault:
       groupRes = self.getDIRACGroup( ignoreDefault = ignoreDefault )
       if not groupRes[ 'OK' ]:
         return groupRes
       if not groupRes[ 'Value' ]:
-      return DError(DErrno.)
-#         gLogger.error( "Proxy does not have an explicit group" )
-#         return S_ERROR( "Proxy does not have an explicit group" )
+        return DError( DErrno.EDISET, "Proxy does not have an explicit group" )
     return S_OK( True )
 
   def isVOMS( self ):
@@ -395,41 +354,39 @@ class X509Chain( object ):
       res = cert.getVOMSData()
       if res[ 'OK' ]:
         return res
-    return DError(DErrno.)
-#     gLogger.error( "No VOMS data" )
-#     return S_ERROR( "No VOMS data" )
+    return DError( DErrno.EVOMS )
 
 
   def __checkProxyness( self ):
     self.__hash = False
-    self.__firstProxyStep = len( self.__certList ) - 2 # -1 is user cert by default, -2 is first proxy step
+    self.__firstProxyStep = len( self.__certList ) - 2  # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
     self.__isRFC = None
     self.__isLimitedProxy = False
     prevDNMatch = 2
-    #If less than 2 steps in the chain is no proxy
+    # If less than 2 steps in the chain is no proxy
     if len( self.__certList ) < 2:
       self.__isProxy = False
       return
-    #Check proxyness in steps
+    # Check proxyness in steps
     for step in range( len( self.__certList ) - 1 ):
       issuerMatch = self.__checkIssuer( step, step + 1 )
       if not issuerMatch:
         self.__isProxy = False
         return
-      #Do we need to check the proxy DN?
+      # Do we need to check the proxy DN?
       if prevDNMatch:
         dnMatch = self.__checkProxyDN( step, step + 1 )
-        #No DN match
+        # No DN match
         if dnMatch == 0:
-          #If we are not in the first step we've found the entity cert
+          # If we are not in the first step we've found the entity cert
           if step > 0:
             self.__firstProxyStep = step - 1
-          #If we are in the first step this is not a proxy
+          # If we are in the first step this is not a proxy
           else:
             self.__isProxy = False
             return
-        #Limited proxy DN match
+        # Limited proxy DN match
         elif dnMatch == 2:
           self.__isLimitedProxy = True
           if prevDNMatch != 2:
@@ -456,7 +413,7 @@ class X509Chain( object ):
       extList = self.__certList[ certStep ].get_extensions()
       for ext in extList:
         if ext.get_sn() == "proxyCertInfo":
-          contraint = [ line.split(":")[1].strip() for line in ext.get_value().split("\n") if line.split(":")[0] == "Path Length Constraint" ]
+          contraint = [ line.split( ":" )[1].strip() for line in ext.get_value().split( "\n" ) if line.split( ":" )[0] == "Path Length Constraint" ]
           if len( contraint ) == 0:
             return 0
           if self.__isRFC == None:
@@ -486,14 +443,11 @@ class X509Chain( object ):
     Get the dirac group if present
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if not self.__isProxy:
-      gLogger.error( "Chain does not contain a valid proxy" )
-      return S_ERROR( "Chain does not contain a valid proxy" )
-    #ADRI: Below will find first match of dirac group
-    #for i in range( len( self.__certList ) -1, -1, -1 ):
+      return DError( DErrno.EX509, "Chain does not contain a valid proxy" )
+    # ADRI: Below will find first match of dirac group
+    # for i in range( len( self.__certList ) -1, -1, -1 ):
     #  retVal = self.getCertInChain( i )[ 'Value' ].getDIRACGroup()
     #  if retVal[ 'OK' ] and 'Value' in retVal and retVal[ 'Value' ]:
     #    return retVal
@@ -507,9 +461,7 @@ class X509Chain( object ):
     Is any of the elements in the chain expired?
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     for iC in range( len( self.__certList ) - 1, -1, -1 ):
       if self.__certList[iC].has_expired():
         return S_OK( True )
@@ -520,9 +472,7 @@ class X509Chain( object ):
     Get the smallest not after date
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     notAfter = self.__certList[0].get_not_after()
     for iC in range( len( self.__certList ) - 1, -1, -1 ):
       stepNotAfter = self.__certList[iC].get_not_after()
@@ -538,11 +488,9 @@ class X509Chain( object ):
     Return S_OK( X509Request ) / S_ERROR
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if not bitStrength:
-      return S_ERROR( "bitStrength has to be greater than 1024 (%s)" % bitStrength )
+      return DError( DErrno.EX509, "bitStrength has to be greater than 1024 (%s)" % bitStrength )
     x509 = self.getCertInChain( 0 )[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
@@ -552,18 +500,13 @@ class X509Chain( object ):
     return S_OK( string ) / S_ERROR
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if not self.__loadedPKey:
-      return DError(DErrno.)
-#       gLogger.error( "No pkey loaded" )
-#       return S_ERROR( "No pkey loaded" )
+      return DError( DErrno.ENOPKEY )
     try:
       req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return DError(DErrno., "Can't load request data: %s" % e)
-#       return S_ERROR( "Can't load request data: %s" % e )
+      return DError( DErrno.ECERTLOAD, "Can't load request data: %s" % e )
     limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
     return self.generateProxyToString( lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey() )
 
@@ -572,9 +515,7 @@ class X509Chain( object ):
     Get remaining time
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     remainingSecs = self.getCertInChain( 0 )[ 'Value' ].getRemainingSecs()[ 'Value' ]
     for i in range( 1, len( self.__certList ) ):
       stepRS = self.getCertInChain( i )[ 'Value' ].getRemainingSecs()[ 'Value' ]
@@ -586,9 +527,7 @@ class X509Chain( object ):
     Dump all to string
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     data = crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[0] )
     if self.__loadedPKey:
       data += crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj )
@@ -614,22 +553,16 @@ class X509Chain( object ):
         fd.write( pemData )
         fd.close()
     except Exception as e:
-      return DError(DErrno., "%s :%s" % ( filename, e ))
-#       gLogger.error( "Cannot write to file", "%s :%s" % ( filename, e ) )
-#       return S_ERROR( "Cannot write to file" )
+      return DError( DErrno.EWF, "%s :%s" % ( filename, e ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return DError(DErrno., "%s :%s" % ( filename, e ))
-#       gLogger.error( "Cannot set permissions to file", "%s :%s" % ( filename, e ) )
-#       return S_ERROR( "Cannot set permissions to file" )
+      return DError( DErrno.ESPF, "%s :%s" % ( filename, e ) )
     return S_OK( filename )
 
   def isRFC( self ):
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( self.__isRFC )
 
   def dumpChainToString( self ):
@@ -637,9 +570,7 @@ class X509Chain( object ):
     Dump only cert chain to string
     """
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     data = ''
     for i in range( len( self.__certList ) ):
       data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
@@ -650,9 +581,7 @@ class X509Chain( object ):
     Dump key to string
     """
     if not self.__loadedPKey:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     return S_OK( crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj ) )
 
   def __str__( self ):
@@ -685,9 +614,7 @@ class X509Chain( object ):
 
   def getCredentials( self, ignoreDefault = False ):
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     credDict = { 'subject' : self.__certList[0].get_subject().one_line(),
                  'issuer' : self.__certList[0].get_issuer().one_line(),
                  'secondsLeft' : self.getRemainingSecs()[ 'Value' ],
@@ -734,9 +661,7 @@ class X509Chain( object ):
 
   def hash( self ):
     if not self.__loadedChain:
-      return DError(DErrno.)
-#       gLogger.error( "No chain loaded" )
-#       return S_ERROR( "No chain loaded" )
+      return DError( DErrno.ENOCHAIN )
     if self.__hash:
       return S_OK( self.__hash )
     sha1 = hashlib.sha1()
