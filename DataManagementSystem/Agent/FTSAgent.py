@@ -115,6 +115,8 @@ class FTSAgent( AgentModule ):
   MONITOR_COMMAND = 'glite-transfer-status'
   # Max number of requests fetched from the RMS
   MAX_REQUESTS = 100
+  # Minimum interval (seconds) between 2 job monitoring
+  MONITORING_INTERVAL = 600
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -302,6 +304,9 @@ class FTSAgent( AgentModule ):
     self.MAX_REQUESTS = self.am_getOption( "MaxRequests", self.MAX_REQUESTS )
     log.info( "Max Requests fetched           = ", str( self.MAX_REQUESTS ) )
 
+    self.MONITORING_INTERVAL = self.am_getOption( "MonitoringInterval", self.MONITORING_INTERVAL )
+    log.info( "Minimum monitoring interval    = ", str( self.MONITORING_INTERVAL ) )
+
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
     log.info( "initialize: creation of FTSPlacement..." )
@@ -463,10 +468,11 @@ class FTSAgent( AgentModule ):
       # # dict keeping info about files to reschedule, submit, fail and register
       ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-      if ftsJobs:
-        log.info( "==> found %s FTSJobs to monitor" % len( ftsJobs ) )
+      jobsToMonitor = [ftsJob for ftsJob in ftsJobs if ( datetime.datetime.utcnow() - ftsJob.LastUpdate ).seconds > self.MONITORING_INTERVAL]
+      if jobsToMonitor:
+        log.info( "==> found %s FTSJobs to monitor" % len( jobsToMonitor ) )
         # # PHASE 0 = monitor active FTSJobs
-        for ftsJob in ftsJobs:
+        for ftsJob in jobsToMonitor:
           monitor = self.__monitorJob( request, ftsJob )
           if not monitor["OK"]:
             log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
@@ -628,6 +634,8 @@ class FTSAgent( AgentModule ):
               toSubmit.append( ftsFile )
               retryIds.add( ftsFile.FTSFileID )
 
+      # # should not put back jobs that have not been monitored this time
+      ftsJobs = jobsToMonitor
       # # submit new ftsJobs
       if toSubmit:
         if request.Status != 'Scheduled':
