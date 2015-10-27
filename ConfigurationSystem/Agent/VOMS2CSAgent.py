@@ -13,11 +13,11 @@ from DIRAC.Core.Base.AgentModule                       import AgentModule
 from DIRAC.ConfigurationSystem.Client.CSAPI            import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient   import NotificationClient
 from DIRAC.Core.Security.VOMSService                   import VOMSService
-from DIRAC.Core.Security                               import Locations, X509Chain
 from DIRAC                                             import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUserOption, \
                                                               getVOMSRoleGroupMapping, getUsersInVO, \
                                                               getAllUsers
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 
 class VOMS2CSAgent( AgentModule ):
 
@@ -59,31 +59,7 @@ class VOMS2CSAgent( AgentModule ):
 
     return S_OK( voDict )
 
-  def __generateProxy( self ):
-    self.log.info( "Generating proxy..." )
-    certLoc = Locations.getHostCertificateAndKeyLocation()
-    if not certLoc:
-      self.log.error( "Can not find certificate!" )
-      return False
-    chain = X509Chain.X509Chain()
-    result = chain.loadChainFromFile( certLoc[0] )
-    if not result[ 'OK' ]:
-      self.log.error( "Can not load certificate file", "%s : %s" % ( certLoc[0], result[ 'Message' ] ) )
-      return False
-    result = chain.loadKeyFromFile( certLoc[1] )
-    if not result[ 'OK' ]:
-      self.log.error( "Can not load key file", "%s : %s" % ( certLoc[1], result[ 'Message' ] ) )
-      return False
-    result = chain.generateProxyToFile( self.proxyLocation, 3600 )
-    if not result[ 'OK' ]:
-      self.log.error( "Could not generate proxy file", result[ 'Message' ] )
-      return False
-    self.log.info( "Proxy generated" )
-    return True
-
   def execute( self ):
-
-
 
     self.__adminMsgs = {}
     self.csapi.downloadCSData()
@@ -92,10 +68,13 @@ class VOMS2CSAgent( AgentModule ):
       voAdminMail = None
       if voAdminUser:
         voAdminMail = getUserOption( voAdminUser, "Email")
+      voAdminGroup = getVOOption( vo, "VOAdminGroup", getVOOption( vo, "DefaultGroup" ) )
 
-      result = self.__syncCSWithVOMS( vo )
+      self.log.info( 'Performing VOMS sync for VO %s with credentials %s@%s' % ( vo, voAdminUser, voAdminGroup ) )
+
+      result = self.__syncCSWithVOMS( vo, proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup )
       if not result['OK']:
-        self.log.error( 'Failed to perform VOMS to CS synchronization. ', result["Message"] )
+        self.log.error( 'Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % ( vo, result["Message"] ) )
         continue
 
       mailMsg = ""
@@ -108,20 +87,16 @@ class VOMS2CSAgent( AgentModule ):
                                      self.am_getOption( 'mailFrom', "DIRAC system" ) )
 
     # We have accumulated all the changes, commit them now
-#    result = self.csapi.commitChanges()
-#    if not result[ 'OK' ]:
-#      self.log.error( "Could not commit configuration changes", result[ 'Message' ] )
-#      return result
-#    self.log.info( "Configuration committed" )
+    result = self.csapi.commitChanges()
+    if not result[ 'OK' ]:
+      self.log.error( "Could not commit configuration changes", result[ 'Message' ] )
+      return result
+    self.log.info( "Configuration committed" )
     return S_OK()
 
-
+  @executeWithUserProxy
   def __syncCSWithVOMS( self, vo ):
     self.__adminMsgs = { 'Errors' : [], 'Info' : [] }
-
-    voAdminUser = getVOOption( vo, "VOAdmin", [] )[0]
-    voAdminGroup = getVOOption( vo, "VOAdminGroup", getVOOption( vo, "DefaultGroup" ) )
-
 
     # Get DIRAC group vs VOMS Role Mappings
     result = getVOMSRoleGroupMapping( vo )
@@ -140,16 +115,17 @@ class VOMS2CSAgent( AgentModule ):
       self.log.error( 'Could not retrieve VOMS VO name', "for %s" % vo )
       return result
     vomsVOName = result[ 'Value' ].lstrip( '/' )
-    self.log.info( "VOMS VO Name for %s is %s" % ( vo, vomsVOName ) )
+    self.log.verbose( "VOMS VO Name for %s is %s" % ( vo, vomsVOName ) )
 
-    # Get VOMS user info
-    result = vomsSrv.getUsers( proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup )
+    # Get VOMS users
+    result = vomsSrv.getUsers()
     if not result['OK']:
       self.log.error( 'Could not retrieve user information from VOMS', result['Message'] )
       return result
     vomsUserDict = result[ 'Value' ]
-    self.__adminMsgs[ 'Info' ].append( "There are %s registered users in VOMS VO %s" % ( len( vomsUserDict ), vomsVOName ) )
-    self.log.info( "There are %s registered users in VOMS VO %s" % ( len( vomsUserDict ), vomsVOName ) )
+    message = "There are %s registered users in VOMS VO %s" % ( len( vomsUserDict ), vomsVOName )
+    self.__adminMsgs[ 'Info' ].append( message )
+    self.log.info( message )
 
     # Get DIRAC users
     diracUsers = getUsersInVO( vo )
@@ -197,16 +173,22 @@ class VOMS2CSAgent( AgentModule ):
             diracName = user
         # We have a real new user
         if not diracName:
-          result = vomsSrv.getUserNickname( dn, vomsUserDict[dn]['CA'], vomsUserDict[dn]['mail'], proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup )
-          if not result['OK']:
-            self.log.error( 'Failed to evaluate nickname for DN', dn )
-            continue
-          newDiracName = result['Value']
+          nickName = ''
+          result = vomsSrv.attGetUserNickname( dn, vomsUserDict[dn]['CA'] )
+          if result['OK']:
+            nickName = result['Value']
+
+          if nickName:
+            newDiracName = nickName
+          else:
+            newDiracName = getUserName( dn, vomsUserDict[dn]['mail'] )
+
           ind = 1
           trialName = newDiracName
           while newDiracName in allDiracUsers:
             # We have a user with the same name but with a different DN
             newDiracName = "%s_%d" % ( trialName, ind )
+            ind += 1
 
           # We now have everything to add the new user
           userDict = { "DN": dn, "CA": vomsUserDict[dn]['CA'], "Email": vomsUserDict[dn]['mail'] }
@@ -222,39 +204,115 @@ class VOMS2CSAgent( AgentModule ):
           self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
           continue
 
-      # We have an already existing user
-      userDict = { "DN": dn, "CA": vomsUserDict[dn]['CA'], "Email": vomsUserDict[dn]['mail'] }
-      nonVOGroups = nonVOUserDict.get( diracName, {} ).get( 'Groups', [] )
-      existingGroups = diracUserDict.get( diracName, {} ).get( 'Groups', [] )
-      groupsWithRole = []
-      for role in vomsUserDict[dn]['Roles']:
-        fullRole = "/%s/%s" % ( vomsVOName, role )
-        group = vomsDIRACMapping.get( fullRole )
-        if group:
-          groupsWithRole.append( group )
-      keepGroups = nonVOGroups + groupsWithRole + [defaultVOGroup]
-      for group in existingGroups:
-        role = diracVOMSMapping[group]
-        # Among already existing groups for the user keep those without a special VOMS Role
-        # because this membership is done by hand in the CS
-        if not "Role" in role:
-          keepGroups.append( group )
-        # Keep existing groups with no VOMS attribute if any
-        if group in noVOMSGroups:
-          keepGroups.append( group )
-      userDict['Groups'] = keepGroups
-      self.csapi.modifyUser( diracName, userDict )
+        # We have an already existing user
+        userDict = { "DN": dn, "CA": vomsUserDict[dn]['CA'], "Email": vomsUserDict[dn]['mail'] }
+        nonVOGroups = nonVOUserDict.get( diracName, {} ).get( 'Groups', [] )
+        existingGroups = diracUserDict.get( diracName, {} ).get( 'Groups', [] )
+        groupsWithRole = []
+        for role in vomsUserDict[dn]['Roles']:
+          fullRole = "/%s/%s" % ( vomsVOName, role )
+          group = vomsDIRACMapping.get( fullRole )
+          if group:
+            groupsWithRole.append( group )
+        keepGroups = nonVOGroups + groupsWithRole + [defaultVOGroup]
+        for group in existingGroups:
+          role = diracVOMSMapping[group]
+          # Among already existing groups for the user keep those without a special VOMS Role
+          # because this membership is done by hand in the CS
+          if not "Role" in role:
+            keepGroups.append( group )
+          # Keep existing groups with no VOMS attribute if any
+          if group in noVOMSGroups:
+            keepGroups.append( group )
+        userDict['Groups'] = keepGroups
+        self.csapi.modifyUser( diracName, userDict )
 
-      # Check if there are potentially obsoleted users
-      oldUsers = []
-      for user in diracUserDict:
-        dn = diracUserDict[user]['DN']
-        if not dn in vomsUserDict and not user in nonVOUserDict:
-          for group in diracUserDict[user]['Groups']:
-            if not group in noVOMSGroups:
-              oldUsers.append( user )
-      if oldUsers:
-        self.__adminMsgs[ 'Info' ].append( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
-        self.log.info( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
+    # Check if there are potentially obsoleted users
+    oldUsers = set()
+    for user in diracUserDict:
+      dn = diracUserDict[user]['DN']
+      if not dn in vomsUserDict and not user in nonVOUserDict:
+        for group in diracUserDict[user]['Groups']:
+          if not group in noVOMSGroups:
+            oldUsers.add( user )
+    if oldUsers:
+      self.__adminMsgs[ 'Info' ].append( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
+      self.log.info( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
 
     return S_OK()
+
+###############################################################
+# Local utilities
+###############################################################
+
+def getUserName( dn, mail ):
+  """ Utility to construct user name
+  :param str dn: user DN
+  :param str mail: user e-mail address
+  :return str: user name
+  """
+  dnName = getUserNameFromDN( dn )
+  mailName = getUserNameFromMail( mail )
+
+  # Is mailName reasonable ?
+  if len( mailName ) > 5 and mailName.isalpha():
+    return mailName
+
+  # dnName too long
+  if len( dnName ) >= 12:
+    return dnName[:11]
+
+  return dnName
+
+def getUserNameFromMail( mail ):
+  """ Utility to construct a reasonable user name from the user mail address
+
+  :param str mail: e-mail address
+  :return str: user name
+  """
+
+  mailName = mail.split( '@' )[0].lower()
+  if '.' in mailName:
+    # Most likely the mail contains the full user name
+    names = mailName.split( '.' )
+    name = names[0][0] + names[-1].lower()
+    return name
+
+  return mailName
+
+def getUserNameFromDN( dn ):
+  """ Utility to construct a reasonable user name from the user DN
+  :param str dn: user DN
+  :return str: user name
+  """
+
+  for entry in dn.split( '/' ):
+    if entry:
+      key, value = entry.split( '=' )
+      if key == 'CN':
+        names = value.split()
+        if len( names ) == 1:
+          nname = names[0].lower()
+          if '.' in nname:
+            names = nname.split( '.' )
+            nname = ( names[0][0] + names[-1] ).lower()
+          if '-' in nname:
+            names = nname.split( '-' )
+            nname = ( names[0][0] + names[-1] ).lower()
+          return nname
+        else:
+          robot = False
+          if names[0].lower().startswith( "robot" ):
+            names.pop( 0 )
+            robot = True
+          for name in list( names ):
+            if name.isdigit() or "@" in name:
+              names.pop( names.index( name ) )
+          if robot:
+            nname = "robot-%s" % names[-1].lower()
+          else:
+            nname = ( names[0][0] + names[-1] ).lower()
+            if '.' in nname:
+              names = nname.aplit( '.' )
+              nname = ( names[0][0] + names[-1] ).lower()
+          return nname
