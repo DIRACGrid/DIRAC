@@ -43,9 +43,10 @@ class VOMSPolicy( SecurityManagerBase ):
   
   def __getVomsRole(self, grpName):
     """ Returns the VOMS role of a given DIRAC group
-        :param grpName
 
-        :returns VOMS role, or None
+        :param grpName:
+
+        :returns: VOMS role, or None
     """
     if ( datetime.datetime.now() - self.lastBuild ) > self.CACHE_TIME:
       self.__buildRolesAndGroups()
@@ -54,9 +55,10 @@ class VOMSPolicy( SecurityManagerBase ):
 
   def __getDiracGroups( self, vomsRole ):
     """ Returns all the DIRAC groups that have a given VOMS role
-        :param vomsRole
+
+        :param vomsRole:
         
-        :returns list of groups, empty if not exist
+        :returns: list of groups, empty if not exist
     """
 
     if ( datetime.datetime.now - self.lastBuild ) > self.CACHE_TIME:
@@ -151,7 +153,7 @@ class VOMSPolicy( SecurityManagerBase ):
                                  * False : forbid the access
                                  * None : return the error as is
 
-        :returns Successful dictionary with True of False, and Failed.
+        :returns: Successful dictionary with True of False, and Failed.
     """
 
     successful = {}
@@ -242,7 +244,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
                noExistStrategy makes sense only if recursive is False
 
-        :returns Successful dictionary with True of False, and Failed.
+        :returns: Successful dictionary with True of False, and Failed.
     """
 
     successful = {}
@@ -273,7 +275,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
                noExistStrategy makes sense only if recursive is False
 
-        :returns Successful dictionary with True of False, and Failed.
+        :returns: Successful dictionary with True of False, and Failed.
     """
 
     parentDirs = {}
@@ -349,7 +351,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
                noExistStrategy makes sense only if recursive is False
 
-        :returns Successful dictionary with True of False, and Failed.
+        :returns: Successful dictionary with True of False, and Failed.
     """
 
     successful = {}
@@ -374,8 +376,8 @@ class VOMSPolicy( SecurityManagerBase ):
         on the parent
 
         :param paths : list/dict of path
-        :credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :param credDict : credential of the user
+        :returns: Successful with True of False, and Failed.
     """
 
     successful = {}
@@ -410,8 +412,8 @@ class VOMSPolicy( SecurityManagerBase ):
         on the parent
 
         :param paths : list/dict of path
-        :credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :param credDict : credential of the user
+        :returns: Successful with True of False, and Failed.
     """
 
     successful = {}
@@ -444,8 +446,8 @@ class VOMSPolicy( SecurityManagerBase ):
         If the directory does not exist, we do not allow.
 
         :param paths : list/dict of path
-        :credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :param credDict : credential of the user
+        :returns: Successful with True of False, and Failed.
     """
 
     return self.__testPermissionOnDirectory( paths, 'Read', credDict,
@@ -460,7 +462,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
 
     return self.__testPermissionOnParentDirectory( paths, 'Read', credDict,
@@ -473,7 +475,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
 
     return self.__testPermissionOnParentDirectory( paths, 'Write', credDict,
@@ -486,7 +488,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
     return self.__testPermissionOnFile( paths, 'Read', credDict,
                                                noExistStrategy = True )
@@ -497,7 +499,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
     return self.__testPermissionOnFile( paths, 'Write', credDict,
                                                noExistStrategy = True )
@@ -508,7 +510,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
     return self.__testPermissionOnFile( paths, 'Write', credDict,
                                                noExistStrategy = True )
@@ -521,7 +523,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
 
     return self.__testPermissionOnFileOrDirectory( paths, 'Write', credDict,
@@ -533,7 +535,7 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :param paths : list/dict of path
         :param credDict : credential of the user
-        :returns Successful with True of False, and Failed.
+        :returns: Successful with True of False, and Failed.
     """
 
     return S_OK( {'Successful': dict.fromkeys( paths, False ), 'Failed' : {}} )
@@ -545,11 +547,12 @@ class VOMSPolicy( SecurityManagerBase ):
 
   def hasAccess( self, opType, paths, credDict ):
     """ Checks whether a given operation on given paths is permitted
+
         :param opType : name of the operation (the FileCatalog methods in fact...)
         :param paths: list/dictionary of path on which we want to apply the operation
         :param credDict : credential of the users (with at least username, group and properties)
 
-        :returns Successful dict with True or False, and Failed dict. In fact, it is not neccesarily
+        :returns: Successful dict with True or False, and Failed dict. In fact, it is not neccesarily
                 a boolean, rather an int (binary operation results)
     """
     # Check if admin access is granted first

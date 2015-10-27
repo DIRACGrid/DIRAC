@@ -216,7 +216,7 @@ class FileStorage( StorageBase ):
 
       :param self: self reference
       :param path: path on the storage
-      :returns Successful S_OK(metadataDict) or S_ERROR
+      :returns: Successful S_OK(metadataDict) or S_ERROR
     """
     try:
       statInfo = os.stat( path )
@@ -344,13 +344,13 @@ class FileStorage( StorageBase ):
   def __copyDirectory( src_dir, dest_dir ):
     """ Copy a whole tree, and return the number of files and the size copied
 
-        :raise OSError
+        :raise OSError:
 
         :param src_dir: source folder
         :param dest_dir: destination folder
 
 
-        :return dictionary with 'Files' and 'Size' as key
+        :return: dictionary with 'Files' and 'Size' as key
      """
 
     shutil.copytree( src_dir, dest_dir )

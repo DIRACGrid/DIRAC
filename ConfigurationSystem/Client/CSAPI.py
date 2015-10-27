@@ -230,6 +230,7 @@ class CSAPI( object ):
   def addUser( self, username, properties ):
     """
     Add a user to the cs
+
       :param str username: group name
       :param dict properties: dictionary describing user properties:
 
@@ -237,7 +238,7 @@ class CSAPI( object ):
         - groups
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -268,6 +269,7 @@ class CSAPI( object ):
   def modifyUser( self, username, properties, createIfNonExistant = False ):
     """
     Modify a user
+
       :param str username: group name
       :param dict properties: dictionary describing user properties:
 
@@ -275,7 +277,7 @@ class CSAPI( object ):
         - Groups
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -327,6 +329,7 @@ class CSAPI( object ):
   def addGroup( self, groupname, properties ):
     """
     Add a group to the cs
+
       :param str groupname: group name
       :param dict properties: dictionary describing group properties:
 
@@ -334,7 +337,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -358,7 +361,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -393,7 +396,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -521,7 +524,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized

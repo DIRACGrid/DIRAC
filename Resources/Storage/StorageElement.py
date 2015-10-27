@@ -118,7 +118,7 @@ class StorageElementItem( object ):
 
     :param str name: SE name
     :param list plugins: requested storage plugins
-    :param vo
+    :param: vo
     """
 
     self.methodName = None
@@ -422,7 +422,7 @@ class StorageElementItem( object ):
         :param sourceSE : storageElement instance of the sourceSE
         :param protocols: protocol restriction list
 
-        :return a list protocols that fits the needs, or None
+        :return: a list protocols that fits the needs, or None
 
     """
 
