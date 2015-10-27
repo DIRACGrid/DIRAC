@@ -7,6 +7,11 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import sys
+import re
+import time
+
 from DIRAC                                                  import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
@@ -22,7 +27,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils         import createJobWrapper
 
-import os, sys, re, time
 
 class JobAgent( AgentModule ):
   """ This agent is what runs in a worker node. The pilot runs it, after having prepared its configuration.
@@ -323,14 +327,6 @@ class JobAgent( AgentModule ):
     if self.cpuFactor:
       timeleft -= cpuTime * self.cpuFactor
     return timeleft
-
-  #############################################################################
-  def __changeProxy( self, oldProxy, newProxy ):
-    """Can call glexec utility here to set uid or simply log the changeover
-       of a proxy.
-    """
-    self.log.verbose( 'Log proxy change (to be instrumented)' )
-    return S_OK()
 
   #############################################################################
   def __setupProxy( self, ownerDN, ownerGroup ):

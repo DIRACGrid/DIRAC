@@ -6,13 +6,15 @@
     for the current CPU and Wallclock consumed, as well as their limits.
 """
 
+import os
+import time
+import urllib
+
 from DIRAC import gLogger, S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
-import os, re, time, urllib
-
-class MJFTimeLeft:
+class MJFTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
@@ -37,9 +39,7 @@ class MJFTimeLeft:
        and WallClockLimit for current slot.  All values returned in seconds.
     """
 
-    cpu = None
     cpuLimit = None
-    wallClock = None
     wallClockLimit = None
 
     try:
