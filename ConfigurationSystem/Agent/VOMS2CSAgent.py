@@ -17,7 +17,7 @@ from DIRAC                                             import S_OK, S_ERROR, gCo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUserOption, \
                                                               getVOMSRoleGroupMapping, getUsersInVO, \
                                                               getAllUsers
-from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+from DIRAC.Core.Utilities.Proxy                        import executeWithUserProxy
 
 class VOMS2CSAgent( AgentModule ):
 
@@ -27,37 +27,20 @@ class VOMS2CSAgent( AgentModule ):
     voNames = self.am_getOption( 'VO', [] )
     if voNames[0].lower() == "any":
       voNames = []
-    result = self.__getVOMSVOs( voNames )
+    result = getVOMSVOs( voNames )
     if not result['OK']:
       return result
     self.__voDict = result['Value']
 
-    self.proxyLocation = os.path.join( self.am_getWorkDirectory(), ".volatileId" )
     self.__adminMsgs = {}
     self.csapi = CSAPI()
 
     self.log.notice( "VOs: %s" % self.__voDict.keys() )
 
+    self.autoAddUsers = self.am_getOption( 'AutoAddUsers', False )
+    self.autoModifyUsers = self.am_getOption( 'AutoModifyUsers', False )
+    self.autoSuspendUsers = self.am_getOption( 'AutoSuspendUsers', False )
     return S_OK()
-
-  def __getVOMSVOs( self, voList = [] ):
-    """ Get all VOs that have VOMS correspondence
-
-    :return: dictonary of the VO -> VOMSName correspondence
-    """
-    voDict = {}
-    if not voList:
-      result = gConfig.getSections( '/Registry/VO' )
-      if not result['OK']:
-        return result
-      voList = result['Value']
-
-    for vo in voList:
-      vomsName = getVOOption( vo, 'VOMSName' )
-      if vomsName:
-        voDict[vo] = vomsName
-
-    return S_OK( voDict )
 
   def execute( self ):
 
@@ -200,8 +183,9 @@ class VOMS2CSAgent( AgentModule ):
               groupsWithRole.append( group )
           userDict['Groups'] = list( set( groupsWithRole + [defaultVOGroup] ) )
           self.__adminMsgs[ 'Info' ].append( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
-          self.log.info( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
-          self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
+          if self.autoAddUsers:
+            self.log.info( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
+            self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
           continue
 
         # We have an already existing user
@@ -225,7 +209,8 @@ class VOMS2CSAgent( AgentModule ):
           if group in noVOMSGroups:
             keepGroups.append( group )
         userDict['Groups'] = keepGroups
-        self.csapi.modifyUser( diracName, userDict )
+        if self.autoModifyUsers:
+          self.csapi.modifyUser( diracName, userDict )
 
     # Check if there are potentially obsoleted users
     oldUsers = set()
@@ -244,6 +229,25 @@ class VOMS2CSAgent( AgentModule ):
 ###############################################################
 # Local utilities
 ###############################################################
+
+def getVOMSVOs( voList = [] ):
+  """ Get all VOs that have VOMS correspondence
+
+  :return: dictonary of the VO -> VOMSName correspondence
+  """
+  voDict = {}
+  if not voList:
+    result = gConfig.getSections( '/Registry/VO' )
+    if not result['OK']:
+      return result
+    voList = result['Value']
+
+  for vo in voList:
+    vomsName = getVOOption( vo, 'VOMSName' )
+    if vomsName:
+      voDict[vo] = vomsName
+
+  return S_OK( voDict )
 
 def getUserName( dn, mail ):
   """ Utility to construct user name
