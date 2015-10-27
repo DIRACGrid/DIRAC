@@ -473,12 +473,9 @@ class Dirac( API ):
     localCfg.addDefaultEntry( 'ControlDirectory', os.getcwd() )
     localCfg.addDefaultEntry( 'MaxCycles', 1 )
     localCfg.addDefaultEntry( '/LocalSite/WorkingDirectory', os.getcwd() )
-    localCfg.addDefaultEntry( '/LocalSite/TotalCPUs', 1 )
     localCfg.addDefaultEntry( '/LocalSite/MaxCPUTime', 300000 )
     localCfg.addDefaultEntry( '/LocalSite/CPUTime', 300000 )
     localCfg.addDefaultEntry( '/LocalSite/OwnerGroup', self.__getCurrentGroup() )
-    localCfg.addDefaultEntry( '/LocalSite/MaxRunningJobs', 1 )
-    localCfg.addDefaultEntry( '/LocalSite/MaxTotalJobs', 1 )
     # Running twice in the same process, the second time it use the initial JobID.
     ( fd, jobidCfg ) = tempfile.mkstemp( '.cfg', 'DIRAC_JobId', text = True )
     os.write( fd, 'AgentJobRequirements\n {\n  JobID = %s\n }\n' % jobID )
