@@ -25,12 +25,13 @@ class VOMS2CSAgent( AgentModule ):
     self.am_setOption( "PollingTime", 3600 * 6 ) # Every 6 hours
     self.__voDict = {}
     voNames = self.am_getOption( 'VO', [] )
-    if voNames[0].lower() == "any":
-      voNames = []
-    result = getVOMSVOs( voNames )
-    if not result['OK']:
-      return result
-    self.__voDict = result['Value']
+    if not voNames[0].lower() == "none":
+      if voNames[0].lower() == "any":
+        voNames = []
+      result = getVOMSVOs( voNames )
+      if not result['OK']:
+        return result
+      self.__voDict = result['Value']
 
     self.__adminMsgs = {}
     self.csapi = CSAPI()
