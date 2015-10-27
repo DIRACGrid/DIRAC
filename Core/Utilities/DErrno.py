@@ -56,14 +56,32 @@ import sys
 # 1900: TS
 # 2000: RSS
 
-# Generic
+# ## Generic (10XX)
 ERRX = 1001
-ERRY = 1002
+ETYPE = 1002
 EIMPERR = 1003
 ENOMETH = 1004
 ECONF = 1006
+ECTMPF = 1007
+EOF = 1008
+ERF = 1009
+EWF = 1010
+ESPF = 1011
 
-# DMS/StorageManagement
+# ## Core (11XX)
+# Certificates and Proxy: 0X
+EX509 = 1100
+ENOCERT = 1101
+EPROXYFIND = 1102
+EPROXYLOAD = 1103
+EPROXYREAD = 1104
+ECERTFIND = 1105
+ECERTLOAD = 1106
+ECERTREAD = 1107
+# 3rd party security: 1X
+EVOMS = 1110
+
+# ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
 EGFAL = 1602
 EBADCKS = 1603
@@ -73,24 +91,54 @@ EBADCKS = 1603
 
 # This translates the integer number into the name of the variable
 dErrorCode = { 1001 : 'ERRX',
-               1002 : 'ERRY',
+               1002 : 'ETYPE',
                1003 : 'EIMPERR',
                1004 : 'ENOMETH',
                1006 : 'ECONF',
+               1007 : 'ECTMPF',
+               1008 : 'EOF',
+               1009 : 'ERF',
+               1010 : 'EWF',
+               1011 : 'ESPF',
+
+               # Core
+               1100 : 'EX509',
+               1101 : 'ENOCERT',
+               1102 : 'EPROXYFIND',
+               1103 : 'EPROXYLOAD',
+               1104 : 'EPROXYREAD',
+               1105 : 'ECERTFIND',
+               1106 : 'ECERTLOAD',
+               1107 : 'ECERTREAD',
+               1110 : 'EVOMS',
 
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
                1603 : 'EBADCKS',
-
-                }
+               }
 
 
 dStrError = { ERRX : "A human readable error message for ERRX",
-              ERRY : "A nice message for ERRY",
+              ETYPE : "Object Type Error",
               EIMPERR : "Failed to import library",
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
+              ECTMPF : "Failed to create temporary file",
+              EOF : "Cannot open file",
+              ERF : "Cannot read from file",
+              EWF : "Cannot write to file",
+              ESPF : "Cannot set permissions to file",
+
+              EX509 : "Generic Error with X509",
+              ENOCERT : "Missing proxy of certificate",
+              EPROXYFIND : "Can't find proxy",
+              EPROXYLOAD : "Can't load proxy from file",
+              EPROXYREAD : "Can't read proxy",
+              ECERTFIND : "Can't find certificate",
+              ECERTLOAD : "Can't load certificate from file",
+              ECERTREAD : "Can't read certificate",
+              EVOMS : "VOMS Error",
 
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
@@ -110,7 +158,7 @@ def strerror(code):
       It completes it with the DIRAC specific errors.
   """
   
-  errMsg = "Unknown error %s"%code
+  errMsg = "Unknown error %s" % code
   
   try:
     errMsg = dStrError[code]

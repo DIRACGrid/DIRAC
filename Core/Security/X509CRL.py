@@ -45,9 +45,7 @@ class X509CRL( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( crlLocation, e ) )
-#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, e ) )
-#       return S_ERROR( "Can't open file" )
+      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, e ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
@@ -59,12 +57,9 @@ class X509CRL( object ):
     try:
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return DError(DErrno., "%s" % e)
-#       gLogger.error( "Can't load pem data", "%s" % e )
-#       return S_ERROR( "Can't load pem data" )
+      return DError( DErrno.ECERTLOAD, "%s" % e )
     if not self.__revokedCert:
-      return DError(DErrno.)
-#       return S_ERROR( "No certificates in the contents" )
+      return DError( DErrno.ECERTLOAD )
     self.__loadedCert = True
     self.__pemData = pemData
 
@@ -81,9 +76,7 @@ class X509CRL( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( crlLocation, e ) )
-#       gLogger.error( "Can't open file", "%s: %s" % ( crlLocation, e ) )
-#       return S_ERROR( "Can't open file" )
+      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, e ) )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
@@ -99,9 +92,7 @@ class X509CRL( object ):
     Dump all to string
     """
     if not self.__loadedCert:
-      return DError(DErrno.)
-#       gLogger.error( "No certificate loaded" )
-#       return S_ERROR( "No certificate loaded" )
+      return DError( DErrno.ECERTLOAD, "No certificate loaded" )
 
     return S_OK( self.__pemData )
 
@@ -123,15 +114,11 @@ class X509CRL( object ):
         fd.write( pemData )
         fd.close()
     except Exception as e:
-      return DError(DErrno., "%s: %s" % ( filename, e ))
-#       gLogger.error( "Cannot write to file", "%s: %s" % ( filename, e ) )
-#       return S_ERROR( "Cannot write to file" )
+      return DError( DErrno.EWF, "%s: %s" % ( filename, e ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return DError(DErrno.,"%s: %s" % ( filename, e ) )
-#       gLogger.error( "Cannot set permissions to file", "%s: %s" % ( filename, e ) )
-#       return S_ERROR( "Cannot set permissions to file" )
+      return DError( DErrno.ESPF, "%s: %s" % ( filename, e ) )
     return S_OK( filename )
 
   def __str__( self ):
@@ -143,5 +130,3 @@ class X509CRL( object ):
 
   def __repr__( self ):
     return self.__str__()
-
-
