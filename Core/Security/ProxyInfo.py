@@ -1,11 +1,14 @@
-# $HeadURL$
 """
  Set of utilities to retrieve Information from proxy
 """
+
 __RCSID__ = "$Id$"
+
 import base64
 import types
-from DIRAC                                     import S_OK, S_ERROR
+
+from DIRAC                                     import S_OK
+from DIRAC.Core.Utilities                      import DError, DErrno
 from DIRAC.Core.Security.X509Chain             import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS                  import VOMS
 from DIRAC.Core.Security                       import Locations
@@ -44,11 +47,11 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
     elif type( proxy ) in ( types.StringType, types.UnicodeType ):
       proxyLocation = proxy
     if not proxyLocation:
-      return S_ERROR( "Can't find a valid proxy" )
+      return DError( DErrno.EPROXYFIND )
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( proxyLocation )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't load %s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
+      return DError( DErrno.EPROXYLOAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
   retVal = chain.getCredentials()
   if not retVal[ 'OK' ]:
