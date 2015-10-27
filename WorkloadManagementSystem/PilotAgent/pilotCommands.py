@@ -549,19 +549,10 @@ class ConfigureSite( CommandBase ):
             self.log.error( "CE Name %s not accepted" % CE )
             self.exitWithError( retCode )
         else:
-          self.log.info( "Looking if queue name is already present in local cfg" )
-          from DIRAC import gConfig
-          ceName = gConfig.getValue( 'LocalSite/GridCE', '' )
-          ceQueue = gConfig.getValue( 'LocalSite/CEQueue', '' )
-          if ceName and ceQueue:
-            self.log.debug( "Found CE %s, queue %s" % ( ceName, ceQueue ) )
-            self.pp.ceName = ceName
-            self.pp.queueName = ceQueue
-          else:
-            self.log.error( "Can't find ceName nor queue... have to fail!" )
-            sys.exit( 1 )
+          self.log.error( "Can't find ceName nor queue... have to fail!" )
+          sys.exit( 1 )
       else:
-        self.log.debug( "Found CE %s" % ceName )
+        self.log.debug( "Found CE %s" % CEName )
         self.pp.ceName = CEName.split( ':' )[0]
         if len( CEName.split( '/' ) ) > 1:
           self.pp.queueName = CEName.split( '/' )[1]
