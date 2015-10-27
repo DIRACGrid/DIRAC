@@ -13,7 +13,6 @@ Script.setUsageMessage( '\n'.join( ['Get the Tag of a CE',
 
 ceName = ''
 ceType = ''
-Tags = []
 
 def setCEName( args ):
   global ceName

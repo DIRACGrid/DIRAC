@@ -365,22 +365,30 @@ class CheckCECapabilities( CommandBase ):
     """ c'tor
     """
     super( CheckCECapabilities, self ).__init__( pilotParams )
-    self.cfg = []
 
+    # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
+    self.cfg = []
 
   def execute( self ):
     """ Setup CE/Queue Tags
     """
-    from DIRAC.ConfigurationSystem.Client.Config import gConfig
-    gConfig.forceRefresh()
 
-    from DIRAC.ConfigurationSystem.Client.Helpers import Resources
-    result = Resources.getQueue( self.pp.site, self.pp.ceName, self.pp.queueName )
-    if not result['OK']:
-      self.log.error( "Could not retrieve resource parameters", ": " + result['Message'] )
+    if self.pp.useServerCertificate:
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
-    if result['Value'].get('Tag'):
-      self.pp.tags = result['Value']['Tag']
+
+    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
+                                                                               " ".join( self.cfg ) )
+    retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
+
+    import json
+    resourceDict = json.loads( resourceDict )
+    if retCode:
+      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
+    if resourceDict.get( 'Tag' ):
+      self.pp.tags.append( resourceDict['Tag'] )
       self.cfg.append( '-FDMH' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )
@@ -389,14 +397,54 @@ class CheckCECapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ', '.join(self.pp.tags) )
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
         self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
 
+class CheckWNCapabilities( CommandBase ):
+  """ Used to get  CE tags.
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( CheckWNCapabilities, self ).__init__( pilotParams )
+    self.cfg = []
 
+  def execute( self ):
+    """ Discover #Processors and memory
+    """
+
+
+    retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
+    result = result.split( ' ' )
+    Processors = result[0]
+    totalMemory = result[1]
+    if not Processors:
+      self.log.warn( "Could not retrieve number of processors" )
+    else:
+      self.pp.tags.append( 'Processors_%s' % Processors )
+    if not totalMemory:
+      self.log.warn( "Could not retrieve memory" )
+    else:
+      self.pp.tags.append( 'Memory_%s' % totalMemory )
+    if Processors or totalMemory:
+      self.cfg.append( '-FDMH' )
+      if self.pp.localConfigFile:
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )
+        self.cfg.append( self.pp.localConfigFile )
+
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
+
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if retCode:
+        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
 
 
 class ConfigureSite( CommandBase ):
