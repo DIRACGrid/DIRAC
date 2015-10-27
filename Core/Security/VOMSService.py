@@ -6,25 +6,26 @@ __RCSID__ = "$Id$"
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SOAPFactory import getSOAPClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
-from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 
 def _processListReturn( soapReturn ):
   data = []
-  for entry in soapReturn:
-    data.append( str( entry ) )
+  if soapReturn:
+    for entry in soapReturn:
+      data.append( str( entry ) )
   return data
 
 def _processListDictReturn( soapReturn ):
   data = []
-  for entry in soapReturn:
-    entryData = {}
-    for info in entry:
+  if soapReturn:
+    for entry in soapReturn:
+      entryData = {}
+      for info in entry:
 
-      try:
-        entryData[ info[0] ] = str( info[1] )
-      except:
-        pass
-    data.append( entryData )
+        try:
+          entryData[ info[0] ] = str( info[1] )
+        except:
+          pass
+      data.append( entryData )
   return data
 
 class VOMSService:
@@ -130,7 +131,6 @@ class VOMSService:
     else:
       return S_ERROR( result )
 
-  @executeWithUserProxy
   def getUsers( self ):
     """ Get all the users of the VOMS VO with their detailed information
 
@@ -169,7 +169,6 @@ class VOMSService:
 
     return S_OK( vomsUsers )
 
-  @executeWithUserProxy
   def getUserNickname( self, dn, ca, mail ):
     """ Get the best guess user name
 
