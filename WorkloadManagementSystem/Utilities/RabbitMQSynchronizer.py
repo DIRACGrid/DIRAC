@@ -11,6 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForHost
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getHosts
 from DIRAC.Core.Utilities.RabbitMQAdmin import getAllUsers, deleteUsers
 from DIRAC.Core.Utilities.RabbitMQAdmin import setUsersPermissions, addUsersWithoutPasswords
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 class RabbitMQSynchronizer(object):
 
@@ -19,7 +20,7 @@ class RabbitMQSynchronizer(object):
     # Warm up local CS
     # I am not sure whether it is needed but
     # it was used in DIRAC.ResourceStatusSystem.Utilities.Synchronizer
-    warmUp()
+    CSHelpers.warmUp()
     self._accessUserGroup = 'lhcb_pilot'  #only users belonging to group with this property are allowed to connect
     self._accessProperty = 'GenericPilot' #only host with this property are allowed to connect
 
@@ -100,13 +101,3 @@ def listDifference(list1, list2):
     list:
   """
   return list(set(list1) - set(list2))
-
-def warmUp():
-  '''
-    gConfig has its own dark side, it needs some warm up phase.
-    This function was copied from
-    from DIRAC.ResourceStatusSystem.Utilities import CSHelpers.
-  '''
-  from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-  gRefresher.refreshConfigurationIfNeeded()
-
