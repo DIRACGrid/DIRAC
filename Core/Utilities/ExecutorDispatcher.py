@@ -1,10 +1,12 @@
+""" Used by the executors for dispatching events (IIUC)
+"""
 
 import threading, time, types
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
-class ExecutorState:
+class ExecutorState( object ):
 
   def __init__( self, log = False ):
     if log:

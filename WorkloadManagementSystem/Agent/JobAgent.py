@@ -325,12 +325,11 @@ class JobAgent( AgentModule ):
     return timeleft
 
   #############################################################################
-  def __changeProxy( self, oldProxy, newProxy ):
-    """Can call glexec utility here to set uid or simply log the changeover
-       of a proxy.
-    """
-    self.log.verbose( 'Log proxy change (to be instrumented)' )
-    return S_OK()
+#   def __changeProxy( self, oldProxy, newProxy ):
+#     """Can call glexec utility here to set uid or simply log the changeover of a proxy.
+#     """
+#     self.log.verbose( 'Log proxy change (to be instrumented)' )
+#     return S_OK()
 
   #############################################################################
   def __setupProxy( self, ownerDN, ownerGroup ):
@@ -520,8 +519,6 @@ class JobAgent( AgentModule ):
 
     return jobStatus
 
-  #############################################################################
-  # FIXME: this is not called anywhere...?
   def __setJobSite( self, jobID, site ):
     """Wraps around setJobSite of state update client
     """

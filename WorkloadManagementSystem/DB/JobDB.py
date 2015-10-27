@@ -59,8 +59,6 @@ JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
               'Running', 'Stalled', 'Done', 'Completed', 'Failed']
 JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
-JOB_DEPRECATED_ATTRIBUTES = [ 'UserPriority', 'SystemPriority' ]
-
 JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'JobSplitType', 'MasterJobID',
                           'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag' ]
 
@@ -83,7 +81,6 @@ class JobDB( DB ):
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
-    self.nJobAttributeNames = 0
 
     result = self.__getAttributeNames()
 
@@ -111,8 +108,6 @@ class JobDB( DB ):
     for row in res['Value']:
       field = row[0]
       self.jobAttributeNames.append( field )
-
-    self.nJobAttributeNames = len( self.jobAttributeNames )
 
     return S_OK()
 

@@ -1,18 +1,17 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ The Machine/Job Features TimeLeft utility interrogates the MJF values
     for the current CPU and Wallclock consumed, as well as their limits.
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
-import os, re, time, urllib
+import os
+import time
+import urllib
 
-class MJFTimeLeft:
+from DIRAC import gLogger, S_OK, S_ERROR
+
+class MJFTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
@@ -37,9 +36,7 @@ class MJFTimeLeft:
        and WallClockLimit for current slot.  All values returned in seconds.
     """
 
-    cpu = None
     cpuLimit = None
-    wallClock = None
     wallClockLimit = None
 
     try:

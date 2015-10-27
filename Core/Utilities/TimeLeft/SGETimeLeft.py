@@ -12,7 +12,6 @@ import socket
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
-
 class SGETimeLeft( object ):
   """
    This is the SGE plugin of the TimeLeft Utility

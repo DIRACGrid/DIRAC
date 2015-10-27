@@ -40,11 +40,9 @@ class Watchdog( object ):
     self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
-    self.appPID = self.exeThread.getCurrentPID()
     self.spObject = spObject
     self.jobCPUtime = jobCPUtime
     self.memoryLimit = memoryLimit
-    self.calibration = 0
     self.initialValues = {}
     self.parameters = {}
     self.peekFailCount = 0
@@ -76,7 +74,6 @@ class Watchdog( object ):
     self.minCPUWallClockRatio = 5  # ratio %age
     self.nullCPULimit = 5  # After 5 sample times return null CPU consumption kill job
     self.checkCount = 0
-    self.nullCPUCount = 0
 
     self.grossTimeLeftLimit = 10 * self.checkingTime
     self.timeLeftUtil = TimeLeft()
@@ -838,7 +835,6 @@ class Watchdog( object ):
     """ Will kill the running thread process and any child processes."""
     self.log.info( 'Sending kill signal to application PID %s' % ( self.spObject.getChildPID() ) )
     result = self.spObject.killChild()
-    self.applicationKilled = True
     self.log.info( 'Subprocess.killChild() returned:%s ' % ( result ) )
     return S_OK( 'Thread killed' )
 
