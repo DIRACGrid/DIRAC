@@ -12,7 +12,7 @@ import os
 import json
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import PilotLogger
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import send, connect
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import getUniqueIDAndSaveToFile
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.TestStompConsumer  import TestStompConsumer
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import readPilotLoggerConfigFile
 
@@ -23,7 +23,7 @@ class TestPilotLoggerIntegration( unittest.TestCase ):
     self.consumer = TestStompConsumer()
     self.confFile = 'TestPilotLogger.cfg'
     self.config = readPilotLoggerConfigFile(self.confFile)
-    generateUniqueIDAndSaveToFile( self.config['fileWithID'])
+    getUniqueIDAndSaveToFile( self.config['fileWithID'])
     self.testUUID = self.config['fileWithID']
     self.logger = PilotLogger(self.confFile)
     self.sslCfg = { k: self.config[k] for k  in ('key_file', 'cert_file', 'ca_certs')}
