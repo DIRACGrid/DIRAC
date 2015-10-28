@@ -22,7 +22,7 @@ from DIRAC.Core.Utilities.Proxy                        import executeWithUserPro
 class VOMS2CSAgent( AgentModule ):
 
   def initialize( self ):
-    self.am_setOption( "PollingTime", 3600 * 6 ) # Every 6 hours
+
     self.__voDict = {}
     voNames = self.am_getOption( 'VO', [] )
     if not voNames[0].lower() == "none":
