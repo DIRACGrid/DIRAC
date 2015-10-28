@@ -1,6 +1,14 @@
 """ Class for the LCG File Catalog Client
 
 """
+
+__RCSID__ = "$Id"
+
+from stat import *
+import os
+import re
+import time
+
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkCatalogArguments
@@ -9,10 +17,6 @@ from DIRAC.Core.Utilities.List                             import breakListIntoC
 from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getDNForUsername, getVOMSAttributeForGroup, \
                                                                   getVOForGroup, getVOOption
-
-from stat import *
-import os, re, types, time
-
 lfc = None
 importedLFC = None
 
@@ -1325,7 +1329,7 @@ class LcgFileCatalogClient( object ):
     if not fcn:
       return S_ERROR( "Unable to invoke %s, it isn't a member function of LcgFileCatalogClient" % method )
     res = fcn( path )
-    if type( path ) == types.DictType:
+    if isinstance( path, dict ):
       path = path.keys()[0]
     if not res['OK']:
       return res
