@@ -366,7 +366,7 @@ class TransformationCLI( cmd.Cmd, API ):
         print res['Message']
         return
       if not len( res['Value'] ) > 0:
-        print 'No output files yet for transformation %d' %transName
+        print 'No output files yet for transformation %d' %int(transName)
         return
       else:
         for lfn in res['Value']:
