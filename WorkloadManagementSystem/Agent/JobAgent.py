@@ -478,9 +478,9 @@ class JobAgent( AgentModule ):
       matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
       result = matcher.requestJob( ceDict )
       return result
-    except Exception, x:
+    except Exception as x:
       self.log.exception( lException = x )
-      return S_ERROR( 'Job request to matcher service failed with exception' )
+      return S_ERROR( "Job request to matcher service failed with exception" )
 
   #############################################################################
   def __getJDLParameters( self, jdl ):

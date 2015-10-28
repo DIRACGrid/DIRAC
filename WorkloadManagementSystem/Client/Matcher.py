@@ -72,7 +72,7 @@ class Matcher( object ):
     result = result['Value']
     if not result['matchFound']:
       self.log.info( "No match found" )
-      raise RuntimeError( "No match found" )
+      return {}
 
     jobID = result['jobId']
     resAtt = self.jobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup', 'Status'] )
