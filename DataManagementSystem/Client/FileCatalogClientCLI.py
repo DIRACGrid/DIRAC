@@ -179,7 +179,7 @@ class DirectoryListing:
       
     return pstring  
   
-  def human_readable_size(self,num,suffix='B'):
+  def humanReadableSize(self,num,suffix='B'):
     """ Translate file size in bytes to human readable
 
         Powers of 2 are used (1Mi = 2^20 = 1048576 bytes).
@@ -215,9 +215,9 @@ class DirectoryListing:
     for d in self.entries:
       for i in range(7):
         if humanread and i == 4:
-          humanread_len = len(str(self.human_readable_size(d[4])))
-          if humanread_len > wList[4]:
-            wList[4] = humanread_len
+          humanreadlen = len(str(self.humanReadableSize(d[4])))
+          if humanreadlen > wList[4]:
+            wList[4] = humanreadlen
         else:
           if len(str(d[i])) > wList[i]:
             wList[i] = len(str(d[i]))
@@ -225,7 +225,7 @@ class DirectoryListing:
     for e in self.entries:
       size = e[4]
       if humanread:
-        size = self.human_readable_size(e[4])
+        size = self.humanReadableSize(e[4])
       print str(e[0]),
       print str(e[1]).rjust(wList[1]),
       print str(e[2]).ljust(wList[2]),
@@ -1310,12 +1310,12 @@ File Catalog Client $Revision: 1.17 $Date:
     numericid = False
     sizeorder = False
     humanread = False
-    short_opts = 'ltrnSH'
-    long_opts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
+    shortopts = 'ltrnSH'
+    longopts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
     path = self.cwd
     if len(argss) > 0:
       try:
-        optlist, arguments = getopt.getopt(argss,short_opts,long_opts)
+        optlist, arguments = getopt.getopt(argss,shortopts,longopts)
       except getopt.GetoptError, e:
         print str(e)
         print self.do_ls.__doc__
@@ -1351,13 +1351,13 @@ File Catalog Client $Revision: 1.17 $Date:
         
       # Get path    
       if arguments:
-        input_path = False
-        while arguments or not input_path:
+        inputpath = False
+        while arguments or not inputpath:
           tmparg = arguments.pop()
           # look for a non recognized option not starting with '-'
           if tmparg[0] != '-':
             path = tmparg
-            input_path = True
+            inputpath = True
             if path[0] != '/':
               path = self.cwd+'/'+path
     path = self.getPath(path)
