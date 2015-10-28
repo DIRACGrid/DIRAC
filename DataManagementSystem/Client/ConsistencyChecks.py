@@ -37,8 +37,8 @@ class ConsistencyChecks( object ):
     """
     self.interactive = interactive
     self.transClient = TransformationClient() if transClient is None else transClient
-    self.dm = DataManager() if dm is None else dm
-    self.fc = FileCatalog() if fc is None else fc
+    self.dm = dm if dm else DataManager()
+    self.fc = fc if fc else FileCatalog()
 
     self.dirac = Dirac()
 
@@ -658,7 +658,7 @@ class ConsistencyChecks( object ):
     sizeMismatch = []
     for lfn, lfnCatalogMetadata in catalogMetadata.items():
       lfnStorageMetadata = storageMetadata[lfn]
-      if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ) and ( lfnStorageMetadata['Size'] != 0 ):
+      if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ): # and ( lfnStorageMetadata['Size'] != 0 ):
         sizeMismatch.append( ( lfn, 'deprecatedUrl', storageElement, 'CatalogPFNSizeMismatch' ) )
     if sizeMismatch:
       self.__reportProblematicReplicas( sizeMismatch, storageElement, 'CatalogPFNSizeMismatch' )
