@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SOAPFactory import getSOAPClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 def _processListReturn( soapReturn ):
   data = []
@@ -30,7 +31,12 @@ def _processListDictReturn( soapReturn ):
 
 class VOMSService( object ):
 
-  def __init__( self, vo, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
+  def __init__( self, vo = None, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
+
+    if vo is None:
+      vo = getVO()
+    if not vo:
+      raise Exception( 'No VO name given' )
 
     self.vo = vo
     self.vomsVO = getVOOption( vo, "VOMSName" )
