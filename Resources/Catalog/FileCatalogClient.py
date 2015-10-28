@@ -5,8 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-from types import ListType, DictType
 import os
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
@@ -227,9 +227,9 @@ class FileCatalogClient( FileCatalogClientBase ):
     result = rpcClient.findFilesByMetadata( metaDict, path )
     if not result['OK']:
       return result
-    if type( result['Value'] ) == ListType:
+    if isinstance( result['Value'], list ):
       return result
-    elif type( result['Value'] ) == DictType:
+    elif isinstance( result['Value'], dict ):
       # Process into the lfn list
       fileList = []
       for dir_, fList in result['Value'].items():
