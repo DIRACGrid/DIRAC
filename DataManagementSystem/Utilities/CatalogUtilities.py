@@ -52,14 +52,13 @@ def checkArgumentFormat( path, generateMap = False ):
     if not url:
       continue
     mUrl = url
-    if url.startswith( 'lfn:' ):
-      mUrl = url[4:]
-    elif url.startswith( 'LFN:' ):
+    if url.lower().startswith( 'lfn:' ):
       mUrl = url[4:]
     if mUrl.startswith('/grid'):
       uList = mUrl.split('/')
       if len( uList ) >= 2 and uList[1] == 'grid':
-        mUrl = mUrl[5:]
+        uList.pop( 1 )
+        mUrl = '/'.join( uList )
     normPath = os.path.normpath( mUrl )
     urls[normPath] = pathDict[url]
     if normPath != url:
