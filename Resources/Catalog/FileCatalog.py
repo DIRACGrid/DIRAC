@@ -47,10 +47,10 @@
 import re
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-from DIRAC.Core.Security.ProxyInfo                          import getVOfromProxyGroup
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities  import checkArgumentFormat
-from DIRAC.Resources.Catalog.FileCatalogFactory             import FileCatalogFactory
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
+from DIRAC.Resources.Catalog.Utilities                   import checkArgumentFormat
+from DIRAC.Resources.Catalog.FileCatalogFactory          import FileCatalogFactory
 
 class FileCatalog( object ):
 

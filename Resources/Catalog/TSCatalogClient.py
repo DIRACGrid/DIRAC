@@ -4,10 +4,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                  import S_OK
-from DIRAC.Core.Utilities.List                              import breakListIntoChunks
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities  import checkCatalogArguments
-from DIRAC.Resources.Catalog.FileCatalogClientBase          import FileCatalogClientBase
+from DIRAC                                         import S_OK
+from DIRAC.Core.Utilities.List                     import breakListIntoChunks
+from DIRAC.Resources.Catalog.Utilities             import checkCatalogArguments
+from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
 # List of common File Catalog methods implemented by this client
 READ_METHODS = []

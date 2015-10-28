@@ -9,8 +9,8 @@ from types import ListType, DictType
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkCatalogArguments
-from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
+from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
+from DIRAC.Resources.Catalog.FileCatalogClientBase     import FileCatalogClientBase
 
 # The list of methods below is defining the client interface
 READ_METHODS = ['exists', 'isFile', 'getFileMetadata', 'getReplicas',

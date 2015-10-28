@@ -10,13 +10,13 @@ import re
 import time
 
 import DIRAC
-from DIRAC                                                 import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.DataManagementSystem.Utilities.CatalogUtilities import checkCatalogArguments
-from DIRAC.Core.Utilities.Time                             import fromEpoch
-from DIRAC.Core.Utilities.List                             import breakListIntoChunks
-from DIRAC.Core.Security.ProxyInfo                         import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getDNForUsername, getVOMSAttributeForGroup, \
-                                                                  getVOForGroup, getVOOption
+from DIRAC                                              import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Resources.Catalog.Utilities                  import checkCatalogArguments
+from DIRAC.Core.Utilities.Time                          import fromEpoch
+from DIRAC.Core.Utilities.List                          import breakListIntoChunks
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getDNForUsername, getVOMSAttributeForGroup, \
+                                                               getVOForGroup, getVOOption
 lfc = None
 importedLFC = None
 
