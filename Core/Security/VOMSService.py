@@ -28,7 +28,7 @@ def _processListDictReturn( soapReturn ):
       data.append( entryData )
   return data
 
-class VOMSService:
+class VOMSService( object ):
 
   def __init__( self, vo, adminUrl = False, attributesUrl = False, certificatesUrl = False ):
 
