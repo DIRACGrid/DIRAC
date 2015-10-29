@@ -1,3 +1,7 @@
+[v6r13p19]
+
+FIX: changes incorporated from v6r12p53 patch
+
 [v6r13p18]
 
 *WMS
@@ -320,6 +324,17 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p53]
+
+*DMS
+CHANGE: FileCatalogClientCLI - ls order by size, human readable size value
+
+*WMS
+BUGFIX: JobAgent - bug when rescheduling job due to glexec failure
+
+*TS
+NEW: TransformationCLI - added getOutputFiles command
 
 [v6r12p52]
 

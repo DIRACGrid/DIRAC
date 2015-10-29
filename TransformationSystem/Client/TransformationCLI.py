@@ -344,6 +344,34 @@ class TransformationCLI( cmd.Cmd, API ):
       else:
         print "No files found"
 
+  def do_getOutputFiles( self, args ):
+    """Get output files for the transformation
+
+    usage: getOutputFiles <transName|ID>
+    """
+    argss = args.split()
+    if not len( argss ) > 0:
+      print "no transformation supplied"
+      return
+    transName = argss[0]
+    res = self.server.getTransformation( transName )
+    if not res['OK']:
+      print "Failed to get transformation information: %s" % res['Message']
+    else:
+      fc = FileCatalogClient()
+      meta = {}
+      meta ['ProdID'] = transName
+      res = fc.findFilesByMetadata( meta )
+      if not res['OK']:
+        print res['Message']
+        return
+      if not len( res['Value'] ) > 0:
+        print 'No output files yet for transformation %d' %int(transName)
+        return
+      else:
+        for lfn in res['Value']:
+          print lfn
+
   def do_getInputDataQuery( self, args ):
     """Get input data query for the transformation
 
