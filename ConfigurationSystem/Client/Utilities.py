@@ -233,6 +233,9 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         if newCEType in ['ARC','CREAM']:
           newSubmissionMode = "Direct" 
         newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
+        # Protect from unreasonable values
+        if newRAM and int( newRAM ) > 150000:
+          newRAM = ''
 
         # Adding CE data to the change list
         addToChangeSet( ( ceSection, 'architecture', arch, newarch ), changeSet )
