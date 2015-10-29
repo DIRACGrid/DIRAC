@@ -78,7 +78,7 @@ class MJFTimeLeft:
     # We cannot get CPU usage from MJF
       
     consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
-    self.log.debug( consumed )
+    self.log.debug( "MJF consumed: %s" % str( consumed ) )
 
     if cpuLimit and wallClock and wallClockLimit:
       return S_OK( consumed )
