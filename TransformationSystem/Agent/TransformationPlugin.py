@@ -207,19 +207,17 @@ class TransformationPlugin( PluginBase ):
 
   def _getNextSite( self, existingCount, targetShares, candidates = None ):
     if candidates is None:
-      candidates = []
+      candidates = targetShares
     # normalise the existing counts
     existingShares = self.util._normaliseShares( existingCount )
     # then fill the missing share values to 0
     for site in targetShares:
-      if site not in existingShares:
-        existingShares[site] = 0.0
+      existingShares.setdefault( site, 0.0 )
     # determine which site is farthest from its share
     chosenSite = ''
     minShareShortFall = -float( "inf" )
-    print targetShares, candidates, existingShares
     for site, targetShare in targetShares.items():
-      if ( candidates and site not in candidates ) or not targetShare:
+      if site not in candidates or not targetShare:
         continue
       existingShare = existingShares[site]
       shareShortFall = targetShare - existingShare
