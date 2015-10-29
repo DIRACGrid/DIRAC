@@ -85,7 +85,7 @@ class TimeLeft( object ):
       return resourceDict
 
     resources = resourceDict['Value']
-    self.log.verbose( resources )
+    self.log.debug( "self.batchPlugin.getResourceUsage(): %s" % str( resources ) )
     if not resources['CPULimit'] and not resources['WallClockLimit']:
       # This should never happen
       return S_ERROR( 'No CPU or WallClock limit obtained' )
