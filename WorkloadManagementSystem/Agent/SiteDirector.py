@@ -654,6 +654,11 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-S %s' % setup )
     opsHelper = Operations.Operations( group = self.pilotGroup, setup = setup )
 
+    # Installation defined?
+    installationName = opsHelper.getValue( "Pilot/Installation", "" )
+    if installationName:
+      pilotOptions.append( '-V %s' % installationName )
+
     #Project defined?
     projectName = opsHelper.getValue( "Pilot/Project", "" )
     if projectName:
