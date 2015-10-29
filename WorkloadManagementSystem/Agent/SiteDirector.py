@@ -214,9 +214,6 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
-        if isinstance( ceTags, basestring ):
-          ceTags = fromChar( ceTags )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -237,16 +234,6 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
-          queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
-          if queueTags and isinstance( queueTags, basestring ):
-            queueTags = fromChar( queueTags )
-            self.queueDict[queueName]['ParametersDict']['Tag'] = queueTags
-          if ceTags:
-            if queueTags:
-              allTags = list( set( ceTags + queueTags ) )
-              self.queueDict[queueName]['ParametersDict']['Tag'] = allTags
-            else:
-              self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
           if maxMemory:
@@ -358,7 +345,6 @@ class SiteDirector( AgentModule ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
-    tqDict['Tag'] = []
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
@@ -668,11 +654,6 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-S %s' % setup )
     opsHelper = Operations.Operations( group = self.pilotGroup, setup = setup )
 
-    #Installation defined?
-    installationName = opsHelper.getValue( "Pilot/Installation", "" )
-    if installationName:
-      pilotOptions.append( '-V %s' % installationName )
-
     #Project defined?
     projectName = opsHelper.getValue( "Pilot/Project", "" )
     if projectName:
@@ -742,9 +723,6 @@ class SiteDirector( AgentModule ):
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
-    if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
