@@ -102,47 +102,17 @@ def __downloadPilotScripts(basepath, diracpath):
   Downloads the scripts necessary to configure the pilot
   
   """
-  ### dirac path = /afs/cern.ch/lhcb/software/releases/DIRAC/DIRAC_v6r14p5/DIRAC/WorkloadManagementSystem/PilotAgent
   shutil.copyfile(str(diracpath) + "/WorkloadManagementSystem/PilotAgent/dirac-pilot.py"   , basepath + "/dirac-pilot.py")
   shutil.copyfile(str(diracpath) + "/WorkloadManagementSystem/PilotAgent/pilotCommands.py" , basepath + "/pilotCommands.py")
   shutil.copyfile(str(diracpath) + "/WorkloadManagementSystem/PilotAgent/pilotTools.py"    , basepath + "/pilotTools.py")
-  
-  
-#   #include retry function
-#   out = os.system("wget -P " + basepath + "/ http://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilotscripts/LHCbPilotCommands.py")
-#   if not out:
-#     S_OK("LHCbPilotCommands.py script successfully download.\n")
-#   else:
-#     print "LHCbPilotCommands.py script download error.\n"
-#     #DError(errno.ENETUNREACH, "LHCbPilotCommands.py script download error.\n" )
-#   out = os.system("wget -P " + basepath +  "/ http://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilotscripts/dirac-pilot.py")
-#   if not out:
-#     S_OK("dirac-pilot.py script successfully download.\n")
-#   else:
-#     print "dirac-pilot.py script download error.\n"
-#     #DError(errno.ENETUNREACH, "dirac-pilot.py script download error.\n" )
-#   out = os.system("wget -P " + basepath +  "/ http://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilotscripts/pilotCommands.py")
-#   if not out:
-#     S_OK("pilotCommands.py script successfully download.\n")
-#   else:
-#     print "pilotCommands.py script download error.\n"
-#     #DError(errno.ENETUNREACH, "pilotCommands.py script download error.\n" )
-#   out = os.system("wget -P " + basepath +  "/ http://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilotscripts/pilotTools.py")
-#   if not out:
-#     S_OK("pilotTools.py script successfully download.\n")
-#   else:
-#     print "pilotTools.py script download error.\n"
-#     #DError(errno.ENETUNREACH, "pilotTools.py script download error.\n" )
-    
-    
+      
 def __configurePilot(basepath, vo):
   """
   Configures the pilot.
   This method was created specifically for LHCb pilots, more info
   about othe VOs is needed to make it more general.
   """
-#   out = os.system("python " + basepath + "/dirac-pilot.py -S LHCb-Production -l LHCb -C dips://lbvobox18.cern.ch:9135/Configuration/Server -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -M 1 -E LHCbPilot -X LHCbConfigureBasics,LHCbConfigureSite,LHCbConfigureArchitecture,LHCbConfigureCPURequirements -dd")
-#   if not out:
+
   from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals    import getVO, getSetup
   from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
   
@@ -155,11 +125,6 @@ def __configurePilot(basepath, vo):
   masterCS = gConfigurationData.getMasterServer()
 
   os.system("python " + basepath + "/dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %(currentSetup, vo, masterCS))
-
-#     return S_OK("Pilot successfully configured.")
-  
-#   else:
-#     some DErrno message
 
 def __runJobLocally(jobID, basepath, vo):
   """
