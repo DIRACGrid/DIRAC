@@ -233,8 +233,7 @@ class SiteDirector( AgentModule ):
         ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
-        maxMemory = ceDict.get( 'MaxRAM', None )
-        ceTags += self.__getMemoryTags( maxMemory )
+        ceMaxMemory = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -267,10 +266,12 @@ class SiteDirector( AgentModule ):
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          memoryTags = self.__getMemoryTags( maxMemory )
-          if memoryTags:
-            self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-            self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          maxMemory = ceMaxMemory if not maxMemory else maxMemory
+          if maxMemory:
+            memoryTags = self.__getMemoryTags( maxMemory )
+            if memoryTags:
+              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
