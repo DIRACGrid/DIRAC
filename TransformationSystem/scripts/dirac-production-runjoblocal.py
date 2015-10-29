@@ -135,7 +135,7 @@ def __downloadPilotScripts(basepath, diracpath):
 #     #DError(errno.ENETUNREACH, "pilotTools.py script download error.\n" )
     
     
-def __configurePilot(basepath):
+def __configurePilot(basepath, vo):
   """
   Configures the pilot.
   This method was created specifically for LHCb pilots, more info
@@ -143,9 +143,19 @@ def __configurePilot(basepath):
   """
 #   out = os.system("python " + basepath + "/dirac-pilot.py -S LHCb-Production -l LHCb -C dips://lbvobox18.cern.ch:9135/Configuration/Server -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -M 1 -E LHCbPilot -X LHCbConfigureBasics,LHCbConfigureSite,LHCbConfigureArchitecture,LHCbConfigureCPURequirements -dd")
 #   if not out:
+  from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals    import getVO, getSetup
+  from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
+  
   dir = str(os.getcwd())
   os.rename(dir + '/.dirac.cfg', dir + '/.dirac.cfg.old')
   os.system("cp " + dir + "/pilot.cfg " + dir + "/.dirac.cfg")
+  
+  vo = getVO()
+  currentSetup = getSetup()
+  masterCS = gConfigurationData.getMasterServer()
+
+  os.system("python " + basepath + "/dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %(currentSetup, vo, masterCS))
+
 #     return S_OK("Pilot successfully configured.")
   
 #   else:
@@ -180,7 +190,7 @@ if __name__ == "__main__":
     
     __downloadPilotScripts(_path, _diracPath)
     
-#    __configurePilot(_path)
+    __configurePilot(_path)
     
     __runJobLocally(_jobID, _path, _vo)
     
