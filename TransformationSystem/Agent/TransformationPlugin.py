@@ -217,8 +217,9 @@ class TransformationPlugin( PluginBase ):
     # determine which site is farthest from its share
     chosenSite = ''
     minShareShortFall = -float( "inf" )
+    print targetShares, candidates, existingShares
     for site, targetShare in targetShares.items():
-      if site not in candidates or not targetShare:
+      if ( candidates and site not in candidates ) or not targetShare:
         continue
       existingShare = existingShares[site]
       shareShortFall = targetShare - existingShare
