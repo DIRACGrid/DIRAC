@@ -1,3 +1,14 @@
+[v6r12p53]
+
+*DMS
+CHANGE: FileCatalogClientCLI - ls order by size, human readable size value
+
+*WMS
+BUGFIX: JobAgent - bug when rescheduling job due to glexec failure
+
+*TS
+NEW: TransformationCLI - added getOutputFiles command
+
 [v6r12p52]
 
 *DMS
