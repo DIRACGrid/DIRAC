@@ -236,13 +236,14 @@ class SiteDirector( AgentModule ):
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
 
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
+          print maxMemory, self.queueDict[queueName]
           if maxMemory:
             # MaxRAM value is supposed to be in MB
             maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
+            memoryTags = ['%dGB' % mem for mem in maxMemoryList]
             if memoryTags:
               self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+              self.queueDict[queueName]['ParametersDict']['Tag'] += ','.join( memoryTags )
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
