@@ -204,6 +204,22 @@ class SiteDirector( AgentModule ):
     hexstring = myMD5.hexdigest()
     return hexstring
 
+  def __getMemoryTags( self, maxMemory ):
+    """ Get memory tag list from the string value in MB
+
+    :param str or int maxMemory: max RAM value
+    :return: list of Tags
+    """
+    if maxMemory:
+      # MaxRAM value is supposed to be in MB
+      maxMemory = int( maxMemory )/1000
+      # No more 128 GB, otherwise likely a false value in the CS
+      if maxMemory < 128:
+        maxMemoryList = range( 1, maxMemory + 1 )
+        memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
+        return memoryTags
+    return []
+
   def getQueues( self, resourceDict ):
     """ Get the list of relevant CEs and their descriptions
     """
@@ -214,9 +230,11 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
+        ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
+        maxMemory = ceDict.get( 'MaxRAM', None )
+        ceTags += self.__getMemoryTags( maxMemory )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -249,13 +267,10 @@ class SiteDirector( AgentModule ):
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          if maxMemory:
-            # MaxRAM value is supposed to be in MB
-            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
-            if memoryTags:
-              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          memoryTags = self.__getMemoryTags( maxMemory )
+          if memoryTags:
+            self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
+            self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
