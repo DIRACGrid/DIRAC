@@ -623,8 +623,6 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
-<<<<<<< HEAD
-=======
 [v6r12p53]
 
 *DMS
@@ -641,7 +639,6 @@ NEW: Transformation - added getAuthorDNfromProxy, getTransformationsByUser metho
 *Resources
 CHANGE: GlobusComputingElement - simplify creating of pilotStamp
 
->>>>>>> rel-v6r14
 [v6r12p52]
 
 *DMS
