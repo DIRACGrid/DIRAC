@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 import os, types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
+from DIRAC.Core.Utilities.Time import queryTime
 
 class DirectoryMetadata:
 
