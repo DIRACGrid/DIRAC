@@ -1,3 +1,19 @@
+[v6r14p10]
+
+*Configuration
+FIX: Resources - getQueue() is fixed to get properly Tag parameters
+
+*Framework
+FIX: SecurityFileLog - fix for zipping very large files
+
+*Resources
+NEW: added dirac-resource-get-parameters command
+
+*WMS
+NEW: JobMonitoringHandler - add getJobsParameters() method
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities
+NEW: Added dirac-wms-get-wn-parameters command
+
 [v6r14p9]
 
 *Core
