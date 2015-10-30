@@ -26,7 +26,7 @@ import tempfile
 import commands
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
-
+DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
 
 def condorIDFromJobRef( jobRef ):
   """return tuple of "jobURL" and condorID from the jobRef string"""
@@ -276,9 +276,8 @@ Queue %(nJobs)s
     ## FIXME: the WMSAdministrator does not know about the
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
-    workingDirectory = self.ceParameters.get( 'WorkingDirectory',
-                                              '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT' )
-    workingDirectory = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
+    workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    workingDirectory = DEFAULT_WORKINGDIRECTORY
 
     output = ''
     error = ''
@@ -331,9 +330,8 @@ Queue %(nJobs)s
 
   def __cleanup( self ):
     """ clean the working directory of old jobs"""
-    workingDirectory = self.ceParameters.get( 'WorkingDirectory',
-                                              '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT' )
-    workingDirectory = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
+    workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    workingDirectory = DEFAULT_WORKINGDIRECTORY
 
     self.log.debug( "Cleaning working directory: %s" % workingDirectory )
 
