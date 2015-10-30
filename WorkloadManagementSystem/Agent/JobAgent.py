@@ -7,6 +7,11 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import sys
+import re
+import time
+
 from DIRAC                                                  import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
@@ -22,7 +27,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils         import createJobWrapper
 
-import os, sys, re, time
 
 class JobAgent( AgentModule ):
   """ This agent is what runs in a worker node. The pilot runs it, after having prepared its configuration.
@@ -474,9 +478,9 @@ class JobAgent( AgentModule ):
       matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
       result = matcher.requestJob( ceDict )
       return result
-    except Exception, x:
+    except Exception as x:
       self.log.exception( lException = x )
-      return S_ERROR( 'Job request to matcher service failed with exception' )
+      return S_ERROR( "Job request to matcher service failed with exception" )
 
   #############################################################################
   def __getJDLParameters( self, jdl ):

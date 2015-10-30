@@ -68,11 +68,11 @@ class Matcher( object ):
     result = self.tqDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
 
     if not result['OK']:
-      return result
+      raise RuntimeError( result['Message'] )
     result = result['Value']
     if not result['matchFound']:
       self.log.info( "No match found" )
-      raise RuntimeError( "No match found" )
+      return {}
 
     jobID = result['jobId']
     resAtt = self.jobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup', 'Status'] )
@@ -84,7 +84,7 @@ class Matcher( object ):
       self.log.error( 'Job matched by the TQ is not in Waiting state', str( jobID ) )
       result = self.tqDB.deleteJob( jobID )
       if not result[ 'OK' ]:
-        return result
+        raise RuntimeError( result['Message'] )
       raise RuntimeError( "Job %s is not in Waiting state" % str( jobID ) )
 
     self._reportStatus( resourceDict, jobID )
