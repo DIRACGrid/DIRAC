@@ -126,7 +126,7 @@ class TransformationCLI( cmd.Cmd, API ):
     oTrans = Transformation()
     oTrans.getTransformations( transStatus = args.split(), printOutput = True )
 
-  def do_getallByUser( self, args ):
+  def do_getAllByUser( self, args ):
     """Get all transformations created by a given user
 
 The first argument is the authorDN or username. The authorDN
