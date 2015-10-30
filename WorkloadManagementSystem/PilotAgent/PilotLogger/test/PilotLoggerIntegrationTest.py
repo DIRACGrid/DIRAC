@@ -20,16 +20,20 @@ from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools impo
 class TestPilotLoggerIntegration( unittest.TestCase ):
 
   def setUp( self ):
+    CURRENT_DIR = os.path.dirname(__file__)
     self.consumer = TestStompConsumer()
-    self.confFile = 'TestPilotLogger.cfg'
+    self.confFile = os.path.join(CURRENT_DIR, 'TestPilotLogger.cfg')
     self.config = readPilotLoggerConfigFile(self.confFile)
+    if (self.config):
+      print "jest"
+    else:
+      print "nie ma"
     getUniqueIDAndSaveToFile( self.config['fileWithID'])
     self.testUUID = self.config['fileWithID']
     self.logger = PilotLogger(self.confFile)
     self.sslCfg = { k: self.config[k] for k  in ('key_file', 'cert_file', 'ca_certs')}
     self.networkCfg= [(self.config['host'], int(self.config['port']))]
   def tearDown( self ):
-    pass
     try:
       os.remove( self.testUUID)
     except OSError:
