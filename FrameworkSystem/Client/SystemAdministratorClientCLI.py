@@ -633,7 +633,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         # Add component section with specific parameters only
         result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
                                                      getCSExtensions(), hostSetup, specialOptions, 
-                                                     addDefaultOptions = False )
+                                                     addDefaultOptions = True )
       else:  
         # Install component section
         result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
