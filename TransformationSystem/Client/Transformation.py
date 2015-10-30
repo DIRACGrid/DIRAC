@@ -376,6 +376,49 @@ class Transformation( API ):
     return res
 
   #############################################################################
+  def getSummaryTransformations( self , transID = []):
+    """Show the summary for a list of Transformations
+
+       Fields starting with 'F' ('J')  refers to files (jobs).
+       Proc. stand for processed.
+    """
+    condDict = { 'TransformationID' : transID }
+    orderby = []
+    start = 0
+    maxitems = len(transID)
+    paramShowNames = ['TransformationID','Type','Status','Files_Total','Files_PercentProcessed',\
+                      'Files_Processed','Files_Unused','Jobs_TotalCreated','Jobs_Waiting',\
+                      'Jobs_Running','Jobs_Done','Jobs_Failed','Jobs_Stalled']
+    # Below, the header used for each field in the printing: short to fit in one line
+    paramShowNamesShort = ['TransID','Type','Status','F_Total','F_Proc.(%)','F_Proc.',\
+                           'F_Unused','J_Created','J_Wait','J_Run','J_Done','J_Fail','J_Stalled']
+    dictList = []
+
+    result = self.transClient.getTransformationSummaryWeb( condDict, orderby, start, maxitems )
+    if not result['OK']:
+      self._prettyPrint( result )
+      return result
+
+    if result['Value']['TotalRecords'] > 0:
+      try:
+        paramNames = result['Value']['ParameterNames']
+        for paramValues in result['Value']['Records']:
+          paramShowValues = map(lambda pname: paramValues[ paramNames.index(pname) ], paramShowNames)
+          showDict = dict(zip( paramShowNamesShort, paramShowValues ))
+          dictList.append( showDict )
+
+      except Exception, x:
+        print 'Exception %s ' %str(x)
+
+    if not len(dictList) > 0:
+      gLogger.error( 'No found transformations satisfying input condition')
+      return S_ERROR( 'No found transformations satisfying input condition')
+    else:
+      print self._printFormattedDictList( dictList, paramShowNamesShort, paramShowNamesShort[0], paramShowNamesShort[0] )
+
+    return S_OK( dictList )
+
+  #############################################################################
   def addTransformation( self, addFiles = True, printOutput = False ):
     res = self._checkCreation()
     if not res['OK']:
