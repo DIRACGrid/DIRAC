@@ -741,10 +741,6 @@ class SiteDirector( AgentModule ):
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
-    # This is needed until the MaxRAM is properly evaluated in the pilot Commands
-    if 'MaxRAM' in queueDict:
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/MaxRAM=%s' % queueDict['MaxRAM'] )
-
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
 
