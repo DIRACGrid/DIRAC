@@ -5,6 +5,7 @@ from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 COMPONENT_NAME = 'Transformation'
 
@@ -301,6 +302,68 @@ class Transformation( API ):
       if printOutput:
         self._prettyPrint( res )
       return res
+    if printOutput:
+      if not outputFields:
+        gLogger.info( "Available fields are: %s" % res['ParameterNames'].join( ' ' ) )
+      elif not res['Value']:
+        gLogger.info( "No tasks found for selection" )
+      else:
+        self._printFormattedDictList( res['Value'], outputFields, 'TransformationID', orderBy )
+    return res
+
+  #############################################################################
+  def getAuthorDNfromProxy( self ):
+    """ gets the AuthorDN and username of the transformation from the uploaded proxy
+    """
+    username = ""
+    author   = ""
+    res = getProxyInfo()
+    if res['OK']:
+      author   = res['Value']['identity']
+      username = res['Value']['username']
+    else:
+      gLogger.error( "Unable to get uploaded proxy Info %s " %res['Message'] )
+      return S_ERROR( res['Message'] )
+
+    res = {'username' : username, 'authorDN' : author }
+    return S_OK( res )
+
+  #############################################################################
+  def getTransformationsByUser( self, authorDN = "", userName = "", transID = [], transStatus = [], outputFields = ['TransformationID', 'Status',
+                                                                                                     'AgentType', 'TransformationName',
+                                                                                                     'CreationDate', 'AuthorDN'],
+                                orderBy = 'TransformationID', printOutput = False ):
+    condDict = {}
+    if authorDN == "":
+      res = self.getAuthorDNfromProxy()
+      if not res['OK']:
+        gLogger.error( res['Message'] )
+        return S_ERROR( res['Message'] )
+      else:
+        foundUserName = res['Value']['username']
+        foundAuthor   = res['Value']['authorDN']
+        # If the username whom created the uploaded proxy is different than the provided username report error and exit
+        if not ( userName == ""  or userName == foundUserName ):
+          gLogger.error("Couldn't resolve the authorDN for user '%s' from the uploaded proxy (proxy created by '%s')" %(userName, foundUserName))
+          return S_ERROR("Couldn't resolve the authorDN for user '%s' from the uploaded proxy (proxy created by '%s')" %(userName, foundUserName))
+
+        userName = foundUserName
+        authorDN = foundAuthor
+        gLogger.info("Will list transformations created by user '%s' with status '%s'" %(userName, ', '.join( transStatus )))
+    else:
+      gLogger.info("Will list transformations created by '%s' with status '%s'" %(authorDN, ', '.join( transStatus )))
+
+    condDict['AuthorDN'] = authorDN
+    if transID:
+      condDict['TransformationID'] = transID
+    if transStatus:
+      condDict['Status'] = transStatus
+    res = self.transClient.getTransformations( condDict = condDict )
+    if not res['OK']:
+      if printOutput:
+        self._prettyPrint( res )
+      return res
+
     if printOutput:
       if not outputFields:
         gLogger.info( "Available fields are: %s" % res['ParameterNames'].join( ' ' ) )
