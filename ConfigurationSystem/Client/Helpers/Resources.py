@@ -143,18 +143,14 @@ def getQueue( site, ce, queue ):
   resultDict = result['Value']
   ceTags = resultDict.get( 'Tag' )
   if ceTags:
-    if isinstance( ceTags, basestring ):
-      Tags = fromChar( ceTags )
-    else:
-      Tags = ceTags
+    Tags = fromChar( ceTags )
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
   if not result['OK']:
     return result
   resultDict.update( result['Value'] )
   queueTags = resultDict.get( 'Tag' )
   if queueTags:
-    if isinstance( queueTags , basestring ):
-      queueTags = fromChar( queueTags )
+    queueTags = fromChar( queueTags )
     Tags = list( set( Tags + queueTags ) )
   if Tags:
     resultDict['Tag'] = Tags
