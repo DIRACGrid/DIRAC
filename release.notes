@@ -42,8 +42,6 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 
-<<<<<<< HEAD
-=======
 [v6r14p10]
 *Configuration
 FIX: Resources - getQueue() is fixed to get properly Tag parameters
@@ -79,7 +77,6 @@ FIX: JobWrapper - fix in getting the OutputPath defined in the job
 *Resources
 FIX: ARCComputingElement - add queue to the XRSL string
 
->>>>>>> rel-v6r15
 [v6r14p8]
 
 *Core
@@ -101,10 +98,6 @@ CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
         invocation arguments  
 CHANGE: Matcher - allow matching by hosts in multi-VO installations              
 
-<<<<<<< HEAD
-
-=======
->>>>>>> rel-v6r14
 [v6r14p7]
 
 *Core
