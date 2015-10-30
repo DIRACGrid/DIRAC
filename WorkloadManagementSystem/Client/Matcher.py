@@ -68,11 +68,11 @@ class Matcher( object ):
     result = self.tqDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
 
     if not result['OK']:
-      return result
+      raise RuntimeError( result['Message'] )
     result = result['Value']
     if not result['matchFound']:
       self.log.info( "No match found" )
-      raise RuntimeError( "No match found" )
+      return {}
 
     jobID = result['jobId']
     resAtt = self.jobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup', 'Status'] )
@@ -84,7 +84,7 @@ class Matcher( object ):
       self.log.error( 'Job matched by the TQ is not in Waiting state', str( jobID ) )
       result = self.tqDB.deleteJob( jobID )
       if not result[ 'OK' ]:
-        return result
+        raise RuntimeError( result['Message'] )
       raise RuntimeError( "Job %s is not in Waiting state" % str( jobID ) )
 
     self._reportStatus( resourceDict, jobID )
@@ -187,8 +187,24 @@ class Matcher( object ):
         if resourceDescription.has_key( name ):
           resourceDict[name] = resourceDescription[name]
 
-      if resourceDescription.has_key( 'JobID' ):
+      if 'JobID' in resourceDescription:
         resourceDict['JobID'] = resourceDescription['JobID']
+
+      # Convert MaxRAM and NumberOfCores parameters into a list of tags
+      maxRAM = resourceDescription.get( 'MaxRAM' )
+      nCores = resourceDescription.get( 'NumberOfProcessors' )
+      for param, key in [ ( maxRAM, 'GB' ), ( nCores, 'Cores' ) ]:
+        if param:
+          try:
+            intValue = int( param )/1000
+            if intValue <= 128:
+              paramList = range( 1, intValue + 1 )
+              paramTags = [ '%d%s' % ( par, key ) for par in paramList ]
+              resourceDict.setdefault( "Tag", [] ).extend( paramTags )
+          except ValueError:
+            pass
+      if 'Tag' in resourceDict:
+        resourceDict['Tag'] = list( set( resourceDict['Tag'] ) )
 
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
                  'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag' ):

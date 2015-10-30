@@ -336,7 +336,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if len( result['Value'] ) > 1:
-        return S_ERROR( 'Metadata conflict for directory %s' % path )
+        return S_ERROR( 'Metadata conflict for %s for directory %s' % (meta, path) )
       if result['Value']:
         metaDict[meta] = result['Value'][0][0]
         if int( result['Value'][0][1] ) == dirID:
