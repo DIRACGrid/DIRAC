@@ -118,7 +118,7 @@ class DataManager( object ):
     else:
       paths = path
 
-    res = self.fc.hasAccess( opType, paths )
+    res = self.fc.hasAccess( paths, opType )
     if not res['OK']:
       return res
     result = {'Successful':list(), 'Failed':list()}

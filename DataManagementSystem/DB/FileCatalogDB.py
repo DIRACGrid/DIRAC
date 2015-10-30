@@ -18,7 +18,6 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager, DirectorySecurityManager, FullSecurityManager, DirectorySecurityManagerWithDelete, PolicyBasedSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager        import DatasetManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import checkArgumentFormat
 
 #############################################################################
 class FileCatalogDB( DB ):
@@ -236,11 +235,6 @@ class FileCatalogDB( DB ):
   def getPathPermissions(self, lfns, credDict):
     """ Get permissions for the given user/group to manipulate the given lfns 
     """
-    res = checkArgumentFormat( lfns )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
-
     return self.securityManager.getPathPermissions( lfns.keys(), credDict )
   
 
@@ -250,11 +244,6 @@ class FileCatalogDB( DB ):
 
         returns Successful dict with True/False
     """
-    res = checkArgumentFormat( paths )
-    if not res['OK']:
-      return res
-    paths = res['Value']
-
     return self.securityManager.hasAccess( opType, paths, credDict )
 
   ########################################################################
@@ -1115,10 +1104,6 @@ class FileCatalogDB( DB ):
     return self.securityManager.hasAdminAccess( credDict )
 
   def _checkPathPermissions( self, operation, lfns, credDict ):
-    res = checkArgumentFormat( lfns )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     res = self.securityManager.hasAccess( operation, lfns.keys(), credDict )
     if not res['OK']:
       return res
