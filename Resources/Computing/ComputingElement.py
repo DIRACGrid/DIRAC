@@ -425,7 +425,7 @@ class ComputingElement(object):
       if 'AvailableCores' in result:
         cores = result['AvailableCores']
         if cores > 1:
-          ceDict['NumberOfCores'] = cores
+          ceDict['NumberOfProcessors'] = cores
 
     return S_OK( ceDict )
 
