@@ -181,18 +181,18 @@ class DirectoryListing( object ):
       num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
-  def printListing(self,reverse,timeorder,sizeorder,humanread):
+  def printListing( self, reverse, timeorder, sizeorder, humanread ):
     """
     """
     if timeorder:
       if reverse:
-        self.entries.sort(key=lambda x: x[5]) 
-      else:  
-        self.entries.sort(key=lambda x: x[5],reverse=True) 
-    elif sizeorder:  
+        self.entries.sort(key=lambda x: x[5])
+      else:
+        self.entries.sort(key=lambda x: x[5],reverse=True)
+    elif sizeorder:
       if reverse:
         self.entries.sort(key=lambda x: x[4])
-      else:  
+      else:
         self.entries.sort(key=lambda x: x[4],reverse=True)
     else:  
       if reverse:
@@ -211,7 +211,7 @@ class DirectoryListing( object ):
         else:
           if len(str(d[i])) > wList[i]:
             wList[i] = len(str(d[i]))
-        
+
     for e in self.entries:
       size = e[4]
       if humanread:
