@@ -35,4 +35,3 @@ def getMemoryFromProc():
       return mem_free_kb
     else:
       return None
-

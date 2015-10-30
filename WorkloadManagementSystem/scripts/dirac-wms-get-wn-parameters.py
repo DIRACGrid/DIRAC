@@ -5,7 +5,7 @@
 from DIRAC.Core.Base import Script
 from DIRAC import gConfig, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities import Os
-from DIRAC.WorkloadManagementSystem.Client import JobMemory
+from DIRAC.WorkloadManagementSystem.Utilities import JobMemory
 
 Script.setUsageMessage( '\n'.join( ['Get the Tag of a CE',
                                     'Usage:',
