@@ -599,7 +599,7 @@ class JobAgent( AgentModule ):
   #############################################################################
   def __getCores( self ):
     """
-    Return number of cores from gConfig and a boolean indicating corresponding to WholeNode option
+    Return number of cores from gConfig and a boolean corresponding to WholeNode option
     """
     tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
 
