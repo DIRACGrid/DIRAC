@@ -4,14 +4,14 @@
 import unittest
 import os
 from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLogger import PilotLogger, getPilotUUIDFromFile
-from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import generateUniqueIDAndSaveToFile
+from DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools import getUniqueIDAndSaveToFile
 
 class TestPilotLogger( unittest.TestCase ):
 
   def setUp( self ):
     self.testFile = 'UUID_to_store'
     self.testCfgFile = 'TestPilotLogger.cfg'
-    generateUniqueIDAndSaveToFile( self.testFile )
+    getUniqueIDAndSaveToFile( self.testFile )
     self.logger = PilotLogger(self.testCfgFile)
     self.badFile = '////'
     self.nonExistentFile = 'abrakadabraToCzaryIMagia'
