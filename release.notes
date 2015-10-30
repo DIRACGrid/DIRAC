@@ -2,12 +2,17 @@
 
 *DMS
 CHANGE: FileCatalogClientCLI - ls order by size, human readable size value
+FIX: DirectoryMetadata - enhanced error message in getDirectoryMetadata
 
 *WMS
 BUGFIX: JobAgent - bug when rescheduling job due to glexec failure
 
 *TS
-NEW: TransformationCLI - added getOutputFiles command
+NEW: TransformationCLI - added getOutputFiles, getAllByUser commands
+NEW: Transformation - added getAuthorDNfromProxy, getTransformationsByUser methods
+
+*Resources
+CHANGE: GlobusComputingElement - simplify creating of pilotStamp
 
 [v6r12p52]
 
