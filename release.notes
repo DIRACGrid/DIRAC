@@ -13,10 +13,17 @@ FIX: BaseClient - only give warning log message "URL banned" when one of the
      service URLs is really banned
 NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
      policy section of Dirac.cfg     
+FIX: XXXTimeLeft - do not mix CPU and WallTime values     
+
+*Configuration
+NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
+NEW: VOMS2CSAgent to synchronize VOMS user data with the DIRAC Registry
 
 *Framework
 CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
         to speed up the operation
+CHANGE: InstalledComponentsDB - table to cache host status information populated
+        by a periodic task        
 
 *RSS
 NEW: CE Availability policy, closing #2373
@@ -27,6 +34,8 @@ CHANGE: DataManager, StorageElement - move physical accounting the StorageElemen
 CHANGE: FileCatalog - added recursive changePathXXX operations
 NEW: ConsistencyInspector class to perform data consistency checks between 
      different databases
+CHANGE: FileCatalog(Client) - refactored to allow clients declare which interface
+        they implement     
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
