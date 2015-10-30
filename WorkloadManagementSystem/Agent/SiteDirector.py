@@ -55,10 +55,11 @@ class SiteDirector( AgentModule ):
                  for the agent restart
   """
 
-  def __init__( self, *args, **kwargs ):
-    """ c'tor
+  def initialize( self ):
+    """ Standard constructor
     """
-    AgentModule.__init__( self, *args, **kwargs )
+    self.am_setOption( "PollingTime", 60.0 )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -66,12 +67,6 @@ class SiteDirector( AgentModule ):
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
-
-  def initialize( self ):
-    """ Standard constructor
-    """
-    self.am_setOption( "PollingTime", 60.0 )
-    self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
 
   def beginExecution( self ):
@@ -214,6 +209,9 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
+        ceTags = ceDict.get( 'Tag' )
+        if isinstance( ceTags, basestring ):
+          ceTags = fromChar( ceTags )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -234,16 +232,25 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+          queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
+          if queueTags and isinstance( queueTags, basestring ):
+            queueTags = fromChar( queueTags )
+            self.queueDict[queueName]['ParametersDict']['Tag'] = queueTags
+          if ceTags:
+            if queueTags:
+              allTags = list( set( ceTags + queueTags ) )
+              self.queueDict[queueName]['ParametersDict']['Tag'] = allTags
+            else:
+              self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
           maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-
           if maxMemory:
             # MaxRAM value is supposed to be in MB
             maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
             memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
             if memoryTags:
               self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += ','.join( memoryTags )
+              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -346,6 +353,7 @@ class SiteDirector( AgentModule ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
+    tqDict['Tag'] = []
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
@@ -655,7 +663,7 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-S %s' % setup )
     opsHelper = Operations.Operations( group = self.pilotGroup, setup = setup )
 
-    # Installation defined?
+    #Installation defined?
     installationName = opsHelper.getValue( "Pilot/Installation", "" )
     if installationName:
       pilotOptions.append( '-V %s' % installationName )
@@ -721,6 +729,21 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
+    if 'ClientPlatform' in queueDict:
+      pilotOptions.append( "-p '%s'" % queueDict['ClientPlatform'] )
+
+    if 'SharedArea' in queueDict:
+      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
+
+#     if 'SI00' in queueDict:
+#       factor = float( queueDict['SI00'] ) / 250.
+#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
+#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
+#     else:
+#       if 'CPUScalingFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
+#       if 'CPUNormalizationFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append( queueDict['ExtraPilotOptions'] )
@@ -729,6 +752,9 @@ class SiteDirector( AgentModule ):
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
+    if "Tag" in queueDict:
+      tagString = ','.join( queueDict['Tag'] )
+      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
