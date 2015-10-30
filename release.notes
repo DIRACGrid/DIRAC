@@ -13,6 +13,10 @@ NEW: added dirac-resource-get-parameters command
 NEW: JobMonitoringHandler - add getJobsParameters() method
 NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities
 NEW: Added dirac-wms-get-wn-parameters command
+NEW: Matcher - generate internal tags for MaxRAM and NumberOfProcessors parameters
+CHANGE: SiteDirector does not pass Tags to the Pilot
+FIX: Matcher(Handler) - do not send error log message if No match found,
+     fixed Matcher return value not correctly interpreted
 
 [v6r14p9]
 
