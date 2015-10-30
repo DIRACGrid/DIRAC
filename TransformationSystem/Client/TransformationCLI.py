@@ -177,6 +177,23 @@ that the username provided to the function.
 
     oTrans.getTransformationsByUser( authorDN = author, userName = username, transStatus = status, printOutput = True )
 
+  def do_summaryTransformations( self, args ):
+    """Show the summary for a list of Transformations
+
+    Fields starting with 'F' ('J')  refers to files (jobs).
+    Proc. stand for processed.
+
+        Usage: summaryTransformations <ProdID> [<ProdID> ...]
+    """
+    argss = args.split()
+    if not len( argss ) > 0:
+      print self.do_summaryTransformations.__doc__
+      return
+
+    transid = argss
+    oTrans = Transformation()
+    oTrans.getSummaryTransformations( transID = transid )
+
   def do_getStatus( self, args ):
     """Get transformation details
 
