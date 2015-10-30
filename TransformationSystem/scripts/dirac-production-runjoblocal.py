@@ -69,7 +69,7 @@ def __runSystemDefaults(jobID, vo):
 
     
   basepath = os.getcwd()
-  return basepath + "/" + tempdir
+  return basepath + os.path.sep + tempdir + os.path.sep
 
 def __downloadJobDescriptionXML(jobID, basepath):
   """
@@ -89,11 +89,11 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
   """
   if not downloadinputdata:
     from xml.etree import ElementTree as et
-    archive = et.parse(basepath + "/InputSandbox" + str(jobID) + "/jobDescription.xml")
+    archive = et.parse(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
     for element in archive.getiterator():
       if element.text == "DIRAC.WorkloadManagementSystem.Client.DownloadInputData":
         element.text = "DIRAC.WorkloadManagementSystem.Client.InputDataByProtocol"
-        archive.write(basepath + "/InputSandbox" + str(jobID) + "/jobDescription.xml")
+        archive.write(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
         S_OK("Job parameter changed from DownloadInputData to InputDataByProtocol.")
 
   
@@ -102,9 +102,9 @@ def __downloadPilotScripts(basepath, diracpath):
   Downloads the scripts necessary to configure the pilot
   
   """
-  shutil.copyfile(str(diracpath) + "/WorkloadManagementSystem/PilotAgent/dirac-pilot.py"   , basepath + "/dirac-pilot.py")
-  shutil.copyfile(str(diracpath) + "/WorkloadManagementSystem/PilotAgent/pilotCommands.py" , basepath + "/pilotCommands.py")
-  shutil.copyfile(str(diracpath) + "/WorkloadManagementSystem/PilotAgent/pilotTools.py"    , basepath + "/pilotTools.py")
+  shutil.copyfile(str(diracpath) + os.path.sep + "WorkloadManagementSystem/PilotAgent/dirac-pilot.py"   , basepath + "dirac-pilot.py")
+  shutil.copyfile(str(diracpath) + os.path.sep + "WorkloadManagementSystem/PilotAgent/pilotCommands.py" , basepath + "pilotCommands.py")
+  shutil.copyfile(str(diracpath) + os.path.sep + "WorkloadManagementSystem/PilotAgent/pilotTools.py"    , basepath + "pilotTools.py")
       
 def __configurePilot(basepath, vo):
   """
@@ -116,15 +116,17 @@ def __configurePilot(basepath, vo):
   from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals    import getVO, getSetup
   from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
   
-  dir = str(os.getcwd())
-  os.rename(dir + '/.dirac.cfg', dir + '/.dirac.cfg.old')
-  os.system("cp " + dir + "/pilot.cfg " + dir + "/.dirac.cfg")
+
   
   vo = getVO()
   currentSetup = getSetup()
   masterCS = gConfigurationData.getMasterServer()
 
-  os.system("python " + basepath + "/dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %(currentSetup, vo, masterCS))
+  os.system("python " + basepath + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %(currentSetup, vo, masterCS))
+  
+  dir = str(os.getcwd()) + os.path.sep
+  os.rename(dir + '.dirac.cfg', dir + '.dirac.cfg.old')
+  shutil.copyfile(dir + 'pilot.cfg', dir + '.dirac.cfg')
 
 def __runJobLocally(jobID, basepath, vo):
   """
@@ -133,9 +135,9 @@ def __runJobLocally(jobID, basepath, vo):
   """
   ipr = __import__(str(vo) + 'DIRAC.Interfaces.API.' + str(vo) + 'Job', globals(), locals(), [str(vo) + 'Job'], -1)
   voJob = getattr(ipr, str(vo) + 'Job')
-  localJob = voJob(basepath + "/InputSandbox" + str(jobID) + "/jobDescription.xml")
-  localJob.setInputSandbox(os.getcwd()+"/pilot.cfg")
-  localJob.setConfigArgs(os.getcwd()+"/pilot.cfg")
+  localJob = voJob(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
+  localJob.setInputSandbox(os.getcwd()+ os.path.sep+"pilot.cfg")
+  localJob.setConfigArgs(os.getcwd()+ os.path.sep+"pilot.cfg")
   os.chdir(basepath)
   localJob.runLocal()
   
@@ -145,7 +147,7 @@ if __name__ == "__main__":
   ext = Extensions()
   _vo = ext.getCSExtensions()[0]
   _diracPath = Extensions().getExtensionPath('DIRAC')
-  _dir = os.getcwd()
+  _dir = str(os.getcwd()) + os.path.sep
   try:
     _path = __runSystemDefaults(_jobID, _vo)
       
@@ -161,4 +163,4 @@ if __name__ == "__main__":
     
   finally:
     os.chdir(_dir)
-    os.rename(_dir + '/.dirac.cfg.old', _dir + '/.dirac.cfg')
+    os.rename(_dir + '.dirac.cfg.old', _dir + '.dirac.cfg')
