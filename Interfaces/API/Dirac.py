@@ -1261,6 +1261,22 @@ class Dirac( API ):
     return result
 
   #############################################################################
+  def getFilesFromDirectory( self, directory, destdir, wildcard='*', days=0):
+    dm = DataManager()
+    result = dm.getFilesFromDirectory(directory, wildcard=wildcard, days=days)
+    if not result['OK']:
+      self.log.error("Failure calling DataManager.getFilesFromDirectory")
+      return result
+    lfns = result['Value']
+    for lfn in lfns:
+      result = self.getFile(lfn, destDir=destdir)
+      if not result['OK']:
+        self.log.error("Failed to retrieve file: %s" % lfn)
+        return result
+      self.log.info("Successfully got file: %s" % lfn)
+    return S_OK(lfns)
+
+
   def getFile( self, lfn, destDir = '', printOutput = False ):
     """Retrieve a single file or list of files from Grid storage to the current directory. lfn is the
        desired logical file name for the file, fullPath is the local path to the file and diracSE is the
