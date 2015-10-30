@@ -192,7 +192,7 @@ class Matcher( object ):
 
       # Convert MaxRAM and NumberOfCores parameters into a list of tags
       maxRAM = resourceDescription.get( 'MaxRAM' )
-      nCores = resourceDescription.get( 'NumberOfCores' )
+      nCores = resourceDescription.get( 'NumberOfProcessors' )
       for param, key in [ ( maxRAM, 'GB' ), ( nCores, 'Cores' ) ]:
         if param:
           try:
