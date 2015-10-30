@@ -77,7 +77,7 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
     specialUsers(list): special users that will not be processed.
   """
   if specialUsers is None:
-    specialUsers = ['admin', 'ala', 'O=client,CN=kamyk']
+    specialUsers = ['admin', 'dirac', 'ala', 'O=client,CN=kamyk']
   ret = getAllUsers()
   if not ret['OK']:
     print "Some problem with getting all users from RabbitMQ DB"
