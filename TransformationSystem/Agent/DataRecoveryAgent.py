@@ -234,7 +234,7 @@ class DataRecoveryAgent(AgentModule):
 
       if self.notesToSend:
         ##remove from the jobCache because something happened
-        self.jobCache.pop(prodID, None)
+        self.jobCache.pop(int(prodID), None)
         notification = NotificationClient()
         for address in self.addressTo:
           result = notification.sendMail(address, "%s: %s" %
