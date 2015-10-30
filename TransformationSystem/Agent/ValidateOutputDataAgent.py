@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegr
 from DIRAC.Resources.Catalog.FileCatalog                       import FileCatalog
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
-from DIRAC.DataManagementSystem.Client.ConsistencyChecks       import ConsistencyChecks
+from DIRAC.DataManagementSystem.Client.ConsistencyInspector    import ConsistencyInspector
 
 AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 
@@ -24,7 +24,7 @@ class ValidateOutputDataAgent( AgentModule ):
     """
     AgentModule.__init__( self, *args, **kwargs )
     
-    self.consistencyChecks = ConsistencyChecks()
+    self.consistencyInspector = ConsistencyInspector()
     self.integrityClient = DataIntegrityClient()
     self.fc = FileCatalog()
     self.transClient = TransformationClient()
@@ -187,7 +187,7 @@ class ValidateOutputDataAgent( AgentModule ):
     for directory in sorted( directoryExists.keys() ):
       if not directoryExists[directory]:
         continue
-      iRes = self.consistencyChecks.catalogDirectoryToSE( directory )
+      iRes = self.consistencyInspector.catalogDirectoryToSE( directory )
       if not iRes['OK']:
         gLogger.error( iRes['Message'] )
         return iRes
@@ -197,7 +197,7 @@ class ValidateOutputDataAgent( AgentModule ):
     # This check performs SE->Catalog for possible output directories
     #
     for storageElementName in sorted( self.activeStorages ):
-      res = self.consistencyChecks.storageDirectoryToCatalog( directories, storageElementName )
+      res = self.consistencyInspector.storageDirectoryToCatalog( directories, storageElementName )
       
       if not res['OK']:
         gLogger.error( 'Failed to check integrity SE->Catalog', res['Message'] )

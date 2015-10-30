@@ -3,7 +3,7 @@ from mock import Mock
 
 
 
-from DIRAC.DataManagementSystem.Client.ConsistencyChecks import ConsistencyChecks
+from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyInspector
 
 
 
@@ -43,13 +43,13 @@ class UtilitiesTestCase( unittest.TestCase ):
     self.dmMock.getReplicas.return_value = {'OK': True, 'Value':{'Successful':{'bb.raw':'metadataPippo'},
                                                                   'Failed':{}}}
 
-    self.cc = ConsistencyChecks( transClient = Mock(), dm = self.dmMock )
+    self.cc = ConsistencyInspector( transClient = Mock(), dm = self.dmMock )
     self.cc.fileType = ['SEMILEPTONIC.DST', 'LOG', 'RAW']
     self.cc.fileTypesExcluded = ['LOG']
     self.cc.prod = 0
     self.maxDiff = None
 
-class ConsistencyChecksSuccess( UtilitiesTestCase ):
+class ConsistencyInspectorSuccess( UtilitiesTestCase ):
 
   def test_getReplicasPresence(self):
     lfnDict = {'aa.raw': {'bb.raw':{'FileType': 'RAW', 'RunNumber': 97019},
@@ -145,6 +145,6 @@ class ConsistencyChecksSuccess( UtilitiesTestCase ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UtilitiesTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ConsistencyChecksSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ConsistencyInspectorSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 3 ).run( suite )
 

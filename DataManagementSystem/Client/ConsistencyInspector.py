@@ -24,7 +24,7 @@ from DIRAC.Resources.Utilities                              import checkArgument
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
 
-class ConsistencyChecks( object ):
+class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
   """
   def __init__( self, interactive = True, transClient = None, dm = None, fc = None ):
