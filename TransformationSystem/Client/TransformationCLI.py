@@ -139,7 +139,7 @@ so that the retrieved transformations are those created by
 the user who uploaded that proxy: that user could be different
 that the username provided to the function.
 
-       usage: getallByUser authorDN or username [Status] [Status]
+       usage: getAllByUser authorDN or username [Status] [Status]
     """
     oTrans = Transformation()
     argss = args.split()
@@ -147,7 +147,7 @@ that the username provided to the function.
     author = ""
     status = []
     if not len( argss ) > 0:
-      print self.do_getallByUser.__doc__
+      print self.do_getAllByUser.__doc__
       return
 
     # if the user didnt quoted the authorDN ends
