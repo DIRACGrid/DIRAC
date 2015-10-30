@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.Subprocess                            import shellCall
 
 from DIRAC.TransformationSystem.Client.Transformation           import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.Resources.Catalog.FileCatalogClient                  import FileCatalogClient
 
 __RCSID__ = "$Id$"
 
@@ -125,6 +126,57 @@ class TransformationCLI( cmd.Cmd, API ):
     """
     oTrans = Transformation()
     oTrans.getTransformations( transStatus = args.split(), printOutput = True )
+
+  def do_getallByUser( self, args ):
+    """Get all transformations created by a given user
+
+The first argument is the authorDN or username. The authorDN
+is preferred: it need to be inside quotes because contains
+white spaces. Only authorDN should be quoted.
+
+When the username is provided instead, 
+the authorDN is retrieved from the uploaded proxy,
+so that the retrieved transformations are those created by
+the user who uploaded that proxy: that user could be different
+that the username provided to the function.
+
+       usage: do_getallByUser authorDN or username [Status] [Status]
+    """
+    oTrans = Transformation()
+    argss = args.split()
+    userName = ""
+    authorDN = ""
+    status = []
+    if not len( argss ) > 0:
+      print self.do_getallByUser.__doc__
+      return
+
+    # if the user didnt quoted the authorDN ends
+    if '=' in argss[0] and argss[0][0] not in ["'", '"']:
+      print "AuthorDN need to be quoted (just quote that argument)"
+      return
+
+    if argss[0][0] in ["'", '"']: # authorDN given
+      authorDN = argss[0]
+      status_idx = 1
+      for arg in argss[1:]:
+        authorDN += ' ' + arg
+        status_idx +=1
+        if arg[-1] in ["'", '"']:
+          break
+      # At this point we should have something like 'authorDN'
+      if not authorDN[0] in ["'", '"'] or not authorDN[-1] in ["'", '"']:
+        print "AuthorDN need to be quoted (just quote that argument)"
+        return
+      else:
+        authorDN = authorDN[1:-1] # throw away the quotes
+      # the rest are the requested status
+      status = argss[ status_idx: ]
+    else: # username given
+      userName = argss[0]
+      status = argss[ 1: ]
+
+    oTrans.getTransformationsByUser( authorDN = authorDN, userName = userName, transStatus = status, printOutput = True )
 
   def do_getStatus( self, args ):
     """Get transformation details
