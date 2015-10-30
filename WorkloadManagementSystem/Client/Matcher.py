@@ -187,8 +187,24 @@ class Matcher( object ):
         if resourceDescription.has_key( name ):
           resourceDict[name] = resourceDescription[name]
 
-      if resourceDescription.has_key( 'JobID' ):
+      if 'JobID' in resourceDescription:
         resourceDict['JobID'] = resourceDescription['JobID']
+
+      # Convert MaxRAM and NumberOfCores parameters into a list of tags
+      maxRAM = resourceDescription.get( 'MaxRAM' )
+      nCores = resourceDescription.get( 'NumberOfProcessors' )
+      for param, key in [ ( maxRAM, 'GB' ), ( nCores, 'Cores' ) ]:
+        if param:
+          try:
+            intValue = int( param )/1000
+            if intValue <= 128:
+              paramList = range( 1, intValue + 1 )
+              paramTags = [ '%d%s' % ( par, key ) for par in paramList ]
+              resourceDict.setdefault( "Tag", [] ).extend( paramTags )
+          except ValueError:
+            pass
+      if 'Tag' in resourceDict:
+        resourceDict['Tag'] = list( set( resourceDict['Tag'] ) )
 
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
                  'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag' ):
