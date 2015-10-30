@@ -9,11 +9,11 @@ parseCommandLine()
 
 import sys, cmd
 
-from DIRAC.Core.Base.API                                        import API
-from DIRAC.Core.Utilities.Subprocess                            import shellCall
-
-from DIRAC.TransformationSystem.Client.Transformation           import Transformation
-from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.Core.Base.API                                     import API
+from DIRAC.Core.Utilities.Subprocess                         import shellCall
+from DIRAC.TransformationSystem.Client.Transformation        import Transformation
+from DIRAC.TransformationSystem.Client.TransformationClient  import TransformationClient
+from DIRAC.Resources.Catalog.FileCatalog                     import FileCatalog
 
 __RCSID__ = "$Id$"
 
@@ -426,7 +426,7 @@ that the username provided to the function.
     if not res['OK']:
       print "Failed to get transformation information: %s" % res['Message']
     else:
-      fc = FileCatalogClient()
+      fc = FileCatalog()
       meta = {}
       meta ['ProdID'] = transName
       res = fc.findFilesByMetadata( meta )
