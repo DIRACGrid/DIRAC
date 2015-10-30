@@ -36,7 +36,7 @@ class Extensions( object ):
 
   def getCSExtensions( self ):
     if not self.__csExt:
-      from DIRAC import gConfig
+      from DIRAC.ConfigurationSystem.Client.Config import gConfig
       exts = gConfig.getValue( '/DIRAC/Extensions', [] )
       for iP in range( len( exts ) ):
         ext = exts[ iP ]

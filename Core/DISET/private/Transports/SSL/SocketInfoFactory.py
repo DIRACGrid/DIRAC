@@ -62,7 +62,7 @@ class SocketInfoFactory:
       return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
     # osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 5 )
+      osSocket.settimeout( 1 ) # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
