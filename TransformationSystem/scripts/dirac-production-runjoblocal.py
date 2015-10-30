@@ -124,8 +124,11 @@ def __configurePilot(basepath, vo):
 
   os.system("python " + basepath + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %(currentSetup, vo, masterCS))
   
-  dir = str(os.getcwd()) + os.path.sep
-  os.rename(dir + '.dirac.cfg', dir + '.dirac.cfg.old')
+  dir = os.path.expanduser('~') + os.path.sep
+  try:
+    os.rename(dir + '.dirac.cfg', dir + '.dirac.cfg.old')
+  except OSError:
+    pass
   shutil.copyfile(dir + 'pilot.cfg', dir + '.dirac.cfg')
 
 def __runJobLocally(jobID, basepath, vo):
@@ -147,7 +150,7 @@ if __name__ == "__main__":
   ext = Extensions()
   _vo = ext.getCSExtensions()[0]
   _diracPath = Extensions().getExtensionPath('DIRAC')
-  _dir = str(os.getcwd()) + os.path.sep
+  _dir = os.path.expanduser('~') + os.path.sep
   try:
     _path = __runSystemDefaults(_jobID, _vo)
       
