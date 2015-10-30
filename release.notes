@@ -1,4 +1,4 @@
-[v6r15-pre6]
+[v6r15-pre7]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -25,6 +25,8 @@ NEW: CE Availability policy, closing #2373
 CHANGE: FileCatalogClient - make explicit methods for all service calls
 CHANGE: DataManager, StorageElement - move physical accounting the StorageElement
 CHANGE: FileCatalog - added recursive changePathXXX operations
+NEW: ConsistencyInspector class to perform data consistency checks between 
+     different databases
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
