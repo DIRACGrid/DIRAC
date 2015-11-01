@@ -85,11 +85,15 @@ if userDN.find( "/" ) != 0:
   DNList = retVal[ 'Value' ]
   if len( DNList ) > 1:
     print "Username %s has more than one DN registered" % userName
+    ind = 0
     for dn in DNList:
-      print " %s" % dn
-    print "Which dn do you want to download?"
-    DIRAC.exit( 2 )
-  userDN = DNList[0]
+      print "%d. %s" % ( ind, dn )
+      ind += 1
+    inp = raw_input( "Which dn do you want to download? " )
+    inp = int( inp )
+    userDN = DNList[inp]
+  else:
+    userDN = DNList[0]
 
 if not params.proxyPath:
   if not userName:
