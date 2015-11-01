@@ -87,10 +87,13 @@ if userDN.find( "/" ) != 0:
     print "Username %s has more than one DN registered" % userName
     ind = 0
     for dn in DNList:
-      print "%d. %s" % ( ind, dn )
+      print "%d %s" % ( ind, dn )
       ind += 1
-    inp = raw_input( "Which dn do you want to download? " )
-    inp = int( inp )
+    inp = raw_input( "Which DN do you want to download? [default 0] " )
+    if not inp:
+      inp = 0
+    else:
+      inp = int( inp )
     userDN = DNList[inp]
   else:
     userDN = DNList[0]
