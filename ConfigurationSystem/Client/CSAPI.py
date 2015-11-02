@@ -353,7 +353,8 @@ class CSAPI( object ):
 
   def modifyGroup( self, groupname, properties, createIfNonExistant = False ):
     """
-    Modify a user
+    Modify a group
+
       :param str groupname: group name
       :param dict properties: dictionary describing group properties:
 
