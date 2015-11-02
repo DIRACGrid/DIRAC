@@ -214,9 +214,10 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
+        ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
+        ceMaxRAM = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -237,6 +238,7 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -248,14 +250,11 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          if maxMemory:
-            # MaxRAM value is supposed to be in MB
-            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
-            if memoryTags:
-              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
+          maxRAM = ceMaxRAM if not maxRAM else maxRAM
+          if maxRAM:
+            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -756,10 +755,6 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
-
-    if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )

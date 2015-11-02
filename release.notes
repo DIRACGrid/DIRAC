@@ -1,3 +1,22 @@
+[v6r14p10]
+*Configuration
+FIX: Resources - getQueue() is fixed to get properly Tag parameters
+
+*Framework
+FIX: SecurityFileLog - fix for zipping very large files
+
+*Resources
+NEW: added dirac-resource-get-parameters command
+
+*WMS
+NEW: JobMonitoringHandler - add getJobsParameters() method
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities
+NEW: Added dirac-wms-get-wn-parameters command
+NEW: Matcher - generate internal tags for MaxRAM and NumberOfProcessors parameters
+CHANGE: SiteDirector does not pass Tags to the Pilot
+FIX: Matcher(Handler) - do not send error log message if No match found,
+     fixed Matcher return value not correctly interpreted
+
 [v6r14p9]
 
 *Core
@@ -227,6 +246,15 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p19]
+
+FIX: changes incorporated from v6r12p53 patch
+
+[v6r13p18]
+
+*WMS
+FIX: JobWrapper - ported back from v6r14p9 the fix for getting OutputPath
 
 [v6r13p17]
 
@@ -545,6 +573,22 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p53]
+
+*DMS
+CHANGE: FileCatalogClientCLI - ls order by size, human readable size value
+FIX: DirectoryMetadata - enhanced error message in getDirectoryMetadata
+
+*WMS
+BUGFIX: JobAgent - bug when rescheduling job due to glexec failure
+
+*TS
+NEW: TransformationCLI - added getOutputFiles, getAllByUser commands
+NEW: Transformation - added getAuthorDNfromProxy, getTransformationsByUser methods
+
+*Resources
+CHANGE: GlobusComputingElement - simplify creating of pilotStamp
 
 [v6r12p52]
 
