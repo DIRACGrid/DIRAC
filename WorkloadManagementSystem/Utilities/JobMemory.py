@@ -22,16 +22,16 @@ def getJobFeatures():
 
 def getMemoryFromMJF():
   features = getJobFeatures()
-  totalMemory = features.get( 'mem_limit_MB' )
-  if totalMemory:
-    return totalMemory
+  MemTotal = features.get( 'mem_limit_MB' )
+  if MemTotal:
+    return MemTotal
   else:
     return None
 
 def getMemoryFromProc():
     meminfo = dict( ( i.split()[0].rstrip( ':' ), int( i.split()[1] ) ) for i in open( '/proc/meminfo' ).readlines() )
-    mem_free_kb = meminfo['MemFree']
-    if mem_free_kb:
-      return mem_free_kb
+    MemTotal = meminfo['MemFree']
+    if MemTotal:
+      return MemTotal / 1024
     else:
       return None

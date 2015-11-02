@@ -417,20 +417,12 @@ class CheckWNCapabilities( CommandBase ):
     """ Discover #Processors and memory
     """
 
-
     retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
     result = result.split( ' ' )
-    Processors = result[0]
-    totalMemory = result[1]
-    if not Processors:
-      self.log.warn( "Could not retrieve number of processors" )
-    else:
-      self.pp.tags.append( 'Processors_%s' % Processors )
-    if not totalMemory:
-      self.log.warn( "Could not retrieve memory" )
-    else:
-      self.pp.tags.append( 'Memory_%s' % totalMemory )
-    if Processors or totalMemory:
+    NumberOfProcessor = result[0]
+    MemTotal = result[1]
+
+    if NumberOfProcessor or MemTotal:
       self.cfg.append( '-FDMH' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )
@@ -439,8 +431,14 @@ class CheckWNCapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
-
+      if NumberOfProcessor:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%s"' % ','.join( NumberOfProcessor ) )
+      else:
+        self.log.warn( "Could not retrieve number of processors" )
+      if MemTotal:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%s"' % ''.join( MemTotal ) )
+      else:
+        self.log.warn( "Could not retrieve memory" )
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:

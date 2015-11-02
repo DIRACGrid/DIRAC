@@ -16,8 +16,8 @@ Script.setUsageMessage( '\n'.join( ['Get the Tag of a CE',
 Script.parseCommandLine( ignoreErrors = True )
 
 
-Processors = Os.getNumberOfCores()
-totalMemory = JobMemory.getMemoryFromMJF()
-if not totalMemory:
-  totalMemory = JobMemory.getMemoryFromProc()
-gLogger.notice( Processors, totalMemory )
+NumberOfProcessor = Os.getNumberOfCores()
+MemTotal = JobMemory.getMemoryFromMJF()
+if not MemTotal:
+  MemTotal = JobMemory.getMemoryFromProc()
+gLogger.notice( NumberOfProcessor, MemTotal )
