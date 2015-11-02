@@ -102,7 +102,7 @@ class VOMS( BaseSecurity ):
           - identity
           - fqan
           - all
-        @rtype:   tuple
+        :rtype:   tuple
         :return:  status, output, error, pyerror.
     """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
