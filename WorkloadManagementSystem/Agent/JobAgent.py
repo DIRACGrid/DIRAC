@@ -452,7 +452,8 @@ class JobAgent( AgentModule ):
       self.log.error( 'Job submission failed', jobID )
       self.__setJobParam( jobID, 'ErrorMessage', '%s CE Submission Error' % ( self.ceName ) )
       if 'ReschedulePayload' in submission:
-        rescheduleFailedJob( jobID, submission['Message'], self.__report )
+        rescheduleFailedJob( jobID, submission['Message'] )
+        return S_OK()  # Without this job is marked as failed at line 265 above
       else:
         if 'Value' in submission:
           self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % ( str( submission['Value'] ) ) )
@@ -470,9 +471,9 @@ class JobAgent( AgentModule ):
       matcher = RPCClient( 'WorkloadManagement/Matcher', timeout = 600 )
       result = matcher.requestJob( ceDict )
       return result
-    except Exception, x:
+    except Exception as x:
       self.log.exception( lException = x )
-      return S_ERROR( 'Job request to matcher service failed with exception' )
+      return S_ERROR( "Job request to matcher service failed with exception" )
 
   #############################################################################
   def __getJDLParameters( self, jdl ):

@@ -54,29 +54,15 @@ from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources      import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 
-DEBUG = False
-JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
-              'Running', 'Stalled', 'Done', 'Completed', 'Failed']
-JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
-
-JOB_STATIC_ATTRIBUTES = [ 'JobID', 'JobType', 'DIRACSetup', 'JobGroup', 'JobSplitType', 'MasterJobID',
-                          'JobName', 'Owner', 'OwnerDN', 'OwnerGroup', 'SubmissionTime', 'VerifiedFlag' ]
-
-JOB_VARIABLE_ATTRIBUTES = [ 'Site', 'RescheduleTime', 'StartExecTime', 'EndExecTime', 'RescheduleCounter',
-                           'DeletedFlag', 'KilledFlag', 'FailedFlag',
-                           'ISandboxReadyFlag', 'OSandboxReadyFlag', 'RetrievedFlag', 'AccountedFlag' ]
-
-JOB_DYNAMIC_ATTRIBUTES = [ 'LastUpdateTime', 'HeartBeatTime',
-                           'Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationNumStatus', 'CPUTime']
-
 #############################################################################
+
 class JobDB( DB ):
 
   def __init__( self ):
     """ Standard Constructor
     """
 
-    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB', debug = DEBUG )
+    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB' )
 
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
@@ -89,6 +75,11 @@ class JobDB( DB ):
       self.log.fatal( 'JobDB: %s' % error )
       sys.exit( error )
       return
+
+    self.JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
+                       'Running', 'Stalled', 'Done', 'Completed', 'Failed']
+    self.JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
+    self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
 
     self.log.info( "MaxReschedule:  %s" % self.maxRescheduling )
     self.log.info( "==================================================" )
@@ -1064,7 +1055,7 @@ class JobDB( DB ):
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
-    for jdlName in 'JobName', 'JobType', 'JobGroup':
+    for jdlName in self.jdl2DBParameters:
       # Defaults are set by the DB.
       jdlValue = classAdJob.getAttributeString( jdlName )
       if jdlValue:
@@ -1684,7 +1675,7 @@ class JobDB( DB ):
     """
 
     paramNames = ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus']
-    paramNames += JOB_STATES
+    paramNames += self.JOB_STATES
     paramNames += ['Efficiency', 'Status']
     #FIXME: hack!!!
     siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'SARA', 'PIC', 'CNAF', 'RAL', 'GRIDKA', 'RRCKI']
@@ -1733,19 +1724,19 @@ class JobDB( DB ):
         status = attDict['Status']
         if not resultDict.has_key( siteFullName ):
           resultDict[siteFullName] = {}
-          for state in JOB_STATES:
+          for state in self.JOB_STATES:
             resultDict[siteFullName][state] = 0
-        if status not in JOB_FINAL_STATES:
+        if status not in self.JOB_FINAL_STATES:
           resultDict[siteFullName][status] = count
     if resultDay['OK']:
       for attDict, count in resultDay['Value']:
         siteFullName = attDict['Site']
         if not resultDict.has_key( siteFullName ):
           resultDict[siteFullName] = {}
-          for state in JOB_STATES:
+          for state in self.JOB_STATES:
             resultDict[siteFullName][state] = 0
         status = attDict['Status']
-        if status in JOB_FINAL_STATES:
+        if status in self.JOB_FINAL_STATES:
           resultDict[siteFullName][status] = count
 
     # Collect records now
@@ -1764,19 +1755,19 @@ class JobDB( DB ):
 
       if not countryCounts.has_key( country ):
         countryCounts[country] = {}
-        for state in JOB_STATES:
+        for state in self.JOB_STATES:
           countryCounts[country][state] = 0
       rList = [siteFullName, grid, country, tier]
       if siteMask.has_key( siteFullName ):
         rList.append( siteMask[siteFullName] )
       else:
         rList.append( 'NoMask' )
-      for status in JOB_STATES:
+      for status in self.JOB_STATES:
         rList.append( siteDict[status] )
         countryCounts[country][status] += siteDict[status]
       efficiency = 0
       total_finished = 0
-      for state in JOB_FINAL_STATES:
+      for state in self.JOB_FINAL_STATES:
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
         efficiency = float( siteDict['Done'] + siteDict['Completed'] ) / float( total_finished )

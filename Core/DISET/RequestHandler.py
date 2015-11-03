@@ -277,15 +277,15 @@ class RequestHandler( object ):
     try:
       mismatch = False
       for iIndex in range( min( len( oTypesList ), len( args ) ) ):
-        #If none skip a parameter
-        if oTypesList[ iIndex ] == None:
+        #If None skip the parameter
+        if oTypesList[ iIndex ] is None:
           continue
         #If parameter is a list or a tuple check types inside
-        elif type( oTypesList[ iIndex ] ) in ( types.TupleType, types.ListType ):
-          if not type( args[ iIndex ] ) in oTypesList[ iIndex ]:
+        elif isinstance( oTypesList[ iIndex ], ( tuple, list ) ):
+          if not isinstance( args[ iIndex ], tuple( oTypesList[ iIndex ] ) ):
             mismatch = True
         #else check the parameter
-        elif not type( args[ iIndex ] ) == oTypesList[ iIndex ]:
+        elif not isinstance( args[ iIndex ], oTypesList[ iIndex ] ):
           mismatch = True
         #Has there been a mismatch?
         if mismatch:

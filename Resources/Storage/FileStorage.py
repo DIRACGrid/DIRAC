@@ -9,10 +9,10 @@ import shutil
 import errno
 import stat
 
-from DIRAC                                      import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities                  import checkArgumentFormat
-from DIRAC.Resources.Storage.StorageBase        import StorageBase
-from DIRAC.Core.Utilities.Adler import fileAdler
+from DIRAC                                 import gLogger, S_OK, S_ERROR
+from DIRAC.Resources.Storage.Utilities     import checkArgumentFormat
+from DIRAC.Resources.Storage.StorageBase   import StorageBase
+from DIRAC.Core.Utilities.Adler            import fileAdler
 
 
 class FileStorage( StorageBase ):
