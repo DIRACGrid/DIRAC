@@ -17,7 +17,7 @@
 from DIRAC.Core.Base.ConsumerModule import ConsumerModule
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
-from DIRAC import S_OK
+from DIRAC import S_OK, DError
 
 def loadConsumerModule( consumerModuleName, hideExceptions = False ):
   """Loads the consumerModule.
@@ -43,9 +43,11 @@ class ConsumerReactor(object):
     self.system_ConsumerModuleName = systemConsumerModuleName
 
   def go( self ):
+    """Creates an instance of a consumer module and
+       initializes it.
     """
-      Main method to control the execution of the consumer.
-    """
+    if not self.consumerModule['classObj']:
+      return DError(errno.EPERM, 'Consumer module class is not loaded')
     instanceObj = self.consumerModule['classObj']()
     instanceObj.initialize( systemConsumerModuleName =  self.system_ConsumerModuleName )
     return S_OK()
