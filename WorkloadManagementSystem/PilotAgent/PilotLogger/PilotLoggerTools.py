@@ -10,13 +10,13 @@ import sys
 import os
 
 def createPilotLoggerConfigFile( filename = 'PilotLogger.cfg',
-                                 host = '127.0.0.1',
-                                 port = 61614,
-                                 queuePath = '/queue/test',
-                                 key_file  = ' /home/krzemien/workdir/lhcb/dirac_development/certificates/client/key.pem',
-                                 cert_file = '/home/krzemien/workdir/lhcb/dirac_development/certificates/client/cert.pem',
-                                 ca_certs = '/home/krzemien/workdir/lhcb/dirac_development/certificates/testca/cacert.pem',
-                                 fileWithID = 'PilotAgentUUID'):
+                                 host = '',
+                                 port = '',
+                                 queuePath = '',
+                                 key_file  = '',
+                                 cert_file = '',
+                                 ca_certs = '',
+                                 fileWithID = ''):
   """Helper function that creates proper configuration file.
      The format is json encoded file with the following options included
   """
