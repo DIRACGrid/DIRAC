@@ -5,7 +5,9 @@
   and override its methods
 """
 
-from DIRAC import S_ERROR
+#from DIRAC import S_ERROR
+from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerOption
+from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
 #from DIRAC.Core.Utilities.MQConnector import MQConnector
 
 class ConsumerModule(object):
@@ -17,25 +19,48 @@ class ConsumerModule(object):
 
   def __init__( self ):
     self._MQConnector = None
+    self._MQConnectorProperties = {
+                                    'MQConnectorSystem' : 'MyRabbitSystem',
+                                    'MQConnectorModuleName' : 'DIRAC.Core.Utilities.RabbitMQConnector',
+                                    'MQConnectorClassName' : 'RabbitConnection',
+                                    'Host' : '',
+                                    'Port' : '',
+                                    'Queue' : '',
+                                    'VH' : '',
+                                    'ExchangeName' : '',
+                                    'Type' : ''
+                                  }
 
-  def initialize( self ):
+  def initialize( self, systemConsumerModuleName ):
     """
     """
-    #based on some arguments decide what type of MQ and if the connection should be blocking or not?
-    self._MQConnector = self. loadMQConnector( moduleName = 'DIRAC.Core.Utilities.RabbitMQ',
-                                               className = 'RabbitInterface')
-    self._MQConnector.connectBlocking(system ="MyRabbitSystem",
-                        queueName = "testQueue",
-                        receive = True,
-                        messageCallback = self.consume)
 
+    self._MQConnector = self._loadMQConnector( moduleName = self._MQConnectorProperties[ 'MQConnectorModuleName' ],
+                                               className = self._MQConnectorProperties[ 'MQConnectorClassName' ])
+    self._setMQConnectorProperties( systemConsumerModuleName )
+    res = self._MQConnector.blockingConnection(system = self._MQConnectorProperties[ 'MQConnectorSystem' ],
+                                               queueName = self._MQConnectorProperties[ 'Queue' ],
+                                               receive = True,
+                                               messageCallback = self.consume
+                                              )
 
-  def loadMQConnector( self, moduleName = 'DIRAC.Core.Utilities.RabbitMQ', className = 'RabbitInterface' ):
+  def _loadMQConnector( self, moduleName = 'DIRAC.Core.Utilities.RabbitMQConnector', className = 'RabbitConnection' ):
     """
     """
     myModule = __import__ (moduleName, fromlist = [moduleName])
     connectorClass = getattr(myModule, className)
     return connectorClass()
+
+  def _setMQConnectorProperties( self, systemConsumerModuleName ):
+    """
+    """
+    consumerSection = getConsumerSection(systemConsumerModuleName)
+    for option in self._MQConnectorProperties:
+      res = getConsumerOption( option, consumerSection)
+      if res[ 'OK' ]:
+        self._MQConnectorProperties[option] = res[ 'Value' ]
+      else:
+        print 'Error: consumer option: %s was not found in section: %s' % ( option, consumerSection )
 
   def consume( self, headers, message ):
     """ Function must be overriden in the implementation

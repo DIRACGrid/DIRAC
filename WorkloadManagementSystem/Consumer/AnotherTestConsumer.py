@@ -11,12 +11,10 @@ class AnotherTestConsumer( ConsumerModule ):
      to connect to the queue.
      See RabbitInterface class for more info.
   """
-  def __init__ ( self ):
-    super(AnotherTestConsumer,self).__init__()
 
   #or guarantee that it will never be overwritten
-  def initialize( self ):
-    super(AnotherTestConsumer, self).initialize()
+  def initialize( self, systemConsumerModuleName ):
+    super(AnotherTestConsumer, self).initialize( systemConsumerModuleName )
 
   def consume( self, headers, message ):
     print "I have just eatean a tasty message:%s" % message
