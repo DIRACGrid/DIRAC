@@ -57,16 +57,17 @@ import sys
 # 2000: RSS
 
 # ## Generic (10XX)
-ERRX = 1001
-ETYPE = 1002
-EIMPERR = 1003
-ENOMETH = 1004
-ECONF = 1005
-ECTMPF = 1006
-EOF = 1007
-ERF = 1008
-EWF = 1009
-ESPF = 1010
+# Python related: 0X
+ETYPE = 1000
+EIMPERR = 1001
+ENOMETH = 1002
+ECONF = 1003
+# Files manipulation: 1X
+ECTMPF = 1010
+EOF = 1011
+ERF = 1012
+EWF = 1013
+ESPF = 1014
 
 # ## Core (11XX)
 # Certificates and Proxy: 0X
@@ -93,16 +94,19 @@ EBADCKS = 1603
 
 
 # This translates the integer number into the name of the variable
-dErrorCode = { 1001 : 'ERRX',
-               1002 : 'ETYPE',
-               1003 : 'EIMPERR',
-               1004 : 'ENOMETH',
-               1005 : 'ECONF',
-               1006 : 'ECTMPF',
-               1007 : 'EOF',
-               1008 : 'ERF',
-               1009 : 'EWF',
-               1010 : 'ESPF',
+dErrorCode = {
+               # ## Generic (10XX)
+               # 100X: Python related
+               1000 : 'ETYPE',
+               1001 : 'EIMPERR',
+               1002 : 'ENOMETH',
+               1003 : 'ECONF',
+               # 101X: Files manipulation
+               1010 : 'ECTMPF',
+               1011 : 'EOF',
+               1012 : 'ERF',
+               1013 : 'EWF',
+               1014 : 'ESPF',
 
                # ## Core
                # 110X: Certificates and Proxy
@@ -127,11 +131,15 @@ dErrorCode = { 1001 : 'ERRX',
                }
 
 
-dStrError = { ERRX : "A human readable error message for ERRX",
+dStrError = {
+
+              # ## Generic (10XX)
+              # 100X: Python related
               ETYPE : "Object Type Error",
               EIMPERR : "Failed to import library",
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
+              # 101X: Files manipulation
               ECTMPF : "Failed to create temporary file",
               EOF : "Cannot open file",
               ERF : "Cannot read from file",
