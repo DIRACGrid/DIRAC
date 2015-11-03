@@ -19,7 +19,7 @@ __RCSID__ = '$Id:  $'
 
 class DowntimeCommand( Command ):
   '''
-    Downtime "master" Command.
+    Downtime "master" Command or removed DTs.
   '''
 
   def __init__( self, args = None, clients = None ):
@@ -62,7 +62,7 @@ class DowntimeCommand( Command ):
     resQuery = []
     
     for elementName in elementNames:
-      #reading all the cache entries
+      #get the list of all DTs stored in the cache
       result = self.rmClient.selectDowntimeCache( element = element,
                                                   name = elementName )
 
@@ -75,9 +75,15 @@ class DowntimeCommand( Command ):
     
       if len(uniformResult) == 0:
         return S_OK( None ) 
+      
+      #get the list of all ongoing DTs from GocDB
+      gDTLinkList = self.gClient.getCurrentDTLinkList()  
+      if not gDTLinkList[ 'OK' ]:
+        return gDTLinkList   
     
       for dt in uniformResult:
-        if dt[ 'EndDate' ] < currentDate:
+        #if DT expired or DT not in the list of current DTs, then we remove it from the cache
+        if dt[ 'EndDate' ] < currentDate or dt[ 'Link' ] not in gDTLinkList[ 'Value' ]:
           result = self.rmClient.deleteDowntimeCache ( 
                                downtimeID = dt[ 'DowntimeID' ]
                                )

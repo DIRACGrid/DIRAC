@@ -29,18 +29,19 @@ def getMachineFeatures():
     try:
       val = urllib.urlopen( fname ).read()
     except:
-      val = None
+      val = 0
     features[item] = val
   return features
 
 def getPowerFromMJF():
   features = getMachineFeatures()
   totalPower = features.get( 'hs06' )
-  logCores = features.get( 'log_cores' )
-  jobSlots = features.get( 'jobslots' )
-  denom = min( logCores, jobSlots ) if logCores and jobSlots else None
+  logCores = float( features.get( 'log_cores', 0 ) )
+  physCores = float( features.get( 'phys_cores', 0 ) )
+  jobSlots = float( features.get( 'jobslots', 0 ) )
+  denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
   if totalPower and denom:
-    return int( 10. * float( totalPower ) / float( denom ) ) / 10.
+    return int( 10. * float( totalPower ) / denom ) / 10.
   else:
     return None
 
@@ -153,7 +154,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
 
 
 def getCPUTime( CPUNormalizationFactor ):
-  """ Trying to get CPUTime (in seconds) from the CS. The default is a (low) 10000s.
+  """ Trying to get CPUTime (in seconds) from the CS. The default is a large 9999999, that we may consider as "Infinite".
 
       This is a generic method, independent from the middleware of the resource.
   """
@@ -182,13 +183,13 @@ def getCPUTime( CPUNormalizationFactor ):
       queues = res['Value']
       CPUTimes = []
       for queue in queues:
-        CPUTimes.append( gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 10000 ) )
+        CPUTimes.append( gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 9999999 ) )
       cpuTimeInMinutes = min( CPUTimes )
       # These are (real, wall clock) minutes - damn BDII!
       CPUTime = int( cpuTimeInMinutes ) * 60
     else:
       queueInfo = getQueueInfo( '%s/%s' % ( gridCE, CEQueue ) )
-      CPUTime = 10000
+      CPUTime = 9999999
       if not queueInfo['OK'] or not queueInfo['Value']:
         gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to %d" % CPUTime )
       else:

@@ -4,11 +4,13 @@
 # imports
 import unittest
 import importlib
+import os
 
 from mock import MagicMock
 
 from DIRAC import gLogger, S_OK
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
+from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
 
 class JobWrapperTestCase( unittest.TestCase ):
   """ Base class for the JobWrapper test cases
@@ -57,6 +59,12 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.fc = self.mockFC
     res = jw.resolveInputData()
     self.assert_( res['OK'] )
+
+  def test__performChecks( self ):
+    wd = WatchdogLinux( os.getpid(), MagicMock(), MagicMock(), 1000, 1024 * 1024 )
+    res = wd._performChecks()
+    self.assert_( res['OK'] )
+
 
 
 #############################################################################

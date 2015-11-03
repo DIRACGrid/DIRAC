@@ -30,6 +30,8 @@ from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
 
+from collections import defaultdict
+
 __RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
@@ -53,18 +55,23 @@ class SiteDirector( AgentModule ):
                  for the agent restart
   """
 
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
+    """
+    AgentModule.__init__( self, *args, **kwargs )
+    self.queueDict = {}
+    self.queueCECache = {}
+    self.queueSlots = {}
+    self.failedQueues = defaultdict( int )
+    self.firstPass = True
+    self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
+    self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+
   def initialize( self ):
     """ Standard constructor
     """
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
-    self.queueDict = {}
-    self.queueCECache = {}
-    self.queueSlots = {}
-    self.failedQueues = {}
-    self.firstPass = True
-    self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
-    self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
     return S_OK()
 
   def beginExecution( self ):
@@ -207,9 +214,10 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
+        ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
+        ceMaxRAM = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -230,6 +238,7 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -241,14 +250,11 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          if maxMemory:
-            # MaxRAM value is supposed to be in MB
-            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
-            if memoryTags:
-              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
+          maxRAM = ceMaxRAM if not maxRAM else maxRAM
+          if maxRAM:
+            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -408,7 +414,7 @@ class SiteDirector( AgentModule ):
     for queue in queues:
 
       # Check if the queue failed previously
-      failedCount = self.failedQueues.setdefault( queue, 0 ) % self.failedQueueCycleFactor
+      failedCount = self.failedQueues[ queue ] % self.failedQueueCycleFactor
       if failedCount != 0:
         self.log.warn( "%s queue failed recently, skipping %d cycles" % ( queue, 10-failedCount ) )
         self.failedQueues[queue] += 1
@@ -532,7 +538,11 @@ class SiteDirector( AgentModule ):
 
         executable, pilotSubmissionChunk = result['Value']
         result = ce.submitJob( executable, '', pilotSubmissionChunk )
-        os.unlink( executable )
+        ### FIXME: The condor thing only transfers the file with some
+        ### delay, so when we unlink here the script is gone
+        ### FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
+        if ceType != 'HTCondorCE':
+          os.unlink( executable )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
           pilotsToSubmit = 0
@@ -723,21 +733,6 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
-    if 'ClientPlatform' in queueDict:
-      pilotOptions.append( "-p '%s'" % queueDict['ClientPlatform'] )
-
-    if 'SharedArea' in queueDict:
-      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
-
-#     if 'SI00' in queueDict:
-#       factor = float( queueDict['SI00'] ) / 250.
-#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
-#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
-#     else:
-#       if 'CPUScalingFactor' in queueDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
-#       if 'CPUNormalizationFactor' in queueDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append( queueDict['ExtraPilotOptions'] )
@@ -745,10 +740,6 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
-
-    if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )

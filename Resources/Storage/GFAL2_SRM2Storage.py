@@ -9,9 +9,7 @@ from types import StringType, ListType
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Utilities import checkArgumentFormat
-
-
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 
 __RCSID__ = "$Id$"
@@ -24,7 +22,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     """ """
     self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
     self.log.debug( "GFAL2_SRM2Storage.__init__: Initializing object" )
-    GFAL2_StorageBase.__init__( self, storageName, parameters )
+    super( GFAL2_SRM2Storage, self ).__init__( storageName, parameters )
     self.pluginName = 'GFAL2_SRM2'
 
     # ##
@@ -35,10 +33,10 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     self.gfal2requestLifetime = gConfig.getValue( '/Resources/StorageElements/RequestLifeTime', 100 )
 
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
-    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
-    self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.__setSRMOptionsToDefault()
+
+    if self.checksumType:
+      self.gfal2.set_opt_string( "SRM PLUGIN", "COPY_CHECKSUM_TYPE", self.checksumType )
 
 
   def __setSRMOptionsToDefault( self ):
@@ -47,26 +45,45 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     '''
     self.gfal2.set_opt_integer( "SRM PLUGIN", "OPERATION_TIMEOUT", self.gfal2Timeout )
     self.gfal2.set_opt_string( "SRM PLUGIN", "SPACETOKENDESC", self.spaceToken )
-    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.gfal2.set_opt_integer( "SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime )
+    # Setting the TURL protocol to gsiftp because with other protocols we have authorisation problems
+#    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
+    self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", ['gsiftp'] )
 
 
-  def _getExtendedAttributes( self, path, protocols = False ):
+  def _getExtendedAttributes( self, path, protocols = False, attributes = None ):
     ''' Changing the TURL_PROTOCOLS option for SRM in case we ask for a specific
         protocol
 
         :param self: self reference
         :param str path: path on the storage
         :param str protocols: a list of protocols
+        :param list attributes: a list of extended attributes that we are interested in,
+                                default is None so we retrieve the list with listxattr via
+                                gfal2 and get them all.
         :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes
                                       and values the respective values
     '''
     if protocols:
       self.gfal2.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", protocols )
-    res = GFAL2_StorageBase._getExtendedAttributes( self, path )
+    res = super( GFAL2_SRM2Storage, self )._getExtendedAttributes( path, attributes = attributes )
     self.__setSRMOptionsToDefault()
     return res
 
+  def _updateMetadataDict( self, metadataDict, attributeDict ):
+    """ Updating the metadata dictionary with srm specific attributes
 
+    :param self: self reference
+    :param dict: metadataDict we want add the SRM specific attributes to
+    :param dict: attributeDict contains 'user.status' which we then fill in the metadataDict
+
+    """
+    # 'user.status' is the extended attribute we are interested in
+    user_status = attributeDict.get( 'user.status', '' )
+    metadataDict['Cached'] = int( 'ONLINE' in user_status )
+    metadataDict['Migrated'] = int( 'NEARLINE' in user_status )
+    metadataDict['Lost'] = int( user_status == 'LOST' )
+    metadataDict['Unavailable'] = int( user_status == 'UNAVAILABLE' )
 
   def getTransportURL( self, path, protocols = False ):
     """ obtain the tURLs for the supplied path and protocols
@@ -132,10 +149,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
              S_ERROR( errStr ) in case of a failure
     """
     self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
-    if protocols:
-      res = self._getExtendedAttributes( path, protocols )
-    else:
-      res = self._getExtendedAttributes( path )
+    res = self._getExtendedAttributes( path, protocols = protocols, attributes = ['user.replicas'] )
     if res['OK']:
       attributeDict = res['Value']
       # 'user.replicas' is the extended attribute we are interested in
@@ -166,8 +180,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     protocolsList = []
     for section in sections['Value']:
-      path = '/Resources/StorageElements/%s/%s/ProtocolName' % ( self.name, section )
-      if gConfig.getValue( path, '' ) == self.protocol:
+      path = '/Resources/StorageElements/%s/%s/PluginName' % ( self.name, section )
+      if gConfig.getValue( path, '' ) == self.pluginName:
         protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
         siteProtocols = gConfig.getValue( protPath, [] )
         if siteProtocols:

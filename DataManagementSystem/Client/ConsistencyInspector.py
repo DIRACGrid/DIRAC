@@ -20,11 +20,11 @@ from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 from DIRAC.Interfaces.API.Dirac                             import Dirac
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient  import DataIntegrityClient
-from DIRAC.Resources.Utilities                              import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities                      import checkArgumentFormat
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
 
-class DataConsistencyChecker( object ):
+class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
   """
   def __init__( self, interactive = True, transClient = None, dm = None, fc = None ):
@@ -37,9 +37,9 @@ class DataConsistencyChecker( object ):
     """
     self.interactive = interactive
     self.transClient = TransformationClient() if transClient is None else transClient
-    self.dm = dm if dm else DataManager()
-    self.fc = fc if fc else FileCatalog()
-
+    self.dm = DataManager() if dm is None else dm
+    self.fc = FileCatalog() if fc is None else fc
+    self.dic = DataIntegrityClient()
     self.dirac = Dirac()
 
     # Base elements from which to start the consistency checks
@@ -235,6 +235,27 @@ class DataConsistencyChecker( object ):
 
     return processedLFNs, nonProcessedLFNs, nonProcessedStatuses
 
+  def __getDirectories( self ):
+    """ get the directories where to look into (they are either given, or taken from the transformation ID
+    """
+    if self.directories:
+      directories = []
+      printout = False
+      for directory in self.directories:
+        if not directory.endswith( '...' ):
+          directories.append( directory )
+        else:
+          printout = True
+          topDir = os.path.dirname( directory )
+          res = self.dm.getCatalogListDirectory( topDir )
+          if not res['OK']:
+            raise RuntimeError( res['Message'] )
+          else:
+            matchDir = directory.split( '...' )[0]
+            directories += [d for d in res['Value']['Successful'].get( topDir, {} ).get( 'SubDirs', [] ) if d.startswith( matchDir )]
+      if printout:
+        gLogger.always( 'Expanded list of %d directories:\n%s' % ( len( directories ), '\n'.join( directories ) ) )
+      return directories
   ################################################################################
 
   def __write( self, text ):
@@ -561,7 +582,7 @@ class DataConsistencyChecker( object ):
           if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ):                # and ( metadata['Size'] != 0 ):
             sizeMismatch.append( ( lfn, 'deprecatedUrl', se, 'CatalogPFNSizeMismatch' ) )
       if sizeMismatch:
-        self.__reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
+        self.dic.__reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
     return S_OK()
 
   def __checkPhysicalFileMetadata( self, lfns, se ):
@@ -582,7 +603,7 @@ class DataConsistencyChecker( object ):
       if re.search( 'File does not exist', reason ):
         missingReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNMissing' ) )
     if missingReplicas:
-      self.__reportProblematicReplicas( missingReplicas, se, 'PFNMissing' )
+      self.dic.__reportProblematicReplicas( missingReplicas, se, 'PFNMissing' )
     lostReplicas = []
     unavailableReplicas = []
     zeroSizeReplicas = []
@@ -595,11 +616,11 @@ class DataConsistencyChecker( object ):
       if not lfnMetadata['Size']:
         zeroSizeReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNZeroSize' ) )
     if lostReplicas:
-      self.__reportProblematicReplicas( lostReplicas, se, 'PFNLost' )
+      self.dic.__reportProblematicReplicas( lostReplicas, se, 'PFNLost' )
     if unavailableReplicas:
-      self.__reportProblematicReplicas( unavailableReplicas, se, 'PFNUnavailable' )
+      self.dic.__reportProblematicReplicas( unavailableReplicas, se, 'PFNUnavailable' )
     if zeroSizeReplicas:
-      self.__reportProblematicReplicas( zeroSizeReplicas, se, 'PFNZeroSize' )
+      self.dic.__reportProblematicReplicas( zeroSizeReplicas, se, 'PFNZeroSize' )
     gLogger.info( 'Checking the integrity of physical files at %s complete' % se )
     return S_OK( lfnMetadataDict )
 
@@ -645,7 +666,7 @@ class DataConsistencyChecker( object ):
         notRegisteredLfns.append( ( lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered' ) )
 
     if notRegisteredLfns:
-      self.__reportProblematicReplicas( notRegisteredLfns, storageElement, 'LFNNotRegistered' )
+      self.dic.__reportProblematicReplicas( notRegisteredLfns, storageElement, 'LFNNotRegistered' )
     if failedLfns:
       return S_ERROR( 'Failed to obtain replicas' )
 
@@ -658,10 +679,10 @@ class DataConsistencyChecker( object ):
     sizeMismatch = []
     for lfn, lfnCatalogMetadata in catalogMetadata.items():
       lfnStorageMetadata = storageMetadata[lfn]
-      if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ): # and ( lfnStorageMetadata['Size'] != 0 ):
+      if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ) and ( lfnStorageMetadata['Size'] != 0 ):
         sizeMismatch.append( ( lfn, 'deprecatedUrl', storageElement, 'CatalogPFNSizeMismatch' ) )
     if sizeMismatch:
-      self.__reportProblematicReplicas( sizeMismatch, storageElement, 'CatalogPFNSizeMismatch' )
+      self.dic.__reportProblematicReplicas( sizeMismatch, storageElement, 'CatalogPFNSizeMismatch' )
     gLogger.info( 'Checking storage files exist in the catalog complete' )
     resDict = {'CatalogMetadata':catalogMetadata, 'StorageMetadata':storageMetadata}
     return S_OK( resDict )
@@ -727,7 +748,7 @@ class DataConsistencyChecker( object ):
         if not metadata['Size']:
           zeroSizeFiles.append( ( lfn, 'deprecatedUrl', storageElement, 'PFNZeroSize' ) )
     if zeroSizeFiles:
-      self.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
+      self.dic.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
 
     gLogger.info( 'Obtained at total of %s files for directories at %s' % ( len( allFiles ), storageElement ) )
     return S_OK( allFiles )
@@ -831,7 +852,7 @@ class DataConsistencyChecker( object ):
     gLogger.info( 'The following %s files were found with %s' % ( len( lfns ), reason ) )
     for lfn in sorted( lfns ):
       gLogger.info( lfn )
-    res = DataIntegrityClient.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
+    res = self.dic.setFileProblematic( lfns, reason, sourceComponent = 'DataIntegrityClient' )
     if not res['OK']:
       gLogger.info( 'Failed to update integrity DB with files', res['Message'] )
     else:

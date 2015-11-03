@@ -15,6 +15,7 @@ from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 if GSI.__version__ < "0.5.0":
   raise Exception( "Required GSI version >= 0.5.0" )
@@ -54,10 +55,14 @@ class SocketInfoFactory:
     return S_ERROR( ", ".join( errs ) )
 
   def __sockConnect( self, hostAddress, sockType, timeout, retries ):
-    osSocket = socket.socket( sockType, socket.SOCK_STREAM )
-    #osSocket.setblocking( 0 )
+    try:
+      osSocket = socket.socket( sockType, socket.SOCK_STREAM )
+    except socket.error as e:
+      gLogger.warn( "Exception while creating a socket:", str( e ) ) 
+      return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
+    # osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 5 )
+      osSocket.settimeout( 1 ) # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
