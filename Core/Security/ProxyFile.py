@@ -112,7 +112,7 @@ def multiProxyArgument( proxy = False ):
     proxy = X509Chain()
     retVal = proxy.loadProxyFromFile( proxyLoc )
     if not retVal[ 'OK' ]:
-      return DError( DErrno.EPROXYLOAD, "ProxyLocation: %s" % proxyLoc )
+      return DError( DErrno.EPROXYREAD, "ProxyLocation: %s" % proxyLoc )
   return S_OK( { 'file' : proxyLoc,
                  'chain' : proxy,
                  'tempFile' : tempFile } )

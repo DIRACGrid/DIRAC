@@ -57,9 +57,9 @@ class X509CRL( object ):
     try:
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return DError( DErrno.ECERTLOAD, "%s" % e )
+      return DError( DErrno.ECERTREAD, "%s" % e )
     if not self.__revokedCert:
-      return DError( DErrno.ECERTLOAD )
+      return DError( DErrno.ECERTREAD )
     self.__loadedCert = True
     self.__pemData = pemData
 
@@ -92,7 +92,7 @@ class X509CRL( object ):
     Dump all to string
     """
     if not self.__loadedCert:
-      return DError( DErrno.ECERTLOAD, "No certificate loaded" )
+      return DError( DErrno.ECERTREAD, "No certificate loaded" )
 
     return S_OK( self.__pemData )
 

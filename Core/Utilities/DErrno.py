@@ -61,25 +61,23 @@ ERRX = 1001
 ETYPE = 1002
 EIMPERR = 1003
 ENOMETH = 1004
-ECONF = 1006
-ECTMPF = 1007
-EOF = 1008
-ERF = 1009
-EWF = 1010
-ESPF = 1011
+ECONF = 1005
+ECTMPF = 1006
+EOF = 1007
+ERF = 1008
+EWF = 1009
+ESPF = 1010
 
 # ## Core (11XX)
 # Certificates and Proxy: 0X
 EX509 = 1100
 EPROXYFIND = 1101
-EPROXYLOAD = 1102
-EPROXYREAD = 1103
-ECERTFIND = 1104
-ECERTLOAD = 1105
-ECERTREAD = 1106
-ENOCERT = 1107
-ENOCHAIN = 1108
-ENOPKEY = 1109
+EPROXYREAD = 1102
+ECERTFIND = 1103
+ECERTREAD = 1104
+ENOCERT = 1105
+ENOCHAIN = 1106
+ENOPKEY = 1107
 # DISET: 1X
 EDISET = 1110
 # 3rd party security: 2X
@@ -99,25 +97,23 @@ dErrorCode = { 1001 : 'ERRX',
                1002 : 'ETYPE',
                1003 : 'EIMPERR',
                1004 : 'ENOMETH',
-               1006 : 'ECONF',
-               1007 : 'ECTMPF',
-               1008 : 'EOF',
-               1009 : 'ERF',
-               1010 : 'EWF',
-               1011 : 'ESPF',
+               1005 : 'ECONF',
+               1006 : 'ECTMPF',
+               1007 : 'EOF',
+               1008 : 'ERF',
+               1009 : 'EWF',
+               1010 : 'ESPF',
 
                # ## Core
                # 110X: Certificates and Proxy
                1100 : 'EX509',
                1101 : 'EPROXYFIND',
-               1102 : 'EPROXYLOAD',
-               1103 : 'EPROXYREAD',
-               1104 : 'ECERTFIND',
-               1105 : 'ECERTLOAD',
-               1106 : 'ECERTREAD',
-               1107 : 'ENOCERT',
-               1108 : 'ENOCHAIN',
-               1109 : 'ENOPKEY',
+               1102 : 'EPROXYREAD',
+               1103 : 'ECERTFIND',
+               1104 : 'ECERTREAD',
+               1105 : 'ENOCERT',
+               1106 : 'ENOCHAIN',
+               1107 : 'ENOPKEY',
                # 111X: DISET
                1110 : 'EDISET',
                # 112X: 3rd party security
@@ -146,10 +142,8 @@ dStrError = { ERRX : "A human readable error message for ERRX",
               # 110X: Certificates and Proxy
               EX509 : "Generic Error with X509",
               EPROXYFIND : "Can't find proxy",
-              EPROXYLOAD : "Can't load proxy from file",
               EPROXYREAD : "Can't read proxy",
               ECERTFIND : "Can't find certificate",
-              ECERTLOAD : "Can't load certificate from file",
               ECERTREAD : "Can't read certificate",
               ENOCERT : "No certificate loaded",
               ENOCHAIN : "No chain loaded",

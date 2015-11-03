@@ -51,7 +51,7 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( proxyLocation )
     if not retVal[ 'OK' ]:
-      return DError( DErrno.EPROXYLOAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
+      return DError( DErrno.EPROXYREAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
   retVal = chain.getCredentials()
   if not retVal[ 'OK' ]:

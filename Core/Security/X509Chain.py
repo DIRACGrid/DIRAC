@@ -74,7 +74,7 @@ class X509Chain( object ):
     try:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, data )
     except Exception as e:
-      return DError( DErrno.ECERTLOAD, "%s" % e )
+      return DError( DErrno.ECERTREAD, "%s" % e )
     if not self.__certList:
       return DError( DErrno.EX509 )
     self.__loadedChain = True
@@ -113,7 +113,7 @@ class X509Chain( object ):
     try:
       self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception as e:
-      return DError( DErrno.ECERTLOAD, "%s (Probably bad pass phrase?)" % e )
+      return DError( DErrno.ECERTREAD, "%s (Probably bad pass phrase?)" % e )
     self.__loadedPKey = True
     return S_OK()
 
@@ -506,7 +506,7 @@ class X509Chain( object ):
     try:
       req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return DError( DErrno.ECERTLOAD, "Can't load request data: %s" % e )
+      return DError( DErrno.ECERTREAD, "Can't load request data: %s" % e )
     limited = requireLimited and self.isLimitedProxy().get( 'Value', False )
     return self.generateProxyToString( lifetime, diracGroup, 1024, limited, rfc, req.get_pubkey() )
 
