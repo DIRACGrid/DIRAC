@@ -44,7 +44,7 @@ class TimeLeft( object ):
       self.batchPlugin = None
       self.batchError = result['Message']
 
-  def getScaledCPU( self, cores = 1 ):
+  def getScaledCPU( self, processors = 1 ):
     """Returns the current CPU Time spend (according to batch system) scaled according
        to /LocalSite/CPUScalingFactor
     """
@@ -62,14 +62,14 @@ class TimeLeft( object ):
       if resourceDict['Value']['CPU']:
         return resourceDict['Value']['CPU'] * self.scaleFactor
       elif resourceDict['Value']['WallClock']:
-        # When CPU value missing, guess from WallClock and number of cores
-        return resourceDict['Value']['WallClock'] * self.scaleFactor * cores
+        # When CPU value missing, guess from WallClock and number of processors
+        return resourceDict['Value']['WallClock'] * self.scaleFactor * processors
 
 
     return 0
 
   #############################################################################
-  def getTimeLeft( self, cpuConsumed = 0.0, cores = 1 ):
+  def getTimeLeft( self, cpuConsumed = 0.0, processors = 1 ):
     """Returns the CPU Time Left for supported batch systems.  The CPUConsumed
        is the current raw total CPU.
     """
@@ -93,13 +93,13 @@ class TimeLeft( object ):
 
     # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
     if not resources['CPULimit']:
-      resources['CPULimit'] = resources['WallClockLimit'] * cores
+      resources['CPULimit'] = resources['WallClockLimit'] * processors
     elif not resources['WallClockLimit']:
       resources['WallClockLimit'] = resources['CPULimit']
 
     # if one of CPU or WallClock is missing, compute a reasonable value
     if not resources['CPU']:
-      resources['CPU'] = resources['WallClock'] * cores
+      resources['CPU'] = resources['WallClock'] * processors
     elif not resources['WallClock']:
       resources['WallClock'] = resources['CPU']
 
