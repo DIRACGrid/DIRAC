@@ -22,16 +22,16 @@ def getJobFeatures():
 
 def getMemoryFromMJF():
   features = getJobFeatures()
-  MemTotal = features.get( 'mem_limit_MB' )
-  if MemTotal:
-    return MemTotal
+  MaxRAM = features.get( 'mem_limit_MB' )
+  if MaxRAM:
+    return MaxRAM
   else:
     return None
 
 def getMemoryFromProc():
     meminfo = dict( ( i.split()[0].rstrip( ':' ), int( i.split()[1] ) ) for i in open( '/proc/meminfo' ).readlines() )
-    MemTotal = meminfo['MemFree']
-    if MemTotal:
-      return MemTotal / 1024
+    MaxRAM = meminfo['MemTotal']
+    if MaxRAM:
+      return MaxRAM / 1024
     else:
       return None

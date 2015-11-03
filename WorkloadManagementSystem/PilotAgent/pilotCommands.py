@@ -420,9 +420,9 @@ class CheckWNCapabilities( CommandBase ):
     retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
     result = result.split( ' ' )
     NumberOfProcessor = result[0]
-    MemTotal = result[1]
+    MaxRAM = result[1]
 
-    if NumberOfProcessor or MemTotal:
+    if NumberOfProcessor or MaxRAM:
       self.cfg.append( '-FDMH' )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )
@@ -435,8 +435,8 @@ class CheckWNCapabilities( CommandBase ):
         self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%s"' % ','.join( NumberOfProcessor ) )
       else:
         self.log.warn( "Could not retrieve number of processors" )
-      if MemTotal:
-        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%s"' % ''.join( MemTotal ) )
+      if MaxRAM:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%s"' % ''.join( MaxRAM ) )
       else:
         self.log.warn( "Could not retrieve memory" )
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )

@@ -17,7 +17,7 @@ Script.parseCommandLine( ignoreErrors = True )
 
 
 NumberOfProcessor = Os.getNumberOfCores()
-MemTotal = JobMemory.getMemoryFromMJF()
-if not MemTotal:
-  MemTotal = JobMemory.getMemoryFromProc()
-gLogger.notice( NumberOfProcessor, MemTotal )
+MaxRAM = JobMemory.getMemoryFromMJF()
+if not MaxRAM:
+  MaxRAM = JobMemory.getMemoryFromProc()
+gLogger.notice( NumberOfProcessor, MaxRAM )
