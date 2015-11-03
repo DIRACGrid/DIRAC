@@ -84,6 +84,9 @@ EDISET = 1110
 # 3rd party security: 2X
 E3RDPARTY = 1120
 EVOMS = 1121
+# Databases : 3X
+EDB = 1130
+EMYSQL = 1131
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -123,6 +126,9 @@ dErrorCode = {
                # 112X: 3rd party security
                1120 : 'E3RDPARTY',
                1121 : 'EVOMS',
+               # 113X: Databases
+               1130 : 'EDB',
+               1131 : 'EMYSQL',
 
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
@@ -132,7 +138,6 @@ dErrorCode = {
 
 
 dStrError = {
-
               # ## Generic (10XX)
               # 100X: Python related
               ETYPE : "Object Type Error",
@@ -161,6 +166,9 @@ dStrError = {
               # 112X: 3rd party security
               E3RDPARTY: "3rd party security service error",
               EVOMS : "VOMS Error",
+              # 113X: Databases
+              EDB : "Database Error",
+              EMYSQL : "MySQL Error",
 
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
