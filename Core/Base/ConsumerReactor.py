@@ -9,7 +9,7 @@
   [DIRAC System Name]/[DIRAC Consumer Name]
   dirac-consumer then:
   - produces a instance of ConsumerReactor
-  - loads the required module using the ConsumerReactor.loadModule method
+  - loads the required module using the loadModule method
   - starts the consumer itself using the ConsumerReactor.go method
 
 """
@@ -21,7 +21,9 @@ from DIRAC import S_OK, DError
 import errno
 
 def loadConsumerModule( consumerModuleName, hideExceptions = False ):
-  """Loads the consumerModule.
+  """Loads the consumer module.
+  Args:
+    consumerModuleName(str):
   """
   loader = ModuleLoader( "Consumer", getConsumerSection, ConsumerModule )
   #The function loadModules takes as the first argument, the list
@@ -44,8 +46,13 @@ class ConsumerReactor(object):
     self.system_ConsumerModuleName = systemConsumerModuleName
 
   def go( self ):
-    """Creates an instance of a consumer module and
-       initializes it.
+    """Creates an instance of a consumer class and
+       initializes it. It is assumed that the consumer
+       module and the consumer class are already loaded.
+       Also the field self.system_ConsumerModuleName
+       must be already set in format:[DIRAC System Name]/[DIRAC Consumer Name]
+    Returns:
+      S_OK(): or DError in case of errors.
     """
     if not self.consumerModule['classObj']:
       return DError(errno.EPERM, 'Consumer module class is not loaded')
