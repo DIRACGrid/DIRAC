@@ -74,12 +74,15 @@ class MQConnector( object ):
     exchange indicates whether the destination will be a exchange (True) or a queue (False). Only taken into account if receive = True
     messageCallback is the function to be called when a new message is received from the queue ( only receiver mode ). If None, the defaultCallback method is used instead
     """
+    print 'im here'
     result = self.setupConnection( system, queueName, receive, messageCallback )
     if not result[ 'OK' ]:
+      print 'wat1?'
       return result
 
     while 1:
       time.sleep( 1 )
+    print 'wat?'
 
     self.unsetupConnection()
 
