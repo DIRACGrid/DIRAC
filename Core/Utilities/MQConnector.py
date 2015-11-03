@@ -26,11 +26,13 @@ class MQConnector( object ):
 
   # Rest of functions
 
-  def setQueueParameters( self, system, queueName ):
+  def setQueueParameters( self, system, queueName, parameters ):
     """
     Reads the MessageQueue parameters from the CS and sets the appropriate variables in the class with their values
     system is the DIRAC system where the queue works
     queueName is the name of the queue
+    parameters is a dictionary with the parameters for the queue. It should include the following parameters:
+    'Host', 'Port', 'User', 'VH' and 'Type'. Otherwise, the function will return an error
     """
 
     # Utility function to lowercase the first letter of a string ( to create valid variable names )
@@ -40,11 +42,10 @@ class MQConnector( object ):
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
 
-    # Get the parameters from the CS and set them
+    # Read and set the parameters
     for parameter in [ 'Host', 'Port', 'User', 'VH', 'Type' ]:
-      result = gConfig.getOption( '/Systems/%s/%s/MessageQueueing/%s/%s' % ( system, setup, queueName, parameter ) )
-      if not result[ 'OK' ]:
-        return S_ERROR( 'Failed to get the parameter \'%s\' for the queue: %s' % ( parameter, result[ 'Message' ] ) )
+      if not parameter in parameters:
+        return S_ERROR( 'The parameter \'%s\' for the queue was not provided' % parameter )
       setattr( self, toLowerFirst( parameter ), result[ 'Value' ] )
 
     result = gConfig.getOption( '/LocalInstallation/MessageQueueing/Password' )
