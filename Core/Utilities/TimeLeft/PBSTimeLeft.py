@@ -100,14 +100,8 @@ class PBSTimeLeft( object ):
       return S_OK( consumed )
 
     if cpuLimit or wallClockLimit:
-      # We have got a partial result from PBS, assume that we ran for too short time
-      if not cpuLimit:
-        consumed['CPULimit'] = wallClockLimit
-      if not wallClockLimit:
-        consumed['WallClockLimit'] = cpuLimit
-      if not cpu:
-        consumed['CPU'] = int( time.time() - self.startTime )
-      if not wallClock:
+      # We have got a partial result from PBS, we can only restore WallClock
+      if not wallClock:  
         consumed['WallClock'] = int( time.time() - self.startTime )
       self.log.debug( "TimeLeft counters restored:", str( consumed ) )
       return S_OK( consumed )

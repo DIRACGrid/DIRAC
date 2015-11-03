@@ -2,24 +2,12 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                  import S_OK, gLogger
-from DIRAC.Core.Base.Client                                 import Client
-from DIRAC.Core.Utilities.List                              import breakListIntoChunks
-from DIRAC.Resources.Catalog.FileCatalogueBase              import FileCatalogueBase
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-from DIRAC.Resources.Utilities                              import checkArgumentFormat
+from DIRAC                                                         import S_OK, gLogger
+from DIRAC.Core.Base.Client                                        import Client
+from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 
-def _returnOK( lfn ):
-  res = checkArgumentFormat( lfn )
-  if not res['OK']:
-    return res
-  successful = {}
-  for lfn in res['Value']:
-    successful[lfn] = True
-  resDict = {'Successful':successful, 'Failed':{}}
-  return S_OK( resDict )
-
-class TransformationClient( Client, FileCatalogueBase ):
+class TransformationClient( Client ):
 
   """ Exposes the functionality available in the DIRAC/TransformationHandler
 
@@ -434,122 +422,10 @@ class TransformationClient( Client, FileCatalogueBase ):
     """
     return dictOfProposedstatus.values()[0]
 
-  #####################################################################
-  #
-  # These are the file catalog interface methods
-  #
-
   def isOK( self ):
     return self.valid
-
-  def getName( self, DN = '' ):
-    """ Get the file catalog type name
-    """
-    return self.name
 
   def addDirectory( self, path, force = False ):
     rpcClient = self._getRPC()
     return rpcClient.addDirectory( path, force )
 
-  def getReplicas( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value'].keys()
-    rpcClient = self._getRPC()
-    return rpcClient.getReplicas( lfns )
-
-  def addFile( self, lfn, force = False ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfndicts = res['Value']
-    rpcClient = self._getRPC()
-    return rpcClient.addFile( lfndicts, force )
-
-  def addReplica( self, lfn, force = False ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfndicts = res['Value']
-    rpcClient = self._getRPC()
-    return rpcClient.addReplica( lfndicts, force )
-
-  def removeFile( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value'].keys()
-    rpcClient = self._getRPC()
-    successful = {}
-    failed = {}
-    listOfLists = breakListIntoChunks( lfns, 100 )
-    for fList in listOfLists:
-      res = rpcClient.removeFile( fList )
-      if not res['OK']:
-        return res
-      successful.update( res['Value']['Successful'] )
-      failed.update( res['Value']['Failed'] )
-    resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK( resDict )
-
-  def removeReplica( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfndicts = res['Value']
-    rpcClient = self._getRPC()
-    successful = {}
-    failed = {}
-    # as lfndicts is a dict, the breakListIntoChunks will fail. Fake it!
-    listOfDicts = []
-    localdicts = {}
-    for lfn, info in lfndicts.items():
-      localdicts.update( { lfn : info } )
-      if len( localdicts ) % 100 == 0:
-        listOfDicts.append( localdicts )
-        localdicts = {}
-    for fDict in listOfDicts:
-      res = rpcClient.removeReplica( fDict )
-      if not res['OK']:
-        return res
-      successful.update( res['Value']['Successful'] )
-      failed.update( res['Value']['Failed'] )
-    resDict = {'Successful': successful, 'Failed':failed}
-    return S_OK( resDict )
-
-  def getReplicaStatus( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfndict = res['Value']
-    rpcClient = self._getRPC()
-    return rpcClient.getReplicaStatus( lfndict )
-
-  def setReplicaStatus( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfndict = res['Value']
-    rpcClient = self._getRPC()
-    return rpcClient.setReplicaStatus( lfndict )
-
-  def setReplicaHost( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfndict = res['Value']
-    rpcClient = self._getRPC()
-    return rpcClient.setReplicaHost( lfndict )
-
-  def removeDirectory( self, lfn ):
-    return _returnOK( lfn )
-
-  def createDirectory( self, lfn, ):
-    return _returnOK( lfn )
-
-  def createLink( self, lfn ):
-    return _returnOK( lfn )
-
-  def removeLink( self, lfn ):
-    return _returnOK( lfn )

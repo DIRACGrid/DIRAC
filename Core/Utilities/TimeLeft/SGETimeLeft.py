@@ -88,12 +88,6 @@ class SGETimeLeft( object ):
 
     if cpuLimit or wallClockLimit:
       # We have got a partial result from SGE
-      if not cpuLimit:
-        consumed['CPULimit'] = wallClockLimit
-      if not wallClockLimit:
-        consumed['WallClockLimit'] = cpuLimit
-      if not cpu:
-        consumed['CPU'] = time.time() - self.startTime
       if not wallClock:
         consumed['WallClock'] = time.time() - self.startTime
       self.log.debug( "TimeLeft counters restored:", str( consumed ) )

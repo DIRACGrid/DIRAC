@@ -56,7 +56,16 @@ class TimeLeft( object ):
     if not self.batchPlugin:
       return 0
 
-    return self.batchPlugin.getResourceUsage().get( 'Value', {} ).get( 'CPU', 0.0 ) * self.scaleFactor
+    resourceDict = self.batchPlugin.getResourceUsage()
+
+    if 'Value' in resourceDict:
+      if resourceDict['Value']['CPU']:
+        return resourceDict['Value']['CPU'] * self.scaleFactor
+      elif resourceDict['Value']['WallClock']:
+        # build a reasonable CPU value from WallClock
+        return resourceDict['Value']['WallClock'] * self.scaleFactor
+
+    return 0
 
   #############################################################################
   def getTimeLeft( self, cpuConsumed = 0.0 ):
@@ -76,9 +85,22 @@ class TimeLeft( object ):
       return resourceDict
 
     resources = resourceDict['Value']
-    if not resources['CPULimit'] or not resources['WallClockLimit']:
+    self.log.debug( "self.batchPlugin.getResourceUsage(): %s" % str( resources ) )
+    if not resources['CPULimit'] and not resources['WallClockLimit']:
       # This should never happen
       return S_ERROR( 'No CPU or WallClock limit obtained' )
+
+    # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
+    if not resources['CPULimit']:
+      resources['CPULimit'] = resources['WallClockLimit']
+    elif not resources['WallClockLimit']:
+      resources['WallClockLimit'] = resources['CPULimit']
+
+    # if one of CPU or WallClock is missing, compute a reasonable value
+    if not resources['CPU']:
+      resources['CPU'] = resources['WallClock']
+    elif not resources['WallClock']:
+      resources['WallClock'] = resources['CPU']
 
     timeLeft = 0.
     cpu = float( resources['CPU'] )
