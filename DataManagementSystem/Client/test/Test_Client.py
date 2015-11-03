@@ -3,11 +3,8 @@ from mock import Mock
 
 
 
-<<<<<<< HEAD
-from DIRAC.DataManagementSystem.Client.DataConsistencyChecker import DataConsistencyChecker
-=======
+
 from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyInspector
->>>>>>> 9e71f1878a9d22c716b89ee742108a1d81a18a4f
 
 
 
@@ -47,11 +44,8 @@ class UtilitiesTestCase( unittest.TestCase ):
     self.dmMock.getReplicas.return_value = {'OK': True, 'Value':{'Successful':{'bb.raw':'metadataPippo'},
                                                                   'Failed':{}}}
 
-<<<<<<< HEAD
-    self.cc = DataConsistencyChecker( transClient = Mock(), dm = self.dmMock )
-=======
+
     self.cc = ConsistencyInspector( transClient = Mock(), dm = self.dmMock )
->>>>>>> 9e71f1878a9d22c716b89ee742108a1d81a18a4f
     self.cc.fileType = ['SEMILEPTONIC.DST', 'LOG', 'RAW']
     self.cc.fileTypesExcluded = ['LOG']
     self.cc.prod = 0
