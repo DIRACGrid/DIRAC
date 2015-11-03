@@ -1135,6 +1135,22 @@ class ComponentsInstaller( object ):
         runsv = "Not running"
 
       runDict = {}
+      runDict['CPU'] = -1
+      runDict['MEM'] = -1
+      runDict['VSZ'] = -1
+      runDict['RSS'] = -1
+      if pid: # check the process CPU usage and memory
+        # PID %CPU %MEM VSZ
+        result = execCommand( 0, ['ps', '-q', pid, 'au'] )
+        if result['OK'] and len( result['Value'] ) > 0:
+          stats = result['Value'][1]
+          values = re.findall( r"\d*\.\d+|\d+", stats )
+          if len( values ) > 0:
+            runDict['CPU'] = values[1]
+            runDict['MEM'] = values[2]
+            runDict['VSZ'] = values[3]
+            runDict['RSS'] = values[4]
+
       runDict['Timeup'] = timeup
       runDict['PID'] = pid
       runDict['RunitStatus'] = "Unknown"
@@ -1228,6 +1244,10 @@ class ComponentsInstaller( object ):
                 resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
                 resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
                 resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
+                resultDict[compType][system][component]['CPU'] = runitDict[compDir]['CPU']
+                resultDict[compType][system][component]['MEM'] = runitDict[compDir]['MEM']
+                resultDict[compType][system][component]['RSS'] = runitDict[compDir]['RSS']
+                resultDict[compType][system][component]['VSZ'] = runitDict[compDir]['VSZ']
             except Exception:
               # print str(x)
               pass
@@ -1258,6 +1278,10 @@ class ComponentsInstaller( object ):
                 resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
                 resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
                 resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
+                resultDict[compType][system][component]['CPU'] = runitDict[compDir]['CPU']
+                resultDict[compType][system][component]['MEM'] = runitDict[compDir]['MEM']
+                resultDict[compType][system][component]['RSS'] = runitDict[compDir]['RSS']
+                resultDict[compType][system][component]['VSZ'] = runitDict[compDir]['VSZ']
             except Exception:
               # print str(x)
               pass
