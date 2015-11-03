@@ -76,8 +76,6 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
-from DIRAC.ConfigurationSystem.Client.PathFinder        import getServiceSection
-
 
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
