@@ -5,15 +5,13 @@
   and override its methods
 """
 
-#from DIRAC import S_ERROR
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerOption
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
-#from DIRAC.Core.Utilities.MQConnector import MQConnector
 
 class ConsumerModule(object):
   """ Base class for all consumer modules
 
-      This class is used by the ConsumertReactor class to steer the execution of
+      This class is used by the ConsumerReactor class to steer the execution of
       DIRAC consumers.
   """
 
@@ -32,27 +30,42 @@ class ConsumerModule(object):
                                   }
 
   def initialize( self, systemConsumerModuleName ):
-    """
+    """Reads properties related to MQ connector from CS and
+       loads MQconnector object. Finally the blocking connection
+       is called so the consumer starts listening for the incoming
+       messages.
+    Args:
+      systemConsumerModuleName(str): in form of [DIRAC System Name]/[DIRAC Consumer Name]
     """
 
+    self._setMQConnectorProperties( systemConsumerModuleName )
     self._MQConnector = self._loadMQConnector( moduleName = self._MQConnectorProperties[ 'MQConnectorModuleName' ],
                                                className = self._MQConnectorProperties[ 'MQConnectorClassName' ])
-    self._setMQConnectorProperties( systemConsumerModuleName )
-    res = self._MQConnector.blockingConnection(system = self._MQConnectorProperties[ 'MQConnectorSystem' ],
+    self._MQConnector.blockingConnection(system = self._MQConnectorProperties[ 'MQConnectorSystem' ],
                                                queueName = self._MQConnectorProperties[ 'Queue' ],
                                                receive = True,
                                                messageCallback = self.consume
                                               )
 
   def _loadMQConnector( self, moduleName = 'DIRAC.Core.Utilities.RabbitMQConnector', className = 'RabbitConnection' ):
-    """
+    """Loads MQConnector module and class.
+    Args:
+      moduleName(str): full path to the MQConnector module.
+      className(str): MQConnector class name.
+    Returns:
+      an instance of the specific MQConnector class.
     """
     myModule = __import__ (moduleName, fromlist = [moduleName])
     connectorClass = getattr(myModule, className)
     return connectorClass()
 
   def _setMQConnectorProperties( self, systemConsumerModuleName ):
-    """
+    """Sets self._MQConnectorProperties from the CS. It is assumed that
+       self._MQConnectorProperties dictionnary contains keys that
+       correspond to strings which are options in the consumer section
+       of CS e.g. 'Host, 'Port' etc.
+    Args:
+      systemConsumerModuleName(str): in form of [DIRAC System Name]/[DIRAC Consumer Name]
     """
     consumerSection = getConsumerSection(systemConsumerModuleName)
     for option in self._MQConnectorProperties:
