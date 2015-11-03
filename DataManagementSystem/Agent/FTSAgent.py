@@ -312,7 +312,7 @@ class FTSAgent( AgentModule ):
     log.info( "initialize: creation of FTSPlacement..." )
     createPlacement = self.resetFTSPlacement()
     if not createPlacement["OK"]:
-      log.error( "initialize: %s" % createPlacement["Message"] )
+      log.error( "initialize:", createPlacement["Message"] )
       return createPlacement
 
     # This sets the Default Proxy to used as that defined under
@@ -390,19 +390,19 @@ class FTSAgent( AgentModule ):
       log.info( "resetting expired FTS placement..." )
       resetFTSPlacement = self.resetFTSPlacement()
       if not resetFTSPlacement["OK"]:
-        log.error( "FTSPlacement recreation error: %s" % resetFTSPlacement["Message"] )
+        log.error( "FTSPlacement recreation error:" , resetFTSPlacement["Message"] )
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
     requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = self.MAX_REQUESTS )
     if not requestIDs["OK"]:
-      log.error( "unable to read scheduled request ids: %s" % requestIDs["Message"] )
+      log.error( "unable to read scheduled request ids" , requestIDs["Message"] )
       return requestIDs
     if not requestIDs["Value"]:
-      requestIDs = self.__reqCache.keys()
+      requestIDs = []
     else:
-      requestIDs = [ req[0] for req in requestIDs["Value"] ]
-      requestIDs = list( set ( requestIDs + self.__reqCache.keys() ) )
+      requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache ]
+    requestIDs += self.__reqCache.keys()
 
     if not requestIDs:
       log.info( "no 'Scheduled' requests to process" )
@@ -475,7 +475,7 @@ class FTSAgent( AgentModule ):
         for ftsJob in jobsToMonitor:
           monitor = self.__monitorJob( request, ftsJob )
           if not monitor["OK"]:
-            log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
+            log.error( "unable to monitor FTSJob", "%s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
             ftsJob.Status = "Submitted"
           else:
             ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
@@ -484,6 +484,8 @@ class FTSAgent( AgentModule ):
         for key, ftsFiles in ftsFilesDict.items():
           if ftsFiles:
             log.verbose( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
+      if len( ftsJobs ) != len( jobsToMonitor ):
+        log.info( "==> found %d FTSJobs that were monitored recently" % ( len( ftsJobs ) - len( jobsToMonitor ) ) )
 
       # # PHASE ONE - check ready replicas
       missingReplicas = self.__checkReadyReplicas( request, operation )
@@ -798,14 +800,14 @@ class FTSAgent( AgentModule ):
         sourceSE = StorageElement( source )
         sourceToken = sourceSE.getStorageParameters( "SRM2" )
         if not sourceToken["OK"]:
-          log.error( "unable to get sourceSE '%s' parameters: %s" % ( source, sourceToken["Message"] ) )
+          log.error( "unable to get sourceSE parameters:", "(%s) %s" % ( source, sourceToken["Message"] ) )
           continue
         seStatus = sourceSE.getStatus()['Value']
 
         targetSE = StorageElement( target )
         targetToken = targetSE.getStorageParameters( "SRM2" )
         if not targetToken["OK"]:
-          log.error( "unable to get targetSE '%s' parameters: %s" % ( target, targetToken["Message"] ) )
+          log.error( "unable to get targetSE parameters:", "(%s) %s" % ( target, targetToken["Message"] ) )
           continue
 
         # # create FTSJob
