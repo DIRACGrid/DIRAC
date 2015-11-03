@@ -151,7 +151,7 @@ __RCSID__ = "$Id$"
 
 
 from DIRAC                      import gLogger
-from DIRAC                      import S_OK, S_ERROR
+from DIRAC                      import S_OK
 from DIRAC.Core.Utilities.Time  import fromString
 
 # Get rid of the annoying Deprecation warning of the current MySQLdb
