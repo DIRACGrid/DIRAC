@@ -1580,3 +1580,20 @@ class XROOTStorage( StorageBase ):
     else:
       url = "%(Protocol)s://%(Host)s/%(Path)s" % urlDict
     return S_OK(url)
+
+  def getCurrentURL( self, fileName ):
+    """ Obtain the current file URL from the current working directory and the filename
+
+    :param self: self reference
+    :param str fileName: path on storage
+    """
+    urlDict = dict( self.protocolParameters )
+    if not fileName.startswith( '/' ):
+      # Relative path is given
+      urlDict['Path'] = self.cwd
+    result = self.getURLBase( urlDict )
+    if not result['OK']:
+      return result
+    cwdUrl = result['Value']
+    fullUrl = '%s/%s' % ( cwdUrl, fileName )
+    return S_OK( fullUrl )
