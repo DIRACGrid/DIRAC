@@ -582,7 +582,7 @@ class ConsistencyInspector( object ):
           if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ):                # and ( metadata['Size'] != 0 ):
             sizeMismatch.append( ( lfn, 'deprecatedUrl', se, 'CatalogPFNSizeMismatch' ) )
       if sizeMismatch:
-        self.dic.__reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
+        self.dic.reportProblematicReplicas( sizeMismatch, se, 'CatalogPFNSizeMismatch' )
     return S_OK()
 
   def __checkPhysicalFileMetadata( self, lfns, se ):
@@ -603,7 +603,7 @@ class ConsistencyInspector( object ):
       if re.search( 'File does not exist', reason ):
         missingReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNMissing' ) )
     if missingReplicas:
-      self.dic.__reportProblematicReplicas( missingReplicas, se, 'PFNMissing' )
+      self.dic.reportProblematicReplicas( missingReplicas, se, 'PFNMissing' )
     lostReplicas = []
     unavailableReplicas = []
     zeroSizeReplicas = []
@@ -616,11 +616,11 @@ class ConsistencyInspector( object ):
       if not lfnMetadata['Size']:
         zeroSizeReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNZeroSize' ) )
     if lostReplicas:
-      self.dic.__reportProblematicReplicas( lostReplicas, se, 'PFNLost' )
+      self.dic.reportProblematicReplicas( lostReplicas, se, 'PFNLost' )
     if unavailableReplicas:
-      self.dic.__reportProblematicReplicas( unavailableReplicas, se, 'PFNUnavailable' )
+      self.dic.reportProblematicReplicas( unavailableReplicas, se, 'PFNUnavailable' )
     if zeroSizeReplicas:
-      self.dic.__reportProblematicReplicas( zeroSizeReplicas, se, 'PFNZeroSize' )
+      self.dic.reportProblematicReplicas( zeroSizeReplicas, se, 'PFNZeroSize' )
     gLogger.info( 'Checking the integrity of physical files at %s complete' % se )
     return S_OK( lfnMetadataDict )
 
@@ -666,7 +666,7 @@ class ConsistencyInspector( object ):
         notRegisteredLfns.append( ( lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered' ) )
 
     if notRegisteredLfns:
-      self.dic.__reportProblematicReplicas( notRegisteredLfns, storageElement, 'LFNNotRegistered' )
+      self.dic.reportProblematicReplicas( notRegisteredLfns, storageElement, 'LFNNotRegistered' )
     if failedLfns:
       return S_ERROR( 'Failed to obtain replicas' )
 
@@ -682,7 +682,7 @@ class ConsistencyInspector( object ):
       if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ) and ( lfnStorageMetadata['Size'] != 0 ):
         sizeMismatch.append( ( lfn, 'deprecatedUrl', storageElement, 'CatalogPFNSizeMismatch' ) )
     if sizeMismatch:
-      self.dic.__reportProblematicReplicas( sizeMismatch, storageElement, 'CatalogPFNSizeMismatch' )
+      self.dic.reportProblematicReplicas( sizeMismatch, storageElement, 'CatalogPFNSizeMismatch' )
     gLogger.info( 'Checking storage files exist in the catalog complete' )
     resDict = {'CatalogMetadata':catalogMetadata, 'StorageMetadata':storageMetadata}
     return S_OK( resDict )
@@ -748,7 +748,7 @@ class ConsistencyInspector( object ):
         if not metadata['Size']:
           zeroSizeFiles.append( ( lfn, 'deprecatedUrl', storageElement, 'PFNZeroSize' ) )
     if zeroSizeFiles:
-      self.dic.__reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
+      self.dic.reportProblematicReplicas( zeroSizeFiles, storageElement, 'PFNZeroSize' )
 
     gLogger.info( 'Obtained at total of %s files for directories at %s' % ( len( allFiles ), storageElement ) )
     return S_OK( allFiles )
