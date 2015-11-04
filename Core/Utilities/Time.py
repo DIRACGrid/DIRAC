@@ -46,11 +46,12 @@ def timeThis( method ):
   """
 
   def timed( *args, **kw ):
+
     ts = nativetime.time()
     result = method( *args, **kw )
     te = nativetime.time()
 
-    pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S " ) + 'UTC '
+    pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )
 
     try:
       pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: ' + args[0].transString
@@ -62,7 +63,20 @@ def timeThis( method ):
     except IndexError:
       pre += '  TIME : '
 
-    print( "%s Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( pre, method.__name__, len( kw ), te - ts ) )
+    argsLen = ''
+    if args:
+      try:
+        if isinstance( args[1], ( list, dict ) ):
+          argsLen = "arguments len: %d" % len( args[1] )
+      except IndexError:
+        if kw:
+          try:
+            if isinstance( kw.items()[0][1], ( list, dict ) ):
+              argsLen = "arguments len: %d" % len( kw.items()[0][1] )
+          except IndexError:
+            argsLen = ''
+
+    print( "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts ) )
     return result
 
   return timed

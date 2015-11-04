@@ -29,7 +29,7 @@ class myClass(object):
 class myBetterClass( object ):
   def __init__( self ):
     self.log = logClass()
-    self.log._subName = 'aSubName'
+    self.log._subName = 'anotherSubName'
 
   @timeThis
   def myMethodInAClass( self ):
@@ -38,11 +38,10 @@ class myBetterClass( object ):
 class myEvenBetterClass( object ):
   def __init__( self ):
     self.log = logClass()
-    self.log._subName = 'aSubName'
     self.transString = 'this is a transString'
 
   @timeThis
-  def myMethodInAClass( self ):
+  def myMethodInAClass( self, a, b = None ):
     print 'boh'
 
 
@@ -63,7 +62,18 @@ class TimeSuccess( TimeTestCase ):
     self.assertIsNone( myMethod() )
     self.assertIsNone( myClass().myMethodInAClass() )
     self.assertIsNone( myBetterClass().myMethodInAClass() )
-    self.assertIsNone( myEvenBetterClass().myMethodInAClass() )
+    a1 = ['aa', 'bb']
+    a2 = 'bb'
+    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a1, b = a2 ) )
+    a1 = 'aa'
+    a2 = {'a':'aa', 'b': 'bb'}
+    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a1, b = a2 ) )
+    a1 = 'aa'
+    a2 = {'a':'aa', 'b': 'bb'}
+    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a = a1, b = a2 ) )
+    a1 = 'aa'
+    a2 = {'a':'aa', 'b': 'bb', 'c':'cc'}
+    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a = a2, b = a2 ) )
 
 #############################################################################
 # Test Suite run
