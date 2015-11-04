@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 
 import json
 from DIRAC.Core.Base import Script
-from DIRAC import gConfig, gLogger, exit as DIRACExit
+from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
 Script.setUsageMessage( '\n'.join( ['Get the Tag of a CE',
