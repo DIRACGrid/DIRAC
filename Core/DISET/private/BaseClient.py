@@ -50,6 +50,7 @@ class BaseClient:
     self.__retryDelay = 0
     self.__nbOfUrls = 1 #by default we always have 1 url for example: RPCClient('dips://volhcb38.cern.ch:9162/Framework/SystemAdministrator')
     self.__nbOfRetry = 3 # by default we try try times 
+    self.__retryCounter = 1
     self.__bannedUrls = []
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
@@ -218,11 +219,41 @@ class BaseClient:
         gLogger.debug( "Removing banned URL", "%s" % i )
         urls.remove( i )
         
-    sURL = List.randomize( urls )[0]
-
+    print 'UUUUU', urls
+    randUrls = List.randomize( urls ) 
+    sURL = randUrls[0]
+    print sURL
+    if len(self.__bannedUrls) > 1 and self.__nbOfUrls > 2: #we have multiple services and we are running same service more than once in different port.
+      retVal = Network.splitURL( sURL )
+      if retVal['OK']:
+        nexturl = retVal['Value']
+      found = False
+      for i in self.__bannedUrls:
+        retVal = Network.splitURL( i )
+        if retVal['OK']:
+          bannedurl = retVal['Value']
+        else:
+          break
+        if nexturl[1] == bannedurl[1]:
+          found = True
+      if found:
+        nexturl = self.__selectUrl(nexturl, randUrls[1:])
+        if nexturl:
+          sURL = nexturl
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )
     return S_OK( sURL )
-
+  
+  def __selectUrl( self, notselect, urls ):
+    url = None
+    for i in urls:
+      retVal = Network.splitURL( i )
+      if retVal['OK']:
+        if retVal['Value'][1] != notselect[1]:
+          url = i
+          break
+    return url
+        
+        
   def __checkThreadID( self ):
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
@@ -250,7 +281,10 @@ and this is thread %s
       self.__checkThreadID()
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
-      transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs )
+      print 'UUURLS',self.__URLTuple
+      transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs ) 
+      #the socket timeout is the default value which is 1. 
+      #later we increase to 5
       retVal = transport.initAsClient()
       if not retVal[ 'OK' ]:
         if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
@@ -260,9 +294,12 @@ and this is thread %s
             if len( self.__bannedUrls ) < self.__nbOfUrls:
               gLogger.notice( "Non-responding URL temporarily banned", "%s" % url )
           self.__retry += 1
+          if self.__retryCounter == self.__nbOfRetry - 1:
+            transport.setSocketTimeout( 5 ) # we increase the socket timeout in case the network is not good
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
           if (len(self.__bannedUrls) == self.__nbOfUrls):
-            self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 5  # we run only one service! In that case we increase the retry delay.
+            self.__retryCounter += 1
+            self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 2  # we run only one service! In that case we increase the retry delay.
             gLogger.info( "Waiting %f  second before retry all service(s)" % self.__retryDelay )
             time.sleep( self.__retryDelay )
           self.__discoverURL()

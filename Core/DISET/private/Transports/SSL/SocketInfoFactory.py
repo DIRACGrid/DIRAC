@@ -26,6 +26,7 @@ class SocketInfoFactory:
     self.__timeout = 1
   
   def setSocketTimeout(self, timeout):
+    print 'DDDDD', timeout
     self.__timeout = timeout
     
   def getSocketTimeout(self):
@@ -132,12 +133,14 @@ class SocketInfoFactory:
     retVal = Network.getIPsForHostName( hostName )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
-    ipList = List.randomize( retVal[ 'Value' ] )
-    for _ in range( 1 ): #TODO: retry once
+    ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
+    print 'ips',ipList
+    for _ in range( 1 ): #TODO: this retry can be reduced. 
       connected = False
       errorsList = []
       for ip in ipList :
         ipAddress = ( ip, hostAddress[1] )
+        print 'ipAddress',ipAddress
         retVal = self.__connect( socketInfo, ipAddress )
         if retVal[ 'OK' ]:
           sslSocket = retVal[ 'Value' ]
