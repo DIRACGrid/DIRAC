@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 """
   Determine number of processors and memory for the worker node
 """
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-from DIRAC import gConfig, gLogger, exit as DIRACExit
+from DIRAC import gLogger
 from DIRAC.Core.Utilities import Os
 from DIRAC.WorkloadManagementSystem.Utilities import JobMemory
 

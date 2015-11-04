@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+"""
+  Get parameters assigned to the CE
+"""
+
 __RCSID__ = "$Id$"
 
 import json
