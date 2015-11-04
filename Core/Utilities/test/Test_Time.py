@@ -7,115 +7,71 @@ __RCSID__ = "$Id$"
 import unittest
 
 # sut
-from DIRAC.Core.Utilities.Time import *
+from DIRAC.Core.Utilities.Time import timeThis
+
+class logClass(object):
+  def __init__( self ):
+    self._systemName = 'aSystemName'
+    self._subName = 'sSubName'
+
+@timeThis
+def myMethod():
+  print 'boh'
+
+class myClass(object):
+  def __init__( self ):
+    self.log = logClass()
+
+  @timeThis
+  def myMethodInAClass( self ):
+    print 'boh'
+
+class myBetterClass( object ):
+  def __init__( self ):
+    self.log = logClass()
+    self.log._subName = 'aSubName'
+
+  @timeThis
+  def myMethodInAClass( self ):
+    print 'boh'
+
+class myEvenBetterClass( object ):
+  def __init__( self ):
+    self.log = logClass()
+    self.log._subName = 'aSubName'
+    self.transString = 'this is a transString'
+
+  @timeThis
+  def myMethodInAClass( self ):
+    print 'boh'
 
 
-#
-# def testTime():
-#
-#   curDateTime = DIRAC.Time.dateTime()
-#   curDate     = DIRAC.Time.date( curDateTime )
-#   curTime     = DIRAC.Time.time( curDateTime )
-#   curDateTimeString = DIRAC.Time.toString( curDateTime )
-#   curDateString     = DIRAC.Time.toString( curDate )
-#   curTimeString     = DIRAC.Time.toString( curTime )
-#
-#   newDateTimeString = curDateString + " " + curTimeString
-#
-#   interval    = DIRAC.Time.timeInterval( curDateTime, curTime )
-#   inDateTime  = curDateTime + curTime / 2
-#   outDateTime = curDateTime + curTime * 2
-#
-#   testToString = [{ 'method'    : DIRAC.Time.toString,
-#                     'arguments' : ( curDateTime, ),
-#                     'output'    : newDateTimeString
-#                   },]
-#
-#   testFromString1 = [{ 'method'    : DIRAC.Time.fromString,
-#                        'arguments' : ( curDateTimeString, ),
-#                        'output'    : curDateTime
-#                      },]
-#
-#   testFromString2 = [{ 'method'    : DIRAC.Time.fromString,
-#                        'arguments' : ( curDateString, ),
-#                        'output'    : curDate
-#                      },]
-#
-#   testFromString3 = [{ 'method'    : DIRAC.Time.fromString,
-#                        'arguments' : ( curTimeString, ),
-#                        'output'    : curTime
-#                      },]
-#
-#   testInInterval  = [{ 'method'    : interval.includes,
-#                        'arguments' : ( inDateTime, ),
-#                        'output'    : True
-#                      },]
-#
-#   testOutInterval  = [{ 'method'    : interval.includes,
-#                         'arguments' : ( outDateTime, ),
-#                         'output'    : False
-#                      },]
-#
-#
-#   testdict = { 'DIRAC.Time.timeToString'               : testToString,
-#                'DIRAC.Time.timeFromString( DateTime )' : testFromString1,
-#                'DIRAC.Time.timeFromString( Date )'     : testFromString2,
-#                'DIRAC.Time.timeFromString( Time )'     : testFromString3,
-#                'DIRAC.Time.timeInterval( In )'     : testInInterval,
-#                'DIRAC.Time.timeInterval( Out )'    : testOutInterval }
-#
-# #   DIRAC.Tests.run( testdict )
-#
-#   return True
-#
-# def testNetwork():
-#
-#   testAllInterfaces = [{ 'method'    : DIRAC.Network.getAllInterfaces,
-#                          'arguments' : ( ),
-#                          'output'    : False
-#                        }, ]
-#
-#   testAddressFromInterface = [{ 'method'    : DIRAC.Network.getAddressFromInterface,
-#                                 'arguments' : ( 'lo', ),
-#                                 'output'    : '127.0.0.1'
-#                               }, ]
-#
-#
-#   testdict = { 'DIRAC.Network.getAllInterfaces'        : testAllInterfaces,
-#                'DIRAC.Network.getAddressFromInterface' : testAddressFromInterface }
-#
-#   testdict = { 'DIRAC.Network.getAddressFromInterface' : testAddressFromInterface }
-#
-# #   DIRAC.Tests.run( testdict )
-#   return True
-#
-# def writeToStdout( iIndex, sLine ):
-#   if iIndex == 0: # stdout
-#     DIRAC.gLogger.info( 'stdout:', sLine )
-#   if iIndex == 1: # stderr
-#     DIRAC.gLogger.error( 'stderr:', sLine )
-#
-# def failingWriteToStdOut( iIndex ):
-#   pass
-#
-#
-#
-# testTime = [{ 'method'    : testTime,
-#               'arguments' : ( ),
-#               'output'    : True
-#             },]
-#
-# testNetwork = [{ 'method'    : testNetwork,
-#                  'arguments' : ( ),
-#                  'output'    : True
-#                },]
-#
-# testReturnValues = [{ 'method'    : DIRAC.ReturnValues.S_OK,
-#                       'arguments' : ( 24, ),
-#                       'output'    : { 'OK': 1, 'Value': 24}
-#                     },
-#                     { 'method'    : DIRAC.ReturnValues.S_ERROR,
-#                       'arguments' : ( 24, ),
-#                       'output'    : { 'OK': 0, 'Message': '24'}
-#                     },]
-#
+class TimeTestCase( unittest.TestCase ):
+  """ Base class for the Agents test cases
+  """
+  def setUp( self ):
+    pass
+
+  def tearDown( self ):
+    pass
+
+
+class TimeSuccess( TimeTestCase ):
+
+  def test_timeThis( self ):
+
+    self.assertIsNone( myMethod() )
+    self.assertIsNone( myClass().myMethodInAClass() )
+    self.assertIsNone( myBetterClass().myMethodInAClass() )
+    self.assertIsNone( myEvenBetterClass().myMethodInAClass() )
+
+#############################################################################
+# Test Suite run
+#############################################################################
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TimeTestCase )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TimeSuccess ) )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -50,10 +50,17 @@ def timeThis( method ):
     result = method( *args, **kw )
     te = nativetime.time()
 
+    pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S " ) + 'UTC '
+
     try:
-      pre = str( dateTime() ) + args[0].log._systemName + args[0].transString
-    except Exception:
-      pre = str( dateTime() )
+      pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: ' + args[0].transString
+    except AttributeError:
+      try:
+        pre += args[0].log._systemName + '    TIME: ' + args[0].transString
+      except AttributeError:
+        pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+    except IndexError:
+      pre += '  TIME : '
 
     print( "%s Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( pre, method.__name__, len( kw ), te - ts ) )
     return result
