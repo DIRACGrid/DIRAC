@@ -720,7 +720,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   sectionName = result[ 'Value' ]
 
   componentModule = component
-  if "Module" in specialOptions:
+  if "Module" in specialOptions and specialOptions[ 'Module' ]:
     componentModule = specialOptions['Module']
 
   compCfg = CFG()
