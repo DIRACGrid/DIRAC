@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: TypedListTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/19 12:16:39
 ########################################################################
@@ -18,10 +16,8 @@
 __RCSID__ = "$Id $"
 
 ##
-# @file TypedListTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/07/19 12:16:48
-# @brief Definition of unittests for TypedList 
 
 ## imports 
 import unittest

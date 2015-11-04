@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: StateMachineTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/07/03 15:17:23
 ########################################################################
@@ -15,10 +13,8 @@
 """
 __RCSID__ = "$Id: $"
 ##
-# @file StateMachineTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/07/03 15:17:33
-# @brief Definition of StateMachineTests class.
 
 ## imports 
 import unittest
