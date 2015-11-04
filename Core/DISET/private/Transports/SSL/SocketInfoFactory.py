@@ -22,6 +22,15 @@ if GSI.__version__ < "0.5.0":
 
 class SocketInfoFactory:
 
+  def __init__(self):
+    self.__timeout = 1
+  
+  def setSocketTimeout(self, timeout):
+    self.__timeout = timeout
+    
+  def getSocketTimeout(self):
+    return self.__timeout
+  
   def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True,
                  'hostname' : destinationHostname,
@@ -62,7 +71,9 @@ class SocketInfoFactory:
       return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
     # osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 1 ) # we try to connect 3 times with 1 second timeout
+      tsocket = self.getSocketTimeout()
+      gLogger.info( "Connection timeout set to: ", tsocket )
+      osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
@@ -122,7 +133,7 @@ class SocketInfoFactory:
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
     ipList = List.randomize( retVal[ 'Value' ] )
-    for i in range( 3 ):
+    for _ in range( 1 ): #TODO: retry once
       connected = False
       errorsList = []
       for ip in ipList :
