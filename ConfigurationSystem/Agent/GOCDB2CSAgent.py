@@ -122,8 +122,9 @@ class GOCDB2CSAgent ( AgentModule ):
 
     # static elements of a path
     rootPath = '/Resources/Sites'
-    extPath = 'Network/perfSONAR'
-    optionName = 'Enabled'
+    extPath = 'Network'
+    baseOptionName = 'Enabled'
+    options = {baseOptionName: 'True', 'ServiceType': 'perfSONAR'}
 
     # enable GOCDB endpoints in configuration
     newConfiguration = {}
@@ -132,28 +133,40 @@ class GOCDB2CSAgent ( AgentModule ):
         continue
 
       split = endpoint['DIRACSITENAME'].split( '.' )
-      path = cfgPath( rootPath, split[0], endpoint['DIRACSITENAME'], extPath, endpoint['HOSTNAME'], optionName )
-      newConfiguration[path] = 'True'
+      path = cfgPath( rootPath, split[0], endpoint['DIRACSITENAME'], extPath, endpoint['HOSTNAME'] )
+      for name, defaultValue in options.iteritems():
+        newConfiguration[cfgPath(path, name)] = defaultValue
 
     # get current configuration
-    result = gConfig.getConfigurationTree( rootPath, extPath + '/', '/' + optionName )
-    if not result['OK']:
-      log.error( "getConfigurationTree() failed with message: %s" % result['Message'] )
-      return S_ERROR( 'Unable to fetch perfSONAR endpoints from CS.' )
-    currentConfiguration = result['Value']
-
+    currentConfiguration = {}
+    for option in options.iterkeys():
+      result = gConfig.getConfigurationTree( rootPath, extPath + '/', '/' + option )
+      if not result['OK']:
+        log.error( "getConfigurationTree() failed with message: %s" % result['Message'] )
+        return S_ERROR( 'Unable to fetch perfSONAR endpoints from CS.' )
+      currentConfiguration.update(result['Value'])
+    
     # disable endpoints that disappeared in GOCDB
     removedElements = set( currentConfiguration ) - set( newConfiguration )
     newElements = set( newConfiguration ) - set( currentConfiguration )
+    
+    addedEndpoints = len( newElements )/len( options )
+    disabledEndpoints = 0
     for path in removedElements:
-      newConfiguration[path] = 'False'
+      if baseOptionName in path:
+        newConfiguration[path] = 'False'
+        if currentConfiguration[path] != 'False':
+          disabledEndpoints = disabledEndpoints + 1
 
     # inform what will be changed
-    if len( newElements ) > 0:
-      self.log.info( "%s new perfSONAR endpoints will be added to the configuration" % len( newElements ) )
+    if addedEndpoints > 0:
+      self.log.info( "%s new perfSONAR endpoints will be added to the configuration" % addedEndpoints  )
 
-    if len( removedElements ) > 0:
-      self.log.info( "%s old perfSONAR endpoints will be disable in the configuration" % len( removedElements ) )
+    if disabledEndpoints > 0:
+      self.log.info( "%s old perfSONAR endpoints will be disable in the configuration" % disabledEndpoints )
+      
+    if addedEndpoints == 0 and disabledEndpoints == 0:
+      self.log.info( "perfSONAR configuration is up-to-date" )
 
     log.debug( 'End function.' )
     return S_OK( newConfiguration )
@@ -200,7 +213,7 @@ class GOCDB2CSAgent ( AgentModule ):
 
     log = self.log.getSubLogger( '__updateConfiguration' )
     log.debug( 'Begin function ...' )
-
+    
     # assure existence and proper value of a section or an option
     for path, value in setElements.iteritems():
 
@@ -209,15 +222,21 @@ class GOCDB2CSAgent ( AgentModule ):
       else:
         split = path.rsplit( '/', 1 )
         section = split[0]
-
-      result = self.csAPI.createSection( section )
-      if not result['OK']:
-        log.error( "createSection() failed with message: %s" % result['Message'] )
+      
+      try:
+        result = self.csAPI.createSection( section )
+        if not result['OK']:
+          log.error( "createSection() failed with message: %s" % result['Message'] )
+      except Exception as e:
+        log.error( "Exception in createSection(): %s" % str(e) )      
 
       if value is not None:
-        result = self.csAPI.setOption( path, value )
-        if not result['OK']:
-          log.error( "setOption() failed with message: %s" % result['Message'] )
+        try:
+          result = self.csAPI.setOption( path, value )
+          if not result['OK']:
+            log.error( "setOption() failed with message: %s" % result['Message'] )
+        except Exception as e:
+          log.error( "Exception in setOption(): %s" % str(e) )
 
     # delete elements in the configuration
     for path in delElements:
