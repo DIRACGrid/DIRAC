@@ -2481,7 +2481,7 @@ def installDatabase( dbName, monitorFlag = True ):
 
   # now creating the Database
   result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
-  if not result['OK'] and 'database exists' in result[ 'Value' ]:
+  if not result['OK'] and not 'database exists' in result[ 'Value' ]:
     gLogger.error( 'Failed to create databases', result['Message'] )
     if exitOnError:
       DIRAC.exit( -1 )
