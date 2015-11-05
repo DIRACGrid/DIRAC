@@ -716,7 +716,7 @@ class ComponentsInstaller( object ):
     sectionName = result[ 'Value' ]
 
     componentModule = component
-    if "Module" in specialOptions:
+    if "Module" in specialOptions and specialOptions[ 'Module' ]:
       componentModule = specialOptions['Module']
 
     compCfg = CFG()
@@ -2508,7 +2508,7 @@ class ComponentsInstaller( object ):
 
     # now creating the Database
     result = self.execMySQL( 'CREATE DATABASE `%s`' % dbName )
-    if not result['OK']:
+    if not result['OK'] and not 'database exists' in result[ 'Value' ]:
       gLogger.error( 'Failed to create databases', result['Message'] )
       if self.exitOnError:
         DIRAC.exit( -1 )
