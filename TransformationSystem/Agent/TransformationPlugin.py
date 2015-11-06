@@ -47,6 +47,12 @@ class TransformationPlugin( PluginBase ):
       self.valid = False
     return self.valid
 
+  def setParameters( self, params ):
+    """ Need to pass parameters also to self.util
+    """
+    self.params = params
+    self.util.setParameters(params)
+
   def setInputData( self, data ):
     self.data = data
     self.util.logDebug( "Set data: %s" % self.data )
