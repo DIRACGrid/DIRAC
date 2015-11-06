@@ -89,7 +89,7 @@ class DataRecoveryAgent(AgentModule):
                      dict(Message="One of many Successful: clean others",
                           ShortMessage="Other Tasks --> Keep",
                           Counter=0,
-                          Check=lambda job: job.allFilesExist() and job.otherTasks,
+                          Check=lambda job: job.allFilesExist() and job.otherTasks and job.inputFile not in self.inputFilesProcessed,
                           Actions=lambda job, tInfo: [self.inputFilesProcessed.add(
                               job.inputFile), job.setJobDone(tInfo), job.setInputProcessed(tInfo)]
                           ),
@@ -228,6 +228,7 @@ class DataRecoveryAgent(AgentModule):
         self.log.notice("Ignoring Production: %s " % prodID)
         continue
       self.__resetCounters()
+      self.inputFilesProcessed = set()
       transType, transName = values
       self.log.notice("Running over Production: %s " % prodID)
       self.treatProduction(int(prodID), transName, transType)
