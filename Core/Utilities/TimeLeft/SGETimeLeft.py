@@ -85,13 +85,18 @@ class SGETimeLeft( object ):
       # This cannot happen as we can't get wallClock from anywhere
       self.log.debug( "TimeLeft counters complete:", str( consumed ) )
       return S_OK( consumed )
+    else:
+      missed = [key for key, val in consumed.items() if val is None]
+      self.log.info( 'Could not determine parameter', ','.join( missed ) )
+      self.log.debug( 'This is the stdout from the batch system call\n%s' % ( result['Value'] ) )
 
     if cpuLimit or wallClockLimit:
       # We have got a partial result from SGE
       if not cpuLimit:
-        consumed['CPULimit'] = wallClockLimit
+        # Take some margin
+        consumed['CPULimit'] = wallClockLimit * 0.8
       if not wallClockLimit:
-        consumed['WallClockLimit'] = cpuLimit
+        consumed['WallClockLimit'] = cpuLimit / 0.8
       if not cpu:
         consumed['CPU'] = time.time() - self.startTime
       if not wallClock:

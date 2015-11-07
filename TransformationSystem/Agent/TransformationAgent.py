@@ -206,8 +206,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         res = self.processTransformation( transDict, clients )
         if not res['OK']:
           self._logInfo( "Failed to process transformation:", res['Message'], transID = transID )
-      except Exception, x:
-        self._logException( '%s' % x, transID = transID )
+      except Exception as x:
+        self._logException( 'Exception in plugin', lException = x, transID = transID )
       finally:
         if not transID:
           transID = 'None'
