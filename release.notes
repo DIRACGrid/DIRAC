@@ -1,4 +1,4 @@
-[v6r15-pre7]
+[v6r15-pre8]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -23,7 +23,8 @@ NEW: VOMS2CSAgent to synchronize VOMS user data with the DIRAC Registry
 CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
         to speed up the operation
 CHANGE: InstalledComponentsDB - table to cache host status information populated
-        by a periodic task        
+        by a periodic task    
+NEW: ComponentInstaller Client class            
 
 *RSS
 NEW: CE Availability policy, closing #2373
@@ -41,6 +42,7 @@ CHANGE: FileCatalog(Client) - refactored to allow clients declare which interfac
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
+CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
 
 [v6r14p10]
 *Configuration
@@ -98,10 +100,6 @@ CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
         invocation arguments  
 CHANGE: Matcher - allow matching by hosts in multi-VO installations              
 
-<<<<<<< HEAD
-
-=======
->>>>>>> rel-v6r14
 [v6r14p7]
 
 *Core
@@ -620,8 +618,6 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
-<<<<<<< HEAD
-=======
 [v6r12p53]
 
 *DMS
@@ -638,7 +634,6 @@ NEW: Transformation - added getAuthorDNfromProxy, getTransformationsByUser metho
 *Resources
 CHANGE: GlobusComputingElement - simplify creating of pilotStamp
 
->>>>>>> rel-v6r14
 [v6r12p52]
 
 *DMS
