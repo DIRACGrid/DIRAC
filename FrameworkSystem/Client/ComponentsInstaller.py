@@ -78,7 +78,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.Platform import getPlatformString
 
 
-class ComponentsInstaller( object ):
+class ComponentInstaller( object ):
 
   def __init__( self ):
     self.gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
@@ -698,7 +698,7 @@ class ComponentsInstaller( object ):
     sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
 
     newCfg = self.__getCfg( sectionPath )
-    newCfg.createNewSection( cfgPath( sectionPath, component ), 'Added by ComponentsInstaller', cfg )
+    newCfg.createNewSection( cfgPath( sectionPath, component ), 'Added by ComponentInstaller', cfg )
     if newCfg.writeToFile( compCfgFile ):
       return S_OK( compCfgFile )
     error = 'Can not write %s' % compCfgFile
@@ -2752,4 +2752,4 @@ class ComponentsInstaller( object ):
 
     return result
 
-gComponentsInstaller = ComponentsInstaller()
+gComponentInstaller = ComponentInstaller()
