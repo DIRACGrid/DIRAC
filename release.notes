@@ -1,3 +1,29 @@
+[v6r14p11]
+
+*Core
+FIX: XXXTimeLeft - set limit to CPU lower than wall clock if unknown
+FIX: Logger - fix exception printing in gLogger.exception()
+CHANGE: InstallTools - added more info about the process in getStartupComponentStatus()
+CHANGE: Time - better report from timeThis() decorator
+
+*DMS
+CHANGE: FTSAgent - wait some time between 2 monitorings of each job
+
+*WMS
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities commands
+NEW: Added dirac-wms-get-wn-parameters command
+
+*TS
+NEW: Added dirac-production-runjoblocal command
+FIX: TransformationAgent(Plugin) - clean getNextSite() and normalizeShares()
+FIX: TransformationPlugin - added setParameters() method
+
+*RSS
+FIX: dirac-rss-sync - move imports to after the Script.getPositionalArguments()
+
+*Resources
+NEW: Added dirac-resource-get-parameters command
+
 [v6r14p10]
 *Configuration
 FIX: Resources - getQueue() is fixed to get properly Tag parameters
