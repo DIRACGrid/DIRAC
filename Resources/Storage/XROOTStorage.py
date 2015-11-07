@@ -1168,7 +1168,7 @@ class XROOTStorage( StorageBase ):
 
     :param self: self reference
     :param str path: single path on storage (pfn : root://...)
-    :returns S_OK() if all went well
+    :returns: S_OK() if all went well
               S_ERROR(errMsg) in case of any problem
     """
     self.log.debug( "XROOTStorage.__createSingleDirectory: Attempting to create directory %s." % path )

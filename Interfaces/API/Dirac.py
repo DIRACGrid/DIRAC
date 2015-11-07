@@ -133,7 +133,7 @@ class Dirac( API ):
        >>> print dirac.getRepositoryJobs()
        {'OK': True, 'Value': [1,2,3,4]}
 
-       :return S_OK,S_ERROR
+       :return: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )

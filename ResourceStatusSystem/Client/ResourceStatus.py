@@ -258,7 +258,7 @@ class ResourceStatus( object ):
         :param seName : string, name of the SE
         :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
 
-        :returns S_OK(True/False)
+        :returns: S_OK(True/False)
     """
 
     res = self.infoGetter.getPoliciesThatApply( {'name' : seName, 'statusType' : statusType} )

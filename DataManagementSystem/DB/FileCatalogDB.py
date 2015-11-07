@@ -87,8 +87,9 @@ class FileCatalogDB( DB ):
   def addSE( self, seName, credDict ):
     """
         Add a new StorageElement
-        :param str seName Name of the StorageElement
-        :param credDict credential
+
+        :param str seName: Name of the StorageElement
+        :param credDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -100,8 +101,9 @@ class FileCatalogDB( DB ):
   def deleteSE( self, seName, credDict ):
     """
       Delete a StorageElement
-      :param str seName Name of the StorageElement
-      :param creDict credential
+
+      :param str seName: Name of the StorageElement
+      :param creDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -118,8 +120,9 @@ class FileCatalogDB( DB ):
   def addUser( self, userName, credDict ):
     """
       Add a new user
-      :param str userName Name of the User
-      :param creDict credential
+
+      :param str userName: Name of the User
+      :param creDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -131,8 +134,9 @@ class FileCatalogDB( DB ):
   def deleteUser( self, userName, credDict ):
     """
       Delete a user
-      :param str userName Name of the User
-      :param creDict credential
+
+      :param str userName: Name of the User
+      :param creDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -144,8 +148,9 @@ class FileCatalogDB( DB ):
   def addGroup( self, groupName, credDict ):
     """
       Add a new group
-      :param str groupName Name of the group
-      :param creDict credential
+
+      :param str groupName: Name of the group
+      :param creDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -157,8 +162,9 @@ class FileCatalogDB( DB ):
   def deleteGroup( self, groupName, credDict ):
     """
       Delete a group
-      :param str groupName Name of the group
-      :param creDict credential
+
+      :param str groupName: Name of the group
+      :param creDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -175,9 +181,9 @@ class FileCatalogDB( DB ):
   def getUsers( self, credDict ):
     """
       Returns the list of users
-      :param creDict credential
 
-      :return dictionary indexed on the user name
+      :param creDict: credential
+      :return: dictionary indexed on the user name
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -189,9 +195,9 @@ class FileCatalogDB( DB ):
   def getGroups( self, credDict ):
     """
       Returns the list of groups
-      :param creDict credential
 
-      :return dictionary indexed on the group name
+      :param creDict: credential
+      :return: dictionary indexed on the group name
     """
 
     res = self._checkAdminPermission( credDict )
@@ -326,11 +332,12 @@ class FileCatalogDB( DB ):
   def addFile( self, lfns, credDict ):
     """
       Add a new File
+
       :param dict lfns: indexed on file's LFN, the values are dictionaries which contains
                         the attributes of the files (PFN, SE, Size, GUID, Checksum)
-      :param creDict credential
+      :param creDict: credential
 
-      :return Successful/Failed dict.
+      :return: Successful/Failed dict.
     """
     res = self._checkPathPermissions( 'addFile', lfns, credDict )
     if not res['OK']:
@@ -350,10 +357,11 @@ class FileCatalogDB( DB ):
   def setFileStatus( self, lfns, credDict ):
     """
       Set the status of a File
-      :param dict lfns: dict indexed on the LFNs. The values are the status (should be in config['ValidFileStatus'])
-      :param creDict credential
 
-      :return Successful/Failed dict.
+      :param dict lfns: dict indexed on the LFNs. The values are the status (should be in config['ValidFileStatus'])
+      :param creDict: credential
+
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'setFileStatus', lfns, credDict )
@@ -375,10 +383,10 @@ class FileCatalogDB( DB ):
   def removeFile( self, lfns, credDict ):
     """
        Remove files
-      :param list lfns: list of LFNs to remove
-      :param creDict credential
 
-      :return Successful/Failed dict.
+      :param list lfns: list of LFNs to remove
+      :param creDict: credential
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'removeFile', lfns, credDict )
@@ -400,11 +408,12 @@ class FileCatalogDB( DB ):
   def addReplica( self, lfns, credDict ):
     """
        Add a replica to a File
+
       :param dict lfns: keys are LFN. The values are dict with key PFN and SE
                         (e.g. {myLfn : {"PFN" : "myPfn", "SE" : "mySE"}})
-      :param creDict credential
+      :param creDict: credential
 
-      :return Successful/Failed dict.
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'addReplica', lfns, credDict )
@@ -426,11 +435,12 @@ class FileCatalogDB( DB ):
   def removeReplica( self, lfns, credDict ):
     """
        Remove replicas
+
       :param dict lfns: keys are LFN. The values are dict with key PFN and SE
                         (e.g. {myLfn : {"PFN" : "myPfn", "SE" : "mySE"}})
-      :param creDict credential
+      :param creDict: credential
 
-      :return Successful/Failed dict.
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'removeReplica', lfns, credDict )
@@ -452,11 +462,12 @@ class FileCatalogDB( DB ):
   def setReplicaStatus( self, lfns, credDict ):
     """
       Set the status of a Replicas
+
       :param dict lfns: dict indexed on the LFNs. The values are dict with keys
                         "SE" and "Status" (that has to be in config['ValidReplicaStatus'])
-      :param creDict credential
+      :param creDict: credential
 
-      :return Successful/Failed dict.
+      :return: Successful/Failed dict.
     """
     res = self._checkPathPermissions( 'setReplicaStatus', lfns, credDict )
     if not res['OK']:
@@ -494,10 +505,11 @@ class FileCatalogDB( DB ):
   def setFileOwner( self, lfns, credDict ):
     """
       Set the owner of a File
-      :param dict lfns: dict indexed on the LFNs. The values are the owner's name
-      :param creDict credential
 
-      :return Successful/Failed dict.
+      :param dict lfns: dict indexed on the LFNs. The values are the owner's name
+      :param creDict: credential
+
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'setFileOwner', lfns, credDict )
@@ -519,10 +531,11 @@ class FileCatalogDB( DB ):
   def setFileGroup( self, lfns, credDict ):
     """
       Set the group of a File
-      :param dict lfns: dict indexed on the LFNs. The values are the grou's name
-      :param creDict credential
 
-      :return Successful/Failed dict.
+      :param dict lfns: dict indexed on the LFNs. The values are the grou's name
+      :param creDict: credential
+
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'setFileGroup', lfns, credDict )
@@ -544,10 +557,11 @@ class FileCatalogDB( DB ):
   def setFileMode( self, lfns, credDict ):
     """
       Set the mode of a File
-      :param dict lfns: dict indexed on the LFNs. The values are the modes (posix like)
-      :param creDict credential
 
-      :return Successful/Failed dict.
+      :param dict lfns: dict indexed on the LFNs. The values are the modes (posix like)
+      :param creDict: credential
+
+      :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'setFileMode', lfns, credDict )
@@ -593,10 +607,11 @@ class FileCatalogDB( DB ):
   def isFile( self, lfns, credDict ):
     """
         Checks whether a list of LFNS are files or not
-        :param list lfns: list of LFN to check
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param list lfns: list of LFN to check
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
                 The values of the successful dict are True or False whether it's a file or not
     """
 
@@ -619,10 +634,11 @@ class FileCatalogDB( DB ):
   def getFileSize( self, lfns, credDict ):
     """
         Gets the size of a list of lfns
-        :param list lfns: list of LFN to check
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param list lfns: list of LFN to check
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'getFileSize', lfns, credDict )
@@ -644,10 +660,11 @@ class FileCatalogDB( DB ):
   def getFileMetadata( self, lfns, credDict ):
     """
         Gets the metadata of a list of lfns
-        :param list lfns: list of LFN to check
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param list lfns: list of LFN to check
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
     """
 
     res = self._checkPathPermissions( 'getFileMetadata', lfns, credDict )
@@ -671,12 +688,13 @@ class FileCatalogDB( DB ):
   def getReplicas( self, lfns, allStatus, credDict ):
     """
         Gets the list of replicas of a list of lfns
+
         :param list lfns: list of LFN to check
         :param allStatus : if all the status are visible, or only those defined in config['ValidReplicaStatus']
-        :param creDict credential
+        :param creDict: credential
 
-        :return Successful/Failed dict.
-        Successful is indexed on the LFN, and the values are dictionary with the SEName as keys
+        :return: Successful/Failed dict.
+           Successful is indexed on the LFN, and the values are dictionary with the SEName as keys
     """
 
     res = self._checkPathPermissions( 'getReplicas', lfns, credDict )
@@ -698,10 +716,11 @@ class FileCatalogDB( DB ):
   def getReplicaStatus( self, lfns, credDict ):
     """
         Gets the status of a list of replicas
-        :param dict lfns: <lfn, se name>
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param dict lfns: <lfn, se name>
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
     """
     
     res = self._checkPathPermissions( 'getReplicaStatus', lfns, credDict )
@@ -786,10 +805,11 @@ class FileCatalogDB( DB ):
   def getLFNForGUID( self, guids, credDict ):
     """
         Gets the lfns that match a list of guids
-        :param list lfns: list of guid to look for
-        :param creDict credential
 
-        :return S_OK({guid:lfn}) dict.
+        :param list lfns: list of guid to look for
+        :param creDict: credential
+
+        :return: S_OK({guid:lfn}) dict.
     """
 
     res = self._checkAdminPermission( credDict )
@@ -808,10 +828,11 @@ class FileCatalogDB( DB ):
   def createDirectory( self, lfns, credDict ):
     """
         Create new directories
-        :param list lfns: list of directories
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param list lfns: list of directories
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
     """
     res = self._checkPathPermissions( 'createDirectory', lfns, credDict )
     if not res['OK']:
@@ -832,10 +853,11 @@ class FileCatalogDB( DB ):
   def removeDirectory( self, lfns, credDict ):
     """
         Remove directories
-        :param list lfns: list of directories
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param list lfns: list of directories
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
     """
     res = self._checkPathPermissions( 'removeDirectory', lfns, credDict )
     if not res['OK']:
@@ -877,11 +899,12 @@ class FileCatalogDB( DB ):
   def listDirectory( self, lfns, credDict, verbose = False ):
     """
         List directories
-        :param list lfns: list of directories
-        :param creDict credential
 
-        :return Successful/Failed dict.
-        The successful values are dictionaries indexed "Files", "Datasets", "Subdirs" and "Links"
+        :param list lfns: list of directories
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
+           The successful values are dictionaries indexed "Files", "Datasets", "Subdirs" and "Links"
     """
 
     res = self._checkPathPermissions( 'listDirectory', lfns, credDict )
@@ -903,10 +926,11 @@ class FileCatalogDB( DB ):
   def isDirectory( self, lfns, credDict ):
     """
         Checks whether a list of LFNS are directories or not
-        :param list lfns: list of LFN to check
-        :param creDict credential
 
-        :return Successful/Failed dict.
+        :param list lfns: list of LFN to check
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
                 The values of the successful dict are True or False whether it's a dir or not
     """
 
@@ -946,12 +970,13 @@ class FileCatalogDB( DB ):
   def getDirectorySize( self, lfns, longOutput, fromFiles, credDict ):
     """
         Get the sizes of a list of directories
-        :param list lfns: list of LFN to check
-        :param creDict credential
 
-        :return Successful/Failed dict.
-         The successful values are dictionaries indexed "LogicalFiles" (nb of files),
-         "LogicalDirectories" (nb of dir) and "LogicalSize" (sum of File's sizes)
+        :param list lfns: list of LFN to check
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
+            The successful values are dictionaries indexed "LogicalFiles" (nb of files),
+            "LogicalDirectories" (nb of dir) and "LogicalSize" (sum of File's sizes)
     """
 
 

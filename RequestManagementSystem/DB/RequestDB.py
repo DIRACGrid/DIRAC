@@ -387,7 +387,7 @@ class RequestDB( object ):
     :param int numberOfRequest: Number of Request we want (default 10)
     :param bool assigned: if True, the status of the selected requests are set to assign
 
-    :returns a dictionary of Request objects indexed on the RequestID
+    :returns: a dictionary of Request objects indexed on the RequestID
 
     """
     

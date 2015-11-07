@@ -243,7 +243,7 @@ class StorageBase( object ):
 
     :param self: self reference
     :param bool withWSUrl: flag to include Web Service part of the url
-    :returns URL
+    :returns: URL
     """
     urlDict = dict( self.protocolParameters )
     if not withWSUrl:
