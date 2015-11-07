@@ -444,7 +444,7 @@ class ComputingElement(object):
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
-  def getCEStatus( self ):
+  def getCEStatus( self, jobIDList = None ):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'

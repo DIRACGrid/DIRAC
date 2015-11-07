@@ -6,6 +6,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 class FileCatalogClientBase( Client ):
   """ Client code to the DIRAC File Catalogue

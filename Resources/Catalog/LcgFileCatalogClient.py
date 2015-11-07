@@ -1705,7 +1705,7 @@ class LcgFileCatalogClient( object ):
     totalError = ""
     for link, error in res['Value']['Failed'].items():
       gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link", 
-                     "for %s: " % ( link, error ) )
+                     "for %s: %s" % ( link, error ) )
       totalError = "%s\n %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 

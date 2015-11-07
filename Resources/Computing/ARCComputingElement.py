@@ -14,10 +14,11 @@ import os
 import stat
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger, shellCall
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
