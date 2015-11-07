@@ -67,7 +67,6 @@ class JobDB( DB ):
     self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
-    self.nJobAttributeNames = 0
 
     result = self.__getAttributeNames()
 
@@ -100,8 +99,6 @@ class JobDB( DB ):
     for row in res['Value']:
       field = row[0]
       self.jobAttributeNames.append( field )
-
-    self.nJobAttributeNames = len( self.jobAttributeNames )
 
     return S_OK()
 

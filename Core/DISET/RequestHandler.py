@@ -1,16 +1,19 @@
-# $HeadURL$
+""" Base class for all services
+"""
+
 __RCSID__ = "$Id$"
 
 import os
 import types
 import time
+
+import DIRAC
+
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities import Time
-import DIRAC
 
 def getServiceOption( serviceInfo, optionName, defaultValue ):
   """ Get service option resolving default values from the master service

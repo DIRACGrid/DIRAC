@@ -329,14 +329,6 @@ class JobAgent( AgentModule ):
     return timeleft
 
   #############################################################################
-  def __changeProxy( self, oldProxy, newProxy ):
-    """Can call glexec utility here to set uid or simply log the changeover
-       of a proxy.
-    """
-    self.log.verbose( 'Log proxy change (to be instrumented)' )
-    return S_OK()
-
-  #############################################################################
   def __setupProxy( self, ownerDN, ownerGroup ):
     """
     Retrieve a proxy for the execution of the job

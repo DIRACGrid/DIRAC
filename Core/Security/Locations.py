@@ -1,4 +1,6 @@
-# $HeadURL$
+""" Collection of utilities for locating certs, proxy, CAs
+"""
+
 __RCSID__ = "$Id$"
 
 import os
