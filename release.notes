@@ -1,3 +1,11 @@
+[v6r13p20]
+
+*DMS
+FIX: DMSHelpers - allow for more than one Site defined to be local per SE
+
+*Resources
+FIX: XRootStorage - fix in getURLBase()
+
 [v6r13p19]
 
 FIX: changes incorporated from v6r12p53 patch
