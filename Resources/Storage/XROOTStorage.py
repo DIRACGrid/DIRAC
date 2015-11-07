@@ -1565,3 +1565,35 @@ class XROOTStorage( StorageBase ):
 
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
+  def getURLBase( self, withWSUrl = False ):
+    """ This will get the URL base. This is then appended with the LFN in DIRAC convention.
+
+    :param self: self reference
+    :param bool withWSUrl: flag to include Web Service part of the url
+    :returns: URL
+    """
+    urlDict = dict( self.protocolParameters )
+    if not withWSUrl:
+      urlDict['WSUrl'] = ''
+    if self.protocolParameters.get('Port', None):
+      url = "%(Protocol)s://%(Host)s:%(Port)s/%(Path)s" % urlDict
+    else:
+      url = "%(Protocol)s://%(Host)s/%(Path)s" % urlDict
+    return S_OK(url)
+
+  def getCurrentURL( self, fileName ):
+    """ Obtain the current file URL from the current working directory and the filename
+
+    :param self: self reference
+    :param str fileName: path on storage
+    """
+    urlDict = dict( self.protocolParameters )
+    if not fileName.startswith( '/' ):
+      # Relative path is given
+      urlDict['Path'] = self.cwd
+    result = self.getURLBase( urlDict )
+    if not result['OK']:
+      return result
+    cwdUrl = result['Value']
+    fullUrl = '%s/%s' % ( cwdUrl, fileName )
+    return S_OK( fullUrl )
