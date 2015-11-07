@@ -308,7 +308,7 @@ class HostLogging( Base ):
 
     dictionary = {
                   'HostName': self.hostName,
-                  'DIRAC': self.DIRAC,
+                  'DIRACVersion': self.DIRAC,
                   'Load1': self.Load1,
                   'Load5': self.Load5,
                   'Load15': self.Load15,

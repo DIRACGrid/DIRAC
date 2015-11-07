@@ -20,11 +20,8 @@
 
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
-from DIRAC.ResourceStatusSystem.Utilities      import CSHelpers, RssConfiguration, Synchronizer
 
-__RCSID__  = '$Id:$'
+__RCSID__  = '$Id$'
 
 subLogger  = None
 switchDict = {}
@@ -94,7 +91,8 @@ def synchronize():
     Given the element switch, adds rows to the <element>Status tables with Status
     `Unknown` and Reason `Synchronized`.
   '''
-  
+  from DIRAC.ResourceStatusSystem.Utilities      import Synchronizer
+
   synchronizer = Synchronizer.Synchronizer()
   
   if switchDict[ 'element' ] in ( 'Site', 'all' ):
@@ -121,6 +119,9 @@ def initSEs():
   '''
     Initializes SEs statuses taking their values from the CS.
   '''
+  from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
+  from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
+  from DIRAC.ResourceStatusSystem.Utilities      import CSHelpers, RssConfiguration
 
   #WarmUp local copy
   CSHelpers.warmUp()

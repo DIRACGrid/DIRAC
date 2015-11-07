@@ -1217,7 +1217,7 @@ class DataManager( object ):
         Remove the replica from the storageElement, and then from the catalog
 
         :param storageElementName : The name of the storage Element
-        :param lfns list of lfn we want to remove
+        :param lfns : list of lfn we want to remove
         :param replicaDict : cache of fc.getReplicas(lfns) : { lfn { se : catalog url } }
 
     """

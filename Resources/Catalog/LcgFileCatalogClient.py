@@ -1060,11 +1060,12 @@ class LcgFileCatalogClient( object ):
   def setReplicaProblematic( self, lfns, revert = False ):
     """
       Set replicas to problematic.
-      :param lfn lfns has to be formated this way :
-                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
-      :param revert If True, remove the problematic flag
 
-      :return { Successful : { lfn : [ ses ] }, Failed : { lfn : { se : msg } } }
+      :param lfn lfns: has to be formated this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+      :param revert: If True, remove the problematic flag
+
+      :return: { Successful : { lfn : [ ses ] }, Failed : { lfn : { se : msg } } }
     """
 
     # This method does a batch treatment because the setReplicaStatus can only take one replica per lfn at once
@@ -1705,7 +1706,7 @@ class LcgFileCatalogClient( object ):
     totalError = ""
     for link, error in res['Value']['Failed'].items():
       gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link", 
-                     "for %s: " % ( link, error ) )
+                     "for %s: %s" % ( link, error ) )
       totalError = "%s\n %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 

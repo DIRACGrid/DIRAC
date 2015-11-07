@@ -1,15 +1,19 @@
-# $HeadURL$
+""" Base class for MyProxy and VOMS
+"""
+
 __RCSID__ = "$Id$"
 
 import types
 import os
 import tempfile
+
 import DIRAC
+from DIRAC import gConfig, S_OK
+from DIRAC.Core.Utilities import DError, DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
-from DIRAC import gConfig, S_OK, S_ERROR
 
-class BaseSecurity:
+class BaseSecurity( object ):
 
   def __init__( self,
                 server = False,
@@ -70,7 +74,7 @@ class BaseSecurity:
       fd, filename = tempfile.mkstemp()
       os.close( fd )
     except IOError:
-      return S_ERROR( 'Failed to create temporary file' )
+      return DError( DErrno.ECTMPF )
     return S_OK( filename )
 
   def _getUsername( self, proxyChain ):
@@ -79,10 +83,10 @@ class BaseSecurity:
       return retVal
     credDict = retVal[ 'Value' ]
     if not credDict[ 'isProxy' ]:
-      return S_ERROR( "chain does not contain a proxy" )
+      return DError( DErrno.EX509, "chain does not contain a proxy" )
     if not credDict[ 'validDN' ]:
-      return S_ERROR( "DN %s is not known in dirac" % credDict[ 'subject' ] )
+      return DError( DErrno.EDISET, "DN %s is not known in dirac" % credDict[ 'subject' ] )
     if not credDict[ 'validGroup' ]:
-      return S_ERROR( "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
+      return DError( DErrno.EDISET, "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
     mpUsername = "%s:%s" % ( credDict[ 'group' ], credDict[ 'username' ] )
     return S_OK( mpUsername )

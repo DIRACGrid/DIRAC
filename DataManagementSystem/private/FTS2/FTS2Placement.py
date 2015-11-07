@@ -46,10 +46,11 @@ class FTS2Placement(FTSAbstractPlacement):
 
   def findRoute( self, sourceSE, targetSE ):
     """ Find the appropriate route from point A to B
+
       :param sourceSE : source SE
       :param targetSE : destination SE
 
-      :returns S_OK(FTSRoute)
+      :returns: S_OK(FTSRoute)
 
     """
 
@@ -72,7 +73,7 @@ class FTS2Placement(FTSAbstractPlacement):
 
        :param route : FTSRoute
 
-       :returns S_OK or S_ERROR(reason)
+       :returns: S_OK or S_ERROR(reason)
     """
 
     edge = self.fts2Strategy.ftsGraph.findRoute( route.sourceSE, route.targetSE )

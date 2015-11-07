@@ -81,13 +81,10 @@ class Dirac( API ):
         gLogger.error( "Unable to write to supplied repository location" )
         self.jobRepo = False
 
-    self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
     self.useCertificates = useCertificates
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
-
-    self.__clients = None
 
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
@@ -133,7 +130,7 @@ class Dirac( API ):
        >>> print dirac.getRepositoryJobs()
        {'OK': True, 'Value': [1,2,3,4]}
 
-       :return S_OK,S_ERROR
+       :return: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )

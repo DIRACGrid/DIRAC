@@ -273,6 +273,12 @@ class JobWrapper( object ):
     os.environ['DIRACSITE'] = DIRAC.siteName()
     self.log.verbose( 'DIRACSITE = %s' % ( DIRAC.siteName() ) )
 
+    os.environ['DIRAC_PROCESSORS'] = str( self.ceArgs.get( 'Processors', 1 ) )
+    self.log.verbose( 'DIRAC_PROCESSORS = %s' % ( self.ceArgs.get( 'Processors', 1 ) ) )
+
+    os.environ['DIRAC_WHOLENODE'] = str( self.ceArgs.get( 'WholeNode', False ) )
+    self.log.verbose( 'DIRAC_WHOLENODE = %s' % ( self.ceArgs.get( 'WholeNode', False ) ) )
+
     errorFile = self.jobArgs.get( 'StdError', self.defaultErrorFile )
     outputFile = self.jobArgs.get( 'StdOutput', self.defaultOutputFile )
 

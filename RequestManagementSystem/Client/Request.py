@@ -442,7 +442,7 @@ class Request( object ):
         CAUTION: this method is meant to be called before inserting into the DB.
                 So if the RequestID is not 0, we don't touch
 
-        :return S_ERROR if the Request should not be optimized (because already in the DB
+        :return: S_ERROR if the Request should not be optimized (because already in the DB)
                 S_OK(True) if a optimization was carried out
                 S_OK(False) if no optimization were carried out
     """
