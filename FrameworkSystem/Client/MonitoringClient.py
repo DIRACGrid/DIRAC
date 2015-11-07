@@ -142,8 +142,8 @@ class MonitoringClient( object ):
     """
     Set the location of the component reporting.
 
-    @type  componentLocation: string
-    @param componentLocation: Location of the component reporting
+    :type  componentLocation: string
+    :param componentLocation: Location of the component reporting
     """
     if not componentLocation:
       self.sourceDict[ 'componentLocation' ] = gConfig.getValue( "/Site" )
@@ -154,8 +154,8 @@ class MonitoringClient( object ):
     """
     Set the name of the component reporting.
 
-    @type  componentName: string
-    @param componentName: Name of the component reporting
+    :type  componentName: string
+    :param componentName: Name of the component reporting
     """
     self.sourceDict[ 'componentName' ] = componentName
 
@@ -163,8 +163,8 @@ class MonitoringClient( object ):
     """
     Define the type of component reporting data.
 
-    @type  componentType: string
-    @param componentType: Defines the grouping of the host by type. All the possibilities
+    :type  componentType: string
+    :param componentType: Defines the grouping of the host by type. All the possibilities
                             are defined in the Constants.py file
     """
     self.sourceDict[ 'componentType' ] = componentType
@@ -174,19 +174,19 @@ class MonitoringClient( object ):
     Register new activity. Before reporting information to the server, the activity
     must be registered.
 
-    @type  name: string
-    @param name: Id of the activity to report
-    @type description: string
-    @param description: Description of the activity
-    @type  category: string
-    @param category: Grouping of the activity
-    @type  unit: string
-    @param unit: String representing the unit that will be printed in the plots
-    @type  operation: string
-    @param operation: Type of data operation to represent data. All the possibilities
+    :type  name: string
+    :param name: Id of the activity to report
+    :type description: string
+    :param description: Description of the activity
+    :type  category: string
+    :param category: Grouping of the activity
+    :type  unit: string
+    :param unit: String representing the unit that will be printed in the plots
+    :type  operation: string
+    :param operation: Type of data operation to represent data. All the possibilities
                         are defined in the Constants.py file
-    @type  bucketLength: int
-    @param bucketLength: Bucket length in seconds
+    :type  bucketLength: int
+    :param bucketLength: Bucket length in seconds
     """
     if not self.__initialized:
       return
@@ -214,10 +214,10 @@ class MonitoringClient( object ):
     """
     Add a new mark to the specified activity
 
-    @type  name: string
-    @param name: Name of the activity to report
-    @type  value: number
-    @param value: Weight of the mark. By default it's one.
+    :type  name: string
+    :param name: Name of the activity to report
+    :type  value: number
+    :param value: Weight of the mark. By default it's one.
     """
     if not self.__initialized:
       return

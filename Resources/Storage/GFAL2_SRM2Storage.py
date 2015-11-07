@@ -61,7 +61,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
         :param list attributes: a list of extended attributes that we are interested in,
                                 default is None so we retrieve the list with listxattr via
                                 gfal2 and get them all.
-        :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes
+        :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes
                                       and values the respective values
     '''
     if protocols:
@@ -145,8 +145,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
     :param self: self reference
     :param str path: path on the storage
-    :returns S_OK( Transport_URL ) in case of success
-             S_ERROR( errStr ) in case of a failure
+    :returns: S_OK( Transport_URL ) in case of success
+              S_ERROR( errStr ) in case of a failure
     """
     self.log.debug( 'GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s' % path )
     res = self._getExtendedAttributes( path, protocols = protocols, attributes = ['user.replicas'] )

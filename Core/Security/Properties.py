@@ -1,4 +1,6 @@
-# $HeadURL$
+""" Just listing the possible Properties
+"""
+
 __RCSID__ = "$Id$"
 #
 TRUSTED_HOST = "TrustedHost"

@@ -1,9 +1,13 @@
+""" Contains a class used for evaluating policies for accessing jobs/WMS/pilots accounting
+"""
+
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.AccountingSystem.private.Policies.FilterExecutor import FilterExecutor
 
-class JobPolicy:
+class JobPolicy( object ):
 
   def __init__( self ):
     self.__executor = FilterExecutor()

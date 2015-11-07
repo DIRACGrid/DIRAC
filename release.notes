@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v6r15-pre8]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
@@ -43,6 +44,33 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
+=======
+[v6r14p11]
+
+*Core
+FIX: XXXTimeLeft - set limit to CPU lower than wall clock if unknown
+FIX: Logger - fix exception printing in gLogger.exception()
+CHANGE: InstallTools - added more info about the process in getStartupComponentStatus()
+CHANGE: Time - better report from timeThis() decorator
+
+*DMS
+CHANGE: FTSAgent - wait some time between 2 monitorings of each job
+
+*WMS
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities commands
+NEW: Added dirac-wms-get-wn-parameters command
+
+*TS
+NEW: Added dirac-production-runjoblocal command
+FIX: TransformationAgent(Plugin) - clean getNextSite() and normalizeShares()
+FIX: TransformationPlugin - added setParameters() method
+
+*RSS
+FIX: dirac-rss-sync - move imports to after the Script.getPositionalArguments()
+
+*Resources
+NEW: Added dirac-resource-get-parameters command
+>>>>>>> rel-v6r14
 
 [v6r14p10]
 *Configuration
@@ -290,6 +318,14 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p20]
+
+*DMS
+FIX: DMSHelpers - allow for more than one Site defined to be local per SE
+
+*Resources
+FIX: XRootStorage - fix in getURLBase()
 
 [v6r13p19]
 

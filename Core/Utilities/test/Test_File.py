@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FileTestCase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/01/17 14:00:52
@@ -26,7 +25,10 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 import os
-from DIRAC.Core.Utilities.File import *
+import re
+
+# sut
+from DIRAC.Core.Utilities.File import checkGuid, makeGuid, getSize, getMD5ForFiles, getCommonPath
 
 ########################################################################
 class FileTestCase(unittest.TestCase):
@@ -37,7 +39,7 @@ class FileTestCase(unittest.TestCase):
   Test case for DIRAC.Core.Utilities.File module.
 
   """
-	
+
   def setUp(self):
     """ test case setup
     .. function:: FileTestCase.setUp(self)
