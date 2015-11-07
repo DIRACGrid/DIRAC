@@ -43,7 +43,7 @@ PROPERTY_RIGHTS[ Properties.NORMAL_USER ] = [ RIGHT_SUBMIT ]
 PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ] = [ RIGHT_RESCHEDULE ]
 PROPERTY_RIGHTS[ Properties.JOB_MONITOR ] = [ RIGHT_GET_INFO ]
 
-class JobPolicy:
+class JobPolicy( object ):
 
   def __init__( self, userDN, userGroup, allInfo=True ):
 
