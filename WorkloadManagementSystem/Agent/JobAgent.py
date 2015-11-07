@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
 from DIRAC.Core.Utilities.CFG                               import CFG
+from DIRAC.Core.Utilities.Os                                import getNumberOfCores
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
@@ -149,6 +150,12 @@ class JobAgent( AgentModule ):
     if result['OK']:
       requirementsDict = result['Value']
       ceDict.update( requirementsDict )
+      self.log.info( 'Requirements:', requirementsDict )
+
+    processors, wholeNode = self.__getProcessors()
+    ceDict['Processors'] = processors
+    ceDict['WholeNode'] = wholeNode
+    self.log.info( 'Configured number of processors: %d, WholeNode: %s' % ( processors, wholeNode ) )
 
     self.log.verbose( ceDict )
     start = time.time()
@@ -289,7 +296,7 @@ class JobAgent( AgentModule ):
     # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
     cpuTime = sum( os.times()[:-1] ) - sum( self.initTimes[:-1] )
 
-    result = self.timeLeftUtil.getTimeLeft( cpuTime )
+    result = self.timeLeftUtil.getTimeLeft( cpuTime, processors )
     if result['OK']:
       self.timeLeft = result['Value']
     else:
@@ -299,7 +306,7 @@ class JobAgent( AgentModule ):
         # if the batch system is not defined, use the process time and the CPU normalization defined locally
         self.timeLeft = self.__getCPUTimeLeft()
 
-    scaledCPUTime = self.timeLeftUtil.getScaledCPU()
+    scaledCPUTime = self.timeLeftUtil.getScaledCPU( processors )
     self.__setJobParam( jobID, 'ScaledCPUTime', str( scaledCPUTime - self.scaledCPUTime ) )
     self.scaledCPUTime = scaledCPUTime
 
@@ -580,6 +587,28 @@ class JobAgent( AgentModule ):
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
     return self.__finish( 'Job Rescheduled', stop )
+
+  #############################################################################
+  def __getProcessors( self ):
+    """
+    Return number of processors from gConfig and a boolean corresponding to WholeNode option
+    """
+    tag = gConfig.getValue( '/Resources/Computing/CEDefaults/Tag', None )
+
+    if tag is None: return 1, False
+
+    self.log.verbose( "__getProcessors: /Resources/Computing/CEDefaults/Tag", repr( tag ) )
+
+    # look for a pattern like "12345Processors" in tag list
+    m = re.match( r'^(.*\D)?(?P<processors>\d+)Processors([ \t,].*)?$', tag )
+    if m:
+      return int( m.group( 'processors' ) ), False
+
+    # In WholeNode case, detect number of cores from the host
+    if re.match( r'^(.*,\s*)?WholeNode([ \t,].*)?$', tag ):
+      return getNumberOfCores(), True
+
+    return 1, False
 
   #############################################################################
   def finalize( self ):
