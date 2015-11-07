@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: PfnTestCase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/12/14 15:07:01
 ########################################################################
@@ -18,17 +16,14 @@
 __RCSID__ = "$Id $"
 
 ##
-# @file PfnTestCase.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2011/12/14 15:07:12
-# @brief Definition of PfnTestCase class.
 
 ## imports 
 import unittest
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-import random, string, timeit
 
+# sut
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 
 
