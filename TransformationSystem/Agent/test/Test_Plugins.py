@@ -52,6 +52,10 @@ class PluginsTestCase( unittest.TestCase ):
     self.tPlugin.DataManager = self.mockDM
     self.tPlugin.FileCatalog = self.mockCatalog
 
+    self.util = importlib.import_module( 'DIRAC.TransformationSystem.Client.Utilities' )
+    self.util.FileCatalog = self.mockCatalog
+    self.util.StorageElement = MagicMock()
+
     self.maxDiff = None
 
     gLogger.setLevel( 'DEBUG' )
@@ -64,30 +68,75 @@ class PluginsTestCase( unittest.TestCase ):
   
 class PluginsBaseSuccess( PluginsTestCase ):
 
-  def test__Standard( self ):
-    # no input data, active
+  def test__Standard_G10( self ):
+  #   # no input data, active
+    params = dict( paramsBase )
+    params['GroupSize'] = 10L
+    pluginStandard = TransformationPlugin( 'Standard' )
+    pluginStandard.setParameters( params )
+    res = pluginStandard.run()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+  def test__Standard_Data_G10( self ):
+    # input data, active
+    params = dict( paramsBase )
+    params['GroupSize'] = 10L
+    pluginStandard = TransformationPlugin( 'Standard' )
+    pluginStandard.setParameters( params )
+    pluginStandard.setInputData( data )
+    res = pluginStandard.run()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [] )
+
+  def test__Standard_Flush_G10( self ):
+    # input data, flush
+    pluginStandard = TransformationPlugin( 'Standard' )
+    params = dict( paramsBase )
+    params['GroupSize'] = 10L
+    params['Status'] = 'Flush'
+    pluginStandard.setParameters( params )
+    pluginStandard.setInputData( data )
+    res = pluginStandard.run()
+    sortedData = [('SE1',
+                   ['/this/is/also/at.12',
+                    '/this/is/at.1',
+                    '/this/is/at_123',
+                    '/this/is/at.12']),
+                  ('SE2', ['/this/is/als/at.2', '/this/is/at_23', '/this/is/at.2']),
+                  ('SE4', ['/this/is/at_4'])]
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], sortedData )
+
+  def test__Standard_G1( self ):
+    #no input data, active
     pluginStandard = TransformationPlugin( 'Standard' )
     pluginStandard.setParameters( paramsBase )
     res = pluginStandard.run()
     self.assert_( res['OK'] )
     self.assertEqual( res['Value'], [] )
 
+  def test__Standard_Data_G1( self ):
     # input data, active
     pluginStandard = TransformationPlugin( 'Standard' )
     pluginStandard.setParameters( paramsBase )
     pluginStandard.setInputData( data )
     res = pluginStandard.run()
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], [] )
+    sortedData = sorted([ (",".join(SEs), [lfn]) for lfn,SEs in data.iteritems() ])
+    self.assertEqual( res['Value'], sortedData )
 
+  def test__Standard_Flush_G1( self ):
     # input data, flush
     pluginStandard = TransformationPlugin( 'Standard' )
-    paramsBase['Status'] = 'Flush'
-    pluginStandard.setParameters( paramsBase )
+    params = dict( paramsBase )
+    params['Status'] = 'Flush'
+    pluginStandard.setParameters( params )
     pluginStandard.setInputData( data )
     res = pluginStandard.run()
+    sortedData = sorted([ (",".join(SEs), [lfn]) for lfn,SEs in data.iteritems() ])
     self.assert_( res['OK'] )
-    self.assertNotEqual( res['Value'], [] )
+    self.assertEqual( res['Value'], sortedData )
 
 #############################################################################
 # Test Suite run
