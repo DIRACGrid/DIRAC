@@ -133,13 +133,12 @@ class SocketInfoFactory:
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
     ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
-    print 'ips',ipList
+    
     for _ in range( 1 ): #TODO: this retry can be reduced. 
       connected = False
       errorsList = []
       for ip in ipList :
         ipAddress = ( ip, hostAddress[1] )
-        print 'ipAddress',ipAddress
         retVal = self.__connect( socketInfo, ipAddress )
         if retVal[ 'OK' ]:
           sslSocket = retVal[ 'Value' ]

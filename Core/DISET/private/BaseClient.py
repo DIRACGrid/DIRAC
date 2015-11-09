@@ -219,11 +219,11 @@ class BaseClient:
         gLogger.debug( "Removing banned URL", "%s" % i )
         urls.remove( i )
         
-    print 'UUUUU', urls
     randUrls = List.randomize( urls ) 
     sURL = randUrls[0]
-    print sURL
-    if len(self.__bannedUrls) > 1 and self.__nbOfUrls > 2: #we have multiple services and we are running same service more than once in different port.
+    
+    if len( self.__bannedUrls ) > 0 and self.__nbOfUrls > 2:  # when we have multiple services then we can have a situation 
+      # when two service are running on the same machine with different port...
       
       retVal = Network.splitURL( sURL )
       nexturl = None
@@ -237,11 +237,13 @@ class BaseClient:
           bannedurl = retVal['Value']
         else:
           break
+        
         if nexturl[1] == bannedurl[1]:
           found = True
+          break
       if found:
-        nexturl = self.__selectUrl(nexturl, randUrls[1:])
-        if nexturl: #an url found which is in different host
+        nexturl = self.__selectUrl( nexturl, randUrls[1:] )
+        if nexturl:  # an url found which is in different host
           sURL = nexturl
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )
     return S_OK( sURL )
@@ -250,11 +252,12 @@ class BaseClient:
     """In case when multiple services are running in the same host, a new url has to be in a different host
     Note: If we do not have different host we will use the selected url...
     """
+    
     url = None
     for i in urls:
       retVal = Network.splitURL( i )
       if retVal['OK']:
-        if retVal['Value'][1] != notselect[1]: #the hots are different
+        if retVal['Value'][1] != notselect[1]:  # the hots are different
           url = i
           break
     return url
@@ -280,7 +283,7 @@ and this is thread %s
 
 
   def _connect( self ):
-    print '_connect'
+    
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
