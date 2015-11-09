@@ -41,7 +41,7 @@ def getPowerFromMJF():
   jobSlots = float( features.get( 'jobslots', 0 ) )
   denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
   if totalPower and denom:
-    return int( 10. * float( totalPower ) / denom ) / 10.
+    return round( float( totalPower ) / denom , 2 )
   else:
     return None
 
@@ -123,9 +123,12 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   except ( TypeError, ValueError ), x :
     return S_ERROR( x )
 
-  # This number of iterations corresponds to 250 HS06 seconds
+  # This number of iterations corresponds to 1kHS2k.seconds, i.e. 250 HS06 seconds
+  # 06.11.2015: fixed absolute normalization w.r.t. MJF at GRIDKA
+  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+  corr = Operations().getValue( 'JobScheduling/CPUNormalizationCorrection', 1. )
   n = int( 1000 * 1000 * 12.5 )
-  calib = 250.0 / UNITS[reference]
+  calib = 250.0 / UNITS[reference] / corr
 
   m = long( 0 )
   m2 = long( 0 )
