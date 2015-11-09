@@ -278,7 +278,6 @@ class InstallDIRAC( CommandBase ):
     self._installDIRAC()
 
 
-
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
       - download, by default, the CAs
@@ -358,6 +357,92 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( '--UseServerCertificate' )
       self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
       self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+
+class CheckCECapabilities( CommandBase ):
+  """ Used to get  CE tags.
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( CheckCECapabilities, self ).__init__( pilotParams )
+
+    # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
+    self.cfg = []
+
+  def execute( self ):
+    """ Setup CE/Queue Tags
+    """
+
+    if self.pp.useServerCertificate:
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+
+
+    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
+                                                                               " ".join( self.cfg ) )
+    retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
+
+    import json
+    resourceDict = json.loads( resourceDict )
+    if retCode:
+      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
+    if resourceDict.get( 'Tag' ):
+      self.pp.tags.append( resourceDict['Tag'] )
+      self.cfg.append( '-FDMH' )
+      if self.pp.localConfigFile:
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )
+        self.cfg.append( self.pp.localConfigFile )
+
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
+
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if retCode:
+        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
+
+class CheckWNCapabilities( CommandBase ):
+  """ Used to get  CE tags.
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( CheckWNCapabilities, self ).__init__( pilotParams )
+    self.cfg = []
+
+  def execute( self ):
+    """ Discover #Processors and memory
+    """
+
+    retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
+    result = result.split( ' ' )
+    NumberOfProcessor = result[0]
+    MaxRAM = result[1]
+
+    if NumberOfProcessor or MaxRAM:
+      self.cfg.append( '-FDMH' )
+      if self.pp.localConfigFile:
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )
+        self.cfg.append( self.pp.localConfigFile )
+
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      if NumberOfProcessor:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%s"' % ','.join( NumberOfProcessor ) )
+      else:
+        self.log.warn( "Could not retrieve number of processors" )
+      if MaxRAM:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%s"' % ''.join( MaxRAM ) )
+      else:
+        self.log.warn( "Could not retrieve memory" )
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if retCode:
+        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
 
 
 class ConfigureSite( CommandBase ):
@@ -712,7 +797,7 @@ class LaunchAgent( CommandBase ):
     # To prevent a wayward agent picking up and failing many jobs.
     self.inProcessOpts.append( '-o MaxTotalJobs=%s' % 10 )
     self.jobAgentOpts= ['-o MaxCycles=%s' % self.pp.maxCycles]
-
+    
     if self.debugFlag:
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 

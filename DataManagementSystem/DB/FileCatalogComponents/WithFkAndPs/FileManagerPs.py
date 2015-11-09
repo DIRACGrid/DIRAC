@@ -124,6 +124,7 @@ class FileManagerPs( FileManagerBase ):
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
     """ For a given directory, and eventually given file, returns all the desired metadata
+
         :param dirID : directory ID
         :param filenames : the list of filenames, or []
         :param metadata_input: list of desired metadata.
@@ -131,7 +132,7 @@ class FileManagerPs( FileManagerBase ):
                    GID, OwnerGroup, Status, GUID, Checksum, ChecksumType, Type, CreationDate, ModificationDate, Mode)
         :param allStatus : if False, only displays the files whose status is in db.visibleFileStatus
 
-        :returns S_OK(files), where files is a dictionary indexed on filename, and values are dictionary of metadata
+        :returns: S_OK(files), where files is a dictionary indexed on filename, and values are dictionary of metadata
     """
 
     connection = self._getConnection( connection )
@@ -177,9 +178,10 @@ class FileManagerPs( FileManagerBase ):
 
   def _getFileMetadataByID( self, fileIDs, connection=False ):
     """ Get standard file metadata for a list of files specified by FileID
+
         :param fileIDS : list of file Ids
 
-        :returns S_OK(files), where files is a dictionary indexed on fileID
+        :returns: S_OK(files), where files is a dictionary indexed on fileID
                             and the values dictionaries containing the following info:
                             ["FileID", "Size", "UID", "GID", "s.Status", "GUID", "CreationDate"]
     """
@@ -392,9 +394,10 @@ class FileManagerPs( FileManagerBase ):
 
   def _deleteFiles( self, fileIDs, connection = False ):
     """ Delete a list of files and the associated replicas
+
        :param fileIDS : list of fileID
 
-       :returns S_OK() or S_ERROR(msg)
+       :returns: S_OK() or S_ERROR(msg)
     """
 
     connection = self._getConnection(connection)
@@ -412,9 +415,10 @@ class FileManagerPs( FileManagerBase ):
 
   def __deleteFileReplicas( self, fileIDs, connection = False ):
     """ Delete all the replicas from the file ids
-        :param fileIDs list of file ids
 
-        :returns S_OK() or S_ERROR(msg)
+        :param fileIDs: list of file ids
+
+        :returns: S_OK() or S_ERROR(msg)
     """
 
     connection = self._getConnection(connection)
@@ -439,9 +443,10 @@ class FileManagerPs( FileManagerBase ):
 
   def __deleteFiles(self,fileIDs,connection=False):
     """ Delete the files from their ids
-        :param fileIDs list of file ids
 
-        :returns S_OK() or S_ERROR(msg)
+        :param fileIDs: list of file ids
+
+        :returns: S_OK() or S_ERROR(msg)
     """
 
     connection = self._getConnection(connection)
@@ -495,7 +500,7 @@ class FileManagerPs( FileManagerBase ):
         :param lfns: lfns and info to insert
         :param master: true if they are master replica, otherwise they will be just 'Replica'
 
-        :return successful/failed convention, with successful[lfn] = true
+        :return: successful/failed convention, with successful[lfn] = true
     """
     chunkSize = 200
 
@@ -622,7 +627,7 @@ class FileManagerPs( FileManagerBase ):
         :param lfns : dictinary with lfns as key, and the value is a dict with a mandatory "SE" key,
                       corresponding to the SE name or SE ID
 
-        :returns successful/failed convention, with successful[lfn] = True
+        :returns: successful/failed convention, with successful[lfn] = True
     """
     connection = self._getConnection(connection)
     failed = {}
@@ -678,7 +683,7 @@ class FileManagerPs( FileManagerBase ):
       :param se : se name or se id
       :param status : status to be applied
 
-      :returns S_OK() or S_ERROR(msg)
+      :returns: S_OK() or S_ERROR(msg)
     """
     if not status in self.db.validReplicaStatus:
       return S_ERROR( 'Invalid replica status %s' % status )
@@ -715,7 +720,7 @@ class FileManagerPs( FileManagerBase ):
       :param se : se name or se id of the previous se
       :param newSE : se name or se id of the new se
 
-      :returns S_OK() or S_ERROR(msg)
+      :returns: S_OK() or S_ERROR(msg)
     """
     connection = self._getConnection(connection)
 
@@ -755,7 +760,7 @@ class FileManagerPs( FileManagerBase ):
             there is a manual request done.
       :param paramValue : the value (raw, or id) to insert
 
-      :returns S_OK() or S_ERROR
+      :returns: S_OK() or S_ERROR
 
     """
     connection = self._getConnection(connection)
@@ -849,7 +854,7 @@ class FileManagerPs( FileManagerBase ):
 
         :param dirID : directory id
 
-        :returns S_OK(value) or S_ERROR
+        :returns: S_OK(value) or S_ERROR
     """
 
     result = self.db.executeStoredProcedure( 'ps_count_files_in_dir', ( dirId, 'ret1' ), outputIds = [1] )

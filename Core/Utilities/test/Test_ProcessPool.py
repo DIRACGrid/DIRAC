@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: ProcessPoolTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/02/13 07:55:31
 ########################################################################
@@ -18,10 +16,8 @@
 __RCSID__ = "$Id $"
 
 ##
-# @file ProcessPoolTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/02/13 07:55:46
-# @brief Definition of ProcessPoolTests class.
 
 ## imports 
 import os
