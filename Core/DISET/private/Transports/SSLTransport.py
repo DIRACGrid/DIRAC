@@ -47,7 +47,6 @@ class SSLTransport( BaseTransport ):
     """
     This method is used to chenge the default timeout of the socket
     """
-    print 'JAJJA, de joooo'
     gSocketInfoFactory.setSocketTimeout( timeout )
     
   def initAsClient( self ):

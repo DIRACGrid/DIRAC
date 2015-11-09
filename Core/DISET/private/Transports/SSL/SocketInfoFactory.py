@@ -26,7 +26,6 @@ class SocketInfoFactory:
     self.__timeout = 1
   
   def setSocketTimeout(self, timeout):
-    print 'DDDDD', timeout
     self.__timeout = timeout
     
   def getSocketTimeout(self):
