@@ -1,10 +1,13 @@
-# $HeadURL$
+""" Frontend to MySQL DB AccountingDB
+"""
+
 __RCSID__ = "$Id$"
 
-import datetime, time
-import types
+import datetime
+import time
 import threading
 import random
+
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -304,7 +307,7 @@ class AccountingDB( DB ):
       if field in keyFieldsList:
         return S_ERROR( "Value field %s is also in the list of key fields" % field )
     for bucket in bucketsLength:
-      if type( bucket ) != types.TupleType:
+      if not isinstance( bucket, tuple ):
         return S_ERROR( "Length of buckets should be a list of tuples" )
       if len( bucket ) != 2:
         return S_ERROR( "Length of buckets should have 2d tuples" )
@@ -486,7 +489,7 @@ class AccountingDB( DB ):
       Adds a key value to a key table if not existant
     """
     #Cast to string just in case
-    if type( keyValue ) != types.StringType:
+    if not isinstance( keyValue, basestring ):
       keyValue = str( keyValue )
     #No more than 64 chars for keys
     if len( keyValue ) > 64:
@@ -1035,7 +1038,7 @@ class AccountingDB( DB ):
                                                                     keyName,
                                                                     _getTableName( "key", typeName, keyName )
                                                                     ) )
-      if type( condDict[ keyName ] ) not in ( types.ListType, types.TupleType ):
+      if not isinstance( condDict[ keyName ], ( list, tuple ) ):
         condDict[ keyName ] = [ condDict[ keyName ] ]
       for keyValue in condDict[ keyName ]:
         retVal = self._escapeString( keyValue )
