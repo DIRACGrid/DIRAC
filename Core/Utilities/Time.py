@@ -261,10 +261,10 @@ def queryTime(f):
   """ Decorator to measure the function call time
   """
   def measureQueryTime(*args, **kwargs):
-    start = time.time()
+    start = nativetime.time()
     result = f(*args, **kwargs)
     if result['OK'] and not 'QueryTime' in result:
-      result['QueryTime'] = time.time() - start
+      result['QueryTime'] = nativetime.time() - start
     return result
   return measureQueryTime
 
