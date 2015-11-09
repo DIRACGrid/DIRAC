@@ -160,7 +160,7 @@ if __name__ == "__main__":
     
     __downloadPilotScripts(_path, _diracPath)
     
-    __configurePilot(_path)
+    __configurePilot(_path, _vo)
     
     __runJobLocally(_jobID, _path, _vo)
     
