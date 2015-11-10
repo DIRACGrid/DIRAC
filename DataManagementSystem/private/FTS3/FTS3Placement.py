@@ -136,10 +136,11 @@ class FTS3Placement( FTSAbstractPlacement ):
 
   def findRoute( self, sourceSE, targetSE ):
     """ Find the appropriate route from point A to B
+
       :param sourceSE : source SE
       :param targetSE : destination SE
 
-      :returns S_OK(FTSRoute)
+      :returns: S_OK(FTSRoute)
 
     """
 
@@ -160,9 +161,10 @@ class FTS3Placement( FTSAbstractPlacement ):
         In FTS3, all routes are valid a priori.
         If a route was not valid for some reason, then FTS would know it
         thanks to the blacklist sent by RSS, and would deal with it itself.
+
        :param route : FTSRoute
 
-       :returns S_OK or S_ERROR(reason)
+       :returns: S_OK or S_ERROR(reason)
     """
     
     rAccess = self.rssClient.getStorageElementStatus( route.sourceSE, "ReadAccess" )

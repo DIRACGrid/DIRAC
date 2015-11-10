@@ -733,6 +733,21 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
+    if 'ClientPlatform' in queueDict:
+      pilotOptions.append( "-p '%s'" % queueDict['ClientPlatform'] )
+
+    if 'SharedArea' in queueDict:
+      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
+
+#     if 'SI00' in queueDict:
+#       factor = float( queueDict['SI00'] ) / 250.
+#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
+#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
+#     else:
+#       if 'CPUScalingFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
+#       if 'CPUNormalizationFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append( queueDict['ExtraPilotOptions'] )
