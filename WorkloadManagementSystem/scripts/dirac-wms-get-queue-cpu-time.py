@@ -27,5 +27,6 @@ for unprocSw in Script.getUnprocessedSwitches():
 if __name__ == "__main__":
   from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getCPUTime
   cpuTime = getCPUTime( CPUNormalizationFactor )
-  DIRAC.gLogger.info( 'Queue CPU time:', str( cpuTime ) )
+  # I hate this kind of output... PhC
+  print cpuTime
   DIRAC.exit( 0 )
