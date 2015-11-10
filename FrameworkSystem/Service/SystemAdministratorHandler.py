@@ -582,7 +582,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if result[ 'OK' ]:
       return S_OK( result[ 'Value' ][0] )
     else:
-      return result
+      return self.__readHostInfo()
 
   types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
   def export_getComponentDocumentation( self, cType, system, module ):
