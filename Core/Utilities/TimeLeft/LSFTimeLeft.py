@@ -146,10 +146,12 @@ class LSFTimeLeft( object ):
         else:
           self.log.error( 'Cannot source the LSF environment', ret['Message'] )
     if not self.normRef:
+      # If nothing works take this as the unit
+      self.normRef = 1.
       # If nothing worked, take the maximum defined for a Model
-      if modelMaxNorm:
-        self.normRef = modelMaxNorm
-        self.log.info( 'Reference Normalization taken from Max Model:', self.normRef )
+      # if modelMaxNorm:
+      #  self.normRef = modelMaxNorm
+      #  self.log.info( 'Reference Normalization taken from Max Model:', self.normRef )
 
     # Now get the Normalization for the current Host
     if self.host:
