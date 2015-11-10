@@ -14,6 +14,7 @@ import urllib
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
 
 # TODO: This should come from some place in the configuration
 NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to HS06 (ie min * SI00 -> sec * HS06 )
@@ -157,21 +158,30 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
 
 
 def getCPUTime( cpuNormalizationFactor ):
-  """ Trying to get CPUTime (in seconds) from the CS. The default is a (low) 10000s.
+  """ Trying to get CPUTime (in seconds) from the CS or from TimeLeft. The default is a (low) 3600s.
 
-      This is a generic method, independent from the middleware of the resource.
+      This is a generic method, independent from the middleware of the resource if TimeLeft doesn't return a value
   """
-  cpuTimeLeft = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
+  cpuTimeLeft = 0.
+  cpuWorkLeft = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
 
-  if cpuTimeLeft:
+  if not cpuWorkLeft:
+    # Try and get the information from the CPU left utility
+    result = TimeLeft().getTimeLeft()
+    if result['OK']:
+      cpuWorkLeft = result['Value']
+
+  if cpuWorkLeft:
     # This is in HS06sseconds
     # We need to convert in real seconds
     if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg
       cpuNormalizationFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
-    # if CPUNormalizationFactor is not even in the local cfg, it's a problem, and yes the next line will raise an exception
-    cpuTimeLeft /= cpuNormalizationFactor
-  else:
+    if cpuNormalizationFactor:
+      cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor
+
+  if not cpuTimeLeft:
     # now we know that we have to find the CPUTimeLeft by looking in the CS
+    # this is not granted to be correct as the CS units may not be real seconds
     gridCE = gConfig.getValue( '/LocalSite/GridCE' )
     ceQueue = gConfig.getValue( '/LocalSite/CEQueue' )
     if not ceQueue:
@@ -189,7 +199,7 @@ def getCPUTime( cpuNormalizationFactor ):
       cpuTimeLeft = min( cpuTimes ) * 60
     else:
       queueInfo = getQueueInfo( '%s/%s' % ( gridCE, ceQueue ) )
-      cpuTimeLeft = 10000
+      cpuTimeLeft = 3600
       if not queueInfo['OK'] or not queueInfo['Value']:
         gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to %d" % cpuTimeLeft )
       else:
