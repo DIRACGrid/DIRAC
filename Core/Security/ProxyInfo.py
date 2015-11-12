@@ -43,7 +43,7 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
   else:
     if not proxy:
       proxyLocation = Locations.getProxyLocation()
-    elif isinstance( proxy, ( basestring, unicode ) ):
+    elif isinstance( proxy, basestring ):
       proxyLocation = proxy
     if not proxyLocation:
       return DError( DErrno.EPROXYFIND )
