@@ -382,6 +382,12 @@ class PilotDirector( object ):
     self.log.error( '_submitPilots method not implemented' )
     return S_OK()
 
+  def _submitPilot( self, proxy, pilotsToSubmit, jdl, taskQueueID, rb ):
+    """ Submit pilot and get back the reference
+    """
+    self.log.error( '_submitPilot method not implemented' )
+    return S_OK()
+
   def _listMatch( self, proxy, jdl, taskQueueID, rb ):
     """ This method must be implemented on the Backend specific derived class.
     """

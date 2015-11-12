@@ -142,12 +142,13 @@ class FileCatalogHandler( RequestHandler ):
     return gFileCatalogDB.getPathPermissions( lfns, self.getRemoteCredentials() )
   
   
-  types_hasAccess = [StringTypes, [ ListType, DictType ] + list( StringTypes ) ]
-  def export_hasAccess( self, opType, paths ):
+  types_hasAccess = [ dict, basestring ]
+  def export_hasAccess( self, paths, opType ):
     """ Determine if the given op can be performed on the paths
         The OpType is all the operations exported
     """
-    return gFileCatalogDB.hasAccess( opType, paths, self.getRemoteCredentials() )
+    lfns = paths.keys()
+    return gFileCatalogDB.hasAccess( opType, lfns, self.getRemoteCredentials() )
   
 
   ###################################################################
@@ -587,11 +588,11 @@ class FileCatalogHandler( RequestHandler ):
 #
 #  Dataset manipulation methods
 #
-  types_addDataset = [ StringTypes, DictType ]
-  def export_addDataset( self, datasetName, metaQuery ):
+  types_addDataset = [ DictType ]
+  def export_addDataset( self, datasets ):
     """ Add a new dynamic dataset defined by its meta query
     """
-    return gFileCatalogDB.datasetManager.addDataset( datasetName, metaQuery, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.addDataset( datasets, self.getRemoteCredentials() )
   
   types_addDatasetAnnotation = [ DictType ]
   def export_addDatasetAnnotation( self, datasetDict ):
@@ -599,56 +600,56 @@ class FileCatalogHandler( RequestHandler ):
     """
     return gFileCatalogDB.datasetManager.addDatasetAnnotation( datasetDict, self.getRemoteCredentials() )
   
-  types_removeDataset = [ StringTypes ]
-  def export_removeDataset( self, datasetName ):
+  types_removeDataset = [ DictType ]
+  def export_removeDataset( self, datasets ):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return gFileCatalogDB.datasetManager.removeDataset( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.removeDataset( datasets, self.getRemoteCredentials() )
   
-  types_checkDataset = [ StringTypes ]
-  def export_checkDataset( self, datasetName ):
+  types_checkDataset = [ DictType ]
+  def export_checkDataset( self, datasets ):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return gFileCatalogDB.datasetManager.checkDataset( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.checkDataset( datasets, self.getRemoteCredentials() )
   
-  types_updateDataset = [ StringTypes ]
-  def export_updateDataset( self, datasetName ):
+  types_updateDataset = [ DictType ]
+  def export_updateDataset( self, datasets ):
     """ Update the given dynamic dataset for changes since its definition
     """
-    return gFileCatalogDB.datasetManager.updateDataset( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.updateDataset( datasets, self.getRemoteCredentials() )
   
-  types_getDatasets = [ list( StringTypes ) + [ListType] ]
-  def export_getDatasets( self, datasetName ):
+  types_getDatasets = [ DictType ]
+  def export_getDatasets( self, datasets ):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return gFileCatalogDB.datasetManager.getDatasets( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.getDatasets( datasets, self.getRemoteCredentials() )
   
-  types_getDatasetParameters = [ StringTypes ]
-  def export_getDatasetParameters( self, datasetName ):
+  types_getDatasetParameters = [ DictType ]
+  def export_getDatasetParameters( self, datasets ):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return gFileCatalogDB.datasetManager.getDatasetParameters( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.getDatasetParameters( datasets, self.getRemoteCredentials() )
   
-  types_getDatasetAnnotation = [ list( StringTypes ) + [ListType] ]
-  def export_getDatasetAnnotation( self, datasetName ):
+  types_getDatasetAnnotation = [ DictType ]
+  def export_getDatasetAnnotation( self, datasets ):
     """ Get annotation of the given datasets 
     """
-    return gFileCatalogDB.datasetManager.getDatasetAnnotation( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.getDatasetAnnotation( datasets, self.getRemoteCredentials() )
   
-  types_freezeDataset = [ StringTypes ]
-  def export_freezeDataset( self, datasetName ):
+  types_freezeDataset = [ DictType ]
+  def export_freezeDataset( self, datasets ):
     """ Freeze the contents of the dataset making it effectively static
     """
-    return gFileCatalogDB.datasetManager.freezeDataset( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.freezeDataset( datasets, self.getRemoteCredentials() )
   
-  types_releaseDataset = [ StringTypes ]
-  def export_releaseDataset( self, datasetName ):
+  types_releaseDataset = [ DictType ]
+  def export_releaseDataset( self, datasets ):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
-    return gFileCatalogDB.datasetManager.releaseDataset( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.releaseDataset( datasets, self.getRemoteCredentials() )
   
-  types_getDatasetFiles = [ StringTypes ]
-  def export_getDatasetFiles( self, datasetName ):
+  types_getDatasetFiles = [ DictType ]
+  def export_getDatasetFiles( self, datasets ):
     """ Get lfns in the given dataset
     """
-    return gFileCatalogDB.datasetManager.getDatasetFiles( datasetName, self.getRemoteCredentials() )
+    return gFileCatalogDB.datasetManager.getDatasetFiles( datasets, self.getRemoteCredentials() )

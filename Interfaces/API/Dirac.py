@@ -81,13 +81,10 @@ class Dirac( API ):
         gLogger.error( "Unable to write to supplied repository location" )
         self.jobRepo = False
 
-    self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
     self.useCertificates = useCertificates
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
-
-    self.__clients = None
 
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
@@ -133,7 +130,7 @@ class Dirac( API ):
        >>> print dirac.getRepositoryJobs()
        {'OK': True, 'Value': [1,2,3,4]}
 
-       :return S_OK,S_ERROR
+       :return: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -306,7 +303,7 @@ class Dirac( API ):
     if isinstance( job, basestring ):
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
-        fd = os.open( job, 'r' )
+        fd = open( job, 'r' )
         jdlAsString = fd.read()
       else:
         self.log.verbose( 'Job is a JDL string' )
@@ -473,14 +470,9 @@ class Dirac( API ):
     localCfg.addDefaultEntry( 'ControlDirectory', os.getcwd() )
     localCfg.addDefaultEntry( 'MaxCycles', 1 )
     localCfg.addDefaultEntry( '/LocalSite/WorkingDirectory', os.getcwd() )
-    localCfg.addDefaultEntry( '/LocalSite/TotalCPUs', 1 )
     localCfg.addDefaultEntry( '/LocalSite/MaxCPUTime', 300000 )
     localCfg.addDefaultEntry( '/LocalSite/CPUTime', 300000 )
     localCfg.addDefaultEntry( '/LocalSite/OwnerGroup', self.__getCurrentGroup() )
-    localCfg.addDefaultEntry( '/LocalSite/MaxRunningJobs', 1 )
-    localCfg.addDefaultEntry( '/LocalSite/MaxTotalJobs', 1 )
-#    if os.environ.has_key('VO_LHCB_SW_DIR'):
-#      localCfg.addDefaultEntry('/LocalSite/SharedArea',os.environ['VO_LHCB_SW_DIR'])
     # Running twice in the same process, the second time it use the initial JobID.
     ( fd, jobidCfg ) = tempfile.mkstemp( '.cfg', 'DIRAC_JobId', text = True )
     os.write( fd, 'AgentJobRequirements\n {\n  JobID = %s\n }\n' % jobID )

@@ -251,16 +251,17 @@ class ResourceStatus( object ):
     self.rssClient = None
     return False
   
-  def isStorageElementAlwaysBanned( self, seName ):
+  def isStorageElementAlwaysBanned( self, seName, statusType ):
     """ Checks if the AlwaysBanned policy is applied to the SE
         given as parameter
 
         :param seName : string, name of the SE
+        :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
 
-        :returns S_OK(True/False)
+        :returns: S_OK(True/False)
     """
 
-    res = self.infoGetter.getPoliciesThatApply( {'name' : seName} )
+    res = self.infoGetter.getPoliciesThatApply( {'name' : seName, 'statusType' : statusType} )
     if not res['OK']:
       self.log.error( "isStorageElementAlwaysBanned: unable to get the information", res['Message'] )
       return res

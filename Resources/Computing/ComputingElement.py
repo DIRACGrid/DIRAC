@@ -29,7 +29,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
-from DIRAC.Core.Security                              import File
+from DIRAC.Core.Security.ProxyFile                    import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo                    import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
@@ -130,7 +130,7 @@ class ComputingElement(object):
         self.ceParameters.update( ceOptions )
 
     # Get local CE configuration
-    localConfigDict = getLocalCEConfigDict( self.ceName )
+    localConfigDict = getCEConfigDict( self.ceName )
     self.ceParameters.update( localConfigDict )
 
     # Adds site level parameters 
@@ -294,7 +294,7 @@ class ComputingElement(object):
   def writeProxyToFile( self, proxy ):
     """CE helper function to write a CE proxy string to a file.
     """
-    result = File.writeToProxyFile( proxy )
+    result = writeToProxyFile( proxy )
     if not result[ 'OK' ]:
       self.log.error( 'Could not write proxy to file', result[ 'Message' ] )
       return result
@@ -401,14 +401,14 @@ class ComputingElement(object):
 
     ceDict = {}
     for option, value in self.ceParameters.items():
-      if type( value ) == type( [] ):
+      if isinstance( value, list ):
         ceDict[option] = value
-      elif type( value ) == type( ' ' ):
+      elif isinstance( value, basestring ):
         try:
           ceDict[option] = int( value )
         except:
           ceDict[option] = value  
-      elif type( value ) == type( 1 ) or type( value ) == type( 1. ):
+      elif isinstance( value, ( int, long, float ) ):
         ceDict[option] = value
       else:
         self.log.warn( 'Type of option %s = %s not determined' % ( option, value ) )
@@ -425,10 +425,7 @@ class ComputingElement(object):
       if 'AvailableCores' in result:
         cores = result['AvailableCores']
         if cores > 1:
-          tagList = []
-          for i in range( 2, cores+1 ):
-            tagList.append( '%dCore' % i )
-          ceDict['Tag'] = tagList  
+          ceDict['NumberOfProcessors'] = cores
 
     return S_OK( ceDict )
 
@@ -447,20 +444,12 @@ class ComputingElement(object):
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
-  def getCEStatus( self ):
+  def getCEStatus( self, jobIDList = None ):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'
     self.log.error( 'ComputingElement should be implemented in a subclass', name )
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
-
-def getLocalCEConfigDict( ceName ):
-  """ Collect all the local settings relevant to the CE configuration
-  """
-  ceConfigDict = getCEConfigDict( ceName )
-  resourceDict = getResourceDict( ceName )
-  ceConfigDict.update( resourceDict )
-  return ceConfigDict
 
 def getCEConfigDict( ceName ):
   """Look into LocalSite for configuration Parameters for this CE
@@ -471,29 +460,5 @@ def getCEConfigDict( ceName ):
     if result['OK']:
       ceConfigDict = result['Value']
   return ceConfigDict
-
-def getResourceDict( ceName = None ):
-  """Look into LocalSite for Resource Requirements
-  """
-  # FIXME: this /LocalSite/ResourceDict is probably a relic, no no idea why it's here
-  ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
-  if not ret['OK']:
-    resourceDict = {}
-  else:
-    resourceDict = dict( ret['Value'] )
-
-  # if a CE Name is given, check the corresponding section
-  if ceName:
-    ret = gConfig.getOptionsDict( '/LocalSite/%s/ResourceDict' % ceName )
-    if ret['OK']:
-      resourceDict.update( dict( ret['Value'] ) )
-
-  # now add some defaults
-  resourceDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'None' )
-  if not 'CPUTime' in resourceDict:
-    from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
-    resourceDict['CPUTime'] = gConfig.getValue( '/LocalSite/CPUTime', maxCPUSegments[-1] )
-
-  return resourceDict
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

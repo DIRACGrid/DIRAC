@@ -7,7 +7,8 @@ import datetime
 import types
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Security import Locations, CS, File
+from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.VOMS import VOMS
@@ -385,30 +386,30 @@ class ProxyManagerClient:
       newProxyLifeTime : life time of new proxy
       proxyToConnect : proxy to use for connecting to the service
     """
-    retVal = File.multiProxyArgument( proxyToBeRenewed )
+    retVal = multiProxyArgument( proxyToBeRenewed )
     if not retVal[ 'Value' ]:
       return retVal
     proxyToRenewDict = retVal[ 'Value' ]
 
     secs = proxyToRenewDict[ 'chain' ].getRemainingSecs()[ 'Value' ]
     if secs > minLifeTime:
-      File.deleteMultiProxy( proxyToRenewDict )
+      deleteMultiProxy( proxyToRenewDict )
       return S_OK()
 
     if not proxyToConnect:
       proxyToConnectDict = { 'chain': False, 'tempFile': False }
     else:
-      retVal = File.multiProxyArgument( proxyToConnect )
+      retVal = multiProxyArgument( proxyToConnect )
       if not retVal[ 'Value' ]:
-        File.deleteMultiProxy( proxyToRenewDict )
+        deleteMultiProxy( proxyToRenewDict )
         return retVal
       proxyToConnectDict = retVal[ 'Value' ]
 
     userDN = proxyToRenewDict[ 'chain' ].getIssuerCert()[ 'Value' ].getSubjectDN()[ 'Value' ]
     retVal = proxyToRenewDict[ 'chain' ].getDIRACGroup()
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyToRenewDict )
-      File.deleteMultiProxy( proxyToConnectDict )
+      deleteMultiProxy( proxyToRenewDict )
+      deleteMultiProxy( proxyToConnectDict )
       return retVal
     userGroup = retVal[ 'Value' ]
     limited = proxyToRenewDict[ 'chain' ].isLimitedProxy()[ 'Value' ]
@@ -416,8 +417,8 @@ class ProxyManagerClient:
     voms = VOMS()
     retVal = voms.getVOMSAttributes( proxyToRenewDict[ 'chain' ] )
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyToRenewDict )
-      File.deleteMultiProxy( proxyToConnectDict )
+      deleteMultiProxy( proxyToRenewDict )
+      deleteMultiProxy( proxyToConnectDict )
       return retVal
     vomsAttrs = retVal[ 'Value' ]
     if vomsAttrs:
@@ -434,8 +435,8 @@ class ProxyManagerClient:
                                    requiredTimeLeft = newProxyLifeTime,
                                    proxyToConnect = proxyToConnectDict[ 'chain' ] )
 
-    File.deleteMultiProxy( proxyToRenewDict )
-    File.deleteMultiProxy( proxyToConnectDict )
+    deleteMultiProxy( proxyToRenewDict )
+    deleteMultiProxy( proxyToConnectDict )
 
     if not retVal[ 'OK' ]:
       return retVal

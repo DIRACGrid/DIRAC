@@ -1,4 +1,6 @@
-[v6r15-pre2]
+[v6r15-pre8]
+
+Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
 *Core
 NEW: New class DError for reporting errors in output results of DIRAC functions 
@@ -7,16 +9,224 @@ CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems 
 NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
 NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
+FIX: BaseClient - only give warning log message "URL banned" when one of the
+     service URLs is really banned
+NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
+     policy section of Dirac.cfg     
+FIX: XXXTimeLeft - do not mix CPU and WallTime values     
+
+*Configuration
+NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
+NEW: VOMS2CSAgent to synchronize VOMS user data with the DIRAC Registry
+
+*Framework
+CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
+        to speed up the operation
+CHANGE: InstalledComponentsDB - table to cache host status information populated
+        by a periodic task    
+NEW: ComponentInstaller Client class            
 
 *RSS
 NEW: CE Availability policy, closing #2373
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
+CHANGE: DataManager, StorageElement - move physical accounting the StorageElement
+CHANGE: FileCatalog - added recursive changePathXXX operations
+NEW: ConsistencyInspector class to perform data consistency checks between 
+     different databases
+CHANGE: FileCatalog(Client) - refactored to allow clients declare which interface
+        they implement     
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
+FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
+CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
+
+[v6r14p11]
+
+*Core
+FIX: XXXTimeLeft - set limit to CPU lower than wall clock if unknown
+FIX: Logger - fix exception printing in gLogger.exception()
+CHANGE: InstallTools - added more info about the process in getStartupComponentStatus()
+CHANGE: Time - better report from timeThis() decorator
+
+*DMS
+CHANGE: FTSAgent - wait some time between 2 monitorings of each job
+
+*WMS
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities commands
+NEW: Added dirac-wms-get-wn-parameters command
+
+*TS
+NEW: Added dirac-production-runjoblocal command
+FIX: TransformationAgent(Plugin) - clean getNextSite() and normalizeShares()
+FIX: TransformationPlugin - added setParameters() method
+
+*RSS
+FIX: dirac-rss-sync - move imports to after the Script.getPositionalArguments()
+
+*Resources
+NEW: Added dirac-resource-get-parameters command
+
+[v6r14p10]
+*Configuration
+FIX: Resources - getQueue() is fixed to get properly Tag parameters
+
+*Framework
+FIX: SecurityFileLog - fix for zipping very large files
+
+*Resources
+NEW: added dirac-resource-get-parameters command
+
+*WMS
+NEW: JobMonitoringHandler - add getJobsParameters() method
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities
+NEW: Added dirac-wms-get-wn-parameters command
+NEW: Matcher - generate internal tags for MaxRAM and NumberOfProcessors parameters
+CHANGE: SiteDirector does not pass Tags to the Pilot
+FIX: Matcher(Handler) - do not send error log message if No match found,
+     fixed Matcher return value not correctly interpreted
+
+[v6r14p9]
+
+*Core
+FIX: BaseClient - enhance retry connection logic to minimize the overall delay
+FIX: MessageBroker - fix of calling private __remove() method from outside
+     of the class
+
+*Framework
+BUGFIX: dirac-(un)install-component - bug in importing InstallTools module
+
+*WMS:
+FIX: JobWrapper - fix in getting the OutputPath defined in the job
+
+*Resources
+FIX: ARCComputingElement - add queue to the XRSL string
+
+[v6r14p8]
+
+*Core
+FIX: XXXTimeLeft - minor fixes plus added the corresponding Test case
+FIX: ReturnValues - fixes in the doc strings to comply with the sphinx syntax
+FIX: SocketInfoFactory - in __sockConnect() catch exception when creating a
+     socket
+
+*Interfaces
+FIX: Job.py - fixes in the doc strings to comply with the sphinx syntax
+
+*RSS
+NEW: Configurations.py - new possible configuration options for Downtime Policies
+
+*WMS
+CHANGE: StatesAccountingAgent - retry once and empty the local messages cache
+        in case of failure to avoid large backlog of messages
+CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
+        invocation arguments  
+CHANGE: Matcher - allow matching by hosts in multi-VO installations              
+
+[v6r14p7]
+
+*Core
+CHANGE: XXXTimeLeft utilities revisited - all return real seconds,
+        code refactoring - use consistently always the same CPU power 
+
+*WMS
+FIX: JobAgent - code refactoring for the timeLeft logic part
+
+*Resources
+BUGFIX: ComputingElement - get rid of legacy getResourcesDict() call
+
+[v6r14p6]
+
+*Configuration
+FIX: Bdii2CSAgent - refresh configuration from Master before updating
+FIX: Bdii2CSAgent - distinguish the CE and the Cluster in the Glue 1.0 schema
+
+*DMS
+CHANGE: FTSAgent - make the amount of scheduled requests fetched by the 
+        FTSAgent a parameter in the CS 
+CHANGE: RMS Operations - check whether the always banned policy is applied for SEs
+        to a given access type
+
+*RMS
+FIX: RequestClient(DB,Manager) - fix bulk requests, lock the lines when selecting 
+     the requests to be assigned, update the LastUpdate time, and expose the 
+     assigned flag to the client
+
+*WMS
+FIX: JobAgent - when the application finishes with errors but the agent continues 
+     to take jobs, the timeLeft was not evaluated
+FIX: JobAgent - the initial timeLeft value was always set to 0.0     
+
+[v6r14p5]
+
+*Core
+FIX: X509Certificate - protect from VOMS attributes that are not decodable
+
+
+*Resources
+FIX: GFAL2_StorageBase - fixed indentation and a debug log typo
+
+*WMS
+BUGFIX: Matcher - only the first job was associated with the given pilot
+FIX: pilotTools - 0o22 is only a valid int for recent python interpreters, 
+     replaced by 18
+
+[v6r14p4]
+
+*Core
+FIX: DictCache - fix the exception in the destructor preventing the final
+     cache cleaning
+
+*Framework
+FIX: SystemAdministratorClientCLI - corrected info line inviting to update
+     the pilot version after the software update
+
+*DMS
+FIX: FTSAgent - Add recovery of FTS files that can be left in weird statuses 
+     when the agent dies
+CHANGE: DataManager - allow to not get URLs of the replicas
+CHANGE: FTSJob - keep and reuse the FTS3 Context object
+
+*Storage
+CHANGE: StorageManagerClient - don't fail getting metadata for staging if at 
+        least one staged replica found
+
+*WMS
+FIX: CPUNormalization - protect MJF from 0 logical cores
+FIX: JobScheduling - fix printout that was saying "single site" and "multiple sites" 
+     in two consecutive lines
+NEW: pilotTools,Commands - added CEType argument, e.g. to specify Pool CE usage 
+FIX: WatchDog - added checks of function return status, added hmsCPU initialization to 0,
+     removed extra printout     
+     
+*Resources
+FIX: GFAL2 plugins - multiple bug fixes     
+
+[v6r14p3]
+
+*Core
+BUGFIX: small bug fixed in dirac-install-component, dirac-uninstall-component
+BUGFIX: VOMS - remove the temporary file created when issuing getVOMSProxyInfo
+FIX: FileHelper - support unicode file names
+FIX: DictCache - purges all the entry of the DictCache when deleting the DictCache object 
+
+*Framework
+BUGFIX: dirac-populate-component-db - avoid return statement out of scope
+
+*Interfaces
+BUGFIX: Dirac - in submitJob() faulty use of os.open
+
+*WMS
+FIX: JobWrapper - avoid evaluation of OutputData to ['']
+FIX: Matcher - the Matcher object uses a VO dependent Operations helper
+CHANGE: JobAgent - stop agent if time left is too small (default 1000 HS06.s)
+FIX: CPUNormalization - use correct denominator to get power in MJF
+
+*Resources
+FIX: ARCComputingElement - changed implementation of ldap query for getCEStatus
 
 [v6r14p2]
 
@@ -106,6 +316,35 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+[v6r13p20]
+
+*DMS
+FIX: DMSHelpers - allow for more than one Site defined to be local per SE
+
+*Resources
+FIX: XRootStorage - fix in getURLBase()
+
+[v6r13p19]
+
+FIX: changes incorporated from v6r12p53 patch
+
+[v6r13p18]
+
+*WMS
+FIX: JobWrapper - ported back from v6r14p9 the fix for getting OutputPath
+
+[v6r13p17]
+
+FIX: changes incorporated from v6r12p52 patch
+
+[v6r13p16]
+
+FIX: changes incorporated from v6r12p51 patch
+
+[v6r13p15]
+
+Included patches from v6r12p50 release 
 
 [v6r13p14]
 
@@ -412,6 +651,62 @@ CHANGE: TokenAgent - added more info to the mail
 
 *TS
 CHANGE: Task Manager plugins
+
+[v6r12p53]
+
+*DMS
+CHANGE: FileCatalogClientCLI - ls order by size, human readable size value
+FIX: DirectoryMetadata - enhanced error message in getDirectoryMetadata
+
+*WMS
+BUGFIX: JobAgent - bug when rescheduling job due to glexec failure
+
+*TS
+NEW: TransformationCLI - added getOutputFiles, getAllByUser commands
+NEW: Transformation - added getAuthorDNfromProxy, getTransformationsByUser methods
+
+*Resources
+CHANGE: GlobusComputingElement - simplify creating of pilotStamp
+
+[v6r12p52]
+
+*DMS
+NEW: dirac-dms-directory-sync - new command to synchronize the contents of a
+     local and remote directories
+FIX: DataManager - in removeFile() return successfully if empty input file list     
+
+*TS
+NEW: TransformationCLI - getInputDataQuery command returning inputDataQuery 
+     of a given transformation
+
+[v6r12p51]
+
+*Core
+FIX: dirac-install - fix to work with python version prior to 2.5
+
+*DMS
+CHANGE: FileCatalogClientCLI - possibility to set multiple metadata with one command
+
+*Resources
+FIX: HTCondorComputingElement - multiple improvements
+
+[v6r12p50]
+
+*Core
+FIX: dirac-install - define TERMINFO variable to include local sources as well
+
+*Framework
+FIX: SystemAdministratorHandler - show also executors in the log overview
+
+*DMS
+FIX: FileCatalogClientCLI - use getPath utility systematically to normalize the
+     paths passed by users
+
+*WMS
+FIX: PilotStatusAgent - split dynamic and static parts in the log error message
+
+*Resources
+NEW: HTCondorCEComputingElement class
 
 [v6r12p49]
 

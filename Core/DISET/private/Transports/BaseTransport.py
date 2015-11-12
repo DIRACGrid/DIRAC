@@ -10,8 +10,8 @@ except:
   from md5 import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.Core.Utilities import DEncode
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Utilities import DEncode
 
 class BaseTransport:
 
@@ -139,6 +139,7 @@ class BaseTransport:
 
 
   def receiveData( self, maxBufferSize = 0, blockAfterKeepAlive = True, idleReceive = False ):
+    from DIRAC.Core.Utilities import DEncode
     self.__updateLastActionTimestamp()
     if self.receivedMessages:
       return self.receivedMessages.pop( 0 )

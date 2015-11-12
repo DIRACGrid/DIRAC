@@ -1,4 +1,5 @@
 # $HeadURL$
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 __RCSID__ = "$Id$"
 
 import types
@@ -8,7 +9,6 @@ from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ConfigurationClient:
 
@@ -24,8 +24,8 @@ class ConfigurationClient:
   def loadCFG( self, cfg ):
     return gConfigurationData.mergeWithLocal( cfg )
 
-  def forceRefresh( self ):
-    return gRefresher.forceRefresh()
+  def forceRefresh( self, fromMaster = False ):
+    return gRefresher.forceRefresh( fromMaster = fromMaster )
 
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )
@@ -103,11 +103,11 @@ class ConfigurationClient:
     if optionValue == None:
       return S_ERROR( "Path %s does not exist or it's not an option" % optionPath )
 
-    #Value has been returned from the configuration
+    # Value has been returned from the configuration
     if typeValue == None:
       return S_OK( optionValue )
 
-    #Casting to typeValue's type
+    # Casting to typeValue's type
     requestedType = typeValue
     if not type( typeValue ) == types.TypeType:
       requestedType = type( typeValue )
@@ -156,41 +156,74 @@ class ConfigurationClient:
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
-    
-  def getSectionTree(self, root = '', substr = ''):
+
+  def getConfigurationTree( self, root = '', *filters ):
     """
-    Creates a list of all subsections starting from given root.
-    List can be filtered by setting `substr` parameter.
-    
+    Create a dictionary with all sections, subsections and options
+    starting from given root. Result can be filtered.
+
     :param:`root` - string:
-            Starting point in the CS tree.
-    
-    :param:`substr` - string:
-            Select only results that contains given substring.
-            
-    :return: Returns a list of strings containing full path taken form CS
+            Starting point in the configuration tree.
+
+    :param:`filters` - string(s):
+            Select results that contain given substrings
+            (check full path, i.e. with option name)
+
+    :return: Return a dictionary where keys are paths taken from
+             the configuration (e.g. /Systems/Configuration/...).
+             Value is "None" when path points to a section
+             or not "None" if path points to an option.
     """
-    
-    if substr and substr in root:
-      result = [root]
+
+    log = DIRAC.gLogger.getSubLogger( 'getConfigurationTree' )
+
+    # check if root is an option (special case)
+    option = self.getOption( root )
+    if option['OK']:
+      result = {root: option['Value']}
+
     else:
-      result = []
-    
-    # get subsections of the root
-    sections = self.getSections( root )
-    if not sections['OK']:
-      gLogger.error('getSectionTree', "getSection() failed with message: %s" % sections['Message'])
-      return S_ERROR('Invalid root path provided')
-    
-    # recursively go through subsections and get their subsections
-    for section in sections['Value']:
-      subtree = self.getSectionTree("%s/%s" % ( root, section ), substr)
-      if not subtree['OK']:
-        gLogger.error('getSectionTree', "getSection() failed with message: %s" % sections['Message'])
-        return S_ERROR('CS content was altered during the operation')
-      result.extend(subtree['Value'])
-        
-    return S_OK(result) 
+      result = {root: None}
+      for substr in filters:
+        if not substr in root:
+          result = {}
+          break
+
+      # remove slashes at the end
+      root = root.rstrip( '/' )
+
+      # get options of current root
+      options = self.getOptionsDict( root )
+      if not options['OK']:
+        log.error( "getOptionsDict() failed with message: %s" % options['Message'] )
+        return S_ERROR( 'Invalid root path provided' )
+
+      for key, value in options['Value'].iteritems():
+        path = cfgPath( root, key )
+        addOption = True
+        for substr in filters:
+          if not substr in path:
+            addOption = False
+            break
+
+        if addOption:
+          result[path] = value
+
+      # get subsections of the root
+      sections = self.getSections( root )
+      if not sections['OK']:
+        log.error( "getSections() failed with message: %s" % sections['Message'] )
+        return S_ERROR( 'Invalid root path provided' )
+
+      # recursively go through subsections and get their subsections
+      for section in sections['Value']:
+        subtree = self.getConfigurationTree( "%s/%s" % ( root, section ), *filters )
+        if not subtree['OK']:
+          log.error( "getConfigurationTree() failed with message: %s" % sections['Message'] )
+          return S_ERROR( 'Configuration was altered during the operation' )
+        result.update( subtree['Value'] )
+
+    return S_OK( result )
 
   def setOptionValue( self, optionPath, value ):
     """

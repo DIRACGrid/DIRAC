@@ -1,37 +1,41 @@
-# $HeadURL$
+""" Collection of utilities for dealing with security files (i.e. proxy files)
+"""
+
 __RCSID__ = "$Id$"
+
 import os
 import stat
 import tempfile
 import types
-from DIRAC import S_OK, S_ERROR
+
+from DIRAC import S_OK
+from DIRAC.Core.Utilities import DError, DErrno
 from DIRAC.Core.Security.X509Chain import g_X509ChainType, X509Chain
 from DIRAC.Core.Security.Locations import getProxyLocation
 
 def writeToProxyFile( proxyContents, fileName = False ):
-  """
-  Write an proxy string to file
-  arguments:
-    - proxyContents : string object to dump to file
-    - fileName : filename to dump to
+  """ Write a proxy string to file
+      arguments:
+        - proxyContents : string object to dump to file
+        - fileName : filename to dump to
   """
   if not fileName:
     try:
       fd, proxyLocation = tempfile.mkstemp()
       os.close( fd )
     except IOError:
-      return S_ERROR( 'Failed to create temporary file' )
+      return DError( DErrno.ECTMPF )
     fileName = proxyLocation
   try:
     fd = open( fileName, 'w' )
     fd.write( proxyContents )
     fd.close()
-  except Exception, e:
-    return S_ERROR( "Cannot write to file %s :%s" % ( fileName, str( e ) ) )
+  except Exception as e:
+    return DError( DErrno.EWF, " %s: %s" % ( fileName, e ) )
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
-  except Exception, e:
-    return S_ERROR( "Cannot set permissions to file %s :%s" % ( fileName, str( e ) ) )
+  except Exception as e:
+    return DError( DErrno.ESPF, "%s: %s" % ( fileName, e ) )
   return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
@@ -55,7 +59,7 @@ def writeChainToTemporaryFile( proxyChain ):
     fd, proxyLocation = tempfile.mkstemp()
     os.close( fd )
   except IOError:
-    return S_ERROR( 'Failed to create temporary file' )
+    return DError( DErrno.ECTMPF )
   retVal = writeChainToProxyFile( proxyChain, proxyLocation )
   if not retVal[ 'OK' ]:
     try:
@@ -90,7 +94,7 @@ def multiProxyArgument( proxy = False ):
       S_ERROR
   """
   tempFile = False
-  #Set env
+  # Set env
   if type( proxy ) == g_X509ChainType:
     tempFile = True
     retVal = writeChainToTemporaryFile( proxy )
@@ -101,14 +105,14 @@ def multiProxyArgument( proxy = False ):
     if not proxy:
       proxyLoc = getProxyLocation()
       if not proxyLoc:
-        return S_ERROR( "Can't find proxy" )
+        return DError( DErrno.EPROXYFIND )
     if type( proxy ) == types.StringType:
       proxyLoc = proxy
-    #Load proxy
+    # Load proxy
     proxy = X509Chain()
     retVal = proxy.loadProxyFromFile( proxyLoc )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't load proxy at %s" % proxyLoc )
+      return DError( DErrno.EPROXYREAD, "ProxyLocation: %s" % proxyLoc )
   return S_OK( { 'file' : proxyLoc,
                  'chain' : proxy,
                  'tempFile' : tempFile } )

@@ -278,7 +278,6 @@ class InstallDIRAC( CommandBase ):
     self._installDIRAC()
 
 
-
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
       - download, by default, the CAs
@@ -359,6 +358,92 @@ class ConfigureBasics( CommandBase ):
       self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
       self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
 
+class CheckCECapabilities( CommandBase ):
+  """ Used to get  CE tags.
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( CheckCECapabilities, self ).__init__( pilotParams )
+
+    # this variable contains the options that are passed to dirac-configure, and that will fill the local dirac.cfg file
+    self.cfg = []
+
+  def execute( self ):
+    """ Setup CE/Queue Tags
+    """
+
+    if self.pp.useServerCertificate:
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+
+
+    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
+                                                                               " ".join( self.cfg ) )
+    retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
+
+    import json
+    resourceDict = json.loads( resourceDict )
+    if retCode:
+      self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
+    if resourceDict.get( 'Tag' ):
+      self.pp.tags.append( resourceDict['Tag'] )
+      self.cfg.append( '-FDMH' )
+      if self.pp.localConfigFile:
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )
+        self.cfg.append( self.pp.localConfigFile )
+
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
+
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if retCode:
+        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
+
+class CheckWNCapabilities( CommandBase ):
+  """ Used to get  CE tags.
+  """
+  def __init__( self, pilotParams ):
+    """ c'tor
+    """
+    super( CheckWNCapabilities, self ).__init__( pilotParams )
+    self.cfg = []
+
+  def execute( self ):
+    """ Discover #Processors and memory
+    """
+
+    retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
+    result = result.split( ' ' )
+    NumberOfProcessor = result[0]
+    MaxRAM = result[1]
+
+    if NumberOfProcessor or MaxRAM:
+      self.cfg.append( '-FDMH' )
+      if self.pp.localConfigFile:
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )
+        self.cfg.append( self.pp.localConfigFile )
+
+      if self.debugFlag:
+        self.cfg.append( '-ddd' )
+
+      if NumberOfProcessor:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%s"' % ','.join( NumberOfProcessor ) )
+      else:
+        self.log.warn( "Could not retrieve number of processors" )
+      if MaxRAM:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%s"' % ''.join( MaxRAM ) )
+      else:
+        self.log.warn( "Could not retrieve memory" )
+      configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
+      retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
+      if retCode:
+        self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
+
 
 class ConfigureSite( CommandBase ):
   """ Command to configure DIRAC sites using the pilot options
@@ -391,6 +476,8 @@ class ConfigureSite( CommandBase ):
     self.cfg.append( '-N "%s"' % self.pp.ceName )
     self.cfg.append( '-o /LocalSite/GridCE=%s' % self.pp.ceName )
     self.cfg.append( '-o /LocalSite/CEQueue=%s' % self.pp.queueName )
+    if self.pp.ceType:
+      self.cfg.append( '-o /LocalSite/LocalCE=%s' % self.pp.ceType )
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
@@ -467,6 +554,11 @@ class ConfigureSite( CommandBase ):
     if os.environ.has_key( 'CONDOR_JOBID' ):
       self.pp.flavour = 'SSHCondor'
       pilotRef = 'sshcondor://' + self.pp.ceName + '/' + os.environ['CONDOR_JOBID']
+
+    # HTCondor
+    if os.environ.has_key( 'HTCONDOR_JOBID' ):
+      self.pp.flavour = 'HTCondorCE'
+      pilotRef = 'htcondorce://' + self.pp.ceName + '/' + os.environ['HTCONDOR_JOBID']
 
     # LSF
     if os.environ.has_key( 'LSB_BATCH_JID' ):
@@ -546,19 +638,10 @@ class ConfigureSite( CommandBase ):
             self.log.error( "CE Name %s not accepted" % CE )
             self.exitWithError( retCode )
         else:
-          self.log.info( "Looking if queue name is already present in local cfg" )
-          from DIRAC import gConfig
-          ceName = gConfig.getValue( 'LocalSite/GridCE', '' )
-          ceQueue = gConfig.getValue( 'LocalSite/CEQueue', '' )
-          if ceName and ceQueue:
-            self.log.debug( "Found CE %s, queue %s" % ( ceName, ceQueue ) )
-            self.pp.ceName = ceName
-            self.pp.queueName = ceQueue
-          else:
-            self.log.error( "Can't find ceName nor queue... have to fail!" )
-            sys.exit( 1 )
+          self.log.error( "Can't find ceName nor queue... have to fail!" )
+          sys.exit( 1 )
       else:
-        self.log.debug( "Found CE %s" % ceName )
+        self.log.debug( "Found CE %s" % CEName )
         self.pp.ceName = CEName.split( ':' )[0]
         if len( CEName.split( '/' ) ) > 1:
           self.pp.queueName = CEName.split( '/' )[1]
@@ -713,15 +796,12 @@ class LaunchAgent( CommandBase ):
     self.log.info( 'User Id    = %s' % localUid )
     self.inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
     self.inProcessOpts.append( '-o WorkingDirectory=%s' % self.pp.workingDir )
-    # FIXME: this is artificial
-    self.inProcessOpts.append( '-o TotalCPUs=%s' % 1 )
     self.inProcessOpts.append( '-o /LocalSite/MaxCPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
     self.inProcessOpts.append( '-o /LocalSite/CPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
-    self.inProcessOpts.append( '-o MaxRunningJobs=%s' % 1 )
     # To prevent a wayward agent picking up and failing many jobs.
     self.inProcessOpts.append( '-o MaxTotalJobs=%s' % 10 )
     self.jobAgentOpts= ['-o MaxCycles=%s' % self.pp.maxCycles]
-
+    
     if self.debugFlag:
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 

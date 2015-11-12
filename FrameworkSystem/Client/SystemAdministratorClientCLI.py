@@ -43,7 +43,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     self.cwd = ''  
     self.previous_cwd = ''
     self.homeDir = ''
-    self.runitComponents = [ "service", "agent", "executor" ]
+    self.runitComponents = [ "service", "agent", "executor", "consumer" ]
 
     # store history
     histfilename = os.path.basename(sys.argv[0])
@@ -925,7 +925,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     else:
       gLogger.notice( "Software successfully updated." )
       gLogger.notice( "You should restart the services to use the new software version." )
-      gLogger.notice( "Think of updating /Operation/<vo>/<setup>/Versions section in the CS" )
+      gLogger.notice( "Think of updating /Operations/<vo>/<setup>/Pilot/Versions section in the CS" )
 
   def do_revert( self, args ):
     """ Revert the last installed version of software to the previous one
@@ -1139,6 +1139,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
     
     client = SystemAdministratorIntegrator()
+    silentHosts = client.getSilentHosts()
+    respondingHosts = client.getRespondingHosts()
     resultAll = client.getOverallStatus()
     resultInfo = client.getInfo()
     
@@ -1181,6 +1183,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                 record += [str( rDict[compType][system][component]['Timeup'] )]
                 records.append(record)  
       printTable( fields, records, sortOption )        
+      if silentHosts:
+        print "\n %d out of %d hosts did not respond" % ( len( silentHosts ), len( respondingHosts ) )
 
   def default( self, args ):
 

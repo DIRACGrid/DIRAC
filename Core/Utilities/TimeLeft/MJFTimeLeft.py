@@ -6,13 +6,15 @@
     for the current CPU and Wallclock consumed, as well as their limits.
 """
 
+import os
+import time
+import urllib
+
 from DIRAC import gLogger, S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
-import os, re, time, urllib
-
-class MJFTimeLeft:
+class MJFTimeLeft( object ):
 
   #############################################################################
   def __init__( self ):
@@ -37,9 +39,7 @@ class MJFTimeLeft:
        and WallClockLimit for current slot.  All values returned in seconds.
     """
 
-    cpu = None
     cpuLimit = None
-    wallClock = None
     wallClockLimit = None
 
     try:
@@ -73,16 +73,14 @@ class MJFTimeLeft:
       cpuLimit = int( urllib.urlopen(jobFeaturesPath + '/cpu_limit_secs').read() )
     except:
       self.log.warn( 'Could not determine cpu limit from $JOBFEATURES/cpu_limit_secs' )
-      cpuLimit = wallClockLimit
 
     wallClock = int(time.time()) - jobStartSecs
-    # We cannot get CPU usage from MJF, so for now use wallClock figure
-    cpu = wallClock
+    # We cannot get CPU usage from MJF
       
     consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
-    self.log.debug( consumed )
+    self.log.debug( "MJF consumed: %s" % str( consumed ) )
 
-    if cpu and cpuLimit and wallClock and wallClockLimit:
+    if cpuLimit and wallClock and wallClockLimit:
       return S_OK( consumed )
     else:
       self.log.info( 'Could not determine some parameters' )

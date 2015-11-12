@@ -15,8 +15,3 @@ nid = GSI.crypto.create_oid( "1.3.6.1.4.1.8005.100.100.5", "vomsExtensions", "VO
 GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
 nid = GSI.crypto.create_oid( "1.3.6.1.4.1.8005.100.100.11", "vomsAttribute", "VOMS attribute" )
 GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
-
-import DIRAC.Core.Security.Locations
-import DIRAC.Core.Security.CS
-import DIRAC.Core.Security.File
-import DIRAC.Core.Security.Properties

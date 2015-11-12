@@ -1,28 +1,40 @@
 """ Class for the LCG File Catalog Client
 
 """
-import DIRAC
-from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Resources.Utilities                                import checkArgumentFormat
-from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
-from DIRAC.Core.Utilities.Time                                import fromEpoch
-from DIRAC.Core.Utilities.List                                import breakListIntoChunks
-from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getDNForUsername, getVOMSAttributeForGroup, getVOForGroup, getVOOption
+
+__RCSID__ = "$Id"
 
 from stat import *
-import os, re, types, time
+import os
+import re
+import time
 
+import DIRAC
+from DIRAC                                              import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Resources.Catalog.Utilities                  import checkCatalogArguments
+from DIRAC.Core.Utilities.Time                          import fromEpoch
+from DIRAC.Core.Utilities.List                          import breakListIntoChunks
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getDNForUsername, getVOMSAttributeForGroup, \
+                                                               getVOForGroup, getVOOption
 lfc = None
 importedLFC = None
 
-_readMethods = ['exists', 'isFile', 'getFileSize', 'getFileMetadata',
-           'getReplicas', 'getReplicaStatus', 'listDirectory', 'isDirectory',
-           'getDirectoryReplicas', 'getDirectorySize']
+READ_METHODS = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
+                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUserDirectory']
 
-_writeMethods = ['addFile', 'removeFile', 'addReplica',
-            'removeReplica', 'setReplicaStatus', 'setReplicaHost',
-            'createDirectory', 'removeDirectory']
+WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'addReplica', 'removeReplica',
+                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory',
+                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset',
+                 'changePathOwner', 'changePathMode']
+
+NO_LFN_METHODS = ['getUserDirectory', 'createUserDirectory', 'createUserMapping',
+                 'removeUserDirectory']
+
+ADMIN_METHODS = ['getUserDirectory', 'createUserDirectory', 'createUserMapping',
+                 'removeUserDirectory']
 
 ####################################################################
 #
@@ -162,12 +174,10 @@ def returnCode( error, value = '', errMsg = '' ):
 #
 #####################################################
 
-class LcgFileCatalogClient( FileCatalogueBase ):
+class LcgFileCatalogClient( object ):
 
   def __init__( self, infosys = None, host = None ):
     global lfc, importedLFC
-
-    FileCatalogueBase.__init__( self, 'LFC' )
 
     if importedLFC == None:
       try:
@@ -223,6 +233,21 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
   # These are the get/set methods for use within the client
   #
+
+  def hasCatalogMethod( self, methodName ):
+    """
+    :param methodName: the name of the method to check
+    :return: bollean if the method is implemented
+    """
+    return hasattr( self, methodName )
+
+  def getInterfaceMethods( self ):
+    """ Get the methods implemented by the File Catalog client
+
+    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
+    """
+    global READ_METHODS, WRITE_METHODS
+    return ( READ_METHODS, WRITE_METHODS, [] )
 
   def isOK( self ):
     return self.valid
@@ -287,13 +312,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are read methods for paths
   #
 
-  def exists( self, path ):
+  @checkCatalogArguments
+  def exists( self, lfns ):
     """ Check if the path exists
     """
-    res = checkArgumentFormat( path )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -335,18 +357,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       else:
         resDict[ p ] = False
     return S_OK( resDict )
-  
-  
-  def hasAccess(self, opType, paths):
 
-    res = checkArgumentFormat( paths )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def hasAccess(self, lfns, opType ):
 
-    if opType in _readMethods:
+    if opType in READ_METHODS:
       opType = 'Read'
-    elif opType in _writeMethods:
+    elif opType in WRITE_METHODS:
       opType = 'Write'
 
     res = self.getPathPermissions( lfns )
@@ -361,14 +378,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( {'Successful': successful, 'Failed' : failed} )
 
 
-
-  def getPathPermissions( self, path ):
+  @checkCatalogArguments
+  def getPathPermissions( self, lfns ):
     """ Determine the VOMs based ACL information for a supplied path
     """
-    res = checkArgumentFormat( path )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -414,11 +427,9 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are read methods for files
   #
 
-  def isFile( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def isFile( self, lfns ):
+
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
     if created < 0:
@@ -438,13 +449,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getFileMetadata( self, lfn, ownership = False ):
+  @checkCatalogArguments
+  def getFileMetadata( self, lfns, ownership = False ):
     """ Returns the file metadata associated to a supplied LFN
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
     if created < 0:
@@ -483,13 +491,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getFileSize( self, lfn ):
+  @checkCatalogArguments
+  def getFileSize( self, lfns ):
     """ Get the size of a supplied file
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = False
     if len( lfns ) > 2:
@@ -509,14 +514,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-
-  def getReplicas( self, lfn, allStatus = False ):
+  @checkCatalogArguments
+  def getReplicas( self, lfns, allStatus = False ):
     """ Returns replicas for an LFN or list of LFNs
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     lfnChunks = breakListIntoChunks( lfns, 1000 )
     # If we have less than three groups to query a session doesn't make sense
     created = False
@@ -572,11 +573,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getReplicaStatus( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def getReplicaStatus( self, lfns ):
     # If we have less than three lfns to query a session doesn't make sense
     created = False
     if len( lfns ) > 2:
@@ -596,11 +594,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getLFNForPFN( self, pfn ):
-    res = checkArgumentFormat( pfn )
-    if not res['OK']:
-      return res
-    pfns = res['Value']
+  @checkCatalogArguments
+  def getLFNForPFN( self, pfns ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -622,13 +617,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following a read methods for directories
   #
 
-  def isDirectory( self, lfn ):
+  @checkCatalogArguments
+  def isDirectory( self, lfns ):
     """ Determine whether the path is a directory
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     # If we have less than three lfns to query a session doesn't make sense
     created = False
     if len( lfns ) > 2:
@@ -650,11 +642,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getDirectoryMetadata( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def getDirectoryMetadata( self, lfns ):
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
     if created < 0:
@@ -692,13 +681,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getDirectoryReplicas( self, lfn, allStatus = False ):
+  @checkCatalogArguments
+  def getDirectoryReplicas( self, lfns, allStatus = False ):
     """ This method gets all of the pfns in the directory
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -724,13 +710,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def listDirectory( self, lfn, verbose = False ):
+  @checkCatalogArguments
+  def listDirectory( self, lfns, verbose = False ):
     """ Returns the result of __getDirectoryContents for multiple supplied paths
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -747,11 +730,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getDirectorySize( self, lfn, longOutput = False, rawFiles = False ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def getDirectorySize( self, lfns, longOutput = False, rawFiles = False ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -773,11 +753,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are read methods for links
   #
 
-  def isLink( self, link ):
-    res = checkArgumentFormat( link )
-    if not res['OK']:
-      return res
-    links = res['Value']
+  @checkCatalogArguments
+  def isLink( self, links ):
     # If we have less than three lfns to query a session doesn't make sense
     failed = {}
     successful = {}
@@ -797,11 +774,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def readLink( self, link ):
-    res = checkArgumentFormat( link )
-    if not res['OK']:
-      return res
-    links = res['Value']
+  @checkCatalogArguments
+  def readLink( self, links ):
     # If we have less than three lfns to query a session doesn't make sense
     created = False
     if len( links ) > 2:
@@ -826,11 +800,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are read methods for datasets
   #
 
-  def resolveDataset( self, dataset, allStatus = False ):
-    res = checkArgumentFormat( dataset )
-    if not res['OK']:
-      return res
-    datasets = res['Value']
+  @checkCatalogArguments
+  def resolveDataset( self, datasets, allStatus = False ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -859,11 +830,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following a write methods for files
   #
 
-  def addFile( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def addFile( self, lfns ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -943,13 +911,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def addReplica( self, lfn ):
+  @checkCatalogArguments
+  def addReplica( self, lfns ):
     """ This adds a replica to the catalogue.
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -977,13 +942,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def removeFile( self, lfn ):
+  @checkCatalogArguments
+  def removeFile( self, lfns ):
     """ Remove the supplied path
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -1008,17 +970,14 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def removeReplica( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def removeReplica( self, lfns ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
       if created < 0:
         return S_ERROR( "Error opening LFC session" )
-    res = self.getReplicas( lfn )  # We need the PFNs of the input lfn (list)
+    res = self.getReplicas( lfns )  # We need the PFNs of the input lfn (list)
     if not res['OK']:
       return res
     for lfn, lfnrep in res['Value']['Successful'].items():
@@ -1074,11 +1033,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def setReplicaStatus( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def setReplicaStatus( self, lfns ):
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
@@ -1100,15 +1056,16 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     return S_OK( resDict )
 
 
-
+  @checkCatalogArguments
   def setReplicaProblematic( self, lfns, revert = False ):
     """
       Set replicas to problematic.
-      :param lfn lfns has to be formated this way :
-                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
-      :param revert If True, remove the problematic flag
 
-      :return { Successful : { lfn : [ ses ] }, Failed : { lfn : { se : msg } } }
+      :param lfn lfns: has to be formated this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+      :param revert: If True, remove the problematic flag
+
+      :return: { Successful : { lfn : [ ses ] }, Failed : { lfn : { se : msg } } }
     """
 
     # This method does a batch treatment because the setReplicaStatus can only take one replica per lfn at once
@@ -1169,14 +1126,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
     return S_OK( {'Successful' : successful, 'Failed': failed} )
 
-
-  def setReplicaHost( self, lfn ):
+  @checkCatalogArguments
+  def setReplicaHost( self, lfns ):
     """ This modifies the replica metadata for the SE.
     """
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
     created = False
     if len( lfns ) > 2:
       created = self.__openSession()
@@ -1202,11 +1155,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are write methods for directories
   #
 
-  def removeDirectory( self, lfn, recursive = False ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def removeDirectory( self, lfns, recursive = False ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -1234,11 +1184,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def createDirectory( self, lfn ):
-    res = checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
+  @checkCatalogArguments
+  def createDirectory( self, lfns ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -1260,11 +1207,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are write methods for links
   #
 
-  def createLink( self, link ):
-    res = checkArgumentFormat( link )
-    if not res['OK']:
-      return res
-    links = res['Value']
+  @checkCatalogArguments
+  def createLink( self, links ):
     # If we have less than three lfns to query a session doesn't make sense
     created = self.__openSession()
     if created < 0:
@@ -1286,11 +1230,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def removeLink( self, link ):
-    res = checkArgumentFormat( link )
-    if not res['OK']:
-      return res
-    links = res['Value']
+  @checkCatalogArguments
+  def removeLink( self, links ):
     # If we have less than three lfns to query a session doesn't make sense
     created = False
     if len( links ) > 2:
@@ -1315,11 +1256,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # The following are write methods for datasets
   #
 
-  def createDataset( self, dataset ):
-    res = checkArgumentFormat( dataset )
-    if not res['OK']:
-      return res
-    datasets = res['Value']
+  @checkCatalogArguments
+  def createDataset( self, datasets ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -1342,11 +1280,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def removeDataset( self, dataset ):
-    res = checkArgumentFormat( dataset )
-    if not res['OK']:
-      return res
-    datasets = res['Value']
+  @checkCatalogArguments
+  def removeDataset( self, datasets ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -1363,11 +1298,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def removeFileFromDataset( self, dataset ):
-    res = checkArgumentFormat( dataset )
-    if not res['OK']:
-      return res
-    datasets = res['Value']
+  @checkCatalogArguments
+  def removeFileFromDataset( self, datasets ):
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
@@ -1398,7 +1330,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if not fcn:
       return S_ERROR( "Unable to invoke %s, it isn't a member function of LcgFileCatalogClient" % method )
     res = fcn( path )
-    if type( path ) == types.DictType:
+    if isinstance( path, dict ):
       path = path.keys()[0]
     if not res['OK']:
       return res
@@ -1416,12 +1348,9 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     """
     error = lfc.lfc_access( self.__fullLfn( lfn ), 0 )
     return returnCode( error and lfc.cvar.serrno != 2, error == 0 )
-  
+
+  @checkCatalogArguments
   def getLFNForGUID(self, guids):
-    res = checkArgumentFormat( guids )
-    if not res['OK']:
-      return res
-    guids = res['Value']
     guidLFN = {}
     failed = {}
 
@@ -1777,7 +1706,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     totalError = ""
     for link, error in res['Value']['Failed'].items():
       gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link", 
-                     "for %s: " % ( link, error ) )
+                     "for %s: %s" % ( link, error ) )
       totalError = "%s\n %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 
@@ -1821,17 +1750,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   # These are the methods required for the admin interface
   #
 
-  def getUserDirectory( self, username ):
+  def getUserDirectory( self, usernames ):
     """ Takes a list of users and determines whether their directories already exist
     """
     result = getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
-    res = checkArgumentFormat( username )
-    if not res['OK']:
-      return res
-    usernames = res['Value'].keys()
     usernameDict = {}
     for username in usernames:
       userDirectory = "/%s/user/%s/%s" % ( vo, username[0], username )
@@ -1848,17 +1773,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def createUserDirectory( self, username ):
+  def createUserDirectory( self, usernames ):
     """ Creates the user directory
     """
     result = getClientCertInfo()
     if not result['OK']:
       return result
     vo = result['Value']['VO']
-    res = checkArgumentFormat( username )
-    if not res['OK']:
-      return res
-    usernames = res['Value'].keys()
     successful = {}
     failed = {}
     created = self.__openSession()
@@ -1907,19 +1828,16 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def changeDirectoryOwner( self, directory ):
+  @checkCatalogArguments
+  def changePathOwner( self, paths ):
     """ Change the ownership of the directory to the user associated to the supplied DN
     """
-    res = checkArgumentFormat( directory )
-    if not res['OK']:
-      return res
-    directory = res['Value']
     successful = {}
     failed = {}
     created = self.__openSession()
     if created < 0:
       return S_ERROR( "Error opening LFC session" )
-    for dirPath, dn in directory.items():
+    for dirPath, dn in paths.items():
       res = getDNUserID( dn )
       if not res['OK']:
         failed[dirPath] = res['Message']
@@ -1935,13 +1853,29 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def createUserMapping( self, userDN ):
+  @checkCatalogArguments
+  def changePathMode( self, paths ):
+    """ Change the ownership of the directory to the user associated to the supplied DN
+    """
+    successful = {}
+    failed = {}
+    created = self.__openSession()
+    if created < 0:
+      return S_ERROR( "Error opening LFC session" )
+    for dirPath, mode in paths.items():
+      res = self.__changeMode( dirPath, mode )
+      if not res['OK']:
+        failed[dirPath] = res['Message']
+      else:
+        successful[dirPath] = True
+    if created:
+      self.__closeSession()
+    resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
+
+  def createUserMapping( self, userDNs ):
     """ Create a user with the supplied DN and return the userID
     """
-    res = checkArgumentFormat( userDN )
-    if not res['OK']:
-      return res
-    userDNs = res['Value']
     successful = {}
     failed = {}
     created = self.__openSession()

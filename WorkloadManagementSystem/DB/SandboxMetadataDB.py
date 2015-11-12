@@ -274,7 +274,7 @@ class SandboxMetadataDB( DB ):
                "e.EntityId = %s" % self._escapeString( entityId )[ 'Value' ],
                "e.EntitySetup = %s" % self._escapeString( entitySetup )[ 'Value' ] ]
     requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
-    if Properties.JOB_ADMINISTRATOR in requesterProps:
+    if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
     elif Properties.JOB_SHARING in requesterProps:
@@ -322,7 +322,7 @@ class SandboxMetadataDB( DB ):
                 's.OwnerId=o.OwnerId' ]
     sqlCmd = "SELECT s.SBId FROM `sb_SandBoxes` s, `sb_Owners` o WHERE"
     requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
-    if Properties.JOB_ADMINISTRATOR in requesterProps:
+    if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
     elif Properties.JOB_SHARING in requesterProps:

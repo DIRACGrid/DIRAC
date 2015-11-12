@@ -77,8 +77,6 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 # # from Accounting
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
-from DIRAC.ConfigurationSystem.Client.PathFinder        import getServiceSection
-
 
 # # agent base name
 AGENT_NAME = "DataManagement/FTSAgent"
@@ -114,6 +112,10 @@ class FTSAgent( AgentModule ):
   SUBMIT_COMMAND = 'glite-transfer-submit'
   # # FTS monitoring command
   MONITOR_COMMAND = 'glite-transfer-status'
+  # Max number of requests fetched from the RMS
+  MAX_REQUESTS = 100
+  # Minimum interval (seconds) between 2 job monitoring
+  MONITORING_INTERVAL = 600
 
   # # placeholder for FTS client
   __ftsClient = None
@@ -298,12 +300,18 @@ class FTSAgent( AgentModule ):
     log.info( "ThreadPool min threads         = ", str( self.MIN_THREADS ) )
     log.info( "ThreadPool max threads         = ", str( self.MAX_THREADS ) )
 
+    self.MAX_REQUESTS = self.am_getOption( "MaxRequests", self.MAX_REQUESTS )
+    log.info( "Max Requests fetched           = ", str( self.MAX_REQUESTS ) )
+
+    self.MONITORING_INTERVAL = self.am_getOption( "MonitoringInterval", self.MONITORING_INTERVAL )
+    log.info( "Minimum monitoring interval    = ", str( self.MONITORING_INTERVAL ) )
+
     self.__ftsVersion = Operations().getValue( 'DataManagement/FTSVersion', 'FTS2' )
     log.info( "FTSVersion : %s" % self.__ftsVersion )
     log.info( "initialize: creation of FTSPlacement..." )
     createPlacement = self.resetFTSPlacement()
     if not createPlacement["OK"]:
-      log.error( "initialize: %s" % createPlacement["Message"] )
+      log.error( "initialize:", createPlacement["Message"] )
       return createPlacement
 
     # This sets the Default Proxy to used as that defined under
@@ -381,19 +389,19 @@ class FTSAgent( AgentModule ):
       log.info( "resetting expired FTS placement..." )
       resetFTSPlacement = self.resetFTSPlacement()
       if not resetFTSPlacement["OK"]:
-        log.error( "FTSPlacement recreation error: %s" % resetFTSPlacement["Message"] )
+        log.error( "FTSPlacement recreation error:" , resetFTSPlacement["Message"] )
         return resetFTSPlacement
       self.__ftsPlacementValidStamp = now + datetime.timedelta( seconds = self.FTSPLACEMENT_REFRESH )
 
-    requestIDs = self.requestClient().getRequestIDsList( [ "Scheduled" ] )
+    requestIDs = self.requestClient().getRequestIDsList( statusList = [ "Scheduled" ], limit = self.MAX_REQUESTS )
     if not requestIDs["OK"]:
-      log.error( "unable to read scheduled request ids: %s" % requestIDs["Message"] )
+      log.error( "unable to read scheduled request ids" , requestIDs["Message"] )
       return requestIDs
     if not requestIDs["Value"]:
-      requestIDs = self.__reqCache.keys()
+      requestIDs = []
     else:
-      requestIDs = [ req[0] for req in requestIDs["Value"] ]
-      requestIDs = list( set ( requestIDs + self.__reqCache.keys() ) )
+      requestIDs = [ req[0] for req in requestIDs["Value"] if req[0] not in self.__reqCache ]
+    requestIDs += self.__reqCache.keys()
 
     if not requestIDs:
       log.info( "no 'Scheduled' requests to process" )
@@ -459,13 +467,14 @@ class FTSAgent( AgentModule ):
       # # dict keeping info about files to reschedule, submit, fail and register
       ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
 
-      if ftsJobs:
-        log.info( "==> found %s FTSJobs to monitor" % len( ftsJobs ) )
+      jobsToMonitor = [ftsJob for ftsJob in ftsJobs if ( datetime.datetime.utcnow() - ftsJob.LastUpdate ).seconds > self.MONITORING_INTERVAL]
+      if jobsToMonitor:
+        log.info( "==> found %s FTSJobs to monitor" % len( jobsToMonitor ) )
         # # PHASE 0 = monitor active FTSJobs
-        for ftsJob in ftsJobs:
+        for ftsJob in jobsToMonitor:
           monitor = self.__monitorJob( request, ftsJob )
           if not monitor["OK"]:
-            log.error( "unable to monitor FTSJob %s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
+            log.error( "unable to monitor FTSJob", "%s: %s" % ( ftsJob.FTSJobID, monitor["Message"] ) )
             ftsJob.Status = "Submitted"
           else:
             ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
@@ -474,6 +483,8 @@ class FTSAgent( AgentModule ):
         for key, ftsFiles in ftsFilesDict.items():
           if ftsFiles:
             log.verbose( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
+      if len( ftsJobs ) != len( jobsToMonitor ):
+        log.info( "==> found %d FTSJobs that were monitored recently" % ( len( ftsJobs ) - len( jobsToMonitor ) ) )
 
       # # PHASE ONE - check ready replicas
       missingReplicas = self.__checkReadyReplicas( request, operation )
@@ -522,6 +533,10 @@ class FTSAgent( AgentModule ):
               if finishedFiles:
                 log.warn( "%s is %s while replication was Finished to %s, update" % ( ftsFile.LFN, ftsFile.Status, targetSE ) )
                 ftsFilesDict['toUpdate'] += finishedFiles
+            # identify Active transfers for which there is no FTS job any longer and reschedule them
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Active' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
+              if not [ftsJob for ftsJob in ftsJobs if ftsJob.FTSGUID == ftsFile.FTSGUID]:
+                ftsFilesDict['toReschedule'].append( ftsFile )
             # identify Finished transfer for which the replica is still missing
             for ftsFile in [f for f in ftsFiles if f.Status == 'Finished' and f.TargetSE in missingReplicas.get( f.LFN, [] ) and f not in ftsFilesDict['toRegister'] ]:
               # Check if there is a registration operation for that file and that target
@@ -531,6 +546,20 @@ class FTSAgent( AgentModule ):
                        [f for f in op if f.LFN == ftsFile.LFN]]
               if not regOp:
                 ftsFilesDict['toReschedule'].append( ftsFile )
+
+            # Recover files that are Failed but were not spotted
+            for ftsFile in [f for f in ftsFiles if f.Status == 'Failed' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
+              _r, _s, fail = self.__checkFailed( ftsFile )
+              if fail:
+                ftsFilesDict['toFail'].append( ftsFile )
+
+            # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
+            for lfn in missingReplicas:
+              if not [f for f in ftsFiles if f.LFN == lfn and ( f.Status != 'Finished' or f in ftsFilesDict['toReschedule'] or f in ftsFilesDict['toRegister'] )]:
+                for opFile in operation:
+                  if opFile.LFN == lfn:
+                    opFile.Status = 'Done'
+                    break
 
       toFail = ftsFilesDict.get( "toFail", [] )
       toReschedule = ftsFilesDict.get( "toReschedule", [] )
@@ -606,6 +635,8 @@ class FTSAgent( AgentModule ):
               toSubmit.append( ftsFile )
               retryIds.add( ftsFile.FTSFileID )
 
+      # # should not put back jobs that have not been monitored this time
+      ftsJobs = jobsToMonitor
       # # submit new ftsJobs
       if toSubmit:
         if request.Status != 'Scheduled':
@@ -768,14 +799,14 @@ class FTSAgent( AgentModule ):
         sourceSE = StorageElement( source )
         sourceToken = sourceSE.getStorageParameters( "SRM2" )
         if not sourceToken["OK"]:
-          log.error( "unable to get sourceSE '%s' parameters: %s" % ( source, sourceToken["Message"] ) )
+          log.error( "unable to get sourceSE parameters:", "(%s) %s" % ( source, sourceToken["Message"] ) )
           continue
         seStatus = sourceSE.getStatus()['Value']
 
         targetSE = StorageElement( target )
         targetToken = targetSE.getStorageParameters( "SRM2" )
         if not targetToken["OK"]:
-          log.error( "unable to get targetSE '%s' parameters: %s" % ( target, targetToken["Message"] ) )
+          log.error( "unable to get targetSE parameters:", "(%s) %s" % ( target, targetToken["Message"] ) )
           continue
 
         # # create FTSJob

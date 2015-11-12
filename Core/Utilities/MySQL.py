@@ -151,8 +151,9 @@ __RCSID__ = "$Id$"
 
 
 from DIRAC                      import gLogger
-from DIRAC                      import S_OK, S_ERROR
+from DIRAC                      import S_OK
 from DIRAC.Core.Utilities.Time  import fromString
+from DIRAC.Core.Utilities       import DError, DErrno
 
 # Get rid of the annoying Deprecation warning of the current MySQLdb
 # FIXME: compile a newer MySQLdb version
@@ -184,7 +185,7 @@ def _checkFields( inFields, inValues ):
   try:
     assert len( inFields ) == len( inValues )
   except:
-    return S_ERROR( 'Mismatch between inFields and inValues.' )
+    return DError( DErrno.EMYSQL, 'Mismatch between inFields and inValues.' )
 
   return S_OK()
 
@@ -209,7 +210,7 @@ def _quotedList( fieldList = None ):
   return ', '.join( quotedFields )
 
 
-class MySQL:
+class MySQL( object ):
   """
   Basic multithreaded DIRAC MySQL Client Class
   """
@@ -266,7 +267,7 @@ class MySQL:
       except MySQLdb.MySQLError, excp:
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
-        return S_ERROR( "Could not connect: %s" % excp )
+        return DError( DErrno.EMYSQL, "Could not connect: %s" % excp )
 
       if not self.__ping( conn ):
         try:
@@ -275,7 +276,7 @@ class MySQL:
           pass
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft )
-        return S_ERROR( "Could not connect" )
+        return DError( DErrno.EMYSQL, "Could not connect" )
 
       if lastName != dbName:
         try:
@@ -283,13 +284,13 @@ class MySQL:
         except MySQLdb.MySQLError, excp:
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
-          return S_ERROR( "Could not select db %s: %s" % ( dbName, excp ) )
+          return DError( DErrno.EMYSQL, "Could not select db %s: %s" % ( dbName, excp ) )
         try:
           self.__assigned[ thid ][1] = dbName
         except KeyError:
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
-          return S_ERROR( "Could not connect" )
+          return DError( DErrno.EMYSQL, "Could not connect" )
       return S_OK( conn )
 
 
@@ -350,7 +351,7 @@ class MySQL:
       try:
         return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
       except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not begin transaction: %s" % excp )
+        return DError( DErrno.EMYSQL, "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
       result = self.get( dbName )
@@ -361,7 +362,7 @@ class MySQL:
         result = self.__execute( conn, "COMMIT" )
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not commit transaction: %s" % excp )
+        return DError( DErrno.EMYSQL, "Could not commit transaction: %s" % excp )
 
     def transactionRollback( self, dbName ):
       result = self.get( dbName )
@@ -372,7 +373,7 @@ class MySQL:
         result = self.__execute( conn, "ROLLBACK" )
         return S_OK( result )
       except MySQLdb.MySQLError, excp:
-        return S_ERROR( "Could not rollback transaction: %s" % excp )
+        return DError( DErrno.EMYSQL, "Could not rollback transaction: %s" % excp )
 
   __connectionPools = {}
 
@@ -433,10 +434,10 @@ class MySQL:
     except MySQLdb.Error, e:
       self.log.debug( '%s: %s' % ( methodName, err ),
                      '%d: %s' % ( e.args[0], e.args[1] ) )
-      return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
+      return DError( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
     except Exception, e:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
-      return S_ERROR( '%s: (%s)' % ( err, str( e ) ) )
+      return DError( DErrno.EMYSQL, '%s: (%s)' % ( err, str( e ) ) )
 
   def __isDateTime( self, dateString ):
 
@@ -468,7 +469,7 @@ class MySQL:
     try:
       myString = str( myString )
     except ValueError:
-      return S_ERROR( "Cannot escape value!" )
+      return DError( DErrno.EMYSQL, "Cannot escape value!" )
 
     timeUnits = [ 'MICROSECOND', 'SECOND', 'MINUTE', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR' ]
 
@@ -486,7 +487,7 @@ class MySQL:
               if self.__isDateTime( arg3 ) or arg3.isalnum():
                 return S_OK( myString )
           self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
-          return S_ERROR( '__escape_string: Could not escape string' )
+          return DError( DErrno.EMYSQL, '__escape_string: Could not escape string' )
 
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
@@ -499,7 +500,7 @@ class MySQL:
 
     table = _quotedList( [tableName] )
     if not table:
-      return S_ERROR( 'Invalid tableName argument' )
+      return DError( DErrno.EMYSQL, 'Invalid tableName argument' )
 
     cmd = 'SHOW TABLES'
     retDict = self._query( cmd, debug = True )
@@ -508,7 +509,7 @@ class MySQL:
     if ( tableName, ) in retDict['Value']:
       if not force:
         # the requested exist and table creation is not force, return with error
-        return S_ERROR( 'The requested table already exist' )
+        return DError( DErrno.EMYSQL, 'The requested table already exist' )
       else:
         cmd = 'DROP TABLE %s' % table
         retDict = self._update( cmd, debug = True )
@@ -571,7 +572,7 @@ class MySQL:
     if not self.__initialized:
       error = 'DB not properly initialized'
       gLogger.error( error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     self.log.debug( '_connect:', self._connected )
     if self._connected:
@@ -707,7 +708,7 @@ class MySQL:
     :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
     """
     if type( cmdList ) != ListType:
-      return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
+      return DError( DErrno.EMYSQL, "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
 
     # # get connection
     connection = conn
@@ -728,7 +729,7 @@ class MySQL:
       self.logger.execption( error )
       # # rollback, put back connection to the pool
       connection.rollback()
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
     # # close cursor, put back connection to the pool
     cursor.close()
     return S_OK( cmdRet )
@@ -815,7 +816,7 @@ class MySQL:
 
     # First check consistency of request
     if type( tableDict ) != DictType:
-      return S_ERROR( 'Argument is not a dictionary: %s( %s )'
+      return DError( DErrno.EMYSQL, 'Argument is not a dictionary: %s( %s )'
                       % ( type( tableDict ), tableDict ) )
 
     tableList = tableDict.keys()
@@ -825,10 +826,10 @@ class MySQL:
       thisTable = tableDict[table]
       # Check if Table is properly described with a dictionary
       if type( thisTable ) != DictType:
-        return S_ERROR( 'Table description is not a dictionary: %s( %s )'
+        return DError( DErrno.EMYSQL, 'Table description is not a dictionary: %s( %s )'
                         % ( type( thisTable ), thisTable ) )
       if not 'Fields' in thisTable:
-        return S_ERROR( 'Missing `Fields` key in `%s` table dictionary' % table )
+        return DError( DErrno.EMYSQL, 'Missing `Fields` key in `%s` table dictionary' % table )
 
     tableCreationList = [[]]
 
@@ -857,10 +858,10 @@ class MySQL:
               toBeExtracted = False
               break
             if not key in thisTable['Fields']:
-              return S_ERROR( 'ForeignKey `%s` -> `%s` not defined in Primary table `%s`.'
+              return DError( DErrno.EMYSQL, 'ForeignKey `%s` -> `%s` not defined in Primary table `%s`.'
                               % ( key, forKey, table ) )
             if not forKey in tableDict[forTable]['Fields']:
-              return S_ERROR( 'ForeignKey `%s` -> `%s` not defined in Auxiliary table `%s`.'
+              return DError( DErrno.EMYSQL, 'ForeignKey `%s` -> `%s` not defined in Auxiliary table `%s`.'
                               % ( key, forKey, forTable ) )
 
         if toBeExtracted:
@@ -870,7 +871,7 @@ class MySQL:
           tableCreationList[i].append( table )
 
     if tableList:
-      return S_ERROR( 'Recursive Foreign Keys in %s' % ', '.join( tableList ) )
+      return DError( DErrno.EMYSQL, 'Recursive Foreign Keys in %s' % ', '.join( tableList ) )
 
     for tableList in tableCreationList:
       for table in tableList:
@@ -952,7 +953,7 @@ class MySQL:
       try:
         condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
       except Exception, x:
-        return S_ERROR( x )
+        return DError( DErrno.EMYSQL, x )
 
     return self.getFields( tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute )
 
@@ -999,7 +1000,7 @@ class MySQL:
     if not self.__initialized:
       error = 'DB not properly initialized'
       gLogger.error( error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     return self.__connectionPool.get( self.__dbName )
 
@@ -1034,13 +1035,13 @@ class MySQL:
     if not table:
       error = 'Invalid table argument'
       self.log.debug( 'countEntries:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                   greater = None, smaller = None )
     except Exception, x:
-      return S_ERROR( x )
+      return DError( DErrno.EMYSQL, x )
 
     cmd = 'SELECT COUNT(*) FROM %s %s' % ( table, cond )
     res = self._query( cmd , connection, debug = True )
@@ -1060,19 +1061,19 @@ class MySQL:
     if not table:
       error = 'Invalid table argument'
       self.log.debug( 'getCounters:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     attrNames = _quotedList( attrList )
     if attrNames == None:
       error = 'Invalid updateFields argument'
       self.log.debug( 'getCounters:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                   greater = None, smaller = None )
     except Exception, x:
-      return S_ERROR( x )
+      return DError( DErrno.EMYSQL, x )
 
     cmd = 'SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
     res = self._query( cmd , connection, debug = True )
@@ -1099,19 +1100,19 @@ class MySQL:
     if not table:
       error = 'Invalid table argument'
       self.log.debug( 'getDistinctAttributeValues:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     attributeName = _quotedList( [attribute] )
     if not attributeName:
       error = 'Invalid attribute argument'
       self.log.debug( 'getDistinctAttributeValues:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                   greater = None, smaller = None )
     except Exception, x:
-      return S_ERROR( x )
+      return DError( DErrno.EMYSQL, x )
 
     cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % ( attributeName, table, cond, attributeName )
     res = self._query( cmd, connection, debug = True )
@@ -1302,7 +1303,7 @@ class MySQL:
     if not table:
       error = 'Invalid tableName argument'
       self.log.warn( 'getFields:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     quotedOutFields = '*'
     if outFields:
@@ -1310,7 +1311,7 @@ class MySQL:
       if quotedOutFields == None:
         error = 'Invalid outFields arguments'
         self.log.warn( 'getFields:', error )
-        return S_ERROR( error )
+        return DError( DErrno.EMYSQL, error )
 
     self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' %
                           ( quotedOutFields, table ) )
@@ -1329,7 +1330,7 @@ class MySQL:
                         timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
                         greater = None, smaller = None, offset = myoffset )
     except Exception, x:
-      return S_ERROR( x )
+      return DError( DErrno.EMYSQL, x )
 
     return self._query( 'SELECT %s FROM %s %s' %
                         ( quotedOutFields, table, condition ), conn, debug = True )
@@ -1351,7 +1352,7 @@ class MySQL:
     if not table:
       error = 'Invalid tableName argument'
       self.log.warn( 'deleteEntries:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     self.log.verbose( 'deleteEntries:', 'deleting rows from table %s.' % table )
 
@@ -1360,7 +1361,7 @@ class MySQL:
                                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
                                        greater = None, smaller = None )
     except Exception, x:
-      return S_ERROR( x )
+      return DError( DErrno.EMYSQL, x )
 
     return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn, debug = True )
 
@@ -1388,13 +1389,13 @@ class MySQL:
     if not table:
       error = 'Invalid tableName argument'
       self.log.warn( 'updateFields:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     retDict = _checkFields( updateFields, updateValues )
     if not retDict['OK']:
       error = 'Mismatch between updateFields and updateValues.'
       self.log.warn( 'updateFields:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     if updateFields == None:
       updateFields = []
@@ -1404,14 +1405,14 @@ class MySQL:
       if type( updateDict ) != DictType:
         error = 'updateDict must be a of Type DictType'
         self.log.warn( 'updateFields:', error )
-        return S_ERROR( error )
+        return DError( DErrno.EMYSQL, error )
       try:
         updateFields += updateDict.keys()
         updateValues += [updateDict[k] for k in updateDict.keys()]
       except TypeError:
         error = 'updateFields and updateValues must be a list'
         self.log.warn( 'updateFields:', error )
-        return S_ERROR( error )
+        return DError( DErrno.EMYSQL, error )
 
     updateValues = self._escapeValues( updateValues )
     if not updateValues['OK']:
@@ -1427,7 +1428,7 @@ class MySQL:
                         timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
                         greater = None, smaller = None )
     except Exception, x:
-      return S_ERROR( x )
+      return DError( DErrno.EMYSQL, x )
 
     updateString = ','.join( ['%s = %s' % ( _quotedList( [updateFields[k]] ),
                                             updateValues[k] ) for k in range( len( updateFields ) ) ] )
@@ -1446,7 +1447,7 @@ class MySQL:
     if not table:
       error = 'Invalid tableName argument'
       self.log.warn( 'insertFields:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
     retDict = _checkFields( inFields, inValues )
     if not retDict['OK']:
@@ -1461,20 +1462,20 @@ class MySQL:
       if type( inDict ) != DictType:
         error = 'inDict must be a of Type DictType'
         self.log.warn( 'insertFields:', error )
-        return S_ERROR( error )
+        return DError( DErrno.EMYSQL, error )
       try:
         inFields += inDict.keys()
         inValues += [inDict[k] for k in inDict.keys()]
       except TypeError:
         error = 'inFields and inValues must be a list'
         self.log.warn( 'insertFields:', error )
-        return S_ERROR( error )
+        return DError( DErrno.EMYSQL, error )
 
     inFieldString = _quotedList( inFields )
     if inFieldString == None:
       error = 'Invalid inFields arguments'
       self.log.warn( 'insertFields:', error )
-      return S_ERROR( error )
+      return DError( DErrno.EMYSQL, error )
 
 
     inFieldString = '(  %s )' % inFieldString

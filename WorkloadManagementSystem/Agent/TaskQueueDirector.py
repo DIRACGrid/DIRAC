@@ -125,14 +125,17 @@
 """
 __RCSID__ = "$Id$"
 
-import random, time, threading
-from DIRAC                                                       import S_OK, S_ERROR, List, Time, abort
+import random
+import time
+import threading
+
+from DIRAC                                                       import S_OK, S_ERROR, gConfig, abort
+from DIRAC.Core.Utilities                                        import List, Time
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.Utilities.ObjectLoader                           import ObjectLoader
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient
 from DIRAC.Core.Base.AgentModule                                 import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources          import getDIRACPlatforms
-from DIRAC.Resources.Computing.ComputingElement                  import getResourceDict
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
 
 
@@ -188,7 +191,9 @@ class TaskQueueDirector( AgentModule ):
 
     self.__checkSubmitPools()
 
-    self.directorDict = getResourceDict()
+    self.directorDict = {}
+    self.directorDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'None' )
+    self.directorDict['CPUTime'] = 9999999
     #Add all submit pools
     self.directorDict[ 'SubmitPool' ] = self.am_getOption( "SubmitPools" ) 
     #Add all DIRAC platforms if not specified otherwise

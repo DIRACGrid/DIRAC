@@ -158,11 +158,13 @@ class DictCache( object ):
     finally:
       self.lock.release()
 
-  def purgeAll( self ):
+  def purgeAll( self, useLock = True ):
     """
     Purge all entries
+    CAUTION: useLock parameter should ALWAYS be True except when called from __del__
     """
-    self.lock.acquire()
+    if useLock:
+      self.lock.acquire()
     try:
       keys = self.__cache.keys()
       for cKey in keys:
@@ -170,4 +172,17 @@ class DictCache( object ):
           self.__deleteFunction( self.__cache[ cKey ][ 'value' ] )
         del( self.__cache[ cKey ] )
     finally:
-      self.lock.release()
+      if useLock:
+        self.lock.release()
+
+  def __del__( self ):
+    """ When the DictCache is deleted, all the entries should be purged.
+        This is particularly useful when the DictCache manages files
+        CAUTION: if you carefully read the python doc, you will see all the
+        caveat of __del__. In particular, no guaranty that it is called...
+        (https://docs.python.org/2/reference/datamodel.html#object.__del__)
+    """
+    self.purgeAll( useLock = False )
+    del self.__lock
+    del self.__cache
+

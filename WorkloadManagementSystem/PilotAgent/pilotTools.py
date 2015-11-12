@@ -31,7 +31,7 @@ def printVersion( log ):
 def pythonPathCheck():
 
   try:
-    os.umask( 0o22 )
+    os.umask( 18 ) # 022
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
     print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
@@ -354,15 +354,18 @@ class PilotParams( object ):
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC',
-                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
+    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC', 'ConfigureBasics', 'CheckCECapabilities'
+                     'CheckWNCapabilities', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
+    self.tags = []
+    self.processors = ""
     self.site = ""
     self.setup = ""
     self.configServer = ""
     self.installation = ""
     self.ceName = ""
+    self.ceType = ''
     self.queueName = ""
     self.platform = ""
     self.minDiskSpace = 2560 #MB
@@ -409,15 +412,16 @@ class PilotParams( object ):
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
                      ( 'D:', 'disk=', 'Require at least <space> MB available' ),
                      ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
-                     ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
-                     ( 'Q:', 'Queue', 'Queue name' ),
+                     ( 'N:', 'Name=', 'CE Name' ),
+                     ( 'Q:', 'Queue=', 'Queue name' ),
+                     ( 'y:', 'CEType=', 'CE Type (normally InProcess)' ),
                      ( 'S:', 'setup=', 'DIRAC Setup to use' ),
                      ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
                      ( 'T:', 'CPUTime', 'Requested CPU Time' ),
                      ( 'G:', 'Group=', 'DIRAC Group to use' ),
                      ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
                      ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
-                     ( 'V:', 'VO=', 'Virtual Organization' ),
+                     ( 'V:', 'installation=', 'Installation configuration file' ),
                      ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
                      ( 's:', 'section=', 'Set base section for relative parsed options' ),
                      ( 'o:', 'option=', 'Option=value to add' ),
@@ -449,6 +453,8 @@ class PilotParams( object ):
         self.site = v
       elif o == '-N' or o == '--Name':
         self.ceName = v
+      elif o == '-y' or o == '--CEType':
+        self.ceType = v
       elif o == '-Q' or o == '--Queue':
         self.queueName = v  
       elif o == '-R' or o == '--reference':
@@ -465,7 +471,6 @@ class PilotParams( object ):
         self.executeCmd = v
       elif o in ( '-O', '--OwnerDN' ):
         self.userDN = v
-
       elif o in ( '-V', '--installation' ):
         self.installation = v
       elif o == '-p' or o == '--platform':

@@ -21,5 +21,12 @@ class ObjectLoaderMainSuccessScenario( unittest.TestCase ):
     dataClass = self.__check( self.ol.getObjects( "WorkloadManagementSystem.Service", parentClass = RequestHandler )  )
     self.assertEqual( sorted( dataFilter.keys() ), sorted( dataClass.keys() ) )
 
-if __name__ == "__main__":
-  unittest.main()
+#############################################################################
+# Test Suite run
+#############################################################################
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( ObjectLoaderMainSuccessScenario )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

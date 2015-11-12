@@ -5,6 +5,8 @@
 
 __RCSID__ = "$Id$"
 
+import datetime
+import socket
 from types import ListType, StringTypes, BooleanType
 import os, re, commands, getpass, importlib
 from datetime import timedelta
@@ -18,8 +20,28 @@ from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
 import DIRAC
 from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 
 class SystemAdministratorHandler( RequestHandler ):
+
+  @classmethod
+  def initializeHandler( cls, serviceInfo ):
+    """
+    Handler class initialization
+    """
+
+    hostMonitoring = True
+
+    # Check the flag for monitoring of the state of the host
+    hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
+
+    if hostMonitoring:
+      client = SystemAdministratorClient( 'localhost' )
+      gThreadScheduler.addPeriodicTask( 60, client.storeHostInfo )
+
+    return S_OK( 'Initialization went well' )
 
   types_getInfo = [ ]
   def export_getInfo( self ):
@@ -387,7 +409,7 @@ class SystemAdministratorHandler( RequestHandler ):
       if component == '*':
         result = InstallTools.getSetupComponents()
         if result['OK']:
-          for ctype in ['Services', 'Agents']:
+          for ctype in ['Services', 'Agents', 'Executors']:
             if ctype in result['Value']:
               for sname in result['Value'][ctype]:
                 for cname in result['Value'][ctype][sname]:
@@ -431,8 +453,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK( resultDict )
 
-  types_getHostInfo = []
-  def export_getHostInfo( self ):
+  def __readHostInfo( self ):
     """ Get host current loads, memory, etc
     """
 
@@ -550,6 +571,19 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK(result)
 
+  types_getHostInfo = []
+  def export_getHostInfo( self ):
+    """
+    Retrieve host parameters
+    """
+    client = ComponentMonitoringClient()
+    result = client.getLog( socket.getfqdn() )
+
+    if result[ 'OK' ]:
+      return S_OK( result[ 'Value' ][0] )
+    else:
+      return result
+
   types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
   def export_getComponentDocumentation( self, cType, system, module ):
     if cType == 'service':
@@ -572,3 +606,22 @@ class SystemAdministratorHandler( RequestHandler ):
     except Exception, e:
       return S_ERROR( 'No documentation was found' )
 
+  types_storeHostInfo = []
+  def export_storeHostInfo( self ):
+    """
+    Retrieves and stores into a MySQL database information about the host
+    """
+    result = self.__readHostInfo()
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+
+    fields = result[ 'Value' ]
+    fields[ 'Timestamp' ] = datetime.datetime.utcnow()
+    client = ComponentMonitoringClient()
+    result = client.updateLog( socket.getfqdn(), fields )
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+
+    return S_OK( 'Profiling information logged correctly' )

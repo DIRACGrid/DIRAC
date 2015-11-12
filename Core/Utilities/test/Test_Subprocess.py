@@ -1,5 +1,4 @@
 ########################################################################
-# File: SubprocessTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/12/11 18:04:25
 ########################################################################
@@ -17,10 +16,8 @@
 __RCSID__ = "$Id $"
 
 ##
-# @file SubprocessTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/12/11 18:04:37
-# @brief Definition of SubprocessTests class.
 
 ## imports 
 import unittest

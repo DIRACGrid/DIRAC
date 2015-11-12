@@ -259,6 +259,13 @@ if __name__ == "__main__":
   signal.signal( signal.SIGTERM, handler )
   signal.signal( signal.SIGINT, handler )
 
+  if len( sys.argv ) == 2 and sys.argv[1] == "-h":
+    print """
+    DIRAC client installer. The installer will guide your through the process
+    of the DIRAC client installation and configuration. Read and follow carefully
+    the instructions
+    """
+    sys.exit()
 
   print """
   Welcome to the DIRAC client installer !

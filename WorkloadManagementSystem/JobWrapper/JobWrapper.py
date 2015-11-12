@@ -33,7 +33,8 @@ from DIRAC.Core.Utilities.Version                                   import getCu
 from DIRAC.Core.Utilities.Adler                                     import fileAdler
 from DIRAC.Core.Utilities                                           import List
 from DIRAC.Core.Utilities                                           import DEncode
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, Time
+from DIRAC.Core.Utilities                                           import Time
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
 import DIRAC
 
@@ -271,6 +272,12 @@ class JobWrapper( object ):
     self.log.verbose( 'DIRACPYTHON = %s' % ( sys.executable ) )
     os.environ['DIRACSITE'] = DIRAC.siteName()
     self.log.verbose( 'DIRACSITE = %s' % ( DIRAC.siteName() ) )
+
+    os.environ['DIRAC_PROCESSORS'] = str( self.ceArgs.get( 'Processors', 1 ) )
+    self.log.verbose( 'DIRAC_PROCESSORS = %s' % ( self.ceArgs.get( 'Processors', 1 ) ) )
+
+    os.environ['DIRAC_WHOLENODE'] = str( self.ceArgs.get( 'WholeNode', False ) )
+    self.log.verbose( 'DIRAC_WHOLENODE = %s' % ( self.ceArgs.get( 'WholeNode', False ) ) )
 
     errorFile = self.jobArgs.get( 'StdError', self.defaultErrorFile )
     outputFile = self.jobArgs.get( 'StdOutput', self.defaultOutputFile )
@@ -544,18 +551,15 @@ class JobWrapper( object ):
     # Now doing the real stuff
     optReplicas = {}
     if self.optArgs:
-      optDict = None
       try:
-        optDict = eval( self.optArgs['InputData'] )
+        optDict, _length = DEncode.decode( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
         self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
       except Exception, x:
-        optDict = None
         self.log.warn( str( x ) )
         self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
-    resolvedData = {}
     result = self.__checkFileCatalog( lfns, optReplicas )
     if not result['OK']:
       self.log.info( 'Could not obtain replica information from Optimizer File Catalog information' )
@@ -697,8 +701,8 @@ class JobWrapper( object ):
       outputSandbox = [ outputSandbox ]
     if outputSandbox:
       self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
-    outputData = self.jobArgs.get( 'OutputData', '' )
-    if isinstance( outputData, basestring ):
+    outputData = self.jobArgs.get( 'OutputData', [] )
+    if outputData and isinstance( outputData, basestring ):
       outputData = outputData.split( ';' )
     if outputData:
       self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
@@ -763,7 +767,7 @@ class JobWrapper( object ):
         outputSE = [outputSE]
 
       outputPath = self.jobArgs.get( 'OutputPath', self.defaultOutputPath )
-      if isinstance( outputPath, basestring ):
+      if not isinstance( outputPath, basestring ):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:

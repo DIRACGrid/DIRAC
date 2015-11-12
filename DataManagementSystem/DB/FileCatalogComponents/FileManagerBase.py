@@ -2,14 +2,17 @@
 # $Id$
 ########################################################################
 
+""" FileManagerBase is a base class for all the specific File Managers
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List              import intListToString
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
-import os, stat
-from types import ListType, StringTypes, DictType
+import os
+import stat
 
 class FileManagerBase( object ):
 
@@ -30,6 +33,8 @@ class FileManagerBase( object ):
     self.db = database
 
   def getFileCounters( self, connection = False ):
+    """ Get a number of counters to verify the sanity of the Files in the catalog
+    """
     connection = self._getConnection( connection )
   
     resultDict = {}
@@ -75,6 +80,9 @@ class FileManagerBase( object ):
     return S_OK( resultDict )
 
   def getReplicaCounters( self, connection = False ):
+    """ Get a number of counters to verify the sanity of the Replicas in the catalog
+    """
+
     connection = self._getConnection( connection )
     req = "SELECT COUNT(*) FROM FC_Replicas;"
     res = self.db._query( req, connection )
@@ -147,6 +155,10 @@ class FileManagerBase( object ):
     """
     return S_ERROR( "To be implemented on derived class" )
 
+  def _getDirectoryFileIDs( self, dirID, requestString = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
   
   def _findFileIDs( self, lfns, connection=False ):
     """ To be implemented on derived class
@@ -167,7 +179,7 @@ class FileManagerBase( object ):
 
         :param dirID : directory id
 
-        :returns S_OK(value) or S_ERROR
+        :returns: S_OK(value) or S_ERROR
     """
     return S_ERROR( "To be implemented on derived class" )
 
@@ -194,31 +206,6 @@ class FileManagerBase( object ):
           failed[id_] = "File ID not found"
 
     return S_OK({'Successful':successful,'Failed':failed})
-    
-  def _getFileLFNs_old(self,fileIDs):
-    """ Get the file LFNs for a given list of file IDs
-    """            
-    stringIDs = intListToString(fileIDs)
-    req = "SELECT DirID, FileID, FileName from FC_Files WHERE FileID IN ( %s )" % stringIDs
-    result = self.db._query(req)
-    if not result['OK']:
-      return result
-
-    dirPathDict = {}  
-    fileNameDict = {}
-    for row in result['Value']:
-      if not row[0] in dirPathDict:
-        dirPathDict[row[0]] = self.db.dtree.getDirectoryPath(row[0])['Value']      
-      fileNameDict[row[1]] = '%s/%s' % (dirPathDict[row[0]],row[2])
-
-    failed = {}
-    successful = fileNameDict
-    for id_ in fileIDs:
-      if not id_ in fileNameDict:
-        failed[id_] = "File ID not found"
-
-    return S_OK({'Successful':successful,'Failed':failed})          
-                                    
 
   def addFile( self, lfns, credDict, connection = False ):
     """ Add files to the catalog
@@ -259,7 +246,7 @@ class FileManagerBase( object ):
     extraLfns = {}
     for lfn in lfns:
       masterLfns[lfn] = dict( lfns[lfn] )
-      if 'SE' in lfns[lfn] and type( lfns[lfn]['SE'] ) == ListType:
+      if isinstance( lfns[lfn].get( 'SE' ), list ):
         masterLfns[lfn]['SE'] = lfns[lfn]['SE'][0]  
         if len( lfns[lfn]['SE'] ) > 1:
           extraLfns[lfn] = dict( lfns[lfn] )
@@ -706,32 +693,6 @@ class FileManagerBase( object ):
 
     return S_OK( directorySESizeDict )
 
-  def _setFileOwner( self, fileID, owner, connection = False ):
-    """ Set the file owner """
-    connection = self._getConnection( connection )
-    if type( owner ) in StringTypes:
-      result = self.db.ugManager.findUser( owner )
-      if not result['OK']:
-        return result
-      owner = result['Value']
-    return self._setFileParameter( fileID, 'UID', owner, connection = connection )
-
-  def _setFileGroup( self, fileID, group, connection = False ):
-    """ Set the file group """
-    connection = self._getConnection( connection )
-    if type( group ) in StringTypes:
-      result = self.db.ugManager.findGroup( group )
-      if not result['OK']:
-        return result
-      group = result['Value']
-    return self._setFileParameter( fileID, 'GID', group, connection = connection )
-
-  def _setFileMode( self, fileID, mode, connection = False ):
-    """ Set the file mode """
-    connection = self._getConnection( connection )
-    return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
-  
-
   def setFileStatus( self, lfns, connection = False ):
     """ Get set the group for the supplied files """
     connection = self._getConnection( connection )
@@ -742,27 +703,22 @@ class FileManagerBase( object ):
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       status = lfns[lfn]
+      if isinstance( status, basestring ):
+        if not status in self.db.validFileStatus:
+          failed[lfn] = 'Invalid file status %s' % status
+          continue
+        result = self._getStatusInt( status, connection = connection )
+        if not result['OK']:
+          failed[lfn] = res['Message']
+          continue
+        status = result['Value']
       fileID = res['Value']['Successful'][lfn]['FileID']
-      res = self._setFileStatus( fileID, status, connection = connection )
+      res = self._setFileParameter( fileID, "Status", status, connection = connection )
       if not res['OK']:
         failed[lfn] = res['Message']
       else:
         successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
-
-
-
-  def _setFileStatus( self, fileID, status, connection = False ):
-    """ Set the file owner """
-    connection = self._getConnection( connection )
-    if type( status ) in StringTypes:
-      if not status in self.db.validFileStatus:
-        return S_ERROR( 'Invalid file status %s' % status )
-      result = self._getStatusInt( status, connection = connection )
-      if not result['OK']:
-        return result
-      status = result['Value']
-    return self._setFileParameter( fileID, 'Status', status, connection = connection )
 
   ######################################################
   #
@@ -899,18 +855,18 @@ class FileManagerBase( object ):
       # We consider only 2 options :
       # either {lfn : guid}
       # or P lfn : {PFN : .., GUID : ..} }
-      if type( lfns ) == DictType:
+      if isinstance( lfns, dict ):
         val = lfns.values()
 
       # We have values, take the first to identify the type
       if val:
         val = val[0]
 
-      if type( val ) == DictType and 'GUID' in val:
+      if isinstance( val, dict ) and 'GUID' in val:
         # We are in the case {lfn : {PFN:.., GUID:..}}
         guidList = [lfns[lfn]['GUID'] for lfn in lfns]
         pass
-      elif type( val ) in StringTypes:
+      elif isinstance( val, basestring ):
         # We hope that it is the GUID which is given
         guidList = lfns.values()
 
@@ -1157,6 +1113,15 @@ class FileManagerBase( object ):
       return S_OK(self.statusDict[statusID])
     return S_OK('Unknown')
 
+  def getFileIDsInDirectory( self, dirID, requestString = False ):
+    """ Get a list of IDs for all the files stored in given directories or their
+        subdirectories
+    :param mixt dirID: single directory ID or a list of directory IDs
+    :param boolean requestString: if True return result as a SQL SELECT string
+    :return: list of file IDs or SELECT string
+    """
+    return self._getDirectoryFileIDs( dirID, requestString = requestString )
+
   def getFilesInDirectory( self, dirID, verbose = False, connection = False ):
     connection = self._getConnection( connection )
     files = {}
@@ -1216,7 +1181,8 @@ class FileManagerBase( object ):
   def _getFileDirectories( self, lfns ):
     """ For a list of lfn, returns a dictionary with key the directory, and value
         the files in that directory. It does not make any query, just splits the names
-        :param lfns list of lfns
+
+        :param lfns: list of lfns
     """
     dirDict = {}
     for lfn in lfns:
@@ -1242,67 +1208,19 @@ class FileManagerBase( object ):
   #     return S_ERROR( 'PFN does not correspond to the LFN convention' )
   #  return S_OK()
 
-  def _checkLFNPFNConvention( self, lfn, pfn, se ):
-    """ Check that the PFN corresponds to the LFN-PFN convention
-    """
-    # Check if the PFN corresponds to the LFN convention
-    if pfn == lfn:
-      return S_OK()
-    lfn_pfn = True   # flag that the lfn is contained in the pfn
-    if ( len( pfn ) < len( lfn ) ) or ( pfn[-len( lfn ):] != lfn ) :
-      return S_ERROR( 'PFN does not correspond to the LFN convention' )
-    if not pfn.endswith( lfn ):
-      return S_ERROR()
-    # Check if the pfn corresponds to the SE definition
-    result = self._getStorageElement( se )
-    if not result['OK']:
-      return result
-    selement = result['Value']
-    res = pfnparse( pfn )
-    if not res['OK']:
-      return res
-    pfnDict = res['Value']
-    protocol = pfnDict['Protocol']
-    pfnpath = pfnDict['Path']
-    result = selement.getStorageParameters( protocol )
-    if not result['OK']:
-      return result
-    seDict = result['Value']
-    sePath = seDict['Path']
-    ind = pfnpath.find( sePath )
-    if ind == -1:
-      return S_ERROR( 'The given PFN %s does not correspond to the %s SE definition' % ( pfn, se ) )
-    # Check the full LFN-PFN-SE convention
-    if lfn_pfn:
-      seAccessDict = dict( seDict )
-      seAccessDict['Path'] = sePath + '/' + lfn
-      check_pfn = pfnunparse( seAccessDict )
-      if check_pfn != pfn:
-        return S_ERROR( 'PFN does not correspond to the LFN convention' )
-    return S_OK()
-
-  def _getStorageElement( self, seName ):
-    from DIRAC.Resources.Storage.StorageElement              import StorageElement
-    storageElement = StorageElement( seName )
-    if not storageElement.valid:
-      return S_ERROR( storageElement.errorReason )
-    return S_OK( storageElement )
-
-  def setFileGroup( self, lfns, uid=0, gid=0, connection = False ):
+  def changeFileGroup( self, lfns ):
     """ Get set the group for the supplied files
         :param lfns : dictionary < lfn : group >
-        :param uid : useless
-        :param gid : useless
+        :param int/str newGroup: optional new group/groupID the same for all the supplied lfns
      """
-    connection = self._getConnection( connection )
-    res = self._findFiles( lfns, ['FileID', 'GID'], connection = connection )
+    res = self._findFiles( lfns, ['FileID', 'GID'] )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       group = lfns[lfn]
-      if type( group ) in StringTypes:
+      if isinstance( group, basestring ):
         groupRes = self.db.ugManager.findGroup( group )
         if not groupRes['OK']:
           return groupRes
@@ -1312,28 +1230,26 @@ class FileManagerBase( object ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileGroup( fileID, group, connection = connection )
+        res = self._setFileParameter( fileID, "GID", group )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileOwner( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the group for the supplied files
-        :param lfns : dictionary < lfn : group >
-        :param uid : useless
-        :param gid : useless
-     """
-    connection = self._getConnection( connection )
-    res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
+  def changeFileOwner( self, lfns ):
+    """ Set the owner for the supplied files
+        :param lfns : dictionary < lfn : owner >
+        :param int/str newOwner: optional new user/userID the same for all the supplied lfns
+    """
+    res = self._findFiles( lfns, ['FileID', 'UID'] )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       owner = lfns[lfn]
-      if type( owner ) in StringTypes:
+      if isinstance( owner, basestring ):
         userRes = self.db.ugManager.findUser( owner )
         if not userRes['OK']:
           return userRes
@@ -1343,17 +1259,19 @@ class FileManagerBase( object ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileOwner( fileID, owner, connection = connection )
+        res = self._setFileParameter( fileID, "UID", owner )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileMode( self, lfns, uid=0, gid=0, connection = False ):
-    """ Get set the mode for the supplied files """
-    connection = self._getConnection( connection )
-    res = self._findFiles( lfns, ['FileID', 'Mode'], connection = connection )
+  def changeFileMode( self, lfns ):
+    """" Set the mode for the supplied files
+        :param lfns : dictionary < lfn : mode >
+        :param int newMode: optional new mode the same for all the supplied lfns
+    """
+    res = self._findFiles( lfns, ['FileID', 'Mode'] )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -1365,73 +1283,47 @@ class FileManagerBase( object ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileMode( fileID, mode, connection = connection )
+        res = self._setFileParameter( fileID, "Mode", mode )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def changePathOwner( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryOwner,
-                                    self.setFileOwner, recursive )
+  def setFileOwner( self, path, owner ):
+    """ Set the file owner
 
-  def changePathGroup( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryGroup,
-                                    self.setFileGroup, recursive )
+        :param mixed path: file path as a string or int or list of ints or select statement
+        :param mixt group: new user as a string or int uid
+    """
 
-  def changePathMode( self, paths, credDict, recursive = False ):
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryMode,
-                                    self.setFileMode, recursive )
-
-  def _changePathFunction( self, paths, credDict, change_function_directory, change_function_file, recursive = False ):
-    """ A generic function to change Owner, Group or Mode for the given paths """
-    result = self.db.ugManager.getUserAndGroupID( credDict )
+    result = self.db.ugManager.findUser( owner )
     if not result['OK']:
       return result
-    uid, gid = result['Value']
 
-    dirList = []
-    result = self.db.isDirectory( paths, credDict )
+    uid = result['Value']
+
+    return self._setFileParameter( path, 'UID', uid )
+
+  def setFileGroup( self, path, gname ):
+    """ Set the file group
+
+        :param mixed path: file path as a string or int or list of ints or select statement
+        :param mixt group: new group as a string or int gid
+    """
+
+    result = self.db.ugManager.findGroup( gname )
     if not result['OK']:
       return result
-    for p in result['Value']['Successful']:
-      if result['Value']['Successful'][p]:
-        dirList.append( p )
-    fileList = []
-    if len( dirList ) < len( paths ):
-      result = self.isFile( paths )
-      if not result['OK']:
-        return result
-      fileList = result['Value']['Successful'].keys()
 
-    successful = {}
-    failed = {}
+    gid = result['Value']
 
-    dirArgs = {}
-    fileArgs = {}
+    return self._setFileParameter( path, 'GID', gid )
 
-    for path in paths:
-      if ( not path in dirList ) and ( not path in fileList ):
-        failed[path] = 'Path not found'
-      if path in dirList:
-        dirArgs[path] = paths[path]
-      elif path in fileList:
-        fileArgs[path] = paths[path]
-    if dirArgs:
-      result = change_function_directory( dirArgs, uid, gid )
-      if not result['OK']:
-        return result
-      successful.update( result['Value']['Successful'] )
-      failed.update( result['Value']['Failed'] )
-    if fileArgs:
-      result = change_function_file( fileArgs, uid, gid )
-      if not result['OK']:
-        return result
-      successful.update( result['Value']['Successful'] )
-      failed.update( result['Value']['Failed'] )
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-  
+  def setFileMode( self, path, mode ):
+    """ Set the file mode
+
+        :param mixed path: file path as a string or int or list of ints or select statement
+        :param int mode: new mode
+    """
+    return self._setFileParameter( path, 'Mode', mode )
