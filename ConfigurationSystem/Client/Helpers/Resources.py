@@ -299,10 +299,19 @@ def getCatalogPath( catalogName ):
   """
   return '/Resources/FileCatalogs/%s' % catalogName
 
-def getRegistrationProtocols():
-  """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/RegistrationProtocols', ['srm', 'dips'] )
+# def getRegistrationProtocols():
+#   """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
+#   return gConfig.getValue( '/Resources/FileCatalogs/RegistrationProtocols', ['srm', 'dips'] )
+#
+# def getThirdPartyProtocols():
+#   """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
+#   return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm', 'dips'] )
+#
+# def getAccessProtocols():
+#   """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
+#   return gConfig.getValue( '/Resources/StorageElements/AccessProtocols', ['srm', 'dips'] )
+#
+# def getWriteProtocols():
+#   """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
+#   return gConfig.getValue( '/Resources/StorageElements/WriteProtocols', ['srm', 'dips'] )
 
-def getThirdPartyProtocols():
-  """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm', 'dips'] )

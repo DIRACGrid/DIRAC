@@ -65,11 +65,11 @@ def _getConnectionIndex( connectionLevel, default = None ):
 
 class DMSHelpers( object ):
 
-  def __init__( self ):
+  def __init__( self, vo = None ):
     self.siteSEMapping = {}
     self.storageElementSet = set()
     self.siteSet = set()
-    self.__opsHelper = Operations()
+    self.__opsHelper = Operations( vo = vo )
 
 
   def getSiteSEMapping( self ):
@@ -308,3 +308,21 @@ class DMSHelpers( object ):
       gLogger.warn( 'No SE found at that site', 'in group %s at %s' % ( seGroup, site ) )
       return S_OK()
     return S_OK( list( se )[0] )
+
+  def getRegistrationProtocols( self ):
+    """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/RegistrationProtocols', ['srm', 'dips'] )
+
+  def getThirdPartyProtocols( self ):
+    """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/ThirdPartyProtocols', ['srm', 'dips'] )
+
+  def getAccessProtocols( self ):
+    """ Returns the Favorite access protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/AccessProtocols', ['srm', 'dips'] )
+
+
+  def getWriteProtocols( self ):
+    """ Returns the Favorite Write protocol defined in the CS, or 'srm' as default """
+    return self.__opsHelper.getValue( 'DataManagement/WriteProtocols', ['srm', 'dips'] )
+

@@ -23,7 +23,6 @@ import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import DErrno, DError
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
@@ -98,12 +97,12 @@ class DataManager( object ):
 
     self.fc = FileCatalog( catalogs = catalogsToUse, vo = self.vo )
     self.accountingClient = None
-    self.registrationProtocol = getRegistrationProtocols()
-    self.thirdPartyProtocols = getThirdPartyProtocols()
     self.resourceStatus = ResourceStatus()
     self.ignoreMissingInFC = Operations( self.vo ).getValue( 'DataManagement/IgnoreMissingInFC', False )
     self.useCatalogPFN = Operations( self.vo ).getValue( 'DataManagement/UseCatalogPFN', True )
-    self.dmsHelper = DMSHelpers()
+    self.dmsHelper = DMSHelpers( vo = vo )
+    self.registrationProtocol = self.dmsHelper.getRegistrationProtocols()
+    self.thirdPartyProtocols = self.dmsHelper.getThirdPartyProtocols()
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -808,54 +807,74 @@ class DataManager( object ):
         continue
 
 
-      replicationProtocol = res['Value']
+      replicationProtocols = res['Value']
 
-      if not replicationProtocol:
+      if not replicationProtocols:
         possibleIntermediateSEs.append( candidateSE )
         log.debug( "No protocol suitable for replication found" )
         continue
 
-      log.debug( 'Found common protocols', replicationProtocol )
+      log.debug( 'Found common protocols', replicationProtocols )
 
       # THIS WOULD NOT WORK IF PROTO == file !!
+      # Why did I write that comment ?!
+      
+      # We try the protocols one by one
+      # That obviously assumes that there is an overlap and not only
+      # a compatibility between the  output protocols of the source
+      # and the input protocols of the destination.
+      # But that is the only way to make sure we are not replicating
+      # over ourselves.
+      for compatibleProtocol in replicationProtocols:
 
-      # Compare the urls to make sure we are not overwriting
-      res = returnSingleResult( candidateSE.getURL( lfn, protocol = replicationProtocol ) )
-      if not res['OK']:
-        log.debug( "Cannot get sourceURL", res['Message'] )
-        continue
+        # Compare the urls to make sure we are not overwriting
+        res = returnSingleResult( candidateSE.getURL( lfn, protocol = compatibleProtocol ) )
+        if not res['OK']:
+          log.debug( "Cannot get sourceURL", res['Message'] )
+          continue
 
-      sourceURL = res['Value']
+        sourceURL = res['Value']
 
-      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = replicationProtocol ) )
-      if not res['OK']:
-        log.debug( "Cannot get destURL", res['Message'] )
-        continue
-      destURL = res['Value']
+        destURL = ''
+        res = returnSingleResult( destStorageElement.getURL( destPath, protocol = compatibleProtocol ) )
+        if not res['OK']:
 
-      if sourceURL == destURL:
-        log.debug( "Same source and destination, give up" )
-        continue
+          # for some protocols, in particular srm
+          # you might get an error because the file does not exist
+          # which is exactly what we want
+          # in that case, we just keep going with the comparison
+          # since destURL will be an empty string
+          if not DErrno.cmpError( res, errno.ENOENT ):
+            log.debug( "Cannot get destURL", res['Message'] )
+            continue
+        else:
+          destURL = res['Value']
 
-      # Attempt the transfer
-      res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL}, sourceSize = catalogSize ) )
+        if sourceURL == destURL:
+          log.debug( "Same source and destination, give up" )
+          continue
 
-      if not res['OK']:
-        log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
-        continue
+        # Attempt the transfer
+        res = returnSingleResult( destStorageElement.replicateFile( {destPath:sourceURL},
+                                                                     sourceSize = catalogSize,
+                                                                     inputProtocol = compatibleProtocol ) )
+
+        if not res['OK']:
+          log.debug( "Replication failed", "%s from %s to %s." % ( lfn, candidateSEName, destSEName ) )
+          continue
 
 
-      log.debug( "Replication successful.", res['Value'] )
+        log.debug( "Replication successful.", res['Value'] )
 
-      res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
-      if not res['OK']:
-        log.debug( 'Error getting the registration URL', res['Message'] )
-        # it's maybe pointless to try the other candidateSEs...
-        continue
+        res = returnSingleResult( destStorageElement.getURL( destPath, protocol = self.registrationProtocol ) )
+        if not res['OK']:
+          log.debug( 'Error getting the registration URL', res['Message'] )
+          # it's maybe pointless to try the other candidateSEs...
+          continue
 
-      registrationURL = res['Value']
+        registrationURL = res['Value']
 
-      return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
+        return S_OK( {'DestSE':destSEName, 'DestPfn':registrationURL} )
 
 
 

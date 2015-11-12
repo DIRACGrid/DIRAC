@@ -18,6 +18,9 @@ from DIRAC.Core.Utilities.File                  import getSize
 
 class RFIOStorage( StorageBase ):
 
+  _InputProtocols = ['file', 'rfio']
+  _OutputProtocols = ['rfio']
+  
   def __init__( self, storageName, parameters ):
     
     StorageBase.__init__( self, storageName, parameters )
