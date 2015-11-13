@@ -3,7 +3,8 @@
    permissions can execute those commands.
 """
 import re
-from DIRAC import S_OK, DError
+from DIRAC import S_OK
+from DIRAC.Core.Utilities.DErrno import DError
 import errno
 from DIRAC.Core.Utilities import Subprocess
 

@@ -17,7 +17,8 @@
 from DIRAC.Core.Base.ConsumerModule import ConsumerModule
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
-from DIRAC import S_OK, DError
+from DIRAC import S_OK
+from DIRAC.Core.Utilities.DErrno import DError
 import errno
 
 def loadConsumerModule( consumerModuleName, hideExceptions = False ):
