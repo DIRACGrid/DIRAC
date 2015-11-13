@@ -44,7 +44,7 @@ class ConsumerReactor(object):
 
   def __init__( self, systemConsumerModuleName ):
     self.consumerModule = None
-    self.system_ConsumerModuleName = systemConsumerModuleName
+    self.systemConsumerModuleName = systemConsumerModuleName
 
   def go( self ):
     """Creates an instance of a consumer class and
@@ -57,6 +57,6 @@ class ConsumerReactor(object):
     """
     if not self.consumerModule['classObj']:
       return DError(errno.EPERM, 'Consumer module class is not loaded')
-    instanceObj = self.consumerModule['classObj']()
-    instanceObj.initialize( systemConsumerModuleName =  self.system_ConsumerModuleName )
+    instanceObj = self.consumerModule['classObj']( systemConsumerModuleName = self.systemConsumerModuleName )
+    instanceObj.initialize( systemConsumerModuleName =  self.systemConsumerModuleName )
     return S_OK()

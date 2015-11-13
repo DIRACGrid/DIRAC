@@ -7,6 +7,7 @@
 
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerOption
 from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
+from DIRAC import gLogger
 
 class ConsumerModule(object):
   """ Base class for all consumer modules
@@ -15,7 +16,8 @@ class ConsumerModule(object):
       DIRAC consumers.
   """
 
-  def __init__( self ):
+  def __init__( self , systemConsumerModuleName ):
+    self.log = gLogger.getSubLogger(systemConsumerModuleName)
     self._MQConnector = None
     self._MQConnectorProperties = {
                                     'MQConnectorSystem' : 'MyRabbitSystem',
@@ -73,7 +75,7 @@ class ConsumerModule(object):
       if res[ 'OK' ]:
         self._MQConnectorProperties[option] = res[ 'Value' ]
       else:
-        print 'Error: consumer option: %s was not found in section: %s' % ( option, consumerSection )
+        self.log.error('Error: consumer option: %s was not found in section: %s' % ( option, consumerSection ))
 
   def consume( self, headers, message ):
     """ Function must be overriden in the implementation
