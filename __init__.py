@@ -1,8 +1,7 @@
-# $HeadURL$
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
 
-   The LHCb distributed data production and analysis system.
+   The distributed data production and analysis system of LHCb and other VOs.
 
    DIRAC is a software framework for distributed computing which
    allows to integrate various computing resources in a single
@@ -76,7 +75,7 @@ import sys, os
 # Define Version
 
 majorVersion = 6
-minorVersion = 13
+minorVersion = 15
 patchLevel = 0
 preVersion = 0
 
