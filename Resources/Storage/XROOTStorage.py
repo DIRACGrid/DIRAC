@@ -416,16 +416,17 @@ class XROOTStorage( StorageBase ):
           self.log.debug( "XROOTStorage.__putSingleFile: Successfully removed remote file" )
 
     # get the absolute path needed by the xroot api
-    src_file = os.path.abspath( src_file )
-    if not os.path.exists( src_file ):
-      errStr = "XROOTStorage.__putSingleFile: The local source file does not exist."
-      gLogger.error( errStr, src_file )
-      return S_ERROR( errStr )
-    sourceSize = getSize( src_file )
-    if sourceSize == -1:
-      errStr = "XROOTStorage.__putSingleFile: Failed to get file size."
-      gLogger.error( errStr, src_file )
-      return S_ERROR( errStr )
+    if not src_file.startswith( "root:" ):
+      src_file = os.path.abspath( src_file )
+      if not os.path.exists( src_file ):
+        errStr = "XROOTStorage.__putSingleFile: The local source file does not exist."
+        gLogger.error( errStr, src_file )
+        return S_ERROR( errStr )
+      sourceSize = getSize( src_file )
+      if sourceSize == -1:
+        errStr = "XROOTStorage.__putSingleFile: Failed to get file size."
+        gLogger.error( errStr, src_file )
+        return S_ERROR( errStr )
 
     # Perform the copy with the API
     status = self.xrootClient.copy( src_file, dest_url )
