@@ -2717,9 +2717,9 @@ class ComponentInstaller( object ):
       # Now write a local Configuration for the Director
 
     directorCfg = CFG()
-    directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by InstallTools' )
-    directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by InstallTools' )
-    directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by InstallTools' )
+    directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by ComponentInstaller' )
+    directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by ComponentInstaller' )
+    directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by ComponentInstaller' )
     result = self.addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
     if not result['OK']:
       return result
