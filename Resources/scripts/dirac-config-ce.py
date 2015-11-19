@@ -45,8 +45,8 @@ cfg = None
 if len( args ):
   cfg = args[0]
 
-from DIRAC.Core.Utilities import InstallTools
-result = InstallTools.configureCE( ceName, ceType, cfg, Script.localCfg.currentSectionPath )
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+result = gComponentInstaller.configureCE( ceName, ceType, cfg, Script.localCfg.currentSectionPath )
 if not result['OK']:
   Script.showHelp()
   DIRAC.exit( -1 )
@@ -54,4 +54,4 @@ if not result['OK']:
 ceNameList = result['Value']
 
 if setupDirector:
-  print InstallTools.configureLocalDirector( ceNameList )
+  print gComponentInstaller.configureLocalDirector( ceNameList )
