@@ -55,7 +55,7 @@ def findFile( workingDir, fileName ):
   res = Subprocess().systemCall("find %s -name '%s'" % (workingDir, fileName), shell=True)
   if not res['OK']:
     return res
-  paths = res['Value'].splitlines()
+  paths = res['Value'][1].splitlines()
   return S_OK(paths)
 
 def getCondorLogFile( pilotRef ):

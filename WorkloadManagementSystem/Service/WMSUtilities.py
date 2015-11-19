@@ -100,7 +100,7 @@ def getPilotLoggingInfo( grid, pilotRef ):
     if not resLog['OK']:
       return resLog
     logFile = resLog['Value']
-    cmd = [ 'cat', logFile ]
+    cmd = [ 'cat', " ".join(logFile) ]
   else:
     return S_ERROR( 'Pilot logging not available for %s CEs' % grid )
 
