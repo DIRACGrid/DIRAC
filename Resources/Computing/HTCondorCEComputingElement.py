@@ -252,7 +252,7 @@ Queue %(nJobs)s
     for job,jobID in condorIDs.iteritems():
 
       pilotStatus = parseCondorStatus( lines, jobID )
-      if pilotStatus == 'Held':
+      if pilotStatus == 'HELD':
         #make sure the pilot stays dead and gets taken out of the condor_q
         _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
         #self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
