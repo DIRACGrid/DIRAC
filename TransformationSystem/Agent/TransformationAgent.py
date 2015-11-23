@@ -103,8 +103,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 #     threadPool = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
     self.log.info( "Multithreaded with %d threads" % maxNumberOfThreads )
     self.threadPool.map_async( self._execute, xrange( maxNumberOfThreads ) )
-#     threadPool.close()
-#     threadPool.join()
 #     for i in xrange( maxNumberOfThreads ):
 #       threadPool.generateJobAndQueueIt( self._execute, [i] )
 
