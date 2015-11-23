@@ -2,6 +2,9 @@
 """
 
 import time, Queue, os, datetime, pickle
+
+from multiprocessing.pool import ThreadPool as nativeThreadPool
+
 from DIRAC                                                          import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool
@@ -96,11 +99,14 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Get it threaded
     maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-    threadPool = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
+    self.threadPool = nativeThreadPool( maxNumberOfThreads )
+#     threadPool = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
     self.log.info( "Multithreaded with %d threads" % maxNumberOfThreads )
-
-    for i in xrange( maxNumberOfThreads ):
-      threadPool.generateJobAndQueueIt( self._execute, [i] )
+    self.threadPool.map_async( self._execute, xrange( maxNumberOfThreads ) )
+#     threadPool.close()
+#     threadPool.join()
+#     for i in xrange( maxNumberOfThreads ):
+#       threadPool.generateJobAndQueueIt( self._execute, [i] )
 
     self.log.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
 
@@ -118,6 +124,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         time.sleep( 2 )
       self._logInfo( "Threads are empty, terminating the agent..." , method = method )
     self.__writeCache()
+    self.threadPool.close()
+    self.threadPool.join()
     return S_OK()
 
   def execute( self ):
