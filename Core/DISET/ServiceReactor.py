@@ -124,9 +124,12 @@ class ServiceReactor( object ):
     for svcName in self.__listeningConnections:
       gLogger.always( "Listening at %s" % self.__services[ svcName ].getConfig().getURL() )
     #Multiple clones not yet working. Disabled by default
-    if False and multiprocessing:
+    if multiprocessing:
+      print self.__listeningConnections
+      print self.__services
       for svcName in self.__listeningConnections:
         clones = self.__services[ svcName ].getConfig().getCloneProcesses()
+        print clones
         for i in range( 1, clones ):
           p = multiprocessing.Process( target = self.__startCloneProcess, args = ( svcName, i ) )
           p.start()
