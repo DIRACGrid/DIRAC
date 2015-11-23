@@ -63,7 +63,7 @@ removeLogs = False
 if force:
   removeLogs = True
 else:
-  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.COMPONENT_TYPES:
+  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.componentTypes:
     result = promptUser( 'Remove logs?', [ 'y', 'n' ], 'n' )
     if result[ 'OK' ]:
       removeLogs = result[ 'Value' ] == 'y'
