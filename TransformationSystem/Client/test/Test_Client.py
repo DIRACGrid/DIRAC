@@ -4,6 +4,7 @@
 import unittest, types
 
 from mock import MagicMock
+from DIRAC import gLogger
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
@@ -56,6 +57,8 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.maxDiff = None
 
+    gLogger.setLevel( 'DEBUG' )
+
 
   def tearDown( self ):
     pass
@@ -79,9 +82,11 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
                                     '/this/is/at_123': ['SE1', 'SE2', 'SE3'],
                                     '/this/is/at_23': ['SE2', 'SE3'],
                                     '/this/is/at_4': ['SE4']},
-                                  'aStatus' )
-    print res
-    self.assertEqual( res['OK'], False )
+                                  'Flush' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at_123', '/this/is/at.12', '/this/is/at.1'] ),
+                                     ( 'SE2', ['/this/is/at_23', '/this/is/at.2'] ),
+                                     ( 'SE4', ['/this/is/at_4'] )] )
 
 #############################################################################
 
