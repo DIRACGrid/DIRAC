@@ -35,6 +35,7 @@ class PluginBase( object ):
       if re.search( self.plugin, str( x ) ):
         return S_ERROR( "Plugin not found" )
       else:
+        gLogger.exception( 'Exception in plugin', self.plugin, x )
         raise AttributeError( x )
     except Exception as x:
       gLogger.exception( 'Exception in plugin', self.plugin, x )
