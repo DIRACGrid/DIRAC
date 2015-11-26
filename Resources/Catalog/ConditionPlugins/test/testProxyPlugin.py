@@ -11,18 +11,18 @@ from DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin import ProxyPlugin
 
 def mock_getProxyInfo():
   return S_OK( {'VOMS': ['/lhcb/Role=user'],
-            'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=705305/CN=Christophe Haen]',
+            'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen]',
             'group': 'lhcb_user',
             'groupProperties': ['NormalUser', 'SuperProperty'],
             'hasVOMS': True,
-            'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=705305/CN=Christophe Haen',
+            'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen',
             'isLimitedProxy': False,
             'isProxy': True,
-            'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=705305/CN=Christophe Haen/CN=proxy',
-            'path': '/tmp/x509up_u56212',
+            'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
+            'path': '/tmp/x509up_u12345',
             'rfc': False,
             'secondsLeft': 86026,
-            'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=705305/CN=Christophe Haen/CN=proxy/CN=proxy',
+            'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
             'username': 'chaen',
             'validDN': True,
             'validGroup': True} )
