@@ -8,7 +8,6 @@ from pyparsing import infixNotation, opAssoc, Word, printables, Literal, Suppres
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -202,7 +201,7 @@ class FCConditionParser(object):
 
 
 
-  def __init__( self, vo = None, ):
+  def __init__( self, vo = None, ro_methods = None ):
     """
         :param vo : name of the VO
     """
@@ -212,6 +211,9 @@ class FCConditionParser(object):
 
     self.opHelper = Operations( vo = vo )
 
+    self.ro_methods = ro_methods if ro_methods else []
+
+    self.log = gLogger.getSubLogger( "FCConditionParser", child = True )
 
 
   def __evaluateCondition( self, conditionString, **kwargs ):
@@ -220,7 +222,7 @@ class FCConditionParser(object):
 
     """
 
-    gLogger.debug( "Testing %s against %s" % ( conditionString, kwargs ) )
+    self.log.debug( "Testing %s against %s" % ( conditionString, kwargs ) )
   
 
     # Parse all the condition and evaluate it
@@ -229,7 +231,7 @@ class FCConditionParser(object):
     res = self.__boolExpr.parseString( conditionString )
     res = res[0].eval( **kwargs )
 
-    gLogger.debug( "Evaluated to %s" % res )
+    self.log.debug( "Evaluated to %s" % res )
 
     return res
 
@@ -250,9 +252,9 @@ class FCConditionParser(object):
 
 
     """
-    basePath = 'Services/Catalogs/%s/' % catalogName
+    basePath = 'Services/Catalogs/%s/Conditions/' % catalogName
     pathList = [basePath + '%s' % operationName,
-                basePath + '%s' % ( 'READ' if operationName in FileCatalog.ro_methods else 'WRITE' ),
+                basePath + '%s' % ( 'READ' if operationName in self.ro_methods else 'WRITE' ),
                 basePath + 'ALL']
 
     for path in pathList:
@@ -294,9 +296,11 @@ class FCConditionParser(object):
 
 
     """
-
+    self.log.debug( "Testing %s on %s for %s lfns" % ( operationName, catalogName, len( lfns ) ) )
     
     conditionStr = condition if condition is not None else self.__getConditionFromCS( catalogName, operationName )
+
+    self.log.debug( "Condition string: %s" % conditionStr )
 
     evaluatedLfns = {}
 
@@ -304,7 +308,8 @@ class FCConditionParser(object):
       for lfn in lfns:
         try:
           evaluatedLfns[lfn] = self.__evaluateCondition( conditionStr, lfn = lfn, **kwargs )
-        except:
+        except Exception as e:
+          self.log.error( e )
           evaluatedLfns[lfn] = False
     else:
       evaluatedLfns = dict.fromkeys( lfns, True )
