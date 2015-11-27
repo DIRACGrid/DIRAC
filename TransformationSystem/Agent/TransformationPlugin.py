@@ -57,8 +57,8 @@ class TransformationPlugin( PluginBase ):
     if not res['OK']:
       return res
     newTasks = []
-    for _se, lfns in res['Value']:
-      newTasks.append( ( '', lfns ) )
+    for se, lfns in res['Value']:
+      newTasks.append( ( se, lfns ) )
     return S_OK( newTasks )
 
   def _BySize( self ):
