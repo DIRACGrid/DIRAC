@@ -188,6 +188,7 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
+  certFile = ''
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
