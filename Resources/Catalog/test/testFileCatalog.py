@@ -388,5 +388,6 @@ class TestRead( unittest.TestCase ):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestInitialization )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestWrite ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestRead ) )
 
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
