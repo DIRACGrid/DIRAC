@@ -20,7 +20,7 @@ Usage:
 
   Script.parseCommandLine()
 
-  from DIRAC.Core.Utilities.List                        import sortList, breakListIntoChunks
+  from DIRAC.Core.Utilities.List                        import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   dm = DataManager()
   import os
@@ -42,14 +42,14 @@ Usage:
     inputFile.close()
   else:
     lfns = [inputFileName]
-  for lfnList in breakListIntoChunks( sortList( lfns, True ), 500 ):
+  for lfnList in breakListIntoChunks( sorted( lfns, True ), 500 ):
     for storageElementName in storageElementNames:
       res = dm.removeReplica( storageElementName, lfnList )
       if not res['OK']:
         print 'Error:', res['Message']
         continue
-      for lfn in sortList( res['Value']['Successful'].keys() ):
+      for lfn in sorted( res['Value']['Successful'].keys() ):
         print 'Successfully removed %s replica of %s' % ( storageElementName, lfn )
-      for lfn in sortList( res['Value']['Failed'].keys() ):
+      for lfn in sorted( res['Value']['Failed'].keys() ):
         message = res['Value']['Failed'][lfn]
         print 'Error: failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )

@@ -58,14 +58,6 @@ def randomize( aList ):
   random.shuffle( tmpList )
   return tmpList
 
-def sortList( aList, invert = False ):
-  """Return a sorted list of ints or list of strings
-
-		:param list aList: list to sort
-		:param boolean invert: flag to revert sorting order (default False = list sorted in ascending order)
-  """
-  return sorted( aList, reverse = invert )
-
 def pop( aList, popElement ):
   """ Pop the first element equal to popElement from the list.
 

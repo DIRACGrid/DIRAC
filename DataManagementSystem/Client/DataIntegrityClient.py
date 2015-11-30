@@ -88,7 +88,7 @@ class DataIntegrityClient( Client ):
   def __reportProblematicReplicas( self, replicaTuple, se, reason ):
     """ Simple wrapper function around setReplicaProblematic """
     gLogger.info( 'The following %s files had %s at %s' % ( len( replicaTuple ), reason, se ) )
-    for lfn, _pfn, se, reason in sortList( replicaTuple ):
+    for lfn, _pfn, se, reason in sorted( replicaTuple ):
       if lfn:
         gLogger.info( lfn )
     res = self.setReplicaProblematic( replicaTuple, sourceComponent = 'DataIntegrityClient' )

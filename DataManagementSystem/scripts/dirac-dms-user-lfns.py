@@ -46,7 +46,6 @@ from DIRAC                                                   import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Core.Utilities.List                               import sortList
 from datetime import datetime, timedelta
 import sys, os, time, fnmatch
 fc = FileCatalog()
@@ -122,7 +121,7 @@ while len( activeDirs ) > 0:
 
 outputFileName = '%s.lfns' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
 outputFile = open( outputFileName, 'w' )
-for lfn in sortList( allFiles ):
+for lfn in sorted( allFiles ):
   outputFile.write( lfn + '\n' )
 outputFile.close()
 gLogger.notice( '%d matched files have been put in %s' % ( len( allFiles ), outputFileName ) )
@@ -130,7 +129,7 @@ gLogger.notice( '%d matched files have been put in %s' % ( len( allFiles ), outp
 if emptyDirsFlag:
   outputFileName = '%s.emptydirs' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
   outputFile = open( outputFileName, 'w' )
-  for dir in sortList( emptyDirs ):
+  for dir in sorted( emptyDirs ):
     outputFile.write( dir + '\n' )
   outputFile.close()
   gLogger.notice( '%d empty directories have been put in %s' % ( len( emptyDirs ), outputFileName ) )
