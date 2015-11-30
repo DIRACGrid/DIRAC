@@ -54,12 +54,16 @@ class GetPilotVersion( CommandBase ):
                                    self.log,
                                    timeout = 120 )
       if not result:
-        self.log.error( "Failed to get pilot version, exiting ...")
+        self.log.error( "Failed to get pilot version, exiting ..." )
         sys.exit( 1 )
       fp = open( self.pp.pilotCFGFile + '-local', 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
-      pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
+      if self.pp.setup in pilotCFGFileContent.keys() and 'Version' in pilotCFGFileContent[self.pp.setup].keys():
+        pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
+      else:
+        pilotVersions = [str( pv ) for pv in pilotCFGFileContent['Defaults']['Version']]
+
       self.log.debug( "Pilot versions found: %s" % ', '.join( pilotVersions ) )
       self.log.info( "Setting pilot version to %s" % pilotVersions[0] )
       self.pp.releaseVersion = pilotVersions[0]

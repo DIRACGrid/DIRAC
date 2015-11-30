@@ -74,9 +74,10 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
       expectedBytes = 0
     data = remoteFD.read()
     if fileName:
-      localFD = open( fileName + '-local', "wb" )
-      localFD.write( data )
-      localFD.close()
+      if not os.path.exists( fileName + '-local' ):
+        localFD = open( fileName + '-local', "wb" )
+        localFD.write( data )
+        localFD.close()
     else:
       urlData += data
     remoteFD.close()
@@ -400,8 +401,6 @@ class PilotParams( object ):
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
                      ( 'd', 'debug', 'Set debug flag' ),
                      ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
-                     ( 'E:', 'commandExtensions=', 'Python module with extra commands' ),
-                     ( 'X:', 'commands=', 'Pilot commands to execute commands' ),
                      ( 'g:', 'grid=', 'lcg tools package version' ),
                      ( 'h', 'help', 'Show this help' ),
                      ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
@@ -443,11 +442,7 @@ class PilotParams( object ):
                                             "".join( [ opt[0] for opt in self.cmdOpts ] ),
                                             [ opt[1] for opt in self.cmdOpts ] )
     for o, v in self.optList:
-      if o == '-E' or o == '--commandExtensions':
-        self.commandExtensions = v.split( ',' )
-      elif o == '-X' or o == '--commands':
-        self.commands = v.split( ',' )
-      elif o == '-e' or o == '--extraPackages':
+      if o == '-e' or o == '--extraPackages':
         self.extensions = v.split( ',' )
       elif o == '-n' or o == '--name':
         self.site = v

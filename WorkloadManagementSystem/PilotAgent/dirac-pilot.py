@@ -25,7 +25,7 @@ import getopt
 import sys
 from types import ListType
 
-from pilotTools import Logger, pythonPathCheck, PilotParams, getCommand
+from pilotTools import Logger, pythonPathCheck, PilotParams, getCommand, retrieveUrlTimeout
 
 if __name__ == "__main__":
 
@@ -40,12 +40,42 @@ if __name__ == "__main__":
   pilotParams.pilotRootPath = os.getcwd()
   pilotParams.pilotScript = os.path.realpath( sys.argv[0] )
   pilotParams.pilotScriptName = os.path.basename( pilotParams.pilotScript )
+  grid = pilotParams.site.split( '.' )[0]
   log.debug( 'PARAMETER [%s]' % ', '.join( map( str, pilotParams.optList ) ) )
+  try:
+    import json
+  except ImportError:
+    log.error( 'No json module available, could not get pilot commands at runtime. Using the default list.' )
+  log.info( "Finding the pilot commands list" )
 
+  result = retrieveUrlTimeout( pilotParams.pilotCFGFileLocation + '/' + pilotParams.pilotCFGFile,
+                               pilotParams.pilotCFGFile,
+                               log,
+                               timeout = 120 )
+
+  if result:
+    fp = open( pilotParams.pilotCFGFile + '-local', 'r' )
+    pilotCommandsFileContent = json.load( fp )
+    fp.close()
+    if pilotParams.setup in pilotCommandsFileContent.keys():
+      if grid in pilotCommandsFileContent[pilotParams.setup]['Commands'].keys():
+        pilotParams.commands = [str( pv ) for pv in pilotCommandsFileContent[pilotParams.setup]['Commands'][grid]]
+      elif grid in pilotCommandsFileContent['Defaults']['Commands'].keys():
+        pilotParams.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands'][grid]]
+      else:
+        pilotParams.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands']['defaultList']]
+      if 'Extensions' in pilotCommandsFileContent[pilotParams.setup].keys():
+        pilotParams.commandExtensions = [str( pv ) for pv in pilotCommandsFileContent[pilotParams.setup]['Extensions']]
+    elif grid in pilotCommandsFileContent['Defaults']['Commands'].keys():
+      pilotParams.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands'][grid]]
+    else:
+      pilotParams.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands']['defaultList']]
+
+    if pilotParams.commandExtensions:
+      log.info( "Requested command extensions: %s" % str( pilotParams.commandExtensions ) )
+  else:
+    log.error( "Failed to get pilot commands at runtime. Using the default list." )
   log.info( "Executing commands: %s" % str( pilotParams.commands ) )
-  if pilotParams.commandExtensions:
-    log.info( "Requested command extensions: %s" % str( pilotParams.commandExtensions ) )
-
   for commandName in pilotParams.commands:
     command, module = getCommand( pilotParams, commandName, log )
     if command is not None:
