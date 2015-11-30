@@ -282,9 +282,8 @@ class X509Chain( object ):
     if not retVal[ 'OK' ]:
       return retVal
     try:
-      fd = open( filePath, 'w' )
-      fd.write( retVal['Value'] )
-      fd.close()
+      with open( filePath, 'w' ) as fd:
+        fd.write( retVal['Value'] )
     except Exception as e:
       return DError( DErrno.EWF, "%s :%s" % ( filePath, e ) )
     try:

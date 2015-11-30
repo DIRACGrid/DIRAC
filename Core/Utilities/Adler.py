@@ -1,4 +1,3 @@
-# $HeadURL$
 """ Collection of DIRAC useful adler32 related tools.
     By default on Error they return None. 
 
@@ -86,15 +85,15 @@ def fileAdler( fileName ):
         break
       yield data
   try:
-    inputFile = open(fileName)
-  except Exception, error:
+    with open(fileName) as inputFile:
+      myAdler = 1
+      for data in readChunk( inputFile ):
+        myAdler = adler32( data, myAdler )
+      inputFile.close()
+      return intAdlerToHex( myAdler )
+  except Exception as error:
     print error
     return False
-  myAdler = 1
-  for data in readChunk( inputFile ):
-    myAdler = adler32( data, myAdler )
-  inputFile.close()
-  return intAdlerToHex( myAdler) 
 
 
 def stringAdler( string ):

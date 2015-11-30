@@ -48,9 +48,8 @@ class ConfigurationClient:
               confSec.deleteKey( opt )
       strData = str( cfg )
       if fileName:
-        fd = open( fileName, "w" )
-        fd.write( strData )
-        fd.close()
+        with open( fileName, "w" ) as fd:
+          fd.write( strData )
     except Exception, e:
       return S_ERROR( "Can't write to file %s: %s" % ( fileName, str( e ) ) )
     return S_OK( strData )

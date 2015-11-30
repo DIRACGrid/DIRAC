@@ -226,9 +226,8 @@ class AgentModule( object ):
 
   def am_createStopAgentFile( self ):
     try:
-      fd = open( self.am_getStopAgentFile(), 'w' )
-      fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
-      fd.close()
+      with open( self.am_getStopAgentFile(), 'w' ) as fd:
+        fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
     except Exception:
       pass
 

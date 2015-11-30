@@ -186,7 +186,7 @@ class SandboxStoreHandler( RequestHandler ):
     if not result[ 'OK' ]:
       self.__secureUnlinkFile( tmpFilePath )
       return result
-    sbid, newSandbox = result[ 'Value' ]
+    sbid, _newSandbox = result[ 'Value' ]
     gLogger.info( "Registered in DB", "with SBId %s" % sbid )
 
     result = self.__moveToFinalLocation( tmpFilePath, sbPath )
@@ -244,15 +244,14 @@ class SandboxStoreHandler( RequestHandler ):
     except:
       pass
     try:
-      fd = open( destFileName, "wb" )
-    except Exception, e:
+      with open( destFileName, "wb" ) as fd:
+        result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
+    except Exception as e:
       return S_ERROR( "Cannot open to write destination file %s" % destFileName )
-    result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
     if not result[ 'OK' ]:
       return result
     if tfd:
       os.close( tfd )
-    fd.close()
     return S_OK( destFileName )
 
   def __secureUnlinkFile( self, filePath ):
@@ -409,7 +408,6 @@ class SandboxStoreHandler( RequestHandler ):
       return result
     sbList = result[ 'Value' ]
     gLogger.info( "Got %s sandboxes to purge" % len( sbList ) )
-    deletedFromSE = []
     for sbId, SEName, SEPFN in sbList:
       self.__purgeSandbox( sbId, SEName, SEPFN )
 

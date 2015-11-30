@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########################################################################
-# $HeadURL$
 # File :    dirac-distribution
 # Author :  Adria Casajus
 ########################################################################
@@ -28,11 +27,10 @@ diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install
 if not os.path.isfile( diracInstallLocation ):
   diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install.py" )
 try:
-  diFile = open( diracInstallLocation, "r" )
-  DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
-  diFile.close()
-except Exception, excp:
-  raise
+  with open( diracInstallLocation, "r" ) as diFile:
+    DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
+except Exception as excp:
+  raise excp
   gLogger.fatal( "Cannot find dirac-install! Aborting (%s)" % str( excp ) )
   sys.exit( 1 )
 

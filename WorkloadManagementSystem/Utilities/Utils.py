@@ -34,9 +34,8 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   if os.path.exists( jobWrapperFile ):
     log.verbose( 'Removing existing Job Wrapper for %s' % ( jobID ) )
     os.remove( jobWrapperFile )
-  fd = open( os.path.join( diracRoot, defaultWrapperLocation ), 'r' )
-  wrapperTemplate = fd.read()
-  fd.close()
+  with open( os.path.join( diracRoot, defaultWrapperLocation ), 'r' ) as fd:
+    wrapperTemplate = fd.read()
 
   if jobParams.has_key( 'LogLevel' ):
     logLevel = jobParams['LogLevel']
@@ -61,9 +60,8 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
 """#!/bin/sh
 %s %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
 """ % ( dPython, jobWrapperFile, extraOptions, logLevel )
-  jobFile = open( jobExeFile, 'w' )
-  jobFile.write( jobFileContents )
-  jobFile.close()
+  with open( jobExeFile, 'w' ) as jobFile:
+    jobFile.write( jobFileContents )
 
   return S_OK( jobExeFile )
 

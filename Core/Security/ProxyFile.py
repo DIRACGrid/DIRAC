@@ -27,9 +27,8 @@ def writeToProxyFile( proxyContents, fileName = False ):
       return DError( DErrno.ECTMPF )
     fileName = proxyLocation
   try:
-    fd = open( fileName, 'w' )
-    fd.write( proxyContents )
-    fd.close()
+    with open( fileName, 'w' ) as fd:
+      fd.write( proxyContents )
   except Exception as e:
     return DError( DErrno.EWF, " %s: %s" % ( fileName, e ) )
   try:

@@ -51,9 +51,8 @@ class PoolXMLSlice( object ):
       xmlSlice = poolXMLCat.toXML()
       self.log.verbose( 'POOL XML Slice is: ' )
       self.log.verbose( xmlSlice )
-      poolSlice = open( poolXMLCatName, 'w' )
-      poolSlice.write( xmlSlice )
-      poolSlice.close()
+      with open( poolXMLCatName, 'w' ) as poolSlice:
+        poolSlice.write( xmlSlice )
       self.log.info( 'POOL XML Catalogue slice written to %s' % ( poolXMLCatName ) )
       try:
         # Temporary solution to the problem of storing the SE in the Pool XML slice

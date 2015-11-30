@@ -405,7 +405,7 @@ class ReleaseConfig( object ):
   def loadInstallationLocalDefaults( self, fileName ):
     try:
       fd = open( fileName, "r" )
-      #TODO: Merge with installation CFG
+      # TODO: Merge with installation CFG
       cfg = ReleaseConfig.CFG().parse( fd.read() )
       fd.close()
     except Exception, excp :
