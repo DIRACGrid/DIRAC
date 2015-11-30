@@ -362,7 +362,7 @@ class PluginUtilities( object ):
 
   @staticmethod
   def _normaliseShares( originalShares ):
-    total = sum( [ float( share ) for share in originalShares.values()] )
+    total = sum( float( share ) for share in originalShares.values() )
     return dict( [ ( site, 100.*float( share ) / total if total else 0. ) for site, share in originalShares.items()] )
 
   def uniqueSEs( self, ses ):

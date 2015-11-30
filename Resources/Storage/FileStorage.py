@@ -358,7 +358,7 @@ class FileStorage( StorageBase ):
     totalSize = 0
     for root, _dirs, files in os.walk( src_dir ):
       nbOfFiles += len( files )
-      totalSize += sum( [os.path.getsize( os.path.join( root, fn ) ) for fn in files] )
+      totalSize += sum( os.path.getsize( os.path.join( root, fn ) ) for fn in files )
 
     return {'Files':nbOfFiles, 'Size':totalSize}
 
@@ -479,7 +479,7 @@ class FileStorage( StorageBase ):
         # Calculate the original size
         for root, _dirs, files in os.walk( url ):
           nbOfFiles += len( files )
-          totalSize += sum( [os.path.getsize( os.path.join( root, fn ) ) for fn in files] )
+          totalSize += sum( os.path.getsize( os.path.join( root, fn ) ) for fn in files )
         try:
           shutil.rmtree(url)
           successful[url] = {'FilesRemoved':nbOfFiles, 'SizeRemoved':totalSize}
@@ -492,7 +492,7 @@ class FileStorage( StorageBase ):
             leftSize = 0
             for root, _dirs, files in os.walk( url ):
               leftFiles += len( files )
-              leftSize += sum( [os.path.getsize( os.path.join( root, fn ) ) for fn in files] )
+              leftSize += sum( os.path.getsize( os.path.join( root, fn ) ) for fn in files )
             nbOfFiles -= leftFiles
             totalSize -= leftSize
           failed[url] = {'FilesRemoved':nbOfFiles, 'SizeRemoved':totalSize}

@@ -243,14 +243,13 @@ class FTSJob( object ):
     if value:
       self.__data__["FailedFiles"] = value
     else:
-      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self
-                                           if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedFiles"] = sum( ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES )
 
   @property
   def Size( self ):
     """ size getter """
     # if not self.__data__["Size"]:
-    self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+    self.__data__["Size"] = sum( ftsFile.Size for ftsFile in self )
     return self.__data__["Size"]
 
   @Size.setter
@@ -259,14 +258,13 @@ class FTSJob( object ):
     if value:
       self.__data__["Size"] = value
     else:
-      self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+      self.__data__["Size"] = sum( ftsFile.Size for ftsFile in self )
 
   @property
   def FailedSize( self ):
     """ size getter """
     if not self.__data__["FailedSize"]:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self
-                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedSize"] = sum( ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES )
     return self.__data__["FailedSize"]
 
   @FailedSize.setter
@@ -275,8 +273,7 @@ class FTSJob( object ):
     if value:
       self.__data__["FailedSize"] = value
     else:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self
-                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedSize"] = sum( ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES )
 
   @property
   def CreationTime( self ):
@@ -512,7 +509,7 @@ class FTSJob( object ):
         statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
 
     total = sum( statusSummary.values() )
-    completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
+    completed = sum( statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES )
     self.Completeness = 100 * completed / total if total else 0
 
     if not full:
