@@ -1,4 +1,3 @@
-# $HeadURL $
 """ PublisherHandler
 
 This service has been built to provide the RSS web views with all the information
@@ -6,7 +5,7 @@ they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from types    import NoneType
 
 # DIRAC
@@ -16,7 +15,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceS
 from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers, Utils
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
-__RCSID__ = '$Id: PublisherHandler.py 65921 2013-05-14 13:05:43Z ubeda $'
+__RCSID__ = '$Id:$'
 
 # RSS Clients
 rsClient  = None
@@ -136,6 +135,10 @@ class PublisherHandler( RequestHandler ):
                                         statusType = statusType, 
                                         meta = { 'columns' : columns } )
 
+  types_getNodeStatuses = []
+  def export_getNodeStatuses( self ):
+      return rsClient.selectStatusElement( 'Node', 'Status' ) 
+
   types_getTree = [ str, str, str ]
   def export_getTree( self, element, elementType, elementName ):
     """
@@ -161,7 +164,7 @@ class PublisherHandler( RequestHandler ):
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
     if not cesStatus[ 'OK' ]:
       return cesStatus
-    
+  
     ses = CSHelpers.getSiteStorageElements( site )
     sesStatus = rsClient.selectStatusElement( 'Resource', 'Status', name = ses,
                                               meta = { 'columns' : [ 'Name', 'StatusType', 'Status'] } )
@@ -186,6 +189,46 @@ class PublisherHandler( RequestHandler ):
     return S_OK( tree )
     
   #-----------------------------------------------------------------------------  
+  types_setToken = [ str ] * 7
+  def export_setToken( self, element, name, statusType, token, elementType, username, lastCheckTime ):
+
+    lastCheckTime = datetime.strptime( lastCheckTime, '%Y-%m-%d %H:%M:%S' )
+
+    credentials = self.getRemoteCredentials()
+    gLogger.info( credentials )
+
+    elementInDB =rsClient.selectStatusElement( element, 'Status', name = name,
+                                               statusType = statusType,
+                                               elementType = elementType,
+                                               lastCheckTime = lastCheckTime )
+    if not elementInDB[ 'OK' ]:
+      return elementInDB
+    elif not elementInDB[ 'Value' ]:
+      return S_ERROR( 'Your selection has been modified. Please refresh.' )
+
+
+
+    if token == 'Acquire':
+      tokenOwner = username
+      tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+    elif token == 'Release':
+      tokenOwner = 'rs_svc'
+      tokenExpiration = datetime.max
+    else:
+      return S_ERROR( '%s is unknown token action' % token )
+
+    reason = 'Token %sd by %s ( web )' % ( token, username )
+
+    newStatus = rsClient.addOrModifyStatusElement( element, 'Status', name = name,
+                                                   statusType = statusType,
+                                                   elementType = elementType,
+                                                   reason = reason,
+                                                   tokenOwner = tokenOwner,
+                                                   tokenExpiration = tokenExpiration )
+    if not newStatus[ 'OK' ]:
+      return newStatus
+
+    return S_OK( reason )
     
   def getSite( self, element, elementType, elementName ):
     """
@@ -263,6 +306,99 @@ class PublisherHandler( RequestHandler ):
     result[ 'Columns' ] = res[ 'Columns' ]
     
     return result    
+
+  types_setStatus = [ str ] * 7
+  def export_setStatus( self, element, name, statusType, status, elementType, username, lastCheckTime ):
+
+    lastCheckTime = datetime.strptime( lastCheckTime, '%Y-%m-%d %H:%M:%S' )
+
+    credentials = self.getRemoteCredentials()
+    gLogger.info( credentials )
+
+    elementInDB =rsClient.selectStatusElement( element, 'Status', name = name,
+                                               statusType = statusType,
+                                            #   status = status,
+                                               elementType = elementType,
+                                               lastCheckTime = lastCheckTime )
+    if not elementInDB[ 'OK' ]:
+      return elementInDB
+    elif not elementInDB[ 'Value' ]:
+      return S_ERROR( 'Your selection has been modified. Please refresh.' )
+
+    reason          = 'Status %s forced by %s ( web )' % ( status, username )
+    tokenExpiration = datetime.utcnow() + timedelta( days = 1 )
+
+    newStatus = rsClient.addOrModifyStatusElement( element, 'Status', name = name,
+                                                   statusType = statusType,
+                                                   status = status,
+                                                   elementType = elementType,
+                                                   reason = reason,
+                                                   tokenOwner = username,
+                                                   tokenExpiration = tokenExpiration )
+    if not newStatus[ 'OK' ]:
+      return newStatus
+
+    return S_OK( reason )    
+    
+  #-----------------------------------------------------------------------------  
+    
+  # ResourceManagementClient ...................................................
+  types_getSpaceTokenOccupancy = [ ( str, NoneType, list ) ] * 2
+  def export_getSpaceTokenOccupancy( self, site, token ):
+
+    # Ugly thing
+    #...........................................................................
+    
+    endpoint2Site = {}
+    
+    ses = CSHelpers.getStorageElements()
+    if not ses[ 'OK' ]:
+      gLogger.error( ses[ 'Message' ] )
+    
+    for seName in ses[ 'Value' ]:
+      # Ugly, ugly, ugly.. waiting for DIRAC v7r0 to do it properly
+      if ( not '-' in seName ) or ( '_' in seName ):
+        continue
+      
+      res = CSHelpers.getStorageElementEndpoint( seName )
+      if not res[ 'OK' ]:
+        continue
+     
+      if not res[ 'Value' ] in endpoint2Site:
+        endpoint2Site[ res[ 'Value' ] ] = seName.split( '-', 1 )[ 0 ]
+      
+    #...........................................................................  
+
+    endpointSet = set()
+
+    if site:
+    
+      if isinstance( site, str ):
+        site = [ site ]
+     
+      for ep, siteName in endpoint2Site.items():
+        if siteName in site:
+          endpointSet.add( ep )
+    
+    if endpointSet:
+      endpoint = list( endpointSet )
+    else:
+      endpoint = None
+      
+    res = rmClient.selectSpaceTokenOccupancyCache( endpoint = endpoint, token = token )
+    if not res[ 'OK' ]:
+      return res
+    
+    spList = [ dict( zip( res[ 'Columns' ], sp ) ) for sp in res[ 'Value' ] ]
+    
+    for spd in spList:
+      
+      try:
+        spd[ 'Site' ] = endpoint2Site[ spd[ 'Endpoint' ] ]
+      except KeyError:
+        spd[ 'Site' ] = 'Unknown'  
+      
+    return S_OK( spList )
 
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
