@@ -108,15 +108,6 @@ class ListTestCase( unittest.TestCase ):
     aStr = List.intListToString( aList )
     self.assertEqual( aStr, "1,2,3")
 
-  def testRemoveEmptyElements( self ):
-    """ removeEmptyElements tests """
-    # empty list
-    aList = []
-    self.assertEqual( List.removeEmptyElements(aList), [] )
-    # None or "" (empty string) in
-    aList = [ "", None, 1 ] 
-    self.assertEqual( List.removeEmptyElements(aList), [1])
-
   def testFromChar( self ):
     """ fromChar tests """
     # empty string

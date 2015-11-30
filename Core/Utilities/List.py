@@ -110,10 +110,3 @@ def breakListIntoChunks( aList, chunkSize ):
   if type( aList ) in ( type( set() ), DictType, TupleType ):
     aList = list( aList )
   return [ chunk for chunk in getChunk( aList, chunkSize ) ]
-
-def removeEmptyElements( aList ):
-  """Remove empty elements from a list ( [''] ), preserve the order of the non-null elements.
-
-	:param list aList: list of elements
-  """
-  return [x for x in aList if x]
