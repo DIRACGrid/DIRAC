@@ -373,16 +373,19 @@ class CheckCECapabilities( CommandBase ):
     """ Setup CE/Queue Tags
     """
 
+    cfg = []
     if self.pp.useServerCertificate:
-      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+      cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+      cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+      cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
     if self.pp.localConfigFile:
-      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+      cfg.append( self.pp.localConfigFile )  # this file is as input
 
 
     checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
                                                                         self.pp.ceName,
                                                                         self.pp.queueName,
-                                                                        " ".join( self.cfg ) )
+                                                                        " ".join( cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
 
     import json
@@ -392,9 +395,15 @@ class CheckCECapabilities( CommandBase ):
     if resourceDict.get( 'Tag' ):
       self.pp.tags.append( resourceDict['Tag'] )
       self.cfg.append( '-FDMH' )
+
+      if self.pp.useServerCertificate:
+        self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+        self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+        self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+
       if self.pp.localConfigFile:
-        self.cfg.append( '-O %s' % self.pp.localConfigFile )
-        self.cfg.append( self.pp.localConfigFile )
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
+        self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
       if self.debugFlag:
         self.cfg.append( '-ddd' )
