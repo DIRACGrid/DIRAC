@@ -273,6 +273,12 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
 
+
+[v6r13p21]
+
+*TS
+FIX: Registering TargetSE for Standard TransformationAgent plugin
+
 [v6r13p20]
 
 *DMS
