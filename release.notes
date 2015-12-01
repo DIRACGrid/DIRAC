@@ -1,3 +1,8 @@
+[v6r13p21]
+
+*TS
+FIX: Registering TargetSE for Standard TransformationAgent plugin
+
 [v6r13p20]
 
 *DMS
