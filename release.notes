@@ -1,3 +1,19 @@
+[v6r14p12]
+
+*Core
+FIX: allow a renormalization of the estimated CPU power
+FIX: dirac-install: Make hashlib optional again (for previous versions of python, since the pilot may end up on old machines)
+
+*Framework
+FIX: allow to install agents with non-standard names (different from the module name)
+
+*DMS
+CHANGE: Consider files to reschedule and submit when they are Failed in FTS
+
+*WMS
+CHANGE: Move getCEStatus function back to using the ARC API
+
+
 [v6r14p11]
 
 *Core
