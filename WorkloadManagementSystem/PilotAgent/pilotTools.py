@@ -53,7 +53,8 @@ def pythonPathCheck():
     raise x
   
 def alarmTimeoutHandler( *args ):
-  raise Exception( 'Timeout' )  
+  raise Exception( 'Timeout' )
+
   
 def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
   """
@@ -496,4 +497,21 @@ class PilotParams( object ):
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
+
+
+  def retrievePilotParameters( self, pilotCommandsFileContent ):
+    grid = self.site.split( '.' )[0]
+    if self.setup in pilotCommandsFileContent.keys():
+      if grid in pilotCommandsFileContent[self.setup]['Commands'].keys():
+        self.commands = [str( pv ) for pv in pilotCommandsFileContent[self.setup]['Commands'][grid]]
+      elif grid in pilotCommandsFileContent['Defaults']['Commands'].keys():
+        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands'][grid]]
+      else:
+        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands']['defaultList']]
+      if 'Extensions' in pilotCommandsFileContent[self.setup].keys():
+        self.commandExtensions = [str( pv ) for pv in pilotCommandsFileContent[self.setup]['Extensions']]
+      elif grid in pilotCommandsFileContent['Defaults']['Commands'].keys():
+        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands'][grid]]
+      else:
+        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands']['defaultList']]
 
