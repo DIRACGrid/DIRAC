@@ -41,27 +41,27 @@ def getFilesToStage( lfnList ):
     if not fileMetadata['OK']:
       failed[se] = dict.fromkeys( lfnsInSEList, fileMetadata['Message'] )
     else:
-      failed[se] = fileMetadata['Value']['Failed']
+      if fileMetadata['Value']['Failed']:
+        failed[se] = fileMetadata['Value']['Failed']
       # is there at least one online?
       for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
         if 'Cached' not in mDict:
-          failed[se][lfn] = 'No Cached item returned as metadata'
+          failed.setdefault( se, {} )[lfn] = 'No Cached item returned as metadata'
         elif mDict['Cached']:
           onlineLFNs.add( lfn )
 
   # If the file was found staged, ignore possible errors, but print out errors
+  for se, seFailed in failed.items():
+    gLogger.error( "Errors when getting files metadata", 'at %s' % se )
+    for lfn, reason in seFailed.items():
+      gLogger.info( '%s: %s' % ( lfn, reason ) )
+      if lfn in onlineLFNs:
+        failed[se].pop( lfn )
+    if not failed[se]:
+      failed.pop( se )
   if failed:
-    for se, seFailed in failed.items():
-      gLogger.error( "Errors when getting files metadata", 'at %s' % se )
-      for lfn, reason in seFailed.items():
-        gLogger.info( '%s: %s' % ( lfn, reason ) )
-        if lfn in onlineLFNs:
-          failed[se].pop( lfn )
-      if not failed[se]:
-        failed.pop( se )
-    if failed:
-      return S_ERROR( 'Could not get metadata for %d files' % \
-                      len( set( [lfn for lfnList in failed.values() for lfn in lfnList] ) ) )
+    return S_ERROR( 'Could not get metadata for %d files' % \
+                    len( set( [lfn for lfnList in failed.values() for lfn in lfnList] ) ) )
   offlineLFNs = set( lfnList ) - onlineLFNs
 
 
