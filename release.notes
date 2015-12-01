@@ -44,6 +44,23 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
 
+
+[v6r14p12]
+
+*Core
+FIX: allow a renormalization of the estimated CPU power
+FIX: dirac-install: Make hashlib optional again (for previous versions of python, since the pilot may end up on old machines)
+
+*Framework
+FIX: allow to install agents with non-standard names (different from the module name)
+
+*DMS
+CHANGE: Consider files to reschedule and submit when they are Failed in FTS
+
+*WMS
+CHANGE: Move getCEStatus function back to using the ARC API
+
+
 [v6r14p11]
 
 *Core
@@ -316,6 +333,12 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+
+[v6r13p21]
+
+*TS
+FIX: Registering TargetSE for Standard TransformationAgent plugin
 
 [v6r13p20]
 
