@@ -44,7 +44,9 @@ def getFilesToStage( lfnList ):
       failed[se] = fileMetadata['Value']['Failed']
       # is there at least one online?
       for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
-        if mDict['Cached']:
+        if 'Cached' not in mDict:
+          failed[se][lfn] = 'No Cached item returned as metadata'
+        elif mDict['Cached']:
           onlineLFNs.add( lfn )
 
   # If the file was found staged, ignore possible errors, but print out errors
