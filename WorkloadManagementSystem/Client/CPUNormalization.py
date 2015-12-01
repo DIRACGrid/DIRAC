@@ -14,6 +14,7 @@ import urllib
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
 
 # TODO: This should come from some place in the configuration
 NORMALIZATIONCONSTANT = 60. / 250.  # from minutes to seconds and from SI00 to HS06 (ie min * SI00 -> sec * HS06 )
@@ -41,7 +42,7 @@ def getPowerFromMJF():
   jobSlots = float( features.get( 'jobslots', 0 ) )
   denom = min( max( logCores, physCores ), jobSlots ) if ( logCores or physCores ) and jobSlots else None
   if totalPower and denom:
-    return int( 10. * float( totalPower ) / denom ) / 10.
+    return round( float( totalPower ) / denom , 2 )
   else:
     return None
 
@@ -123,9 +124,12 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   except ( TypeError, ValueError ), x :
     return S_ERROR( x )
 
-  # This number of iterations corresponds to 250 HS06 seconds
+  # This number of iterations corresponds to 1kHS2k.seconds, i.e. 250 HS06 seconds
+  # 06.11.2015: fixed absolute normalization w.r.t. MJF at GRIDKA
+  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+  corr = Operations().getValue( 'JobScheduling/CPUNormalizationCorrection', 1. )
   n = int( 1000 * 1000 * 12.5 )
-  calib = 250.0 / UNITS[reference]
+  calib = 250.0 / UNITS[reference] / corr
 
   m = long( 0 )
   m2 = long( 0 )
@@ -155,24 +159,32 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
 
 def getCPUTime( CPUNormalizationFactor ):
   """ Trying to get CPUTime (in seconds) from the CS. The default is a large 9999999, that we may consider as "Infinite".
-
-      This is a generic method, independent from the middleware of the resource.
+      This is a generic method, independent from the middleware of the resource if TimeLeft doesn't return a value
   """
-  CPUTime = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
+  cpuTimeLeft = 0.
+  cpuWorkLeft = gConfig.getValue( '/LocalSite/CPUTimeLeft', 0 )
 
-  if CPUTime:
+  if not cpuWorkLeft:
+    # Try and get the information from the CPU left utility
+    result = TimeLeft().getTimeLeft()
+    if result['OK']:
+      cpuWorkLeft = result['Value']
+
+  if cpuWorkLeft:
     # This is in HS06sseconds
     # We need to convert in real seconds
-    if not CPUNormalizationFactor:  # if CPUNormalizationFactor passed in is 0, try get it from the local cfg
-      CPUNormalizationFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
-    # if CPUNormalizationFactor is not even in the local cfg, it's a problem, and yes the next line will raise an exception
-    CPUTime = CPUTime / int( CPUNormalizationFactor )
-  else:
+    if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg
+      cpuNormalizationFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
+    if cpuNormalizationFactor:
+      cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor
+
+  if not cpuTimeLeft:
     # now we know that we have to find the CPUTimeLeft by looking in the CS
+    # this is not granted to be correct as the CS units may not be real seconds
     gridCE = gConfig.getValue( '/LocalSite/GridCE' )
-    CEQueue = gConfig.getValue( '/LocalSite/CEQueue' )
-    if not CEQueue:
-      # we have to look for a CEQueue in the CS
+    ceQueue = gConfig.getValue( '/LocalSite/CEQueue' )
+    if not ceQueue:
+      # we have to look for a ceQueue in the CS
       # A bit hacky. We should better profit from something generic
       gLogger.warn( "No CEQueue in local configuration, looking to find one in CS" )
       siteName = gConfig.getValue( '/LocalSite/Site' )
@@ -181,25 +193,22 @@ def getCPUTime( CPUNormalizationFactor ):
       if not res['OK']:
         raise RuntimeError( res['Message'] )
       queues = res['Value']
-      CPUTimes = []
-      for queue in queues:
-        CPUTimes.append( gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 9999999 ) )
-      cpuTimeInMinutes = min( CPUTimes )
+      cpuTimes = [gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 9999999 ) for queue in queues]
       # These are (real, wall clock) minutes - damn BDII!
-      CPUTime = int( cpuTimeInMinutes ) * 60
+      cpuTimeLeft = min( cpuTimes ) * 60
     else:
-      queueInfo = getQueueInfo( '%s/%s' % ( gridCE, CEQueue ) )
-      CPUTime = 9999999
+      queueInfo = getQueueInfo( '%s/%s' % ( gridCE, ceQueue ) )
+      cpuTimeLeft = 9999999
       if not queueInfo['OK'] or not queueInfo['Value']:
-        gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to %d" % CPUTime )
+        gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to %d" % cpuTimeLeft )
       else:
         queueCSSection = queueInfo['Value']['QueueCSSection']
         # These are (real, wall clock) minutes - damn BDII!
         cpuTimeInMinutes = gConfig.getValue( '%s/maxCPUTime' % queueCSSection )
         if cpuTimeInMinutes:
-          CPUTime = int( cpuTimeInMinutes ) * 60
-          gLogger.info( "CPUTime for %s: %d" % ( queueCSSection, CPUTime ) )
+          cpuTimeLeft = cpuTimeInMinutes * 60.
+          gLogger.info( "CPUTime for %s: %d" % ( queueCSSection, cpuTimeLeft ) )
         else:
-          gLogger.warn( "Can't find maxCPUTime for %s, defaulting CPUTime to %d" % ( queueCSSection, CPUTime ) )
+          gLogger.warn( "Can't find maxCPUTime for %s, defaulting CPUTime to %d" % ( queueCSSection, cpuTimeLeft ) )
 
-  return CPUTime
+  return int( cpuTimeLeft )
