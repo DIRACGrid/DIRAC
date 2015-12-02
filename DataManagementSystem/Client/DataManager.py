@@ -451,7 +451,7 @@ class DataManager( object ):
       log.debug( "Checksum calculated to be %s." % checksum )
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
-      errStr = "Completey failed to determine existence of destination LFN."
+      errStr = "Completely failed to determine existence of destination LFN."
       log.debug( errStr, lfn )
       return res
     if lfn not in res['Value']['Successful']:
@@ -463,8 +463,9 @@ class DataManager( object ):
         errStr = "The supplied LFN already exists in the File Catalog."
         log.debug( errStr, lfn )
       else:
-        errStr = "This file GUID already exists for another file. " \
-            "Please remove it and try again."
+        # If the returned LFN is different, this is the name of a file
+        # with the same GUID
+        errStr = "This file GUID already exists for another file"
         log.debug( errStr, res['Value']['Successful'][lfn] )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
 
