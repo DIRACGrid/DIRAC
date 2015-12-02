@@ -34,11 +34,17 @@ class GetPilotVersion( CommandBase ):
   """ Used to get the pilot version that needs to be installed.
       If passed as a parameter, uses that one. If not passed, it looks for alternatives.
 
+      If the version is not passed as a parameter, it is taken from a json file that should look like:
+
+      { 'SetupName':{'Commands':{ Name of the grid': [list of commands]}, 'Extensions':['list of extensions'], 'Version':['xyz'],
+      'Defaults':{'Commands':{ 'defaultList': [list of commands]', 'Name of the grid': [list of commands]}, 'Version':['xyz']}}
+
+
       This assures that a version is always got even on non-standard Grid resources.
   """
 
   def execute(self):
-    """ Standard method for pilot commands
+    """ Standard method for pilot commands.
     """
     if self.pp.releaseVersion:
       self.log.info( "Pilot version requested as pilot script option. Nothing to do." )
@@ -59,7 +65,9 @@ class GetPilotVersion( CommandBase ):
       fp = open( self.pp.pilotCFGFile + '-local', 'r' )
       pilotCFGFileContent = json.load( fp )
       fp.close()
-      if self.pp.setup in pilotCFGFileContent.keys() and 'Version' in pilotCFGFileContent[self.pp.setup].keys():
+
+      # If the version of a specific setup is not present, we take the default version.
+      if self.pp.setup in pilotCFGFileContent and 'Version' in pilotCFGFileContent[self.pp.setup]:
         pilotVersions = [str( pv ) for pv in pilotCFGFileContent[self.pp.setup]['Version']]
       else:
         pilotVersions = [str( pv ) for pv in pilotCFGFileContent['Defaults']['Version']]
@@ -551,8 +559,8 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
     # Generic JOB_ID
     elif os.environ.has_key( 'JOB_ID' ):
-       self.pp.flavour = 'Generic'
-       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
+      self.pp.flavour = 'Generic'
+      pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
     if os.environ.has_key( 'CONDOR_JOBID' ):
