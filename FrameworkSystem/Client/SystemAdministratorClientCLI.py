@@ -1013,9 +1013,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     argss = args.split()
     fname = argss[0]
-    executedfile = open( fname, 'r' )
-    lines = executedfile.readlines()
-    executedfile.close()
+    with open( fname, 'r' ) as executedfile:
+      lines = executedfile.readlines()
 
     for line in lines:
       if line.find( '#' ) != -1 :

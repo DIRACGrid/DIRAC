@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
 
 __RCSID__ = "$Id$"
+
 from DIRAC           import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
@@ -20,7 +18,7 @@ Usage:
 
   Script.parseCommandLine()
 
-  from DIRAC.Core.Utilities.List                        import breakListIntoChunks
+  from DIRAC.Core.Utilities.List import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   dm = DataManager()
   import os
@@ -48,8 +46,8 @@ Usage:
       if not res['OK']:
         print 'Error:', res['Message']
         continue
-      for lfn in sorted( res['Value']['Successful'].keys() ):
+      for lfn in sorted( res['Value']['Successful'] ):
         print 'Successfully removed %s replica of %s' % ( storageElementName, lfn )
-      for lfn in sorted( res['Value']['Failed'].keys() ):
+      for lfn in sorted( res['Value']['Failed'] ):
         message = res['Value']['Failed'][lfn]
         print 'Error: failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )

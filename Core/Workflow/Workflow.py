@@ -90,9 +90,8 @@ class Workflow( AttributeCollection ):
   def toXMLFile( self, outFile ):
     if os.path.exists( outFile ):
       os.remove( outFile )
-    xmlfile = open( outFile, 'w' )
-    xmlfile.write( self.toXML() )
-    xmlfile.close()
+    with open( outFile, 'w' ) as xmlfile:
+      xmlfile.write( self.toXML() )
 
   def addTool( self, name, tool ):
     """ Add an object that will be available in all the modules to perform some operations.
@@ -182,25 +181,6 @@ class Workflow( AttributeCollection ):
 
   def createCode( self, combine_steps = False ):
     self.resolveGlobalVars()
-    str = ''
-    str = str + self.module_definitions.createCode()
-    str = str + self.step_definitions.createCode()
-    str = str + "\nclass job:\n"
-    str = str + indent( 1 ) + 'def execute(self):\n'
-    #str=str+indent(2)+'# flush self.step_instances\n'
-    str = str + self.step_instances.createCode()
-    # it seems we do not need it on this level
-    str = str + indent( 2 ) + '# output assignment\n'
-    for v in self.parameters:
-      if v.isOutput():
-        str = str + v.createParameterCode( 2, 'self' )
-
-    str = str + '\nj=job()\n'
-    str = str + self.parameters.createParametersCode( 0, 'j' )
-    str = str + 'j.execute()'
-    return str
-
-  def showCode( self, combine_steps = False ):
     str = ''
     str = str + self.module_definitions.createCode()
     str = str + self.step_definitions.createCode()

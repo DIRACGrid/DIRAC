@@ -294,8 +294,6 @@ workflow1.addParameter(Parameter("CONFIG_VERSION","CCRC08","string","","",True, 
 workflow1.toXMLFile('wkf_CCRC_3.xml')
 #w4 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test1.xml")
 #print 'Creating code for the workflow'
-#print workflow1.showCode()
-print workflow1.createCode()
 #eval(compile(workflow1.createCode(),'<string>','exec'))
 #workflow1.execute()
 
