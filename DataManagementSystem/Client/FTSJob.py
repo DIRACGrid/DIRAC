@@ -243,7 +243,7 @@ class FTSJob( object ):
     if value:
       self.__data__["FailedFiles"] = value
     else:
-      self.__data__["FailedFiles"] = sum( ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES )
+      self.__data__["FailedFiles"] = len( [ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES] )
 
   @property
   def Size( self ):
