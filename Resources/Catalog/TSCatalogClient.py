@@ -34,7 +34,8 @@ class TSCatalogClient( FileCatalogClientBase ):
     """
     return methodName in ( READ_METHODS + WRITE_METHODS + NO_LFN_METHODS )
 
-  def getInterfaceMethods( self ):
+  @staticmethod
+  def getInterfaceMethods():
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
