@@ -20,6 +20,7 @@ class FileCatalogProxyClient( object ):
     self.rpc = RPCClient( 'DataManagement/FileCatalogProxy', timeout=120 )
     self.valid = False
     self.valid = self.rpc.ping()['OK']
+    self.interfaceMethods = None
 
   def isOK( self ):
     """ Is the Catalog available?
@@ -30,6 +31,12 @@ class FileCatalogProxyClient( object ):
     """ Get the file catalog name
     """
     return self.fcName
+
+  def setInterfaceMethods( self, methodTuple ):
+    self.interfaceMethods = methodTuple
+
+  def getInterfaceMethods( self ):
+    return self.interfaceMethods
 
   def __getattr__( self, name ):
     self.method = name
