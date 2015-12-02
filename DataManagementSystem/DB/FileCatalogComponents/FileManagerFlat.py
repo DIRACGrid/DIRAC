@@ -4,12 +4,11 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                  import S_OK, S_ERROR, gLogger
+from DIRAC                                  import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List              import stringListToString, intListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
 
-import time, os
-from types import *
+import os
 
 class FileManagerFlat( FileManagerBase ):
 
@@ -21,14 +20,12 @@ class FileManagerFlat( FileManagerBase ):
   def _findFiles( self, lfns, metadata = ['FileID'], connection = False ):
     connection = self._getConnection( connection )
     """ Find file ID if it exists for the given list of LFNs """
-    startTime = time.time()
     dirDict = self._getFileDirectories( lfns )
     failed = {}
     directoryIDs = {}
     for dirPath in dirDict.keys():
-      startTime = time.time()
       res = self.db.dtree.findDir( dirPath )
-      if ( not res['OK'] ) or ( not res['Value'] ):
+      if not res['OK'] or not res['Value']:
         error = res.get( 'Message', 'No such file or directory' )
         for fileName in dirDict[dirPath]:
           failed['%s/%s' % ( dirPath, fileName )] = error
@@ -37,9 +34,8 @@ class FileManagerFlat( FileManagerBase ):
     successful = {}
     for dirPath in directoryIDs.keys():
       fileNames = dirDict[dirPath]
-      startTime = time.time()
       res = self._getDirectoryFiles( directoryIDs[dirPath], fileNames, metadata, connection = connection )
-      if ( not res['OK'] ) or ( not res['Value'] ):
+      if not res['OK'] or not res['Value']:
         error = res.get( 'Message', 'No such file or directory' )
         for fileName in fileNames:
           failed['%s/%s' % ( dirPath, fileName )] = error
@@ -65,9 +61,9 @@ class FileManagerFlat( FileManagerBase ):
     if not res['OK']:
       return res
     files = {}
-    for tuple in res['Value']:
-      fileName = tuple[0]
-      files[fileName] = dict( zip( metadata, tuple[1:] ) )
+    for fTuple in res['Value']:
+      fileName = fTuple[0]
+      files[fileName] = dict( zip( metadata, fTuple[1:] ) )
     return S_OK( files )
 
   ######################################################
@@ -118,7 +114,7 @@ class FileManagerFlat( FileManagerBase ):
     connection = self._getConnection( connection )
     if not guid:
       return S_OK( {} )
-    if type( guid ) not in [ListType, TupleType]:
+    if not isinstance( guid, ( list, tuple ) ):
       guid = [guid]
     req = "SELECT FileID,GUID FROM FC_Files WHERE GUID IN (%s)" % stringListToString( guid )
     res = self.db._query( req, connection )
@@ -221,7 +217,7 @@ class FileManagerFlat( FileManagerBase ):
     # TODO: This is in efficient. Should perform bulk operation
     connection = self._getConnection( connection )
     """ Check if a replica already exists """
-    if type( seID ) in StringTypes:
+    if isinstance( seID, basestring ):
       res = self.db.seManager.findSE( seID )
       if not res['OK']:
         return res
@@ -278,7 +274,7 @@ class FileManagerFlat( FileManagerBase ):
     connection = self._getConnection( connection )
     deleteTuples = []
     for fileID, seID in replicaTuples:
-      if type( seID ) in StringTypes:
+      if isinstance( seID, basestring ):
         res = self.db.seManager.findSE( seID )
         if not res['OK']:
           return res
@@ -311,7 +307,7 @@ class FileManagerFlat( FileManagerBase ):
 
   def _setReplicaParameter( self, fileID, seID, paramName, paramValue, connection = False ):
     connection = self._getConnection( connection )
-    if type( seID ) in StringTypes:
+    if isinstance( seID, basestring ):
       res = self.db.seManager.findSE( seID )
       if not res['OK']:
         return res
@@ -321,7 +317,7 @@ class FileManagerFlat( FileManagerBase ):
 
   def _setFileParameter( self, fileID, paramName, paramValue, connection = False ):
     connection = self._getConnection( connection )
-    if type( fileID ) not in [TupleType, ListType]:
+    if not isinstance( fileID, ( list, tuple ) ):
       fileID = [fileID]
     req = "UPDATE FC_Files SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % ( paramName, paramValue, intListToString( fileID ) )
     return self.db._update( req, connection )
@@ -340,22 +336,22 @@ class FileManagerFlat( FileManagerBase ):
     if not res['OK']:
       return res
     replicas = {}
-    for tuple in res['Value']:
-      fileID = tuple[0]
+    for fTuple in res['Value']:
+      fileID = fTuple[0]
       if not replicas.has_key( fileID ):
         replicas[fileID] = {}
-      seID = tuple[1]
+      seID = fTuple[1]
       res = self.db.seManager.getSEName( seID )
       if not res['OK']:
         continue
       seName = res['Value']
-      statusID = tuple[2]
+      statusID = fTuple[2]
       res = self._getIntStatus( statusID, connection = connection )
       if not res['OK']:
         continue
       status = res['Value']
       replicas[fileID][seName] = {'Status':status}
-      replicas[fileID][seName].update( dict( zip( fields, tuple[3:] ) ) )
+      replicas[fileID][seName].update( dict( zip( fields, fTuple[3:] ) ) )
     for fileID in fileIDs:
       if not replicas.has_key( fileID ):
         replicas[fileID] = {}
