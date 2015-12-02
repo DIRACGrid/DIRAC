@@ -6,7 +6,6 @@ __RCSID__ = "$Id$"
 import os
 import stat
 import tempfile
-import types
 
 from DIRAC import S_OK
 from DIRAC.Core.Utilities import DError, DErrno
@@ -30,11 +29,11 @@ def writeToProxyFile( proxyContents, fileName = False ):
     with open( fileName, 'w' ) as fd:
       fd.write( proxyContents )
   except Exception as e:
-    return DError( DErrno.EWF, " %s: %s" % ( fileName, e ) )
+    return DError( DErrno.EWF, " %s: %s" % ( fileName, repr( e ).replace( ',)', ')' ) ) )
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception as e:
-    return DError( DErrno.ESPF, "%s: %s" % ( fileName, e ) )
+    return DError( DErrno.ESPF, "%s: %s" % ( fileName, repr( e ).replace( ',)', ')' ) ) )
   return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
@@ -105,7 +104,7 @@ def multiProxyArgument( proxy = False ):
       proxyLoc = getProxyLocation()
       if not proxyLoc:
         return DError( DErrno.EPROXYFIND )
-    if type( proxy ) == types.StringType:
+    if isinstance( proxy, basestring ):
       proxyLoc = proxy
     # Load proxy
     proxy = X509Chain()

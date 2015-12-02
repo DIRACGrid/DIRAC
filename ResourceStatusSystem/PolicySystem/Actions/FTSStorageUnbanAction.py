@@ -71,7 +71,7 @@ class FTSStorageUnbanAction( BaseAction ):
       try:
         proxyPath = proxyPath['Value']['path']
       except Exception as e:
-        return S_ERROR( e.message )
+        return S_ERROR( repr( e ).replace( ',)', ')' ) )
 
       context = fts3.Context( endpoint, proxyPath )
 

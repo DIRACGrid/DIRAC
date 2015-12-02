@@ -1,10 +1,9 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os.path
 import zlib
 import zipfile
-import threading, thread
+import thread
 import time
 import DIRAC
 from DIRAC.Core.Utilities import List, Time
@@ -13,7 +12,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-class ConfigurationData:
+class ConfigurationData( object ):
 
   def __init__( self, loadDefaultCFG = True ):
     lr = LockRing()
@@ -366,7 +365,7 @@ class ConfigurationData:
     except Exception as e:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
-      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
+      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, repr( e ).replace( ',)', ')' ) ) )
     if backupName:
       self.__backupCurrentConfiguration( backupName )
     return S_OK()

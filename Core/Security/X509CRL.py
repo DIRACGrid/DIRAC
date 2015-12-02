@@ -45,7 +45,7 @@ class X509CRL( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, e ) )
+      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, repr( e ).replace( ',)', ')' ) ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
@@ -57,7 +57,7 @@ class X509CRL( object ):
     try:
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return DError( DErrno.ECERTREAD, "%s" % e )
+      return DError( DErrno.ECERTREAD, "%s" % repr( e ).replace( ',)', ')' ) )
     if not self.__revokedCert:
       return DError( DErrno.ECERTREAD )
     self.__loadedCert = True
@@ -76,7 +76,7 @@ class X509CRL( object ):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, e ) )
+      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, repr( e ).replace( ',)', ')' ) ) )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
@@ -114,11 +114,11 @@ class X509CRL( object ):
         fd.write( pemData )
         fd.close()
     except Exception as e:
-      return DError( DErrno.EWF, "%s: %s" % ( filename, e ) )
+      return DError( DErrno.EWF, "%s: %s" % ( filename, repr( e ).replace( ',)', ')' ) ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return DError( DErrno.ESPF, "%s: %s" % ( filename, e ) )
+      return DError( DErrno.ESPF, "%s: %s" % ( filename, repr( e ).replace( ',)', ')' ) ) )
     return S_OK( filename )
 
   def __str__( self ):

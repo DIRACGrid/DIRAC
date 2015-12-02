@@ -92,7 +92,7 @@ def fileAdler( fileName ):
       inputFile.close()
       return intAdlerToHex( myAdler )
   except Exception as error:
-    print error
+    print repr( error ).replace( ',)', ')' )
     return False
 
 

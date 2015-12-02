@@ -1,4 +1,3 @@
-# $HeadURL$
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 __RCSID__ = "$Id$"
 
@@ -10,7 +9,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
-class ConfigurationClient:
+class ConfigurationClient( object ):
 
   def __init__( self, fileToLoadList = None ):
     self.diracConfigFilePath = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
