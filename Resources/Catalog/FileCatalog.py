@@ -46,7 +46,8 @@
 
 import re
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                               import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities                                import DError, DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 from DIRAC.Resources.Catalog.Utilities                   import checkArgumentFormat
@@ -67,23 +68,38 @@ class FileCatalog( object ):
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
     self.vo = vo if vo else getVOfromProxyGroup().get( 'Value', None )
+    self.log = gLogger.getSubLogger( "FileCatalog" )
 
     self.opHelper = Operations( vo = self.vo )
 
-    if catalogs is None:
-      catalogList = []
-    elif isinstance( catalogs, basestring ):
+    catalogList = []
+    if isinstance( catalogs, basestring ):
       catalogList = [catalogs]
     elif isinstance( catalogs, ( list, tuple ) ):
       catalogList = list( catalogs )
 
     if catalogList:
-      res = self._getSelectedCatalogs( catalogList )
+      result = self._getEligibleCatalogs()
+      if not result['OK']:
+        self.log.error( "Failed to get eligible catalog" )
+        return
+      eligibleFileCatalogs = result['Value']
+      catalogCheck = True
+      for catalog in catalogList:
+        if catalog not in eligibleFileCatalogs:
+          self.log.error( "Specified catalog is not eligible", catalog )
+          catalogCheck = False
+      if catalogCheck:
+        result = self._getSelectedCatalogs( catalogList )
+      else:
+        result = S_ERROR( "Specified catalog is not eligible" )
     else:
-      res = self._getCatalogs()
-    if not res['OK']:
+      result = self._getCatalogs()
+    if not result['OK']:
+      self.log.error( "Failed to create catalog objects" )
       self.valid = False
     elif ( len( self.readCatalogs ) == 0 ) and ( len( self.writeCatalogs ) == 0 ):
+      self.log.error( "No catalog object created" )
       self.valid = False
 
     result = self.getMasterCatalogNames()
@@ -91,6 +107,7 @@ class FileCatalog( object ):
     # There can not be more than one master catalog
     haveMaster = False
     if len( masterCatalogs ) > 1:
+      self.log.error( "More than one master catalog created" )
       self.valid = False
     elif len( masterCatalogs ) == 1:
       haveMaster = True
@@ -150,6 +167,7 @@ class FileCatalog( object ):
     allLfns = []
     lfnMapDict = {}
     masterResult = {}
+    parms1 = []
     if not self.call in FileCatalog.no_lfn_methods:
       fileInfo = parms[0]
       result = checkArgumentFormat( fileInfo, generateMap = True )
@@ -166,8 +184,8 @@ class FileCatalog( object ):
       # Skip if the method is not implemented in this catalog
       if not oCatalog.hasCatalogMethod( self.call ):
         if master:
-          gLogger.error( "Master catalog does not implement the write method", self.call )
-          return S_ERROR( "Master catalog does not implement the write method %s" % self.call )
+          self.log.error( "Master catalog does not implement the write method", self.call )
+          return DError( DErrno.EFCERR, "Master catalog does not implement the write method %s" % self.call )
         else:
           continue
 
@@ -180,9 +198,9 @@ class FileCatalog( object ):
         masterResult = result
       if not result['OK']:
         if master:
-          # If this is the master catalog and it fails we dont want to continue with the other catalogs
-          gLogger.error( "FileCatalog.w_execute: Failed to execute call on master catalog",
-                         "%s on %s: %s" % ( self.call, catalogName, result['Message'] ) )
+          # If this is the master catalog and it fails we don't want to continue with the other catalogs
+          self.log.error( "Failed to execute call on master catalog",
+                     "%s on %s: %s" % ( self.call, catalogName, result['Message'] ) )
           return result
         else:
           # Otherwise we keep the failed catalogs so we can update their state later
@@ -216,13 +234,9 @@ class FileCatalog( object ):
       resDict = {'Failed':failed, 'Successful':successful}
       return S_OK( resDict )
     else:
-      if failedCatalogs:
-        result = S_ERROR( 'Failed to execute on some catalogs' )
-        resDict = {'Failed':failedCatalogs, 'Successful':successfulCatalogs}
-        result['Value'] = resDict
-        return result
-      else:
-        return masterResult
+      # FIXME: Return just master result here. This is temporary as more detailed
+      # per catalog result needs multiple fixes in various client calls
+      return masterResult
 
 
   def r_execute( self, *parms, **kws ):
@@ -249,7 +263,7 @@ class FileCatalog( object ):
         else:
           return res
     if not successful and not failed:
-      return S_ERROR( "Failed to perform %s from any catalog" % self.call )
+      return DError( DErrno.EFCERR, "Failed to perform %s from any catalog" % self.call )
     return S_OK( {'Failed':failed, 'Successful':successful} )
 
   ###########################################################################################
@@ -300,50 +314,53 @@ class FileCatalog( object ):
 
   def _getSelectedCatalogs( self, desiredCatalogs ):
     for catalogName in desiredCatalogs:
-      res = self._getCatalogConfigDetails( catalogName )
-      if not res['OK']:
-        return res
-      catalogConfig = res['Value']
-      res = self._generateCatalogObject( catalogName )
-      if not res['OK']:
-        return res
-      oCatalog = res['Value']
-      self.readCatalogs.append( ( catalogName, oCatalog, True ) )
-      self.writeCatalogs.append( ( catalogName, oCatalog, True ) )
+      result = self._getCatalogConfigDetails( catalogName )
+      if not result['OK']:
+        return result
+      catalogConfig = result['Value']
+      result = self._generateCatalogObject( catalogName )
+      if not result['OK']:
+        return result
+      oCatalog = result['Value']
+      self.readCatalogs.append( ( catalogName, oCatalog, catalogConfig['Master'] ) )
+      self.writeCatalogs.append( ( catalogName, oCatalog, catalogConfig['Master'] ) )
     return S_OK()
 
-  def _getCatalogs( self ):
+  def _getEligibleCatalogs( self ):
+    """ Get a list of eligible catalogs
 
-    # Get the eligible catalogs first
+    :return: S_OK/S_ERROR, Value - a list of catalog names
+    """
     # First, look in the Operations, if nothing defined look in /Resources for backward compatibility
     fileCatalogs = self.opHelper.getValue( '/Services/Catalogs/CatalogList', [] )
-    if fileCatalogs:
-      operationsFlag = True
-    else:
+    if not fileCatalogs:
       result = self.opHelper.getSections( '/Services/Catalogs' )
-      operationsFlag = False
       if result['OK']:
         fileCatalogs = result['Value']
-        operationsFlag = True
       else:
         res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
         if not res['OK']:
           errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
-          gLogger.error( errStr, res['Message'] )
+          self.log.error( errStr, res['Message'] )
           return S_ERROR( errStr )
         fileCatalogs = res['Value']
 
-    # Get the catalogs now
+    return S_OK( fileCatalogs )
+
+  def _getCatalogs( self ):
+
+    # Get the eligible catalogs first
+    result = self._getEligibleCatalogs()
+    if not result['OK']:
+      return result
+    fileCatalogs = result['Value']
+
+    # Get the catalog objects now
     for catalogName in fileCatalogs:
       res = self._getCatalogConfigDetails( catalogName )
       if not res['OK']:
         return res
       catalogConfig = res['Value']
-      if operationsFlag:
-        result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % catalogName )
-        if not result['OK']:
-          return result
-        catalogConfig.update( result['Value'] )
       if catalogConfig['Status'] == 'Active':
         res = self._generateCatalogObject( catalogName )
         if not res['OK']:
@@ -367,25 +384,25 @@ class FileCatalog( object ):
   def _getCatalogConfigDetails( self, catalogName ):
     # First obtain the options that are available
     catalogConfigPath = '%s/%s' % ( self.rootConfigPath, catalogName )
-    res = gConfig.getOptions( catalogConfigPath )
-    if not res['OK']:
+    result = gConfig.getOptionsDict( catalogConfigPath )
+    if not result['OK']:
       errStr = "FileCatalog._getCatalogConfigDetails: Failed to get catalog options."
-      gLogger.error( errStr, catalogName )
+      self.log.error( errStr, catalogName )
       return S_ERROR( errStr )
-    catalogConfig = {}
-    for option in res['Value']:
-      configPath = '%s/%s' % ( catalogConfigPath, option )
-      optionValue = gConfig.getValue( configPath )
-      catalogConfig[option] = optionValue
+    catalogConfig = result['Value']
+    result = self.opHelper.getOptionsDict( '/Services/Catalogs/%s' % catalogName )
+    if result['OK']:
+      catalogConfig.update( result['Value'] )
+
     # The 'Status' option should be defined (default = 'Active')
     if 'Status' not in catalogConfig:
       warnStr = "FileCatalog._getCatalogConfigDetails: 'Status' option not defined."
-      gLogger.warn( warnStr, catalogName )
+      self.log.warn( warnStr, catalogName )
       catalogConfig['Status'] = 'Active'
     # The 'AccessType' option must be defined
     if 'AccessType' not in catalogConfig:
       errStr = "FileCatalog._getCatalogConfigDetails: Required option 'AccessType' not defined."
-      gLogger.error( errStr, catalogName )
+      self.log.error( errStr, catalogName )
       return S_ERROR( errStr )
     # Anything other than 'True' in the 'Master' option means it is not
     catalogConfig['Master'] = ( catalogConfig.setdefault( 'Master', False ) == 'True' )
