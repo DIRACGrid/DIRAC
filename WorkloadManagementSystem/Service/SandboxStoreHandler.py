@@ -12,7 +12,7 @@ import random
 import types
 import threading
 import tempfile
-from DIRAC import gLogger, S_OK, S_ERROR  # , gConfig
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
@@ -22,7 +22,6 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security import Properties
-# from DIRAC.Core.Utilities import List
 
 sandboxDB = False
 
