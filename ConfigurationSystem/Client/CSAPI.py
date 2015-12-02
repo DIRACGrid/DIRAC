@@ -277,7 +277,7 @@ class CSAPI( object ):
         - Groups
         - <extra params>
 
-      :return: True/False
+      :return: S_OK, Value = True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
