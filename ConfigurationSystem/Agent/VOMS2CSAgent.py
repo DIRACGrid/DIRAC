@@ -35,6 +35,7 @@ class VOMS2CSAgent( AgentModule ):
 
     self.__adminMsgs = {}
     self.csapi = CSAPI()
+    self.voChanged = False
 
     self.log.notice( "VOs: %s" % self.__voDict.keys() )
 
@@ -48,6 +49,7 @@ class VOMS2CSAgent( AgentModule ):
     self.__adminMsgs = {}
     self.csapi.downloadCSData()
     for vo in self.__voDict:
+      self.voChanged = False
       voAdminUser = getVOOption( vo, "VOAdmin")
       voAdminMail = None
       if voAdminUser:
@@ -61,14 +63,15 @@ class VOMS2CSAgent( AgentModule ):
         self.log.error( 'Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % ( vo, result["Message"] ) )
         continue
 
-      mailMsg = ""
-      if self.__adminMsgs[ 'Errors' ]:
-        mailMsg += "\nErrors list:\n  %s" % "\n  ".join( self.__adminMsgs[ 'Errors' ] )
-      if self.__adminMsgs[ 'Info' ]:
-        mailMsg += "\nRun result:\n  %s" % "\n  ".join( self.__adminMsgs[ 'Info' ] )
-      NotificationClient().sendMail( self.am_getOption( 'MailTo', voAdminMail ),
-                                     "VOMS2CSAgent run log", mailMsg,
-                                     self.am_getOption( 'mailFrom', "DIRAC system" ) )
+      if self.voChanged:
+        mailMsg = ""
+        if self.__adminMsgs[ 'Errors' ]:
+          mailMsg += "\nErrors list:\n  %s" % "\n  ".join( self.__adminMsgs[ 'Errors' ] )
+        if self.__adminMsgs[ 'Info' ]:
+          mailMsg += "\nRun result:\n  %s" % "\n  ".join( self.__adminMsgs[ 'Info' ] )
+        NotificationClient().sendMail( self.am_getOption( 'MailTo', voAdminMail ),
+                                       "VOMS2CSAgent run log", mailMsg,
+                                       self.am_getOption( 'mailFrom', "DIRAC system" ) )
 
     # We have accumulated all the changes, commit them now
     result = self.csapi.commitChanges()
@@ -184,9 +187,12 @@ class VOMS2CSAgent( AgentModule ):
               groupsWithRole.append( group )
           userDict['Groups'] = list( set( groupsWithRole + [defaultVOGroup] ) )
           self.__adminMsgs[ 'Info' ].append( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
+          self.voChanged = True
           if self.autoAddUsers:
             self.log.info( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
-            self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
+            result = self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
+            if not result['OK']:
+              self.log.warn( 'Failed adding new user %s', newDiracName )
           continue
 
         # We have an already existing user
@@ -211,7 +217,9 @@ class VOMS2CSAgent( AgentModule ):
             keepGroups.append( group )
         userDict['Groups'] = keepGroups
         if self.autoModifyUsers:
-          self.csapi.modifyUser( diracName, userDict )
+          result = self.csapi.modifyUser( diracName, userDict )
+          if result['OK'] and result['Value']:
+            self.voChanged = True
 
     # Check if there are potentially obsoleted users
     oldUsers = set()
@@ -222,6 +230,7 @@ class VOMS2CSAgent( AgentModule ):
           if not group in noVOMSGroups:
             oldUsers.add( user )
     if oldUsers:
+      self.voChanged = True
       self.__adminMsgs[ 'Info' ].append( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
       self.log.info( 'The following users to be checked for deletion: %s' % str( oldUsers ) )
 
