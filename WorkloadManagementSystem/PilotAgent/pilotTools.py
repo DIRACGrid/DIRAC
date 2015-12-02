@@ -500,6 +500,13 @@ class PilotParams( object ):
 
 
   def retrievePilotParameters( self, pilotCommandsFileContent ):
+    """Retrieve pilot parameters from the content of a json file. The file should be something like:
+
+    { 'SetupName':{'Commands':{ Name of the grid': [list of commands]}, 'Extensions':['list of extensions'], 'Version':['xyz'],
+      'Defaults':{'Commands':{ 'defaultList': [list of commands]', 'Name of the grid': [list of commands]}, 'Version':['xyz']}}
+
+    The file must contains at least the Defaults section. """
+
     grid = self.site.split( '.' )[0]
     if self.setup in pilotCommandsFileContent.keys():
       if grid in pilotCommandsFileContent[self.setup]['Commands'].keys():
