@@ -346,7 +346,7 @@ class PilotParams( object ):
 
         param names and defaults are defined here
     """
-
+    self.log = Logger( self.__class__.__name__ )
     self.rootPath = os.getcwd()
     self.originalRootPath = os.getcwd()
     self.pilotRootPath = os.getcwd()
@@ -499,26 +499,44 @@ class PilotParams( object ):
         self.jobCPUReq = v
 
 
-  def retrievePilotParameters( self, pilotCommandsFileContent ):
+  def retrievePilotParameters( self ):
     """Retrieve pilot parameters from the content of a json file. The file should be something like:
 
     { 'SetupName':{'Commands':{ Name of the grid': [list of commands]}, 'Extensions':['list of extensions'], 'Version':['xyz'],
       'Defaults':{'Commands':{ 'defaultList': [list of commands]', 'Name of the grid': [list of commands]}, 'Version':['xyz']}}
 
     The file must contains at least the Defaults section. """
+    try:
+      import json
+      self.log.info( "Finding the pilot commands list" )
+      result = retrieveUrlTimeout( self.pilotCFGFileLocation + '/' + self.pilotCFGFile,
+                                   self.pilotCFGFile,
+                                   self.log,
+                                   timeout = 120 )
+      if not result:
+        self.log.info( "Could not download the json file, using the default commands list." )
+      else:
+        fp = open( self.pilotCFGFile + '-local', 'r' )
+        pilotCFGFileContent = json.load( fp )
+        fp.close()
+        grid = self.site.split( '.' )[0]
+        if self.setup in pilotCFGFileContent:
+          if grid in pilotCFGFileContent[self.setup]['Commands']:
+            self.commands = [str( pv ) for pv in pilotCFGFileContent[self.setup]['Commands'][grid]]
+          elif grid in pilotCFGFileContent['Defaults']['Commands']:
+            self.commands = [str( pv ) for pv in pilotCFGFileContent['Defaults']['Commands'][grid]]
+          else:
+            self.commands = [str( pv ) for pv in pilotCFGFileContent['Defaults']['Commands']['defaultList']]
+          if 'Extensions' in pilotCFGFileContent[self.setup]:
+            self.commandExtensions = [str( pv ) for pv in pilotCFGFileContent[self.setup]['Extensions']]
+          elif grid in pilotCFGFileContent['Defaults']['Commands']:
+            self.commands = [str( pv ) for pv in pilotCFGFileContent['Defaults']['Commands'][grid]]
+          else:
+            self.commands = [str( pv ) for pv in pilotCFGFileContent['Defaults']['Commands']['defaultList']]
+    except ImportError:
+      self.log.error( 'No json module available, using default commands list. ' )
 
-    grid = self.site.split( '.' )[0]
-    if self.setup in pilotCommandsFileContent.keys():
-      if grid in pilotCommandsFileContent[self.setup]['Commands'].keys():
-        self.commands = [str( pv ) for pv in pilotCommandsFileContent[self.setup]['Commands'][grid]]
-      elif grid in pilotCommandsFileContent['Defaults']['Commands'].keys():
-        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands'][grid]]
-      else:
-        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands']['defaultList']]
-      if 'Extensions' in pilotCommandsFileContent[self.setup].keys():
-        self.commandExtensions = [str( pv ) for pv in pilotCommandsFileContent[self.setup]['Extensions']]
-      elif grid in pilotCommandsFileContent['Defaults']['Commands'].keys():
-        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands'][grid]]
-      else:
-        self.commands = [str( pv ) for pv in pilotCommandsFileContent['Defaults']['Commands']['defaultList']]
+
+
+
 

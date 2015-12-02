@@ -25,7 +25,7 @@ import getopt
 import sys
 from types import ListType
 
-from pilotTools import Logger, pythonPathCheck, PilotParams, getCommand, retrieveUrlTimeout
+from pilotTools import Logger, pythonPathCheck, PilotParams, getCommand
 
 if __name__ == "__main__":
 
@@ -41,19 +41,8 @@ if __name__ == "__main__":
   pilotParams.pilotScript = os.path.realpath( sys.argv[0] )
   pilotParams.pilotScriptName = os.path.basename( pilotParams.pilotScript )
   log.debug( 'PARAMETER [%s]' % ', '.join( map( str, pilotParams.optList ) ) )
-  try:
-    import json
-    log.info( "Finding the pilot commands list" )
-    result = retrieveUrlTimeout( pilotParams.pilotCFGFileLocation + '/' + pilotParams.pilotCFGFile,
-                               pilotParams.pilotCFGFile,
-                               log,
-                               timeout = 120 )
-    fp = open( pilotParams.pilotCFGFile + '-local', 'r' )
-    pilotCommandsFileContent = json.load( fp )
-    fp.close()
-    pilotParams.retrievePilotParameters( pilotCommandsFileContent )
-  except ImportError:
-    log.error( 'No json module available, could not get pilot commands at runtime. Using the default list.' )
+
+  pilotParams.retrievePilotParameters()
 
   if pilotParams.commandExtensions:
     log.info( "Requested command extensions: %s" % str( pilotParams.commandExtensions ) )
