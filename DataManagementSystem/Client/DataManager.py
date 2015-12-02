@@ -939,7 +939,7 @@ class DataManager( object ):
     return res
 
   def __registerFile( self, fileTuples, catalog ):
-    """ register file to cataloge """
+    """ register file to catalog """
 
     fileDict = {}
 
