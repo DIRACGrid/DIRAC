@@ -9,6 +9,8 @@
 """
 __RCSID__ = "$Id$"
 
+import os
+
 import DIRAC
 from DIRAC                                                   import gConfig
 from DIRAC.Core.Base                                         import Script
