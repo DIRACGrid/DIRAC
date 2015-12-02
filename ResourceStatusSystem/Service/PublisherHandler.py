@@ -341,64 +341,65 @@ class PublisherHandler( RequestHandler ):
     return S_OK( reason )    
     
   #-----------------------------------------------------------------------------  
-    
-  # ResourceManagementClient ...................................................
-  types_getSpaceTokenOccupancy = [ ( str, NoneType, list ) ] * 2
-  def export_getSpaceTokenOccupancy( self, site, token ):
 
-    # Ugly thing
-    #...........................................................................
-    
-    endpoint2Site = {}
-    
-    ses = CSHelpers.getStorageElements()
-    if not ses[ 'OK' ]:
-      gLogger.error( ses[ 'Message' ] )
-    
-    for seName in ses[ 'Value' ]:
-      # Ugly, ugly, ugly.. waiting for DIRAC v7r0 to do it properly
-      if ( not '-' in seName ) or ( '_' in seName ):
-        continue
-      
-      res = CSHelpers.getStorageElementEndpoint( seName )
-      if not res[ 'OK' ]:
-        continue
-     
-      if not res[ 'Value' ] in endpoint2Site:
-        endpoint2Site[ res[ 'Value' ] ] = seName.split( '-', 1 )[ 0 ]
-      
-    #...........................................................................  
-
-    endpointSet = set()
-
-    if site:
-    
-      if isinstance( site, str ):
-        site = [ site ]
-     
-      for ep, siteName in endpoint2Site.items():
-        if siteName in site:
-          endpointSet.add( ep )
-    
-    if endpointSet:
-      endpoint = list( endpointSet )
-    else:
-      endpoint = None
-      
-    res = rmClient.selectSpaceTokenOccupancyCache( endpoint = endpoint, token = token )
-    if not res[ 'OK' ]:
-      return res
-    
-    spList = [ dict( zip( res[ 'Columns' ], sp ) ) for sp in res[ 'Value' ] ]
-    
-    for spd in spList:
-      
-      try:
-        spd[ 'Site' ] = endpoint2Site[ spd[ 'Endpoint' ] ]
-      except KeyError:
-        spd[ 'Site' ] = 'Unknown'  
-      
-    return S_OK( spList )
-
-#...............................................................................
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# TO-DO: to restore when v7r0 will be properly integrated
+#   # ResourceManagementClient ...................................................
+#   types_getSpaceTokenOccupancy = [ ( str, NoneType, list ) ] * 2
+#   def export_getSpaceTokenOccupancy( self, site, token ):
+#
+#     # Ugly thing
+#     #...........................................................................
+#
+#     endpoint2Site = {}
+#
+#     ses = CSHelpers.getStorageElements()
+#     if not ses[ 'OK' ]:
+#       gLogger.error( ses[ 'Message' ] )
+#
+#     for seName in ses[ 'Value' ]:
+#       # Ugly, ugly, ugly.. waiting for DIRAC v7r0 to do it properly
+#       if ( not '-' in seName ) or ( '_' in seName ):
+#         continue
+#
+#       res = CSHelpers.getStorageElementEndpoint( seName )
+#       if not res[ 'OK' ]:
+#         return res
+#
+#       if not res[ 'Value' ] in endpoint2Site:
+#         endpoint2Site[ res[ 'Value' ] ] = seName.split( '-', 1 )[ 0 ]
+#
+#     #...........................................................................
+#
+#     endpointSet = set()
+#
+#     if site:
+#
+#       if isinstance( site, str ):
+#         site = [ site ]
+#
+#       for ep, siteName in endpoint2Site.items():
+#         if siteName in site:
+#           endpointSet.add( ep )
+#
+#     if endpointSet:
+#       endpoint = list( endpointSet )
+#     else:
+#       endpoint = None
+#
+#     res = rmClient.selectSpaceTokenOccupancyCache( endpoint = endpoint, token = token )
+#     if not res[ 'OK' ]:
+#       return res
+#
+#     spList = [ dict( zip( res[ 'Columns' ], sp ) ) for sp in res[ 'Value' ] ]
+#
+#     for spd in spList:
+#
+#       try:
+#         spd[ 'Site' ] = endpoint2Site[ spd[ 'Endpoint' ] ]
+#       except KeyError:
+#         spd[ 'Site' ] = 'Unknown'
+#
+#     return S_OK( spList )
+#
+# #...............................................................................
+# #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
