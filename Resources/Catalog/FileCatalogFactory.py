@@ -52,7 +52,8 @@ class FileCatalogFactory:
     self.log.debug( 'Creating %s client of type %s' % ( catalogName, catalogType ) )
 
     result = self.__getCatalogClass( catalogType )
-
+    if not result['OK']:
+      return result
     catalogClass = result['Value']
 
     try:
