@@ -1129,7 +1129,7 @@ File Catalog Client $Revision: 1.17 $Date:
     paths = []
     if len(argss) > 0:
       try:
-        optlist, arguments = getopt.getopt(argss,shortopts,longopts)
+        optlist, arguments = getopt.gnu_getopt(argss,shortopts,longopts)
       except getopt.GetoptError, e:
         print str(e)
         print self.do_ls.__doc__
