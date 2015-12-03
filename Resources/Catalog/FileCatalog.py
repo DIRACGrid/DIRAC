@@ -322,8 +322,16 @@ class FileCatalog( object ):
       if not result['OK']:
         return result
       oCatalog = result['Value']
-      self.readCatalogs.append( ( catalogName, oCatalog, catalogConfig['Master'] ) )
-      self.writeCatalogs.append( ( catalogName, oCatalog, catalogConfig['Master'] ) )
+      if re.search( 'Read', catalogConfig['AccessType'] ):
+        if catalogConfig['Master']:
+          self.readCatalogs.insert( 0, ( catalogName, oCatalog, catalogConfig['Master'] ) )
+        else:
+          self.readCatalogs.append( ( catalogName, oCatalog, catalogConfig['Master'] ) )
+      if re.search( 'Write', catalogConfig['AccessType'] ):
+        if catalogConfig['Master']:
+          self.writeCatalogs.insert( 0, ( catalogName, oCatalog, catalogConfig['Master'] ) )
+        else:
+          self.writeCatalogs.append( ( catalogName, oCatalog, catalogConfig['Master'] ) )
     return S_OK()
 
   def _getEligibleCatalogs( self ):
