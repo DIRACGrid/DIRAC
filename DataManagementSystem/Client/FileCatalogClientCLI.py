@@ -1752,7 +1752,7 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     meta = argss[::2]
     value = argss[1::2]
-    metadict = {meta[n]:value[n] for n in range(len(meta))}
+    metadict = dict(zip(meta, value))
     print path,metadict
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
