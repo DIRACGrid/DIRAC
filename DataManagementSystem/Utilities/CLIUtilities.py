@@ -10,8 +10,18 @@
 __RCSID__ = "$Id$"
 
 import stat
+import os.path
 from DIRAC  import gConfig
 from DIRAC.Core.Security import CS
+
+
+def pathFromArgument( arg, cwd ):
+  """ Normalize arg and make it absolute
+  """
+  path = os.path.normpath( arg )
+  if not os.path.isabs( path ):
+    path = os.path.normpath( os.path.join( cwd, path ))
+  return path
 
 class DirectoryListing:
   
