@@ -6,15 +6,15 @@ correctly updated in the FileCatalog.
 
 __RCSID__ = "$Id$"
 
+import re
+import types
+
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
-from DIRAC.Core.Utilities.List                            import sortList
 from DIRAC.Core.Base.Client                               import Client
-import re
-import types
 
 class DataIntegrityClient( Client ):
 
