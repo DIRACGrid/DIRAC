@@ -24,8 +24,8 @@ def intAdlerToHex(intAdler):
   try:
     # Will always be 8 hex digits made from a positive integer
     return hex(intAdler & 0xffffffff).lower().replace('l','').replace('x','0')[-8:]
-  except Exception, error:
-    print error
+  except Exception as error:
+    print repr( error ).replace( ',)', ')' )
     return False
 
 def hexAdlerToInt(hexAdler, pos=True):
@@ -45,8 +45,8 @@ def hexAdlerToInt(hexAdler, pos=True):
   try:
     # Will always try to return the positive integer value of the provided hex
     return int(hexAdler, 16) & 0xffffffff    
-  except Exception, error:
-    print error
+  except Exception as error:
+    print repr( error ).replace( ',)', ')' )
     return False
 
 def compareAdler( adler1, adler2 ):
@@ -104,8 +104,8 @@ def stringAdler( string ):
   try:
     intAdler = adler32(string)
     return intAdlerToHex(intAdler)
-  except Exception, error:
-    print error
+  except Exception as error:
+    print repr( error ).replace( ',)', ')' )
     return False
 
 if __name__ == "__main__":
