@@ -192,7 +192,7 @@ class VOMS2CSAgent( AgentModule ):
             self.log.info( "Adding new user %s: %s" % ( newDiracName, str( userDict ) ) )
             result = self.csapi.modifyUser( newDiracName, userDict, createIfNonExistant = True )
             if not result['OK']:
-              self.log.warn( 'Failed adding new user %s', newDiracName )
+              self.log.warn( 'Failed adding new user %s' % newDiracName )
           continue
 
         # We have an already existing user
