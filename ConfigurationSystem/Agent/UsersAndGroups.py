@@ -338,9 +338,11 @@ class UsersAndGroups( AgentModule ):
       for k in ( 'DN', 'CA', 'Email' ):
         csUserData[ k ] = ", ".join( csUserData[ k ] )
       result = csapi.modifyUser( user, csUserData, createIfNonExistant = True )
-      if not result[ 'OK' ] or not result['Value']:
+      if not result[ 'OK' ]:
         self.__adminMsgs[ 'Error' ].append( "Cannot modify user %s: %s" % ( user, result[ 'Message' ] ) )
         self.log.error( "Cannot modify user", user )
+      elif not result['Value']:
+        self.__adminMsgs[ 'Error' ].append( "Cannot modify user %s" % user )
 
     if usersWithMoreThanOneDN:
       self.__adminMsgs[ 'Info' ].append( "\nUsers with more than one DN:" )
