@@ -5,8 +5,8 @@ import os
 import shutil
 import errno
 
-from DIRAC import S_OK, S_ERROR, gLogger
-# gLogger.setLevel( 'DEBUG' )
+from DIRAC import S_OK, gLogger
+gLogger.setLevel( 'DEBUG' )
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
@@ -15,15 +15,16 @@ def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
   resolvedName = storageName
   return S_OK( resolvedName )
 
-def mock_StorageFactory_getConfigStorageOptions( storageName ):
+def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName ):
   """ Get the options associated to the StorageElement as defined in the CS
   """
   optionsDict = {'BackendType': 'local',
                  'ReadAccess': 'Active',
                  'WriteAccess': 'Active'}
+
   return S_OK( optionsDict )
 
-def mock_StorageFactory_getConfigStorageProtocols( storageName ):
+def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName ):
   """ Protocol specific information is present as sections in the Storage configuration
   """
   protocolDetails = [{'Host': '',
