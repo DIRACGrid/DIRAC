@@ -229,6 +229,7 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Dump incoming network data to temporal file
     """
+    tfd = False
     if not destFileName:
       try:
         tfd, destFileName = tempfile.mkstemp( prefix = "DSB." )
@@ -244,8 +245,12 @@ class SandboxStoreHandler( RequestHandler ):
       pass
 
     try:
-      with open( destFileName, "wb" ) as fd:
-        result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
+      if tfd:
+        fd = tfd
+      else:
+        fd = open( destFileName, "wb" )
+      result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
+      fd.close()
     except Exception as e:
       gLogger.error( "Cannot open to write destination file", "%s: %s" % ( destFileName, repr( e ).replace( ',)', ')' ) ) )
       return S_ERROR( "Cannot open to write destination file" )
