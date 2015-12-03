@@ -20,7 +20,7 @@ from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
 
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
-from DIRAC.DataManagementSystem.Utilities.CLIUtilities import DirectoryListing
+from DIRAC.DataManagementSystem.Utilities.CLIUtilities import pathFromArgument, DirectoryListing
 
 class FileCatalogClientCLI(cmd.Cmd):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
@@ -59,6 +59,39 @@ File Catalog Client $Revision: 1.17 $Date:
 
     self.ul_fs = UnixLikeFileSystem()
     self.ul_dc = DirectoryCompletion(self.ul_fs)
+
+  def getReplicas( self, path ):
+    replicas = [ ]
+    try:
+      result = self.fc.getReplicas( path )    
+      if result[ 'OK' ]:
+        if result[ 'Value' ][ 'Successful' ]:
+          for se,entry in result[ 'Value' ][ 'Successful' ][ path ].items( ):
+            replicas.append( se.ljust( 15 ) + " " + entry )
+        else:
+          print "Replicas: ", result#[ 'Message' ]
+    except Exception, x:
+      replicas.append( "replicas failed:" + str( x ))
+    return tuple( replicas )
+
+  def getReplicasForPaths( self, paths ):
+    ret = {}
+    try:
+      result = self.fc.getReplicas( paths )    
+      if result[ 'OK' ]:
+        resDict = result[ 'Value' ][ 'Successful' ]
+        if resDict:
+          for lfn in resDict:
+            replicas = [ ]
+            for se,entry in resDict[ lfn ].items( ):
+              replicas.append( se.ljust( 15 ) + " " + entry )
+            ret.update( { lfn : tuple( replicas ) } )
+        else:
+          print "Replicas: ", result#[ 'Message' ]
+    except Exception, x:
+      replicas.append( "replicas failed:" + str( x ))
+
+    return ret
 
   def getPath(self,apath):
 
@@ -1067,11 +1100,12 @@ File Catalog Client $Revision: 1.17 $Date:
     print self.cwd      
 
   def do_ls(self,args):
-    """ Lists directory entries at <path> 
+    """ Lists files or directories
 
-        usage: ls [-ltrnSh] <path>
+        usage: ls [-lLtrnSH] <path> ... <path>
 
      -l  --long                : Long listing.
+     -L  --list-replicas       : Long listing including number of replicas.
      -t  --timeorder           : List ordering by time.
      -r  --reverse             : Reverse list order.
      -n  --numericid           : List with numeric value of UID and GID.
@@ -1083,14 +1117,16 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     # Get switches
     _long = False
+    list_rep = False
     reverse = False
     timeorder = False
     numericid = False
     sizeorder = False
     humanread = False
-    shortopts = 'ltrnSH'
-    longopts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
-    path = self.cwd
+    shortopts = 'lLtrnSH'
+    longopts = ['long','--list-replicas','timeorder','reverse','numericid',
+                'sizeorder','human-readable']
+    paths = []
     if len(argss) > 0:
       try:
         optlist, arguments = getopt.getopt(argss,shortopts,longopts)
@@ -1101,10 +1137,12 @@ File Catalog Client $Revision: 1.17 $Date:
       # Duplicated options are allowed: later options have precedence, e.g.,
       # '-ltSt' will be order by time
       # '-ltStS' will be order by size
-      options = [ opt for (opt, arg) in optlist]
+      options = [ opt_arg[0] for opt_arg in optlist]
       for opt in options:
         if opt in ['-l', '--long']:
           _long = True
+        elif opt in ['-L', '--list-replicas']:
+          list_rep = _long = True
         elif opt in ['-r', '--reverse']:
           reverse = True
         elif opt in ['-t', '--timeorder']:
@@ -1117,8 +1155,8 @@ File Catalog Client $Revision: 1.17 $Date:
           humanread = True
 
       if timeorder and sizeorder:
-        options = [w.replace('--sizeorder','-S') for w in options]
-        options = [w.replace('--human-readable','-H') for w in options]
+        options = [ w.replace('--sizeorder','-S') for w in options ]
+        options = [ w.replace('--timeorder','-t') for w in options ]
         options.reverse()
         # The last ['-S','-t'] provided is the one we use: reverse order
         # means that the last provided has the smallest index.
@@ -1127,75 +1165,86 @@ File Catalog Client $Revision: 1.17 $Date:
         else:
           sizeorder = False
         
-      # Get path    
+      # Get paths
       if arguments:
-        inputpath = False
-        while arguments or not inputpath:
+        while arguments:
           tmparg = arguments.pop()
           # look for a non recognized option not starting with '-'
           if tmparg[0] != '-':
-            path = tmparg
-            inputpath = True
-            if path[0] != '/':
-              path = self.cwd+'/'+path
-    path = self.getPath(path)
+            paths.append( pathFromArgument( tmparg, self.cwd ) )
+
+    paths = uniqueElements( paths ) # drop duplicates preserving order
+    if not len(paths) > 0:
+      paths = [ self.cwd ]
     
-    # Check if the target path is a file
-    result =  self.fc.isFile(path)          
+    # Separate in directories and files
+    result = self.fc.isDirectory( paths )
     if not result['OK']:
-      print "Error: can not verify path"
+      print "Error: can not check if paths are directories"
       return
-    elif path in result['Value']['Successful'] and result['Value']['Successful'][path]:
-      result = self.fc.getFileMetadata(path)      
-      dList = DirectoryListing()
-      fileDict = result['Value']['Successful'][path]
-      dList.addFile(os.path.basename(path),fileDict,{},numericid)
-      dList.printListing(reverse,timeorder,sizeorder,humanread)
-      return         
-    
-    # Get directory contents now
-    try:
-      result =  self.fc.listDirectory(path,_long)                   
-      dList = DirectoryListing()
+    dirdict = result['Value']['Successful']
+    directories = [ d for d in paths if dirdict[d] ]
+    files = [ f for f in paths if not dirdict[f] ]
+
+    # List files
+    if len(files) > 0:
+      result = self.fc.getFileMetadata( files )
       if result['OK']:
-        if result['Value']['Successful']:
-          for entry in result['Value']['Successful'][path]['Files']:
-            fname = entry.split('/')[-1]
-            # print entry, fname
-            # fname = entry.replace(self.cwd,'').replace('/','')
-            if _long:
-              fileDict = result['Value']['Successful'][path]['Files'][entry]['MetaData']
-              repDict = result['Value']['Successful'][path]['Files'][entry].get( "Replicas", {} )
-              if fileDict:
-                dList.addFile(fname,fileDict,repDict,numericid)
-            else:  
-              dList.addSimpleFile(fname)
-          for entry in result['Value']['Successful'][path]['SubDirs']:
-            dname = entry.split('/')[-1]
-            # print entry, dname
-            # dname = entry.replace(self.cwd,'').replace('/','')  
-            if _long:
-              dirDict = result['Value']['Successful'][path]['SubDirs'][entry]
-              if dirDict:
-                dList.addDirectory(dname,dirDict,numericid)
-            else:    
-              dList.addSimpleFile(dname)
-          
-          for entry in result['Value']['Successful'][path]['Links']:
-            pass
-          
-          if 'Datasets' in result['Value']['Successful'][path]:
-            for entry in result['Value']['Successful'][path]['Datasets']:
-              dname = os.path.basename( entry )    
-              if _long:
-                dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']  
-                if dsDict:
-                  dList.addDataset(dname,dsDict,numericid)
-              else:    
-                dList.addSimpleFile(dname)
-              
+        dList = DirectoryListing( list_rep )
+        resdict = result['Value']['Successful']
+        if list_rep:
+          replicas = self.getReplicasForPaths( resdict.keys() )
+        for xpath in resdict:
+          filedict = resdict[ xpath ]
+          add_path = os.path.basename( xpath )
           if _long:
-            dList.printListing(reverse,timeorder,sizeorder,humanread)
+            if list_rep:
+              dList.addFileWithReplicas( add_path,filedict,numericid,replicas[ xpath ] )
+            else:
+              dList.addFile( add_path,filedict,{},numericid )
+          else:
+            dList.addSimpleFile( add_path )  
+        if _long:    
+          dList.printListing( reverse,timeorder,sizeorder,humanread )
+        else:
+          dList.printOrdered()
+      else:
+        print "Cannot get files metadata",result['Message']
+    
+    if not len(directories) > 0:
+      return
+
+    # Get directories contents
+    try:
+      result =  self.fc.listDirectory( directories,_long )
+      dList = DirectoryListing( list_rep )
+      if result['OK']:
+        resDict = result['Value']['Successful']
+        if resDict:
+          for xpath in resDict:
+            for tag in ['Files','SubDirs','Links','Datasets']:
+              for entry in resDict[ xpath ][ tag ]:
+                if tag == 'Links':
+                  pass
+                else:
+                  add_path = os.path.basename( entry )     
+                  if _long:
+                    if tag == 'SubDirs':
+                      cDict = resDict[ xpath ][ tag ][ entry ]
+                    else:    
+                      cDict = resDict[ xpath ][ tag ][ entry ]['MetaData']
+                    if cDict:
+                      if tag == 'Files':
+                        repDict = resDict[ xpath ][ tag ][ entry ].get( "Replicas", {} )
+                        dList.addFile( add_path,cDict,repDict,numericid )
+                      elif tag == 'SubDirs':
+                        dList.addDirectory( add_path,cDict,numericid )
+                      elif tag == 'Datasets':
+                        dList.addDataset( add_path,cDict,numericid )
+                  else:  
+                    dList.addSimpleFile( add_path )
+          if _long:
+            dList.printListing( reverse,timeorder,sizeorder,humanread )
           else:
             dList.printOrdered()
       else:

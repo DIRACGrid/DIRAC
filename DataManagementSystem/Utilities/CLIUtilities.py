@@ -24,10 +24,12 @@ def pathFromArgument( arg, cwd ):
   return path
 
 class DirectoryListing:
-  
-  def __init__(self):
+  """ Store/Print the information of a listing in the file catalog
+  """  
+  def __init__(self, list_replicas = False):
     
     self.entries = []
+    self.list_rep = list_replicas
   
   def addFile(self,name,fileDict,repDict,numericid):
     """ Pretty print of the file ls output
@@ -236,7 +238,8 @@ class DirectoryListing:
       if humanread:
         size = self.humanReadableSize(e[4])
       print str(e[0]),
-      print str(e[1]).rjust(wList[1]),
+      if self.list_rep:
+        print str( e[1] ).rjust( wList[1] ),
       print str(e[2]).ljust(wList[2]),
       print str(e[3]).ljust(wList[3]),
       print str(size).rjust(wList[4]),
