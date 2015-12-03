@@ -59,6 +59,13 @@ class DirectoryListing:
       gname = str(fileDict['GID'])
     
     self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
+
+  def addFileWithReplicas( self,name,fileDict,numericid, replicas ):
+    """ Pretty print of the file ls output with replica info
+    """
+    self.addFile( name, fileDict, replicas, numericid )
+
+    self.entries[ -1 ] += tuple( replicas )
     
   def addDirectory(self,name,dirDict,numericid):
     """ Pretty print of the file ls output
