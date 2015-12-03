@@ -8,10 +8,10 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-import random
 import types
 import threading
 import tempfile
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
@@ -27,9 +27,7 @@ sandboxDB = False
 
 def initializeSandboxStoreHandler( serviceInfo ):
   global sandboxDB, gSBDeletionPool
-  random.seed()
   sandboxDB = SandboxMetadataDB()
-  print sandboxDB
   return S_OK()
 
 class SandboxStoreHandler( RequestHandler ):
@@ -231,33 +229,35 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Dump incoming network data to temporal file
     """
-    tfd = False
     if not destFileName:
       try:
         tfd, destFileName = tempfile.mkstemp( prefix = "DSB." )
-      except Exception, e:
-        return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
+        tfd.close()
+      except Exception as e:
+        gLogger.error( "%s" % repr( e ).replace( ',)', ')' ) )
+        return S_ERROR( "Cannot create temporary file" )
+
     destFileName = os.path.realpath( destFileName )
     try:
       os.makedirs( os.path.dirname( destFileName ) )
     except:
       pass
+
     try:
       with open( destFileName, "wb" ) as fd:
         result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
     except Exception as e:
-      return S_ERROR( "Cannot open to write destination file %s" % destFileName )
+      gLogger.error( "Cannot open to write destination file", "%s: %s" % ( destFileName, repr( e ).replace( ',)', ')' ) ) )
+      return S_ERROR( "Cannot open to write destination file" )
     if not result[ 'OK' ]:
       return result
-    if tfd:
-      os.close( tfd )
     return S_OK( destFileName )
 
   def __secureUnlinkFile( self, filePath ):
     try:
       os.unlink( filePath )
-    except Exception, e:
-      gLogger.warn( " Could not unlink file %s: %s" % ( filePath, str( e ) ) )
+    except Exception as e:
+      gLogger.warn( "Could not unlink file %s: %s" % ( filePath, repr( e ).replace( ',)', ')' ) ) )
       return False
     return True
 
@@ -278,8 +278,8 @@ class SandboxStoreHandler( RequestHandler ):
           os.rename( localFilePath, hdFilePath )
         except Exception, e:
           errMsg = "Cannot move temporal file to final path"
-          gLogger.error( errMsg, str( e ) )
-          result = S_ERROR( "%s: %s" % ( errMsg, str( e ) ) )
+          gLogger.error( errMsg, repr( e ).replace( ',)', ')' ) )
+          result = S_ERROR( errMsg )
     else:
       result = self.__copyToExternalSE( localFilePath, sbPath )
 
@@ -303,7 +303,7 @@ class SandboxStoreHandler( RequestHandler ):
         return S_ERROR( "RM returned OK to the action but SB transfer wasn't in the successful ones" )
       return S_OK( ( self.__externalSEName, okTrans[ sbPath ] ) )
     except Exception, e:
-      return S_ERROR( "Error while moving sandbox to SE: %s" % str( e ) )
+      return S_ERROR( "Error while moving sandbox to SE", "%s" % repr( e ).replace( ',)', ')' ) )
 
   ##################
   # Assigning sbs to jobs
@@ -431,13 +431,13 @@ class SandboxStoreHandler( RequestHandler ):
       try:
         if not os.path.isfile( hdPath ):
           return S_OK()
-      except Exception, e:
-        gLogger.error( "Cannot perform isfile", "%s : %s" % ( hdPath, str( e ) ) )
+      except Exception as e:
+        gLogger.error( "Cannot perform isfile", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
         return S_ERROR( "Error checking %s" % hdPath )
       try:
         os.unlink( hdPath )
-      except Exception, e:
-        gLogger.error( "Cannot delete local sandbox", "%s : %s" % ( hdPath, str( e ) ) )
+      except Exception as e:
+        gLogger.error( "Cannot delete local sandbox", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
       while hdPath:
         hdPath = os.path.dirname( hdPath )
         gLogger.info( "Checking if dir %s is empty" % hdPath )
@@ -450,7 +450,7 @@ class SandboxStoreHandler( RequestHandler ):
           # Empty dir!
           os.rmdir( hdPath )
         except Exception, e:
-          gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, str( e ) ) )
+          gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
           break
     return S_OK()
 
