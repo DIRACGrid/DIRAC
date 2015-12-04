@@ -177,7 +177,7 @@ def getCPUTime( cpuNormalizationFactor ):
     if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg
       cpuNormalizationFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
     if cpuNormalizationFactor:
-      cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor
+      cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor  # this is a float
 
   if not cpuTimeLeft:
     # now we know that we have to find the CPUTimeLeft by looking in the CS
@@ -194,22 +194,22 @@ def getCPUTime( cpuNormalizationFactor ):
       if not res['OK']:
         raise RuntimeError( res['Message'] )
       queues = res['Value']
-      cpuTimes = [gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 10000 ) for queue in queues]
+      cpuTimes = [gConfig.getValue( queueSection + '/' + queue + '/maxCPUTime', 10000. ) for queue in queues]
       # These are (real, wall clock) minutes - damn BDII!
       cpuTimeLeft = min( cpuTimes ) * 60
     else:
       queueInfo = getQueueInfo( '%s/%s' % ( gridCE, ceQueue ) )
-      cpuTimeLeft = 3600
+      cpuTimeLeft = 3600.
       if not queueInfo['OK'] or not queueInfo['Value']:
         gLogger.warn( "Can't find a CE/queue, defaulting CPUTime to %d" % cpuTimeLeft )
       else:
         queueCSSection = queueInfo['Value']['QueueCSSection']
         # These are (real, wall clock) minutes - damn BDII!
-        cpuTimeInMinutes = gConfig.getValue( '%s/maxCPUTime' % queueCSSection )
+        cpuTimeInMinutes = gConfig.getValue( '%s/maxCPUTime' % queueCSSection, 0. )
         if cpuTimeInMinutes:
           cpuTimeLeft = cpuTimeInMinutes * 60.
-          gLogger.info( "CPUTime for %s: %d" % ( queueCSSection, cpuTimeLeft ) )
+          gLogger.info( "CPUTime for %s: %f" % ( queueCSSection, cpuTimeLeft ) )
         else:
-          gLogger.warn( "Can't find maxCPUTime for %s, defaulting CPUTime to %d" % ( queueCSSection, cpuTimeLeft ) )
+          gLogger.warn( "Can't find maxCPUTime for %s, defaulting CPUTime to %f" % ( queueCSSection, cpuTimeLeft ) )
 
   return int( cpuTimeLeft )
