@@ -43,8 +43,8 @@ class FileCatalogClient( FileCatalogClientBase ):
   def __init__( self, url = None, **kwargs ):
     """ Constructor function.
     """
-    self.serverURL = 'DataManagement/FileCatalog'
-    super( FileCatalogClient, self ).__init__( url, **kwargs )
+    self.serverURL = 'DataManagement/FileCatalog' if not url else url
+    super( FileCatalogClient, self ).__init__( self.serverURL, **kwargs )
 
   @staticmethod
   def getInterfaceMethods():
