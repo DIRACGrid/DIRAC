@@ -44,6 +44,10 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
 
+[v6r14p13]
+
+*WMS
+FIX: pilot commands CheckCECapabilities and CheckWNCapabilities were not considering the case of missing proxy
 
 [v6r14p12]
 
