@@ -131,6 +131,8 @@ class BaseTransport( object ):
         if sentBytes == 0:
           return S_ERROR( "Connection closed by peer" )
         packSentBytes += sentBytes
+    del sCodedData
+    sCodedData=None
     return S_OK()
 
 
