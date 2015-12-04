@@ -24,6 +24,7 @@ from DIRAC.Resources.Storage.Utilities                      import checkArgument
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
 
+
 class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
   """
@@ -37,8 +38,8 @@ class ConsistencyInspector( object ):
     """
     self.interactive = interactive
     self.transClient = TransformationClient() if transClient is None else transClient
-    self.dm = DataManager() if dm is None else dm
-    self.fc = FileCatalog() if fc is None else fc
+    self.dm = dm if dm else DataManager()
+    self.fc = fc if fc else FileCatalog()
     self.dic = DataIntegrityClient()
     self.dirac = Dirac()
 
@@ -80,9 +81,10 @@ class ConsistencyInspector( object ):
   ################################################################################
 
   def getReplicasPresence( self, lfns ):
-    """ get the replicas using the standard DataManager.getReplicas()
+    """ get the replicas using the standard FileCatalog.getReplicas()
     """
     lfns = checkArgumentFormat(lfns)
+    print lfns
     present = set()
     notPresent = set()
 
@@ -95,7 +97,7 @@ class ConsistencyInspector( object ):
       if printProgress:
         self.__write( '.' )
       for _ in range( 1, 10 ):
-        res = self.dm.getReplicas( chunk )
+        res = self.fc.getReplicas( chunk )
         if res['OK']:
           present.update( res['Value']['Successful'] )
           self.cachedReplicas.update( res['Value']['Successful'] )
@@ -247,7 +249,8 @@ class ConsistencyInspector( object ):
         else:
           printout = True
           topDir = os.path.dirname( directory )
-          res = self.dm.getCatalogListDirectory( topDir )
+          res = self.fc.listDirectory( topDir )
+          #res = self.dm.getCatalogListDirectory( topDir )
           if not res['OK']:
             raise RuntimeError( res['Message'] )
           else:
@@ -283,7 +286,7 @@ class ConsistencyInspector( object ):
       fileTypes = []
     # and loop on the original dictionaries
     for ancestor in lfnDict:
-      for desc in lfnDict[ancestor]:
+      for desc in lfnDict[ancestor].keys():
         ft = lfnDict[ancestor][desc]['FileType']
         if ft in fileTypesExcluded or ( fileTypes and ft not in fileTypes ):
           ancDict[ancestor].pop( desc )
@@ -340,7 +343,7 @@ class ConsistencyInspector( object ):
       self.__write( "Get replicas for %d files (chunks of %d): " % ( len( lfnsLeft ), chunkSize ) )
       for lfnChunk in breakListIntoChunks( lfnsLeft, chunkSize ):
         self.__write( '.' )
-        replicasRes = self.dm.getReplicas( lfnChunk )
+        replicasRes = self.fc.getReplicas( lfnChunk )
         if not replicasRes['OK']:
           gLogger.error( "error:  %s" % replicasRes['Message'] )
           S_ERROR("error:  %s" % replicasRes['Message'])          # raise RuntimeError( "error:  %s" % replicasRes['Message'] )
@@ -488,7 +491,7 @@ class ConsistencyInspector( object ):
 
   def set_lfns( self, value ):
     """ Setter """
-    if type( value ) == type( "" ):
+    if isinstance( value , "" ):
       value = [value]
     value = [v.replace( ' ', '' ).replace( '//', '/' ) for v in value]
     self._lfns = value
@@ -511,7 +514,7 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
-    if type( lfnDir ) in types.StringTypes:
+    if isinstance( lfnDir, types.StringTypes):
       lfnDir = [lfnDir]
     res = self.__getCatalogDirectoryContents( lfnDir )
     if not res['OK']:
@@ -530,7 +533,7 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
-    if type( lfns ) in types.StringTypes:
+    if isinstance( lfns, types.StringTypes):
       lfns = [lfns]
     res = self.__getCatalogMetadata( lfns )
     if not res['OK']:
@@ -635,7 +638,7 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the SE->FC check at %s" % storageElement )
     gLogger.info( "-" * 40 )
-    if type( lfnDir ) in types.StringTypes:
+    if isinstance( lfnDir, types.StringTypes):
       lfnDir = [lfnDir]
     res = self.getStorageDirectoryContents( lfnDir, storageElement )
     if not res['OK']:
@@ -761,6 +764,8 @@ class ConsistencyInspector( object ):
     activeDirs = lfnDir
     allFiles = {}
     while len( activeDirs ) > 0:
+      print 'activeDirs', activeDirs          ######################
+      #print 'activeDirs 1 ', activeDirs.keys()
       currentDir = activeDirs[0]
       res = self.fc.listDirectory( currentDir )
       activeDirs.remove( currentDir )
