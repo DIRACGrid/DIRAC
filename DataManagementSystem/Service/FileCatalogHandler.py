@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FileCatalogHandler.py
 ########################################################################
 """ 
@@ -20,7 +19,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
-from DIRAC.Core.Utilities.List import sortList
 
 # This is a global instance of the FileCatalogDB class
 gFileCatalogDB = None
@@ -44,7 +42,7 @@ def initializeFileCatalogHandler( serviceInfo ):
                        'DirectoryMetadata' : 'DirectoryMetadata',
                        'FileMetadata'      : 'FileMetadata',
                        'DatasetManager'    : 'DatasetManager' }
-  for configKey in sortList( defaultManagers.keys() ):
+  for configKey in sorted( defaultManagers.keys() ):
     defaultValue = defaultManagers[configKey]
     configValue = getServiceOption( serviceInfo, configKey, defaultValue )
     gLogger.info( "%-20s : %-20s" % ( str( configKey ), str( configValue ) ) )
@@ -61,7 +59,7 @@ def initializeFileCatalogHandler( serviceInfo ):
                     'ValidReplicaStatus'  : ['AprioriGood','Trash','Removing','Probing'],
                     'VisibleFileStatus'   : ['AprioriGood'],
                     'VisibleReplicaStatus': ['AprioriGood']}
-  for configKey in sortList( defaultConfig.keys() ):
+  for configKey in sorted( defaultConfig.keys() ):
     defaultValue = defaultConfig[configKey]
     configValue = getServiceOption( serviceInfo, configKey, defaultValue )
     gLogger.info( "%-20s : %-20s" % ( str( configKey ), str( configValue ) ) )

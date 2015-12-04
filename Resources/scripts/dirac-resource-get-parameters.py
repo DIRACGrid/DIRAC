@@ -49,7 +49,3 @@ if not result['OK']:
   gLogger.error( "Could not retrieve resource parameters", ": " + result['Message'] )
   DIRACExit( 1 )
 gLogger.notice( json.dumps( result['Value'] ) )
-
-
-
-

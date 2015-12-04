@@ -209,9 +209,8 @@ class JobWrapper( object ):
     else:
       self.log.info( 'JobID is not defined, running in current directory' )
 
-    infoFile = open( 'job.info', 'w' )
-    infoFile.write( self.__dictAsInfoString( self.jobArgs, '/Job' ) )
-    infoFile.close()
+    with open( 'job.info', 'w' ) as infoFile:
+      infoFile.write( self.__dictAsInfoString( self.jobArgs, '/Job' ) )
 
   #############################################################################
   def __setInitialJobParameters( self ):
@@ -1224,9 +1223,8 @@ class JobWrapper( object ):
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()
     for rfname in rfiles:
-      rFile = open( rfname, 'r' )
-      requestStored = Request( json.load( rFile ) )
-      rFile.close()
+      with open( rfname, 'r' ) as rFile:
+        requestStored = Request( json.load( rFile ) )
       for storedOperation in requestStored:
         request.addOperation( storedOperation )
 
@@ -1363,13 +1361,11 @@ class ExecutionThread( threading.Thread ):
   #############################################################################
   def sendOutput( self, stdid, line ):
     if stdid == 0 and self.stdout:
-      outputFile = open( self.stdout, 'a+' )
-      print >> outputFile, line
-      outputFile.close()
+      with open( self.stdout, 'a+' ) as outputFile:
+        print >> outputFile, line
     elif stdid == 1 and self.stderr:
-      errorFile = open( self.stderr, 'a+' )
-      print >> errorFile, line
-      errorFile.close()
+      with open( self.stderr, 'a+' ) as errorFile:
+        print >> errorFile, line
     self.outputLines.append( line )
     size = len( self.outputLines )
     if size > self.maxPeekLines:

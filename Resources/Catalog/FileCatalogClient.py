@@ -43,10 +43,11 @@ class FileCatalogClient( FileCatalogClientBase ):
   def __init__( self, url = None, **kwargs ):
     """ Constructor function.
     """
-    self.serverURL = 'DataManagement/FileCatalog'
-    super( FileCatalogClient, self ).__init__( url, **kwargs )
+    self.serverURL = 'DataManagement/FileCatalog' if not url else url
+    super( FileCatalogClient, self ).__init__( self.serverURL, **kwargs )
 
-  def getInterfaceMethods( self ):
+  @staticmethod
+  def getInterfaceMethods():
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )

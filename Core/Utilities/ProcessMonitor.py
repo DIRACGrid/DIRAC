@@ -385,9 +385,8 @@ class ProcessMonitor( object ):
     """
     procPath = '/proc/%s/stat' % ( pid )
     try:
-      fopen = open( procPath, 'r' )
-      procStat = fopen.readline()
-      fopen.close()
+      with open( procPath, 'r' ) as fopen:
+        procStat = fopen.readline()
     except Exception:
       return S_ERROR( 'Not able to check %s' % pid )
     return S_OK( procStat.split( ' ' ) )

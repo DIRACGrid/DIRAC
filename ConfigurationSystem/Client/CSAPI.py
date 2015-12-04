@@ -277,7 +277,7 @@ class CSAPI( object ):
         - Groups
         - <extra params>
 
-      :return: True/False
+      :return: S_OK, Value = True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -319,12 +319,14 @@ class CSAPI( object ):
       for group in groupsToBeAddedTo:
         self.__addUserToGroup( group, username )
         gLogger.info( "Added user %s to group %s" % ( username, group ) )
+    modified = False
     if modifiedUser:
+      modified = True
       gLogger.info( "Modified user %s" % username )
       self.__csModified = True
     else:
       gLogger.info( "Nothing to modify for user %s" % username )
-    return S_OK( True )
+    return S_OK( modified )
 
   def addGroup( self, groupname, properties ):
     """

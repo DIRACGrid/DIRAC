@@ -133,8 +133,11 @@ class RequestHandler( object ):
       gLogger.error( message )
       retVal = S_ERROR( message )
     self.__logRemoteQueryResponse( retVal, time.time() - startTime )
-    return self.__trPool.send( self.__trid, retVal )
-
+    result = self.__trPool.send( self.__trid, retVal ) #this will delete the value from the S_OK(value)
+    del retVal
+    retVal = None
+    return result
+    
 #####
 #
 # File to/from Server Methods
@@ -187,6 +190,8 @@ class RequestHandler( object ):
         if uRetVal[ 'OK' ] and not fileHelper.finishedTransmission():
           gLogger.error( "You haven't finished receiving/sending the file", str( fileInfo ) )
           return S_ERROR( "Incomplete transfer" )
+        del fileHelper
+        fileHelper = None
         return uRetVal
       finally:
         self.__lockManager.unlock( "FileTransfer/%s" % sDirection )

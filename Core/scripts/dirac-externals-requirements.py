@@ -39,12 +39,11 @@ for entry in os.listdir( rootPath ):
     continue
   reqFile = os.path.join( rootPath, entry, "releases.cfg" )
   try:
-   extfd = open( reqFile, "r" )
+   with open( reqFile, "r" ) as extfd:
+     reqCFG = CFG().loadFromBuffer( extfd.read() )
   except:
     gLogger.warn( "%s not found" % reqFile )
     continue
-  reqCFG = CFG().loadFromBuffer( extfd.read() )
-  extfd.close()
   reqs = reqCFG.getOption( "/RequiredExternals/%s" % instType.capitalize(), [] )
   if not reqs:
    gLogger.warn( "%s does not have requirements for %s installation" % ( entry, instType ) )

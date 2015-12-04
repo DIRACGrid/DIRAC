@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import socket

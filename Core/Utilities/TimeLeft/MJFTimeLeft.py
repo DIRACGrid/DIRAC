@@ -50,34 +50,33 @@ class MJFTimeLeft( object ):
       self.log.warn( '$JOBFEATURES and $MACHINEFEATURES not set' )
 
     try:
-      wallClockLimit = int( urllib.urlopen(jobFeaturesPath + '/wall_limit_secs').read() )
+      wallClockLimit = int( urllib.urlopen( jobFeaturesPath + '/wall_limit_secs' ).read() )
     except:
       self.log.warn( 'Could not determine wallclock limit from $JOBFEATURES/wall_limit_secs' )
 
     try:
-      jobStartSecs = int( urllib.urlopen(jobFeaturesPath + '/jobstart_secs').read() )
+      jobStartSecs = int( urllib.urlopen( jobFeaturesPath + '/jobstart_secs' ).read() )
     except:
       self.log.warn( 'Could not determine job start time from $JOBFEATURES/jobstart_secs' )
       jobStartSecs = self.startTime
 
     try:
-      shutdownTime = int( urllib.urlopen(machineFeaturesPath + '/shutdowntime').read() )
+      shutdownTime = int( urllib.urlopen( machineFeaturesPath + '/shutdowntime' ).read() )
     except:
       self.log.info( 'Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime' )
     else:
-      if int(time.time()) + wallClockLimit > shutdownTime:
+      if int( time.time() ) + wallClockLimit > shutdownTime:
         # reduce wallClockLimit if would overrun shutdownTime
         wallClockLimit = shutdownTime - jobStartSecs
 
     try:
-      cpuLimit = int( urllib.urlopen(jobFeaturesPath + '/cpu_limit_secs').read() )
+      cpuLimit = int( urllib.urlopen( jobFeaturesPath + '/cpu_limit_secs' ).read() )
     except:
       self.log.warn( 'Could not determine cpu limit from $JOBFEATURES/cpu_limit_secs' )
 
-    wallClock = int(time.time()) - jobStartSecs
-    # We cannot get CPU usage from MJF
-      
-    consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
+    wallClock = int( time.time() ) - jobStartSecs
+
+    consumed = {'CPU':None, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
     self.log.debug( "MJF consumed: %s" % str( consumed ) )
 
     if cpuLimit and wallClock and wallClockLimit:
@@ -88,4 +87,4 @@ class MJFTimeLeft( object ):
       retVal['Value'] = consumed
       return retVal
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -58,14 +58,6 @@ def randomize( aList ):
   random.shuffle( tmpList )
   return tmpList
 
-def sortList( aList, invert = False ):
-  """Return a sorted list of ints or list of strings
-
-		:param list aList: list to sort
-		:param boolean invert: flag to revert sorting order (default False = list sorted in ascending order)
-  """
-  return sorted( aList, reverse = invert )
-
 def pop( aList, popElement ):
   """ Pop the first element equal to popElement from the list.
 
@@ -118,10 +110,3 @@ def breakListIntoChunks( aList, chunkSize ):
   if type( aList ) in ( type( set() ), DictType, TupleType ):
     aList = list( aList )
   return [ chunk for chunk in getChunk( aList, chunkSize ) ]
-
-def removeEmptyElements( aList ):
-  """Remove empty elements from a list ( [''] ), preserve the order of the non-null elements.
-
-	:param list aList: list of elements
-  """
-  return [x for x in aList if x]

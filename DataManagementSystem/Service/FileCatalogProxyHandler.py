@@ -17,7 +17,7 @@ from types import StringTypes, DictType, TupleType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
@@ -56,8 +56,12 @@ class FileCatalogProxyHandler( RequestHandler ):
       return result
     proxyLocation =result['Value']
     try:
-      fileCatalog = FileCatalog( [fcName] )
-      method = getattr( fileCatalog, methodName )
+      result = FileCatalogFactory().createCatalog( fcName )
+      if result['OK']:
+        fileCatalog = result['Value']
+        method = getattr( fileCatalog, methodName )
+      else:
+        return result
     except AttributeError, error:
       errStr = "%s proxy: no method named %s" % ( fcName, methodName )
       gLogger.exception( errStr, methodName, error )

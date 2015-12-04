@@ -1,6 +1,3 @@
-#####################################################################################
-# $HeadURL$
-#####################################################################################
 """Collection of DIRAC useful file related modules.
 
 .. warning::
@@ -30,10 +27,9 @@ def makeGuid( fileName = None ):
   myMd5 = md5.md5()
   if fileName:
     try:
-      fd = open( fileName, 'r' )
-      data = fd.read( 10 * 1024 * 1024 )
-      myMd5.update( data )
-      fd.close()
+      with open( fileName, 'r' ) as fd:
+        data = fd.read( 10 * 1024 * 1024 )
+        myMd5.update( data )
     except:
       return None
   else:
@@ -198,12 +194,11 @@ def getMD5ForFiles( fileList ):
   for filePath in fileList:
     if ( os.path.isdir( filePath ) ):
       continue
-    fd = open( filePath, "rb" )
-    buf = fd.read( 4096 )
-    while buf:
-      hashMD5.update( buf )
+    with open( filePath, "rb" ) as fd:
       buf = fd.read( 4096 )
-    fd.close()
+      while buf:
+        hashMD5.update( buf )
+        buf = fd.read( 4096 )
   return hashMD5.hexdigest()
 
 if __name__ == "__main__":

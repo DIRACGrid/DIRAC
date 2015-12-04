@@ -1,4 +1,4 @@
-[v6r15-pre8]
+[v6r15-pre9]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -6,6 +6,8 @@ Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.p
 NEW: New class DError for reporting errors in output results of DIRAC functions 
 CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems in
         documentation generation
+CHANGE: removed Core.Utilities.List.sortList (sorted does the job)
+CHANGE: removed unused module Core.Utilities.TimeSeries
 NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
 NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
@@ -28,15 +30,21 @@ NEW: ComponentInstaller Client class
 
 *RSS
 NEW: CE Availability policy, closing #2373
+CHANGE: Ported setStatus and setToken rpc calls to PublisherHandler from LHCb implementation
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
 CHANGE: DataManager, StorageElement - move physical accounting the StorageElement
 CHANGE: FileCatalog - added recursive changePathXXX operations
+CHANGE: FileCatalog contained objects have Master attribute defined in the CS. Extra check of eligibility of the catalogs specified explicitely. No-LFN write methods return just the Master result to be compatible with the current use in the clients.
+CHANGE: Removed LcgFileCatalogXXX obsoleted classes
 NEW: ConsistencyInspector class to perform data consistency checks between 
      different databases
 CHANGE: FileCatalog(Client) - refactored to allow clients declare which interface
         they implement     
+
+*TS
+CHANGE: TransformationDB table TaskInputs: InputVector column from BLOB to MEDIUMTEXT
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 

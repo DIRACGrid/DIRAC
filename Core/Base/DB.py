@@ -28,8 +28,7 @@ class DB( MySQL ):
     self.dbPass = dbParameters[ 'Password' ]
     self.dbName = dbParameters[ 'DBName' ]
 
-    super( DB, self ).__init__( self,
-                                hostName = self.dbHost,
+    super( DB, self ).__init__( hostName = self.dbHost,
                                 userName = self.dbUser,
                                 passwd = self.dbPass,
                                 dbName = self.dbName,

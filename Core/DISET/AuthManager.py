@@ -234,9 +234,9 @@ class AuthManager( object ):
     """
     #HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
     if not caseSensitive:
-      validProps = dict( [ ( prop.lower(), prop ) for prop in validProps ] )
+      validProps = dict( ( prop.lower(), prop ) for prop in validProps )
     else:
-      validProps = dict( [ ( prop, prop ) for prop in validProps ] )
+      validProps = dict( ( prop, prop ) for prop in validProps )
     groupProperties = credDict[ self.KW_PROPERTIES ]
     foundProps = []
     for prop in groupProperties:
