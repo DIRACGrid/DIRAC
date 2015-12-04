@@ -189,6 +189,8 @@ class PluginUtilities( object ):
             taskSize = 0
     if flush and taskLfns:
       tasks.append( ( replicaSE, taskLfns ) )
+    if not tasks and not flush and taskLfns:
+      self.logVerbose( 'Not enough data to create a task, and flush not set (%d bytes for groupSize %d)' % ( taskSize, self.groupSize ) )
     return tasks
 
 

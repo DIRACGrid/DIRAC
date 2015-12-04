@@ -1141,7 +1141,7 @@ class ComponentInstaller( object ):
       runDict['RSS'] = -1
       if pid: # check the process CPU usage and memory
         # PID %CPU %MEM VSZ
-        result = execCommand( 0, ['ps', '-q', pid, 'au'] )
+        result = self.execCommand( 0, ['ps', '-q', pid, 'au'] )
         if result['OK'] and len( result['Value'] ) > 0:
           stats = result['Value'][1]
           values = re.findall( r"\d*\.\d+|\d+", stats )
@@ -2508,7 +2508,7 @@ class ComponentInstaller( object ):
 
     # now creating the Database
     result = self.execMySQL( 'CREATE DATABASE `%s`' % dbName )
-    if not result['OK'] and not 'database exists' in result[ 'Value' ]:
+    if not result['OK'] and not 'database exists' in result[ 'Message' ]:
       gLogger.error( 'Failed to create databases', result['Message'] )
       if self.exitOnError:
         DIRAC.exit( -1 )

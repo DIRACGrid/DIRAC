@@ -39,7 +39,7 @@ if __name__ == "__main__":
   if not result['OK']:
     gLogger.error( result['Message'] )
 
-  norm = int( ( result['Value']['NORM'] + 0.05 ) * 10 ) / 10.
+  norm = round( result['Value']['NORM'], 1 )
 
   gLogger.notice( 'Estimated CPU power is %.1f %s' % ( norm, result['Value']['UNIT'] ) )
 
