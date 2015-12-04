@@ -11,6 +11,7 @@ import os
 import atexit
 import readline
 import datetime
+import time
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
@@ -659,6 +660,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         cpu = result[ 'Value' ][ 'CPUModel' ]
       hostname = self.host
       if component == 'ComponentMonitoring':
+        # Make sure that the service is running before trying to use it
+        nTries = 0
+        maxTries = 5
+        mClient = ComponentMonitoringClient()
+        result = mClient.ping()
+        while not result[ 'OK' ] and nTries < maxTries:
+          time.sleep( 3 )
+          result = mClient.ping()
+          nTries = nTries + 1
+
+        if not result[ 'OK' ]:
+          self.__errMsg( 'ComponentMonitoring service taking too long to start. Installation will not be logged into the database' )
+          return
+
         result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
         if not result['OK']:
           self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
