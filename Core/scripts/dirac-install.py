@@ -7,17 +7,17 @@ __RCSID__ = "$Id$"
 import sys
 import os
 import getopt
-import tarfile
 import urllib2
 import imp
 import signal
-import re
 import time
 import stat
 import types
 import shutil
-import zipfile
-import hashlib as md5
+try:
+  import hashlib as md5
+except ImportError:
+  import md5
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
@@ -405,7 +405,7 @@ class ReleaseConfig( object ):
   def loadInstallationLocalDefaults( self, fileName ):
     try:
       fd = open( fileName, "r" )
-      #TODO: Merge with installation CFG
+      # TODO: Merge with installation CFG
       cfg = ReleaseConfig.CFG().parse( fd.read() )
       fd.close()
     except Exception, excp :
@@ -627,7 +627,7 @@ class ReleaseConfig( object ):
       #Default modules with the same version as the release version
       modules = self.getReleaseOption( project, release, "DefaultModules" )
       if modules:
-        modules = dict( [ ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() ] )
+        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() )
       else:
         #Mod = project and same version
         modules = { project : release }

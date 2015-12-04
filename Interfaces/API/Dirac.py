@@ -81,13 +81,10 @@ class Dirac( API ):
         gLogger.error( "Unable to write to supplied repository location" )
         self.jobRepo = False
 
-    self.scratchDir = gConfig.getValue( self.section + 'ScratchDir', '/tmp' )
     self.useCertificates = useCertificates
 
     # Determine the default file catalog
     self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', None )
-
-    self.__clients = None
 
   def __checkFileArgument( self, fnList, prefix = None, single = False ):
     if prefix is None:
@@ -133,7 +130,7 @@ class Dirac( API ):
        >>> print dirac.getRepositoryJobs()
        {'OK': True, 'Value': [1,2,3,4]}
 
-       :return S_OK,S_ERROR
+       :return: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
@@ -306,8 +303,8 @@ class Dirac( API ):
     if isinstance( job, basestring ):
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
-        fd = open( job, 'r' )
-        jdlAsString = fd.read()
+        with open( job, 'r' ) as fd:
+          jdlAsString = fd.read()
       else:
         self.log.verbose( 'Job is a JDL string' )
         jdlAsString = job
@@ -354,9 +351,8 @@ class Dirac( API ):
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
       jobXMLFile = tmpdir + '/jobDescription.xml'
-      fd = os.open( jobXMLFile, os.O_RDWR | os.O_CREAT )
-      os.write( fd, job._toXML() )
-      os.close( fd )
+      with open( jobXMLFile, os.O_RDWR | os.O_CREAT ) as fd:
+        fd.write( job._toXML() )
       result = self.runLocal( jdlAsString, jobXMLFile, curDir,
                               disableCallback = stopCallback )
       self.log.verbose( 'Cleaning up %s...' % tmpdir )
@@ -439,9 +435,8 @@ class Dirac( API ):
     """Update Job description to avoid pilot submission by WMS
     """
     if os.path.exists( job ):
-      jdlFile = open( job, 'r' )
-      jdl = jdlFile.read()
-      jdlFile.close()
+      with open( job, 'r' ) as jdlFile:
+        jdl = jdlFile.read()
     else:
       jdl = job
 
@@ -946,9 +941,8 @@ class Dirac( API ):
       if os.path.exists( outputFileName ):
         os.remove( outputFileName )
       self.log.info( 'Standard output written to %s' % ( outputFileName ) )
-      outputFile = open( outputFileName, 'w' )
-      print >> outputFile, stdout
-      outputFile.close()
+      with open( outputFileName, 'w' ) as outputFile:
+        print >> outputFile, stdout
     else:
       self.log.warn( 'Job JDL has no StdOutput file parameter defined' )
 
@@ -957,9 +951,8 @@ class Dirac( API ):
       if os.path.exists( errorFileName ):
         os.remove( errorFileName )
       self.log.verbose( 'Standard error written to %s' % ( errorFileName ) )
-      errorFile = open( errorFileName, 'w' )
-      print >> errorFile, stderr
-      errorFile.close()
+      with open( errorFileName, 'w' ) as errorFile:
+        print >> errorFile, stderr
       sandbox = None
     else:
       self.log.warn( 'Job JDL has no StdError file parameter defined' )
@@ -2094,19 +2087,18 @@ class Dirac( API ):
         except Exception, x:
           return self._errorReport( str( x ), 'Could not create directory %s' % ( dirPath ) )
 
-      fopen = open( outputFile, 'w' )
-      line = 'JobID'.ljust( 12 )
-      for i in headers:
-        line += i.ljust( 35 )
-      fopen.write( line + '\n' )
-      for jobID, params in summary.items():
-        line = str( jobID ).ljust( 12 )
-        for header in headers:
-          for key, value in params.items():
-            if header == key:
-              line += value.ljust( 35 )
+      with open( outputFile, 'w' ) as fopen:
+        line = 'JobID'.ljust( 12 )
+        for i in headers:
+          line += i.ljust( 35 )
         fopen.write( line + '\n' )
-      fopen.close()
+        for jobID, params in summary.items():
+          line = str( jobID ).ljust( 12 )
+          for header in headers:
+            for key, value in params.items():
+              if header == key:
+                line += value.ljust( 35 )
+          fopen.write( line + '\n' )
       self.log.verbose( 'Output written to %s' % outputFile )
 
     if printOutput:
@@ -2224,12 +2216,11 @@ class Dirac( API ):
   def __writeFile( self, pObject, fileName ):
     """Internal function.  Writes a python object to a specified file path.
     """
-    fopen = open( fileName, 'w' )
-    if not isinstance( pObject, basestring ):
-      fopen.write( '%s\n' % self.pPrint.pformat( pObject ) )
-    else:
-      fopen.write( pObject )
-    fopen.close()
+    with open( fileName, 'w' ) as fopen:
+      if not isinstance( pObject, basestring ):
+        fopen.write( '%s\n' % self.pPrint.pformat( pObject ) )
+      else:
+        fopen.write( pObject )
 
   #############################################################################
   def getJobCPUTime( self, jobID, printOutput = False ):
@@ -2516,9 +2507,8 @@ class Dirac( API ):
         jdl can be a string, or a file containing the JDL string
     """
     if os.path.exists( jdl ):
-      jdlFile = open( jdl, 'r' )
-      jdl = jdlFile.read()
-      jdlFile.close()
+      with open( jdl, 'r' ) as jdlFile:
+        jdl = jdlFile.read()
     else:
       if not isinstance( jdl, basestring ):
         return S_ERROR( "Can't read JDL" )

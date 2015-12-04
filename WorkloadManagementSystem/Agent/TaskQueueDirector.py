@@ -125,19 +125,12 @@
 """
 __RCSID__ = "$Id$"
 
-<<<<<<< HEAD
-import random, time, threading
-from DIRAC                                                       import S_OK, S_ERROR, abort
-import DIRAC.Core.Utilities.List as List
-import DIRAC.Core.Utilities.Time as Time
-=======
 import random
 import time
 import threading
 
 from DIRAC                                                       import S_OK, S_ERROR, gConfig, abort
 from DIRAC.Core.Utilities                                        import List, Time
->>>>>>> rel-v6r14
 from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
 from DIRAC.Core.Utilities.ObjectLoader                           import ObjectLoader
 from DIRAC.Core.DISET.RPCClient                                  import RPCClient

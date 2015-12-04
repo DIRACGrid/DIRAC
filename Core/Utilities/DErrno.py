@@ -56,46 +56,126 @@ import sys
 # 1900: TS
 # 2000: RSS
 
-# Generic
-ERRX = 1001
-ERRY = 1002
-EIMPERR = 1003
-ENOMETH = 1004
-ECONF = 1006
+# ## Generic (10XX)
+# Python related: 0X
+ETYPE = 1000
+EIMPERR = 1001
+ENOMETH = 1002
+ECONF = 1003
+# Files manipulation: 1X
+ECTMPF = 1010
+EOF = 1011
+ERF = 1012
+EWF = 1013
+ESPF = 1014
 
-# DMS/StorageManagement
+# ## Core (11XX)
+# Certificates and Proxy: 0X
+EX509 = 1100
+EPROXYFIND = 1101
+EPROXYREAD = 1102
+ECERTFIND = 1103
+ECERTREAD = 1104
+ENOCERT = 1105
+ENOCHAIN = 1106
+ENOPKEY = 1107
+# DISET: 1X
+EDISET = 1110
+# 3rd party security: 2X
+E3RDPARTY = 1120
+EVOMS = 1121
+# Databases : 3X
+EDB = 1130
+EMYSQL = 1131
+
+# ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
 EGFAL = 1602
 EBADCKS = 1603
-
+EFCERR = 1604
 
 
 
 # This translates the integer number into the name of the variable
-dErrorCode = { 1001 : 'ERRX',
-               1002 : 'ERRY',
-               1003 : 'EIMPERR',
-               1004 : 'ENOMETH',
-               1006 : 'ECONF',
+dErrorCode = {
+               # ## Generic (10XX)
+               # 100X: Python related
+               1000 : 'ETYPE',
+               1001 : 'EIMPERR',
+               1002 : 'ENOMETH',
+               1003 : 'ECONF',
+               # 101X: Files manipulation
+               1010 : 'ECTMPF',
+               1011 : 'EOF',
+               1012 : 'ERF',
+               1013 : 'EWF',
+               1014 : 'ESPF',
+
+               # ## Core
+               # 110X: Certificates and Proxy
+               1100 : 'EX509',
+               1101 : 'EPROXYFIND',
+               1102 : 'EPROXYREAD',
+               1103 : 'ECERTFIND',
+               1104 : 'ECERTREAD',
+               1105 : 'ENOCERT',
+               1106 : 'ENOCHAIN',
+               1107 : 'ENOPKEY',
+               # 111X: DISET
+               1110 : 'EDISET',
+               # 112X: 3rd party security
+               1120 : 'E3RDPARTY',
+               1121 : 'EVOMS',
+               # 113X: Databases
+               1130 : 'EDB',
+               1131 : 'EMYSQL',
 
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
                1603 : 'EBADCKS',
+               1604 : "EFCERR"
+               }
 
-                }
 
-
-dStrError = { ERRX : "A human readable error message for ERRX",
-              ERRY : "A nice message for ERRY",
+dStrError = {
+              # ## Generic (10XX)
+              # 100X: Python related
+              ETYPE : "Object Type Error",
               EIMPERR : "Failed to import library",
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
+              # 101X: Files manipulation
+              ECTMPF : "Failed to create temporary file",
+              EOF : "Cannot open file",
+              ERF : "Cannot read from file",
+              EWF : "Cannot write to file",
+              ESPF : "Cannot set permissions to file",
+
+              # ## Core
+              # 110X: Certificates and Proxy
+              EX509 : "Generic Error with X509",
+              EPROXYFIND : "Can't find proxy",
+              EPROXYREAD : "Can't read proxy",
+              ECERTFIND : "Can't find certificate",
+              ECERTREAD : "Can't read certificate",
+              ENOCERT : "No certificate loaded",
+              ENOCHAIN : "No chain loaded",
+              ENOPKEY : "No private key loaded",
+              # 111X: DISET
+              EDISET : "DISET Error",
+              # 112X: 3rd party security
+              E3RDPARTY: "3rd party security service error",
+              EVOMS : "VOMS Error",
+              # 113X: Databases
+              EDB : "Database Error",
+              EMYSQL : "MySQL Error",
 
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",
               EBADCKS : "Bad checksum",
+              EFCERR : "FileCatalog error"
 }
 
 
@@ -111,7 +191,7 @@ def strerror(code):
       It completes it with the DIRAC specific errors.
   """
   
-  errMsg = "Unknown error %s"%code
+  errMsg = "Unknown error %s" % code
   
   try:
     errMsg = dStrError[code]

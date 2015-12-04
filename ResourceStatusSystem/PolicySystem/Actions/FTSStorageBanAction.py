@@ -65,13 +65,13 @@ class FTSStorageBanAction( BaseAction ):
 
       # TODO: maybe proxyPath is not needed since it is picked from the environment by the REST API
       proxyPath = getProxyInfo()
-      if not proxyPath.get( 'OK' ):
-        return S_ERROR( "Proxy not found!" )
+      if not proxyPath['OK']:
+        return proxyPath
 
       try:
-        proxyPath = proxyPath.get( 'Value' ).get( 'path' )
+        proxyPath = proxyPath['Value']['path']
       except Exception as e:
-        return S_ERROR( e.message )
+        return S_ERROR( repr( e ).replace( ',)', ')' ) )
 
       context = fts3.Context( endpoint, proxyPath )
       timeout = 3600  # or...?

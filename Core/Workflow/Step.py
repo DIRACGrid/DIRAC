@@ -72,9 +72,8 @@ class StepDefinition( AttributeCollection ):
   def toXMLFile( self, outFile ):
     if os.path.exists( outFile ):
       os.remove( outFile )
-    xmlfile = open( outFile, 'w' )
-    xmlfile.write( self.toXML() )
-    xmlfile.close()
+    with open( outFile, 'w' ) as xmlfile:
+      xmlfile.write( self.toXML() )
 
   def addModule( self, module ):
     # KGG We need to add code to update existing modules

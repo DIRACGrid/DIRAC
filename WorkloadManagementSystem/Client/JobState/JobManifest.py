@@ -1,10 +1,12 @@
+"""
+"""
 
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
+from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import getSubmitPools
 
 class JobManifest( object ):
 
@@ -132,7 +134,6 @@ class JobManifest( object ):
     """
     Check Maximum Number of Input Data files allowed
     """
-    initialVal = False
     varName = "InputData"
     if varName not in self.__manifest:
       return S_OK()
@@ -158,21 +159,21 @@ class JobManifest( object ):
     for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
       if k not in self.__manifest:
         return S_ERROR( "Missing var %s in manifest" % k )
+
     #Check CPUTime
     result = self.__checkNumericalVar( "CPUTime", 86400, 100, 500000 )
     if not result[ 'OK' ]:
       return result
+
     result = self.__checkNumericalVar( "Priority", 1, 0, 10 )
     if not result[ 'OK' ]:
       return result
-    allowedSubmitPools = []
-    for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
-                                                          option ),
-                                             [] )
+
+    allowedSubmitPools = getSubmitPools( self.__manifest['OwnerGroup'] )
     result = self.__checkMultiChoice( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result
+
     result = self.__checkMultiChoice( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
@@ -181,6 +182,7 @@ class JobManifest( object ):
     result = self.__checkMaxInputData( maxInputData )
     if not result[ 'OK' ]:
       return result
+
     transformationTypes = Operations().getValue( "Transformations/DataProcessing", [] )
     result = self.__checkMultiChoice( "JobType", ['User', 'Test', 'Hospital'] + transformationTypes )
     if not result[ 'OK' ]:

@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ GraphUtilities is a a collection of utility functions and classes used
     in the DIRAC Graphs package.
     
@@ -403,9 +399,8 @@ def makeDataFromCSV( csv ):
   """
 
   if os.path.exists( csv ):
-    fdata = open( csv, 'r' )
-    flines = fdata.readlines()
-    fdata.close()
+    with open( csv, 'r' ) as fdata:
+      flines = fdata.readlines()
   else:
     flines = csv.split( '\n' )
 

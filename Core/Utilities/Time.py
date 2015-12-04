@@ -46,16 +46,40 @@ def timeThis( method ):
   """
 
   def timed( *args, **kw ):
+
     ts = nativetime.time()
     result = method( *args, **kw )
     te = nativetime.time()
 
-    try:
-      pre = str( dateTime() ) + args[0].log._systemName + args[0].transString
-    except Exception:
-      pre = str( dateTime() )
+    pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )
 
-    print( "%s Exec time ===> function %r arguments len: %d -> %2.2f sec" % ( pre, method.__name__, len( kw ), te - ts ) )
+    try:
+      pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: ' + args[0].transString
+    except AttributeError:
+      try:
+        pre += args[0].log._systemName + '    TIME: ' + args[0].transString
+      except AttributeError:
+        try:
+          pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+        except AttributeError:
+          pre += 'TIME: '
+    except IndexError:
+      pre += 'TIME: '
+
+    argsLen = ''
+    if args:
+      try:
+        if isinstance( args[1], ( list, dict ) ):
+          argsLen = "arguments len: %d" % len( args[1] )
+      except IndexError:
+        if kw:
+          try:
+            if isinstance( kw.items()[0][1], ( list, dict ) ):
+              argsLen = "arguments len: %d" % len( kw.items()[0][1] )
+          except IndexError:
+            argsLen = ''
+
+    print( "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts ) )
     return result
 
   return timed
@@ -240,10 +264,10 @@ def queryTime(f):
   """ Decorator to measure the function call time
   """
   def measureQueryTime(*args, **kwargs):
-    start = time.time()
+    start = nativetime.time()
     result = f(*args, **kwargs)
     if result['OK'] and not 'QueryTime' in result:
-      result['QueryTime'] = time.time() - start
+      result['QueryTime'] = nativetime.time() - start
     return result
   return measureQueryTime
 

@@ -6,6 +6,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 class FileCatalogClientBase( Client ):
   """ Client code to the DIRAC File Catalogue
@@ -34,7 +35,8 @@ class FileCatalogClientBase( Client ):
 #  The following methods must be implemented in derived classes
 #######################################################################################
 
-  def getInterfaceMethods( self ):
+  @staticmethod
+  def getInterfaceMethods():
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )

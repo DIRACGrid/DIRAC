@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: StatisticsTestCase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/01/17 12:42:07
 ########################################################################
@@ -18,10 +16,8 @@
 __RCSID__ = "$Id $"
 
 ##
-# @file StatisticsTestCase.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2011/01/17 12:42:33
-# @brief Definition of StatisticsTestCase class.
 
 ## imports 
 import unittest
@@ -36,7 +32,7 @@ class StatisticsTestCase(unittest.TestCase):
   Test cases for DIRAC.Core.Utilities.Statistics
 
   """
-			
+
   def testGetMean( self ):
     """ getMean tests
     """
@@ -123,5 +119,3 @@ if __name__ == "__main__":
   SUITE = TESTLOADER.loadTestsFromTestCase( StatisticsTestCase )      
   unittest.TextTestRunner(verbosity=3).run( SUITE )
 
-		
-		

@@ -1,4 +1,3 @@
-# $HeadURL$
 """
    Collection of DIRAC useful operating system related modules
    by default on Error they return None
@@ -8,11 +7,11 @@ __RCSID__ = "$Id$"
 
 import os
 import multiprocessing
+import distutils.spawn
 
 import DIRAC
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
-import distutils.spawn
 
 DEBUG = 0
 
@@ -106,11 +105,11 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   if DIRAC.platformTuple[0] == 'Windows':
     # this needs to be tested
     cmd = ' '.join( cmdTuple ) + envAsDict
-    ret = DIRAC.shellCall( timeout, [ cmd ], env = inputEnv )
+    ret = shellCall( timeout, [ cmd ], env = inputEnv )
   else:
     cmdTuple.insert( 0, 'source' )
     cmd = ' '.join( cmdTuple ) + envAsDict
-    ret = DIRAC.systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
+    ret = systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
 
   # 3.- Now get back the result
   stdout = ''

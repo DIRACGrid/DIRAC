@@ -53,7 +53,7 @@ if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
 if len( result[ 'Value' ] ) < 1:
-  gLogger.error( 'Given component does not exist' )
+  gLogger.warn( 'Given component does not exist' )
   DIRACexit( 1 )
 if len( result[ 'Value' ] ) > 1:
   gLogger.error( 'Too many components match' )

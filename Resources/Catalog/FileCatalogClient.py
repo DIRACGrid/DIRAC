@@ -43,10 +43,11 @@ class FileCatalogClient( FileCatalogClientBase ):
   def __init__( self, url = None, **kwargs ):
     """ Constructor function.
     """
-    self.serverURL = 'DataManagement/FileCatalog'
-    super( FileCatalogClient, self ).__init__( url, **kwargs )
+    self.serverURL = 'DataManagement/FileCatalog' if not url else url
+    super( FileCatalogClient, self ).__init__( self.serverURL, **kwargs )
 
-  def getInterfaceMethods( self ):
+  @staticmethod
+  def getInterfaceMethods():
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
@@ -86,11 +87,12 @@ class FileCatalogClient( FileCatalogClientBase ):
   def setReplicaProblematic( self, lfns, revert = False ):
     """
       Set replicas to problematic.
-      :param lfn lfns has to be formated this way :
-                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
-      :param revert If True, remove the problematic flag
 
-      :return { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
+      :param lfn lfns: has to be formated this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+      :param revert: If True, remove the problematic flag
+
+      :return: { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
     """
 
     # This method does a batch treatment because the setReplicaStatus can only take one replica per lfn at once

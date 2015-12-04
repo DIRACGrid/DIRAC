@@ -1,4 +1,8 @@
-"""
+""" This module exposes singleton gServiceInterface as istance of ServiceInterface (also in this module)
+
+    Interacts with RRD (rrdtool), with ComponentMonitoringDB (mysql) and with MonitoringCatalog (sqlite3)
+
+    Main clients are the monitoring handler (what's called by gMonitor object), and the web portal.
 """
 
 __RCSID__ = "$Id$"
@@ -6,8 +10,12 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC import gLogger, rootPath, gConfig
-from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
 from DIRAC.Core.Utilities import DEncode, List
+
+from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
+from DIRAC.FrameworkSystem.private.monitoring.PlotCache import PlotCache
+from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
 
 class ServiceInterface( object ):
 
@@ -30,15 +38,12 @@ class ServiceInterface( object ):
     """
     Creates a Monitoring catalog connector
     """
-    from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
     return MonitoringCatalog( self.dataPath )
 
   def initialize( self, dataPath ):
     """
     Initialize monitoring server
     """
-    from DIRAC.FrameworkSystem.private.monitoring.PlotCache import PlotCache
-    from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 
     self.dataPath = dataPath
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )

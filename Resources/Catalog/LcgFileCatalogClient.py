@@ -176,7 +176,7 @@ def returnCode( error, value = '', errMsg = '' ):
 
 class LcgFileCatalogClient( object ):
 
-  def __init__( self, infosys = None, host = None ):
+  def __init__( self, **options ):
     global lfc, importedLFC
 
     if importedLFC == None:
@@ -193,25 +193,17 @@ class LcgFileCatalogClient( object ):
 
     self.valid = importedLFC
 
-    if not infosys:
-      # if not provided, take if from CS
-      infosys = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/LcgGfalInfosys', '' )
+    infosys = options.get( 'LcgGfalInfosys' )
     if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
       # if not in CS take from environ
       infosys = os.environ['LCG_GFAL_INFOSYS']
 
-    if not host:
-      # if not provided, take if from CS
-      host = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/MasterHost', '' )
+    host = options.get( 'MasterHost' )
     if not host and 'LFC_HOST' in os.environ:
       # if not in CS take from environ
       host = os.environ['LFC_HOST']
 
     self.host = host
-    result = gConfig.getOption( '/DIRAC/Setup' )
-    if not result['OK']:
-      gLogger.fatal( 'Failed to get the /DIRAC/Setup' )
-      return
 
     if host:
       os.environ['LFC_HOST'] = host
@@ -241,7 +233,8 @@ class LcgFileCatalogClient( object ):
     """
     return hasattr( self, methodName )
 
-  def getInterfaceMethods( self ):
+  @staticmethod
+  def getInterfaceMethods():
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
@@ -1060,11 +1053,12 @@ class LcgFileCatalogClient( object ):
   def setReplicaProblematic( self, lfns, revert = False ):
     """
       Set replicas to problematic.
-      :param lfn lfns has to be formated this way :
-                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
-      :param revert If True, remove the problematic flag
 
-      :return { Successful : { lfn : [ ses ] }, Failed : { lfn : { se : msg } } }
+      :param lfn lfns: has to be formated this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+      :param revert: If True, remove the problematic flag
+
+      :return: { Successful : { lfn : [ ses ] }, Failed : { lfn : { se : msg } } }
     """
 
     # This method does a batch treatment because the setReplicaStatus can only take one replica per lfn at once
@@ -1705,7 +1699,7 @@ class LcgFileCatalogClient( object ):
     totalError = ""
     for link, error in res['Value']['Failed'].items():
       gLogger.error( "LcgFileCatalogClient.__createDataset: Failed to create link", 
-                     "for %s: " % ( link, error ) )
+                     "for %s: %s" % ( link, error ) )
       totalError = "%s\n %s : %s" % ( totalError, link, error )
     return S_ERROR( totalError )
 

@@ -6,15 +6,15 @@ correctly updated in the FileCatalog.
 
 __RCSID__ = "$Id$"
 
+import re
+import types
+
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
-from DIRAC.Core.Utilities.List                            import sortList
 from DIRAC.Core.Base.Client                               import Client
-import re
-import types
 
 class DataIntegrityClient( Client ):
 
@@ -88,7 +88,7 @@ class DataIntegrityClient( Client ):
   def reportProblematicReplicas( self, replicaTuple, se, reason ):
     """ Simple wrapper function around setReplicaProblematic """
     gLogger.info( 'The following %s files had %s at %s' % ( len( replicaTuple ), reason, se ) )
-    for lfn, _pfn, se, reason in sortList( replicaTuple ):
+    for lfn, _pfn, se, reason in sorted( replicaTuple ):
       if lfn:
         gLogger.info( lfn )
     res = self.setReplicaProblematic( replicaTuple, sourceComponent = 'DataIntegrityClient' )

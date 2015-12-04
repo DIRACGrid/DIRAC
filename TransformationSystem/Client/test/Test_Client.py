@@ -1,10 +1,15 @@
+""" unit tests for Transformation Clients
+"""
+
 import unittest, types
 
-from mock import Mock
+from mock import MagicMock
+from DIRAC import gLogger
 from DIRAC.RequestManagementSystem.Client.Request             import Request
 from DIRAC.TransformationSystem.Client.TaskManager            import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
+from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
 def getSitesForSE( ses ):
   if ses == 'pippo':
@@ -19,17 +24,17 @@ class ClientsTestCase( unittest.TestCase ):
   """
   def setUp( self ):
 
-    self.mockTransClient = Mock()
+    self.mockTransClient = MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK':True}
 
-    self.WMSClientMock = Mock()
-    self.jobMonitoringClient = Mock()
-    self.mockReqClient = Mock()
+    self.WMSClientMock = MagicMock()
+    self.jobMonitoringClient = MagicMock()
+    self.mockReqClient = MagicMock()
 
-    self.jobMock = Mock()
-    self.jobMock2 = Mock()
-    mockWF = Mock()
-    mockPar = Mock()
+    self.jobMock = MagicMock()
+    self.jobMock2 = MagicMock()
+    mockWF = MagicMock()
+    mockPar = MagicMock()
     mockWF.findParameter.return_value = mockPar
     mockPar.getValue.return_value = 'MySite'
 
@@ -39,18 +44,20 @@ class ClientsTestCase( unittest.TestCase ):
     self.jobMock.return_value = self.jobMock2
 
     self.taskBase = TaskBase( transClient = self.mockTransClient )
+    self.pu = PluginUtilities( transClient = self.mockTransClient )
     self.wfTasks = WorkflowTasks( transClient = self.mockTransClient,
                                   submissionClient = self.WMSClientMock,
                                   jobMonitoringClient = self.jobMonitoringClient,
-                                  outputDataModule = "mock",
-                                  jobClass = self.jobMock )
+                                  outputDataModule = "mock" )
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
-                                      requestClient = self.mockReqClient
-                                      )
+                                      requestClient = self.mockReqClient,
+                                      requestValidator = MagicMock() )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
     self.maxDiff = None
+
+    gLogger.setLevel( 'DEBUG' )
 
 
   def tearDown( self ):
@@ -66,23 +73,39 @@ class TaskBaseSuccess( ClientsTestCase ):
 
 #############################################################################
 
+class PluginUtilitiesSuccess( ClientsTestCase ):
+
+  def test_groupByReplicas( self ):
+    res = self.pu.groupByReplicas( {'/this/is/at.1': ['SE1'],
+                                    '/this/is/at.12': ['SE1', 'SE2'],
+                                    '/this/is/at.2': ['SE2'],
+                                    '/this/is/at_123': ['SE1', 'SE2', 'SE3'],
+                                    '/this/is/at_23': ['SE2', 'SE3'],
+                                    '/this/is/at_4': ['SE4']},
+                                  'Flush' )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at_123', '/this/is/at.12', '/this/is/at.1'] ),
+                                     ( 'SE2', ['/this/is/at_23', '/this/is/at.2'] ),
+                                     ( 'SE4', ['/this/is/at_4'] )] )
+
+#############################################################################
+
 class WorkflowTasksSuccess( ClientsTestCase ):
 
   def test_prepareTranformationTasks( self ):
     taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
                 2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
-                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'},
-                }
+                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
 
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
-                                          'b1': 'bb1', 'Site': 'MySite'},
+                                          'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
                                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite'},
+                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
                                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3', 'Site': 'MySite'}
+                                         'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
                                      }
                             }
                     )
@@ -96,18 +119,6 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
     self.assertEqual( res, ['Site1', 'Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2'] )
-    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'}, getSitesForSE )
-    self.assertEqual( res, ['Site2', 'Site3'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'}, getSitesForSE )
-    self.assertEqual( res, [] )
 
 #############################################################################
 
@@ -286,6 +297,7 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TaskBaseSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( WorkflowTasksSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PluginUtilitiesSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( RequestTasksSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationClientSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TransformationSuccess ) )

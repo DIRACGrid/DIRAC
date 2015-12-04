@@ -29,7 +29,7 @@ class TransformationPlugin( PluginBase ):
     self.data = {}
     self.files = False
     self.startTime = time.time()
-    
+
     if transClient is None:
       transClient = TransformationClient()
 
@@ -37,7 +37,7 @@ class TransformationPlugin( PluginBase ):
       dataManager = DataManager()
 
     self.util = PluginUtilities( plugin, transClient, dataManager )
-    
+
   def __del__( self ):
     self.util.logInfo( "Execution finished, timing: %.3f seconds" % ( time.time() - self.startTime ) )
 
@@ -47,11 +47,17 @@ class TransformationPlugin( PluginBase ):
       self.valid = False
     return self.valid
 
+  def setParameters( self, params ):
+    """ Need to pass parameters also to self.util
+    """
+    self.params = params
+    self.util.setParameters(params)
+
   def setInputData( self, data ):
     self.data = data
     self.util.logDebug( "Set data: %s" % self.data )
 
-  def setTransformationFiles( self, files ): #TODO ADDED
+  def setTransformationFiles( self, files ):  # TODO ADDED
     self.files = files
 
   def _Standard( self ):
@@ -90,20 +96,20 @@ class TransformationPlugin( PluginBase ):
       targetSEs = targetseParam
     else:
       targetSEs = [targetseParam]
-    #sourceSEs = eval(self.params['SourceSE'])
-    #targetSEs = eval(self.params['TargetSE'])
+    # sourceSEs = eval(self.params['SourceSE'])
+    # targetSEs = eval(self.params['TargetSE'])
     destinations = int( self.params.get( 'Destinations', 0 ) )
-    if destinations and ( destinations >= len(targetSEs) ):
+    if destinations and ( destinations >= len( targetSEs ) ):
       destinations = 0
 
     status = self.params['Status']
-    groupSize = self.params['GroupSize']#Number of files per tasks
+    groupSize = self.params['GroupSize']  # Number of files per tasks
 
     fileGroups = getFileGroups( self.data )  # groups by SE
     targetSELfns = {}
     for replicaSE, lfns in fileGroups.items():
       ses = replicaSE.split( ',' )
-      #sourceSites = self._getSitesForSEs(ses)
+      # sourceSites = self._getSitesForSEs(ses)
       atSource = False
       for se in ses:
         if se in sourceSEs:
@@ -121,17 +127,17 @@ class TransformationPlugin( PluginBase ):
             if ( destinations ) and ( len( targets ) >= destinations ):
               continue
             sources.append( site )
-          targets.append( targetSE )#after all, if someone wants to copy to the source, it's his choice
+          targets.append( targetSE )  # after all, if someone wants to copy to the source, it's his choice
         strTargetSEs = str.join( ',', sorted( targets ) )
         if not targetSELfns.has_key( strTargetSEs ):
           targetSELfns[strTargetSEs] = []
         targetSELfns[strTargetSEs].append( lfn )
     tasks = []
     for ses, lfns in targetSELfns.items():
-      tasksLfns = breakListIntoChunks(lfns, groupSize)
+      tasksLfns = breakListIntoChunks( lfns, groupSize )
       for taskLfns in tasksLfns:
         if ( status == 'Flush' ) or ( len( taskLfns ) >= int( groupSize ) ):
-          #do not allow groups smaller than the groupSize, except if transformation is in flush state
+          # do not allow groups smaller than the groupSize, except if transformation is in flush state
           tasks.append( ( ses, taskLfns ) )
     return S_OK( tasks )
 
@@ -165,7 +171,7 @@ class TransformationPlugin( PluginBase ):
     replicaGroups = res['Value']
 
     tasks = []
-    # For the replica groups 
+    # For the replica groups
     for replicaSE, lfns in replicaGroups:
       possibleSEs = replicaSE.split( ',' )
       # Determine the next site based on requested shares, existing usage and candidate sites
@@ -179,7 +185,7 @@ class TransformationPlugin( PluginBase ):
       if not res['OK']:
         continue
       ses = res['Value']
-      # Determine the selected SE and create the task 
+      # Determine the selected SE and create the task
       for chosenSE in ses:
         if chosenSE in possibleSEs:
           tasks.append( ( chosenSE, lfns ) )
@@ -205,23 +211,22 @@ class TransformationPlugin( PluginBase ):
       return S_ERROR( "No non-zero shares defined" )
     return S_OK( shares )
 
-  def _getNextSite( self, existingCount, cpuShares, candidates = [] ):
-    # normalise the shares
-    siteShare = self.util._normaliseShares( existingCount )
+  def _getNextSite( self, existingCount, targetShares, candidates = None ):
+    if candidates is None:
+      candidates = targetShares
+    # normalise the existing counts
+    existingShares = self.util._normaliseShares( existingCount )
     # then fill the missing share values to 0
-    for site in cpuShares.keys():
-      if ( not siteShare.has_key( site ) ):
-        siteShare[site] = 0.0
-    # determine which site is furthest from its share
+    for site in targetShares:
+      existingShares.setdefault( site, 0.0 )
+    # determine which site is farthest from its share
     chosenSite = ''
     minShareShortFall = -float( "inf" )
-    for site, cpuShare in cpuShares.items():
-      if ( candidates ) and not ( site in candidates ):
+    for site, targetShare in targetShares.items():
+      if site not in candidates or not targetShare:
         continue
-      if not cpuShare:
-        continue
-      existingShare = siteShare[site]
-      shareShortFall = cpuShare - existingShare
+      existingShare = existingShares[site]
+      shareShortFall = targetShare - existingShare
       if shareShortFall > minShareShortFall:
         minShareShortFall = shareShortFall
         chosenSite = site
