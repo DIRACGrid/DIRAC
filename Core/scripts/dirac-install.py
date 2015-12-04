@@ -405,7 +405,7 @@ class ReleaseConfig( object ):
   def loadInstallationLocalDefaults( self, fileName ):
     try:
       fd = open( fileName, "r" )
-      #TODO: Merge with installation CFG
+      # TODO: Merge with installation CFG
       cfg = ReleaseConfig.CFG().parse( fd.read() )
       fd.close()
     except Exception, excp :
@@ -627,7 +627,7 @@ class ReleaseConfig( object ):
       #Default modules with the same version as the release version
       modules = self.getReleaseOption( project, release, "DefaultModules" )
       if modules:
-        modules = dict( [ ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() ] )
+        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() )
       else:
         #Mod = project and same version
         modules = { project : release }

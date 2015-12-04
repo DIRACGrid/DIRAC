@@ -1,6 +1,5 @@
 """ This is the StorageElement class.
 """
-from types import ListType
 
 __RCSID__ = "$Id$"
 # # custom duty
@@ -529,9 +528,9 @@ class StorageElementItem( object ):
 
     if not protocol:
       protocols = self.turlProtocols
-    elif type( protocol ) is ListType:
+    elif isinstance( protocol, list ):
       protocols = protocol
-    elif type( protocol ) == type( '' ):
+    elif isinstance( protocol, basestring ):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"

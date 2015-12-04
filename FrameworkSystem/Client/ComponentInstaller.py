@@ -2703,28 +2703,6 @@ class ComponentInstaller( object ):
 
     return S_OK( ceNameList )
 
-  def configureLocalDirector( self, ceNameList = '' ):
-    """
-    Install a Local DIRAC TaskQueueDirector, basically write the proper configuration file
-    """
-    if ceNameList:
-      result = self.setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
-      if not result['OK']:
-        return result
-      result = MonitoringUtilities.monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
-      if not result[ 'OK' ]:
-        return result
-      # Now write a local Configuration for the Director
-
-    directorCfg = CFG()
-    directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by ComponentInstaller' )
-    directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by ComponentInstaller' )
-    directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by ComponentInstaller' )
-    result = self.addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
-    if not result['OK']:
-      return result
-    return self.runsvctrlComponent( 'WorkloadManagement', 'TaskQueueDirector', 't' )
-
   def execCommand( self, timeout, cmd ):
     """
     Execute command tuple and handle Error cases

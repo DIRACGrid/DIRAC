@@ -26,21 +26,6 @@ class ListTestCase( unittest.TestCase ):
 	Test case for DIRAC.Core.Utilities.List module.
 	"""
 
-  def testSorted( self ):
-    """ sortList tests """
-    # empty list
-    aList = []
-    self.assertEqual( List.sortList(aList), [])
-    # already sorted
-    aList = [ "a", "b", "c" ]
-    self.assertEqual( List.sortList(aList), ["a", "b", "c"] )
-    # unsorted
-    aList = [ "a", "c", "b" ]
-    self.assertEqual( List.sortList(aList), ["a", "b", "c"])
-    # invert
-    aList = [ "a", "b", "c" ]
-    self.assertEqual( List.sortList(aList, invert=True), ["c", "b", "a"] )
-
   def testUniqueElements( self ):
     """ uniqueElements tests """
     # empty list
@@ -122,15 +107,6 @@ class ListTestCase( unittest.TestCase ):
     aList = ["1", 2, 3] 
     aStr = List.intListToString( aList )
     self.assertEqual( aStr, "1,2,3")
-
-  def testRemoveEmptyElements( self ):
-    """ removeEmptyElements tests """
-    # empty list
-    aList = []
-    self.assertEqual( List.removeEmptyElements(aList), [] )
-    # None or "" (empty string) in
-    aList = [ "", None, 1 ] 
-    self.assertEqual( List.removeEmptyElements(aList), [1])
 
   def testFromChar( self ):
     """ fromChar tests """

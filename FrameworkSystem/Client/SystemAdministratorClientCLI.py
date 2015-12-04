@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 """ File Catalog Client Command Line Interface. """
 
 __RCSID__ = "$Id$"
@@ -27,7 +26,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
-  """
+  """ Line oriented command interpreter for administering DIRAC components
   """
   def __errMsg( self, errMsg ):
     gLogger.error( "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg ) )
@@ -1014,9 +1013,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     argss = args.split()
     fname = argss[0]
-    execfile = open( fname, 'r' )
-    lines = execfile.readlines()
-    execfile.close()
+    with open( fname, 'r' ) as executedfile:
+      lines = executedfile.readlines()
 
     for line in lines:
       if line.find( '#' ) != -1 :

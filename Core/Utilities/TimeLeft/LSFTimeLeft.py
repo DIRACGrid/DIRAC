@@ -123,24 +123,24 @@ class LSFTimeLeft( object ):
           except KeyError as e:
             self.log.exception( 'Exception getting LSF configuration', '', e )
           if shared:
-            f = open( shared )
-            hostModelSection = False
-            for line in f.readlines():
-              if line.find( 'Begin HostModel' ) == 0:
-                hostModelSection = True
-                continue
-              if not hostModelSection:
-                continue
-              if line.find( 'End HostModel' ) == 0:
-                break
-              line = line.strip()
-              if line and line.split()[0] == self.cpuRef:
-                try:
-                  self.normRef = float( line.split()[1] )
-                  self.log.info( 'Reference Normalization taken from Configuration File',
-                                 '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
-                except ValueError as e:
-                  self.log.exception( 'Exception reading LSF configuration', '', e )
+            with open( shared ) as f:
+              hostModelSection = False
+              for line in f.readlines():
+                if line.find( 'Begin HostModel' ) == 0:
+                  hostModelSection = True
+                  continue
+                if not hostModelSection:
+                  continue
+                if line.find( 'End HostModel' ) == 0:
+                  break
+                line = line.strip()
+                if line and line.split()[0] == self.cpuRef:
+                  try:
+                    self.normRef = float( line.split()[1] )
+                    self.log.info( 'Reference Normalization taken from Configuration File',
+                                   '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
+                  except ValueError as e:
+                    self.log.exception( 'Exception reading LSF configuration', '', e )
           else:
             self.log.warn( 'Could not find LSF configuration' )
         else:

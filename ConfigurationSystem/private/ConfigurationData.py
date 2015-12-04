@@ -1,10 +1,9 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os.path
 import zlib
 import zipfile
-import threading, thread
+import thread
 import time
 import DIRAC
 from DIRAC.Core.Utilities import List, Time
@@ -13,7 +12,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-class ConfigurationData:
+class ConfigurationData( object ):
 
   def __init__( self, loadDefaultCFG = True ):
     lr = LockRing()
@@ -317,9 +316,8 @@ class ConfigurationData:
 
   def dumpLocalCFGToFile( self, fileName ):
     try:
-      fd = open( fileName, "w" )
-      fd.write( str( self.localCFG ) )
-      fd.close()
+      with open( fileName, "w" ) as fd:
+        fd.write( str( self.localCFG ) )
       gLogger.verbose( "Configuration file dumped", "'%s'" % fileName )
     except IOError:
       gLogger.error( "Can't dump cfg file", "'%s'" % fileName )
@@ -333,9 +331,8 @@ class ConfigurationData:
     return str( self.mergedCFG )
 
   def dumpRemoteCFGToFile( self, fileName ):
-    fd = open( fileName, "w" )
-    fd.write( str( self.remoteCFG ) )
-    fd.close()
+    with open( fileName, "w" ) as fd:
+      fd.write( str( self.remoteCFG ) )
 
   def __backupCurrentConfiguration( self, backupName ):
     configurationFilename = "%s.cfg" % self.getName()
@@ -363,13 +360,12 @@ class ConfigurationData:
   def writeRemoteConfigurationToDisk( self, backupName = False ):
     configurationFile = os.path.join( DIRAC.rootPath, "etc", "%s.cfg" % self.getName() )
     try:
-      fd = open( configurationFile, "w" )
-      fd.write( str( self.remoteCFG ) )
-      fd.close()
-    except Exception, e:
+      with open( configurationFile, "w" ) as fd:
+        fd.write( str( self.remoteCFG ) )
+    except Exception as e:
       gLogger.fatal( "Cannot write new configuration to disk!",
                      "file %s" % configurationFile )
-      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, str( e ) ) )
+      return S_ERROR( "Can't write cs file %s!: %s" % ( configurationFile, repr( e ).replace( ',)', ')' ) ) )
     if backupName:
       self.__backupCurrentConfiguration( backupName )
     return S_OK()

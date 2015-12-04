@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########################################################################
-# $HeadURL$
 # File :    dirac-distribution-create-tarball
 # Author :  Adria Casajus
 ########################################################################
@@ -229,9 +228,8 @@ class TarModuleCreator( object ):
         TarModuleCreator.replaceKeywordsWithGit( objPath )
       elif os.path.isfile( objPath ):
         if fileName.find( '.py', len( fileName ) - 3 ) == len( fileName ) - 3 :
-          fd = open( objPath, "r" )
-          fileContents = fd.read()
-          fd.close()
+          with open( objPath, "r" ) as fd:
+            fileContents = fd.read()
           changed = False
           for keyWord, cmdArgs in ( ( '$Id$', '--pretty="%h (%ad) %an <%aE>" --date=iso' ),
                                     ( '$SHA1$', '--pretty="%H"' ) ):
@@ -247,9 +245,8 @@ class TarModuleCreator( object ):
               fileContents = fileContents.replace( keyWord, toReplace )
               changed = True
 
-          fd = open( objPath, "w" )
-          fd.write( fileContents )
-          fd.close()
+          with open( objPath, "w" ) as fd:
+            fd.write( fileContents )
 
 
   def __checkoutFromGit( self ):
@@ -299,9 +296,8 @@ class TarModuleCreator( object ):
     if not os.path.isfile( relNotes ):
       return S_OK( "" )
     try:
-      fd = open( relNotes, "r" )
-      relaseContents = fd.readlines()
-      fd.close()
+      with open( relNotes, "r" ) as fd:
+        relaseContents = fd.readlines()
     except Exception, excp:
       return S_ERROR( "Could not open %s: %s" % ( relNotes, excp ) )
     gLogger.info( "Loaded %s" % relNotes )
@@ -387,9 +383,8 @@ class TarModuleCreator( object ):
     #Write releasenotes.rst
     try:
       rstFilePath = os.path.join( self.params.destination, self.params.name, rstFileName )
-      fd = open( rstFilePath, "w" )
-      fd.write( "\n".join( rstData ) )
-      fd.close()
+      with open( rstFilePath, "w" ) as fd:
+        fd.write( "\n".join( rstData ) )
     except Exception, excp:
       return S_ERROR( "Could not write %s: %s" % ( rstFileName, excp ) )
     return S_OK()
@@ -447,9 +442,8 @@ class TarModuleCreator( object ):
     baseNotesPath = os.path.join( self.params.destination, self.params.name, baseRSTFile )
     #To HTML
     try:
-      fd = open( relNotesRST )
-      rstData = fd.read()
-      fd.close()
+      with open( relNotesRST ) as fd:
+        rstData = fd.read()
     except Exception, excp:
       return S_ERROR( "Could not read %s: %s" % ( relNotesRST, excp ) )
     try:
@@ -463,11 +457,10 @@ class TarModuleCreator( object ):
     for baseFileName in baseList:
       htmlFileName = baseFileName + ".html"
       try:
-        fd = open( htmlFileName, "w" )
-        fd.write( parts[ 'whole' ] )
-        fd.close()
-      except Exception, excp:
-        return S_ERROR( "Could not write %s: %s" % ( htmlFileName, excp ) )
+        with open( htmlFileName, "w" ) as fd:
+          fd.write( parts[ 'whole' ] )
+      except Exception as excp:
+        return S_ERROR( "Could not write %s: %s" % ( htmlFileName, repr( excp ).replace( ',)', ')' ) ) )
       #To pdf
       pdfCmd = "rst2pdf '%s' -o '%s.pdf'" % ( relNotesRST, baseFileName )
       gLogger.verbose( "Executing %s" % pdfCmd )
