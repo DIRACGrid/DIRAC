@@ -146,51 +146,27 @@ class DirectoryListing:
 
     self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )
 
-  def __getModeString(self,perm):
+  @staticmethod
+  def __getModeString(perm):
     """ Get string representation of the file/directory mode
     """
-
     pstring = ''
-    if perm & stat.S_IRUSR:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWUSR:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXUSR:
-      pstring += 'x'
-    else:
-      pstring += '-'
-    if perm & stat.S_IRGRP:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWGRP:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXGRP:
-      pstring += 'x'
-    else:
-      pstring += '-'
-    if perm & stat.S_IROTH:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWOTH:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXOTH:
-      pstring += 'x'
-    else:
-      pstring += '-'
+    pstring += (perm & stat.S_IRUSR and 'r') or '-'
+    pstring += (perm & stat.S_IWUSR and 'w') or '-'
+    pstring += (perm & stat.S_IXUSR and 'x') or '-'
+
+    pstring += (perm & stat.S_IRGRP and 'r') or '-'
+    pstring += (perm & stat.S_IWGRP and 'w') or '-'
+    pstring += (perm & stat.S_IXGRP and 'x') or '-'
+
+    pstring += (perm & stat.S_IROTH and 'r') or '-'
+    pstring += (perm & stat.S_IWOTH and 'w') or '-'
+    pstring += (perm & stat.S_IXOTH and 'x') or '-'
 
     return pstring
 
-  def humanReadableSize(self,num,suffix='B'):
+  @staticmethod
+  def humanReadableSize(num,suffix='B'):
     """ Translate file size in bytes to human readable
 
         Powers of 2 are used (1Mi = 2^20 = 1048576 bytes).
