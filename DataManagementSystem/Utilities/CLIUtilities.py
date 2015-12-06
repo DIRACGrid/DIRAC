@@ -218,7 +218,7 @@ class DirectoryListing:
     self.entries.append(name)
 
   def printOrdered(self):
-    """ print the ordered list"""
+    """ Print the ordered list"""
     self.entries.sort()
     for entry in self.entries:
       print entry
