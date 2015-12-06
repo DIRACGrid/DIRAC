@@ -413,7 +413,7 @@ File Catalog Client $Revision: 1.17 $Date:
           elif  lfn in result['Value']['Successful']:
             print "File %s at %s removed from the catalog" %( lfn, rmse )
           else:
-            "ERROR: Unexpected returned value %s" % result['Value']
+            print "ERROR: Unexpected returned value %s" % result['Value']
         else:
           print "File %s at %s removed from the catalog" %( lfn, rmse )
       else:
