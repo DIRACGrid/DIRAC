@@ -178,49 +178,40 @@ class DirectoryListing:
       num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
-  def printListing(self,reverse,timeorder,sizeorder,humanread):
-    """
+  def printListing(self,reverseOrder,timeorder,sizeorder,humanread):
+    """ Print the listing of several directories/files
     """
     if timeorder:
-      if reverse:
-        self.entries.sort(key=lambda x: x[5])
-      else:
-        self.entries.sort(key=lambda x: x[5],reverse=True)
+      self.entries.sort( key=lambda x: x[5], reverse = not reverseOrder )
     elif sizeorder:
-      if reverse:
-        self.entries.sort(key=lambda x: x[4])
-      else:
-        self.entries.sort(key=lambda x: x[4],reverse=True)
+      self.entries.sort( key=lambda x: x[4], reverse = not reverseOrder )
     else:
-      if reverse:
-        self.entries.sort(key=lambda x: x[6],reverse=True)
-      else:
-        self.entries.sort(key=lambda x: x[6])
+      self.entries.sort( key=lambda x: x[6], reverse = reverseOrder )
 
     # Determine the field widths
     wList = [0] * 7
     for d in self.entries:
       for i in range(7):
         if humanread and i == 4:
-          humanreadlen = len(str(self.humanReadableSize(d[4])))
+          humanreadlen = len( str(self.humanReadableSize( d[4] ) ) )
           if humanreadlen > wList[4]:
             wList[4] = humanreadlen
         else:
-          if len(str(d[i])) > wList[i]:
-            wList[i] = len(str(d[i]))
+          if len( str( d[i] ) ) > wList[i]:
+            wList[i] = len( str( d[i] ) )
 
     for e in self.entries:
       size = e[4]
       if humanread:
-        size = self.humanReadableSize(e[4])
-      print str(e[0]),
+        size = self.humanReadableSize( e[4] )
+      print str( e[0] ),
       if self.list_rep:
         print str( e[1] ).rjust( wList[1] ),
-      print str(e[2]).ljust(wList[2]),
-      print str(e[3]).ljust(wList[3]),
-      print str(size).rjust(wList[4]),
-      print str(e[5]).rjust(wList[5]),
-      print str(e[6])
+      print str( e[2] ).ljust( wList[2] ),
+      print str( e[3] ).ljust( wList[3] ),
+      print str( size ).rjust( wList[4] ),
+      print str( e[5] ).rjust( wList[5] ),
+      print str( e[6] )
 
   def addSimpleFile(self,name):
     """ Add single files to be sorted later"""
