@@ -57,20 +57,6 @@ File Catalog Client $Revision: 1.17 $Date:
     self.ul_fs = UnixLikeFileSystem()
     self.ul_dc = DirectoryCompletion(self.ul_fs)
 
-  def getReplicas( self, path ):
-    replicas = [ ]
-    try:
-      result = self.fc.getReplicas( path )    
-      if result[ 'OK' ]:
-        if result[ 'Value' ][ 'Successful' ]:
-          for se,entry in result[ 'Value' ][ 'Successful' ][ path ].items( ):
-            replicas.append( se.ljust( 15 ) + " " + entry )
-        else:
-          print "Replicas: ", result#[ 'Message' ]
-    except Exception, x:
-      replicas.append( "replicas failed:" + str( x ))
-    return tuple( replicas )
-
   def getReplicasForPaths( self, paths ):
     ret = {}
     try:
