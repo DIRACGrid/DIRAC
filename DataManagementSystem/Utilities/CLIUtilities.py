@@ -36,21 +36,19 @@ class DirectoryListing:
     """
     perm = fileDict['Mode']
     date = fileDict['ModificationDate']
-    #nlinks = fileDict.get('NumberOfLinks',0)
     nreplicas = len( repDict )
     size = fileDict['Size']
+    uname = 'unknown'
     if 'Owner' in fileDict:
       uname = fileDict['Owner']
     elif 'OwnerDN' in fileDict:
-      result = CS.getUsernameForDN(fileDict['OwnerDN'])
+      result = CS.getUsernameForDN( fileDict['OwnerDN'] )
       if result['OK']:
         uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
+    if numericid and 'UID' in fileDict:
       uname = str(fileDict['UID'])
+
+    gname = 'unknown'
     if 'OwnerGroup' in fileDict:
       gname = fileDict['OwnerGroup']
     elif 'OwnerRole' in fileDict:
@@ -63,14 +61,11 @@ class DirectoryListing:
             gname = default_group
         else:
           gname = groups[0]
-      else:
-        gname = 'unknown'
-    else:
-      gname = 'unknown'
-    if numericid:
+    if numericid and 'GID' in fileDict:
       gname = str(fileDict['GID'])
 
-    self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
+    self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,
+                          gname,size,date,name) )
 
   def addFileWithReplicas( self,name,fileDict,numericid, replicas ):
     """ Pretty print of the file ls output with replica info
@@ -86,18 +81,17 @@ class DirectoryListing:
     date = dirDict['ModificationDate']
     nlinks = 0
     size = 0
+    uname = 'unknown'
     if 'Owner' in dirDict:
       uname = dirDict['Owner']
     elif 'OwnerDN' in dirDict:
-      result = CS.getUsernameForDN(dirDict['OwnerDN'])
+      result = CS.getUsernameForDN( dirDict['OwnerDN'] )
       if result['OK']:
         uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
+    if numericid and 'UID' in dirDict:
       uname = str(dirDict['UID'])
+
+    gname = 'unknown'
     if 'OwnerGroup' in dirDict:
       gname = dirDict['OwnerGroup']
     elif 'OwnerRole' in dirDict:
@@ -110,12 +104,11 @@ class DirectoryListing:
             gname = default_group
         else:
           gname = groups[0]
-      else:
-        gname = 'unknown'
-    if numericid:
+    if numericid and 'GID' in dirDict:
       gname = str(dirDict['GID'])
 
-    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )
+    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,
+                          gname,size,date,name) )
 
   def addDataset(self,name,datasetDict,numericid):
     """ Pretty print of the dataset ls output
@@ -123,28 +116,26 @@ class DirectoryListing:
     perm = datasetDict['Mode']
     date = datasetDict['ModificationDate']
     size = datasetDict['TotalSize']
+    uname = 'unknown'
     if 'Owner' in datasetDict:
       uname = datasetDict['Owner']
     elif 'OwnerDN' in datasetDict:
       result = CS.getUsernameForDN(datasetDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
+    if numericid and 'UID' in datasetDict:
       uname = str( datasetDict['UID'] )
 
     gname = 'unknown'
     if 'OwnerGroup' in datasetDict:
       gname = datasetDict['OwnerGroup']
-    if numericid:
+    if numericid and 'GID' in datasetDict:
       gname = str( datasetDict ['GID'] )
 
     numberOfFiles = datasetDict ['NumberOfFiles']
 
-    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )
+    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,
+                          gname,size,date,name) )
 
   @staticmethod
   def __getModeString(perm):
