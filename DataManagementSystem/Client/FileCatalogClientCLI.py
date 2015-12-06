@@ -1710,7 +1710,6 @@ File Catalog Client $Revision: 1.17 $Date:
             cur_path = args[-1]
           
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
-        pass
       return result
 
     result = [i for i in self._available_meta_cmd if i.startswith(text)]
