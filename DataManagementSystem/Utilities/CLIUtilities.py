@@ -39,9 +39,9 @@ class DirectoryListing:
     #nlinks = fileDict.get('NumberOfLinks',0)
     nreplicas = len( repDict )
     size = fileDict['Size']
-    if fileDict.has_key('Owner'):
+    if 'Owner' in fileDict:
       uname = fileDict['Owner']
-    elif fileDict.has_key('OwnerDN'):
+    elif 'OwnerDN' in fileDict:
       result = CS.getUsernameForDN(fileDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
@@ -51,9 +51,9 @@ class DirectoryListing:
       uname = 'unknown'
     if numericid:
       uname = str(fileDict['UID'])
-    if fileDict.has_key('OwnerGroup'):
+    if 'OwnerGroup' in fileDict:
       gname = fileDict['OwnerGroup']
-    elif fileDict.has_key('OwnerRole'):
+    elif 'OwnerRole' in fileDict:
       groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
       if groups:
         if len(groups) > 1:
@@ -86,9 +86,9 @@ class DirectoryListing:
     date = dirDict['ModificationDate']
     nlinks = 0
     size = 0
-    if dirDict.has_key('Owner'):
+    if 'Owner' in dirDict:
       uname = dirDict['Owner']
-    elif dirDict.has_key('OwnerDN'):
+    elif 'OwnerDN' in dirDict:
       result = CS.getUsernameForDN(dirDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
@@ -98,9 +98,9 @@ class DirectoryListing:
       uname = 'unknown'
     if numericid:
       uname = str(dirDict['UID'])
-    if dirDict.has_key('OwnerGroup'):
+    if 'OwnerGroup' in dirDict:
       gname = dirDict['OwnerGroup']
-    elif dirDict.has_key('OwnerRole'):
+    elif 'OwnerRole' in dirDict:
       groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
       if groups:
         if len(groups) > 1:
@@ -123,9 +123,9 @@ class DirectoryListing:
     perm = datasetDict['Mode']
     date = datasetDict['ModificationDate']
     size = datasetDict['TotalSize']
-    if datasetDict.has_key('Owner'):
+    if 'Owner' in datasetDict:
       uname = datasetDict['Owner']
-    elif datasetDict.has_key('OwnerDN'):
+    elif 'OwnerDN' in datasetDict:
       result = CS.getUsernameForDN(datasetDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
@@ -137,7 +137,7 @@ class DirectoryListing:
       uname = str( datasetDict['UID'] )
 
     gname = 'unknown'
-    if datasetDict.has_key('OwnerGroup'):
+    if 'OwnerGroup' in datasetDict:
       gname = datasetDict['OwnerGroup']
     if numericid:
       gname = str( datasetDict ['GID'] )
