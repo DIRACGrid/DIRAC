@@ -18,6 +18,7 @@ from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 from DIRAC.DataManagementSystem.Utilities.CLIUtilities import pathFromArgument, DirectoryListing
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 class FileCatalogClientCLI(cmd.Cmd):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
@@ -133,7 +134,7 @@ File Catalog Client $Revision: 1.17 $Date:
         cur_path = args[2]
       result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
       return result
-
+ 
     result = [i for i in self._available_register_cmd if i.startswith(text)]
     return result
   
@@ -282,28 +283,39 @@ File Catalog Client $Revision: 1.17 $Date:
     return result
       
   def do_rmreplica(self,args):
-    """ Remove LFN replica from the storage and from the File Catalog
+    """ Remove LFN replicas from the storage and from the File Catalog
     
         usage:
-          rmreplica <lfn> <se>
+          rmreplica <lfn> ... <lfn> <se>
     """        
     argss = args.split()
-    if (len(argss) != 2):
+    if (len(argss) < 2):
       print self.do_rmreplica.__doc__
       return
-    lfn = argss[0]
-    lfn = self.getPath(lfn)
-    print "lfn:",lfn
-    se = argss[1]
+    lfns = argss[0:-1]
+    lfns = [ self.getPath(lfn) for lfn in lfns[:] ]
+    se = argss[-1]
     try:
-      result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
-      if result['OK']:
-        print "Replica at",se,"moved to Trash Bin"
-      else:
-        print "Failed to remove replica at",se
-        print result['Message']
+      storageElement = StorageElement( se )
     except Exception, x:
-      print "Error: rmreplica failed with exception: ", x
+      print "Exception: %s" %str(x)
+      return
+
+    res = storageElement.isValid()
+    if not res['OK']:
+      print "%s is not a valid storage element" %se
+      return
+      
+    for lfn in lfns:
+      try:
+        result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
+        if result['OK']:
+          print "Replica ",lfn,"at",se,"moved to Trash Bin"
+        else:
+          print "Failed to remove replica at",se
+          print result['Message']
+      except Exception, x:
+        print "Error: rmreplica failed with exception: ", x
 
   def complete_rmreplica(self, text, line, begidx, endidx):
     result = []
@@ -323,16 +335,16 @@ File Catalog Client $Revision: 1.17 $Date:
 
     
   def do_rm(self,args):
-    """ Remove file from the storage and from the File Catalog
+    """ Remove files from the storage and from the File Catalog
     
         usage:
-          rm <lfn>
+          rm <lfn> ... <lfn>
           
         NB: this method is not fully implemented !    
     """  
     # Not yet really implemented
     argss = args.split()
-    if len(argss) != 1:
+    if len(argss) < 1:
       print self.do_rm.__doc__
       return
     self.removeFile(argss)
@@ -354,16 +366,16 @@ File Catalog Client $Revision: 1.17 $Date:
     return result
     
   def do_rmdir(self,args):
-    """ Remove directory from the storage and from the File Catalog
+    """ Remove directories from the storage and from the File Catalog
     
         usage:
-          rmdir <path>
+          rmdir <path> ... <path>
           
         NB: this method is not fully implemented !  
     """  
     # Not yet really implemented yet
     argss = args.split()
-    if len(argss) != 1:
+    if len(argss) < 1:
       print self.do_rmdir.__doc__
       return
     self.removeDirectory(argss)  
@@ -411,49 +423,89 @@ File Catalog Client $Revision: 1.17 $Date:
       print "Error: rmpfn failed with exception: ", x
       
   def removeFile(self,args):
-    """ Remove file from the catalog
+    """ Remove files from the catalog
     """  
+    paths = args
+    lfns = [ self.getPath(path) for path in paths ]
+    # 1) check that lfn to remove do exist
+    # 2) check that is not a directory
+    res = self.fc.exists( lfns )
+    if not res['OK']:
+      return res
+    success = res['Value']['Successful']
+    missing = [ lfn for lfn in success if not success[lfn] ]
+    lfns = [ lfn for lfn in success if success[lfn] ]
+
+    for lfn in missing:
+      print "%s doesn't exist" %lfn
+
+    if not len(lfns):
+      return
+    res = self.fc.isDirectory( lfns )
+    if not res['OK']:
+      print "Error: Cannot check if paths are directories"
+      return
+
+    success = res['Value']['Successful']
+    lfns = [ lfn for lfn in success if not success[lfn] ]
+    dirs = [ lfn for lfn in success if success[lfn] ]
+    for lfn in dirs:
+      print "%s is a directory" %lfn
+
+    res = self.fc.removeFile( lfns )
+    if not res['OK']:
+      return res['Message']
     
-    path = args[0]
-    lfn = self.getPath(path)
-    print "lfn:",lfn
-    try:
-      result =  self.fc.removeFile(lfn)
-      if result['OK']:
-        if 'Failed' in result['Value']:
-          if lfn in result['Value']['Failed']:
-            print "ERROR: %s" % ( result['Value']['Failed'][lfn] )
-          elif lfn in result['Value']['Successful']:
-            print "File",lfn,"removed from the catalog"
-          else:
-            print "ERROR: Unexpected result %s" % result['Value']
-        else:
-          print "File",lfn,"removed from the catalog"
-      else:
-        print "Failed to remove file from the catalog"  
-        print result['Message']
-    except Exception, x:
-      print "Error: rm failed with exception: ", x       
+    # report results
+    success = [ lfn for lfn in lfns if res['Value']['Successful'][lfn] ]
+    failed = [ lfn for lfn in lfns if lfn not in success ]
+    for lfn in failed:
+      print 'Failed to remove file %s: %s' %(lfn, res['Value']['Failed']['Message'])
+    for lfn in success:
+      print 'Successfully removed file %s' %lfn
       
   def removeDirectory(self,args):
-    """ Remove file from the catalog
+    """ Remove directories from the catalog
     """  
+    paths = args
+    lfns = [ self.getPath(path) for path in paths ]
+    # 1) check that lfn to remove do exist
+    # 2) check that is a directory
+    # 3) check that is empty
+    res = self.fc.exists( lfns )
+    if not res['OK']:
+      return res
+    success = res['Value']['Successful']
+    missing = [ lfn for lfn in success if not success[lfn] ]
+    lfns = [ lfn for lfn in success if success[lfn] ]
+
+    for lfn in missing:
+      print "%s doesn't exist" %lfn
+
+    if not len(lfns):
+      return
+    res = self.fc.isDirectory( lfns )
+    if not res['OK']:
+      print "Error: Cannot check if paths are directories"
+      return
+
+    success = res['Value']['Successful']
+    lfns = [ lfn for lfn in success if success[lfn] ]
+    no_dirs = [ lfn for lfn in success if not success[lfn] ]
+    for lfn in no_dirs:
+      print "%s is not a directory" %lfn
+
+    res = self.fc.removeDirectory( lfns )
+    if not res['OK']:
+      return res['Message']
     
-    path = args[0]
-    lfn = self.getPath(path)
-    print "lfn:",lfn
-    try:
-      result =  self.fc.removeDirectory(lfn)
-      if result['OK']:
-        if result['Value']['Successful']:
-          print "Directory",lfn,"removed from the catalog"
-        elif result['Value']['Failed']:
-          print "ERROR:", result['Value']['Failed'][lfn]  
-      else:
-        print "Failed to remove directory from the catalog"  
-        print result['Message']
-    except Exception, x:
-      print "Error: rm failed with exception: ", x            
+    # report results
+    failed = res['Value']['Failed'].keys()
+    success = [ lfn for lfn in lfns if lfn not in failed ]
+    for lfn in failed:
+      print 'Failed to remove file %s: %s' %(lfn, res['Value']['Failed']['Message'])
+    for lfn in success:
+      print 'Successfully removed directory %s' %lfn
       
   def do_replicate(self,args):
     """ Replicate a given file to a given SE
@@ -927,33 +979,29 @@ File Catalog Client $Revision: 1.17 $Date:
       print ("Error: %s" % result['Message'])         
          
   def do_mkdir(self,args):
-    """ Make directory
+    """ Make directories
     
-        usage: mkdir <path>
+        usage: mkdir <path> ... <path>
     """
     
     argss = args.split()
     if (len(argss)==0):
       print self.do_group.__doc__
       return
-    path = argss[0] 
-    if path.find('/') == 0:
-      newdir = path
-    else:
-      newdir = self.cwd + '/' + path
+
+    paths = [ pathFromArgument( path, self.cwd ) for path in argss ]
       
-    newdir = self.getPath(newdir)
-    
-    result =  self.fc.createDirectory(newdir)    
-    if result['OK']:
-      if result['Value']['Successful']:
-        if result['Value']['Successful'].has_key(newdir):
-          print "Successfully created directory:", newdir
-      elif result['Value']['Failed']:
-        if result['Value']['Failed'].has_key(newdir):  
-          print 'Failed to create directory:',result['Value']['Failed'][newdir]
-    else:
-      print 'Failed to create directory:',result['Message']
+    for path in paths:
+      result =  self.fc.createDirectory(path)    
+      if result['OK']:
+        resDict= result['Value']['Successful']
+        resDictFail = result['Value']['Failed']
+        if resDict and path in resDict:
+          print "Successfully created directory:", path
+        elif resDictFail and path in resDictFail:
+          print 'Failed to create directory:',resDictFail[path]
+      else:
+        print 'Failed to create directory:',result['Message']
 
   def complete_mkdir(self, text, line, begidx, endidx):
     result = []
@@ -1268,7 +1316,7 @@ File Catalog Client $Revision: 1.17 $Date:
     # Separate in directories and files
     result = self.fc.isDirectory( paths )
     if not result['OK']:
-      print "Error: can not check if paths are directories"
+      print "Error: Cannot check if paths are directories"
       return
     dirdict = result['Value']['Successful']
     directories = [ d for d in paths if dirdict[d] ]
