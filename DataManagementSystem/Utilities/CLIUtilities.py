@@ -25,15 +25,15 @@ def pathFromArgument( arg, cwd ):
 
 class DirectoryListing:
   """ Store/Print the information of a listing in the file catalog
-  """  
+  """
   def __init__(self, list_replicas = False):
-    
+
     self.entries = []
     self.list_rep = list_replicas
-  
+
   def addFile(self,name,fileDict,repDict,numericid):
     """ Pretty print of the file ls output
-    """        
+    """
     perm = fileDict['Mode']
     date = fileDict['ModificationDate']
     #nlinks = fileDict.get('NumberOfLinks',0)
@@ -46,7 +46,7 @@ class DirectoryListing:
       if result['OK']:
         uname = result['Value']
       else:
-        uname = 'unknown' 
+        uname = 'unknown'
     else:
       uname = 'unknown'
     if numericid:
@@ -55,7 +55,7 @@ class DirectoryListing:
       gname = fileDict['OwnerGroup']
     elif fileDict.has_key('OwnerRole'):
       groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
-      if groups: 
+      if groups:
         if len(groups) > 1:
           gname = groups[0]
           default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
@@ -64,12 +64,12 @@ class DirectoryListing:
         else:
           gname = groups[0]
       else:
-        gname = 'unknown' 
+        gname = 'unknown'
     else:
-      gname = 'unknown'     
+      gname = 'unknown'
     if numericid:
       gname = str(fileDict['GID'])
-    
+
     self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
 
   def addFileWithReplicas( self,name,fileDict,numericid, replicas ):
@@ -78,10 +78,10 @@ class DirectoryListing:
     self.addFile( name, fileDict, replicas, numericid )
 
     self.entries[ -1 ] += tuple( replicas )
-    
+
   def addDirectory(self,name,dirDict,numericid):
     """ Pretty print of the file ls output
-    """    
+    """
     perm = dirDict['Mode']
     date = dirDict['ModificationDate']
     nlinks = 0
@@ -114,12 +114,12 @@ class DirectoryListing:
         gname = 'unknown'
     if numericid:
       gname = str(dirDict['GID'])
-    
-    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )  
-    
+
+    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )
+
   def addDataset(self,name,datasetDict,numericid):
     """ Pretty print of the dataset ls output
-    """    
+    """
     perm = datasetDict['Mode']
     date = datasetDict['ModificationDate']
     size = datasetDict['TotalSize']
@@ -135,21 +135,21 @@ class DirectoryListing:
       uname = 'unknown'
     if numericid:
       uname = str( datasetDict['UID'] )
-      
-    gname = 'unknown'  
+
+    gname = 'unknown'
     if datasetDict.has_key('OwnerGroup'):
       gname = datasetDict['OwnerGroup']
     if numericid:
       gname = str( datasetDict ['GID'] )
-    
+
     numberOfFiles = datasetDict ['NumberOfFiles']
-        
-    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )   
-    
+
+    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )
+
   def __getModeString(self,perm):
     """ Get string representation of the file/directory mode
-    """  
-    
+    """
+
     pstring = ''
     if perm & stat.S_IRUSR:
       pstring += 'r'
@@ -162,7 +162,7 @@ class DirectoryListing:
     if perm & stat.S_IXUSR:
       pstring += 'x'
     else:
-      pstring += '-'    
+      pstring += '-'
     if perm & stat.S_IRGRP:
       pstring += 'r'
     else:
@@ -174,7 +174,7 @@ class DirectoryListing:
     if perm & stat.S_IXGRP:
       pstring += 'x'
     else:
-      pstring += '-'    
+      pstring += '-'
     if perm & stat.S_IROTH:
       pstring += 'r'
     else:
@@ -186,10 +186,10 @@ class DirectoryListing:
     if perm & stat.S_IXOTH:
       pstring += 'x'
     else:
-      pstring += '-'    
-      
-    return pstring  
-  
+      pstring += '-'
+
+    return pstring
+
   def humanReadableSize(self,num,suffix='B'):
     """ Translate file size in bytes to human readable
 
@@ -201,26 +201,26 @@ class DirectoryListing:
         return "%3.1f%s%s" % (num, unit, suffix)
       num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
-    
+
   def printListing(self,reverse,timeorder,sizeorder,humanread):
     """
     """
     if timeorder:
       if reverse:
-        self.entries.sort(key=lambda x: x[5]) 
-      else:  
-        self.entries.sort(key=lambda x: x[5],reverse=True) 
-    elif sizeorder:  
+        self.entries.sort(key=lambda x: x[5])
+      else:
+        self.entries.sort(key=lambda x: x[5],reverse=True)
+    elif sizeorder:
       if reverse:
         self.entries.sort(key=lambda x: x[4])
-      else:  
+      else:
         self.entries.sort(key=lambda x: x[4],reverse=True)
-    else:  
+    else:
       if reverse:
-        self.entries.sort(key=lambda x: x[6],reverse=True) 
-      else:  
-        self.entries.sort(key=lambda x: x[6]) 
-        
+        self.entries.sort(key=lambda x: x[6],reverse=True)
+      else:
+        self.entries.sort(key=lambda x: x[6])
+
     # Determine the field widths
     wList = [0] * 7
     for d in self.entries:
@@ -232,7 +232,7 @@ class DirectoryListing:
         else:
           if len(str(d[i])) > wList[i]:
             wList[i] = len(str(d[i]))
-        
+
     for e in self.entries:
       size = e[4]
       if humanread:
