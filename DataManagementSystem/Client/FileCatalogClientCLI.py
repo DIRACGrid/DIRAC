@@ -1422,7 +1422,11 @@ File Catalog Client $Revision: 1.17 $Date:
       
   def do_chmod(self,args):
     """ Change permissions of the given path
+
         usage: chmod [-R] <mode> <path> 
+
+               <mode> is the permission string as an octal number
+               (e.g.: 755 would set -rwxr-xr-x)
     """         
     
     argss = args.split()
