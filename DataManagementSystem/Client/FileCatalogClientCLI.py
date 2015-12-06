@@ -58,6 +58,11 @@ File Catalog Client $Revision: 1.17 $Date:
     self.ul_dc = DirectoryCompletion(self.ul_fs)
 
   def getReplicasForPaths( self, paths ):
+    """ Get list of replicas for paths.
+
+        @param paths: paths to list with ls
+        @type: list
+    """
     ret = {}
     try:
       result = self.fc.getReplicas( paths )    
