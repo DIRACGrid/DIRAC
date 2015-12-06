@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import stat
 import cmd
 import commands
 import os.path
@@ -11,8 +10,6 @@ import time
 import sys
 import getopt
 from types  import DictType, ListType
-from DIRAC  import gConfig
-from DIRAC.Core.Security import CS
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
