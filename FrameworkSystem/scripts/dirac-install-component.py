@@ -11,9 +11,9 @@ from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC import exit as DIRACexit
-import DIRAC.Core.Utilities.InstallTools as InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 
 overwrite = False
 def setOverwrite( opVal ):
@@ -59,7 +59,7 @@ cType = None
 system = args[0]
 component = args[1]
 
-result = InstallTools.getSoftwareComponents( getCSExtensions() )
+result = gComponentInstaller.getSoftwareComponents( getCSExtensions() )
 if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
@@ -76,16 +76,16 @@ if not cType:
   DIRACexit( 1 )
 
 if module:
-  result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, module,
+  result = gComponentInstaller.addDefaultOptionsToCS( gConfig, cType, system, module,
                                                getCSExtensions(),
                                                overwrite = overwrite )
-  result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, component,
+  result = gComponentInstaller.addDefaultOptionsToCS( gConfig, cType, system, component,
                                                getCSExtensions(),
                                                specialOptions = specialOptions,
                                                overwrite = overwrite,
                                                addDefaultOptions = False )
 else:
-  result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, component,
+  result = gComponentInstaller.addDefaultOptionsToCS( gConfig, cType, system, component,
                                                getCSExtensions(),
                                                specialOptions = specialOptions,
                                                overwrite = overwrite )
@@ -94,13 +94,13 @@ if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
 else:
-  result = InstallTools.installComponent( cType, system, component, getCSExtensions(), module )
+  result = gComponentInstaller.installComponent( cType, system, component, getCSExtensions(), module )
   if not result[ 'OK' ]:
     gLogger.error( result[ 'Message' ] )
     DIRACexit( 1 )
   else:
     gLogger.notice( 'Successfully installed component %s in %s system, now setting it up' % ( component, system ) )
-    result = InstallTools.setupComponent( cType, system, component, getCSExtensions(), module )
+    result = gComponentInstaller.setupComponent( cType, system, component, getCSExtensions(), module )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       DIRACexit( 1 )

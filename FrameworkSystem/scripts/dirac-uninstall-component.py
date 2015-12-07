@@ -14,9 +14,9 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
-import DIRAC.Core.Utilities.InstallTools as InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 
 force = False
 def setForce( opVal ):
@@ -63,7 +63,7 @@ removeLogs = False
 if force:
   removeLogs = True
 else:
-  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in InstallTools.COMPONENT_TYPES:
+  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.componentTypes:
     result = promptUser( 'Remove logs?', [ 'y', 'n' ], 'n' )
     if result[ 'OK' ]:
       removeLogs = result[ 'Value' ] == 'y'
@@ -71,7 +71,7 @@ else:
       gLogger.error( result[ 'Message' ] )
       DIRACexit( 1 )
 
-result = InstallTools.uninstallComponent( system, component, removeLogs )
+result = gComponentInstaller.uninstallComponent( system, component, removeLogs )
 if not result['OK']:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
