@@ -23,6 +23,7 @@ from DIRAC.Core.Utilities.File import makeGuid
 import os
 import tempfile
 import commands
+import subprocess
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
@@ -50,11 +51,24 @@ class HTCondorCEComputingElement( ComputingElement ):
     """ Create the Sub File for submission
 
     """
-
     workingDirectory = self.ceParameters['WorkingDirectory']
     initialDir = '/'.join( workingDirectory.split('/')[:-1] )
+    self.log.debug( "Working directory: %s " % workingDirectory )
+    ##We randomize the location of the pilotoutput and log, because there are just too many of them
+    pre1 = makeGuid()[:3]
+    pre2 = makeGuid()[:3]
+    try:
+      os.makedirs( os.path.join( initialDir, pre1, pre2 ) )
+    except OSError:
+      pass
+    initialDirPrefix = "%s/%s" %( pre1, pre2 )
+
+    self.log.debug( "InitialDir: %s" % os.path.join(initialDir,initialDirPrefix) )
+
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = workingDirectory )
     subFile = os.fdopen( fd, 'w' )
+
+    executable = os.path.join( workingDirectory, executable )
 
     sub = """
 executable = %(executable)s
@@ -67,13 +81,13 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
-WhenToTransferOutput = ON_EXIT
+WhenToTransferOutput = ON_EXIT_OR_EVICT
 Queue %(nJobs)s
 
 """ % dict( executable=executable,
             nJobs=nJobs,
             ceName=self.ceName,
-            initialDir=initialDir,
+            initialDir=os.path.join(initialDir,initialDirPrefix),
           )
     subFile.write( sub )
     subFile.close()
@@ -174,6 +188,8 @@ Queue %(nJobs)s
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
+    self.__cleanup()
+
     self.log.verbose( "Job ID List for status: %s " % jobIDList )
     if isinstance( jobIDList, basestring ):
       jobIDList = [ jobIDList ]
@@ -198,6 +214,12 @@ Queue %(nJobs)s
     for job,jobID in condorIDs.iteritems():
 
       pilotStatus = self.__parseCondorStatus( lines, jobID )
+      if pilotStatus == 'Held':
+        #make sure the pilot stays dead and gets taken out of the condor_q
+        _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
+        #self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
+        pilotStatus = 'Aborted'
+
       resultDict[job] = pilotStatus
 
     if len( resultDict ) != len( jobIDList ):
@@ -220,12 +242,13 @@ Queue %(nJobs)s
     ## same machine
     workingDirectory = self.ceParameters.get( 'WorkingDirectory',
                                               '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT' )
+    workingDirectory = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
 
     output = ''
     error = ''
+    outputfilename = self.__findFile( workingDirectory, '%s.out' % condorID )[0]
+    errorfilename = self.__findFile( workingDirectory, '%s.err' % condorID )[0]
 
-    outputfilename = os.path.join( workingDirectory, '%s.out' % condorID )
-    errorfilename = os.path.join( workingDirectory, '%s.err' % condorID )
     try:
       with open( outputfilename ) as outputfile:
         output = outputfile.read()
@@ -280,7 +303,38 @@ Queue %(nJobs)s
         elif " X " in line:
           return 'Aborted'
         elif " H " in line:
-          return 'Aborted'
+          return 'Held'
     return 'Unknown'
+
+  def __cleanup( self ):
+    """ clean the working directory of old jobs"""
+    workingDirectory = self.ceParameters.get( 'WorkingDirectory',
+                                              '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT' )
+    workingDirectory = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
+
+    self.log.debug( "Cleaning working directory: %s" % workingDirectory )
+
+    ### remove all files older than 120 minutes starting with DIRAC_
+    status,stdout = commands.getstatusoutput( 'find %s -mmin +120 -name "DIRAC_*" -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+
+    ### remove all log files older than 15 days
+    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.log" -type f -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.out" -type f -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.err" -type f -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+
+  def __findFile( self, workingDir, fileName ):
+    """ find a pilot out, err, log file """
+    paths = [line for line in subprocess.check_output("find %s -name '%s'" % (workingDir, fileName),
+                                                      shell=True).splitlines()]
+    self.log.debug("Found files?: %s " % paths )
+    return paths
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
