@@ -10,7 +10,9 @@
 
 """
 
-__RCSID__ = "$Id$"
+import os
+import tempfile
+import commands
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
@@ -21,9 +23,8 @@ from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_ST
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import Subprocess
 
-import os
-import tempfile
-import commands
+__RCSID__ = "$Id$"
+
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
