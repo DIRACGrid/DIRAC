@@ -134,7 +134,7 @@ class SocketInfoFactory:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
     ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
     
-    for _ in range( 1 ): #TODO: this retry can be reduced. 
+    for _ in xrange( 1 ): #TODO: this retry can be reduced. 
       connected = False
       errorsList = []
       for ip in ipList :
