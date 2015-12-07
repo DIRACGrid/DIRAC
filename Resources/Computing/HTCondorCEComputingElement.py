@@ -59,9 +59,11 @@ def findFile( workingDir, fileName ):
   return S_OK(paths)
 
 def getCondorLogFile( pilotRef ):
-  """ return the location of the logFile belonging to the pilot reference """
+  """return the location of the logFile belonging to the pilot reference"""
   _jobUrl, condorID = condorIDFromJobRef( pilotRef )
-  resLog = findFile( '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT/', '%s.log' % condorID )
+  #FIXME: This gets called from the WMSAdministrator, so we don't have the same
+  #working directory as for the SiteDirector unless we force it
+  resLog = findFile( DEFAULT_WORKINGDIRECTORY, '%s.log' % condorID )
   return resLog
 
 class HTCondorCEComputingElement( ComputingElement ):
@@ -277,7 +279,7 @@ Queue %(nJobs)s
     ## FIXME: the WMSAdministrator does not know about the
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
-    workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
     workingDirectory = DEFAULT_WORKINGDIRECTORY
 
     output = ''
@@ -331,17 +333,22 @@ Queue %(nJobs)s
 
   def __cleanup( self ):
     """ clean the working directory of old jobs"""
-    workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+
+    #FIXME: again some issue with the working directory...
+    #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
     workingDirectory = DEFAULT_WORKINGDIRECTORY
 
     self.log.debug( "Cleaning working directory: %s" % workingDirectory )
 
-    ### remove all files older than 120 minutes starting with DIRAC_
+    ### remove all files older than 120 minutes starting with DIRAC_ Condor will
+    ### push files on submission, but it takes at least a few seconds until this
+    ### happens so we can't directly unlink after condor_submit
     status,stdout = commands.getstatusoutput( 'find %s -mmin +120 -name "DIRAC_*" -delete ' % workingDirectory )
     if status != 0:
       self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
 
     ### remove all log files older than 15 days
+    ### FIXME: make this configurable
     status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.log" -type f -delete ' % workingDirectory )
     if status != 0:
       self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
