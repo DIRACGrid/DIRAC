@@ -1,3 +1,5 @@
+# $HeadURL$
+
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
 
@@ -5,23 +7,19 @@ __RCSID__ = "$Id$"
 
 import datetime
 import socket
-import os
-import re
-import commands
-import getpass
-import importlib
-from datetime import timedelta
 from types import ListType, StringTypes, BooleanType
-
-import DIRAC
+import os, re, commands, getpass, importlib
+from datetime import timedelta
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
-from DIRAC.Core.Utilities import InstallTools, CFG, Os
+from DIRAC.Core.Utilities import CFG, Os
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
+import DIRAC
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
@@ -33,6 +31,8 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
+
+    hostMonitoring = True
 
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
@@ -48,42 +48,42 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get versions of the installed DIRAC software and extensions, setup of the
          local installation
     """
-    return InstallTools.getInfo( getCSExtensions() )
+    return gComponentInstaller.getInfo( getCSExtensions() )
 
   types_getSoftwareComponents = [ ]
   def export_getSoftwareComponents( self ):
     """  Get the list of all the components ( services and agents ) for which the software
          is installed on the system
     """
-    return InstallTools.getSoftwareComponents( getCSExtensions() )
+    return gComponentInstaller.getSoftwareComponents( getCSExtensions() )
 
   types_getInstalledComponents = [ ]
   def export_getInstalledComponents( self ):
     """  Get the list of all the components ( services and agents )
          installed on the system in the runit directory
     """
-    return InstallTools.getInstalledComponents()
+    return gComponentInstaller.getInstalledComponents()
 
   types_getSetupComponents = [ ]
   def export_getSetupComponents( self ):
     """  Get the list of all the components ( services and agents )
          set up for running with runsvdir in /opt/dirac/startup directory
     """
-    return InstallTools.getSetupComponents()
+    return gComponentInstaller.getSetupComponents()
 
   types_getOverallStatus = []
   def export_getOverallStatus( self ):
     """  Get the complete status information for the components in the
          given list
     """
-    result = InstallTools.getOverallStatus( getCSExtensions() )
+    result = gComponentInstaller.getOverallStatus( getCSExtensions() )
     if not result['OK']:
       return result
     statusDict = result['Value']
     for compType in statusDict:
       for system in statusDict[compType]:
         for component in statusDict[compType][system]:
-          result = InstallTools.getComponentModule( gConfig, system, component, compType )
+          result = gComponentInstaller.getComponentModule( gConfig, system, component, compType )
           if not result['OK']:
             statusDict[compType][system][component]['Module'] = "Unknown"
           else:
@@ -95,20 +95,20 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get the list of all the components ( services and agents )
          set up for running with runsvdir in startup directory
     """
-    return InstallTools.getStartupComponentStatus( componentTupleList )
+    return gComponentInstaller.getStartupComponentStatus( componentTupleList )
 
   types_installComponent = [ StringTypes, StringTypes, StringTypes ]
   def export_installComponent( self, componentType, system, component, componentModule = '' ):
     """ Install runit directory for the specified component
     """
-    return InstallTools.installComponent( componentType, system, component, getCSExtensions(), componentModule )
+    return gComponentInstaller.installComponent( componentType, system, component, getCSExtensions(), componentModule )
 
   types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
   def export_setupComponent( self, componentType, system, component, componentModule = '' ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    result = InstallTools.setupComponent( componentType, system, component, getCSExtensions(), componentModule )
+    result = gComponentInstaller.setupComponent( componentType, system, component, getCSExtensions(), componentModule )
     gConfig.forceRefresh()
     return result
 
@@ -116,44 +116,44 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_addDefaultOptionsToComponentCfg( self, componentType, system, component ):
     """ Add default component options local component cfg
     """
-    return InstallTools.addDefaultOptionsToComponentCfg( componentType, system, component, getCSExtensions() )
+    return gComponentInstaller.addDefaultOptionsToComponentCfg( componentType, system, component, getCSExtensions() )
 
   types_unsetupComponent = [ StringTypes, StringTypes ]
   def export_unsetupComponent( self, system, component ):
     """ Removed the specified component from running with the runsvdir daemon
     """
-    return InstallTools.unsetupComponent( system, component )
+    return gComponentInstaller.unsetupComponent( system, component )
 
   types_uninstallComponent = [ StringTypes, StringTypes, BooleanType ]
   def export_uninstallComponent( self, system, component, removeLogs ):
     """ Remove runit directory for the specified component
         It implies unsetupComponent
     """
-    return InstallTools.uninstallComponent( system, component, removeLogs )
+    return gComponentInstaller.uninstallComponent( system, component, removeLogs )
 
   types_startComponent = [ StringTypes, StringTypes ]
   def export_startComponent( self, system, component ):
     """ Start the specified component, running with the runsv daemon
     """
-    return InstallTools.runsvctrlComponent( system, component, 'u' )
+    return gComponentInstaller.runsvctrlComponent( system, component, 'u' )
 
   types_restartComponent = [ StringTypes, StringTypes ]
   def export_restartComponent( self, system, component ):
     """ Restart the specified component, running with the runsv daemon
     """
-    return InstallTools.runsvctrlComponent( system, component, 't' )
+    return gComponentInstaller.runsvctrlComponent( system, component, 't' )
 
   types_stopComponent = [ StringTypes, StringTypes ]
   def export_stopComponent( self, system, component ):
     """ Stop the specified component, running with the runsv daemon
     """
-    return InstallTools.runsvctrlComponent( system, component, 'd' )
+    return gComponentInstaller.runsvctrlComponent( system, component, 'd' )
 
   types_getLogTail = [ StringTypes, StringTypes ]
   def export_getLogTail( self, system, component, length = 100 ):
     """ Get the tail of the component log file
     """
-    return InstallTools.getLogTail( system, component, length )
+    return gComponentInstaller.getLogTail( system, component, length )
 
 ######################################################################################
 #  Database related methods
@@ -162,21 +162,21 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_getMySQLStatus( self ):
     """ Get the status of the MySQL database installation
     """
-    return InstallTools.getMySQLStatus()
+    return gComponentInstaller.getMySQLStatus()
 
   types_getDatabases = [ ]
   def export_getDatabases( self, mysqlPassword = None ):
     """ Get the list of installed databases
     """
     if mysqlPassword :
-      InstallTools.setMySQLPasswords( mysqlPassword )
-    return InstallTools.getDatabases()
+      gComponentInstaller.setMySQLPasswords( mysqlPassword )
+    return gComponentInstaller.getDatabases()
 
   types_getAvailableDatabases = [ ]
   def export_getAvailableDatabases( self ):
     """ Get the list of databases which software is installed in the system
     """
-    return InstallTools.getAvailableDatabases( getCSExtensions() )
+    return gComponentInstaller.getAvailableDatabases( getCSExtensions() )
 
   types_installMySQL = []
   def export_installMySQL( self, mysqlPassword = None, diracPassword = None ):
@@ -184,11 +184,11 @@ class SystemAdministratorHandler( RequestHandler ):
     """
 
     if mysqlPassword or diracPassword:
-      InstallTools.setMySQLPasswords( mysqlPassword, diracPassword )
-    if InstallTools.mysqlInstalled()['OK']:
+      gComponentInstaller.setMySQLPasswords( mysqlPassword, diracPassword )
+    if gComponentInstaller.mysqlInstalled()['OK']:
       return S_OK( 'Already installed' )
 
-    result = InstallTools.installMySQL()
+    result = gComponentInstaller.installMySQL()
     if not result['OK']:
       return result
 
@@ -199,28 +199,28 @@ class SystemAdministratorHandler( RequestHandler ):
     """ Install a DIRAC database named dbName
     """
     if mysqlPassword :
-      InstallTools.setMySQLPasswords( mysqlPassword )
-    return InstallTools.installDatabase( dbName )
+      gComponentInstaller.setMySQLPasswords( mysqlPassword )
+    return gComponentInstaller.installDatabase( dbName )
 
   types_uninstallDatabase = [ StringTypes ]
   def export_uninstallDatabase( self, dbName, mysqlPassword = None ):
     """ Uninstall a DIRAC database named dbName
     """
     if mysqlPassword :
-      InstallTools.setMySQLPasswords( mysqlPassword )
-    return InstallTools.uninstallDatabase( gConfig, dbName )
+      gComponentInstaller.setMySQLPasswords( mysqlPassword )
+    return gComponentInstaller.uninstallDatabase( gConfig, dbName )
 
   types_addDatabaseOptionsToCS = [ StringTypes, StringTypes ]
   def export_addDatabaseOptionsToCS( self, system, database, overwrite = False ):
     """ Add the section with the database options to the CS
     """
-    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, overwrite = overwrite )
+    return gComponentInstaller.addDatabaseOptionsToCS( gConfig, system, database, overwrite = overwrite )
 
   types_addDefaultOptionsToCS = [StringTypes, StringTypes, StringTypes]
   def export_addDefaultOptionsToCS( self, componentType, system, component, overwrite = False ):
     """ Add default component options to the global CS or to the local options
     """
-    return InstallTools.addDefaultOptionsToCS( gConfig, componentType, system, component,
+    return gComponentInstaller.addDefaultOptionsToCS( gConfig, componentType, system, component,
                                                getCSExtensions(),
                                                overwrite = overwrite )
 
@@ -300,14 +300,14 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_ERROR( message )
 
     # Check if there is a MySQL installation and fix the server scripts if necessary
-    if os.path.exists( InstallTools.mysqlDir ):
-      startupScript = os.path.join( InstallTools.instancePath,
+    if os.path.exists( gComponentInstaller.mysqlDir ):
+      startupScript = os.path.join( gComponentInstaller.instancePath,
                                     'mysql', 'share', 'mysql', 'mysql.server' )
       if not os.path.exists( startupScript ):
-        startupScript = os.path.join( InstallTools.instancePath, 'pro',
+        startupScript = os.path.join( gComponentInstaller.instancePath, 'pro',
                                      'mysql', 'share', 'mysql', 'mysql.server' )
       if os.path.exists( startupScript ):
-        InstallTools.fixMySQLScripts( startupScript )
+        gComponentInstaller.fixMySQLScripts( startupScript )
 
     # For LHCb we need to check Oracle client
     if installOracleClient:
@@ -324,7 +324,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     if webPortal:
     # we have a to compile the new web portal...
-      webappCompileScript = os.path.join( InstallTools.instancePath, 'pro', "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
+      webappCompileScript = os.path.join( gComponentInstaller.instancePath, 'pro', "WebAppDIRAC/scripts", "dirac-webapp-compile.py" )
       outfile = "%s.out" % webappCompileScript
       err = "%s.err" % webappCompileScript
       result = systemCall( False, ['dirac-webapp-compile', ' > ', outfile, ' 2> ', err] )
@@ -342,9 +342,9 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_revertSoftware( self ):
     """ Revert the last installed version of software to the previous one
     """
-    oldLink = os.path.join( InstallTools.instancePath, 'old' )
+    oldLink = os.path.join( gComponentInstaller.instancePath, 'old' )
     oldPath = os.readlink( oldLink )
-    proLink = os.path.join( InstallTools.instancePath, 'pro' )
+    proLink = os.path.join( gComponentInstaller.instancePath, 'pro' )
     os.remove( proLink )
     os.symlink( oldPath, proLink )
 
@@ -372,8 +372,9 @@ class SystemAdministratorHandler( RequestHandler ):
     gLogger.notice( "Setting project to %s" % projectName )
     diracCFG.setOption( "/LocalInstallation/Project", projectName, "Project to install" )
     try:
-      with open( cfgPath, "w" ) as fd:
-        fd.write( str( diracCFG ) )
+      fd = open( cfgPath, "w" )
+      fd.write( str( diracCFG ) )
+      fd.close()
     except IOError, excp :
       return S_ERROR( "Could not write dirac.cfg: %s" % str( excp ) )
     return S_OK()
@@ -383,14 +384,14 @@ class SystemAdministratorHandler( RequestHandler ):
     result = self.__loadDIRACCFG()
     if not result[ 'OK' ]:
       return result
-    _cfgPath, diracCFG = result[ 'Value' ]
+    cfgPath, diracCFG = result[ 'Value' ]
     return S_OK( diracCFG.getOption( "/LocalInstallation/Project", "DIRAC" ) )
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
   def export_addOptionToDiracCfg( self, option, value ):
     """ Set option in the local configuration file
     """
-    return InstallTools.addOptionToDiracCfg( option, value )
+    return gComponentInstaller.addOptionToDiracCfg( option, value )
 
   types_executeCommand = [ StringTypes ]
   def export_executeCommand( self, command ):
@@ -406,7 +407,7 @@ class SystemAdministratorHandler( RequestHandler ):
     componentList = []
     if '*' in component:
       if component == '*':
-        result = InstallTools.getSetupComponents()
+        result = gComponentInstaller.getSetupComponents()
         if result['OK']:
           for ctype in ['Services', 'Agents', 'Executors']:
             if ctype in result['Value']:
@@ -424,7 +425,7 @@ class SystemAdministratorHandler( RequestHandler ):
         continue
       system, cname = c.split( '/' )
 
-      startDir = InstallTools.startDir
+      startDir = gComponentInstaller.startDir
       currentLog = startDir + '/' + system + '_' + cname + '/log/current'
       logFile = file( currentLog, 'r' )
       logLines = logFile.readlines()
@@ -479,45 +480,43 @@ class SystemAdministratorHandler( RequestHandler ):
       result[name] = '%.1f%%/%.1fMB' % ( percentage, memory / 1024. )
 
     # Loads
-    with open( '/proc/loadavg' ) as fd:
-      line = fd.read()
-      l1, l5, l15, _d1, _d2 = line.split()
+    line = open( '/proc/loadavg' ).read()
+    l1, l5, l15, d1, d2 = line.split()
     result['Load1'] = l1
     result['Load5'] = l5
     result['Load15'] = l15
     result['Load'] = '/'.join( [l1, l5, l15] )
 
     # CPU info
-    with open( '/proc/cpuinfo', 'r' ) as fd:
-      lines = fd.readlines()
-      processors = 0
-      physCores = {}
-      for line in lines:
-        if line.strip():
-          parameter, value = line.split( ':' )
-          parameter = parameter.strip()
-          value = value.strip()
-          if parameter.startswith( 'processor' ):
-            processors += 1
-          if parameter.startswith( 'physical id' ):
-            physCores[value] = parameter
-          if parameter.startswith( 'model name' ):
-            result['CPUModel'] = value
-          if parameter.startswith( 'cpu MHz' ):
-            result['CPUClock'] = value
-      result['Cores'] = processors
-      result['PhysicalCores'] = len( physCores )
+    lines = open( '/proc/cpuinfo', 'r' ).readlines()
+    processors = 0
+    physCores = {}
+    for line in lines:
+      if line.strip():
+        parameter, value = line.split( ':' )
+        parameter = parameter.strip()
+        value = value.strip()
+        if parameter.startswith( 'processor' ):
+          processors += 1
+        if parameter.startswith( 'physical id' ):
+          physCores[value] = parameter
+        if parameter.startswith( 'model name' ):
+          result['CPUModel'] = value
+        if parameter.startswith( 'cpu MHz' ):
+          result['CPUClock'] = value
+    result['Cores'] = processors
+    result['PhysicalCores'] = len( physCores )
 
     # Disk occupancy
     summary = ''
-    _status, output = commands.getstatusoutput( 'df' )
+    status, output = commands.getstatusoutput( 'df' )
     lines = output.split( '\n' )
     for i in range( len( lines ) ):
       if lines[i].startswith( '/dev' ):
         fields = lines[i].split()
         if len( fields ) == 1:
           fields += lines[i + 1].split()
-        _disk = fields[0].replace( '/dev/sd', '' )
+        disk = fields[0].replace( '/dev/sd', '' )
         partition = fields[5]
         occupancy = fields[4]
         summary += ",%s:%s" % ( partition, occupancy )
@@ -526,7 +525,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Open files
     puser = getpass.getuser()
-    _status, output = commands.getstatusoutput( 'lsof' )
+    status, output = commands.getstatusoutput( 'lsof' )
     pipes = 0
     files = 0
     sockets = 0
@@ -545,12 +544,12 @@ class SystemAdministratorHandler( RequestHandler ):
     result['OpenFiles'] = files
     result['OpenPipes'] = pipes
 
-    infoResult = InstallTools.getInfo( getCSExtensions() )
+    infoResult = gComponentInstaller.getInfo( getCSExtensions() )
     if infoResult['OK']:
       result.update( infoResult['Value'] )
 
     # Host certificate properties
-    certFile, _keyFile = getHostCertificateAndKeyLocation()
+    certFile, keyFile = getHostCertificateAndKeyLocation()
     chain = X509Chain()
     chain.loadChainFromFile( certFile )
     resultCert = chain.getCredentials()
@@ -563,8 +562,9 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Host uptime
     try:
-      with open( '/proc/uptime', 'r' ) as upFile:
-        uptime_seconds = float( upFile.readline().split()[0] )
+      upFile = open( '/proc/uptime', 'r' )
+      uptime_seconds = float( upFile.readline().split()[0] )
+      upFile.close()
       result['Uptime'] = str( timedelta( seconds = uptime_seconds ) )
     except:
       pass
@@ -582,28 +582,28 @@ class SystemAdministratorHandler( RequestHandler ):
     if result[ 'OK' ]:
       return S_OK( result[ 'Value' ][0] )
     else:
-      return self.__readHostInfo()
+      return result
 
   types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
   def export_getComponentDocumentation( self, cType, system, module ):
     if cType == 'service':
       module = '%sHandler' % module
 
-    result = InstallTools.getExtensions()
+    result = gComponentInstaller.getExtensions()
     extensions = result[ 'Value' ]
     # Look for the component in extensions
     for extension in extensions:
       try:
         importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system, cType.capitalize(), module ) )
         return S_OK( importedModule.__doc__ )
-      except Exception as _e:
+      except Exception, e:
         pass
 
     # If not in an extension, try in base DIRAC
     try:
       importedModule = importlib.import_module( 'DIRAC.%sSystem.%s.%s' % ( system, cType.capitalize(), module ) )
       return S_OK( importedModule.__doc__ )
-    except Exception as _e:
+    except Exception, e:
       return S_ERROR( 'No documentation was found' )
 
   types_storeHostInfo = []
