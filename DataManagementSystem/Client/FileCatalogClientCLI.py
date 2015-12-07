@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import stat
 import cmd
 import commands
 import os.path
@@ -11,8 +10,6 @@ import time
 import sys
 import getopt
 from types  import DictType, ListType
-from DIRAC  import gConfig
-from DIRAC.Core.Security import CS
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
@@ -20,229 +17,8 @@ from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
 
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
-
-class DirectoryListing:
-  
-  def __init__(self):
-    
-    self.entries = []
-  
-  def addFile(self,name,fileDict,repDict,numericid):
-    """ Pretty print of the file ls output
-    """        
-    perm = fileDict['Mode']
-    date = fileDict['ModificationDate']
-    #nlinks = fileDict.get('NumberOfLinks',0)
-    nreplicas = len( repDict )
-    size = fileDict['Size']
-    if fileDict.has_key('Owner'):
-      uname = fileDict['Owner']
-    elif fileDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(fileDict['OwnerDN'])
-      if result['OK']:
-        uname = result['Value']
-      else:
-        uname = 'unknown' 
-    else:
-      uname = 'unknown'
-    if numericid:
-      uname = str(fileDict['UID'])
-    if fileDict.has_key('OwnerGroup'):
-      gname = fileDict['OwnerGroup']
-    elif fileDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
-      if groups: 
-        if len(groups) > 1:
-          gname = groups[0]
-          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
-          if default_group in groups:
-            gname = default_group
-        else:
-          gname = groups[0]
-      else:
-        gname = 'unknown' 
-    else:
-      gname = 'unknown'     
-    if numericid:
-      gname = str(fileDict['GID'])
-    
-    self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
-    
-  def addDirectory(self,name,dirDict,numericid):
-    """ Pretty print of the file ls output
-    """    
-    perm = dirDict['Mode']
-    date = dirDict['ModificationDate']
-    nlinks = 0
-    size = 0
-    if dirDict.has_key('Owner'):
-      uname = dirDict['Owner']
-    elif dirDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(dirDict['OwnerDN'])
-      if result['OK']:
-        uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
-      uname = str(dirDict['UID'])
-    if dirDict.has_key('OwnerGroup'):
-      gname = dirDict['OwnerGroup']
-    elif dirDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
-      if groups:
-        if len(groups) > 1:
-          gname = groups[0]
-          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
-          if default_group in groups:
-            gname = default_group
-        else:
-          gname = groups[0]
-      else:
-        gname = 'unknown'
-    if numericid:
-      gname = str(dirDict['GID'])
-    
-    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )  
-    
-  def addDataset(self,name,datasetDict,numericid):
-    """ Pretty print of the dataset ls output
-    """    
-    perm = datasetDict['Mode']
-    date = datasetDict['ModificationDate']
-    size = datasetDict['TotalSize']
-    if datasetDict.has_key('Owner'):
-      uname = datasetDict['Owner']
-    elif datasetDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(datasetDict['OwnerDN'])
-      if result['OK']:
-        uname = result['Value']
-      else:
-        uname = 'unknown'
-    else:
-      uname = 'unknown'
-    if numericid:
-      uname = str( datasetDict['UID'] )
-      
-    gname = 'unknown'  
-    if datasetDict.has_key('OwnerGroup'):
-      gname = datasetDict['OwnerGroup']
-    if numericid:
-      gname = str( datasetDict ['GID'] )
-    
-    numberOfFiles = datasetDict ['NumberOfFiles']
-        
-    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )   
-    
-  def __getModeString(self,perm):
-    """ Get string representation of the file/directory mode
-    """  
-    
-    pstring = ''
-    if perm & stat.S_IRUSR:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWUSR:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXUSR:
-      pstring += 'x'
-    else:
-      pstring += '-'    
-    if perm & stat.S_IRGRP:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWGRP:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXGRP:
-      pstring += 'x'
-    else:
-      pstring += '-'    
-    if perm & stat.S_IROTH:
-      pstring += 'r'
-    else:
-      pstring += '-'
-    if perm & stat.S_IWOTH:
-      pstring += 'w'
-    else:
-      pstring += '-'
-    if perm & stat.S_IXOTH:
-      pstring += 'x'
-    else:
-      pstring += '-'    
-      
-    return pstring  
-  
-  def humanReadableSize(self,num,suffix='B'):
-    """ Translate file size in bytes to human readable
-
-        Powers of 2 are used (1Mi = 2^20 = 1048576 bytes).
-    """
-    num = int(num)
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
-      if abs(num) < 1024.0:
-        return "%3.1f%s%s" % (num, unit, suffix)
-      num /= 1024.0
-    return "%.1f%s%s" % (num, 'Yi', suffix)
-    
-  def printListing(self,reverse,timeorder,sizeorder,humanread):
-    """
-    """
-    if timeorder:
-      if reverse:
-        self.entries.sort(key=lambda x: x[5]) 
-      else:  
-        self.entries.sort(key=lambda x: x[5],reverse=True) 
-    elif sizeorder:  
-      if reverse:
-        self.entries.sort(key=lambda x: x[4])
-      else:  
-        self.entries.sort(key=lambda x: x[4],reverse=True)
-    else:  
-      if reverse:
-        self.entries.sort(key=lambda x: x[6],reverse=True) 
-      else:  
-        self.entries.sort(key=lambda x: x[6]) 
-        
-    # Determine the field widths
-    wList = [0] * 7
-    for d in self.entries:
-      for i in range(7):
-        if humanread and i == 4:
-          humanreadlen = len(str(self.humanReadableSize(d[4])))
-          if humanreadlen > wList[4]:
-            wList[4] = humanreadlen
-        else:
-          if len(str(d[i])) > wList[i]:
-            wList[i] = len(str(d[i]))
-        
-    for e in self.entries:
-      size = e[4]
-      if humanread:
-        size = self.humanReadableSize(e[4])
-      print str(e[0]),
-      print str(e[1]).rjust(wList[1]),
-      print str(e[2]).ljust(wList[2]),
-      print str(e[3]).ljust(wList[3]),
-      print str(size).rjust(wList[4]),
-      print str(e[5]).rjust(wList[5]),
-      print str(e[6])
-
-  def addSimpleFile(self,name):
-    """ Add single files to be sorted later"""
-    self.entries.append(name)
-
-  def printOrdered(self):
-    """ print the ordered list"""
-    self.entries.sort()
-    for entry in self.entries:
-      print entry
+from DIRAC.DataManagementSystem.Utilities.CLIUtilities import pathFromArgument, DirectoryListing
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 class FileCatalogClientCLI(cmd.Cmd):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
@@ -281,6 +57,30 @@ File Catalog Client $Revision: 1.17 $Date:
 
     self.ul_fs = UnixLikeFileSystem()
     self.ul_dc = DirectoryCompletion(self.ul_fs)
+
+  def getReplicasForPaths( self, paths ):
+    """ Get list of replicas for paths.
+
+        @param paths: paths to list with ls
+        @type: list
+    """
+    ret = {}
+    try:
+      result = self.fc.getReplicas( paths )    
+      if result[ 'OK' ]:
+        resDict = result[ 'Value' ][ 'Successful' ]
+        if resDict:
+          for lfn in resDict:
+            replicas = [ ]
+            for se,entry in resDict[ lfn ].items( ):
+              replicas.append( se.ljust( 15 ) + " " + entry )
+            ret.update( { lfn : tuple( replicas ) } )
+        else:
+          print "Replicas: ", result#[ 'Message' ]
+    except Exception, x:
+      replicas.append( "replicas failed:" + str( x ))
+
+    return ret
 
   def getPath(self,apath):
 
@@ -334,7 +134,7 @@ File Catalog Client $Revision: 1.17 $Date:
         cur_path = args[2]
       result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
       return result
-
+ 
     result = [i for i in self._available_register_cmd if i.startswith(text)]
     return result
   
@@ -483,28 +283,39 @@ File Catalog Client $Revision: 1.17 $Date:
     return result
       
   def do_rmreplica(self,args):
-    """ Remove LFN replica from the storage and from the File Catalog
+    """ Remove LFN replicas from the storage and from the File Catalog
     
         usage:
-          rmreplica <lfn> <se>
+          rmreplica <lfn> ... <lfn> <se>
     """        
     argss = args.split()
-    if (len(argss) != 2):
+    if (len(argss) < 2):
       print self.do_rmreplica.__doc__
       return
-    lfn = argss[0]
-    lfn = self.getPath(lfn)
-    print "lfn:",lfn
-    se = argss[1]
+    lfns = argss[0:-1]
+    lfns = [ self.getPath(lfn) for lfn in lfns[:] ]
+    se = argss[-1]
     try:
-      result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
-      if result['OK']:
-        print "Replica at",se,"moved to Trash Bin"
-      else:
-        print "Failed to remove replica at",se
-        print result['Message']
+      storageElement = StorageElement( se )
     except Exception, x:
-      print "Error: rmreplica failed with exception: ", x
+      print "Exception: %s" %str(x)
+      return
+
+    res = storageElement.isValid()
+    if not res['OK']:
+      print "%s is not a valid storage element" %se
+      return
+      
+    for lfn in lfns:
+      try:
+        result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
+        if result['OK']:
+          print "Replica ",lfn,"at",se,"moved to Trash Bin"
+        else:
+          print "Failed to remove replica at",se
+          print result['Message']
+      except Exception, x:
+        print "Error: rmreplica failed with exception: ", x
 
   def complete_rmreplica(self, text, line, begidx, endidx):
     result = []
@@ -524,16 +335,16 @@ File Catalog Client $Revision: 1.17 $Date:
 
     
   def do_rm(self,args):
-    """ Remove file from the storage and from the File Catalog
+    """ Remove files from the storage and from the File Catalog
     
         usage:
-          rm <lfn>
+          rm <lfn> ... <lfn>
           
         NB: this method is not fully implemented !    
     """  
     # Not yet really implemented
     argss = args.split()
-    if len(argss) != 1:
+    if len(argss) < 1:
       print self.do_rm.__doc__
       return
     self.removeFile(argss)
@@ -555,16 +366,16 @@ File Catalog Client $Revision: 1.17 $Date:
     return result
     
   def do_rmdir(self,args):
-    """ Remove directory from the storage and from the File Catalog
+    """ Remove directories from the storage and from the File Catalog
     
         usage:
-          rmdir <path>
+          rmdir <path> ... <path>
           
         NB: this method is not fully implemented !  
     """  
     # Not yet really implemented yet
     argss = args.split()
-    if len(argss) != 1:
+    if len(argss) < 1:
       print self.do_rmdir.__doc__
       return
     self.removeDirectory(argss)  
@@ -602,7 +413,7 @@ File Catalog Client $Revision: 1.17 $Date:
           elif  lfn in result['Value']['Successful']:
             print "File %s at %s removed from the catalog" %( lfn, rmse )
           else:
-            "ERROR: Unexpected returned value %s" % result['Value']
+            print "ERROR: Unexpected returned value %s" % result['Value']
         else:
           print "File %s at %s removed from the catalog" %( lfn, rmse )
       else:
@@ -612,49 +423,89 @@ File Catalog Client $Revision: 1.17 $Date:
       print "Error: rmpfn failed with exception: ", x
       
   def removeFile(self,args):
-    """ Remove file from the catalog
+    """ Remove files from the catalog
     """  
+    paths = args
+    lfns = [ self.getPath(path) for path in paths ]
+    # 1) check that lfn to remove do exist
+    # 2) check that is not a directory
+    res = self.fc.exists( lfns )
+    if not res['OK']:
+      return res
+    success = res['Value']['Successful']
+    missing = [ lfn for lfn in success if not success[lfn] ]
+    lfns = [ lfn for lfn in success if success[lfn] ]
+
+    for lfn in missing:
+      print "%s doesn't exist" %lfn
+
+    if not len(lfns):
+      return
+    res = self.fc.isDirectory( lfns )
+    if not res['OK']:
+      print "Error: Cannot check if paths are directories"
+      return
+
+    success = res['Value']['Successful']
+    lfns = [ lfn for lfn in success if not success[lfn] ]
+    dirs = [ lfn for lfn in success if success[lfn] ]
+    for lfn in dirs:
+      print "%s is a directory" %lfn
+
+    res = self.fc.removeFile( lfns )
+    if not res['OK']:
+      return res['Message']
     
-    path = args[0]
-    lfn = self.getPath(path)
-    print "lfn:",lfn
-    try:
-      result =  self.fc.removeFile(lfn)
-      if result['OK']:
-        if 'Failed' in result['Value']:
-          if lfn in result['Value']['Failed']:
-            print "ERROR: %s" % ( result['Value']['Failed'][lfn] )
-          elif lfn in result['Value']['Successful']:
-            print "File",lfn,"removed from the catalog"
-          else:
-            print "ERROR: Unexpected result %s" % result['Value']
-        else:
-          print "File",lfn,"removed from the catalog"
-      else:
-        print "Failed to remove file from the catalog"  
-        print result['Message']
-    except Exception, x:
-      print "Error: rm failed with exception: ", x       
+    # report results
+    success = [ lfn for lfn in lfns if res['Value']['Successful'][lfn] ]
+    failed = [ lfn for lfn in lfns if lfn not in success ]
+    for lfn in failed:
+      print 'Failed to remove file %s: %s' %(lfn, res['Value']['Failed']['Message'])
+    for lfn in success:
+      print 'Successfully removed file %s' %lfn
       
   def removeDirectory(self,args):
-    """ Remove file from the catalog
+    """ Remove directories from the catalog
     """  
+    paths = args
+    lfns = [ self.getPath(path) for path in paths ]
+    # 1) check that lfn to remove do exist
+    # 2) check that is a directory
+    # 3) check that is empty
+    res = self.fc.exists( lfns )
+    if not res['OK']:
+      return res
+    success = res['Value']['Successful']
+    missing = [ lfn for lfn in success if not success[lfn] ]
+    lfns = [ lfn for lfn in success if success[lfn] ]
+
+    for lfn in missing:
+      print "%s doesn't exist" %lfn
+
+    if not len(lfns):
+      return
+    res = self.fc.isDirectory( lfns )
+    if not res['OK']:
+      print "Error: Cannot check if paths are directories"
+      return
+
+    success = res['Value']['Successful']
+    lfns = [ lfn for lfn in success if success[lfn] ]
+    no_dirs = [ lfn for lfn in success if not success[lfn] ]
+    for lfn in no_dirs:
+      print "%s is not a directory" %lfn
+
+    res = self.fc.removeDirectory( lfns )
+    if not res['OK']:
+      return res['Message']
     
-    path = args[0]
-    lfn = self.getPath(path)
-    print "lfn:",lfn
-    try:
-      result =  self.fc.removeDirectory(lfn)
-      if result['OK']:
-        if result['Value']['Successful']:
-          print "Directory",lfn,"removed from the catalog"
-        elif result['Value']['Failed']:
-          print "ERROR:", result['Value']['Failed'][lfn]  
-      else:
-        print "Failed to remove directory from the catalog"  
-        print result['Message']
-    except Exception, x:
-      print "Error: rm failed with exception: ", x            
+    # report results
+    failed = res['Value']['Failed'].keys()
+    success = [ lfn for lfn in lfns if lfn not in failed ]
+    for lfn in failed:
+      print 'Failed to remove file %s: %s' %(lfn, res['Value']['Failed']['Message'])
+    for lfn in success:
+      print 'Successfully removed directory %s' %lfn
       
   def do_replicate(self,args):
     """ Replicate a given file to a given SE
@@ -1128,33 +979,29 @@ File Catalog Client $Revision: 1.17 $Date:
       print ("Error: %s" % result['Message'])         
          
   def do_mkdir(self,args):
-    """ Make directory
+    """ Make directories
     
-        usage: mkdir <path>
+        usage: mkdir <path> ... <path>
     """
     
     argss = args.split()
     if (len(argss)==0):
       print self.do_group.__doc__
       return
-    path = argss[0] 
-    if path.find('/') == 0:
-      newdir = path
-    else:
-      newdir = self.cwd + '/' + path
+
+    paths = [ pathFromArgument( path, self.cwd ) for path in argss ]
       
-    newdir = self.getPath(newdir)
-    
-    result =  self.fc.createDirectory(newdir)    
-    if result['OK']:
-      if result['Value']['Successful']:
-        if result['Value']['Successful'].has_key(newdir):
-          print "Successfully created directory:", newdir
-      elif result['Value']['Failed']:
-        if result['Value']['Failed'].has_key(newdir):  
-          print 'Failed to create directory:',result['Value']['Failed'][newdir]
-    else:
-      print 'Failed to create directory:',result['Message']
+    for path in paths:
+      result =  self.fc.createDirectory(path)    
+      if result['OK']:
+        resDict= result['Value']['Successful']
+        resDictFail = result['Value']['Failed']
+        if resDict and path in resDict:
+          print "Successfully created directory:", path
+        elif resDictFail and path in resDictFail:
+          print 'Failed to create directory:',resDictFail[path]
+      else:
+        print 'Failed to create directory:',result['Message']
 
   def complete_mkdir(self, text, line, begidx, endidx):
     result = []
@@ -1288,12 +1135,110 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     print self.cwd      
 
-  def do_ls(self,args):
-    """ Lists directory entries at <path> 
+  def _listFiles(self, files, opts):
+    """ Perform ls on catalog entries which are files
 
-        usage: ls [-ltrnSh] <path>
+        files: list of files to list.
+        opts: list of the ls options to use.
+    """
+    _long = opts["_long"]
+    list_rep = opts[" list_rep"]
+    full_path = opts[" full_path"]
+    reverse = opts[" reverse"]
+    timeorder = opts["timeorder"]
+    numericid = opts[" numericid"]
+    sizeorder = opts[" sizeorder"]
+    humanread = opts[" humanread"]
+
+    try:   
+      result = self.fc.getFileMetadata( files )
+      if not result['OK']:
+        print "Cannot get files metadata",result['Message']
+        return
+
+      dList = DirectoryListing( list_rep )
+      resdict = result['Value']['Successful']
+      if list_rep:
+        replicas = self.getReplicasForPaths( resdict.keys() )
+      for xpath in resdict:
+        filedict = resdict[ xpath ]
+        add_path = ( full_path and xpath ) or os.path.basename( xpath )
+        if _long:
+          if list_rep:
+            dList.addFileWithReplicas( add_path,filedict,numericid,replicas[ xpath ] )
+          else:
+            dList.addFile( add_path,filedict,{},numericid )
+        else:
+          dList.addSimpleFile( add_path )  
+      if _long:    
+        dList.printListing( reverse,timeorder,sizeorder,humanread )
+      else:
+        dList.printOrdered()
+
+    except Exception, x:
+      print "Error:", str(x)
+
+  def _listDirectories(self, directories, opts):
+    """ Perform ls on catalog entries which are directories
+
+        directories: list of directories to list.
+        opts: list of the ls options to use.
+    """
+    _long = opts["_long"]
+    list_rep = opts[" list_rep"]
+    full_path = opts[" full_path"]
+    reverse = opts[" reverse"]
+    timeorder = opts["timeorder"]
+    numericid = opts[" numericid"]
+    sizeorder = opts[" sizeorder"]
+    humanread = opts[" humanread"]
+    try:
+      result =  self.fc.listDirectory( directories,_long )
+      if not result['OK']:
+        print "Error:",result['Message']
+        return 
+
+      dList = DirectoryListing( list_rep )
+      resDict = result['Value']['Successful']
+      for xpath in resDict:
+        for tag in ['Files','SubDirs','Links','Datasets']:
+          for entry in resDict[ xpath ][ tag ]:
+            if tag == 'Links':
+              pass
+            else:
+              add_path = ( full_path and entry ) or os.path.basename( entry )
+              if _long:
+                if tag == 'SubDirs':
+                  cDict = resDict[ xpath ][ tag ][ entry ]
+                else:    
+                  cDict = resDict[ xpath ][ tag ][ entry ]['MetaData']
+
+                if tag == 'Files':
+                  repDict = resDict[ xpath ][ tag ][ entry ].get( "Replicas", {} )
+                  dList.addFile( add_path,cDict,repDict,numericid )
+                elif tag == 'SubDirs':
+                  dList.addDirectory( add_path,cDict,numericid )
+                elif tag == 'Datasets':
+                  dList.addDataset( add_path,cDict,numericid )
+              else:  
+                dList.addSimpleFile( add_path )
+
+      if _long:
+        dList.printListing( reverse,timeorder,sizeorder,humanread )
+      else:
+        dList.printOrdered()
+        
+    except Exception, x:
+      print "Error:", str(x)
+
+  def do_ls(self,args):
+    """ Lists files or directories
+
+        usage: ls [-lLftrnSH] <path> ... <path>
 
      -l  --long                : Long listing.
+     -L  --list-replicas       : Long listing including number of replicas.
+     -f  --full-path           : Show full path instead of just the basename.
      -t  --timeorder           : List ordering by time.
      -r  --reverse             : Reverse list order.
      -n  --numericid           : List with numeric value of UID and GID.
@@ -1305,17 +1250,20 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     # Get switches
     _long = False
+    list_rep = False
+    full_path = False
     reverse = False
     timeorder = False
     numericid = False
     sizeorder = False
     humanread = False
-    shortopts = 'ltrnSH'
-    longopts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
-    path = self.cwd
+    shortopts = 'lLftrnSH'
+    longopts = ['long','list-replicas','full-path','timeorder','reverse',
+                'numericid','sizeorder','human-readable']
+    paths = []
     if len(argss) > 0:
       try:
-        optlist, arguments = getopt.getopt(argss,shortopts,longopts)
+        optlist, arguments = getopt.gnu_getopt(argss,shortopts,longopts)
       except getopt.GetoptError, e:
         print str(e)
         print self.do_ls.__doc__
@@ -1323,10 +1271,14 @@ File Catalog Client $Revision: 1.17 $Date:
       # Duplicated options are allowed: later options have precedence, e.g.,
       # '-ltSt' will be order by time
       # '-ltStS' will be order by size
-      options = [ opt for (opt, arg) in optlist]
+      options = [ opt_arg[0] for opt_arg in optlist]
       for opt in options:
         if opt in ['-l', '--long']:
           _long = True
+        elif opt in ['-L', '--list-replicas']:
+          list_rep = _long = True
+        elif opt in ['-f', '--full-path']:
+          full_path = True
         elif opt in ['-r', '--reverse']:
           reverse = True
         elif opt in ['-t', '--timeorder']:
@@ -1339,8 +1291,8 @@ File Catalog Client $Revision: 1.17 $Date:
           humanread = True
 
       if timeorder and sizeorder:
-        options = [w.replace('--sizeorder','-S') for w in options]
-        options = [w.replace('--human-readable','-H') for w in options]
+        options = [ w.replace('--sizeorder','-S') for w in options ]
+        options = [ w.replace('--timeorder','-t') for w in options ]
         options.reverse()
         # The last ['-S','-t'] provided is the one we use: reverse order
         # means that the last provided has the smallest index.
@@ -1349,81 +1301,40 @@ File Catalog Client $Revision: 1.17 $Date:
         else:
           sizeorder = False
         
-      # Get path    
+      # Get paths
       if arguments:
-        inputpath = False
-        while arguments or not inputpath:
+        while arguments:
           tmparg = arguments.pop()
           # look for a non recognized option not starting with '-'
           if tmparg[0] != '-':
-            path = tmparg
-            inputpath = True
-            if path[0] != '/':
-              path = self.cwd+'/'+path
-    path = self.getPath(path)
+            paths.append( pathFromArgument( tmparg, self.cwd ) )
+
+    paths = uniqueElements( paths ) # drop duplicates preserving order
+    if not len(paths) > 0:
+      paths = [ self.cwd ]
     
-    # Check if the target path is a file
-    result =  self.fc.isFile(path)          
+    # Separate in directories and files
+    result = self.fc.isDirectory( paths )
     if not result['OK']:
-      print "Error: can not verify path"
+      print "Error: Cannot check if paths are directories"
       return
-    elif path in result['Value']['Successful'] and result['Value']['Successful'][path]:
-      result = self.fc.getFileMetadata(path)      
-      dList = DirectoryListing()
-      fileDict = result['Value']['Successful'][path]
-      dList.addFile(os.path.basename(path),fileDict,{},numericid)
-      dList.printListing(reverse,timeorder,sizeorder,humanread)
-      return         
-    
-    # Get directory contents now
-    try:
-      result =  self.fc.listDirectory(path,_long)                   
-      dList = DirectoryListing()
-      if result['OK']:
-        if result['Value']['Successful']:
-          for entry in result['Value']['Successful'][path]['Files']:
-            fname = entry.split('/')[-1]
-            # print entry, fname
-            # fname = entry.replace(self.cwd,'').replace('/','')
-            if _long:
-              fileDict = result['Value']['Successful'][path]['Files'][entry]['MetaData']
-              repDict = result['Value']['Successful'][path]['Files'][entry].get( "Replicas", {} )
-              if fileDict:
-                dList.addFile(fname,fileDict,repDict,numericid)
-            else:  
-              dList.addSimpleFile(fname)
-          for entry in result['Value']['Successful'][path]['SubDirs']:
-            dname = entry.split('/')[-1]
-            # print entry, dname
-            # dname = entry.replace(self.cwd,'').replace('/','')  
-            if _long:
-              dirDict = result['Value']['Successful'][path]['SubDirs'][entry]
-              if dirDict:
-                dList.addDirectory(dname,dirDict,numericid)
-            else:    
-              dList.addSimpleFile(dname)
-          
-          for entry in result['Value']['Successful'][path]['Links']:
-            pass
-          
-          if 'Datasets' in result['Value']['Successful'][path]:
-            for entry in result['Value']['Successful'][path]['Datasets']:
-              dname = os.path.basename( entry )    
-              if _long:
-                dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']  
-                if dsDict:
-                  dList.addDataset(dname,dsDict,numericid)
-              else:    
-                dList.addSimpleFile(dname)
-              
-          if _long:
-            dList.printListing(reverse,timeorder,sizeorder,humanread)
-          else:
-            dList.printOrdered()
-      else:
-        print "Error:",result['Message']
-    except Exception, x:
-      print "Error:", str(x)
+    dirdict = result['Value']['Successful']
+    directories = [ d for d in paths if dirdict[d] ]
+    files = [ f for f in paths if not dirdict[f] ]
+
+    optsdict = { "_long" : _long," list_rep" :  list_rep,
+                 " full_path" :  full_path," reverse" :  reverse,
+                 "timeorder" : timeorder," numericid" :  numericid,
+                 " sizeorder" :  sizeorder," humanread" :  humanread }
+    # List files
+    if len(files) > 0:
+      self._listFiles( files, optsdict )
+
+    # List directories    
+    if not len(directories) > 0:
+      return
+    else:
+      self._listDirectories( directories, optsdict )
 
   def complete_ls(self, text, line, begidx, endidx):
     result = []
@@ -1559,7 +1470,11 @@ File Catalog Client $Revision: 1.17 $Date:
       
   def do_chmod(self,args):
     """ Change permissions of the given path
+
         usage: chmod [-R] <mode> <path> 
+
+               <mode> is the permission string as an octal number
+               (e.g.: 755 would set -rwxr-xr-x)
     """         
     
     argss = args.split()
@@ -1838,7 +1753,6 @@ File Catalog Client $Revision: 1.17 $Date:
             cur_path = args[-1]
           
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
-        pass
       return result
 
     result = [i for i in self._available_meta_cmd if i.startswith(text)]
@@ -1877,7 +1791,7 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     meta = argss[::2]
     value = argss[1::2]
-    metadict = {meta[n]:value[n] for n in range(len(meta))}
+    metadict = dict(zip(meta, value))
     print path,metadict
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
