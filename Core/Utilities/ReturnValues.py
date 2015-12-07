@@ -25,6 +25,11 @@ def S_OK( value = None ):
   return { 'OK' : True, 'Value' : value }
 
 def isReturnStructure( unk ):
+  from DIRAC.Core.Utilities import DError
+
+  if isinstance( unk, DError ):
+    return True
+
   if type( unk ) != types.DictType:
     return False
   if 'OK' not in unk:
@@ -63,12 +68,16 @@ def returnSingleResult( dictRes ):
       {'OK': True, 'Value': {'Successful': {'b': 2, 'd': 4}, 'Failed': {}}} -> {'OK': True, 'Value': 2}
       {'OK': True, 'Value': {'Successful': {}, 'Failed': {}}} -> {'Message': 'returnSingleResult: Failed and Successful dictionaries are empty', 'OK': False}
    """
-  # if S_ERROR was returned, we return it as well
+  from DIRAC.Core.Utilities import DError
+
+  # if S_ERROR/DError was returned, we return it as well
   if not dictRes['OK']:
     return dictRes
   # if there is a Failed, we return the first one in an S_ERROR
   if "Failed" in dictRes['Value'] and len( dictRes['Value']['Failed'] ):
     errorMessage = dictRes['Value']['Failed'].values()[0]
+    if isinstance( errorMessage, DError ):
+      return errorMessage
     return S_ERROR( errorMessage )
   # if there is a Successful, we return the first one in an S_OK
   elif "Successful" in dictRes['Value'] and len( dictRes['Value']['Successful'] ):

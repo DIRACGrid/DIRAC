@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: ListTestCase.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/01/17 08:17:58
 ########################################################################
@@ -14,42 +12,26 @@ Test cases for DIRAC.Core.Utilities.List module.
 __RCSID__ = "$Id $"
 
 ##
-# @file ListTestCase.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2011/01/17 08:17:58
-# @brief Definition of ListTestCase class.
 
-## imports 
-from  DIRAC.Core.Utilities import List
 import unittest
+
+# sut
+from  DIRAC.Core.Utilities import List
 
 ########################################################################
 class ListTestCase( unittest.TestCase ):
   """py:class ListTestCase
 	Test case for DIRAC.Core.Utilities.List module.
-	"""	
-	
-  def testSorted( self ):
-    """ sortList tests """
-    # empty list
-    aList = []
-    self.assertEqual( List.sortList(aList), [])
-    # already sorted
-    aList = [ "a", "b", "c" ]
-    self.assertEqual( List.sortList(aList), ["a", "b", "c"] )
-    # unsorted
-    aList = [ "a", "c", "b" ]
-    self.assertEqual( List.sortList(aList), ["a", "b", "c"])
-		# invert
-    aList = [ "a", "b", "c" ]
-    self.assertEqual( List.sortList(aList, invert=True), ["c", "b", "a"] )
+	"""
 
   def testUniqueElements( self ):
     """ uniqueElements tests """
     # empty list
     aList = []
     self.assertEqual( List.uniqueElements(aList), [])
-		# redundant elements
+    # redundant elements
     aList = [1, 1, 2, 3]
     self.assertEqual( List.uniqueElements( aList ), [1, 2, 3] )
 
@@ -63,11 +45,11 @@ class ListTestCase( unittest.TestCase ):
     aList = [ 1, 2, 3 ]
     List.appendUnique( aList, 1 )
     self.assertEqual( aList, [1, 2, 3] )
-		# all unique
+    # all unique
     aList = [ 1, 2 ]
     List.appendUnique( aList, 3 )
     self.assertEqual( aList, [1, 2, 3] )
-		
+
   def testRandomize( self ):
     """ randomize tests """
     # empty list
@@ -126,15 +108,6 @@ class ListTestCase( unittest.TestCase ):
     aStr = List.intListToString( aList )
     self.assertEqual( aStr, "1,2,3")
 
-  def testRemoveEmptyElements( self ):
-    """ removeEmptyElements tests """
-    # empty list
-    aList = []
-    self.assertEqual( List.removeEmptyElements(aList), [] )
-    # None or "" (empty string) in
-    aList = [ "", None, 1 ] 
-    self.assertEqual( List.removeEmptyElements(aList), [1])
-
   def testFromChar( self ):
     """ fromChar tests """
     # empty string
@@ -182,4 +155,3 @@ if __name__ == "__main__":
   TESTLOADER = unittest.TestLoader()
   SUITE = TESTLOADER.loadTestsFromTestCase( ListTestCase )      
   unittest.TextTestRunner(verbosity=3).run( SUITE )
-		

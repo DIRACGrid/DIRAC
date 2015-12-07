@@ -28,15 +28,18 @@ class DB( MySQL ):
     self.dbPass = dbParameters[ 'Password' ]
     self.dbName = dbParameters[ 'DBName' ]
 
-    MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
-                   self.dbName, self.dbPort, debug = debug )
+    super( DB, self ).__init__( hostName = self.dbHost,
+                                userName = self.dbUser,
+                                passwd = self.dbPass,
+                                dbName = self.dbName,
+                                port = self.dbPort,
+                                debug = debug )
 
     if not self._connected:
-      raise RuntimeError( 'Can not connect to DB %s, exiting...' % self.dbName )
+      raise RuntimeError( "Can not connect to DB '%s', exiting..." % self.dbName )
 
 
     self.log.info( "==================================================" )
-    #self.log.info("SystemInstance: "+self.system)
     self.log.info( "User:           " + self.dbUser )
     self.log.info( "Host:           " + self.dbHost )
     self.log.info( "Port:           " + str( self.dbPort ) )

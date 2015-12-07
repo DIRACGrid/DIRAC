@@ -2,6 +2,10 @@
 """
     This is a comment
 """
+""" Thank you very much!
+    Merci d'avance!
+"""
+
 __RCSID__ = "$Revision: 1.19 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
@@ -70,9 +74,8 @@ class ModuleDefinition( AttributeCollection ):
   def toXMLFile( self, outFile ):
     if os.path.exists( outFile ):
       os.remove( outFile )
-    xmlfile = open( outFile, 'w' )
-    xmlfile.write( self.toXML() )
-    xmlfile.close()
+    with open( outFile, 'w' ) as xmlfile:
+      xmlfile.write( self.toXML() )
 
   def loadCode( self ):
     #print 'Loading code of the Module =', self.getType()

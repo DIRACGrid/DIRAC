@@ -103,7 +103,7 @@ class TransformationCleaningAgent( AgentModule ):
     self.activeStorages = sorted( self.am_getOption( 'ActiveSEs', [] ) )
     self.log.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
     # # transformation log SEs
-    self.logSE = self.am_getOption( 'TransformationLogSE', 'LogSE' )
+    self.logSE = Operations().getValue( '/LogStorage/LogSE', 'LogSE' )
     self.log.info( "Will remove logs found on storage element: %s" % self.logSE )
     # # enable/disable execution, should be using CS option Status?? with default value as 'Active'??
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )

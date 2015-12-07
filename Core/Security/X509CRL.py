@@ -1,7 +1,4 @@
-########################################################################
-# $HeadURL$
-########################################################################
-""" X509CRL is a class for managing X509CRL 
+""" X509CRL is a class for managing X509CRL
 This class is used to manage the revoked certificates....
 """
 __RCSID__ = "$Id$"
@@ -12,20 +9,21 @@ import os
 import tempfile
 
 from GSI import crypto
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
+from DIRAC.Core.Utilities import DError, DErrno
 
-class X509CRL(object):
+class X509CRL( object ):
 
   def __init__( self, cert = False ):
-    
+
     self.__pemData = None
-    
+
     if cert:
       self.__loadedCert = True
       self.__revokedCert = cert
     else:
       self.__loadedCert = False
-    
+
 
   @classmethod
   def instanceFromFile( cls, crlLocation ):
@@ -47,7 +45,7 @@ class X509CRL(object):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return S_ERROR( "Can't open %s file: %s" % ( crlLocation, str( e ) ) )
+      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, repr( e ).replace( ',)', ')' ) ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
@@ -59,12 +57,12 @@ class X509CRL(object):
     try:
       self.__revokedCert = crypto.load_crl( crypto.FILETYPE_PEM, pemData )
     except Exception as e:
-      return S_ERROR( "Can't load pem data: %s" % str( e ) )
+      return DError( DErrno.ECERTREAD, "%s" % repr( e ).replace( ',)', ')' ) )
     if not self.__revokedCert:
-      return S_ERROR( "No certificates in the contents" )
+      return DError( DErrno.ECERTREAD )
     self.__loadedCert = True
     self.__pemData = pemData
-    
+
     return S_OK()
 
 
@@ -78,7 +76,7 @@ class X509CRL(object):
       pemData = fd.read()
       fd.close()
     except Exception as e:
-      return S_ERROR( "Can't open %s file: %s" % ( crlLocation, str( e ) ) )
+      return DError( DErrno.EOF, "%s: %s" % ( crlLocation, repr( e ).replace( ',)', ')' ) ) )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
@@ -87,15 +85,15 @@ class X509CRL(object):
     Return : S_OK / S_ERROR
     """
     return self.loadChainFromString( pemData )
-    
-  
+
+
   def dumpAllToString( self ):
     """
     Dump all to string
     """
     if not self.__loadedCert:
-      return S_ERROR( "No certificate loaded" )
-   
+      return DError( DErrno.ECERTREAD, "No certificate loaded" )
+
     return S_OK( self.__pemData )
 
   def dumpAllToFile( self, filename = False ):
@@ -116,11 +114,11 @@ class X509CRL(object):
         fd.write( pemData )
         fd.close()
     except Exception as e:
-      return S_ERROR( "Cannot write to file %s :%s" % ( filename, str( e ) ) )
+      return DError( DErrno.EWF, "%s: %s" % ( filename, repr( e ).replace( ',)', ')' ) ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception as e:
-      return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str( e ) ) )
+      return DError( DErrno.ESPF, "%s: %s" % ( filename, repr( e ).replace( ',)', ')' ) ) )
     return S_OK( filename )
 
   def __str__( self ):
@@ -132,5 +130,3 @@ class X509CRL(object):
 
   def __repr__( self ):
     return self.__str__()
-
-  

@@ -44,6 +44,14 @@ FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
+def getSubmitPools( group = None, vo = None ):
+  if group:
+    return Registry.getGroupOption( group, 'SubmitPools', '' )
+  if vo:
+    return Registry.getVOOption( vo, 'SubmitPools', '' )
+  return ''
+
+
 class SiteDirector( AgentModule ):
   """
       The specific agents must provide the following methods:
@@ -110,11 +118,8 @@ class SiteDirector( AgentModule ):
 
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
-    if self.group:
-      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
-    elif self.vo:
-      self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+
+    self.defaultSubmitPools = getSubmitPools( self.group, self.vo )
 
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
@@ -733,6 +738,21 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-Q %s' % self.queueDict[queue]['QueueName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
+    if 'ClientPlatform' in queueDict:
+      pilotOptions.append( "-p '%s'" % queueDict['ClientPlatform'] )
+
+    if 'SharedArea' in queueDict:
+      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
+
+#     if 'SI00' in queueDict:
+#       factor = float( queueDict['SI00'] ) / 250.
+#       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
+#       pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
+#     else:
+#       if 'CPUScalingFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
+#       if 'CPUNormalizationFactor' in queueDict:
+#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append( queueDict['ExtraPilotOptions'] )

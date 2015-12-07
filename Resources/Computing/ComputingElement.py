@@ -29,7 +29,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
-from DIRAC.Core.Security                              import File
+from DIRAC.Core.Security.ProxyFile                    import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo                    import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
@@ -294,7 +294,7 @@ class ComputingElement(object):
   def writeProxyToFile( self, proxy ):
     """CE helper function to write a CE proxy string to a file.
     """
-    result = File.writeToProxyFile( proxy )
+    result = writeToProxyFile( proxy )
     if not result[ 'OK' ]:
       self.log.error( 'Could not write proxy to file', result[ 'Message' ] )
       return result
@@ -444,7 +444,7 @@ class ComputingElement(object):
     return S_ERROR( 'ComputingElement: %s should be implemented in a subclass' % ( name ) )
 
   #############################################################################
-  def getCEStatus( self ):
+  def getCEStatus( self, jobIDList = None ):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'

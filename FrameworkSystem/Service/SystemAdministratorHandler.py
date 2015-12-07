@@ -1,5 +1,3 @@
-# $HeadURL$
-
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
 
@@ -7,9 +5,15 @@ __RCSID__ = "$Id$"
 
 import datetime
 import socket
-from types import ListType, StringTypes, BooleanType
-import os, re, commands, getpass, importlib
+import os
+import re
+import commands
+import getpass
+import importlib
 from datetime import timedelta
+from types import ListType, StringTypes, BooleanType
+
+import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
@@ -18,8 +22,6 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
-import DIRAC
-from DIRAC.Core.Utilities import InstallTools
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
@@ -31,8 +33,6 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     Handler class initialization
     """
-
-    hostMonitoring = True
 
     # Check the flag for monitoring of the state of the host
     hostMonitoring = cls.srv_getCSOption( 'HostMonitoring', True )
@@ -372,9 +372,8 @@ class SystemAdministratorHandler( RequestHandler ):
     gLogger.notice( "Setting project to %s" % projectName )
     diracCFG.setOption( "/LocalInstallation/Project", projectName, "Project to install" )
     try:
-      fd = open( cfgPath, "w" )
-      fd.write( str( diracCFG ) )
-      fd.close()
+      with open( cfgPath, "w" ) as fd:
+        fd.write( str( diracCFG ) )
     except IOError, excp :
       return S_ERROR( "Could not write dirac.cfg: %s" % str( excp ) )
     return S_OK()
@@ -384,7 +383,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = self.__loadDIRACCFG()
     if not result[ 'OK' ]:
       return result
-    cfgPath, diracCFG = result[ 'Value' ]
+    _cfgPath, diracCFG = result[ 'Value' ]
     return S_OK( diracCFG.getOption( "/LocalInstallation/Project", "DIRAC" ) )
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
@@ -480,43 +479,45 @@ class SystemAdministratorHandler( RequestHandler ):
       result[name] = '%.1f%%/%.1fMB' % ( percentage, memory / 1024. )
 
     # Loads
-    line = open( '/proc/loadavg' ).read()
-    l1, l5, l15, d1, d2 = line.split()
+    with open( '/proc/loadavg' ) as fd:
+      line = fd.read()
+      l1, l5, l15, _d1, _d2 = line.split()
     result['Load1'] = l1
     result['Load5'] = l5
     result['Load15'] = l15
     result['Load'] = '/'.join( [l1, l5, l15] )
 
     # CPU info
-    lines = open( '/proc/cpuinfo', 'r' ).readlines()
-    processors = 0
-    physCores = {}
-    for line in lines:
-      if line.strip():
-        parameter, value = line.split( ':' )
-        parameter = parameter.strip()
-        value = value.strip()
-        if parameter.startswith( 'processor' ):
-          processors += 1
-        if parameter.startswith( 'physical id' ):
-          physCores[value] = parameter
-        if parameter.startswith( 'model name' ):
-          result['CPUModel'] = value
-        if parameter.startswith( 'cpu MHz' ):
-          result['CPUClock'] = value
-    result['Cores'] = processors
-    result['PhysicalCores'] = len( physCores )
+    with open( '/proc/cpuinfo', 'r' ) as fd:
+      lines = fd.readlines()
+      processors = 0
+      physCores = {}
+      for line in lines:
+        if line.strip():
+          parameter, value = line.split( ':' )
+          parameter = parameter.strip()
+          value = value.strip()
+          if parameter.startswith( 'processor' ):
+            processors += 1
+          if parameter.startswith( 'physical id' ):
+            physCores[value] = parameter
+          if parameter.startswith( 'model name' ):
+            result['CPUModel'] = value
+          if parameter.startswith( 'cpu MHz' ):
+            result['CPUClock'] = value
+      result['Cores'] = processors
+      result['PhysicalCores'] = len( physCores )
 
     # Disk occupancy
     summary = ''
-    status, output = commands.getstatusoutput( 'df' )
+    _status, output = commands.getstatusoutput( 'df' )
     lines = output.split( '\n' )
     for i in range( len( lines ) ):
       if lines[i].startswith( '/dev' ):
         fields = lines[i].split()
         if len( fields ) == 1:
           fields += lines[i + 1].split()
-        disk = fields[0].replace( '/dev/sd', '' )
+        _disk = fields[0].replace( '/dev/sd', '' )
         partition = fields[5]
         occupancy = fields[4]
         summary += ",%s:%s" % ( partition, occupancy )
@@ -525,7 +526,7 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Open files
     puser = getpass.getuser()
-    status, output = commands.getstatusoutput( 'lsof' )
+    _status, output = commands.getstatusoutput( 'lsof' )
     pipes = 0
     files = 0
     sockets = 0
@@ -549,7 +550,7 @@ class SystemAdministratorHandler( RequestHandler ):
       result.update( infoResult['Value'] )
 
     # Host certificate properties
-    certFile, keyFile = getHostCertificateAndKeyLocation()
+    certFile, _keyFile = getHostCertificateAndKeyLocation()
     chain = X509Chain()
     chain.loadChainFromFile( certFile )
     resultCert = chain.getCredentials()
@@ -562,9 +563,8 @@ class SystemAdministratorHandler( RequestHandler ):
 
     # Host uptime
     try:
-      upFile = open( '/proc/uptime', 'r' )
-      uptime_seconds = float( upFile.readline().split()[0] )
-      upFile.close()
+      with open( '/proc/uptime', 'r' ) as upFile:
+        uptime_seconds = float( upFile.readline().split()[0] )
       result['Uptime'] = str( timedelta( seconds = uptime_seconds ) )
     except:
       pass
@@ -582,7 +582,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if result[ 'OK' ]:
       return S_OK( result[ 'Value' ][0] )
     else:
-      return result
+      return self.__readHostInfo()
 
   types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
   def export_getComponentDocumentation( self, cType, system, module ):
@@ -596,14 +596,14 @@ class SystemAdministratorHandler( RequestHandler ):
       try:
         importedModule = importlib.import_module( '%s.%sSystem.%s.%s' % ( extension, system, cType.capitalize(), module ) )
         return S_OK( importedModule.__doc__ )
-      except Exception, e:
+      except Exception as _e:
         pass
 
     # If not in an extension, try in base DIRAC
     try:
       importedModule = importlib.import_module( 'DIRAC.%sSystem.%s.%s' % ( system, cType.capitalize(), module ) )
       return S_OK( importedModule.__doc__ )
-    except Exception, e:
+    except Exception as _e:
       return S_ERROR( 'No documentation was found' )
 
   types_storeHostInfo = []

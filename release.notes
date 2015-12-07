@@ -1,4 +1,4 @@
-[v6r15-pre7]
+[v6r15-pre9]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -6,6 +6,8 @@ Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.p
 NEW: New class DError for reporting errors in output results of DIRAC functions 
 CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems in
         documentation generation
+CHANGE: removed Core.Utilities.List.sortList (sorted does the job)
+CHANGE: removed unused module Core.Utilities.TimeSeries
 NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
 NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
@@ -23,24 +25,79 @@ NEW: VOMS2CSAgent to synchronize VOMS user data with the DIRAC Registry
 CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
         to speed up the operation
 CHANGE: InstalledComponentsDB - table to cache host status information populated
-        by a periodic task        
+        by a periodic task    
+NEW: ComponentInstaller Client class            
 
 *RSS
 NEW: CE Availability policy, closing #2373
+CHANGE: Ported setStatus and setToken rpc calls to PublisherHandler from LHCb implementation
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
 CHANGE: DataManager, StorageElement - move physical accounting the StorageElement
 CHANGE: FileCatalog - added recursive changePathXXX operations
+CHANGE: FileCatalog contained objects have Master attribute defined in the CS. Extra check of eligibility of the catalogs specified explicitely. No-LFN write methods return just the Master result to be compatible with the current use in the clients.
+CHANGE: Removed LcgFileCatalogXXX obsoleted classes
 NEW: ConsistencyInspector class to perform data consistency checks between 
      different databases
 CHANGE: FileCatalog(Client) - refactored to allow clients declare which interface
         they implement     
 
+*TS
+CHANGE: TransformationDB table TaskInputs: InputVector column from BLOB to MEDIUMTEXT
+
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
+CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
+
+[v6r14p13]
+
+*WMS
+FIX: pilot commands CheckCECapabilities and CheckWNCapabilities were not considering the case of missing proxy
+
+[v6r14p12]
+
+*Core
+FIX: allow a renormalization of the estimated CPU power
+FIX: dirac-install: Make hashlib optional again (for previous versions of python, since the pilot may end up on old machines)
+
+*Framework
+FIX: allow to install agents with non-standard names (different from the module name)
+
+*DMS
+CHANGE: Consider files to reschedule and submit when they are Failed in FTS
+
+*WMS
+CHANGE: Move getCEStatus function back to using the ARC API
+
+
+[v6r14p11]
+
+*Core
+FIX: XXXTimeLeft - set limit to CPU lower than wall clock if unknown
+FIX: Logger - fix exception printing in gLogger.exception()
+CHANGE: InstallTools - added more info about the process in getStartupComponentStatus()
+CHANGE: Time - better report from timeThis() decorator
+
+*DMS
+CHANGE: FTSAgent - wait some time between 2 monitorings of each job
+
+*WMS
+NEW: pilotCommands - added CheckCECapabilities, CheckWNCapabilities commands
+NEW: Added dirac-wms-get-wn-parameters command
+
+*TS
+NEW: Added dirac-production-runjoblocal command
+FIX: TransformationAgent(Plugin) - clean getNextSite() and normalizeShares()
+FIX: TransformationPlugin - added setParameters() method
+
+*RSS
+FIX: dirac-rss-sync - move imports to after the Script.getPositionalArguments()
+
+*Resources
+NEW: Added dirac-resource-get-parameters command
 
 [v6r14p10]
 *Configuration
@@ -98,10 +155,6 @@ CHANGE: SiteDirector - do not send SharedArea and ClientPlatform as pilot
         invocation arguments  
 CHANGE: Matcher - allow matching by hosts in multi-VO installations              
 
-<<<<<<< HEAD
-
-=======
->>>>>>> rel-v6r14
 [v6r14p7]
 
 *Core
@@ -292,6 +345,20 @@ CHANGE: Review of the Matcher code, extracting Limiter and Matcher as standalone
 
 *Transformation
 NEW: New ported plugins from LHCb, added unit tests
+
+
+[v6r13p21]
+
+*TS
+FIX: Registering TargetSE for Standard TransformationAgent plugin
+
+[v6r13p20]
+
+*DMS
+FIX: DMSHelpers - allow for more than one Site defined to be local per SE
+
+*Resources
+FIX: XRootStorage - fix in getURLBase()
 
 [v6r13p19]
 
@@ -620,8 +687,6 @@ CHANGE: TokenAgent - added more info to the mail
 *TS
 CHANGE: Task Manager plugins
 
-<<<<<<< HEAD
-=======
 [v6r12p53]
 
 *DMS
@@ -638,7 +703,6 @@ NEW: Transformation - added getAuthorDNfromProxy, getTransformationsByUser metho
 *Resources
 CHANGE: GlobusComputingElement - simplify creating of pilotStamp
 
->>>>>>> rel-v6r14
 [v6r12p52]
 
 *DMS

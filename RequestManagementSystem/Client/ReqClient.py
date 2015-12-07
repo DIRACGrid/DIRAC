@@ -83,7 +83,7 @@ class ReqClient( Client ):
       :param bool useFailoverProxy: if False, will not attempt to forward the request to ReqProxies
       :param int retryMainService: Amount of time we retry on the main ReqHandler in case of failures
 
-      :return S_OK/S_ERROR
+      :return: S_OK/S_ERROR
     """
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
@@ -136,7 +136,7 @@ class ReqClient( Client ):
       :param self: self reference
       :param int requestID: ID of the request. If 0, choice is made for you
 
-      :return S_OK( Request instance ) or S_OK() or S_ERROR
+      :return: S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestID )

@@ -27,7 +27,6 @@ if not 'FileCatalogManagement' in properties:
   gLogger.error( "You need to use a proxy from a group with FileCatalogManagement" )
   dexit( 5 )
 
-from DIRAC.Core.Utilities.List import sortList
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 fc = FileCatalog()
 import os
@@ -52,7 +51,7 @@ res = fc.removeFile( lfns )
 if not res['OK']:
   print "Error:", res['Message']
   dexit( 1 )
-for lfn in sortList( res['Value']['Failed'].keys() ):
+for lfn in sorted( res['Value']['Failed'].keys() ):
   message = res['Value']['Failed'][lfn]
   print 'Error: failed to remove %s: %s' % ( lfn, message )
 print 'Successfully removed %d catalog files.' % ( len( res['Value']['Successful'] ) )

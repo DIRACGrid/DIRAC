@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: TracedTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/08 15:21:32
@@ -18,10 +17,8 @@
 __RCSID__ = "$Id $"
 
 ##
-# @file TracedTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/08/08 15:21:44
-# @brief Definition of TracedTests class.
 
 ## imports 
 import unittest

@@ -1,6 +1,5 @@
 """ This is the StorageElement class.
 """
-from types import ListType
 
 __RCSID__ = "$Id$"
 # # custom duty
@@ -127,7 +126,7 @@ class StorageElementItem( object ):
 
     :param str name: SE name
     :param list plugins: requested storage plugins
-    :param vo
+    :param: vo
     """
 
     self.methodName = None
@@ -433,7 +432,7 @@ class StorageElementItem( object ):
         :param sourceSE : storageElement instance of the sourceSE
         :param protocols: protocol restriction list
 
-        :return a list protocols that fits the needs, or None
+        :return: a list protocols that fits the needs, or None
 
     """
 
@@ -529,9 +528,9 @@ class StorageElementItem( object ):
 
     if not protocol:
       protocols = self.turlProtocols
-    elif type( protocol ) is ListType:
+    elif isinstance( protocol, list ):
       protocols = protocol
-    elif type( protocol ) == type( '' ):
+    elif isinstance( protocol, basestring ):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"

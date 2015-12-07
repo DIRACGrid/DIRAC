@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    AgentModule.py
 # Author :  Adria Casajus
 ########################################################################
@@ -29,7 +28,7 @@ def _checkDir( path ):
   if not os.path.isdir( path ):
     raise Exception( 'Can not create %s' % path )
 
-class AgentModule:
+class AgentModule( object ):
   """ Base class for all agent modules
 
       This class is used by the AgentReactor Class to steer the execution of
@@ -227,9 +226,8 @@ class AgentModule:
 
   def am_createStopAgentFile( self ):
     try:
-      fd = open( self.am_getStopAgentFile(), 'w' )
-      fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
-      fd.close()
+      with open( self.am_getStopAgentFile(), 'w' ) as fd:
+        fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
     except Exception:
       pass
 

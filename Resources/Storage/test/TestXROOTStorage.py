@@ -34,6 +34,13 @@ class XROOTStorage_TestCase( unittest.TestCase ):
     moduleTested.client = self.mock_xrootlib
 
     self.moduleTested = moduleTested
+    self.parameterDict= dict(Protocol='protocol',
+                             Path='path',
+                             Host='host',
+                             Port='',
+                             SpaceTolen='spaceToken',
+                             WSPath='wspath',
+                            )
     self.testClass = self.moduleTested.XROOTStorage
 
   def tearDown( self ):
@@ -169,65 +176,63 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     ''' tests that we can instantiate one object of the tested class
     '''
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
     self.assertEqual( 'XROOTStorage', resource.__class__.__name__ )
 
   def test_init( self ):
     ''' tests that the init method does what it should do
     '''
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     self.assertEqual( 'storageName', resource.name )
-    self.assertEqual( 'XROOT' , resource.protocolName )
+    self.assertEqual( 'XROOT' , resource.pluginName )
     self.assertEqual( 'protocol'   , resource.protocol )
-    self.assertEqual( 'path'       , resource.rootdir )
-    self.assertEqual( 'host'       , resource.host )
-    self.assertEqual( ''       , resource.port )
-    self.assertEqual( '' , resource.spaceToken )
-    self.assertEqual( ''     , resource.wspath )
+    self.assertEqual( 'path'       , resource.protocolParameters['Path'] )
+    self.assertEqual( 'host'       , resource.protocolParameters['Host'] )
+    self.assertEqual( 0       , resource.protocolParameters['Port'] )
+    self.assertEqual( 0       , resource.protocolParameters['SpaceToken'] )
+    self.assertEqual( 0       , resource.protocolParameters['WSUrl'] )
 
   def test_getParameters( self ):
     ''' tests the output of getParameters method
     '''
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     res = resource.getParameters()
-    self.assertEqual( True, res['OK'] )
-    res = res[ 'Value' ]
-
     self.assertEqual( 'storageName', res['StorageName'] )
-    self.assertEqual( 'XROOT' , res['ProtocolName'] )
     self.assertEqual( 'protocol'   , res['Protocol'] )
     self.assertEqual( 'path'       , res['Path'] )
     self.assertEqual( 'host'       , res['Host'] )
-    self.assertEqual( ''       , res['Port'] )
-    self.assertEqual( '' , res['SpaceToken'] )
-    self.assertEqual( ''     , res['WSUrl'] )
+    self.assertEqual( 0       , res['Port'] )
+    self.assertEqual( 0 , res['SpaceToken'] )
+    self.assertEqual( 0     , res['WSUrl'] )
 
-  def test_getProtocolPfn( self ):
-    ''' tests the output of getProtocolPfn
-    '''
+  # def test_getProtocolPfn( self ):
+  #   ''' tests the output of getProtocolPfn
+  #   '''
+  #   parameters = dict(self.parameterDict )
+  #   parameters['Path'] = '/rootdir'
+  #   #'protocol', '/rootdir', 'host', 'port', 'spaceToken', 'wspath'
+  #   resource = self.testClass( 'storageName', parameters )
+  #   pfnDict = {}
+  #   pfnDict['Protocol'] = 'root'
+  #   pfnDict['Host'] = 'host'
+  #   pfnDict['Port'] = 'port'
+  #   pfnDict['WSUrl'] = 'WSUrl'
+  #   pfnDict['Path'] = '/subpath'
+  #   pfnDict['FileName'] = 'fileName'
 
-    resource = self.testClass( 'storageName', 'protocol', '/rootdir', 'host', 'port', 'spaceToken', 'wspath' )
-    pfnDict = {}
-    pfnDict['Protocol'] = 'root'
-    pfnDict['Host'] = 'host'
-    pfnDict['Port'] = 'port'
-    pfnDict['WSUrl'] = 'WSUrl'
-    pfnDict['Path'] = '/subpath'
-    pfnDict['FileName'] = 'fileName'
+  #   res = resource.getProtocolPfn( pfnDict, False )
+  #   self.assertEqual( True, res['OK'] )
+  #   res = res[ 'Value' ]
+  #   self.assertEqual( "root://host//rootdir/subpath/fileName", res )
 
-    res = resource.getProtocolPfn( pfnDict, False )
-    self.assertEqual( True, res['OK'] )
-    res = res[ 'Value' ]
-    self.assertEqual( "root://host//rootdir/subpath/fileName", res )
-
-    res = resource.getProtocolPfn( pfnDict, True )
-    self.assertEqual( True, res['OK'] )
-    res = res[ 'Value' ]
-    self.assertEqual( "root://host//rootdir/subpath/fileName", res )
+  #   res = resource.getProtocolPfn( pfnDict, True )
+  #   self.assertEqual( True, res['OK'] )
+  #   res = res[ 'Value' ]
+  #   self.assertEqual( "root://host//rootdir/subpath/fileName", res )
     
     
 
@@ -235,7 +240,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     ''' tests the output of getFileSize
     '''
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
     
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -271,7 +276,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_getTransportURL( self):
     """ Test the transportURL method"""
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     res = resource.getTransportURL( {} )
     self.assertEqual( True, res['OK'] )
@@ -297,7 +302,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_createDirectory( self):
     """ Test the create directory  method"""
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     res = resource.createDirectory( {} )
     self.assertEqual( True, res['OK'] )
@@ -319,7 +324,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_exists( self ):
     """ Test the existance of files and directories"""
     
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
     
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -361,7 +366,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_getCurrentURL( self):
     """ Test the current URL of a file"""
     
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
     
     res = resource.getCurrentURL( "filename" )
     self.assertEqual( True, res['OK'] )
@@ -371,7 +376,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_getDirectoryMetadata( self ):
     "Try to get the metadata of a directory"
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -405,7 +410,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     """ Try to list the directory"""
 
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -460,7 +465,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_getFileMetadata( self ):
     "Try to get the metadata of a File"
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -497,7 +502,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     '''
 
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -536,7 +541,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_isDirectory( self ):
     """ Check if a path is a directory"""
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -565,7 +570,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_isFile( self ):
     """ Check if a path is a File"""
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -625,7 +630,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     '''
 
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -665,7 +670,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     ''' tests the output of removeDirectory
     '''
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusStatDirMock = xrootStatusMock()
     statusStatDirMock.makeOk()
@@ -747,7 +752,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_getFile( self ):
     """ Test the output of getFile"""
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusMock = xrootStatusMock()
     statusMock.makeOk()
@@ -799,7 +804,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_getDirectory( self ):
     ''' tests the output of getDirectory
     '''
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
 
     statusStatDirMock = xrootStatusMock()
     statusStatDirMock.makeOk()
@@ -898,7 +903,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   def test_putFile( self ):
     """ Test the output of putFile"""
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
     import os
     os.path.exists = MagicMock( return_value = True )
 
@@ -976,7 +981,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
     # I again try to have 2 subdirs, and 1 file per subdir and 1 file a the root
 
-    resource = self.testClass( 'storageName', 'protocol', 'path', 'host', 'port', 'spaceToken', 'wspath' )
+    resource = self.testClass( 'storageName', self.parameterDict )
     import os
     os.path.isdir = MagicMock( side_effect = [True, True, True, False, True, True, False, False] )
     os.listdir = MagicMock( side_effect = [( "dir1", "dir2", "file1" ), ( "file2", ), ( "file3", )] )

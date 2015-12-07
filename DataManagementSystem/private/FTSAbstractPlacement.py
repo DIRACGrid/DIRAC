@@ -66,7 +66,7 @@ class FTSAbstractPlacement( object ):
       :param sourceSE : source SE
       :param targetSE : destination SE
 
-      :returns S_OK(FTSRoute)
+      :returns: S_OK(FTSRoute)
 
     """
     return S_ERROR( 'IMPLEMENT ME' )
@@ -74,9 +74,10 @@ class FTSAbstractPlacement( object ):
   def isRouteValid( self, route ):
     """ Check whether a given route is valid
        (whatever that means here)
+
        :param route : FTSRoute
 
-       :returns S_OK or S_ERROR(reason)
+       :returns: S_OK or S_ERROR(reason)
     """
 
     return S_ERROR( 'IMPLEMENT ME' )

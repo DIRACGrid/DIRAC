@@ -123,33 +123,35 @@ class LSFTimeLeft( object ):
           except KeyError as e:
             self.log.exception( 'Exception getting LSF configuration', '', e )
           if shared:
-            f = open( shared )
-            hostModelSection = False
-            for line in f.readlines():
-              if line.find( 'Begin HostModel' ) == 0:
-                hostModelSection = True
-                continue
-              if not hostModelSection:
-                continue
-              if line.find( 'End HostModel' ) == 0:
-                break
-              line = line.strip()
-              if line and line.split()[0] == self.cpuRef:
-                try:
-                  self.normRef = float( line.split()[1] )
-                  self.log.info( 'Reference Normalization taken from Configuration File',
-                                 '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
-                except ValueError as e:
-                  self.log.exception( 'Exception reading LSF configuration', '', e )
+            with open( shared ) as f:
+              hostModelSection = False
+              for line in f.readlines():
+                if line.find( 'Begin HostModel' ) == 0:
+                  hostModelSection = True
+                  continue
+                if not hostModelSection:
+                  continue
+                if line.find( 'End HostModel' ) == 0:
+                  break
+                line = line.strip()
+                if line and line.split()[0] == self.cpuRef:
+                  try:
+                    self.normRef = float( line.split()[1] )
+                    self.log.info( 'Reference Normalization taken from Configuration File',
+                                   '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
+                  except ValueError as e:
+                    self.log.exception( 'Exception reading LSF configuration', '', e )
           else:
             self.log.warn( 'Could not find LSF configuration' )
         else:
           self.log.error( 'Cannot source the LSF environment', ret['Message'] )
     if not self.normRef:
+      # If nothing works take this as the unit
+      self.normRef = 1.
       # If nothing worked, take the maximum defined for a Model
-      if modelMaxNorm:
-        self.normRef = modelMaxNorm
-        self.log.info( 'Reference Normalization taken from Max Model:', self.normRef )
+      # if modelMaxNorm:
+      #  self.normRef = modelMaxNorm
+      #  self.log.info( 'Reference Normalization taken from Max Model:', self.normRef )
 
     # Now get the Normalization for the current Host
     if self.host:

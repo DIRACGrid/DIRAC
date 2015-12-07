@@ -1,9 +1,10 @@
-# $HeadURL:  $
 ''' Test_RSS_Command_CEAvailabilityCommand
 
 '''
 
-import unittest, importlib, mock
+import unittest
+import importlib
+import mock
 
 from DIRAC import gLogger
 
@@ -155,6 +156,7 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
                                     }
     command = self.testClass({"ce": "cygnus.grid.rug.nl"}) 
     res = command.doCommand()
+    print res
     self.assertEqual( res['Value']['Status'], 'Production' )
 
     #verify when it's not "Production"
