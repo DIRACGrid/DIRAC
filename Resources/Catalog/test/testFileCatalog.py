@@ -126,6 +126,19 @@ def mock_fc_getSelectedCatalogs( self, desiredCatalogs ):
   return S_OK()
 
 
+def mock_fc_getEligibleCatalogs( self ):
+  """ We return an object that always returns True
+      if we ask whether an item is in it
+  """
+  class mockList( object ):
+    def __contains__( self, item ):
+      return True
+
+  x = mockList()
+  return S_OK( x )
+
+
+
 def writeList( count, reverse = None ):
   """ If reverse is none, returns write1, ...., write<count>
       if reverse is set, returns a list with <count> elements backward from read<reverse>
@@ -153,7 +166,9 @@ class TestInitialization( unittest.TestCase ):
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
                 side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
-  def test_01_init( self, mk_getSelectedCatalogs ):
+  @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
+                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+  def test_01_init( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """ Check logic of init"""
     
     # We should not be able to have 2 masters
@@ -189,7 +204,9 @@ class TestWrite(unittest.TestCase):
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
                 side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
-  def test_01_Normal( self, mk_getSelectedCatalogs ):
+  @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
+                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+  def test_01_Normal( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """Test behavior with one master and only standard write methods"""
 
     
@@ -251,7 +268,9 @@ class TestWrite(unittest.TestCase):
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
                 side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
-  def test_02_condParser( self, mk_getSelectedCatalogs ):
+  @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
+                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+  def test_02_condParser( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """Test behavior of write methode when using FCConditionParser"""
 
     fc = FileCatalog( catalogs = ['c1_True_True_True_2_0_2_0', 'c2_False_True_True_3_0_1_0', 'c3_False_True_True_3_0_1_0'] )
@@ -294,7 +313,9 @@ class TestWrite(unittest.TestCase):
     
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
                 side_effect = mock_fc_getSelectedCatalogs, autospec = True ) # autospec is for the binding of the method...
-  def test_03_noLFN( self, mk_getSelectedCatalogs ):
+  @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
+                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+  def test_03_noLFN( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """ Test the no_lfn methods """
 
 
@@ -312,11 +333,9 @@ class TestWrite(unittest.TestCase):
 
     # Fail in the non master
     res = fc.write2( "/lhcb/c2" )
-    self.assert_( not res['OK'] )
+    self.assert_( res['OK'] )
     self.assert_( 'Value' in res )
-    self.assert_( 'Message' in res )
-    self.assertEqual( res['Value']['Successful'].keys(), ['c1'] )
-    self.assertEqual( res['Value']['Failed'].keys(), ['c2'] )
+    self.assertEqual( res['Value'], 'yeah' )
 
 
 
@@ -327,7 +346,9 @@ class TestRead( unittest.TestCase ):
 
   @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getSelectedCatalogs',
                 side_effect = mock_fc_getSelectedCatalogs, autospec = True )  # autospec is for the binding of the method...
-  def test_01_oneMasterNormal( self, mk_getSelectedCatalogs ):
+  @mock.patch.object( DIRAC.Resources.Catalog.FileCatalog.FileCatalog, '_getEligibleCatalogs',
+                side_effect = mock_fc_getEligibleCatalogs, autospec = True )  # autospec is for the binding of the method...
+  def test_01_oneMasterNormal( self, mk_getSelectedCatalogs, mk_getEligibleCatalogs ):
     """Test behavior with one master and only standard read methods"""
 
 
