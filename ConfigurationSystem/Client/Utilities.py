@@ -268,6 +268,8 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
   
           # Current BDII queue info
           newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
+          if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
+            newMaxCPUTime = ''
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
           if type( caps ) == type( '' ):
