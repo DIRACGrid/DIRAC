@@ -9,10 +9,11 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 
 from DIRAC.DataManagementSystem.private import FTS3Utilities
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 
 class FTS3Agent(object):
   
@@ -20,13 +21,26 @@ class FTS3Agent(object):
   def initialize( self ):
     """ agent's initialization """
     self.fts3db = FTS3DB()
-    pass
+
+
+
+    # Getting all the possible servers
+    res = getFTS3Servers()
+    if not res['OK']:
+      gLogger.error( res['Message'] )
+      return res
+
+    srvList = res['Value']
+    serverPolicyType = opHelper().getValue( 'DataManagement/FTSPlacement/FTS3/ServerPolicy' )
+    
+    
+    self.serverPolicy = FTS3Utilities.FTS3ServerPolicy( srvList, serverPolicy = serverPolicyType )
+
 
   def getFTS3Context( self, username, group, ftsServer ):
     pass
 
-  def getFTS3Server( self ):
-    pass
+
   
   def monitorActiveJobs( self ):
     """
@@ -40,7 +54,7 @@ class FTS3Agent(object):
 
 
     # get jobs from DB
-    ret = self.fts3db.getAllActiveJobs()
+    ret = self.fts3db.getActiveJobs()
 
     activeJobs = ret['Value']
     
@@ -65,6 +79,7 @@ class FTS3Agent(object):
       res = self.fts3db.updateJobStatus( {ftsJob.ftsJobID :  {'status' : ftsJob.status,
                                                               'error' : ftsJob.error,
                                                               'completeness' : ftsJob.completeness,
+                                                              'operationID' : ftsJob.operationID,
                                                               }
                                           } )
 
@@ -72,16 +87,17 @@ class FTS3Agent(object):
         log.error( "Error updating job status", "%s, %s" % ( ftsJob.ftsGUID, res ) )
 
 
+
+
   def treatOperations( self ):
     """ * Fetch all the FTSOperations which are not finished
         * Do the call back of finished operation
         * Generate the new jobs and submit them
-        * Fetch the operation for which we need to perform the callback
     """
     
     log = gLogger.getSubLogger( "treatOperations", child = True )
 
-    res = self.fts3db.getOperationsWithFilesToSubmit()
+    res = self.fts3db.getNonFinishedOperations()
 
     if not res['OK']:
       log.error( "Could not get incomplete operations", res )
@@ -93,7 +109,10 @@ class FTS3Agent(object):
 
     for operation in incompleteOperations:
       
+      # If the operation is totally processed
+      # we perform the callback
       if operation.isTotallyProcessed():
+        log.debug( "FTS3Operation %s is totally processed" % operation.operationID )
         res = operation.callback()
         
         if not res['OK']:
@@ -102,15 +121,20 @@ class FTS3Agent(object):
         
 
       else:
+        log.debug( "FTS3Operation %s is not totally processed yet" % operation.operationID )
+
         res = operation.prepareNewJobs()
 
         if not res['OK']:
-          log.error( "Cannot prepare new Jobs", res )
+          log.error( "Cannot prepare new Jobs", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
+
 
         newJobs = res['Value']
 
+        log.debug( "FTS3Operation %s: %s new jobs to be submitted" % ( operation.operationID, len( newJobs ) ) )
+
         for ftsJob in newJobs:
-          res = self.getFTS3Server()
+          res = self.serverPolicy.chooseFTS3Server()
           if not res['OK']:
             log.error( res )
             continue
@@ -122,13 +146,13 @@ class FTS3Agent(object):
           res = ftsJob.submit( context = context )
           
           if not res['OK']:
-            log.error( res )
+            log.error( "Could not submit FTS3Job", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
             continue
 
           operation.ftsJobs.append( ftsJob )
 
           submittedFileIds = res['Value']
-          log.info( "Submitted job for %s transfers" % ( len( submittedFileIds ) ) )
+          log.info( "FTS3Operation %s: Submitted job for %s transfers" % ( operation.operationID, len( submittedFileIds ) ) )
 
 
       # new jobs are put in the DB at the same time
@@ -137,23 +161,6 @@ class FTS3Agent(object):
 
 
 
-    res = self.fts3db.getProcessedOperations()
-
-    if not res['OK']:
-      log.error( "Could not get processed operations", res )
-      return res
-
-    processedOperations = res['Value']
-
-    log.info( "Treating %s processed operations" % len( processedOperations ) )
-
-    for operation in processedOperations:
-
-      res = operation.callback()
-
-      if not res['OK']:
-        log.error( res )
-        continue
 
 
 

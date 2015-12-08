@@ -5,6 +5,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DErrno import DError
 import json
 import datetime
+import random
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
@@ -237,3 +238,83 @@ class FTS3JSONDecoder( json.JSONDecoder ):
       dataDict['__module__'] = modName
       dataDict['__datetime__'] = datetimeAttributes
       return dataDict
+
+
+class FTS3ServerPolicy( object ):
+  """
+  This class manages the policy for choosing a server
+  """
+
+  def __init__( self, initialServerList, serverPolicy = "Random" ):
+    """
+        Call the init of the parent, and initialize the list of FTS3 servers
+    """
+
+    self.log = gLogger.getSubLogger( "FTS3ServerPolicy" )
+
+    self._serverList = initialServerList
+    self._maxAttempts = len( self._serverList )
+    self._nextServerID = 0
+    
+    methName = "_%sServerPolicy"%serverPolicy.lower()
+    if not hasattr(self, methName):
+      self.log.error( 'Unknown server policy %s. Using Random instead' % serverPolicy )
+      methName = "_randomServerPolicy"
+      
+    self._policyMethod = getattr( self, methName )
+    
+
+
+  def _failoverServerPolicy( self, attempt ):
+    """
+       Returns always the server at a given position (normally the first one)
+
+       :param attempt: position of the server in the list
+    """
+    if attempt >= len( self._serverList ):
+      raise Exception( "FTS3ServerPolicy.__failoverServerPolicy: attempt to reach non existing server index" )
+    return self._serverList[attempt]
+
+  def _sequenceServerPolicy( self, _attempt ):
+    """
+       Every time the this policy is called, return the next server on the list
+    """
+
+    fts3server = self._serverList[self._nextServerID]
+    self._nextServerID = ( self._nextServerID + 1 ) % len( self._serverList )
+    return fts3server
+
+  def _randomServerPolicy( self, _attempt ):
+    """
+      return a random server from the list
+    """
+    return random.choice( self._serverList )
+
+
+  def chooseFTS3Server( self ):
+    """
+      Choose the appropriate FTS3 server depending on the policy
+    """
+
+    fts3Server = None
+    attempt = 0
+    # FIXME : need to get real value from RSS
+    ftsServerStatus = True
+
+    while not fts3Server and attempt < self._maxAttempts:
+      fts3Server = self._failoverServerPolicy( attempt = attempt )
+      
+        # FIXME : I need to get the FTS server status from RSS
+#       ftsStatusFromRss = rss.ftsStatusOrSomethingLikeThat
+
+      if not ftsServerStatus:
+        self.log.warn( 'FTS server %s is not in good shape. Choose another one' % fts3Server )
+        fts3Server = None
+      attempt += 1
+
+
+    if fts3Server:
+      return S_OK( fts3Server )
+
+    return S_ERROR ( "Could not find an FTS3 server (max attempt reached)" )
+

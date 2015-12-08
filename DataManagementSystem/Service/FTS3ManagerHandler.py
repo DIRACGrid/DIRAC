@@ -10,7 +10,7 @@ Service handler for FT3SDB using DISET
 __RCSID__ = "$Id$"
 
 import json
-from types import DictType, IntType, LongType, ListType, StringTypes
+from types import DictType, IntType, LongType, ListType, StringTypes, NoneType
 
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -78,15 +78,17 @@ class FTS3ManagerHandler( RequestHandler ):
     return S_OK( opJSON )
 
 
-  types_getAllActiveJobs = [ ( LongType, IntType ) ]
+  types_getActiveJobs = [ ( LongType, IntType ), [NoneType ] + list( StringTypes ), StringTypes ]
   @classmethod
-  def export_getAllActiveJobs( cls, limit ):
+  def export_getActiveJobs( cls, limit, lastMonitor, jobAssignmentTag ):
     """ Get all the FTSJobs that are not in a final state
         :param limit: max number of jobs to retrieve
+        :param jobAssignmentTag: tag to put in the DB
+        :param lastMonitor: jobs monitored earlier than the given date
         :return: json list of FTS3Job
     """
 
-    res = cls.fts3db.getAllActiveJobs( limit = limit )
+    res = cls.fts3db.getActiveJobs( limit = limit, lastMonitor = lastMonitor, jobAssignmentTag = jobAssignmentTag )
     if not res['OK']:
       return res
 
@@ -114,41 +116,58 @@ class FTS3ManagerHandler( RequestHandler ):
 
     return cls.fts3db.updateJobStatus( jobStatusDict )
 
-  types_getProcessedOperations = [( LongType, IntType )]
+#   types_getProcessedOperations = [( LongType, IntType )]
+#   @classmethod
+#   def export_getProcessedOperations( cls, limit ):
+#     """ Get all the FTS3Operations that are missing a callback, i.e.
+#         in 'Processed' state
+#         :param limit: max number of operations to retrieve
+#         :return: json list of FTS3Operation
+#     """
+#
+#     res = cls.fts3db.getProcessedOperations( limit = limit )
+#     if not res['OK']:
+#       return res
+#
+#     processedOperations = res['Value']
+#     processedOperationsJSON = json.dumps( processedOperations, cls = FTS3JSONEncoder )
+#
+#     return S_OK( processedOperationsJSON )
+
+  types_getNonFinishedOperations = [( LongType, IntType ), StringTypes]
   @classmethod
-  def export_getProcessedOperations( cls, limit ):
+  def export_getNonFinishedOperations( cls, limit, operationAssignmentTag ):
     """ Get all the FTS3Operations that are missing a callback, i.e.
         in 'Processed' state
         :param limit: max number of operations to retrieve
         :return: json list of FTS3Operation
     """
-    
-    res = cls.fts3db.getProcessedOperations( limit = limit )
+
+    res = cls.fts3db.getNonFinishedOperations( limit = limit, operationAssignmentTag = operationAssignmentTag )
     if not res['OK']:
       return res
 
-    processedOperations = res['Value']
-    processedOperationsJSON = json.dumps( processedOperations, cls = FTS3JSONEncoder )
+    nonFinishedOperations = res['Value']
+    nonFinishedOperationsJSON = json.dumps( nonFinishedOperations, cls = FTS3JSONEncoder )
 
-    return S_OK( processedOperationsJSON )
+    return S_OK( nonFinishedOperationsJSON )
 
 
-
-  types_getOperationsWithFilesToSubmit = [( LongType, IntType )]
-  @classmethod
-  def export_getOperationsWithFilesToSubmit( cls, limit ):
-    """ Get all the FTS3Operations that have files in New or Failed state
-        (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
-         can retry)
-        :param limit: max number of operation to retrieve
-        :return: json list of FTS3Operation
-    """
-
-    res = cls.fts3db.getOperationsWithFilesToSubmit( limit = limit )
-    if not res['OK']:
-      return res
-
-    operations = res['Value']
-    operationsJSON = json.dumps( operations, cls = FTS3JSONEncoder )
-
-    return S_OK( operationsJSON )
+#   types_getOperationsWithFilesToSubmit = [( LongType, IntType )]
+#   @classmethod
+#   def export_getOperationsWithFilesToSubmit( cls, limit ):
+#     """ Get all the FTS3Operations that have files in New or Failed state
+#         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
+#          can retry)
+#         :param limit: max number of operation to retrieve
+#         :return: json list of FTS3Operation
+#     """
+#
+#     res = cls.fts3db.getOperationsWithFilesToSubmit( limit = limit )
+#     if not res['OK']:
+#       return res
+#
+#     operations = res['Value']
+#     operationsJSON = json.dumps( operations, cls = FTS3JSONEncoder )
+#
+#     return S_OK( operationsJSON )

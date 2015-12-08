@@ -4,12 +4,20 @@ from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+
+
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
+from DIRAC.RequestManagementSystem.Client.File import File as rmsFile
 
 from sqlalchemy import orm
 
@@ -84,7 +92,9 @@ class FTS3Operation( FTS3Serializable ):
 
     ########################
 
-
+    self.reqClient = None
+    self.dManager = None
+    self._log = None
     self.init_on_load()
 
 
@@ -98,8 +108,11 @@ class FTS3Operation( FTS3Serializable ):
 
     self.rssClient = ResourceStatus()
 
-
-    self._log = gLogger.getSubLogger( "req_%s" % self.rmsReqID , True )
+    opID = getattr( self, 'operationID' )
+    loggerName = '%s/' % opID if opID else ''
+    loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID )
+    
+    self._log = gLogger.getSubLogger( loggerName , True )
 
 
   def isTotallyProcessed( self ):
@@ -127,6 +140,7 @@ class FTS3Operation( FTS3Serializable ):
         we can make more attempts
 
         :param maxAttemptsPerFile: the maximum number of attempts to be tried for a file
+
         :return List of FTS3File to submit
     """
 
@@ -199,6 +213,8 @@ class FTS3Operation( FTS3Serializable ):
     """ Trigger the callback once all the FTS interactions are done
         and update the status of the Operation to 'Finished' if successful
     """
+    self.reqClient = ReqClient()
+
     res = self._callback()
 
     if res['OK']:
@@ -217,16 +233,94 @@ class FTS3Operation( FTS3Serializable ):
     raise NotImplementedError( "You should not be using the base class" )
   
 
-   
+  def _upadteRmsOperationStatus( self ):
+    """ Update the status of the Files in the rms operation
+          :return: S_OK with a dict:
+                        * request: rms Request object
+                        * operation: rms Operation object
+                        * ftsFilesByTarget: dict where keys are the SE, and values the list of ftsFiles that were successful
+    """
+
+    log = self._log.getSubLogger( "_upadteRmsOperationStatus/%s/%s" % ( getattr( self, 'operationID' ), self.rmsReqID ), child = True )
+
+
+
+    res = self.reqClient.getRequest( self.rmsReqID )
+    if not res['OK']:
+      return res
+
+    request = res['Value']
+
+    operation = request.getWaiting()
+    if not operation["OK"]:
+      log.error( "Unable to find 'Scheduled' ReplicateAndRegister operation in request" )
+      res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
+      if not res['OK']:
+        log.error( "Could not put back the request !", res['Message'] )
+      return S_ERROR( "Could not find scheduled operation" )
+
+    operation = res['Value']
+
+    # We index the files of the operation by their IDs
+    rmsFileIDs = {}
+    
+    for opFile in operation:
+      rmsFileIDs[opFile.FileID] = opFile
+
+
+    # Files that failed to transfer
+    defunctRmsFileIDs = set()
+
+    # { SE : [FTS3Files] }
+    ftsFilesByTarget = {}
+    for ftsFile in self.ftsFiles:
+
+      if ftsFile.status == 'Defunct':
+        log.error( "File failed to transfer, setting it to failed in RMS", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
+        defunctRmsFileIDs.add( ftsFile.rmsFileID )
+        continue
+      
+      if ftsFile.status == 'Canceled':
+        log.info( "File canceled, setting it Failed in RMS", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
+        defunctRmsFileIDs.add( ftsFile.rmsFileID )
+        continue
+
+      # SHOULD NEVER HAPPEN !
+      if ftsFile.status != 'Done':
+        log.error( "Callback called with file in non terminal state", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
+        res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
+        if not res['OK']:
+          log.error( "Could not put back the request !", res['Message'] )
+        return S_ERROR( "Callback called with file in non terminal state" )
+
+
+      ftsFilesByTarget.setdefault( ftsFile.targetSE, [] ).append( ftsFile )
+
+
+    # Now, we set the rmsFile as done in the operation, providing
+    # that they are not in the defunctFiles.
+    # We cannot do this in the previous list because in the FTS system,
+    # each destination is a separate line in the DB but not in the RMS
+    
+    for ftsFile in self.ftsFiles:
+      opFile = rmsFileIDs[ftsFile.rmsFileID]
+
+      opFile.Status = 'Failed' if ftsFile.rmsFileID in defunctRmsFileIDs else 'Done'
+
+
+    return S_OK( { 'request' : request, 'operation' : operation, 'ftsFilesByTarget' : ftsFilesByTarget} )
+
+       
 
 class FTS3TransferOperation(FTS3Operation):
   """ Class to be used for a Replication operation
   """
+  
 
 
   def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
 
-    log = gLogger.getSubLogger( "_prepareNewJobs", child = True )
+    log = self._log.getSubLogger( "_prepareNewJobs", child = True )
 
     filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
     log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
@@ -280,9 +374,55 @@ class FTS3TransferOperation(FTS3Operation):
     return S_OK( newJobs )
 
 
+  def _callback( self ):
+    """" After a Transfer operation, we have to update the matching Request in the
+        RMS, and add the registration operation just before the ReplicateAndRegister one
+
+        NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
+    """
+
+    log = self._log.getSubLogger( "callback", child = True )
+
+    res = self._upadteRmsOperationStatus()
+
+    if not res['OK']:
+      return res
+
+    ftsFilesByTarget = res['Value']['ftsFilesByTarget']
+    request = res['Value']['request']
+    operation = res['Value']['operation']
 
 
+    log.info( "will create %s 'RegisterReplica' operations" % len( ftsFilesByTarget ) )
 
+    for target, ftsFileList in ftsFilesByTarget.iteritems():
+      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target,
+                                                                                            len( ftsFileList ) ) )
+      registerOperation = rmsOperation()
+      registerOperation.Type = "RegisterReplica"
+      registerOperation.Status = "Waiting"
+      registerOperation.TargetSE = target
+      registerOperation.Catalog = operation.Catalog
+
+      targetSE = StorageElement( target )
+      for ftsFile in ftsFileList:
+        opFile = rmsFile()
+        opFile.LFN = ftsFile.lfn
+        opFile.LFN = ftsFile.checksum
+        opFile.Size = ftsFile.size
+        res = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
+
+        # This should never happen !
+        if not res["OK"]:
+          log.error( "Could not get url", res['Message'] )
+          continue
+        opFile.PFN = res["Value"]
+        registerOperation.addFile( opFile )
+
+      request.insertBefore( registerOperation, operation )
+
+
+    return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
 
 
 
@@ -292,7 +432,7 @@ class FTS3RemovalOperation( FTS3Operation ):
 
   def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
 
-    log = gLogger.getSubLogger( "_prepareNewJobs", child = True )
+    log = self._log.getSubLogger( "_prepareNewJobs", child = True )
 
     filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
     log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
@@ -323,6 +463,53 @@ class FTS3RemovalOperation( FTS3Operation ):
 
     return S_OK( newJobs )
 
+
+  def _callback( self ):
+    """" After a Removal operation, we have to update the matching Request in the
+        RMS, and add the removal operation just before the RemoveReplica/RemoveFile one
+
+        NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
+    """
+
+    log = self._log.getSubLogger( "callback", child = True )
+
+    res = self._upadteRmsOperationStatus()
+
+    if not res['OK']:
+      return res
+
+    ftsFilesByTarget = res['Value']['ftsFilesByTarget']
+    request = res['Value']['request']
+    operation = res['Value']['operation']
+
+
+    log.info( "will create %s 'RegisterReplica' operations" % len( ftsFilesByTarget ) )
+
+    for target, ftsFileList in ftsFilesByTarget.iteritems():
+      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target,
+                                                                                            len( ftsFileList ) ) )
+      registerOperation = rmsOperation()
+      registerOperation.Type = "RegisterReplica"
+      registerOperation.Status = "Waiting"
+      registerOperation.TargetSE = target
+
+      targetSE = StorageElement( target )
+      for ftsFile in ftsFileList:
+        opFile = rmsFile()
+        opFile.LFN = ftsFile.lfn
+        res = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
+
+        # This should never happen !
+        if not res["OK"]:
+          log.error( "Could not get url", res['Message'] )
+          continue
+        opFile.PFN = res["Value"]
+        registerOperation.addFile( opFile )
+
+      request.insertBefore( registerOperation, operation )
+
+
+    return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
 
 
 class FTS3StagingOperation( FTS3Operation ):

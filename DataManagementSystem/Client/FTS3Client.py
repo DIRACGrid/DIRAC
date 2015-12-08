@@ -49,20 +49,20 @@ class FTS3Client(Client):
       return S_ERROR("Exception when decoding the FTS3Operation object %s"%e)
 
 
-  def getAllActiveJobs( self, limit = 20, ** kwargs ):
+  def getActiveJobs( self, limit = 20, lastMonitor = None, jobAssignmentTag = 'Assigned', ** kwargs ):
     """ Get all the FTSJobs that are not in a final state
         :param limit: max number of jobs to retrieve
         :return: list of FTS3Jobs
     """
-    res = self._getRPC( **kwargs ).getAllActiveJobs( limit )
+    res = self._getRPC( **kwargs ).getActiveJobs( limit, lastMonitor, jobAssignmentTag )
     if not res['OK']:
       return res
 
-    allActiveJobsJSON = res['Value']
+    activeJobsJSON = res['Value']
 
     try:
-      allActiveJobs = json.loads( allActiveJobsJSON, cls = FTS3JSONDecoder )
-      return S_OK( allActiveJobs )
+      activeJobs = json.loads( activeJobsJSON, cls = FTS3JSONDecoder )
+      return S_OK( activeJobs )
     except Exception as e:
       return S_ERROR( "Exception when decoding the active jobs json %s" % e )
 
@@ -84,27 +84,47 @@ class FTS3Client(Client):
     return self._getRPC( **kwargs ).updateJobStatus( jobStatusDict )
 
 
-  def getProcessedOperations( self, limit = 20, **kwargs ):
-    """ Get all the FTS3Operations that are missing a callback, i.e.
-        in 'Processed' state
-        :param limit: max number of operations to retrieve
-        :return: json list of FTS3Operation
-    """
+#   def getProcessedOperations( self, limit = 20, **kwargs ):
+#     """ Get all the FTS3Operations that are missing a callback, i.e.
+#         in 'Processed' state
+#         :param limit: max number of operations to retrieve
+#         :return: json list of FTS3Operation
+#     """
+#
+#     res = self._getRPC( **kwargs ).getProcessedOperations( limit )
+#     if not res['OK']:
+#       return res
+#
+#     operationsJSON = res['Value']
+#
+#     try:
+#       operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
+#       return S_OK( operations )
+#     except Exception as e:
+#       return S_ERROR( "Exception when decoding the processed operations json %s" % e )
 
-    res = self._getRPC( **kwargs ).getProcessedOperations( limit )
-    if not res['OK']:
-      return res
 
-    operationsJSON = res['Value']
+#   def getOperationsWithFilesToSubmit( self, limit = 20, **kwargs ):
+#     """ Get all the FTS3Operations that have files in New or Failed state
+#         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
+#          can retry)
+#          :param limit: max number of jobs to retrieve
+#         :return: json list of FTS3Operation
+#     """
+#
+#     res = self._getRPC( **kwargs ).getOperationsWithFilesToSubmit( limit )
+#     if not res['OK']:
+#       return res
+#
+#     operationsJSON = res['Value']
+#
+#     try:
+#       operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
+#       return S_OK( operations )
+#     except Exception as e:
+#       return S_ERROR( "Exception when decoding the operations with files to submit json %s" % e )
 
-    try:
-      operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
-      return S_OK( operations )
-    except Exception as e:
-      return S_ERROR( "Exception when decoding the processed operations json %s" % e )
-
-
-  def getOperationsWithFilesToSubmit( self, limit = 20, **kwargs ):
+  def getNonFinishedOperations( self, limit = 20, operationAssignmentTag = "Assigned", **kwargs ):
     """ Get all the FTS3Operations that have files in New or Failed state
         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
          can retry)
@@ -112,7 +132,7 @@ class FTS3Client(Client):
         :return: json list of FTS3Operation
     """
 
-    res = self._getRPC( **kwargs ).getOperationsWithFilesToSubmit( limit )
+    res = self._getRPC( **kwargs ).getNonFinishedOperations( limit, operationAssignmentTag )
     if not res['OK']:
       return res
 
@@ -122,4 +142,4 @@ class FTS3Client(Client):
       operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
       return S_OK( operations )
     except Exception as e:
-      return S_ERROR( "Exception when decoding the operations with files to submit json %s" % e )
+      return S_ERROR( "Exception when decoding the non finished operations json %s" % e )
