@@ -174,9 +174,7 @@ class FileCatalog( object ):
                                 the specific condition for the catalog will be given
 
       CAUTION !!! If the method is a write no_lfn method, then the return value are completely different
-                  If success, you get the result of the master catalog only.
-                  If not, you get an S_ERROR with Value, in which successful contains the successful catalogs
-                  failed contains the failed catalogs.
+                  We only return the result of the master catalog
 
 
     """
