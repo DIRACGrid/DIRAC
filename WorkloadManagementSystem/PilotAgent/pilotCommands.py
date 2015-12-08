@@ -37,7 +37,7 @@ class GetPilotVersion( CommandBase ):
       This assures that a version is always got even on non-standard Grid resources.
   """
 
-  def execute(self):
+  def execute( self ):
     """ Standard method for pilot commands
     """
     if self.pp.releaseVersion:
@@ -54,7 +54,7 @@ class GetPilotVersion( CommandBase ):
                                    self.log,
                                    timeout = 120 )
       if not result:
-        self.log.error( "Failed to get pilot version, exiting ...")
+        self.log.error( "Failed to get pilot version, exiting ..." )
         sys.exit( 1 )
       fp = open( self.pp.pilotCFGFile + '-local', 'r' )
       pilotCFGFileContent = json.load( fp )
@@ -281,14 +281,14 @@ class InstallDIRAC( CommandBase ):
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
       - download, by default, the CAs
-      - creates a standard or custom (defined by self.pp.localConfigFile) cfg file 
+      - creates a standard or custom (defined by self.pp.localConfigFile) cfg file
         to be used where all the pilot configuration is to be set, e.g.:
       - adds to it basic info like the version
       - adds to it the security configuration
 
       If there is more than one command calling dirac-configure, this one should be always the first one called.
 
-      Nota Bene: Further commands should always call dirac-configure using the options -FDMH 
+      Nota Bene: Further commands should always call dirac-configure using the options -FDMH
       Nota Bene: If custom cfg file is created further commands should call dirac-configure with
                  "-O %s %s" % ( self.pp.localConfigFile, self.pp.localConfigFile )
 
@@ -323,7 +323,7 @@ class ConfigureBasics( CommandBase ):
 
     if self.pp.debugFlag:
       self.cfg.append( '-ddd' )
-    if self.pp.localConfigFile:  
+    if self.pp.localConfigFile:
       self.cfg.append( '-O %s' % self.pp.localConfigFile )
 
     configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
@@ -373,14 +373,19 @@ class CheckCECapabilities( CommandBase ):
     """ Setup CE/Queue Tags
     """
 
+    cfg = []
     if self.pp.useServerCertificate:
-      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+      cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+      cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+      cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
     if self.pp.localConfigFile:
-      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+      cfg.append( self.pp.localConfigFile )  # this file is as input
 
 
-    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
-                                                                               " ".join( self.cfg ) )
+    checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
+                                                                        self.pp.ceName,
+                                                                        self.pp.queueName,
+                                                                        " ".join( cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
 
     import json
@@ -390,9 +395,15 @@ class CheckCECapabilities( CommandBase ):
     if resourceDict.get( 'Tag' ):
       self.pp.tags.append( resourceDict['Tag'] )
       self.cfg.append( '-FDMH' )
+
+      if self.pp.useServerCertificate:
+        self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+        self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+        self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+
       if self.pp.localConfigFile:
-        self.cfg.append( '-O %s' % self.pp.localConfigFile )
-        self.cfg.append( self.pp.localConfigFile )
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
+        self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
       if self.debugFlag:
         self.cfg.append( '-ddd' )
@@ -405,8 +416,9 @@ class CheckCECapabilities( CommandBase ):
         self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
 
 class CheckWNCapabilities( CommandBase ):
-  """ Used to get  CE tags.
+  """ Used to get capabilities specific to the Worker Node.
   """
+
   def __init__( self, pilotParams ):
     """ c'tor
     """
@@ -417,28 +429,43 @@ class CheckWNCapabilities( CommandBase ):
     """ Discover #Processors and memory
     """
 
-    retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
+    cfg = []
+    if self.pp.useServerCertificate:
+      cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
+      cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+      cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+    if self.pp.localConfigFile:
+      cfg.append( self.pp.localConfigFile )  # this file is as input
+
+    checkCmd = "dirac-wms-get-wn-parameters %s" % ' '.join( cfg )
+
+    retCode, result = self.executeAndGetOutput( checkCmd , self.pp.installEnv )
     result = result.split( ' ' )
-    NumberOfProcessor = result[0]
-    MaxRAM = result[1]
+    NumberOfProcessor = int( result[0] )
+    MaxRAM = int( result[1] )
 
     if NumberOfProcessor or MaxRAM:
       self.cfg.append( '-FDMH' )
+
+      if self.pp.useServerCertificate:
+        self.cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
+        self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
+        self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
       if self.pp.localConfigFile:
-        self.cfg.append( '-O %s' % self.pp.localConfigFile )
-        self.cfg.append( self.pp.localConfigFile )
+        self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
+        self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
       if NumberOfProcessor:
-        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%s"' % ','.join( NumberOfProcessor ) )
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % NumberOfProcessor )
       else:
         self.log.warn( "Could not retrieve number of processors" )
       if MaxRAM:
-        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%s"' % ''.join( MaxRAM ) )
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % MaxRAM )
       else:
-        self.log.warn( "Could not retrieve memory" )
+        self.log.warn( "Could not retrieve MaxRAM" )
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
@@ -506,7 +533,7 @@ class ConfigureSite( CommandBase ):
 
     # these are needed as this is not the fist time we call dirac-configure
     self.cfg.append( '-FDMH' )
-    if self.pp.localConfigFile:  
+    if self.pp.localConfigFile:
       self.cfg.append( '-O %s' % self.pp.localConfigFile )
       self.cfg.append( self.pp.localConfigFile )
 
@@ -547,8 +574,8 @@ class ConfigureSite( CommandBase ):
       pilotRef = 'sshge://' + self.pp.ceName + '/' + os.environ['JOB_ID']
     # Generic JOB_ID
     elif os.environ.has_key( 'JOB_ID' ):
-       self.pp.flavour = 'Generic'
-       pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
+      self.pp.flavour = 'Generic'
+      pilotRef = 'generic://' + self.pp.ceName + '/' + os.environ['JOB_ID']
 
     # Condor
     if os.environ.has_key( 'CONDOR_JOBID' ):
@@ -584,7 +611,7 @@ class ConfigureSite( CommandBase ):
     if os.environ.has_key( 'OSG_WN_TMP' ):
       self.pp.flavour = 'OSG'
 
-    #GLOBUS Computing Elements
+    # GLOBUS Computing Elements
     if 'GLOBUS_GRAM_JOB_CONTACT' in os.environ:
       self.pp.flavour = 'GLOBUS'
       pilotRef = os.environ['GLOBUS_GRAM_JOB_CONTACT']
@@ -691,7 +718,7 @@ class ConfigureArchitecture( CommandBase ):
     cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS
     if self.pp.useServerCertificate:
       cfg.append( '--UseServerCertificate' )
-    if self.pp.localConfigFile:    
+    if self.pp.localConfigFile:
       cfg.append( '-O %s' % self.pp.localConfigFile )  # our target file for pilots
       cfg.append( self.pp.localConfigFile )  # this file is also an input
     if self.pp.debugFlag:
@@ -800,8 +827,8 @@ class LaunchAgent( CommandBase ):
     self.inProcessOpts.append( '-o /LocalSite/CPUTime=%s' % ( int( self.pp.jobCPUReq ) ) )
     # To prevent a wayward agent picking up and failing many jobs.
     self.inProcessOpts.append( '-o MaxTotalJobs=%s' % 10 )
-    self.jobAgentOpts= ['-o MaxCycles=%s' % self.pp.maxCycles]
-    
+    self.jobAgentOpts = ['-o MaxCycles=%s' % self.pp.maxCycles]
+
     if self.debugFlag:
       self.jobAgentOpts.append( '-o LogLevel=DEBUG' )
 
@@ -826,7 +853,7 @@ class LaunchAgent( CommandBase ):
       self.inProcessOpts.append( self.pp.localConfigFile )
 
 
-  def __startJobAgent(self):
+  def __startJobAgent( self ):
     """ Starting of the JobAgent
     """
 

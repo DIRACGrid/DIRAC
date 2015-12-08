@@ -500,9 +500,8 @@ for vo in vomsDict:
           DIRAC.gLogger.error( 'Port = %s' % port )
           DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
           continue
-        fd = open( hostFilePath, "wb" )
-        fd.write( "%s\n%s\n" % ( DN, CA ) )
-        fd.close()
+        with open( hostFilePath, "wb" ) as fd:
+          fd.write( "%s\n%s\n" % ( DN, CA ) )
         vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, port, DN, voName ) )
         DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
       except:
@@ -510,9 +509,8 @@ for vo in vomsDict:
         error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
   try:
     vomsesFilePath = os.path.join( vomsesDirPath, voName )
-    fd = open( vomsesFilePath, "wb" )
-    fd.write( "%s\n" % "\n".join( vomsesLines ) )
-    fd.close()
+    with open( vomsesFilePath, "wb" ) as fd:
+      fd.write( "%s\n" % "\n".join( vomsesLines ) )
     DIRAC.gLogger.notice( "Created vomses file %s" % vomsesFilePath )
   except:
     DIRAC.gLogger.exception( "Could not generate vomses file" )

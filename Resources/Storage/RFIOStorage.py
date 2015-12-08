@@ -157,7 +157,7 @@ class RFIOStorage( StorageBase ):
 
   def __permissionsToInt( self, permissions ):
     mode = permissions[1:]
-    return sum( [ pow( 2, 8 - i ) * int( mode[i] != '-' ) for i in range( 0, 9 )] )
+    return sum( pow( 2, 8 - i ) * int( mode[i] != '-' ) for i in range( 0, 9 ) )
 
   def __getFileMetadata( self, urls ):
     gLogger.debug( "RFIOStorage.__getPathMetadata: Attempting to get additional metadata for %s files." % ( len( urls ) ) )

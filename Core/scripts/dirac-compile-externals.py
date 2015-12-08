@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-compile-externals
 # Author : Adria Casajus
 ########################################################################
@@ -41,27 +40,25 @@ def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = [] ):
     basePath = os.path.dirname( os.path.realpath( __file__ ) )
     DIRACRoot = findDIRACRoot( basePath )
   try:
-    fd = open( os.path.join( DIRACRoot, filePath ), "r" )
-    data = fd.readlines()
-    fd.close()
+    with open( os.path.join( DIRACRoot, filePath ), "r" ) as fd:
+      data = fd.readlines()
   except IOError, e:
     print "Could not open %s: %s" % ( filePath, e )
     sys.exit( 1 )
   destFilePath = os.path.join( destPath, os.path.basename( filePath ) )
   try:
-    fd = open( destFilePath, "w" )
-  except IOError, e:
+    with open( destFilePath, "w" ) as fd: 
+      for line in data:
+        found = False
+        for fstr in filterLines:
+          if line.find( fstr ) > -1:
+            found = True
+            break
+        if not found:
+          fd.write( line )
+  except IOError as e:
     print "Could not write into %s: %s" % ( destFilePath, e )
     sys.exit( 1 )
-  for line in data:
-    found = False
-    for fstr in filterLines:
-      if line.find( fstr ) > -1:
-        found = True
-        break
-    if not found:
-      fd.write( line )
-  fd.close()
   if isExecutable:
     os.chmod( destFilePath, executablePerms )
 
@@ -177,9 +174,8 @@ if __name__ == "__main__":
   DIRACRoot = findDIRACRoot( basePath )
   if DIRACRoot:
     platformPath = os.path.join( DIRACRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-    platFD = open( platformPath, "r" )
-    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-    platFD.close()
+    with open( platformPath, "r" ) as platFD:
+      Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
     platform = Platform.getPlatformString()
   
   if not compDest:
@@ -221,10 +217,8 @@ if __name__ == "__main__":
   
   #Load CFG
   cfgPath = os.path.join( externalsDir, "CFG.py" )
-  cfgFD = open( cfgPath, "r" )
-  CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
-  cfgFD.close()
-  
+  with open( cfgPath, "r" ) as cfgFD:
+    CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
   buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
   
   if compType not in buildCFG.listSections():

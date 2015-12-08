@@ -1,7 +1,6 @@
 """ DIRAC API Base Class """
 
 from DIRAC                          import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry         import getDNForUsername
 from DIRAC.Core.Utilities.Version   import getCurrentVersion
@@ -31,9 +30,9 @@ def _printFormattedDictList( dictList, fields, uniqueField, orderBy ):
   for field in fields[1:]:
     headString = "%s %s" % ( headString, field.ljust( fieldWidths[field] + 5 ) )
   print headString
-  for orderValue in sortList( orderDict.keys() ):
+  for orderValue in sorted( orderDict.keys() ):
     uniqueFields = orderDict[orderValue]
-    for uniqueField in sortList( uniqueFields ):
+    for uniqueField in sorted( uniqueFields ):
       myDict = dictFields[uniqueField]
       outStr = "%s" % str( myDict[fields[0]] ).ljust( fieldWidths[fields[0]] + 5 )
       for field in fields[1:]:

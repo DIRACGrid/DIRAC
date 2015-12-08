@@ -92,7 +92,7 @@ EMYSQL = 1131
 EFILESIZE = 1601
 EGFAL = 1602
 EBADCKS = 1603
-
+EFCERR = 1604
 
 
 
@@ -134,6 +134,7 @@ dErrorCode = {
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
                1603 : 'EBADCKS',
+               1604 : "EFCERR"
                }
 
 
@@ -174,6 +175,7 @@ dStrError = {
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",
               EBADCKS : "Bad checksum",
+              EFCERR : "FileCatalog error"
 }
 
 

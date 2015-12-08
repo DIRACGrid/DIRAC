@@ -23,7 +23,6 @@ Script.parseCommandLine( ignoreErrors = False )
 import DIRAC
 from DIRAC                                                          import gConfig, gLogger
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Core.Utilities.List                                      import sortList
 import os
 
 args = Script.getPositionalArgs()
@@ -38,7 +37,7 @@ if os.path.exists( inputFileName ):
   inputFile = open( inputFileName, 'r' )
   string = inputFile.read()
   inputFile.close()
-  lfns = sortList( string.splitlines() )
+  lfns = sorted( string.splitlines() )
 else:
   lfns = [inputFileName]
 

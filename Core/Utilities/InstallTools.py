@@ -720,7 +720,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   sectionName = result[ 'Value' ]
 
   componentModule = component
-  if "Module" in specialOptions:
+  if "Module" in specialOptions and specialOptions[ 'Module' ]:
     componentModule = specialOptions['Module']
 
   compCfg = CFG()
@@ -2505,7 +2505,7 @@ def installDatabase( dbName, monitorFlag = True ):
 
   # now creating the Database
   result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
-  if not result['OK']:
+  if not result['OK'] and not 'database exists' in result[ 'Message' ]:
     gLogger.error( 'Failed to create databases', result['Message'] )
     if exitOnError:
       DIRAC.exit( -1 )
@@ -2700,28 +2700,6 @@ def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' )
   gLogger.always( str( localCfg['LocalSite'] ) )
 
   return S_OK( ceNameList )
-
-def configureLocalDirector( ceNameList = '' ):
-  """
-  Install a Local DIRAC TaskQueueDirector, basically write the proper configuration file
-  """
-  if ceNameList:
-    result = setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
-    if not result['OK']:
-      return result
-    result = MonitoringUtilities.monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
-    if not result[ 'OK' ]:
-      return result
-    # Now write a local Configuration for the Director
-
-  directorCfg = CFG()
-  directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by InstallTools' )
-  directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by InstallTools' )
-  directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by InstallTools' )
-  result = addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
-  if not result['OK']:
-    return result
-  return runsvctrlComponent( 'WorkloadManagement', 'TaskQueueDirector', 't' )
 
 def execCommand( timeout, cmd ):
   """

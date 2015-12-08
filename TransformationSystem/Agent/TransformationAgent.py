@@ -618,7 +618,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
   def __filesInCache( self, transID ):
     cache = self.replicaCache.get( transID, {} )
-    return sum( [len( lfns ) for lfns in cache.values()] )
+    return sum( len( lfns ) for lfns in cache.values() )
 
   @gSynchro
   def __writeCache( self, transID = None ):

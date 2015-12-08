@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 """ File Catalog Client Command Line Interface. """
 
 __RCSID__ = "$Id$"
@@ -12,6 +11,7 @@ import os
 import atexit
 import readline
 import datetime
+import time
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
-  """
+  """ Line oriented command interpreter for administering DIRAC components
   """
   def __errMsg( self, errMsg ):
     gLogger.error( "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg ) )
@@ -633,7 +633,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         # Add component section with specific parameters only
         result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
                                                      getCSExtensions(), hostSetup, specialOptions, 
-                                                     addDefaultOptions = False )
+                                                     addDefaultOptions = True )
       else:  
         # Install component section
         result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
@@ -660,6 +660,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         cpu = result[ 'Value' ][ 'CPUModel' ]
       hostname = self.host
       if component == 'ComponentMonitoring':
+        # Make sure that the service is running before trying to use it
+        nTries = 0
+        maxTries = 5
+        mClient = ComponentMonitoringClient()
+        result = mClient.ping()
+        while not result[ 'OK' ] and nTries < maxTries:
+          time.sleep( 3 )
+          result = mClient.ping()
+          nTries = nTries + 1
+
+        if not result[ 'OK' ]:
+          self.__errMsg( 'ComponentMonitoring service taking too long to start. Installation will not be logged into the database' )
+          return
+
         result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
         if not result['OK']:
           self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
@@ -1014,9 +1028,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     argss = args.split()
     fname = argss[0]
-    execfile = open( fname, 'r' )
-    lines = execfile.readlines()
-    execfile.close()
+    with open( fname, 'r' ) as executedfile:
+      lines = executedfile.readlines()
 
     for line in lines:
       if line.find( '#' ) != -1 :

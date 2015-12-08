@@ -499,18 +499,16 @@ class DiracAdmin( API ):
     outputs = result['Value']
     if outputs.has_key( 'StdOut' ):
       stdout = '%s/std.out' % ( outputPath )
-      fopen = open( stdout, 'w' )
-      fopen.write( outputs['StdOut'] )
-      fopen.close()
+      with open( stdout, 'w' ) as fopen:
+        fopen.write( outputs['StdOut'] )
       self.log.verbose( 'Standard output written to %s' % ( stdout ) )
     else:
       self.log.warn( 'No standard output returned' )
 
     if outputs.has_key( 'StdError' ):
       stderr = '%s/std.err' % ( outputPath )
-      fopen = open( stderr, 'w' )
-      fopen.write( outputs['StdError'] )
-      fopen.close()
+      with open( stderr, 'w' ) as fopen:
+        fopen.write( outputs['StdError'] )
       self.log.verbose( 'Standard error written to %s' % ( stderr ) )
     else:
       self.log.warn( 'No standard error returned' )
@@ -559,18 +557,16 @@ class DiracAdmin( API ):
     outputs = result['Value']
     if outputs.has_key( 'StdOut' ):
       stdout = '%s/std.out' % ( outputPath )
-      fopen = open( stdout, 'w' )
-      fopen.write( outputs['StdOut'] )
-      fopen.close()
+      with open( stdout, 'w' ) as fopen:
+        fopen.write( outputs['StdOut'] )
       self.log.info( 'Standard output written to %s' % ( stdout ) )
     else:
       self.log.warn( 'No standard output returned' )
 
     if outputs.has_key( 'StdErr' ):
       stderr = '%s/std.err' % ( outputPath )
-      fopen = open( stderr, 'w' )
-      fopen.write( outputs['StdErr'] )
-      fopen.close()
+      with open( stderr, 'w' ) as fopen:
+        fopen.write( outputs['StdErr'] )
       self.log.info( 'Standard error written to %s' % ( stderr ) )
     else:
       self.log.warn( 'No standard error returned' )

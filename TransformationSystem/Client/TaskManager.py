@@ -398,7 +398,7 @@ class WorkflowTasks( TaskBase ):
           continue
         for name, output in res['Value'].items():
           oJob._addJDLParameter( name, ';'.join( output ) )
-      taskDict[taskNumber]['TaskObject'] = self.jobClass( oJob._toXML() )
+      taskDict[taskNumber]['TaskObject'] = oJob
     return S_OK( taskDict )
 
   #############################################################################

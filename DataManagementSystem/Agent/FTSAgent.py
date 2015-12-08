@@ -465,7 +465,7 @@ class FTSAgent( AgentModule ):
     # # Use a try: finally: for making sure FTS jobs are put back before returning
     try:
       # # dict keeping info about files to reschedule, submit, fail and register
-      ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
+      ftsFilesDict = dict( ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) )
 
       jobsToMonitor = [ftsJob for ftsJob in ftsJobs if ( datetime.datetime.utcnow() - ftsJob.LastUpdate ).seconds > self.MONITORING_INTERVAL]
       if jobsToMonitor:
@@ -549,9 +549,13 @@ class FTSAgent( AgentModule ):
 
             # Recover files that are Failed but were not spotted
             for ftsFile in [f for f in ftsFiles if f.Status == 'Failed' and f.TargetSE in missingReplicas.get( f.LFN, [] )]:
-              _r, _s, fail = self.__checkFailed( ftsFile )
-              if fail:
+              reschedule, submit, fail = self.__checkFailed( ftsFile )
+              if fail and ftsFile not in ftsFilesDict['toFail']:
                 ftsFilesDict['toFail'].append( ftsFile )
+              elif reschedule and ftsFile not in ftsFilesDict['toReschedule']:
+                ftsFilesDict['toReschedule'].append( ftsFile )
+              elif submit and ftsFile not in ftsFilesDict['toSubmit']:
+                ftsFilesDict['toSubmit'].append( ftsFile )
 
             # If all transfers are finished for unregistered files and there is already a registration operation, set it Done
             for lfn in missingReplicas:
@@ -863,7 +867,7 @@ class FTSAgent( AgentModule ):
     log.info( "FTSJob '%s'@'%s'" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
-    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
+    ftsFilesDict = dict( ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) )
 
     monitor = ftsJob.monitorFTS( self.__ftsVersion , command = self.MONITOR_COMMAND )
     if not monitor["OK"]:
@@ -921,7 +925,7 @@ class FTSAgent( AgentModule ):
     log.info( "finalizing FTSJob %s@%s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     # # this will be returned
-    ftsFilesDict = dict( [ ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) ] )
+    ftsFilesDict = dict( ( k, list() ) for k in ( "toRegister", "toSubmit", "toFail", "toReschedule", "toUpdate" ) )
 
 
     monitor = ftsJob.monitorFTS( self.__ftsVersion, command = self.MONITOR_COMMAND, full = True )
@@ -1074,7 +1078,7 @@ class FTSAgent( AgentModule ):
     # dt = ftsJob.LastUpdate - ftsJob.SubmitTime
     # transferTime = dt.days * 86400 + dt.seconds
     # accountingDict["TransferTime"] = transferTime
-    accountingDict['TransferTime'] = sum( [int( f._duration ) for f in ftsJob if f.Status in FTSFile.SUCCESS_STATES ] )
+    accountingDict['TransferTime'] = sum( int( f._duration ) for f in ftsJob if f.Status in FTSFile.SUCCESS_STATES )
     dataOp.setValuesFromDict( accountingDict )
     dataOp.commit()
 
@@ -1087,8 +1091,7 @@ class FTSAgent( AgentModule ):
     # # { LFN: [ targetSE, ... ] }
     missingReplicas = {}
 
-    scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in operation
-                              if opFile.Status in ( "Scheduled", "Waiting" ) ] )
+    scheduledFiles = dict( ( opFile.LFN, opFile ) for opFile in operation if opFile.Status in ( "Scheduled", "Waiting" ) )
     # # get replicas
     replicas = FileCatalog().getReplicas( scheduledFiles.keys() )
     if not replicas["OK"]:

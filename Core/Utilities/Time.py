@@ -59,9 +59,12 @@ def timeThis( method ):
       try:
         pre += args[0].log._systemName + '    TIME: ' + args[0].transString
       except AttributeError:
-        pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+        try:
+          pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+        except AttributeError:
+          pre += 'TIME: '
     except IndexError:
-      pre += '  TIME : '
+      pre += 'TIME: '
 
     argsLen = ''
     if args:
@@ -261,10 +264,10 @@ def queryTime(f):
   """ Decorator to measure the function call time
   """
   def measureQueryTime(*args, **kwargs):
-    start = time.time()
+    start = nativetime.time()
     result = f(*args, **kwargs)
     if result['OK'] and not 'QueryTime' in result:
-      result['QueryTime'] = time.time() - start
+      result['QueryTime'] = nativetime.time() - start
     return result
   return measureQueryTime
 

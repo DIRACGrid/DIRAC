@@ -18,6 +18,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager, DirectorySecurityManager, FullSecurityManager, DirectorySecurityManagerWithDelete, PolicyBasedSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager        import DatasetManager
+from DIRAC.Resources.Catalog.Utilities                                         import checkArgumentFormat
 
 #############################################################################
 class FileCatalogDB( DB ):
@@ -102,7 +103,7 @@ class FileCatalogDB( DB ):
       Delete a StorageElement
 
       :param str seName: Name of the StorageElement
-      :param creDict: credential
+      :param credDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -121,7 +122,7 @@ class FileCatalogDB( DB ):
       Add a new user
 
       :param str userName: Name of the User
-      :param creDict: credential
+      :param credDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -135,7 +136,7 @@ class FileCatalogDB( DB ):
       Delete a user
 
       :param str userName: Name of the User
-      :param creDict: credential
+      :param credDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -149,7 +150,7 @@ class FileCatalogDB( DB ):
       Add a new group
 
       :param str groupName: Name of the group
-      :param creDict: credential
+      :param credDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -163,7 +164,7 @@ class FileCatalogDB( DB ):
       Delete a group
 
       :param str groupName: Name of the group
-      :param creDict: credential
+      :param credDict: credential
     """
     res = self._checkAdminPermission( credDict )
     if not res['OK']:
@@ -181,7 +182,7 @@ class FileCatalogDB( DB ):
     """
       Returns the list of users
 
-      :param creDict: credential
+      :param credDict: credential
       :return: dictionary indexed on the user name
     """
     res = self._checkAdminPermission( credDict )
@@ -195,7 +196,7 @@ class FileCatalogDB( DB ):
     """
       Returns the list of groups
 
-      :param creDict: credential
+      :param credDict: credential
       :return: dictionary indexed on the group name
     """
 
@@ -237,12 +238,17 @@ class FileCatalogDB( DB ):
         successful.update( res['Value']['Successful'] )
 
     return S_OK( {'Successful':successful,'Failed':failed} )
-  
+
   def getPathPermissions(self, lfns, credDict):
-    """ Get permissions for the given user/group to manipulate the given lfns 
+    """ Get permissions for the given user/group to manipulate the given lfns
     """
+    res = checkArgumentFormat( lfns )
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+
     return self.securityManager.getPathPermissions( lfns.keys(), credDict )
-  
+
 
   def hasAccess( self, opType, paths, credDict ):
     """ Get permissions for the given user/group to execute the given operation
@@ -250,6 +256,11 @@ class FileCatalogDB( DB ):
 
         returns Successful dict with True/False
     """
+    res = checkArgumentFormat( paths )
+    if not res['OK']:
+      return res
+    paths = res['Value']
+
     return self.securityManager.hasAccess( opType, paths, credDict )
 
   ########################################################################
@@ -557,7 +568,7 @@ class FileCatalogDB( DB ):
 
   def addFileAncestors( self, lfns, credDict ):
     """ Add ancestor information for the given LFNs
-    """        
+    """
     res = self._checkPathPermissions( 'addFileAncestors', lfns, credDict )
     if not res['OK']:
       return res
@@ -697,7 +708,7 @@ class FileCatalogDB( DB ):
 
         :return: Successful/Failed dict.
     """
-    
+
     res = self._checkPathPermissions( 'getReplicaStatus', lfns, credDict )
     if not res['OK']:
       return res
@@ -712,8 +723,8 @@ class FileCatalogDB( DB ):
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )  
-    
+    return S_OK( {'Successful':successful,'Failed':failed} )
+
   def getFileAncestors(self, lfns, depths, credDict):
     res = self._checkPathPermissions( 'getFileAncestors', lfns, credDict )
     if not res['OK']:
@@ -729,8 +740,8 @@ class FileCatalogDB( DB ):
       return res
     failed.update( res['Value']['Failed'] )
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )        
-    
+    return S_OK( {'Successful':successful,'Failed':failed} )
+
   def getFileDescendents(self, lfns, depths, credDict):
     res = self._checkPathPermissions( 'getFileDescendents', lfns, credDict )
     if not res['OK']:
@@ -853,7 +864,7 @@ class FileCatalogDB( DB ):
     if not successful:
       return S_OK( {'Successful':successful,'Failed':failed} )
 
-    
+
     # Remove the directory metadata now
     dirIdList = [ successful[p]['DirID'] for p in successful if 'DirID' in successful[p] ]
     result = self.dmeta.removeMetadataForDirectory( dirIdList, credDict )
@@ -1126,6 +1137,12 @@ class FileCatalogDB( DB ):
     return self.securityManager.hasAdminAccess( credDict )
 
   def _checkPathPermissions( self, operation, lfns, credDict ):
+
+    res = checkArgumentFormat( lfns )
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+
     res = self.securityManager.hasAccess( operation, lfns.keys(), credDict )
     if not res['OK']:
       return res

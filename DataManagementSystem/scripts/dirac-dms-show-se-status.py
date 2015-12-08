@@ -14,7 +14,6 @@ Script.parseCommandLine()
 import DIRAC
 from DIRAC                                            import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Utilities.List                        import sortList
 from DIRAC.Core.Utilities.PrettyPrint                 import printTable
 from DIRAC.Core.Security.ProxyInfo                    import getVOfromProxyGroup
 
@@ -28,7 +27,7 @@ if not res[ 'OK' ]:
 
 gLogger.info( "%s %s %s" % ( 'Storage Element'.ljust( 25 ), 'Read Status'.rjust( 15 ), 'Write Status'.rjust( 15 ) ) )
 
-seList = sortList( res[ 'Value' ] )
+seList = sorted( res[ 'Value' ] )
 
 resourceStatus = ResourceStatus()
 
