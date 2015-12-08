@@ -173,6 +173,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
       coor = siteDict.get( 'Coordinates', 'Unknown' )
       mail = siteDict.get( 'Mail', 'Unknown' ).replace( ' ','' )
       description = siteDict.get( 'Description', 'Unknown' )
+      description = description.replace( ' ,', ',')
   
       longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
       latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
