@@ -54,7 +54,7 @@ class XROOTStorage( StorageBase ):
 
     self.protocolParameters['Port'] = 0
     self.protocolParameters['WSUrl'] = 0
-    self.protocolParameters['SpaceToken'] = 0
+    #self.protocolParameters['SpaceToken'] = 0
 
     # The API instance to be used
     self.xrootClient = client.FileSystem( self.host )
@@ -1598,3 +1598,32 @@ class XROOTStorage( StorageBase ):
     cwdUrl = result['Value']
     fullUrl = '%s/%s' % ( cwdUrl, fileName )
     return S_OK( fullUrl )
+
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ Construct URL from the given LFN according to the VO convention for the
+    primary protocol of the storage plagin
+
+    Copy of :function:`StorageBase.constructURLFromLFN`, appends the svcClass addition to the URL
+
+    :param str lfn: file LFN
+    :param boolean withWSUrl: flag to include the web service part into the resulting URL
+    :return result: result['Value'] - resulting URL
+    """
+
+    # Check the LFN convention:
+    # 1. LFN must start with the VO name as the top level directory
+    # 2. VO name must not appear as any subdirectory or file name
+    lfnSplitList = lfn.split( '/' )
+    voLFN = lfnSplitList[1]
+    # TODO comparison to Sandbox below is for backward compatibility, should be removed in the next release
+    if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox" :
+      return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
+
+    result = self.getURLBase( withWSUrl = withWSUrl )
+    if not result['OK']:
+      return result
+    urlBase = result['Value']
+    url = os.path.join( urlBase, lfn.lstrip( '/' ) )
+    if self.protocolParameters.get('SpaceToken', None):
+      url += "?svcClass=%(SpaceToken)s" % self.protocolParameters
+    return S_OK( url )
