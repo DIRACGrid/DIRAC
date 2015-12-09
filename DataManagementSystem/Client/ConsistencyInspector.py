@@ -84,7 +84,6 @@ class ConsistencyInspector( object ):
     """ get the replicas using the standard FileCatalog.getReplicas()
     """
     lfns = checkArgumentFormat(lfns)
-    print lfns
     present = set()
     notPresent = set()
 
