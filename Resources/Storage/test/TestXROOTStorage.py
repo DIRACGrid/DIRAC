@@ -771,6 +771,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
 
     # This test should be completely okay
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.getFile( "a", "/tmp" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"a" :-1}, res['Value']['Successful'] )
@@ -864,6 +867,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     resource.xrootClient.dirlist = MagicMock( side_effect = [( statusStatDirMock, directoryListMock1 ), ( statusStatDirMock, directoryListMock2 ), ( statusStatDirMock, directoryListMock3 )] )
 
     # This test should get the 3 files
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.getDirectory( "A" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"A" : { "Files" : 3, "Size" :-3}}, res['Value']['Successful'] )
@@ -940,6 +946,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
 
     # This test should be completely okay
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.putFile( {"remoteA" : "localA"} )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"remoteA" : 1}, res['Value']['Successful'] )
@@ -1017,6 +1026,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
 
     # This test should upload the 3 files
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusCopyMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.putDirectory( {"remoteA" : "localA"} )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"remoteA" : { "Files" : 3, "Size" :3}}, res['Value']['Successful'] )
