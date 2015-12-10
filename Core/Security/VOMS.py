@@ -93,17 +93,17 @@ class VOMS( BaseSecurity ):
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-        :type  proxy: a string
-        :param proxy: the proxy certificate location.
-        :type  option: a string
-        :param option: None is the default value. Other option available are:
+        @type  proxy: a string
+        @param proxy: the proxy certificate location.
+        @type  option: a string
+        @param option: None is the default value. Other option available are:
           - timeleft
           - actimeleft
           - identity
           - fqan
           - all
-        :rtype:   tuple
-        :return:  status, output, error, pyerror.
+        @rtype:   tuple
+        @return:  status, output, error, pyerror.
     """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option:
@@ -259,6 +259,8 @@ class VOMS( BaseSecurity ):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
+    if chain.isRFC():
+      cmdArgs.append( "-r" )
 
     if not Os.which('voms-proxy-init'):
       return S_ERROR("Missing voms-proxy-init")
