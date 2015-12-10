@@ -92,7 +92,7 @@ class HTCondorCEComputingElement( ComputingElement ):
 
     """
     workingDirectory = self.ceParameters['WorkingDirectory']
-    initialDir = '/'.join( workingDirectory.split('/')[:-1] )
+    initialDir = os.path.dirname( workingDirectory )
     self.log.debug( "Working directory: %s " % workingDirectory )
     ##We randomize the location of the pilotoutput and log, because there are just too many of them
     pre1 = makeGuid()[:3]
