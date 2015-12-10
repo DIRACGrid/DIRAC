@@ -59,7 +59,6 @@ class XROOTStorage( StorageBase ):
     # The API instance to be used
     self.xrootClient = client.FileSystem( self.host )
 
-
   def exists( self, path ):
     """Check if the given path exists. The 'path' variable can be a string or a list of strings.
 
@@ -288,9 +287,13 @@ class XROOTStorage( StorageBase ):
         return S_ERROR( errStr )
 
 
-    status = self.xrootClient.copy( src_url, dest_file )
+    ##create this local to get clean job queue
+    copyProc = client.CopyProcess()
+    copyProc.add_job( source=src_url, target=dest_file, thirdparty="first" )
+    copyProc.prepare()
+    runStatusTuple = copyProc.run()
     # For some reason, the copy method returns a tuple (status,None)
-    status = status[0]
+    status = runStatusTuple[0]
 
     if status.ok:
       self.log.debug( 'XROOTStorage.__getSingleFile: Got a file from storage.' )
@@ -428,10 +431,13 @@ class XROOTStorage( StorageBase ):
         gLogger.error( errStr, src_file )
         return S_ERROR( errStr )
 
-    # Perform the copy with the API
-    status = self.xrootClient.copy( src_file, dest_url )
+    # Perform the copy with the API, create CopyProcess locally to get clean job queue
+    copyProc = client.CopyProcess()
+    copyProc.add_job( source=src_file, target=dest_url, thirdparty="first" )
+    copyProc.prepare()
+    runStatusTuple = copyProc.run()
     # For some reason, the copy method returns a tuple (status,None)
-    status = status[0]
+    status = runStatusTuple[0]
 
     if status.ok:
       self.log.debug( 'XROOTStorage.__putSingleFile: Put file on storage.' )
