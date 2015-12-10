@@ -10,6 +10,7 @@ from types import StringTypes
 from threading import current_thread
 
 from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.Core.Utilities                           import DEncode
 from DIRAC.RequestManagementSystem.Client.Request   import Request
@@ -29,13 +30,21 @@ from DIRAC.DataManagementSystem.Client.DataLogging.DLException import DLExceptio
 
 # wrap _DLDecorator to allow passing some arguments to the decorator
 def DataLoggingDecorator( function = None, **kwargs ):
+
+  # If the flag to not use the decorator is set, just return the function itself
+  useDataLogging = Operations().getValue( 'DataManagement/DataLogging/useDataLogging', False )
+
   if function:
+    if not useDataLogging:
+      return function
     # with no argument for the decorator the call is like decorator(func)
-      return _DataLoggingDecorator( function )
+    return _DataLoggingDecorator( function )
   else:
     # if the decorator has some arguments, the call is like that decorator(args)(func)
     # so function will be none, we can get it with a wrapper
     def wrapper( function ):
+      if not useDataLogging:
+        return function
       return _DataLoggingDecorator( function, **kwargs )
     return wrapper
 
