@@ -358,7 +358,6 @@ class ConsistencyInspector( object ):
     for lfnChunk in breakListIntoChunks( replicas.keys(), chunkSize ):
       self.__write( '.' )
       res = self.fc.getFileMetadata( lfnChunk )
-      print "res", res
       if not res['OK']:
         S_ERROR("error %s" % res['Message'])        # raise RuntimeError( "error %s" % res['Message'] )
       metadata.update( res['Value']['Successful'] )
@@ -764,8 +763,6 @@ class ConsistencyInspector( object ):
     activeDirs = lfnDir
     allFiles = {}
     while len( activeDirs ) > 0:
-      print 'activeDirs', activeDirs          ######################
-      #print 'activeDirs 1 ', activeDirs.keys()
       currentDir = activeDirs[0]
       res = self.fc.listDirectory( currentDir )
       activeDirs.remove( currentDir )
