@@ -118,7 +118,7 @@ class ReqProxyHandler( RequestHandler ):
           gLogger.info( "sweeper: successfully put request '%s' @ ReqManager" % cachedName )
           os.unlink( cachedFile )
         except Exception as error:
-          gLogger.exception( "sweeper: hit by exception %s" % str( error ) )
+          gLogger.exception( "sweeper: hit by exception", lException = error )
       return S_OK()
 
   def __saveRequest( self, requestName, requestJSON ):
