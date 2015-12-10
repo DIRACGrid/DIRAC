@@ -249,7 +249,6 @@ class ConsistencyInspector( object ):
           printout = True
           topDir = os.path.dirname( directory )
           res = self.fc.listDirectory( topDir )
-          #res = self.dm.getCatalogListDirectory( topDir )
           if not res['OK']:
             raise RuntimeError( res['Message'] )
           else:
@@ -258,6 +257,8 @@ class ConsistencyInspector( object ):
       if printout:
         gLogger.always( 'Expanded list of %d directories:\n%s' % ( len( directories ), '\n'.join( directories ) ) )
       return directories
+    else:                                                     
+      raise RuntimeError( "Need to specify the directories" )
   ################################################################################
 
   def __write( self, text ):
