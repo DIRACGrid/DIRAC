@@ -38,7 +38,7 @@ class XROOTStorage_TestCase( unittest.TestCase ):
                              Path='path',
                              Host='host',
                              Port='',
-                             SpaceTolen='spaceToken',
+                             SpaceToken='spaceToken',
                              WSPath='wspath',
                             )
     self.testClass = self.moduleTested.XROOTStorage
@@ -191,7 +191,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( 'path'       , resource.protocolParameters['Path'] )
     self.assertEqual( 'host'       , resource.protocolParameters['Host'] )
     self.assertEqual( 0       , resource.protocolParameters['Port'] )
-    self.assertEqual( 0       , resource.protocolParameters['SpaceToken'] )
+    self.assertEqual( 'spaceToken' , resource.protocolParameters['SpaceToken'] )
     self.assertEqual( 0       , resource.protocolParameters['WSUrl'] )
 
   def test_getParameters( self ):
@@ -206,7 +206,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( 'path'       , res['Path'] )
     self.assertEqual( 'host'       , res['Host'] )
     self.assertEqual( 0       , res['Port'] )
-    self.assertEqual( 0 , res['SpaceToken'] )
+    self.assertEqual( 'spaceToken' , res['SpaceToken'] )
     self.assertEqual( 0     , res['WSUrl'] )
 
   # def test_getProtocolPfn( self ):
@@ -1045,7 +1045,25 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( {"remoteA" : { "Files" : 0, "Size" : 0}}, res['Value']['Failed'] )
 
 
+  def test_constructURLFromLFN( self ):
 
+    resource = self.testClass( 'storageName', self.parameterDict )
+    resource.se  = MagicMock()
+    voName = "voName"
+    resource.se.vo = voName
+    testLFN= "/%s/path/to/filename" % voName
+
+    ## with spaceToken
+    res = resource.constructURLFromLFN( testLFN )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( "protocol://host/path%s?svcClass=%s" % ( testLFN, self.parameterDict['SpaceToken'] )
+                      , res['Value'] )
+
+    ## no spaceToken
+    resource.protocolParameters['SpaceToken']  = ""
+    res = resource.constructURLFromLFN( testLFN )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( "protocol://host/path%s" % ( testLFN,  ) , res['Value'] )
 
 
 if __name__ == '__main__':
