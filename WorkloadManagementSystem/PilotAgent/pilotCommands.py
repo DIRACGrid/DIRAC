@@ -393,7 +393,7 @@ class CheckCECapabilities( CommandBase ):
     if retCode:
       self.log.warn( "Could not get resource parameters [ERROR %d]" % retCode )
     if resourceDict.get( 'Tag' ):
-      self.pp.tags.append( resourceDict['Tag'] )
+      self.pp.tags += resourceDict['Tag']
       self.cfg.append( '-FDMH' )
 
       if self.pp.useServerCertificate:
@@ -408,7 +408,7 @@ class CheckCECapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( self.pp.tags ) )
+      self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
 
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
