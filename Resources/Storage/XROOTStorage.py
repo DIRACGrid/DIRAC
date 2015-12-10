@@ -1606,30 +1606,17 @@ class XROOTStorage( StorageBase ):
     return S_OK( fullUrl )
 
   def constructURLFromLFN( self, lfn, withWSUrl = False ):
-    """ Construct URL from the given LFN according to the VO convention for the
-    primary protocol of the storage plagin
-
-    Copy of :function:`StorageBase.constructURLFromLFN`, appends the svcClass addition to the URL
+    """ Calls :function:`StorageBase.constructURLFromLFN` and appends the svcClass addition to the URL
+    if spaceToken is set for this SE
 
     :param str lfn: file LFN
     :param boolean withWSUrl: flag to include the web service part into the resulting URL
-    :return result: result['Value'] - resulting URL
+    :return: result['Value'] - resulting URL
     """
-
-    # Check the LFN convention:
-    # 1. LFN must start with the VO name as the top level directory
-    # 2. VO name must not appear as any subdirectory or file name
-    lfnSplitList = lfn.split( '/' )
-    voLFN = lfnSplitList[1]
-    # TODO comparison to Sandbox below is for backward compatibility, should be removed in the next release
-    if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox" :
-      return S_ERROR( 'LFN does not follow the DIRAC naming convention %s' % lfn )
-
-    result = self.getURLBase( withWSUrl = withWSUrl )
+    result = super( XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl )
     if not result['OK']:
       return result
-    urlBase = result['Value']
-    url = os.path.join( urlBase, lfn.lstrip( '/' ) )
+    url = result['Value']
     if self.protocolParameters.get('SpaceToken', None):
       url += "?svcClass=%(SpaceToken)s" % self.protocolParameters
     return S_OK( url )
