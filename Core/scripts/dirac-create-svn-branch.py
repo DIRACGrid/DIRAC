@@ -9,11 +9,11 @@
 """
 __RCSID__ = "$Id: dirac-create-svn-tag.py 31857 2010-12-10 10:04:19Z rgracian $"
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, Distribution
 
-import sys, os, tempfile, shutil, getpass
+import sys, os, getpass
 
 svnVersion = ""
 svnPackages = 'DIRAC'

@@ -27,8 +27,8 @@ DIRACRoot = False
 def downloadExternals( destPath, version = False ):
   destPath = os.path.join( destPath, "Externals" )
   if 0 != os.system( "git clone %s %s" % ( gitRepo, destPath ) ):
-      print "Cannot clone git repo"
-      return False
+    print "Cannot clone git repo"
+    return False
   if version and 0 != os.system( "cd '%s'; git checkout -b 'comp-%s' '%s'" % ( destPath, version, version ) ):
     print "Cannot find version %s" % version
     return False
@@ -47,7 +47,7 @@ def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = [] ):
     sys.exit( 1 )
   destFilePath = os.path.join( destPath, os.path.basename( filePath ) )
   try:
-    with open( destFilePath, "w" ) as fd: 
+    with open( destFilePath, "w" ) as fd:
       for line in data:
         found = False
         for fstr in filterLines:
@@ -126,7 +126,7 @@ if __name__ == "__main__":
               ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
               ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
             )
-  
+
   compExtVersion = False
   compType = 'client'
   compDest = False
@@ -134,7 +134,7 @@ if __name__ == "__main__":
   onlyFixLinks = False
   makeArgs = []
   compVersionDict = { 'PYTHONVERSION' : '2.6' }
-  
+
   optList, args = getopt.getopt( sys.argv[1:],
                                  "".join( [ opt[0] for opt in cmdOpts ] ),
                                  [ opt[1] for opt in cmdOpts ] )
@@ -168,7 +168,7 @@ if __name__ == "__main__":
         print "Value for makeJobs mas to be greater than 0 (%s)" % v
         sys.exit( 1 )
       makeArgs.append( "-j %d" % int( v ) )
-  
+
   #Find platform
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
   DIRACRoot = findDIRACRoot( basePath )
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     with open( platformPath, "r" ) as platFD:
       Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
     platform = Platform.getPlatformString()
-  
+
   if not compDest:
     if not DIRACRoot:
       print "Error: Could not find DIRAC root"
@@ -187,12 +187,12 @@ if __name__ == "__main__":
       print >> sys.stderr, "Can not determine local platform"
       sys.exit( -1 )
     compDest = os.path.join( DIRACRoot, platform )
-  
+
   if onlyFixLinks:
     print "Fixing absolute links"
     fixAbsoluteLinks( compDest )
     sys.exit( 0 )
-  
+
   if compDest:
     if os.path.isdir( compDest ):
       oldCompDest = compDest + '.old'
@@ -200,7 +200,7 @@ if __name__ == "__main__":
       if os.path.exists( oldCompDest ):
         shutil.rmtree( oldCompDest )
       os.rename( compDest, oldCompDest )
-  
+
   if not compExtSource:
     workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
     print "Creating temporary work dir at %s" % workDir
@@ -211,33 +211,33 @@ if __name__ == "__main__":
     externalsDir = os.path.join( workDir, "Externals" )
   else:
     externalsDir = compExtSource
-  
+
   copyFromDIRAC( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
   copyFromDIRAC( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
-  
+
   #Load CFG
   cfgPath = os.path.join( externalsDir, "CFG.py" )
   with open( cfgPath, "r" ) as cfgFD:
     CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
   buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
-  
+
   if compType not in buildCFG.listSections():
     print "Invalid compilation type %s" % compType
     print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
     sys.exit( 1 )
-  
+
   packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
-  
-  
+
+
   if compDest:
     makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
-  
+
   #Substitution of versions
   finalPackages = []
   for prog in packagesToBuild:
     for k in compVersionDict:
       finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
-  
+
   print "Trying to get a raw environment"
   patDet = os.path.join( DIRACRoot, platform )
   for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
@@ -250,7 +250,7 @@ if __name__ == "__main__":
       if value.find( patDet ) != 0:
         fixedValList.append( value )
     os.environ[ envVar ] = ":".join( fixedValList )
-  
+
   makeArgs = " ".join( makeArgs )
   print "Building %s" % ", ".join ( finalPackages )
   for prog in finalPackages:
@@ -266,9 +266,6 @@ if __name__ == "__main__":
       print "Oops! Error while compiling %s" % prog
       print "Take a look at %s for more info" % buildOutPath
       sys.exit( 1 )
-  
+
   print "Fixing absolute links"
   fixAbsoluteLinks( compDest )
-  
-  
-  
