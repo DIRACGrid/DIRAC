@@ -31,13 +31,13 @@ if system != '*':
   if len( args ) > 1:
     component = args[1]
 #
-from DIRAC.Core.Utilities import InstallTools
+from FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-result = InstallTools.runsvctrlComponent( system, component, 't' )
+result = gComponentInstaller.runsvctrlComponent( system, component, 't' )
 if not result['OK']:
   print 'ERROR:', result['Message']
   exit( -1 )
 
-InstallTools.printStartupStatus( result['Value'] )
+gComponentInstaller.printStartupStatus( result['Value'] )

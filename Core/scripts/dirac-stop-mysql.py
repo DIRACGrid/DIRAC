@@ -17,8 +17,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      ] ) )
 Script.parseCommandLine()
 #
-from DIRAC.Core.Utilities import InstallTools
+from FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-print InstallTools.stopMySQL()['Value'][1]
+print gComponentInstaller.stopMySQL()['Value'][1]
