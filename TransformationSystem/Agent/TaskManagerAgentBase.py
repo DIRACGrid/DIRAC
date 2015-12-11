@@ -115,8 +115,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        transformationIDsAndBodies = dict( [( transformation['TransformationID'],
-                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        transformationIDsAndBodies = dict( ( transformation['TransformationID'],
+                                             transformation['Body'] ) for transformation in transformations['Value'] )
         for transID, body in transformationIDsAndBodies.iteritems():
           operationsOnTransformationDict[transID] = {'Body': body, 'Operations': ['updateTaskStatus']}
 
@@ -131,8 +131,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        transformationIDsAndBodies = dict( [( transformation['TransformationID'],
-                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        transformationIDsAndBodies = dict( ( transformation['TransformationID'],
+                                             transformation['Body'] ) for transformation in transformations['Value'] )
         for transID, body in transformationIDsAndBodies.iteritems():
           if transID in operationsOnTransformationDict:
             operationsOnTransformationDict[transID]['Operations'].append( 'updateFileStatus' )
@@ -150,8 +150,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       if not transformations['OK']:
         self.log.warn( "Could not select transformations: %s" % transformations['Message'] )
       else:
-        transformationIDsAndBodies = dict( [( transformation['TransformationID'],
-                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        transformationIDsAndBodies = dict( ( transformation['TransformationID'],
+                                             transformation['Body'] ) for transformation in transformations['Value'] )
         for transID, body in transformationIDsAndBodies.iteritems():
           if transID in operationsOnTransformationDict:
             operationsOnTransformationDict[transID]['Operations'].append( 'checkReservedTasks' )
@@ -181,8 +181,8 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption( 'TasksPerLoop', self.tasksPerLoop )
-        transformationIDsAndBodies = dict( [( transformation['TransformationID'],
-                                              transformation['Body'] ) for transformation in transformations['Value']] )
+        transformationIDsAndBodies = dict( ( transformation['TransformationID'],
+                                             transformation['Body'] ) for transformation in transformations['Value'] )
         for transID, body in transformationIDsAndBodies.iteritems():
           if transID in operationsOnTransformationDict:
             operationsOnTransformationDict[transID]['Operations'].append( 'submitTasks' )
