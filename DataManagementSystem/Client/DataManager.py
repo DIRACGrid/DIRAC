@@ -1509,15 +1509,11 @@ class DataManager( object ):
   def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
-    res = self.getReplicas( lfns, allStatus = False, getUrl = getUrl )
+    res = self.getReplicas( lfns, allStatus = False, getUrl = getUrl, diskOnly = diskOnly, preferDisk = preferDisk )
     if not res['OK']:
       return res
     replicas = res['Value']
-    res = self.__checkActiveReplicas( replicas )
-    if not res['OK'] or ( not preferDisk and not diskOnly ) :
-      return res
-    # Check if there are disk replicas and if so filter out tape replicas
-    return self.__filterTapeReplicas( res['Value'], diskOnly = diskOnly )
+    return self.__checkActiveReplicas( replicas )
 
   def __filterTapeReplicas( self, replicaDict, diskOnly = False ):
     """
@@ -1575,7 +1571,7 @@ class DataManager( object ):
   #
 
 
-  def getReplicas( self, lfns, allStatus = True, getUrl = True ):
+  def getReplicas( self, lfns, allStatus = True, getUrl = True, diskOnly = False, preferDisk = False ):
     """ get replicas from catalogue """
     catalogReplicas = {}
     failed = {}
@@ -1605,7 +1601,11 @@ class DataManager( object ):
             # catalogReplicas still points res["value"]["Successful"] so res will be updated
             catalogReplicas[lfn][se] = succPfn[lfn]
 
-    return S_OK( {'Successful':catalogReplicas, 'Failed':failed} )
+    result = {'Successful':catalogReplicas, 'Failed':failed}
+    if diskOnly or preferDisk:
+      return self.__filterTapeReplicas( result, diskOnly = diskOnly )
+    else:
+      return S_OK( result )
 
 
   ##################################################################################################3
