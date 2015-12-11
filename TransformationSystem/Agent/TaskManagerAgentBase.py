@@ -193,13 +193,13 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     return S_OK()
 
-  def _selectTransformations( self, transType = [], status = ['Active', 'Completing'], agentType = ['Automatic'] ):
+  def _selectTransformations( self, transType = None, status = ['Active', 'Completing'], agentType = ['Automatic'] ):
     """ get the transformations
     """
     selectCond = {}
     if status:
       selectCond['Status'] = status
-    if transType:
+    if transType is not None:
       selectCond['Type'] = transType
     if agentType:
       selectCond['AgentType'] = agentType
@@ -265,7 +265,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
             self._logError( "Failed to %s: %s" % ( operation, res['Message'] ), method = method, transID = transID )
           self._logInfo( "Processed operation %s in %.1f seconds" % ( operation, time.time() - startTime if startTime else time.time() ),
                          method = method, transID = transID )
-      except Exception, x:
+      except Exception as x:
         self._logException( 'Exception executing operation %s' % operation, lException = x, transID = transID, method = method )
       finally:
         if not transID:
@@ -346,7 +346,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     transformationFiles = clients['TransformationClient'].getTransformationFiles( condDict = condDict,
                                                                                   older = timeStamp, timeStamp = 'LastUpdate' )
     self._logDebug( "getTransformationFiles(%s) return value: %s" % ( str( condDict ), transformationFiles ),
-                   method = method, transID = transID )
+                    method = method, transID = transID )
     if not transformationFiles['OK']:
       self._logError( "Failed to get transformation files to update: %s" % transformationFiles['Message'],
                       method = method )
@@ -394,7 +394,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     res = clients['TransformationClient'].getTransformationTasks( condDict = condDict, older = time_stamp_older,
                                                                   newer = time_stamp_newer )
     self._logDebug( "getTransformationTasks(%s) return value: %s" % ( condDict, res ),
-                   method = method, transID = transID )
+                    method = method, transID = transID )
     if not res['OK']:
       self._logError( "Failed to get Reserved tasks: %s" % res['Message'],
                       transID = transID, method = method )
@@ -405,7 +405,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     reservedTasks = res['Value']
     res = clients['TaskManager'].updateTransformationReservedTasks( reservedTasks )
     self._logDebug( "updateTransformationReservedTasks(%s) return value: %s" % ( reservedTasks, res ),
-                   method = method, transID = transID )
+                    method = method, transID = transID )
     if not res['OK']:
       self._logError( "Failed to update transformation reserved tasks: %s" % res['Message'],
                       transID = transID, method = method )
@@ -446,7 +446,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     tasksToSubmit = clients['TransformationClient'].getTasksToSubmit( transID, self.tasksPerLoop )
     self._logDebug( "getTasksToSubmit(%s, %s) return value: %s" % ( transID, self.tasksPerLoop, tasksToSubmit ),
-                   method = method, transID = transID )
+                    method = method, transID = transID )
     if not tasksToSubmit['OK']:
       self._logError( "Failed to obtain tasks: %s" % tasksToSubmit['Message'], transID = transID, method = method )
       return tasksToSubmit
