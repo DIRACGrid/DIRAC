@@ -390,9 +390,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     # Select the tasks which have been in Reserved status for more than 1 hour for selected transformations
     condDict = {"TransformationID":transID, "ExternalStatus":'Reserved'}
     time_stamp_older = str( datetime.datetime.utcnow() - datetime.timedelta( hours = 1 ) )
-    time_stamp_newer = str( datetime.datetime.utcnow() - datetime.timedelta( days = 7 ) )
-    res = clients['TransformationClient'].getTransformationTasks( condDict = condDict, older = time_stamp_older,
-                                                                  newer = time_stamp_newer )
+    res = clients['TransformationClient'].getTransformationTasks( condDict = condDict, older = time_stamp_older )
     self._logDebug( "getTransformationTasks(%s) return value: %s" % ( condDict, res ),
                     method = method, transID = transID )
     if not res['OK']:
