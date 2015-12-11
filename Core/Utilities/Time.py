@@ -46,6 +46,8 @@ def timeThis( method ):
   """
 
   def timed( *args, **kw ):
+    """ What actually times
+    """
 
     ts = nativetime.time()
     result = method( *args, **kw )
@@ -79,7 +81,7 @@ def timeThis( method ):
           except IndexError:
             argsLen = ''
 
-    print( "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts ) )
+    print "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts )
     return result
 
   return timed
@@ -185,14 +187,14 @@ def fromString( myDate = None ):
         return ( datetime.datetime( year = dateTuple[0],
                                     month = dateTuple[1],
                                     day = dateTuple[2] ) +
-               fromString( dateTimeTuple[1] ) )
+                 fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
       except:
         return ( datetime.datetime( year = int( dateTuple[0] ),
                                     month = int( dateTuple[1] ),
                                     day = int( dateTuple[2] ) ) +
-               fromString( dateTimeTuple[1] ) )
+                fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
         return None
@@ -278,5 +280,3 @@ _timeType = type( time() )
 _allTimeTypes = ( _dateTimeType, _timeType )
 _allDateTypes = ( _dateTimeType, _dateType )
 _allTypes = ( _dateTimeType, _dateType, _timeType )
-
-
