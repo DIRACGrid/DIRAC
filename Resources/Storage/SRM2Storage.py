@@ -22,8 +22,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
-# from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-# from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+
 
 # # RCSID
 __RCSID__ = "$Id$"
@@ -1666,14 +1665,12 @@ class SRM2Storage( StorageBase ):
       res = self.__gfal_operation_wrapper( 'gfal_prestage',
                                            gfalDict,
                                            timeout_sendreceive = self.fileTimeout * len( urls ) )
-#       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfalturlsfromsurls_wrapper( self, urls, listProtocols ):
@@ -1693,14 +1690,12 @@ class SRM2Storage( StorageBase ):
       gfalDict['nbfiles'] = len( urls )
       gfalDict['timeout'] = self.fileTimeout * len( urls )
       res = self.__gfal_operation_wrapper( 'gfal_turlsfromsurls', gfalDict )
-#       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfaldeletesurls_wrapper( self, urls ):
@@ -1719,14 +1714,12 @@ class SRM2Storage( StorageBase ):
       gfalDict['nbfiles'] = len( urls )
       gfalDict['timeout'] = self.fileTimeout * len( urls )
       res = self.__gfal_operation_wrapper( 'gfal_deletesurls', gfalDict )
-#       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_removedir_wrapper( self, urls ):
@@ -1745,14 +1738,12 @@ class SRM2Storage( StorageBase ):
       gfalDict['nbfiles'] = len( urls )
       gfalDict['timeout'] = self.fileTimeout * len( urls )
       res = self.__gfal_operation_wrapper( 'gfal_removedir', gfalDict )
-#       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
           failed[url] = res['Message']
       else:
         allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_pin_wrapper( self, urls, lifetime ):
@@ -1784,14 +1775,12 @@ class SRM2Storage( StorageBase ):
         gfalDict['nbfiles'] = len( urls )
         gfalDict['timeout'] = self.fileTimeout * len( urls )
         res = self.__gfal_operation_wrapper( 'gfal_pin', gfalDict, srmRequestID = srmRequestID )
-#         gDataStoreClient.addRegister( res['AccountingOperation'] )
         if not res['OK']:
           for url in urls:
             failed[url] = res['Message']
         else:
           allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_prestagestatus_wrapper( self, urls ):
@@ -1821,14 +1810,12 @@ class SRM2Storage( StorageBase ):
         gfalDict['nbfiles'] = len( urls )
         gfalDict['timeout'] = self.fileTimeout * len( urls )
         res = self.__gfal_operation_wrapper( 'gfal_prestagestatus', gfalDict, srmRequestID = srmRequestID )
-#         gDataStoreClient.addRegister( res['AccountingOperation'] )
         if not res['OK']:
           for url in urls:
             failed[url] = res['Message']
         else:
           allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_release_wrapper( self, urls ):
@@ -1857,14 +1844,12 @@ class SRM2Storage( StorageBase ):
         gfalDict['nbfiles'] = len( urls )
         gfalDict['timeout'] = self.fileTimeout * len( urls )
         res = self.__gfal_operation_wrapper( 'gfal_release', gfalDict, srmRequestID = srmRequestID )
-#         gDataStoreClient.addRegister( res['AccountingOperation'] )
         if not res['OK']:
           for url in urls:
             failed[url] = res['Message']
         else:
           allResults.extend( res['Value'] )
 
-    # gDataStoreClient.commit()
     return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
@@ -1876,19 +1861,9 @@ class SRM2Storage( StorageBase ):
     :param srmRequestID: srmRequestID
     :param int timeout_sendreceive: gfal sendreceive timeout in seconds
     """
-    # Create an accounting DataOperation record for each operation
-#     oDataOperation = self.__initialiseAccountingObject( operation, self.name, gfalDict['nbfiles'] )
-
-#     oDataOperation.setStartTime()
-#     start = time.time()
 
     res = self.__importExternals()
     if not res['OK']:
-#       oDataOperation.setEndTime()
-#       oDataOperation.setValueByKey( 'TransferTime', 0. )
-#       oDataOperation.setValueByKey( 'TransferOK', 0 )
-#       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-#       res['AccountingOperation'] = oDataOperation
       return res
 
     # # timeout for one gfal_exec call
@@ -1897,27 +1872,15 @@ class SRM2Storage( StorageBase ):
     pyTimeout = 300 + ( timeout * ( 2 ** self.gfalRetry ) )
     res = pythonCall( pyTimeout, self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
 
-#     end = time.time()
-#     oDataOperation.setEndTime()
-#     oDataOperation.setValueByKey( 'TransferTime', end - start )
-
     if not res['OK']:
-#       oDataOperation.setValueByKey( 'TransferOK', 0 )
-#       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-#       res['AccountingOperation'] = oDataOperation
       return res
     res = res['Value']
-    if not res['OK']:
-      pass
-#       oDataOperation.setValueByKey( 'TransferOK', 0 )
-#       oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
-    else:
+    if res['OK']:
       for urlDict in res['Value']:
         if 'surl' in urlDict:
           urlDict['surl'] = self.__convertRandomSRMOutputIntoAFullURL( urlDict['surl'] )['Value']
 
 
-#     res['AccountingOperation'] = oDataOperation
     return res
 
   def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
@@ -1971,37 +1934,7 @@ class SRM2Storage( StorageBase ):
 
     return S_OK( resultList )
 
-#   @staticmethod
-#   def __initialiseAccountingObject( operation, se, files ):
-#     """ create DataOperation accounting object
-#
-#     :param str operation: operation performed
-#     :param str se: destination SE name
-#     :param int files: nb of files
-#     """
-#     import DIRAC
-#     accountingDict = {}
-#     accountingDict['OperationType'] = operation
-#     result = getProxyInfo()
-#     if not result['OK']:
-#       userName = 'system'
-#     else:
-#       userName = result['Value'].get( 'username', 'unknown' )
-#     accountingDict['User'] = userName
-#     accountingDict['Protocol'] = 'gfal'
-#     accountingDict['RegistrationTime'] = 0.0
-#     accountingDict['RegistrationOK'] = 0
-#     accountingDict['RegistrationTotal'] = 0
-#     accountingDict['Destination'] = se
-#     accountingDict['TransferTotal'] = files
-#     accountingDict['TransferOK'] = files
-#     accountingDict['TransferSize'] = files
-#     accountingDict['TransferTime'] = 0.0
-#     accountingDict['FinalStatus'] = 'Successful'
-#     accountingDict['Source'] = DIRAC.siteName()
-#     oDataOperation = DataOperation()
-#     oDataOperation.setValuesFromDict( accountingDict )
-#     return oDataOperation
+
 
 #######################################################################
 #
