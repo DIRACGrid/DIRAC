@@ -1433,7 +1433,7 @@ class DataManager( object ):
       for lfn in res['Value']['Successful']:
         res['Value']['Successful'][lfn] = True
 
-      deletedSize = sum( deletedSizes[lfn] for lfn in set( deletedSizes ) & set( res['Value']['Successful'] ) )
+      deletedSize = sum( deletedSizes.get( lfn, 0 ) for lfn in res['Value']['Successful'] )
       oDataOperation.setValueByKey( 'TransferSize', deletedSize )
       oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 
