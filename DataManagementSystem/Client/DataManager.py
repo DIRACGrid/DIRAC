@@ -1506,19 +1506,39 @@ class DataManager( object ):
   # def putReplica(self,lfn,storageElementName,singleFile=False):
   # def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
 
-  def getActiveReplicas( self, lfns, getUrl = True ):
+  def getActiveReplicas( self, lfns, getUrl = True, diskOnly = False, preferDisk = False ):
     """ Get all the replicas for the SEs which are in Active status for reading.
     """
     res = self.getReplicas( lfns, allStatus = False, getUrl = getUrl )
     if not res['OK']:
       return res
     replicas = res['Value']
-    return self.checkActiveReplicas( replicas )
+    res = self.__checkActiveReplicas( replicas )
+    if not res['OK'] or ( not preferDisk and not diskOnly ) :
+      return res
+    # Check if there are disk replicas and if so filter out tape replicas
+    return self.__filterTapeReplicas( res['Value'], diskOnly = diskOnly )
+
+  def __filterTapeReplicas( self, replicaDict, diskOnly = False ):
+    """
+    Check a replica dictionary for disk replicas:
+    If there is a disk replica, removetape replicas, else keep all
+    """
+    for replicas in replicaDict['Successful'].values():
+      for se in replicas:
+        if diskOnly or self.__SEActive( se, access = 'DiskSE' ):
+          # There is one disk replica, remove tape replicas and exit loop
+          for se in replicas.keys():
+            if self.__SEActive( se, access = 'TapeSE' ):
+              replicas.pop( se )
+          break
+
+    return S_OK( replicaDict )
 
   def checkActiveReplicas( self, replicaDict ):
-    """ Check a replica dictionary for active replicas
     """
-
+    Check a replica dictionary for active replicas, and verify input structure first
+    """
     if not isinstance( replicaDict, dict ):
       return S_ERROR( 'Wrong argument type %s, expected a dictionary' % type( replicaDict ) )
 
@@ -1532,9 +1552,15 @@ class DataManager( object ):
       if not isinstance( replicas, dict ):
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
-        continue
+    return self.__checkActiveReplicas( replicaDict )
+
+  def __checkActiveReplicas( self, replicaDict ):
+    """
+    Check a replica dictionary for active replicas
+    """
+    for replicas in replicaDict['Successful'].values():
       for se in replicas.keys():
-        if not self.__SEActive( se, 'Read' ):
+        if not self.__SEActive( se, access = 'Read' ):
           replicas.pop( se )
 
     return S_OK( replicaDict )
