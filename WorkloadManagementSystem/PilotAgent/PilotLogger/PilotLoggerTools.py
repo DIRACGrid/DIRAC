@@ -141,8 +141,7 @@ def isMessageFormatCorrect( content ):
   # if any value is not of basestring type
   if any( not isinstance( val, basestring ) for val in values ):
     return False
-  #checking if not empty for all
-  values = content.values()
+  #checking if all elements are not empty 
   if any( not val for val in values ):
     return False
   return True
@@ -195,13 +194,13 @@ def getUniqueIDFromOS():
   """
   #VM case: vm://$CE_NAME/$CE_NAME:$VMTYPE:$VM_UUID
   vmEnvVars = ['CE_NAME', 'VMTYPE', 'VM_UUID']
-  if all (os.environ.has_key(var) for var in vmEnvVars):
+  if all ( var in os.environ for var in vmEnvVars):
     ce_name = os.environ.get('CE_NAME')
     partial_id = ':'.join((os.environ.get(var) for var in vmEnvVars))
     return  'vm://'+ ce_name + '/' + partial_id
   #Other cases: $envVar
   envVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID']
-  ids = ( os.environ.get(var) for var in envVars if os.environ.has_key(var))
+  ids = ( os.environ.get(var) for var in envVars if var in os.environ)
   return next(ids, '')
 
 def main():

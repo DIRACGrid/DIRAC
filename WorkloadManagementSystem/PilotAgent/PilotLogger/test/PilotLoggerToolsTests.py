@@ -185,14 +185,14 @@ def helper_get(var):
   #environVars = ['CREAM_JOBID', 'GRID_GLOBAL_JOBID', 'VM_UUID']
 class TestPilotLoggerGetUniqueIDFromOS( TestPilotLoggerTools ):
 
-  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.__contains__',
               side_effect = lambda var: var =='CREAM_JOBID')
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
               side_effect = lambda var: 'CREAM_uuid' if var =='CREAM_JOBID' else '')
   def test_successCREAM( self, mock_environ_get, mock_environ_key):
     self.assertEqual(getUniqueIDFromOS(), 'CREAM_uuid')
 
-  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.__contains__',
               side_effect = lambda var: var =='GRID_GLOBAL_JOBID')
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
               side_effect = lambda var: 'GRID_uuid' if var =='GRID_GLOBAL_JOBID' else '')
@@ -200,14 +200,14 @@ class TestPilotLoggerGetUniqueIDFromOS( TestPilotLoggerTools ):
     self.assertEqual(getUniqueIDFromOS(), 'GRID_uuid')
 
 
-  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.__contains__',
               side_effect = lambda var: var =='VM_UUID' or var == 'CE_NAME' or var == 'VMTYPE' )
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
               side_effect = helper_get)
   def test_successVM( self, mock_environ_get, mock_environ_key):
     self.assertEqual(getUniqueIDFromOS(), 'vm://myCE/myCE:myVMTYPE:VM_uuid')
 
-  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.has_key',
+  @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.__contains__',
               side_effect = lambda var: False)
   @mock.patch('DIRAC.WorkloadManagementSystem.PilotAgent.PilotLogger.PilotLoggerTools.os.environ.get',
               side_effect = lambda var: None)
