@@ -11,9 +11,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
+from DIRAC.Core.Utilities import Distribution,  Subprocess
 
-import sys, os, shutil, tempfile, getpass, subprocess
+import sys, os, shutil, tempfile, subprocess
 
 class TarModuleCreator( object ):
 

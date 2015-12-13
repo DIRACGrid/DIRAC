@@ -27,7 +27,7 @@ class FileCatalogFactory:
       optionsDict = result['Value']
 
     if useProxy:
-      result = self.__getCatalogClass()
+      result = self.__getCatalogClass( catalogType )
       if not result['OK']:
         return result
       catalogClass = result['Value']
@@ -61,7 +61,7 @@ class FileCatalogFactory:
       catalog = catalogClass( **optionsDict )
       self.log.debug( 'Loaded module %sClient' % catalogType )
       return S_OK( catalog )
-    except Exception, x:
+    except Exception as x:
       errStr = "Failed to instantiate %s()" % ( catalogType )
       gLogger.exception( errStr, lException = x )
       return S_ERROR( errStr )
