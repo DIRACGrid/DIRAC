@@ -52,18 +52,22 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 from DIRAC.Resources.Catalog.Utilities                   import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalogFactory          import FileCatalogFactory
+from DIRAC.Resources.Catalog.FCConditionParser           import FCConditionParser
+
 
 class FileCatalog( object ):
 
-  ro_methods = set()
-  write_methods = set()
-  no_lfn_methods = set()
 
   def __init__( self, catalogs = None, vo = None ):
     """ Default constructor
     """
     self.valid = True
     self.timeout = 180
+
+    self.ro_methods = set()
+    self.write_methods = set()
+    self.no_lfn_methods = set()
+
     self.readCatalogs = []
     self.writeCatalogs = []
     self.rootConfigPath = '/Resources/FileCatalogs'
@@ -117,19 +121,21 @@ class FileCatalog( object ):
       # All the write methods must be present in the master
       catalogName, oCatalog, master = self.writeCatalogs[0]
       _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
-      FileCatalog.write_methods.update( writeList )
-      FileCatalog.no_lfn_methods.update( nolfnList )
+      self.write_methods.update( writeList )
+      self.no_lfn_methods.update( nolfnList )
     else:
       for catalogName, oCatalog, master in self.writeCatalogs:
         _roList, writeList, nolfnList = oCatalog.getInterfaceMethods()
-        FileCatalog.write_methods.update( writeList )
-        FileCatalog.no_lfn_methods.update( nolfnList )
+        self.write_methods.update( writeList )
+        self.no_lfn_methods.update( nolfnList )
 
     # Get the list of read methods
     for catalogName, oCatalog, master in self.readCatalogs:
       roList, _writeList, nolfnList = oCatalog.getInterfaceMethods()
-      FileCatalog.ro_methods.update( roList )
-      FileCatalog.no_lfn_methods.update( nolfnList )
+      self.ro_methods.update( roList )
+      self.no_lfn_methods.update( nolfnList )
+      
+    self.condParser = FCConditionParser( vo = self.vo, ro_methods = self.ro_methods )
 
   def isOK( self ):
     return self.valid
@@ -149,26 +155,42 @@ class FileCatalog( object ):
 
   def __getattr__( self, name ):
     self.call = name
-    if name in FileCatalog.write_methods:
+    if name in self.write_methods:
       return self.w_execute
-    elif name in FileCatalog.ro_methods:
+    elif name in self.ro_methods:
       return self.r_execute
     else:
       raise AttributeError
 
   def w_execute( self, *parms, **kws ):
     """ Write method executor.
+
+      If one of the LFNs given as input does not pass a condition defined for the
+      master catalog, we return S_ERROR without trying anything else
+
+      :param fcConditions: either a dict or a string, to be propagated to the FCConditionParser
+                           If it is a string, it is given for all catalogs
+                           If it is a dict, it has to be { catalogName: condition}, and only
+                                the specific condition for the catalog will be given
+
+      CAUTION !!! If the method is a write no_lfn method, then the return value are completely different
+                  We only return the result of the master catalog
+
+
     """
     successful = {}
     failed = {}
     failedCatalogs = {}
     successfulCatalogs = {}
 
+
+    specialConditions = kws.pop( 'fcConditions' ) if 'fcConditions' in kws else None
+
     allLfns = []
     lfnMapDict = {}
     masterResult = {}
     parms1 = []
-    if not self.call in FileCatalog.no_lfn_methods:
+    if self.call not in self.no_lfn_methods:
       fileInfo = parms[0]
       result = checkArgumentFormat( fileInfo, generateMap = True )
       if not result['OK']:
@@ -182,20 +204,42 @@ class FileCatalog( object ):
     for catalogName, oCatalog, master in self.writeCatalogs:
 
       # Skip if the method is not implemented in this catalog
+      # NOTE: it is impossible for the master since the write method list is populated
+      # only from the master catalog, and if the method is not there, __getattr__
+      # would raise an exception
       if not oCatalog.hasCatalogMethod( self.call ):
-        if master:
-          self.log.error( "Master catalog does not implement the write method", self.call )
-          return DError( DErrno.EFCERR, "Master catalog does not implement the write method %s" % self.call )
-        else:
-          continue
+        continue
 
       method = getattr( oCatalog, self.call )
-      if self.call in FileCatalog.no_lfn_methods:
+
+      if self.call in self.no_lfn_methods:
         result = method( *parms, **kws )
       else:
-        result = method( fileInfo, *parms1, **kws )
+        if isinstance( specialConditions, dict ):
+          condition = specialConditions.get( catalogName )
+        else:
+          condition = specialConditions
+        # Check whether this catalog should be used for this method
+        res = self.condParser( catalogName, self.call, fileInfo, condition = condition )
+        # condParser never returns S_ERROR
+        condEvals = res['Value']['Successful']
+        # For a master catalog, ALL the lfns should be valid
+        if master:
+          if any([not valid for valid in condEvals.values()]):
+            gLogger.error( "The master catalog is not valid for some LFNS", condEvals )
+            return S_ERROR( "The master catalog is not valid for some LFNS %s" % condEvals )
+        
+        validLFNs = dict( ( lfn, fileInfo[lfn] ) for lfn in condEvals if condEvals[lfn] )
+        invalidLFNs = [lfn for lfn in condEvals if not condEvals[lfn]]
+        if invalidLFNs:
+          gLogger.debug( "Some LFNs are not valid for operation '%s' on catalog '%s' : %s" % ( self.call, catalogName,
+                                                                                        invalidLFNs ) )
+        result = method( validLFNs, *parms1, **kws )
+        
+
       if master:
         masterResult = result
+
       if not result['OK']:
         if master:
           # If this is the master catalog and it fails we don't want to continue with the other catalogs
@@ -227,10 +271,10 @@ class FileCatalog( object ):
           failed.setdefault( lfn, {} )[catalogName] = errorMessage
       # Restore original lfns if they were changed by normalization
       if lfnMapDict:
-        for lfn in failed:
-          failed[lfnMapDict.get( lfn, lfn )] = failed[lfn]
-        for lfn in successful:
-          successful[lfnMapDict.get( lfn, lfn )] = successful[lfn]
+        for lfn in failed.keys():
+          failed[lfnMapDict.get( lfn, lfn )] = failed.pop( lfn )
+        for lfn in successful.keys():
+          successful[lfnMapDict.get( lfn, lfn )] = successful.pop( lfn )
       resDict = {'Failed':failed, 'Successful':successful}
       return S_OK( resDict )
     else:
@@ -244,7 +288,7 @@ class FileCatalog( object ):
     """
     successful = {}
     failed = {}
-    for catalogName, oCatalog, _master in self.readCatalogs:
+    for _catalogName, oCatalog, _master in self.readCatalogs:
 
       # Skip if the method is not implemented in this catalog
       if not oCatalog.hasCatalogMethod( self.call ):
