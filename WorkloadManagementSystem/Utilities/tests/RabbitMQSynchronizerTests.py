@@ -3,7 +3,9 @@
 
 import unittest
 from DIRAC.WorkloadManagementSystem.Utilities.RabbitMQSynchronizer import RabbitMQSynchronizer
-#from DIRAC.ConfigurationSystem.Client.Helpers.Registry import
+from DIRAC.WorkloadManagementSystem.Utilities.RabbitMQSynchronizer import getAllowedGroupName
+from DIRAC.WorkloadManagementSystem.Utilities.RabbitMQSynchronizer import getAllowedHostProperty
+from DIRAC.WorkloadManagementSystem.Utilities.RabbitMQSynchronizer import getSpecialUsersForRabbitMQDatabase
 
 class TestRabbitMQSync( unittest.TestCase ):
 
@@ -13,16 +15,24 @@ class TestRabbitMQSync( unittest.TestCase ):
   def tearDown( self ):
     pass
 
-class TestA( TestRabbitMQSync ):
-
+class getAllowedGroupNameTest ( TestRabbitMQSync ):
   def test_success( self ):
-    self.synchronizer.sync( _eventName = None, _params =None)
-    pass
-  def test_failureBadFile( self ):
-    pass
+    self.assertEqual(getAllowedGroupName(), 'lhcb_pilot')
+class getAllowedHostPropertyTest ( TestRabbitMQSync ):
+  def test_success( self ):
+    self.assertEqual(getAllowedHostProperty(), 'GenericPilot')
+
+class getSpecialUsersForRabbitMQDatabaseTest ( TestRabbitMQSync ):
+  def test_success( self ):
+    usersResult = getSpecialUsersForRabbitMQDatabase()
+    usersSpecial = ['admin', 'dirac', 'ala', 'O=client,CN=kamyk']
+    self.assertTrue(set(usersResult) == set(usersSpecial))
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestRabbitMQSync  )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestA ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( getAllowedHostPropertyTest ))
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( getAllowedGroupNameTest  ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( getSpecialUsersForRabbitMQDatabaseTest  ))
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 

@@ -13,6 +13,7 @@ from DIRAC.Core.Utilities.RabbitMQAdmin import getAllUsers, deleteUsers
 from DIRAC.Core.Utilities.RabbitMQAdmin import setUsersPermissions, addUsersWithoutPasswords
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations #for getValidPilotGroupName()
 
 class RabbitMQSynchronizer(object):
 
@@ -22,8 +23,8 @@ class RabbitMQSynchronizer(object):
     # I am not sure whether it is needed but
     # it was used in DIRAC.ResourceStatusSystem.Utilities.Synchronizer
     CSHelpers.warmUp()
-    self._accessUserGroup = 'lhcb_pilot'  #only users belonging to group with this property are allowed to connect
-    self._accessProperty = 'GenericPilot' #only host with this property are allowed to connect
+    self._accessUserGroup = getAllowedGroupName() #only users belonging to group with this property are allowed to connect
+    self._accessProperty = getAllowedHostProperty() #only host with this property are allowed to connect
 
   def sync( self, _eventName, _params ):
     '''Synchronizes the internal RabbitMQ user database with the current content of CS.
@@ -41,6 +42,24 @@ class RabbitMQSynchronizer(object):
     valid_hosts = getDNsForValidHosts(self._accessProperty)
     updateRabbitMQDatabase(valid_users + valid_hosts)
     return S_OK()
+
+def getAllowedGroupName():
+  """Returns name of the group of which users are allowed
+     to connect to RabbitMQ server.
+  Returns:
+    str: group name
+  """
+  return Operations().getValue( "Pilot/GenericPilotGroup", "" )
+
+def getAllowedHostProperty():
+  """Returns property. The hosts that contain it
+     are allowed to connect to RabbitMQ server.
+  Returns:
+    str: property name
+  """
+  #It should be taken from CS
+  return 'GenericPilot'
+
 
 def getDNsForValidHosts(accessProperty):
   """Returns DN of hosts which contains accessProperty based on current
@@ -78,7 +97,9 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
     specialUsers(list): special users that will not be processed.
   """
   if specialUsers is None:
-    specialUsers = ['admin', 'dirac', 'ala', 'O=client,CN=kamyk']
+    #I think specialUsers should be read from CS and not taken as the argument
+    #but I will leave it till we decide it.
+    specialUsers = getSpecialUsersForRabbitMQDatabase()
   ret = getAllUsers()
   if not ret['OK']:
     gLogger.error("Some problem with getting all users from RabbitMQ DB")
@@ -94,6 +115,17 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
   if usersToRemove:
     deleteUsers(usersToRemove)
   return S_OK()
+
+def getSpecialUsersForRabbitMQDatabase():
+  """Returns a list of special users
+     that will not be processed (e.g. removed)
+     while updating the RabbitMQ database.
+  Returns:
+    list: of user logins.
+  """
+  #For a moment it is hardcoded but should be read from
+  #some location in CS
+  return ['admin', 'dirac', 'ala', 'O=client,CN=kamyk']
 
 def listDifference(list1, list2):
   """Calculates differences between two lists.
