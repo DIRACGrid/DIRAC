@@ -65,6 +65,23 @@ FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request i
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
 
+[v6r14p14]
+
+*Core
+FIX: VOMS.py - return RFC proxy if necessary after adding the VOMS extension
+
+*Configuration
+FIX: Validate maxCPUTime and Site description value
+
+*Resources
+FIX: XROOTStorage - changes to allow third party transfers between XROOT storages
+CHANGE: HTCondorCEComputingElement - the Condor logging can now be obtained in the webinterface;
+        SIGTERM (instead of SIGKILL) is send to the application in case jobs are killed by the host site;
+        when pilots are put in held status we kill them in condor and mark them as aborted.
+
+*WMS
+FIX: pilotCommands - fixes for intrepreting tags in the pilot
+
 [v6r14p13]
 
 *WMS

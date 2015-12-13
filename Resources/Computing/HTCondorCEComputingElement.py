@@ -10,7 +10,9 @@
 
 """
 
-__RCSID__ = "$Id$"
+import os
+import tempfile
+import commands
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
@@ -18,13 +20,52 @@ from DIRAC                                               import S_OK, S_ERROR
 
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
-from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Utilities.Subprocess                     import Subprocess
 
-import os
-import tempfile
-import commands
+__RCSID__ = "$Id$"
+
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = [ 'Queue' ]
+DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
+
+def condorIDFromJobRef( jobRef ):
+  """return tuple of "jobURL" and condorID from the jobRef string"""
+  jobURL = jobRef.split(":::")[0]
+  condorID = jobURL.split("/")[-1]
+  return jobURL,condorID
+
+def parseCondorStatus( lines, jobID ):
+  """parse the condor_q or condor_history output for the job status"""
+  for line in lines:
+    if line.strip().startswith( jobID ):
+      if " I " in line:
+        return 'Waiting'
+      elif " R " in line:
+        return 'Running'
+      elif " C " in line:
+        return 'Done'
+      elif " X " in line:
+        return 'Aborted'
+      elif " H " in line:
+        return 'HELD'
+  return 'Unknown'
+
+def findFile( workingDir, fileName ):
+  """ find a pilot out, err, log file """
+  res = Subprocess().systemCall("find %s -name '%s'" % (workingDir, fileName), shell=True)
+  if not res['OK']:
+    return res
+  paths = res['Value'][1].splitlines()
+  return S_OK(paths)
+
+def getCondorLogFile( pilotRef ):
+  """return the location of the logFile belonging to the pilot reference"""
+  _jobUrl, condorID = condorIDFromJobRef( pilotRef )
+  #FIXME: This gets called from the WMSAdministrator, so we don't have the same
+  #working directory as for the SiteDirector unless we force it
+  resLog = findFile( DEFAULT_WORKINGDIRECTORY, '%s.log' % condorID )
+  return resLog
 
 class HTCondorCEComputingElement( ComputingElement ):
   """HTCondorCE computing element class
@@ -50,11 +91,24 @@ class HTCondorCEComputingElement( ComputingElement ):
     """ Create the Sub File for submission
 
     """
-
     workingDirectory = self.ceParameters['WorkingDirectory']
-    initialDir = '/'.join( workingDirectory.split('/')[:-1] )
+    initialDir = os.path.dirname( workingDirectory )
+    self.log.debug( "Working directory: %s " % workingDirectory )
+    ##We randomize the location of the pilotoutput and log, because there are just too many of them
+    pre1 = makeGuid()[:3]
+    pre2 = makeGuid()[:3]
+    try:
+      os.makedirs( os.path.join( initialDir, pre1, pre2 ) )
+    except OSError:
+      pass
+    initialDirPrefix = "%s/%s" %( pre1, pre2 )
+
+    self.log.debug( "InitialDir: %s" % os.path.join(initialDir,initialDirPrefix) )
+
     fd, name = tempfile.mkstemp( suffix = '.sub', prefix = 'HTCondorCE_', dir = workingDirectory )
     subFile = os.fdopen( fd, 'w' )
+
+    executable = os.path.join( workingDirectory, executable )
 
     sub = """
 executable = %(executable)s
@@ -67,13 +121,14 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 ShouldTransferFiles = YES
-WhenToTransferOutput = ON_EXIT
+WhenToTransferOutput = ON_EXIT_OR_EVICT
+kill_sig=SIGTERM
 Queue %(nJobs)s
 
 """ % dict( executable=executable,
             nJobs=nJobs,
             ceName=self.ceName,
-            initialDir=initialDir,
+            initialDir=os.path.join(initialDir,initialDirPrefix),
           )
     subFile.write( sub )
     subFile.close()
@@ -134,7 +189,7 @@ Queue %(nJobs)s
     self.log.verbose( "KillJob jobIDList: %s" % jobIDList )
 
     for jobRef in jobIDList:
-      job,jobID = self.__condorIDFromJobRef( jobRef )
+      job,jobID = condorIDFromJobRef( jobRef )
       self.log.verbose( "Killing pilot %s " % job )
       status,stdout = commands.getstatusoutput( 'condor_rm %s' % jobID )
       if status != 0:
@@ -174,6 +229,8 @@ Queue %(nJobs)s
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
+    self.__cleanup()
+
     self.log.verbose( "Job ID List for status: %s " % jobIDList )
     if isinstance( jobIDList, basestring ):
       jobIDList = [ jobIDList ]
@@ -182,7 +239,7 @@ Queue %(nJobs)s
     condorIDs = {}
     ##Get all condorIDs so we can just call condor_q and condor_history once
     for jobRef in jobIDList:
-      job,jobID = self.__condorIDFromJobRef( jobRef )
+      job,jobID = condorIDFromJobRef( jobRef )
       condorIDs[job] = jobID
 
     status,stdout_q = commands.getstatusoutput( 'condor_q %s' % ' '.join(condorIDs.values()) )
@@ -197,7 +254,13 @@ Queue %(nJobs)s
 
     for job,jobID in condorIDs.iteritems():
 
-      pilotStatus = self.__parseCondorStatus( lines, jobID )
+      pilotStatus = parseCondorStatus( lines, jobID )
+      if pilotStatus == 'HELD':
+        #make sure the pilot stays dead and gets taken out of the condor_q
+        _rmStat, _rmOut = commands.getstatusoutput( 'condor_rm %s ' % jobID )
+        #self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
+        pilotStatus = 'Aborted'
+
       resultDict[job] = pilotStatus
 
     if len( resultDict ) != len( jobIDList ):
@@ -211,21 +274,29 @@ Queue %(nJobs)s
   def getJobOutput( self, jobID, _localDir = None ):
     """ TODO: condor can copy the output automatically back to the
     submission, so we just need to pick it up from the proper folder
-    FIXME: When do we clean the log and out/err files?
     """
     self.log.verbose( "Getting job output for jobID: %s " % jobID )
-    _job,condorID = self.__condorIDFromJobRef( jobID )
+    _job,condorID = condorIDFromJobRef( jobID )
     ## FIXME: the WMSAdministrator does not know about the
     ## SiteDirector WorkingDirectory, it might not even run on the
     ## same machine
-    workingDirectory = self.ceParameters.get( 'WorkingDirectory',
-                                              '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT' )
+    #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    workingDirectory = DEFAULT_WORKINGDIRECTORY
 
     output = ''
     error = ''
+    resOut = findFile( workingDirectory, '%s.out' % condorID )
+    if not resOut['OK']:
+      self.log.error("Failed to find output file for condor job", jobID )
+      return resOut
+    outputfilename = resOut['Value'][0]
 
-    outputfilename = os.path.join( workingDirectory, '%s.out' % condorID )
-    errorfilename = os.path.join( workingDirectory, '%s.err' % condorID )
+    resErr = findFile( workingDirectory, '%s.err' % condorID )
+    if not resErr['OK']:
+      self.log.error("Failed to find error file for condor job", jobID )
+      return resErr
+    errorfilename = resErr['Value'][0]
+
     try:
       with open( outputfilename ) as outputfile:
         output = outputfile.read()
@@ -261,26 +332,32 @@ Queue %(nJobs)s
     jobReferences = [ "%s%s.%s" % ( cePrefix, clusterID, i ) for i in range( int( numJobs ) + 1 ) ]
     return S_OK( jobReferences )
 
-  def __condorIDFromJobRef( self, jobRef ):
-    """return tuple of "jobURL" and condorID from the jobRef string"""
-    jobURL = jobRef.split(":::")[0]
-    condorID = jobURL.split("/")[-1]
-    return jobURL,condorID
+  def __cleanup( self ):
+    """ clean the working directory of old jobs"""
 
-  def __parseCondorStatus( self, lines, jobID ):
-    """parse the condor_q or condor_history output for the job status"""
-    for line in lines:
-      if line.strip().startswith( jobID ):
-        if " I " in line:
-          return 'Waiting'
-        elif " R " in line:
-          return 'Running'
-        elif " C " in line:
-          return 'Done'
-        elif " X " in line:
-          return 'Aborted'
-        elif " H " in line:
-          return 'Aborted'
-    return 'Unknown'
+    #FIXME: again some issue with the working directory...
+    #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    workingDirectory = DEFAULT_WORKINGDIRECTORY
+
+    self.log.debug( "Cleaning working directory: %s" % workingDirectory )
+
+    ### remove all files older than 120 minutes starting with DIRAC_ Condor will
+    ### push files on submission, but it takes at least a few seconds until this
+    ### happens so we can't directly unlink after condor_submit
+    status,stdout = commands.getstatusoutput( 'find %s -mmin +120 -name "DIRAC_*" -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+
+    ### remove all log files older than 15 days
+    ### FIXME: make this configurable
+    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.log" -type f -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.out" -type f -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
+    status,stdout = commands.getstatusoutput( 'find %s -mtime +15 -name "*.err" -type f -delete ' % workingDirectory )
+    if status != 0:
+      self.log.error( "Failure during HTCondorCE __cleanup" , stdout )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

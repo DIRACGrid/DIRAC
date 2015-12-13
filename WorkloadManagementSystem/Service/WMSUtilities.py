@@ -93,6 +93,14 @@ def getPilotLoggingInfo( grid, pilotRef ):
     cmd = [ 'glite-wms-job-logging-info', '-v', '3', '--noint', pilotRef ]
   elif grid == 'CREAM':
     cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]
+  elif grid == 'HTCondorCE':
+    ## need to import here, otherwise import errors happen
+    from DIRAC.Resources.Computing.HTCondorCEComputingElement import getCondorLogFile
+    resLog = getCondorLogFile( pilotRef )
+    if not resLog['OK']:
+      return resLog
+    logFile = resLog['Value']
+    cmd = [ 'cat', " ".join(logFile) ]
   else:
     return S_ERROR( 'Pilot logging not available for %s CEs' % grid )
 
