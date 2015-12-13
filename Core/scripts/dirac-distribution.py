@@ -11,9 +11,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess, CFG
+from DIRAC.Core.Utilities import List, Distribution, Platform
 
-import sys, os, re, urllib2, tempfile, getpass, imp
+import sys, os, re, urllib2, tempfile, imp
 
 try:
   import hashlib as md5
@@ -101,7 +101,7 @@ class Params:
   def setReleasesCFG( self, optionValue ):
     self.relcfg = optionValue
     return S_OK()
-  
+
   def setGlobalDefaults( self, value ):
     self.globalDefaults = value
     return S_OK()
@@ -129,7 +129,7 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName, 
+    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName,
                                                globalDefaultsURL = cliParams.globalDefaults )
     self.relConf.setDebugCB( gLogger.info )
     self.relConf.loadProjectDefaults()
@@ -359,4 +359,3 @@ if __name__ == "__main__":
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
   upCmd = distMaker.getUploadCmd()
   gLogger.always( upCmd )
-

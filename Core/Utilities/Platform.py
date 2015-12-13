@@ -1,4 +1,3 @@
-# $HeadURL$
 """
 Compile the externals
 """

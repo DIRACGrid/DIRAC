@@ -259,6 +259,8 @@ class VOMS( BaseSecurity ):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
+    if chain.isRFC():
+      cmdArgs.append( "-r" )
 
     if not Os.which('voms-proxy-init'):
       return DError( DErrno.EVOMS, "Missing voms-proxy-init" )

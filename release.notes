@@ -1,4 +1,4 @@
-[v6r15-pre9]
+[v6r15-pre10]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 
@@ -13,6 +13,8 @@ NEW: dirac-install-client - a guiding script to install the DIRAC client from A 
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
 FIX: BaseClient - only give warning log message "URL banned" when one of the
      service URLs is really banned
+CHANGE: DISET components - improved logic of service URL retries to speedup queries
+        in case of problematic services     
 NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
      policy section of Dirac.cfg     
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
@@ -42,6 +44,8 @@ NEW: ConsistencyInspector class to perform data consistency checks between
      different databases
 CHANGE: FileCatalog(Client) - refactored to allow clients declare which interface
         they implement     
+NEW: FileCatalog - conditional FileCatalog instantiation based on the configured
+     Operations criteria        
 
 *TS
 CHANGE: TransformationDB table TaskInputs: InputVector column from BLOB to MEDIUMTEXT
@@ -51,6 +55,32 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
+
+*RMS
+FIX: Request - fix for the case when one of the request is malformed, the rest of 
+     the requests could not be swiped
+FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request is buggy     
+
+*Resources
+FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
+     the container StorageElement class
+
+[v6r14p14]
+
+*Core
+FIX: VOMS.py - return RFC proxy if necessary after adding the VOMS extension
+
+*Configuration
+FIX: Validate maxCPUTime and Site description value
+
+*Resources
+FIX: XROOTStorage - changes to allow third party transfers between XROOT storages
+CHANGE: HTCondorCEComputingElement - the Condor logging can now be obtained in the webinterface;
+        SIGTERM (instead of SIGKILL) is send to the application in case jobs are killed by the host site;
+        when pilots are put in held status we kill them in condor and mark them as aborted.
+
+*WMS
+FIX: pilotCommands - fixes for intrepreting tags in the pilot
 
 [v6r14p13]
 
@@ -71,7 +101,6 @@ CHANGE: Consider files to reschedule and submit when they are Failed in FTS
 
 *WMS
 CHANGE: Move getCEStatus function back to using the ARC API
-
 
 [v6r14p11]
 

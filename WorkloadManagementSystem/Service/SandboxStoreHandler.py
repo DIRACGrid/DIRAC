@@ -281,7 +281,7 @@ class SandboxStoreHandler( RequestHandler ):
             pass
         try:
           os.rename( localFilePath, hdFilePath )
-        except Exception, e:
+        except Exception as e:
           errMsg = "Cannot move temporal file to final path"
           gLogger.error( errMsg, repr( e ).replace( ',)', ')' ) )
           result = S_ERROR( errMsg )
@@ -307,8 +307,9 @@ class SandboxStoreHandler( RequestHandler ):
         gLogger.verbose( "Ooops, SB transfer wasn't in the successful ones", str( result ) )
         return S_ERROR( "RM returned OK to the action but SB transfer wasn't in the successful ones" )
       return S_OK( ( self.__externalSEName, okTrans[ sbPath ] ) )
-    except Exception, e:
-      return S_ERROR( "Error while moving sandbox to SE", "%s" % repr( e ).replace( ',)', ')' ) )
+    except Exception as e:
+      gLogger.error( "Error while moving sandbox to SE", "%s" % repr( e ).replace( ',)', ')' ) )
+      return S_ERROR( "Error while moving sandbox to SE" )
 
   ##################
   # Assigning sbs to jobs
@@ -454,7 +455,7 @@ class SandboxStoreHandler( RequestHandler ):
           gLogger.info( "Trying to clean dir %s" % hdPath )
           # Empty dir!
           os.rmdir( hdPath )
-        except Exception, e:
+        except Exception as e:
           gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
           break
     return S_OK()
@@ -474,13 +475,13 @@ class SandboxStoreHandler( RequestHandler ):
         physicalRemoval.addFile( fileToRemove )
         request.addOperation( physicalRemoval )
         return ReqClient().putRequest( request )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "Exception while setting deletion request" )
         return S_ERROR( "Cannot set deletion request: %s" % str( e ) )
     else:
       gLogger.info( "Deleting external Sandbox" )
       try:
         return StorageElement( SEName ).removeFile( SEPFN )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "RM raised an exception while trying to delete a remote sandbox" )
         return S_ERROR( "RM raised an exception while trying to delete a remote sandbox" )

@@ -42,6 +42,12 @@ class SSLTransport( BaseTransport ):
   def __unlock( self ):
     self.__locked = False
 
+  def setSocketTimeout( self, timeout ):
+    """
+    This method is used to chenge the default timeout of the socket
+    """
+    gSocketInfoFactory.setSocketTimeout( timeout )
+    
   def initAsClient( self ):
     retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     if not retVal[ 'OK' ]:

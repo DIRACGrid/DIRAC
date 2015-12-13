@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-executor
 # Author : Adria Casajus
 ########################################################################
@@ -10,9 +9,8 @@ __RCSID__ = "$Id$"
 """
 
 import sys
-import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC import gLogger, gConfig
+from DIRAC import gLogger
 from DIRAC.Core.Base.ExecutorReactor import ExecutorReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 

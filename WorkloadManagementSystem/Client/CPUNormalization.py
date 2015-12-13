@@ -157,7 +157,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
   return S_OK( {'CPU': cput, 'WALL':wall, 'NORM': calib * iterations / cput, 'UNIT': reference } )
 
 
-def getCPUTime( CPUNormalizationFactor ):
+def getCPUTime( cpuNormalizationFactor ):
   """ Trying to get CPUTime (in seconds) from the CS. The default is a large 9999999, that we may consider as "Infinite".
       This is a generic method, independent from the middleware of the resource if TimeLeft doesn't return a value
   """

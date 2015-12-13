@@ -141,12 +141,12 @@ class JobDescription( object ):
     result = self.__checkNumericalVarInDescription( "Priority", 1, 0, 10 )
     if not result[ 'OK' ]:
       return result
-    
+
     allowedSubmitPools = getSubmitPools( self.__description['OwnerGroup'] )
-    result = self.__checkMultiChoice( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result
-    
+
     result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result

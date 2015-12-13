@@ -54,11 +54,10 @@ class XROOTStorage( StorageBase ):
 
     self.protocolParameters['Port'] = 0
     self.protocolParameters['WSUrl'] = 0
-    self.protocolParameters['SpaceToken'] = 0
+    #self.protocolParameters['SpaceToken'] = 0
 
     # The API instance to be used
     self.xrootClient = client.FileSystem( self.host )
-
 
   def exists( self, path ):
     """Check if the given path exists. The 'path' variable can be a string or a list of strings.
@@ -288,9 +287,13 @@ class XROOTStorage( StorageBase ):
         return S_ERROR( errStr )
 
 
-    status = self.xrootClient.copy( src_url, dest_file )
+    ##create this local to get clean job queue
+    copyProc = client.CopyProcess()
+    copyProc.add_job( source=src_url, target=dest_file, thirdparty="first" )
+    copyProc.prepare()
+    runStatusTuple = copyProc.run()
     # For some reason, the copy method returns a tuple (status,None)
-    status = status[0]
+    status = runStatusTuple[0]
 
     if status.ok:
       self.log.debug( 'XROOTStorage.__getSingleFile: Got a file from storage.' )
@@ -416,21 +419,25 @@ class XROOTStorage( StorageBase ):
           self.log.debug( "XROOTStorage.__putSingleFile: Successfully removed remote file" )
 
     # get the absolute path needed by the xroot api
-    src_file = os.path.abspath( src_file )
-    if not os.path.exists( src_file ):
-      errStr = "XROOTStorage.__putSingleFile: The local source file does not exist."
-      gLogger.error( errStr, src_file )
-      return S_ERROR( errStr )
-    sourceSize = getSize( src_file )
-    if sourceSize == -1:
-      errStr = "XROOTStorage.__putSingleFile: Failed to get file size."
-      gLogger.error( errStr, src_file )
-      return S_ERROR( errStr )
+    if not src_file.startswith( "root:" ):
+      src_file = os.path.abspath( src_file )
+      if not os.path.exists( src_file ):
+        errStr = "XROOTStorage.__putSingleFile: The local source file does not exist."
+        gLogger.error( errStr, src_file )
+        return S_ERROR( errStr )
+      sourceSize = getSize( src_file )
+      if sourceSize == -1:
+        errStr = "XROOTStorage.__putSingleFile: Failed to get file size."
+        gLogger.error( errStr, src_file )
+        return S_ERROR( errStr )
 
-    # Perform the copy with the API
-    status = self.xrootClient.copy( src_file, dest_url )
+    # Perform the copy with the API, create CopyProcess locally to get clean job queue
+    copyProc = client.CopyProcess()
+    copyProc.add_job( source=src_file, target=dest_url, thirdparty="first" )
+    copyProc.prepare()
+    runStatusTuple = copyProc.run()
     # For some reason, the copy method returns a tuple (status,None)
-    status = status[0]
+    status = runStatusTuple[0]
 
     if status.ok:
       self.log.debug( 'XROOTStorage.__putSingleFile: Put file on storage.' )
@@ -1597,3 +1604,19 @@ class XROOTStorage( StorageBase ):
     cwdUrl = result['Value']
     fullUrl = '%s/%s' % ( cwdUrl, fileName )
     return S_OK( fullUrl )
+
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ Calls :function:`StorageBase.constructURLFromLFN` and appends the svcClass addition to the URL
+    if spaceToken is set for this SE
+
+    :param str lfn: file LFN
+    :param boolean withWSUrl: flag to include the web service part into the resulting URL
+    :return: result['Value'] - resulting URL
+    """
+    result = super( XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl )
+    if not result['OK']:
+      return result
+    url = result['Value']
+    if self.protocolParameters.get('SpaceToken', None):
+      url += "?svcClass=%(SpaceToken)s" % self.protocolParameters
+    return S_OK( url )
