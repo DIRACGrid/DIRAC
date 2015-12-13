@@ -78,7 +78,7 @@ def eraseFileContent( filename ):
   """ Erases the content of a given file.
   """
 
-  with open(filename, 'r+') as myFile:
+  with open(filename, 'w+') as myFile:
     myFile.truncate()
 
 def saveMessageToFile( msg, filename = 'myLocalQueueOfMessages' ):
