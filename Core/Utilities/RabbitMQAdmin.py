@@ -58,6 +58,8 @@ def addUser(user, password = 'password'):
   return executeRabbitmqctl('add_user', user, password)
 
 def deleteUser(user):
+  '''Removes the user from the internal RabbitMQ database.
+  '''
   return executeRabbitmqctl('delete_user', user)
 
 def getAllUsers():
@@ -83,6 +85,11 @@ def setUserPermission(user):
   return executeRabbitmqctl('set_permissions','-p','/', user, '\".*\"','\".*\"','\".*\"')
 
 def clearUserPassword(user):
+  '''Clears users password for the internal RabbitMQ
+     database. User with no password cannot enter
+     the RabbitMQ website interface but still can
+     connect via SSL if given permission.
+  '''
   return executeRabbitmqctl('clear_password', user)
 
 def setUsersPermissions(users):
