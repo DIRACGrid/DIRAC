@@ -12,6 +12,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getHosts
 from DIRAC.Core.Utilities.RabbitMQAdmin import getAllUsers, deleteUsers
 from DIRAC.Core.Utilities.RabbitMQAdmin import setUsersPermissions, addUsersWithoutPasswords
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
+from DIRAC import gLogger
 
 class RabbitMQSynchronizer(object):
 
@@ -61,7 +62,7 @@ def getDNsForValidHosts(accessProperty):
       if retVal[ 'OK' ]:
         DNs.extend(retVal['Value'])
       else:
-        print 'Could not find a correct DN for host: %s. It will be ignored.'% host
+        gLogger.error('Could not find a correct DN for host: %s. It will be ignored.'% host)
   return DNs
 
 
@@ -80,7 +81,7 @@ def updateRabbitMQDatabase(newUsers, specialUsers = None):
     specialUsers = ['admin', 'dirac', 'ala', 'O=client,CN=kamyk']
   ret = getAllUsers()
   if not ret['OK']:
-    print "Some problem with getting all users from RabbitMQ DB"
+    gLogger.error("Some problem with getting all users from RabbitMQ DB")
     return ret
   currentUsersInRabbitMQ =  ret['Value']
   #special users should not be taken into account
