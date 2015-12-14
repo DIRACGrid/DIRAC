@@ -5,8 +5,8 @@
   and override its methods
 """
 
-from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerOption
-from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerSection
+from DIRAC.Core.Utilities.ConsumerTools import getConsumerOption
+from DIRAC.Core.Utilities.ConsumerTools import getConsumerSection
 from DIRAC import gLogger
 
 class ConsumerModule(object):

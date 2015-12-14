@@ -1,8 +1,7 @@
 """Unit tests for ConsumerTools
 """
 import unittest
-from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getOption
-from DIRAC.WorkloadManagementSystem.Consumer.ConsumerTools import getConsumerOption
+from DIRAC.Core.Utilities.ConsumerTools import getConsumerOption
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 #from DIRAC import gConfig
