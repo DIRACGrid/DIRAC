@@ -31,7 +31,7 @@ def printVersion( log ):
 def pythonPathCheck():
 
   try:
-    os.umask( 18 ) # 022
+    os.umask( 0o22 )
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
     print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
@@ -318,20 +318,10 @@ class CommandBase( object ):
 
       # return code
       returnCode = _p.wait()
-      self.log.debug( "Return code of %s: %d" % ( cmd, returnCode ) )
 
       return (returnCode, outData)
     except ImportError:
       self.log.error( "Error importing subprocess" )
-
-  def exitWithError( self, errorCode ):
-    """ Wrapper around sys.exit()
-    """
-    self.log.info( "List of child processes of current PID:" )
-    retCode, _outData = self.executeAndGetOutput( "ps --forest -o pid,%%cpu,%%mem,tty,stat,time,cmd -g %d" % os.getpid() )
-    if retCode:
-      self.log.error( "Failed to issue ps [ERROR %d] " % retCode )
-    sys.exit( errorCode )
 
 class PilotParams( object ):
   """ Class that holds the structure with all the parameters to be used across all the commands
@@ -363,7 +353,6 @@ class PilotParams( object ):
     self.configServer = ""
     self.installation = ""
     self.ceName = ""
-    self.ceType = ''
     self.queueName = ""
     self.platform = ""
     self.minDiskSpace = 2560 #MB
@@ -384,7 +373,7 @@ class PilotParams( object ):
     self.diracInstalled = False
     self.diracExtensions = []
     # Some commands can define environment necessary to execute subsequent commands
-    self.installEnv = os.environ
+    self.installEnv = None
     # If DIRAC is preinstalled this file will receive the updates of the local configuration
     self.localConfigFile = ''
     self.executeCmd = False
@@ -410,9 +399,8 @@ class PilotParams( object ):
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
                      ( 'D:', 'disk=', 'Require at least <space> MB available' ),
                      ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
-                     ( 'N:', 'Name=', 'CE Name' ),
-                     ( 'Q:', 'Queue=', 'Queue name' ),
-                     ( 'y:', 'CEType=', 'CE Type (normally InProcess)' ),
+                     ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
+                     ( 'Q:', 'Queue', 'Queue name' ),
                      ( 'S:', 'setup=', 'DIRAC Setup to use' ),
                      ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
                      ( 'T:', 'CPUTime', 'Requested CPU Time' ),
@@ -451,8 +439,6 @@ class PilotParams( object ):
         self.site = v
       elif o == '-N' or o == '--Name':
         self.ceName = v
-      elif o == '-y' or o == '--CEType':
-        self.ceType = v
       elif o == '-Q' or o == '--Queue':
         self.queueName = v  
       elif o == '-R' or o == '--reference':
