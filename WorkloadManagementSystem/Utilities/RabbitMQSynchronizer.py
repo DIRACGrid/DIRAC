@@ -125,7 +125,7 @@ def getSpecialUsersForRabbitMQDatabase():
   """
   #For a moment it is hardcoded but should be read from
   #some location in CS
-  return ['admin', 'dirac', 'ala', 'O=client,CN=kamyk']
+  return ['admin', 'dirac']
 
 def listDifference(list1, list2):
   """Calculates differences between two lists.
