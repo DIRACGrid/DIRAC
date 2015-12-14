@@ -18,6 +18,7 @@ class TestRabbitMQSync( unittest.TestCase ):
 class getAllowedGroupNameTest ( TestRabbitMQSync ):
   def test_success( self ):
     self.assertEqual(getAllowedGroupName(), 'lhcb_pilot')
+
 class getAllowedHostPropertyTest ( TestRabbitMQSync ):
   def test_success( self ):
     self.assertEqual(getAllowedHostProperty(), 'GenericPilot')
