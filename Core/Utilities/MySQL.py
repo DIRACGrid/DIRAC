@@ -540,12 +540,12 @@ class MySQL( object ):
       return S_OK( inEscapeValues )
 
     for value in inValues:
-      if type( value ) in StringTypes:
+      if isinstance( value, basestring ):
         retDict = self.__escapeString( value )
         if not retDict['OK']:
           return retDict
         inEscapeValues.append( retDict['Value'] )
-      elif type( value ) == TupleType or type( value ) == ListType:
+      elif isinstance( value, ( tuple, list )):
         tupleValues = []
         for v in list( value ):
           retDict = self.__escapeString( v )
@@ -553,7 +553,7 @@ class MySQL( object ):
             return retDict
           tupleValues.append( retDict['Value'] )
         inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
-      elif type( value ) == BooleanType:
+      elif isinstance( value, bool ):
         inEscapeValues = [str( value )]
       else:
         retDict = self.__escapeString( str( value ) )
@@ -815,7 +815,7 @@ class MySQL( object ):
     """
 
     # First check consistency of request
-    if type( tableDict ) != DictType:
+    if not isinstance( tableDict, dict ):
       return DError( DErrno.EMYSQL, 'Argument is not a dictionary: %s( %s )'
                       % ( type( tableDict ), tableDict ) )
 
@@ -825,7 +825,7 @@ class MySQL( object ):
     for table in tableList:
       thisTable = tableDict[table]
       # Check if Table is properly described with a dictionary
-      if type( thisTable ) != DictType:
+      if not isinstance( thisTable, dict ):
         return DError( DErrno.EMYSQL, 'Table description is not a dictionary: %s( %s )'
                         % ( type( thisTable ), thisTable ) )
       if not 'Fields' in thisTable:
@@ -886,7 +886,7 @@ class MySQL( object ):
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
         if thisTable.has_key( 'PrimaryKey' ):
-          if type( thisTable['PrimaryKey'] ) in StringTypes:
+          if isinstance( thisTable['PrimaryKey'], basestring ):
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
@@ -1139,15 +1139,15 @@ class MySQL( object ):
 
     if condDict != None:
       for aName, attrValue in condDict.iteritems():
-        if type( aName ) in StringTypes:
+        if isinstance( aName, basestring ):
           attrName = _quotedList( [aName] )
-        elif type( aName ) == TupleType:
+        elif isinstance( aName, tuple ):
           attrName = '('+_quotedList( list( aName ) )+')'
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )
           raise Exception( error )
-        if type( attrValue ) == ListType:
+        if isinstance( attrValue, list ):
           retDict = self._escapeValues( attrValue )
           if not retDict['OK']:
             self.log.warn( 'buildCondition:', retDict['Message'] )
@@ -1203,7 +1203,7 @@ class MySQL( object ):
                                              timeStamp,
                                              escapeInValue )
 
-    if type( greater ) == DictType:
+    if isinstance( greater, dict ):
       for attrName, attrValue in greater.iteritems():
         attrName = _quotedList( [attrName] )
         if not attrName:
@@ -1223,7 +1223,7 @@ class MySQL( object ):
                                              escapeInValue )
           conjunction = "AND"
 
-    if type( smaller ) == DictType:
+    if isinstance( smaller, dict ):
       for attrName, attrValue in smaller.iteritems():
         attrName = _quotedList( [attrName] )
         if not attrName:
@@ -1246,12 +1246,12 @@ class MySQL( object ):
 
     orderList = []
     orderAttrList = orderAttribute
-    if type( orderAttrList ) != ListType:
+    if not isinstance( orderAttrList, list ):
       orderAttrList = [ orderAttribute ]
     for orderAttr in orderAttrList:
       if orderAttr == None:
         continue
-      if type( orderAttr ) not in StringTypes:
+      if not isinstance( orderAttr, basestring ):
         error = 'Invalid orderAttribute argument'
         self.log.warn( 'buildCondition:', error )
         raise Exception( error )
