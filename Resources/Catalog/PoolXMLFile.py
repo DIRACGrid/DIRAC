@@ -133,7 +133,7 @@ def _getPoolCatalogs( directory = '' ):
     try:
       _cat = PoolXMLCatalog( possibleCat )
       finalCatList.append( possibleCat )
-    except Exception, x:
+    except Exception as x:
       gLogger.debug( 'Ignoring non-POOL catalogue file %s' % possibleCat )
 
   gLogger.debug( 'Final list of catalog files are: %s' % ', '.join( finalCatList ) )

@@ -93,7 +93,7 @@ def executeWithUserProxy( fcn ):
 
       try:
         resultFcn = fcn( *args, **kwargs )
-      except Exception, x:
+      except Exception as x:
         resultFcn = S_ERROR( "Exception: %s" % str( x ) )
 
       # Restore the default host certificate usage if necessary

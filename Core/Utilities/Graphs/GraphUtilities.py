@@ -52,7 +52,7 @@ def convert_to_datetime( string ):
       pass
     else:
       raise ValueError( "Unknown datetime type!" )
-  except Exception, e:
+  except Exception as e:
     t = None
     for dateformat in datestrings:
       try:

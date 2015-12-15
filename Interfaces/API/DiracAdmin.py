@@ -451,12 +451,12 @@ class DiracAdmin( API ):
     if type( jobID ) == type( " " ):
       try:
         jobID = int( jobID )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
     elif type( jobID ) == type( [] ):
       try:
         jobID = [int( job ) for job in jobID]
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False )
@@ -642,7 +642,7 @@ class DiracAdmin( API ):
     if type( jobID ) == type( " " ):
       try:
         jobID = int( jobID )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -718,13 +718,13 @@ class DiracAdmin( API ):
       if value:
         try:
           conditions[key] = str( value )
-        except Exception, x:
+        except Exception as x:
           return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
     try:
       requestStart = int( requestStart )
       limit = int( limit )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected integer for %s field' % limit )
 
     self.log.verbose( 'Will select requests with the following conditions' )
@@ -788,7 +788,7 @@ class DiracAdmin( API ):
       gLogger.info( infoStr )
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
       gLogger.info( infoStr )
-    except Exception, x:
+    except Exception as x:
       errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % ( x )
       gLogger.exception( errStr )
 
@@ -798,7 +798,7 @@ class DiracAdmin( API ):
       gLogger.info( infoStr )
       infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
       gLogger.info( infoStr )
-    except Exception, x:
+    except Exception as x:
       errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( x )
       gLogger.warn( errStr )
       try:
@@ -807,7 +807,7 @@ class DiracAdmin( API ):
         gLogger.info( infoStr )
         infoStr = "The version of gfal is %s" % gfal.gfal_version()
         gLogger.info( infoStr )
-      except Exception, x:
+      except Exception as x:
         errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % ( x )
         gLogger.exception( errStr )
 

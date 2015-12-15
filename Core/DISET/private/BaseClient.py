@@ -96,7 +96,7 @@ class BaseClient:
     #Calculate final URL
     try:
       result = self.__findServiceURL()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
     if not result[ 'OK' ]:
       return result
@@ -200,7 +200,7 @@ class BaseClient:
 
     try:
       urls = getServiceURL( self._destinationSrv, setup = self.setup )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self._destinationSrv, self.setup, str( e ) ) )
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
@@ -317,7 +317,7 @@ and this is thread %s
           return self._connect()
         else:
           return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
     trid = getGlobalTransportPool().add( transport )
     return S_OK( ( trid, transport ) )

@@ -61,7 +61,7 @@ class DiracSiteAgent( AgentModule ):
       try:
         prop = gConfig.getValue( propLocation, propDefault ).replace( '"', '' )
         self.propertiesDict[propLocation] = str( prop )
-      except Exception, e:
+      except Exception as e:
         print e
         return S_ERROR( 'Expected string for %s field' % propLocation )
 

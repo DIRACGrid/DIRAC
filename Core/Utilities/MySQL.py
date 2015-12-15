@@ -435,7 +435,7 @@ class MySQL( object ):
       self.log.debug( '%s: %s' % ( methodName, err ),
                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return DError( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
-    except Exception, e:
+    except Exception as e:
       self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
       return DError( DErrno.EMYSQL, '%s: (%s)' % ( err, str( e ) ) )
 
@@ -492,7 +492,7 @@ class MySQL( object ):
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
-    except Exception, x:
+    except Exception as x:
       self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
       return self._except( '__escape_string', x, 'Could not escape string' )
 
@@ -585,7 +585,7 @@ class MySQL( object ):
       self.log.verbose( '_connect: Connected.' )
       self._connected = True
       return S_OK()
-    except Exception, x:
+    except Exception as x:
       print x
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
@@ -683,7 +683,7 @@ class MySQL( object ):
       retDict = S_OK( res )
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
-    except Exception, x:
+    except Exception as x:
       self.log.warn( '_update: %s: %s' % ( cmd, str( x ) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
@@ -952,7 +952,7 @@ class MySQL( object ):
     if inFields != None:
       try:
         condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
-      except Exception, x:
+      except Exception as x:
         return DError( DErrno.EMYSQL, x )
 
     return self.getFields( tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute )
@@ -1040,7 +1040,7 @@ class MySQL( object ):
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                   greater = None, smaller = None )
-    except Exception, x:
+    except Exception as x:
       return DError( DErrno.EMYSQL, x )
 
     cmd = 'SELECT COUNT(*) FROM %s %s' % ( table, cond )
@@ -1072,7 +1072,7 @@ class MySQL( object ):
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                   greater = None, smaller = None )
-    except Exception, x:
+    except Exception as x:
       return DError( DErrno.EMYSQL, x )
 
     cmd = 'SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
@@ -1111,7 +1111,7 @@ class MySQL( object ):
     try:
       cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp,
                                   greater = None, smaller = None )
-    except Exception, x:
+    except Exception as x:
       return DError( DErrno.EMYSQL, x )
 
     cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % ( attributeName, table, cond, attributeName )
@@ -1329,7 +1329,7 @@ class MySQL( object ):
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                         timeStamp = timeStamp, orderAttribute = orderAttribute, limit = mylimit,
                         greater = None, smaller = None, offset = myoffset )
-    except Exception, x:
+    except Exception as x:
       return DError( DErrno.EMYSQL, x )
 
     return self._query( 'SELECT %s FROM %s %s' %
@@ -1360,7 +1360,7 @@ class MySQL( object ):
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
                                        greater = None, smaller = None )
-    except Exception, x:
+    except Exception as x:
       return DError( DErrno.EMYSQL, x )
 
     return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn, debug = True )
@@ -1427,7 +1427,7 @@ class MySQL( object ):
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
                         timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit,
                         greater = None, smaller = None )
-    except Exception, x:
+    except Exception as x:
       return DError( DErrno.EMYSQL, x )
 
     updateString = ','.join( ['%s = %s' % ( _quotedList( [updateFields[k]] ),

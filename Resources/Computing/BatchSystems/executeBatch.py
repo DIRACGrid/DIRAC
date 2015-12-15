@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
   try:
     result = getattr( batch, method )( **inputDict )
-  except Exception, x:
+  except Exception as x:
     result = 'Exception: %s' % str( x )
 
   resultJson = urllib.quote( json.dumps( result ) )

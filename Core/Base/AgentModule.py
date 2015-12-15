@@ -317,7 +317,7 @@ class AgentModule( object ):
       if not isReturnStructure( result ):
         raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "Agent exception while calling method", name )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 

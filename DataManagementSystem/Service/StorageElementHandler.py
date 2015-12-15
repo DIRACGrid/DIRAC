@@ -176,7 +176,7 @@ class StorageElementHandler( RequestHandler ):
     try:
       os.makedirs( path )
       return S_OK()
-    except Exception, x:
+    except Exception as x:
       errStr = "Exception creating directory."
       gLogger.error( "StorageElementHandler.createDirectory: %s" % errStr, str( x ) )
       return S_ERROR( errStr )

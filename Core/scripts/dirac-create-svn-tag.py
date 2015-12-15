@@ -70,7 +70,7 @@ def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased
       Distribution.generateReleaseNotes( packageName, rstHistory, versionReleased, singleVersion )
       try:
         Distribution.generateHTMLReleaseNotesFromRST( rstHistory, htmlHistory )
-      except Exception, x:
+      except Exception as x:
         print "Failed to generate html version of the notes:", str( x )
       # Attempt to generate pdf as well  
       os.system( 'rst2pdf %s' % rstHistory )

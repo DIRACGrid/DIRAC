@@ -925,7 +925,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           lcgVersion = argss[1]  
           del argss[0]
           del argss[0]
-    except Exception, x:
+    except Exception as x:
       gLogger.notice( "ERROR: wrong input:", str( x ) )
       gLogger.notice( self.do_update.__doc__ )
       return  

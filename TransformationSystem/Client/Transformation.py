@@ -410,7 +410,7 @@ class Transformation( API ):
           showDict = dict(zip( paramShowNamesShort, paramShowValues ))
           dictList.append( showDict )
 
-      except Exception, x:
+      except Exception as x:
         print 'Exception %s ' %str(x)
 
     if not len(dictList) > 0:

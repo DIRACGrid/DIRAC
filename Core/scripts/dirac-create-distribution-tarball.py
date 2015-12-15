@@ -95,7 +95,7 @@ class TarModuleCreator( object ):
     if not os.path.isdir( self.params.destination ):
       try:
         os.makedirs( self.params.destination )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot write to destination: %s" % str( e ) )
 
     return S_OK()
@@ -153,7 +153,7 @@ class TarModuleCreator( object ):
                          os.path.join( self.params.destination, self.params.name ),
                          symlinks = True,
                          ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not copy data from source URL: %s" % str( e ) )
     return S_OK()
 

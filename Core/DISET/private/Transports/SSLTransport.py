@@ -139,7 +139,7 @@ class SSLTransport( BaseTransport ):
           time.sleep( 0.001 )
         except GSI.SSL.ZeroReturnError:
           return S_OK( "" )
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
     finally:
       self.__unlock()
@@ -160,7 +160,7 @@ class SSLTransport( BaseTransport ):
           if ok:
             try:
               ok = self.oSocket.do_handshake()
-            except Exception, e:
+            except Exception as e:
               return S_ERROR( "Renegotiation failed: %s" % str( e ) )
 
 
@@ -182,7 +182,7 @@ class SSLTransport( BaseTransport ):
           time.sleep( 0.001 )
         except GSI.SSL.WantReadError:
           time.sleep( 0.001 )
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Error while sending: %s" % str( e ) )
       return S_OK( sentBytes )
     finally:

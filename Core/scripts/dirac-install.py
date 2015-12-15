@@ -786,7 +786,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception, x:
+    except Exception as x:
       logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
         
     if fileName:
@@ -825,7 +825,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       return False
   except urllib2.URLError:
     logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
-  except Exception, x:
+  except Exception as x:
     if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:
@@ -861,7 +861,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
       if not urlretrieveTimeout( tarFileURL, tarPath, cliParams.timeout ):
         logERROR( "Cannot download %s" % tarName )
         return False
-    except Exception, e:
+    except Exception as e:
       logERROR( "Cannot download %s: %s" % ( tarName, str( e ) ) )
       sys.exit( 1 )
   if checkHash:
@@ -878,7 +878,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
         if not urlretrieveTimeout( md5FileURL, md5Path, 60 ):
           logERROR( "Cannot download %s" % tarName )
           return False
-      except Exception, e:
+      except Exception as e:
         logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
         return False
     #Read md5
@@ -1264,7 +1264,7 @@ def createPermanentDirLinks():
                 os.makedirs( os.path.join( real, fd ) )
           os.rename( fake, fake + '.bak' )
         os.symlink( real, fake )
-    except Exception, x:
+    except Exception as x:
       logERROR( str( x ) )
       return False
 
@@ -1283,7 +1283,7 @@ def createOldProLinks():
           os.unlink( oldPath )
         os.rename( proPath, oldPath )
       os.symlink( cliParams.targetPath, proPath )
-    except Exception, x:
+    except Exception as x:
       logERROR( str( x ) )
       return False
 
@@ -1342,7 +1342,7 @@ def createBashrc():
       f = open( bashrcFile, 'w' )
       f.write( '\n'.join( lines ) )
       f.close()
-  except Exception, x:
+  except Exception as x:
     logERROR( str( x ) )
     return False
 
@@ -1395,7 +1395,7 @@ def createCshrc():
       f = open( cshrcFile, 'w' )
       f.write( '\n'.join( lines ) )
       f.close()
-  except Exception, x:
+  except Exception as x:
     logERROR( str( x ) )
     return False
 

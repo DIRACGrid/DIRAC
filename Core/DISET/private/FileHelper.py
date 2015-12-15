@@ -145,7 +145,7 @@ class FileHelper:
     finally:
       try:
         dataSink.close()
-      except Exception, e:
+      except Exception as e:
         pass
 
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
@@ -173,7 +173,7 @@ class FileHelper:
         receivedBytes += len( strBuffer )
       if strBuffer:
         dataSink.write( strBuffer )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
       return S_ERROR( "Error in the file CRC" )
@@ -202,7 +202,7 @@ class FileHelper:
           return S_OK()
         ioffset += iPacketSize
       self.sendEOF()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while sending string: %s" % str( e ) )
     try:
       stringIO.close()
@@ -227,7 +227,7 @@ class FileHelper:
         sentBytes += len( sBuffer )
         sBuffer = os.read( iFD, iPacketSize )
       self.sendEOF()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     self.__fileBytes = sentBytes
@@ -259,7 +259,7 @@ class FileHelper:
         sentBytes += len( sBuffer )
         sBuffer = dataSource.read( iPacketSize )
       self.sendEOF()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     self.__fileBytes = sentBytes
@@ -329,12 +329,12 @@ class FileHelper:
     if not onthefly:
       try:
         filePipe, filePath = tempfile.mkstemp()
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str( e ) )
       self.__createTar( fileList, filePipe, compress )
       try:
         fo = file( filePath, 'rb' )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Can't read pregenerated bulk: %s" % str( e ) )
       result = self.DataSourceToNetwork( fo )
       try:
@@ -382,7 +382,7 @@ class FileHelper:
     thrd.start()
     try:
       self.__extractTar( destDir, rPipe, compress )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while extracting bulk: %s" % e )
     thrd.join()
     return retList[0]

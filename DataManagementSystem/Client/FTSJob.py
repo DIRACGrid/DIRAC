@@ -608,7 +608,7 @@ class FTSJob( object ):
       context = self._fts3context
       self.FTSGUID = fts3.submit( context, job )
 
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error at submission: %s" % e )
 
 
@@ -629,7 +629,7 @@ class FTSJob( object ):
         self._fts3context = fts3.Context( endpoint = self.FTSServer )
       context = self._fts3context
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error getting the job status %s" % e )
 
     self.Status = jobStatusDict['job_state'].capitalize()

@@ -229,7 +229,7 @@ class MyProxy( BaseSecurity ):
             elif iP == 2:
               secsLeft += int( fields[ iP ] ) * 3600
           infoDict[ 'timeLeft' ] = secsLeft
-        except Exception, x:
+        except Exception as x:
           print x
 
     return S_OK( infoDict )

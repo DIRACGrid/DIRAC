@@ -482,7 +482,7 @@ for vo in vomsDict:
     if not os.path.isdir( path ):
       try:
         os.makedirs( path )
-      except Exception, e:
+      except Exception as e:
         DIRAC.gLogger.error( "Could not create directory", str( e ) )
         sys.exit( 1 )
   vomsesLines = []

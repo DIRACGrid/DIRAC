@@ -71,7 +71,7 @@ class ConfigurationData( object ):
       self.localCFG = self.localCFG.mergeWith( extraCFG )
       self.unlock()
       gLogger.debug( "CFG merged" )
-    except Exception, e:
+    except Exception as e:
       self.unlock()
       return S_ERROR( "Cannot merge with new cfg: %s" % str( e ) )
     self.sync()
@@ -96,7 +96,7 @@ class ConfigurationData( object ):
       if fileName[0] != "/":
         fileName = os.path.join( DIRAC.rootPath, "etc", fileName )
       self.remoteCFG.loadFromFile( fileName )
-    except Exception, e:
+    except Exception as e:
       print e
       pass
     self.unlock()

@@ -39,12 +39,12 @@ def pythonPathCheck():
         if os.path.normpath( p ) in sys.path:
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove( os.path.normpath( p ) )
-      except Exception, x:
+      except Exception as x:
         print x
         print "[EXCEPTION-info] Failing path:", p, os.path.normpath( p )
         print "[EXCEPTION-info] sys.path:", sys.path
         raise x
-  except Exception, x:
+  except Exception as x:
     print x
     print "[EXCEPTION-info] sys.executable:", sys.executable
     print "[EXCEPTION-info] sys.version:", sys.version
@@ -69,7 +69,7 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception, x:
+    except Exception as x:
       expectedBytes = 0
     data = remoteFD.read()
     if fileName:
@@ -99,7 +99,7 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
   except urllib2.URLError:
     log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     return False
-  except Exception, x:
+  except Exception as x:
     if x == 'Timeout':
       log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:

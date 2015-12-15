@@ -555,7 +555,7 @@ class JobWrapper( object ):
         optReplicas = optDict['Value']
         self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
-      except Exception, x:
+      except Exception as x:
         self.log.warn( str( x ) )
         self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
@@ -580,7 +580,7 @@ class JobWrapper( object ):
         if not isinstance( lfnSize, long ):
           try:
             lfnSize = long( lfnSize )
-          except Exception, x:
+          except Exception as x:
             lfnSize = 0
             self.log.info( 'File size for LFN:%s was not a long integer, setting size to 0' % ( lfn ) )
         self.inputDataSize += lfnSize

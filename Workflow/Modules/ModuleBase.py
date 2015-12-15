@@ -128,7 +128,7 @@ class ModuleBase( object ):
       return S_ERROR( e )
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
-    except Exception, e:
+    except Exception as e:
       self.log.exception( e )
       self.setApplicationStatus( e )
       return S_ERROR( e )
