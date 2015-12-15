@@ -786,9 +786,9 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception as x:
+    except Exception, x:
       logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
-        
+
     if fileName:
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -825,7 +825,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       return False
   except urllib2.URLError:
     logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
-  except Exception as x:
+  except Exception, x:
     if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:
@@ -861,7 +861,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
       if not urlretrieveTimeout( tarFileURL, tarPath, cliParams.timeout ):
         logERROR( "Cannot download %s" % tarName )
         return False
-    except Exception as e:
+    except Exception, e:
       logERROR( "Cannot download %s: %s" % ( tarName, str( e ) ) )
       sys.exit( 1 )
   if checkHash:
@@ -878,7 +878,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
         if not urlretrieveTimeout( md5FileURL, md5Path, 60 ):
           logERROR( "Cannot download %s" % tarName )
           return False
-      except Exception as e:
+      except Exception, e:
         logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
         return False
     #Read md5
@@ -948,9 +948,9 @@ def fixBuildPaths():
     line = fd.readline()
     fd.close()
     buildPath = line[2:line.find( cliParams.platform ) - 1]
-    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath, 
-                                                                          binaryPath, 
-                                                                          buildPath, 
+    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath,
+                                                                          binaryPath,
+                                                                          buildPath,
                                                                           cliParams.targetPath )
     os.system( replaceCmd )
 
@@ -1264,7 +1264,7 @@ def createPermanentDirLinks():
                 os.makedirs( os.path.join( real, fd ) )
           os.rename( fake, fake + '.bak' )
         os.symlink( real, fake )
-    except Exception as x:
+    except Exception, x:
       logERROR( str( x ) )
       return False
 
@@ -1283,7 +1283,7 @@ def createOldProLinks():
           os.unlink( oldPath )
         os.rename( proPath, oldPath )
       os.symlink( cliParams.targetPath, proPath )
-    except Exception as x:
+    except Exception, x:
       logERROR( str( x ) )
       return False
 
@@ -1342,7 +1342,7 @@ def createBashrc():
       f = open( bashrcFile, 'w' )
       f.write( '\n'.join( lines ) )
       f.close()
-  except Exception as x:
+  except Exception, x:
     logERROR( str( x ) )
     return False
 
@@ -1395,7 +1395,7 @@ def createCshrc():
       f = open( cshrcFile, 'w' )
       f.write( '\n'.join( lines ) )
       f.close()
-  except Exception as x:
+  except Exception, x:
     logERROR( str( x ) )
     return False
 
@@ -1483,4 +1483,3 @@ if __name__ == "__main__":
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
-
