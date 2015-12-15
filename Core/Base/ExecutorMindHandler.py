@@ -81,7 +81,7 @@ class ExecutorMindHandler( RequestHandler ):
 
   @classmethod
   def setAllowedClients( cls, aClients ):
-    if type( aClients ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( aClients, (list, tuple) ):
       aClients = ( aClients, )
     cls.__allowedClients = aClients
 
@@ -292,4 +292,3 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def exec_taskFreeze( cls, taskId, taskObj, eType ):
     return S_OK()
-

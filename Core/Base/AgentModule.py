@@ -9,8 +9,8 @@ __RCSID__ = "$Id$"
 
 import os
 import threading
-import types
 import time
+
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -142,7 +142,7 @@ class AgentModule( object ):
                                                                         '.shifterCred' )
 
 
-    if type( properties ) == types.DictType:
+    if isinstance( properties, dict):
       for key in properties:
         self.__moduleProperties[ key ] = properties[ key ]
       self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]

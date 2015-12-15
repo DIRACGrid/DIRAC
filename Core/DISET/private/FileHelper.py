@@ -35,9 +35,9 @@ class FileHelper:
 
   def disableCheckSum( self ):
     self.__checkMD5 = False
-    
+
   def enableCheckSum( self ):
-    self.__checkMD5 = True  
+    self.__checkMD5 = True
 
   def setTransport( self, oTransport ):
     self.oTransport = oTransport
@@ -273,9 +273,9 @@ class FileHelper:
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
       iFD = self.oFile.fileno()
-    elif type( uFile ) == types.FileType:
+    elif isinstance( uFile, file ):
       iFD = uFile.fileno()
-    elif type( uFile ) == types.IntType:
+    elif isinstance( uFile, int ):
       iFD = uFile
       closeAfter = False
     else:
@@ -291,10 +291,10 @@ class FileHelper:
         oFile = file( uFile, "wb" )
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
-    elif type( uFile ) == types.FileType:
+    elif isinstance( uFile, file ):
       oFile = uFile
       closeAfter = False
-    elif type( uFile ) == types.IntType:
+    elif isinstance( uFile, int ):
       oFile = os.fdopen( uFile, "wb" )
       closeAfter = True
     elif "write" in dir( uFile ):
@@ -406,4 +406,3 @@ class FileHelper:
       return S_ERROR( "Error in bulk compression setting: %s" % str( v ) )
     except Exception, v:
       return S_ERROR( "Error in listing bulk: %s" % str( v ) )
-
