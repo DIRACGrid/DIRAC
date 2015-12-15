@@ -253,7 +253,7 @@ class DiracAdmin( API ):
         print '\nAll Site Mask Logging Info\n'
 
       siteDict = result['Value']
-      for site, tupleList in siteDict.items():
+      for site, tupleList in siteDict.iteritems():
         if not site:
           print '\n===> %s\n' % site
         for tup in tupleList:
@@ -671,7 +671,7 @@ class DiracAdmin( API ):
     ceDict = result['Value']
     headers = 'CE'.ljust( 28 )
     i = 0
-    for ce, summary in ceDict.items():
+    for ce, summary in ceDict.iteritems():
       states = summary.keys()
       if len( states ) > i:
         i = len( states )
@@ -680,7 +680,7 @@ class DiracAdmin( API ):
       headers += 'Status'.ljust( 12 ) + 'Count'.ljust( 12 )
     print headers
 
-    for ce, summary in ceDict.items():
+    for ce, summary in ceDict.iteritems():
       line = ce.ljust( 28 )
       states = summary.keys()
       states.sort()
@@ -714,7 +714,7 @@ class DiracAdmin( API ):
                'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
 
     conditions = {}
-    for key, value in options.items():
+    for key, value in options.iteritems():
       if value:
         try:
           conditions[key] = str( value )
@@ -737,7 +737,7 @@ class DiracAdmin( API ):
 
     requestIDs = result['Value']
     conds = []
-    for key, value in conditions.items():
+    for key, value in conditions.iteritems():
       if value:
         conds.append( '%s = %s' % ( key, value ) )
     self.log.verbose( '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ),
@@ -849,7 +849,7 @@ class DiracAdmin( API ):
     if printOutput:
       print '\nSummary of protocols for StorageElements at site %s' % site
       print '\nStorageElement'.ljust( 30 ) + 'ProtocolsList'.ljust( 30 ) + '\n'
-      for se, protocols in seInfo.items():
+      for se, protocols in seInfo.iteritems():
         print se.ljust( 30 ) + ', '.join( protocols ).ljust( 30 )
 
     return S_OK( seInfo )

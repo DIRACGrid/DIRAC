@@ -161,7 +161,7 @@ import warnings
 with warnings.catch_warnings():
   warnings.simplefilter( 'ignore', DeprecationWarning )
   import MySQLdb
-  
+
 # This is for proper initialization of embedded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
@@ -546,13 +546,13 @@ class MySQL( object ):
           return retDict
         inEscapeValues.append( retDict['Value'] )
       elif type( value ) == TupleType or type( value ) == ListType:
-        tupleValues = []  
+        tupleValues = []
         for v in list( value ):
           retDict = self.__escapeString( v )
           if not retDict['OK']:
             return retDict
           tupleValues.append( retDict['Value'] )
-        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' ) 
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
       elif type( value ) == BooleanType:
         inEscapeValues = [str( value )]
       else:
@@ -746,12 +746,12 @@ class MySQL( object ):
     if force:
       gLogger.debug( viewsDict )
 
-      for viewName, viewDict in viewsDict.items():
+      for viewName, viewDict in viewsDict.iteritems():
 
         viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" % ( colDef, colName )
-                             for colName, colDef in  viewDict.get( "Fields", {} ).items() ] )
+                             for colName, colDef in  viewDict.get( "Fields", {} ).iteritems() ] )
         tables = viewDict.get( "SelectFrom", "" )
         if columns and tables:
           viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
@@ -849,7 +849,7 @@ class MySQL( object ):
         thisTable = tableDict[table]
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
-          for key, auxTable in thisKeys.items():
+          for key, auxTable in thisKeys.iteritems():
             forTable = auxTable.split( '.' )[0]
             forKey = key
             if forTable != auxTable:
@@ -904,7 +904,7 @@ class MySQL( object ):
             cmdList.append( 'UNIQUE INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
-          for key, auxTable in thisKeys.items():
+          for key, auxTable in thisKeys.iteritems():
 
             forTable = auxTable.split( '.' )[0]
             forKey = key
@@ -925,7 +925,7 @@ class MySQL( object ):
         else:
           charset = 'latin1'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( 
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % (
                table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
@@ -1138,11 +1138,11 @@ class MySQL( object ):
     conjunction = "WHERE"
 
     if condDict != None:
-      for aName, attrValue in condDict.items():
+      for aName, attrValue in condDict.iteritems():
         if type( aName ) in StringTypes:
           attrName = _quotedList( [aName] )
         elif type( aName ) == TupleType:
-          attrName = '('+_quotedList( list( aName ) )+')'   
+          attrName = '('+_quotedList( list( aName ) )+')'
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )
@@ -1204,7 +1204,7 @@ class MySQL( object ):
                                              escapeInValue )
 
     if type( greater ) == DictType:
-      for attrName, attrValue in greater.items():
+      for attrName, attrValue in greater.iteritems():
         attrName = _quotedList( [attrName] )
         if not attrName:
           error = 'Invalid greater argument'
@@ -1224,7 +1224,7 @@ class MySQL( object ):
           conjunction = "AND"
 
     if type( smaller ) == DictType:
-      for attrName, attrValue in smaller.items():
+      for attrName, attrValue in smaller.iteritems():
         attrName = _quotedList( [attrName] )
         if not attrName:
           error = 'Invalid smaller argument'
