@@ -8,9 +8,9 @@ import stat
 import tempfile
 import shutil
 
-
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
-import DIRAC.Core.Security.File as File
+from DIRAC import S_OK, gConfig, rootPath
+from DIRAC.Core.Utilities import DError, DErrno
+from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -31,7 +31,7 @@ class VOMS( BaseSecurity ):
     # Get all possible info from voms proxy
     result = self.getVOMSProxyInfo( proxy, "all" )
     if not result["OK"]:
-      return S_ERROR( 'Failed to extract info from proxy: %s' % result[ 'Message' ] )
+      return DError( DErrno.EVOMS, 'Failed to extract info from proxy: %s' % result[ 'Message' ] )
 
     vomsInfoOutput = List.fromChar( result["Value"], "\n" )
 
@@ -93,24 +93,24 @@ class VOMS( BaseSecurity ):
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-        @type  proxy: a string
-        @param proxy: the proxy certificate location.
-        @type  option: a string
-        @param option: None is the default value. Other option available are:
+        :type  proxy: a string
+        :param proxy: the proxy certificate location.
+        :type  option: a string
+        :param option: None is the default value. Other option available are:
           - timeleft
           - actimeleft
           - identity
           - fqan
           - all
-        @rtype:   tuple
-        @return:  status, output, error, pyerror.
+        :rtype:   tuple
+        :return:  status, output, error, pyerror.
     """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option:
       if option not in validOptions:
-        S_ERROR( 'Non valid option %s' % option )
+        DError( DErrno.EVOMS, "valid option %s" % option )
 
-    retVal = File.multiProxyArgument( proxy )
+    retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -166,7 +166,7 @@ class VOMS( BaseSecurity ):
 
         return S_OK( "\n".join( lines ) )
       else:
-        return S_ERROR( "NOT IMP" )
+        return DError( DErrno.EVOMS, "NOT IMP" )
 
     finally:
       if proxyDict[ 'tempFile' ]:
@@ -223,9 +223,9 @@ class VOMS( BaseSecurity ):
     """ Sets voms attributes to a proxy
     """
     if not vo:
-      return S_ERROR( "No vo specified, and can't get default in the configuration" )
+      return DError( DErrno.EVOMS, "No vo specified, and can't get default in the configuration" )
 
-    retVal = File.multiProxyArgument( proxy )
+    retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
@@ -234,13 +234,13 @@ class VOMS( BaseSecurity ):
 
     secs = chain.getRemainingSecs()[ 'Value' ] - 300
     if secs < 0:
-      return S_ERROR( "Proxy length is less that 300 secs" )
+      return DError( DErrno.EVOMS, "Proxy length is less that 300 secs" )
     hours = int( secs / 3600 )
     mins = int( ( secs - hours * 3600 ) / 60 )
 
     retVal = self._generateTemporalFile()
     if not retVal[ 'OK' ]:
-      File.deleteMultiProxy( proxyDict )
+      deleteMultiProxy( proxyDict )
       return retVal
     newProxyLocation = retVal[ 'Value' ]
 
@@ -259,32 +259,34 @@ class VOMS( BaseSecurity ):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
+    if chain.isRFC():
+      cmdArgs.append( "-r" )
 
     if not Os.which('voms-proxy-init'):
-      return S_ERROR("Missing voms-proxy-init")
+      return DError( DErrno.EVOMS, "Missing voms-proxy-init" )
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
     if tmpDir:
       shutil.rmtree( tmpDir )
 
-    File.deleteMultiProxy( proxyDict )
+    deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR( 'Failed to call voms-proxy-init: %s' % result['Message'] )
+      return DError( DErrno.EVOMS, 'Failed to call voms-proxy-init: %s' % result['Message'] )
 
     status, output, error = result['Value']
 
     if status:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR( 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
+      return DError( DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile( newProxyLocation )
     self._unlinkFiles( newProxyLocation )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't load new proxy: %s" % retVal[ 'Message' ] )
+      return DError( DErrno.EVOMS, "Can't load new proxy: %s" % retVal[ 'Message' ] )
 
     return S_OK( newChain )
 
@@ -293,7 +295,7 @@ class VOMS( BaseSecurity ):
     Is voms info available?
     """
     if not Os.which("voms-proxy-info"):
-      return S_ERROR("Missing voms-proxy-info")
+      return DError( DErrno.EVOMS, "Missing voms-proxy-info" )
     cmd = 'voms-proxy-info -h'
     result = shellCall( self._secCmdTimeout, cmd )
     if not result['OK']:

@@ -14,11 +14,10 @@ import os
 import stat
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger, shellCall
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
-from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -158,12 +157,13 @@ class ARCComputingElement( ComputingElement ):
 (stdout="%(diracStamp)s.out")
 (stderr="%(diracStamp)s.err")
 (outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
+(queue=%(queue)s)
 %(xrslExtraString)s
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'diracStamp':diracStamp,
-#            'queue':self.queue,
+            'queue':self.arcQueue,
             'xrslExtraString':self.xrslExtraString
            }
 
@@ -180,6 +180,9 @@ class ARCComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
+    # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+    # And none of our supported batch systems have a "-" in their name
+    self.arcQueue = self.queue.split("-",2)[2]
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
@@ -202,6 +205,8 @@ class ARCComputingElement( ComputingElement ):
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
       xrslString, diracStamp = self.__writeXRSL( executableFile )
+      gLogger.debug("XRSL string submitted : %s" %xrslString)
+      gLogger.debug("DIRAC stamp for job : %s" %diracStamp)
       if not arc.JobDescription_Parse(xrslString, jobdescs):
         gLogger.error("Invalid job description")
         break
@@ -227,13 +232,13 @@ class ARCComputingElement( ComputingElement ):
         if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
         if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ):
-          gLogger.warn( "%s no job description was there (Should not happen, but horses can fly (in a plane))" % message )
+          gLogger.warn( "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message )
         if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ):
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
         if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ):
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
         if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ):
-          gLogger.warn( "%s some error from the CE - ask site admins for more information ..." % message )
+          gLogger.warn( "%s some error from the CE - possibly CE problems?" % message )
         gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
 
@@ -280,30 +285,24 @@ class ARCComputingElement( ComputingElement ):
   def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
     """
-    vo = ''
-    res = getVOfromProxyGroup()
-    if res['OK']:
-      vo = res['Value']
-    else: # A backup solution which may work
-      vo = self.ceParameters['VO']
-    cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
-    res = shellCall( 0, cmd )
-    if not res['OK']:
-      gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
-      return res
+
+    result = self._prepareProxy()
+    self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
+    if not result['OK']:
+      gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
+      return result
+    endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
+                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+    retriever = arc.ComputingServiceRetriever(self.usercfg, endpoints)
+    retriever.wait() # Takes a bit of time to get and parse the ldap information
+    targets = retriever.GetExecutionTargets()
+    ceStats = targets[0].ComputingShare
+    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
+    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+
     result = S_OK()
-    try:
-      ldapValues = res['Value'][1].split("\n")
-      running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
-      waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
-      result['RunningJobs'] = int(running[0].split(":")[1])
-      result['WaitingJobs'] = int(waiting[0].split(":")[1])
-    except IndexError:
-      result = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
-      result['RunningJobs'] = 0
-      result['WaitingJobs'] = 0
-    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, result['RunningJobs']))
-    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, result['WaitingJobs']))
+    result['RunningJobs'] = ceStats.RunningJobs
+    result['WaitingJobs'] = ceStats.WaitingJobs
     result['SubmittedJobs'] = 0
     return result
 

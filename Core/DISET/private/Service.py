@@ -5,22 +5,20 @@ import DIRAC
 import threading
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Utilities import List, Time, MemStat
+from DIRAC.Core.Utilities import Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, MessageSender
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
-from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-class Service:
+class Service( object ):
 
   SVC_VALID_ACTIONS = { 'RPC' : 'export',
                         'FileTransfer': 'transfer',
@@ -102,8 +100,9 @@ class Service:
             return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
           if not result[ 'OK' ]:
             return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
-    except Exception, e:
+    except Exception as e:
       errMsg = "Exception while initializing %s" % self._name
+      gLogger.exception( e )
       gLogger.exception( errMsg )
       return S_ERROR( errMsg )
 
@@ -252,7 +251,8 @@ class Service:
     for prop in ( ( "__RCSID__", "version" ), ( "__doc__", "description" ) ):
       try:
         value = getattr( self._handler[ 'module' ], prop[0] )
-      except Exception, e:
+      except Exception as e:
+        gLogger.exception( e )
         gLogger.error( "Missing property", prop[0] )
         value = 'unset'
       self._monitor.setComponentExtraParam( prop[1], value )
@@ -286,7 +286,7 @@ class Service:
     self._lockManager.lockGlobal()
     try:
       monReport = self.__startReportToMonitoring()
-    except Exception, e:
+    except Exception:
       monReport = False
     try:
       #Handshake
@@ -400,9 +400,13 @@ class Service:
     if not self._authMgr.authQuery( csAuthPath, credDict, hardcodedMethodAuth ):
       #Get the identity string
       identity = self._createIdentityString( credDict )
-      gLogger.warn( "Unauthorized query", "to %s:%s by %s" % ( self._name,
+      fromHost = "unknown host"
+      tr = self._transportPool.get( trid )
+      if tr:
+        fromHost = '/'.join( [ str( item ) for item in tr.getRemoteAddress() ] )
+      gLogger.warn( "Unauthorized query", "to %s:%s by %s from %s" % ( self._name,
                                                                "/".join( actionTuple ),
-                                                               identity ) )
+                                                               identity, fromHost ) )
       result = S_ERROR( "Unauthorized query" )
     else:
       result = S_OK()

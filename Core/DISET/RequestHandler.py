@@ -1,16 +1,19 @@
-# $HeadURL$
+""" Base class for all services
+"""
+
 __RCSID__ = "$Id$"
 
 import os
 import types
 import time
+
+import DIRAC
+
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities import Time
-import DIRAC
 
 def getServiceOption( serviceInfo, optionName, defaultValue ):
   """ Get service option resolving default values from the master service
@@ -38,10 +41,10 @@ class RequestHandler( object ):
     """
     Constructor
 
-    @type handlerInitDict: dictionary
-    @param handlerInitDict: Information vars for the service
-    @type trid: object
-    @param trid: Transport to use
+    :type handlerInitDict: dictionary
+    :param handlerInitDict: Information vars for the service
+    :type trid: object
+    :param trid: Transport to use
     """
     #Initially serviceInfoDict is the one base to the RequestHandler
     # the one created in _rh_initializeClass
@@ -60,12 +63,12 @@ class RequestHandler( object ):
     """
     Class initialization (not to be called by hand or overwritten!!)
 
-    @type serviceInfoDict: dictionary
-    @param serviceInfoDict: Information vars for the service
-    @type msgBroker: object
-    @param msgBroker: Message delivery
-    @type lockManager: object
-    @param lockManager: Lock manager to use
+    :type serviceInfoDict: dictionary
+    :param serviceInfoDict: Information vars for the service
+    :type msgBroker: object
+    :param msgBroker: Message delivery
+    :type lockManager: object
+    :param lockManager: Lock manager to use
     """
     cls.__srvInfoDict = serviceInfoDict
     cls.__svcName = cls.__srvInfoDict[ 'serviceName' ]
@@ -79,7 +82,7 @@ class RequestHandler( object ):
     """
     Get the address of the remote peer.
 
-    @return : Address of remote peer.
+    :return : Address of remote peer.
     """
     return self.__trPool.get( self.__trid ).getRemoteAddress()
 
@@ -87,7 +90,7 @@ class RequestHandler( object ):
     """
     Get the credentials of the remote peer.
 
-    @return : Credentials dictionary of remote peer.
+    :return : Credentials dictionary of remote peer.
     """
     return self.__trPool.get( self.__trid ).getConnectingCredentials()
 
@@ -96,7 +99,7 @@ class RequestHandler( object ):
     """
     Get an option from the CS section of the services
 
-    @return : Value for serviceSection/optionName in the CS being defaultValue the default
+    :return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
     return cls.srv_getCSOption( optionName, defaultValue )
 
@@ -104,8 +107,8 @@ class RequestHandler( object ):
     """
     Execute an action.
 
-    @type proposalTuple: tuple
-    @param proposalTuple: Type of action to execute. First position of the tuple must be the type
+    :type proposalTuple: tuple
+    :param proposalTuple: Type of action to execute. First position of the tuple must be the type
                         of action to execute. The second position is the action itself.
     """
     actionTuple = proposalTuple[1]
@@ -130,8 +133,11 @@ class RequestHandler( object ):
       gLogger.error( message )
       retVal = S_ERROR( message )
     self.__logRemoteQueryResponse( retVal, time.time() - startTime )
-    return self.__trPool.send( self.__trid, retVal )
-
+    result = self.__trPool.send( self.__trid, retVal ) #this will delete the value from the S_OK(value)
+    del retVal
+    retVal = None
+    return result
+    
 #####
 #
 # File to/from Server Methods
@@ -142,9 +148,9 @@ class RequestHandler( object ):
     """
     Execute a file transfer action
 
-    @type sDirection: string
-    @param sDirection: Direction of the transfer
-    @return: S_OK/S_ERROR
+    :type sDirection: string
+    :param sDirection: Direction of the transfer
+    :return: S_OK/S_ERROR
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
@@ -184,6 +190,8 @@ class RequestHandler( object ):
         if uRetVal[ 'OK' ] and not fileHelper.finishedTransmission():
           gLogger.error( "You haven't finished receiving/sending the file", str( fileInfo ) )
           return S_ERROR( "Incomplete transfer" )
+        del fileHelper
+        fileHelper = None
         return uRetVal
       finally:
         self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
@@ -217,9 +225,9 @@ class RequestHandler( object ):
     """
     Execute an RPC action
 
-    @type method: string
-    @param method: Method to execute
-    @return: S_OK/S_ERROR
+    :type method: string
+    :param method: Method to execute
+    :return: S_OK/S_ERROR
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
@@ -258,11 +266,11 @@ class RequestHandler( object ):
     """
     Check that the arguments received match the ones expected
 
-    @type method: string
-    @param method: Method to check against
-    @type args: tuple
-    @param args: Arguments to check
-    @return: S_OK/S_ERROR
+    :type method: string
+    :param method: Method to check against
+    :type args: tuple
+    :param args: Arguments to check
+    :return: S_OK/S_ERROR
     """
     sListName = "types_%s" % method
     try:
@@ -274,15 +282,15 @@ class RequestHandler( object ):
     try:
       mismatch = False
       for iIndex in range( min( len( oTypesList ), len( args ) ) ):
-        #If none skip a parameter
-        if oTypesList[ iIndex ] == None:
+        #If None skip the parameter
+        if oTypesList[ iIndex ] is None:
           continue
         #If parameter is a list or a tuple check types inside
-        elif type( oTypesList[ iIndex ] ) in ( types.TupleType, types.ListType ):
-          if not type( args[ iIndex ] ) in oTypesList[ iIndex ]:
+        elif isinstance( oTypesList[ iIndex ], ( tuple, list ) ):
+          if not isinstance( args[ iIndex ], tuple( oTypesList[ iIndex ] ) ):
             mismatch = True
         #else check the parameter
-        elif not type( args[ iIndex ] ) == oTypesList[ iIndex ]:
+        elif not isinstance( args[ iIndex ], oTypesList[ iIndex ] ):
           mismatch = True
         #Has there been a mismatch?
         if mismatch:
@@ -391,9 +399,9 @@ class RequestHandler( object ):
   #  """
   #  Check if connecting user is allowed to perform an action
   #
-  #  @type method: string
-  #  @param method: Method to check
-  #  @return: S_OK/S_ERROR
+  #  :type method: string
+  #  :param method: Method to check
+  #  :return: S_OK/S_ERROR
   #  """
   #  return cls.__srvInfoDict[ 'authManager' ].authQuery( method, cls.getRemoteCredentials() )
 
@@ -401,10 +409,10 @@ class RequestHandler( object ):
     """
     Log the contents of a remote query
 
-    @type method: string
-    @param method: Method to log
-    @type args: tuple
-    @param args: Arguments of the method called
+    :type method: string
+    :param method: Method to log
+    :type args: tuple
+    :param args: Arguments of the method called
     """
     if self.srv_getCSOption( "MaskRequestParams", True ):
       argsString = "<masked>"
@@ -418,8 +426,8 @@ class RequestHandler( object ):
     """
     Log the result of a query
 
-    @type retVal: dictionary
-    @param retVal: Return value of the query
+    :type retVal: dictionary
+    :param retVal: Return value of the query
     """
     if retVal[ 'OK' ]:
       argsString = "OK"
@@ -481,7 +489,7 @@ class RequestHandler( object ):
     """
     Get the address of the remote peer.
 
-    @return : Address of remote peer.
+    :return : Address of remote peer.
     """
     return self.__trPool.get( self.__trid ).getRemoteAddress()
 
@@ -489,7 +497,7 @@ class RequestHandler( object ):
     """
     Get the credentials of the remote peer.
 
-    @return : Credentials dictionary of remote peer.
+    :return : Credentials dictionary of remote peer.
     """
     return self.__trPool.get( self.__trid ).getConnectingCredentials()
 
@@ -505,7 +513,7 @@ class RequestHandler( object ):
     """
     Get an option from the CS section of the services
 
-    @return : Value for serviceSection/optionName in the CS being defaultValue the default
+    :return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
     if optionName[0] == "/":
       return gConfig.getValue( optionName, defaultValue )

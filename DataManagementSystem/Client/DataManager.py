@@ -20,7 +20,8 @@ import errno
 
 # # from DIRAC
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DError, DErrno
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Core.Utilities import DErrno, DError
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -117,7 +118,7 @@ class DataManager( object ):
     else:
       paths = path
 
-    res = self.fc.hasAccess( opType, paths )
+    res = self.fc.hasAccess( paths, opType )
     if not res['OK']:
       return res
     result = {'Successful':list(), 'Failed':list()}
@@ -450,7 +451,7 @@ class DataManager( object ):
       log.debug( "Checksum calculated to be %s." % checksum )
     res = self.fc.exists( {lfn:guid} )
     if not res['OK']:
-      errStr = "Completey failed to determine existence of destination LFN."
+      errStr = "Completely failed to determine existence of destination LFN."
       log.debug( errStr, lfn )
       return res
     if lfn not in res['Value']['Successful']:
@@ -462,8 +463,9 @@ class DataManager( object ):
         errStr = "The supplied LFN already exists in the File Catalog."
         log.debug( errStr, lfn )
       else:
-        errStr = "This file GUID already exists for another file. " \
-            "Please remove it and try again."
+        # If the returned LFN is different, this is the name of a file
+        # with the same GUID
+        errStr = "This file GUID already exists for another file"
         log.debug( errStr, res['Value']['Successful'][lfn] )
       return S_ERROR( "%s %s" % ( errStr, res['Value']['Successful'][lfn] ) )
 
@@ -938,7 +940,7 @@ class DataManager( object ):
     return res
 
   def __registerFile( self, fileTuples, catalog ):
-    """ register file to cataloge """
+    """ register file to catalog """
 
     fileDict = {}
 
@@ -1040,6 +1042,8 @@ class DataManager( object ):
         'lfn' is the file to be removed
     """
     log = self.log.getSubLogger( 'removeFile' )
+    if not lfn:
+      return S_OK( { 'Successful': {}, 'Failed': {} } )
     if force == None:
       force = self.ignoreMissingInFC
     if isinstance( lfn, ( list, dict, set, tuple ) ):
@@ -1214,7 +1218,7 @@ class DataManager( object ):
         Remove the replica from the storageElement, and then from the catalog
 
         :param storageElementName : The name of the storage Element
-        :param lfns list of lfn we want to remove
+        :param lfns : list of lfn we want to remove
         :param replicaDict : cache of fc.getReplicas(lfns) : { lfn { se : catalog url } }
 
     """
@@ -1427,7 +1431,7 @@ class DataManager( object ):
       for lfn in res['Value']['Successful']:
         res['Value']['Successful'][lfn] = True
 
-      deletedSize = sum( [size for lfn, size in deletedSizes.items() if lfn in res['Value']['Successful']] )
+      deletedSize = sum( size for lfn, size in deletedSizes.items() if lfn in res['Value']['Successful'] )
       oDataOperation.setValueByKey( 'TransferSize', deletedSize )
       oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'] ) )
 

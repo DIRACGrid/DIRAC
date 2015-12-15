@@ -258,23 +258,19 @@ class RequestTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = int( fileDict['TaskID'] )
       if taskID in submittedTasks[transID]:
-        requestID = externalIds[taskID]
-        taskFiles.setdefault( requestID, {} )[fileDict['LFN']] = fileDict['Status']
+        taskFiles.setdefault( externalIds[taskID], [] ).append( fileDict['LFN'] )
 
     updateDict = {}
     for requestID in sorted( taskFiles ):
-      lfnDict = taskFiles[requestID]
-      statusDict = self.requestClient.getRequestFileStatus( requestID, lfnDict.keys() )
+      lfnList = taskFiles[requestID]
+      statusDict = self.requestClient.getRequestFileStatus( requestID, lfnList )
       if not statusDict['OK']:
         log = self._logVerbose if 'not exist' in statusDict['Message'] else self.log.warn
         log( "getSubmittedFileStatus: Failed to get files status for request", '%s' % statusDict['Message'] )
         continue
 
-      statusDict = statusDict['Value']
-      for lfn, newStatus in statusDict.items():
-        if newStatus == lfnDict[lfn]:
-          pass
-        elif newStatus == 'Done':
+      for lfn, newStatus in statusDict['Value'].items():
+        if newStatus == 'Done':
           updateDict[lfn] = 'Processed'
         elif newStatus == 'Failed':
           updateDict[lfn] = 'Problematic'
@@ -402,7 +398,7 @@ class WorkflowTasks( TaskBase ):
           continue
         for name, output in res['Value'].items():
           oJob._addJDLParameter( name, ';'.join( output ) )
-      taskDict[taskNumber]['TaskObject'] = self.jobClass( oJob._toXML() )
+      taskDict[taskNumber]['TaskObject'] = oJob
     return S_OK( taskDict )
 
   #############################################################################

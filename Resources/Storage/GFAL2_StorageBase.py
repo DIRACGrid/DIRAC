@@ -14,7 +14,7 @@ from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
@@ -125,9 +125,8 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param str: path to be checked (srm://...)
-    :returns
-        S_OK ( boolean exists ) a boolean whether it exists or not
-        S_ERROR( errStr ) there is a problem with getting the information
+    :returns: S_OK ( boolean exists ) a boolean whether it exists or not
+              S_ERROR( errStr ) there is a problem with getting the information
     """
     self.log.debug( "GFAL2_StorageBase._singleExists: Determining whether %s exists or not" % path )
 
@@ -187,12 +186,12 @@ class GFAL2_StorageBase( StorageBase ):
 
   def __isSingleFile( self, path ):
     """ Checking if :path: exists and is a file
+
     :param self: self reference
     :param str path: single path on the storage (srm://...)
 
-    :returns
-        S_ERROR if there is a fatal error
-        S_OK ( boolean) if it is a file or not
+    :returns: S_ERROR if there is a fatal error
+              S_OK ( boolean) if it is a file or not
     """
 
     self.log.debug( "GFAL2_StorageBase.__isSingleFile: Determining whether %s is a file or not." % path )
@@ -500,10 +499,10 @@ class GFAL2_StorageBase( StorageBase ):
 
   def __removeSingleFile( self, path ):
     """ Physically remove the file specified by path
+
     :param str path: path on storage (srm://...)
-    :returns
-             S_OK( True )  if the removal was successful (also if file didnt exist in the first place)
-             S_ERROR( errStr ) if there was a problem removing the file
+    :returns: S_OK( True )  if the removal was successful (also if file didnt exist in the first place)
+              S_ERROR( errStr ) if there was a problem removing the file
     """
     self.log.debug( "GFAL2_StorageBase.__removeSingleFile: Attemping to remove single file %s" % path )
 
@@ -569,8 +568,8 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param path: single path on the storage (srm://...)
-    :returns S_OK( filesize ) when successfully determined filesize
-             S_ERROR( errStr ) filesize could not be determined
+    :returns: S_OK( filesize ) when successfully determined filesize
+              S_ERROR( errStr ) filesize could not be determined
     """
     self.log.debug( "GFAL2_StorageBase.__getSingleFileSize: Determining file size of %s" % path )
 
@@ -732,7 +731,7 @@ class GFAL2_StorageBase( StorageBase ):
     :param str path: path to be prestaged
     :param int lifetime: prestage lifetime in seconds (default 24h)
 
-    :return S_ structure
+    :return: S_ structure
                             S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned)
                             S_ERROR( errMsg ) ) in case of an error: status -1
     """
@@ -789,7 +788,7 @@ class GFAL2_StorageBase( StorageBase ):
     :param str path: path to be checked
     :param str token: token of the file
 
-    :return S_ structure
+    :return: S_ structure
                             S_OK( True ) if file is staged
                             S_OK( False ) if file is not staged yet
                             S_ERROR( errMsg ) ) in case of an error: status -1
@@ -864,8 +863,8 @@ class GFAL2_StorageBase( StorageBase ):
     :param str path: path to be pinned
     :param int lifetime: pinning lifetime in seconds (default 24h)
 
-    :return  S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned). EAGAIN is also considered pending
-             S_ERROR( errMsg ) ) in case of an error: status -1
+    :return:  S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned). EAGAIN is also considered pending
+              S_ERROR( errMsg ) ) in case of an error: status -1
     """
 
     self.log.debug( "GFAL2_StorageBase.__pinSingleFile: Attempting to issue pinning request for single file: %s" % path )
@@ -925,7 +924,7 @@ class GFAL2_StorageBase( StorageBase ):
     :param str path: path to the file to be released
     :token str token: token belonging to the path
 
-    :returns S_OK( token ) when releasing was successful, S_ERROR( errMessage ) in case of an error
+    :returns: S_OK( token ) when releasing was successful, S_ERROR( errMessage ) in case of an error
     """
 
     self.log.debug( "GFAL2_StorageBase.__releaseSingleFile: Attempting to release single file: %s" % path )
@@ -951,8 +950,8 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param str path: path to single file on storage (srm://...)
-    :returns S_OK( checksum ) if checksum could be calculated
-             S_ERROR( errMsg ) if something failed
+    :returns: S_OK( checksum ) if checksum could be calculated
+              S_ERROR( errMsg ) if something failed
     """
     if not checksumType:
       errStr = "GFAL2_StorageBase.__getChecksum: No checksum type set by the storage element. Can't retrieve checksum"
@@ -1069,10 +1068,11 @@ class GFAL2_StorageBase( StorageBase ):
     """ Create directory :path: on the storage
     if no exception is caught the creation was successful. Also if the
     directory already exists we return S_OK().
+
     :param self: self reference
     :param str path: path to be created (srm://...)
 
-    :returns S_OK() if creation was successful or directory already exists
+    :returns: S_OK() if creation was successful or directory already exists
              S_ERROR() in case of an error during creation
     """
 
@@ -1132,12 +1132,12 @@ class GFAL2_StorageBase( StorageBase ):
 
   def __isSingleDirectory( self, path ):
     """ Checking if :path: exists and is a directory
+
     :param self: self reference
     :param str path: single path on the storage (srm://...)
 
-    :returns
-        S_OK ( boolean) if it is a directory or not
-        S_ERROR ( errStr ) when there was a problem getting the info
+    :returns: S_OK ( boolean) if it is a directory or not
+              S_ERROR ( errStr ) when there was a problem getting the info
     """
 
     self.log.debug( "GFAL2_StorageBase.__isSingleDirectory: Determining whether %s is a directory or not." % path )
@@ -1210,12 +1210,13 @@ class GFAL2_StorageBase( StorageBase ):
 
   def __listSingleDirectory( self, path, internalCall = False ):
     """ List the content of the single directory provided
+
     :param self: self reference
     :param str path: single path on storage (srm://...)
     :param bool internalCall: if we call this method from another internal method we want
                               to work with the full pfn. Used for __getSingleDirectory and
                               __removeSingleDirectory
-    :returns S_ERROR( errStr ) if there is an error
+    :returns: S_ERROR( errStr ) if there is an error
              S_OK( dictionary ): Key: SubDirs and Files
                                  The values of the Files are dictionaries with filename as key and metadata as value
                                  The values of SubDirs are just the dirnames as key and True as value
@@ -1257,12 +1258,13 @@ class GFAL2_StorageBase( StorageBase ):
 
   def getDirectory( self, path, localPath = False ):
     """ get a directory from the SE to a local path with all its files and subdirectories
+
     :param str path: path (or list of paths) on the storage (srm://...)
     :param str localPath: local path where the content of the remote directory will be saved,
                           if not defined it takes current working directory.
-    :return successful and failed dictionaries. The keys are the paths,
-            the values are dictionary {'Files': amount of files downloaded, 'Size' : amount of data downloaded}
-            S_ERROR in case of argument problems
+    :return: successful and failed dictionaries. The keys are the paths,
+             the values are dictionary {'Files': amount of files downloaded, 'Size' : amount of data downloaded}
+             S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1386,11 +1388,12 @@ class GFAL2_StorageBase( StorageBase ):
 
   def putDirectory( self, path ):
     """ Puts one or more local directories to the physical storage together with all its files
+
     :param self: self reference
     :param str path: dictionary { srm://... (destination) : localdir (source dir) }
-    :return successful and failed dictionaries. The keys are the paths,
-            the values are dictionary {'Files' : amount of files uploaded, 'Size' : amount of data upload }
-            S_ERROR in case of argument problems
+    :return: successful and failed dictionaries. The keys are the paths,
+             the values are dictionary {'Files' : amount of files uploaded, 'Size' : amount of data upload }
+             S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1623,14 +1626,15 @@ class GFAL2_StorageBase( StorageBase ):
   def getDirectorySize( self, path ):
     """ Get the size of the directory on the storage
       CAUTION: it is not recursive
+
       :param self: self reference
       :param str path: path or list of paths on storage (srm://...)
-      :returns list of successful and failed dictionaries, both indexed by the path
-               In the failed, the value is the error message
-               In the successful the values are dictionaries: Files : amount of files in the dir
-                                                              Size : summed up size of all files
-                                                              subDirs : amount of sub dirs
-              S_ERROR in case of argument problems
+      :returns: list of successful and failed dictionaries, both indexed by the path
+                In the failed, the value is the error message
+                In the successful the values are dictionaries: Files : amount of files in the dir
+                                                               Size : summed up size of all files
+                                                               subDirs : amount of sub dirs
+                S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1717,11 +1721,11 @@ class GFAL2_StorageBase( StorageBase ):
 
   def __getSingleDirectoryMetadata( self, path ):
     """ Fetch the metadata of the provided path
+
     :param self: self reference
     :param str path: path (only 1) on the storage (srm://...)
-    :returns
-      S_OK( metadataDict ) if we could get the metadata
-      S_ERROR( errStr )if there was a problem getting the metadata or path isn't a directory
+    :returns: S_OK( metadataDict ) if we could get the metadata
+              S_ERROR( errStr )if there was a problem getting the metadata or path isn't a directory
     """
     self.log.debug( "GFAL2_StorageBase.__getSingleDirectoryMetadata: Fetching metadata of directory %s." % path )
 
@@ -1785,7 +1789,7 @@ class GFAL2_StorageBase( StorageBase ):
     :param self: self reference
     :param str path: path of which we wan't extended attributes
     :param str list attributes: list of extended attributes we want to receive
-    :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
+    :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
     """
     attributeDict = {}
     # get all the extended attributes from path

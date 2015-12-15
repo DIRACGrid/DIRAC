@@ -1,6 +1,10 @@
+""" The mind is a service the distributes "task" to executors
+"""
 
-import types, pprint
-from DIRAC import S_OK, S_ERROR, gLogger
+import types
+import pprint
+
+from DIRAC import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

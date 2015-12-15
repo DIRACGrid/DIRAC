@@ -44,6 +44,14 @@ FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
+def getSubmitPools( group = None, vo = None ):
+  if group:
+    return Registry.getGroupOption( group, 'SubmitPools', '' )
+  if vo:
+    return Registry.getVOOption( vo, 'SubmitPools', '' )
+  return ''
+
+
 class SiteDirector( AgentModule ):
   """
       The specific agents must provide the following methods:
@@ -55,11 +63,10 @@ class SiteDirector( AgentModule ):
                  for the agent restart
   """
 
-  def initialize( self ):
-    """ Standard constructor
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
     """
-    self.am_setOption( "PollingTime", 60.0 )
-    self.am_setOption( "maxPilotWaitingHours", 6 )
+    AgentModule.__init__( self, *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -67,6 +74,12 @@ class SiteDirector( AgentModule ):
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+
+  def initialize( self ):
+    """ Standard constructor
+    """
+    self.am_setOption( "PollingTime", 60.0 )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
 
   def beginExecution( self ):
@@ -105,11 +118,8 @@ class SiteDirector( AgentModule ):
 
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
-    if self.group:
-      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
-    elif self.vo:
-      self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+
+    self.defaultSubmitPools = getSubmitPools( self.group, self.vo )
 
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
@@ -209,9 +219,10 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
+        ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
+        ceMaxRAM = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -232,6 +243,7 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -243,14 +255,11 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          if maxMemory:
-            # MaxRAM value is supposed to be in MB
-            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
-            if memoryTags:
-              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
+          maxRAM = ceMaxRAM if not maxRAM else maxRAM
+          if maxRAM:
+            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -751,10 +760,6 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
-
-    if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )

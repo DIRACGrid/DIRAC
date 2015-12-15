@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-configure
 # Author :  Ricardo Graciani
 ########################################################################
@@ -23,7 +22,7 @@
   -V --VO=<vo>                                     To define the VO for the installation
   -U  --UseServerCertificate                       To use Server Certificate for all clients
   -H  --SkipCAChecks                               To skip check of CAs for all clients
-  -D  --SkipCADownload                             To skip download of CAs 
+  -D  --SkipCADownload                             To skip download of CAs
   -M  --SkipVOMSDownload                           To skip download of VOMS info
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
   -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
@@ -32,7 +31,7 @@
   -O --Output                                      define output configuration file
 
   Other arguments will take proper defaults if not defined.
-  
+
   Additionally all options can all be passed inside a .cfg file passed as argument. The following options are recognized:
 
 Setup
@@ -49,12 +48,12 @@ UseVersionsDir
 Architecture
 LocalSE
 LogLevel
-  
-  As in any other script command line option take precedence over .cfg files passed as arguments. 
-  The combination of both is written into the installed dirac.cfg. 
-  
+
+  As in any other script command line option take precedence over .cfg files passed as arguments.
+  The combination of both is written into the installed dirac.cfg.
+
   Notice: It will not overwrite exiting info in current dirac.cfg if it exists.
-  
+
   Example: dirac-configure -d -S LHCb-Development -C 'dips://lhcbprod.pic.es:9135/Configuration/Server' -W 'dips://lhcbprod.pic.es:9135' --SkipCAChecks
 
 """
@@ -306,7 +305,7 @@ if update:
   if outputFile:
     DIRAC.gLogger.notice( 'Will update the output file %s' % outputFile )
   else:
-    DIRAC.gLogger.notice( 'Will update %s' % DIRAC.gConfig.diracConfigFilePath )  
+    DIRAC.gLogger.notice( 'Will update %s' % DIRAC.gConfig.diracConfigFilePath )
 
 if setup:
   DIRAC.gLogger.verbose( '/DIRAC/Setup =', setup )
@@ -421,7 +420,7 @@ if gatewayServer:
 # Create the local cfg if it is not yet there
 if not outputFile:
   outputFile = DIRAC.gConfig.diracConfigFilePath
-outputFile = os.path.abspath( outputFile )  
+outputFile = os.path.abspath( outputFile )
 if not os.path.exists( outputFile ):
   configDir = os.path.dirname( outputFile )
   if not os.path.exists( configDir ):
@@ -500,9 +499,8 @@ for vo in vomsDict:
           DIRAC.gLogger.error( 'Port = %s' % port )
           DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
           continue
-        fd = open( hostFilePath, "wb" )
-        fd.write( "%s\n%s\n" % ( DN, CA ) )
-        fd.close()
+        with open( hostFilePath, "wb" ) as fd:
+          fd.write( "%s\n%s\n" % ( DN, CA ) )
         vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, port, DN, voName ) )
         DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
       except:
@@ -510,9 +508,8 @@ for vo in vomsDict:
         error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
   try:
     vomsesFilePath = os.path.join( vomsesDirPath, voName )
-    fd = open( vomsesFilePath, "wb" )
-    fd.write( "%s\n" % "\n".join( vomsesLines ) )
-    fd.close()
+    with open( vomsesFilePath, "wb" ) as fd:
+      fd.write( "%s\n" % "\n".join( vomsesLines ) )
     DIRAC.gLogger.notice( "Created vomses file %s" % vomsesFilePath )
   except:
     DIRAC.gLogger.exception( "Could not generate vomses file" )

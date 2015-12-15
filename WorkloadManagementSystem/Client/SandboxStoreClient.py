@@ -136,12 +136,11 @@ class SandboxStoreClient( object ):
         return result
 
     oMD5 = hashlib.md5()
-    fd = open( tmpFilePath, "rb" )
-    bData = fd.read( 10240 )
-    while bData:
-      oMD5.update( bData )
+    with open( tmpFilePath, "rb" ) as fd:
       bData = fd.read( 10240 )
-    fd.close()
+      while bData:
+        oMD5.update( bData )
+        bData = fd.read( 10240 )
 
     transferClient = self.__getTransferClient()
     result = transferClient.sendFile( tmpFilePath, ( "%s.tar.bz2" % oMD5.hexdigest(), assignTo ) )

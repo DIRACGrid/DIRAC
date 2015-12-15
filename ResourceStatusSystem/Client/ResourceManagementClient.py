@@ -1,4 +1,3 @@
-# $HeadURL:  $
 """ ResourceManagementClient
 
   Client to interact with the ResourceManagementDB.

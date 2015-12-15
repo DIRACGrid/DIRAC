@@ -1,7 +1,13 @@
 ########################################################################
 # File: RequestDB.py
 # Date: 2012/12/04 08:06:30
+# pylint: disable=E1101
 ########################################################################
+
+""" Frontend for ReqDB
+"""
+
+
 from types import ListType
 """ :mod: RequestDB
     =======================
@@ -161,7 +167,7 @@ class RequestDB( object ):
     self.dbName = dbParameters[ 'DBName' ]
 
 
-  def __init__( self, systemInstance = 'Default' ):
+  def __init__( self ):
     """c'tor
 
     :param self: self reference
@@ -186,7 +192,7 @@ class RequestDB( object ):
     """ create tables """
     try:
       metadata.create_all( self.engine )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
     return S_OK()
 
@@ -198,19 +204,16 @@ class RequestDB( object ):
                          .where( Request.RequestID == requestID )\
                          .values( {Request._Status : 'Canceled',
                                    Request._LastUpdate : datetime.datetime.utcnow()\
-                                                        .strftime( Request._datetimeFormat )
-                                  }
-                                 )
-                       )
+                                                        .strftime( Request._datetimeFormat )}))
       session.commit()
-      
+
       # No row was changed
       if not updateRet.rowcount:
         return S_ERROR( "No such request %s" % requestID )
 
       return S_OK()
 
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       self.log.exception( "cancelRequest: unexpected exception", lException = e )
       return S_ERROR( "cancelRequest: unexpected exception %s" % e )
@@ -223,7 +226,7 @@ class RequestDB( object ):
 
     :param Request request: Request instance
     """
-    
+
     session = self.DBSession( expire_on_commit = False )
     try:
 
@@ -247,10 +250,10 @@ class RequestDB( object ):
       session.add( request )
       session.commit()
       session.expunge_all()
-  
+
       return S_OK( request.RequestID )
 
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       self.log.exception( "putRequest: unexpected exception", lException = e )
       return S_ERROR( "putRequest: unexpected exception %s" % e )
@@ -266,7 +269,7 @@ class RequestDB( object ):
                            .filter( Operation.OperationID == operationID )\
                            .one()
       return self.getRequest( requestID[0] )
-    except NoResultFound, e:
+    except NoResultFound:
       return S_OK()
     finally:
       session.close()
@@ -313,7 +316,7 @@ class RequestDB( object ):
                           .one()
         except NoResultFound, e:
           return S_ERROR( "getRequest: request '%s' not exists" % reqID )
-  
+
         if status and status == "Assigned" and assigned:
           return S_ERROR( "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % reqID )
 
@@ -344,7 +347,7 @@ class RequestDB( object ):
 
         if not reqIDs:
           return S_OK()
-  
+
         reqIDs = list( reqIDs )
         random.shuffle( reqIDs )
         requestID = reqIDs[0]
@@ -356,11 +359,11 @@ class RequestDB( object ):
                        .options( joinedload_all( '__operations__.__files__' ) )\
                        .filter( Request.RequestID == requestID )\
                        .one()
-  
+
       if not reqID:
         log.verbose( "selected request %s('%s')%s" % ( request.RequestID, request.RequestName, ' (Assigned)' if assigned else '' ) )
-  
-  
+
+
       if assigned:
         session.execute( update( Request )\
                          .where( Request.RequestID == requestID )\
@@ -373,7 +376,7 @@ class RequestDB( object ):
       session.expunge_all()
       return S_OK( request )
 
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       log.exception( "getRequest: unexpected exception", lException = e )
       return S_ERROR( "getRequest: unexpected exception : %s" % e )
@@ -387,10 +390,10 @@ class RequestDB( object ):
     :param int numberOfRequest: Number of Request we want (default 10)
     :param bool assigned: if True, the status of the selected requests are set to assign
 
-    :returns a dictionary of Request objects indexed on the RequestID
+    :returns: a dictionary of Request objects indexed on the RequestID
 
     """
-    
+
     # expire_on_commit is set to False so that we can still use the object after we close the session
     session = self.DBSession( expire_on_commit = False )
     log = self.log.getSubLogger( 'getBulkRequest' if assigned else 'peekBulkRequest' )
@@ -401,27 +404,40 @@ class RequestDB( object ):
       # If we are here, the request MUST exist, so no try catch
       # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
       try:
-        requests = session.query( Request )\
-                          .options( joinedload_all( '__operations__.__files__' ) )\
+        now = datetime.datetime.utcnow().replace( microsecond = 0 )
+        requestIDs = session.query( Request.RequestID )\
+                          .with_for_update()\
                           .filter( Request._Status == 'Waiting' )\
+                          .filter( Request._NotBefore < now )\
                           .order_by( Request._LastUpdate )\
                           .limit( numberOfRequest )\
                           .all()
+
+        requestIDs = [ridTuple[0] for ridTuple in requestIDs]
+        log.debug( "Got request ids %s" % requestIDs )
+
+        requests = session.query( Request )\
+                          .options( joinedload_all( '__operations__.__files__' ) )\
+                          .filter( Request.RequestID.in_( requestIDs ) )\
+                          .all()
+        log.debug( "Got %s Request objects " % len( requests ) )
         requestDict = dict((req.RequestID, req) for req in requests)
       # No Waiting requests
       except NoResultFound, e:
         pass
-      
+
       if assigned and requestDict:
         session.execute( update( Request )\
                          .where( Request.RequestID.in_( requestDict.keys() ) )\
-                         .values( {Request._Status : 'Assigned'} )
+                         .values( {Request._Status : 'Assigned',
+                                   Request._LastUpdate : datetime.datetime.utcnow()\
+                                                        .strftime( Request._datetimeFormat )} )
                        )
-        session.commit()
+      session.commit()
 
       session.expunge_all()
 
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       log.exception( "unexpected exception", lException = e )
       return S_ERROR( "getBulkRequest: unexpected exception : %s" % e )
@@ -459,7 +475,7 @@ class RequestDB( object ):
                          .limit( limit )
       requestIDs = [ tuple( reqIDTuple ) for reqIDTuple in reqQuery.all() ]
 
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       self.log.exception( "getRequestIDsList: unexpected exception", lException = e )
       return S_ERROR( "getRequestIDsList: unexpected exception : %s" % e )
@@ -476,13 +492,13 @@ class RequestDB( object ):
     :param str requestID: request.RequestID
     :param mixed connection: connection to use if any
     """
-    
+
     session = self.DBSession()
 
     try:
       session.query( Request ).filter( Request.RequestID == requestID ).delete()
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       self.log.exception( "deleteRequest: unexpected exception", lException = e )
       return S_ERROR( "deleteRequest: unexpected exception : %s" % e )
@@ -496,9 +512,9 @@ class RequestDB( object ):
     """ get db summary """
     # # this will be returned
     retDict = { "Request" : {}, "Operation" : {}, "File" : {} }
- 
+
     session = self.DBSession()
- 
+
     try:
       requestQuery = session.query( Request._Status, func.count( Request.RequestID ) )\
                             .group_by( Request._Status )\
@@ -506,23 +522,23 @@ class RequestDB( object ):
 
       for status, count in requestQuery:
         retDict["Request"][status] = count
- 
+
       operationQuery = session.query(Operation.Type, Operation._Status, func.count(Operation.OperationID))\
                               .group_by( Operation.Type, Operation._Status )\
                               .all()
 
       for oType, status, count in operationQuery:
         retDict['Operation'].setdefault( oType, {} )[status] = count
-      
-      
+
+
       fileQuery = session.query( File._Status, func.count( File.FileID ) )\
                          .group_by( File._Status )\
                          .all()
 
       for status, count in fileQuery:
         retDict["File"][status] = count
- 
-    except Exception, e:
+
+    except Exception as e:
       self.log.exception( "getDBSummary: unexpected exception", lException = e )
       return S_ERROR( "getDBSummary: unexpected exception : %s" % e )
     finally:
@@ -554,9 +570,9 @@ class RequestDB( object ):
 
     try:
       summaryQuery = session.query( Request.RequestID, Request.RequestName,
-                                        Request.JobID, Request.OwnerDN, Request.OwnerGroup,
-                                        Request._Status, Request.Error,
-                                        Request._CreationTime, Request._LastUpdate )
+                                    Request.JobID, Request.OwnerDN, Request.OwnerGroup,
+                                    Request._Status, Request.Error,
+                                    Request._CreationTime, Request._LastUpdate )
 
 
 
@@ -583,15 +599,15 @@ class RequestDB( object ):
 
       if sortList:
         summaryQuery = summaryQuery.order_by( eval( 'Request.%s.%s()' % ( sortList[0][0], sortList[0][1].lower() ) ) )
-        
+
       try:
         requestLists = summaryQuery.all()
       except NoResultFound, e:
         resultDict['ParameterNames'] = parameterList
         resultDict['Records'] = []
-        
+
         return S_OK( resultDict )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( 'Error getting the webSummary %s' % e )
 
       nRequests = len( requestLists )
@@ -617,7 +633,7 @@ class RequestDB( object ):
 
       return S_OK( resultDict )
 #
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
       return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
 
@@ -672,14 +688,14 @@ class RequestDB( object ):
         resultDict = dict( requestLists )
       except NoResultFound, e:
         pass
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( 'Error getting the webCounters %s' % e )
 
 
 
       return S_OK( resultDict )
 
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getRequestSummaryWeb: unexpected exception", lException = e )
       return S_ERROR( "getRequestSummaryWeb: unexpected exception : %s" % e )
 
@@ -699,7 +715,7 @@ class RequestDB( object ):
       distinctValues = [dist[0] for dist in result]
     except NoResultFound, e:
       pass
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getDistinctValues: unexpected exception", lException = e )
       return S_ERROR( "getDistinctValues: unexpected exception : %s" % e )
 
@@ -732,7 +748,7 @@ class RequestDB( object ):
 
       reqDict['Successful'] = dict( ( jobId, reqID ) for jobId, reqID in ret )
       reqDict['Failed'] = dict( (jobid, 'Request not found') for jobid in jobIDs - set(reqDict['Successful']))
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getRequestIDsForJobs: unexpected exception", lException = e )
       return S_ERROR( "getRequestIDsForJobs: unexpected exception : %s" % e )
     finally:
@@ -769,7 +785,7 @@ class RequestDB( object ):
 
       reqDict['Failed'] = dict( ( jobid, 'Request not found' ) for jobid in jobIDs - set( reqDict['Successful'] ) )
       session.expunge_all()
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "readRequestsForJobs: unexpected exception", lException = e )
       return S_ERROR( "readRequestsForJobs: unexpected exception : %s" % e )
     finally:
@@ -784,7 +800,7 @@ class RequestDB( object ):
     session = self.DBSession()
     try:
       status = session.query( Request._Status ).filter( Request.RequestID == requestID ).one()
-    except  NoResultFound, e:
+    except  NoResultFound:
       return S_ERROR( "Request %s does not exist" % requestID )
     finally:
       session.close()
@@ -812,7 +828,7 @@ class RequestDB( object ):
         res[lfn] = status
       return S_OK( res )
 
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getRequestFileStatus: unexpected exception", lException = e )
       return S_ERROR( "getRequestFileStatus: unexpected exception : %s" % e )
     finally:
@@ -835,12 +851,12 @@ class RequestDB( object ):
 
       try:
         requestInfo = requestInfoQuery.one()
-      except NoResultFound, e:
+      except NoResultFound:
         return S_ERROR( 'No such request' )
 
       return S_OK( tuple( requestInfo ) )
 
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getRequestInfo: unexpected exception", lException = e )
       return S_ERROR( "getRequestInfo: unexpected exception : %s" % e )
 
@@ -886,7 +902,7 @@ class RequestDB( object ):
 
     except NoResultFound, e:
       return S_ERROR( 'No such request' )
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "getRequestIDsForName: unexpected exception", lException = e )
       return S_ERROR( "getRequestIDsForName: unexpected exception : %s" % e )
     finally:

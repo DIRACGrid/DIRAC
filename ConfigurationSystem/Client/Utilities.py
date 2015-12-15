@@ -158,8 +158,6 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
     ceBdiiDict = result['Value']
 
   changeSet = set()
-  gConfig.forceRefresh()
-
   for site in ceBdiiDict:
     result = getDIRACSiteName( site )
     if not result['OK']:
@@ -175,6 +173,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
       coor = siteDict.get( 'Coordinates', 'Unknown' )
       mail = siteDict.get( 'Mail', 'Unknown' ).replace( ' ','' )
       description = siteDict.get( 'Description', 'Unknown' )
+      description = description.replace( ' ,', ',')
   
       longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
       latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
@@ -210,7 +209,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         OS = ceDict.get( 'OS', 'Unknown' )
         si00 = ceDict.get( 'SI00', 'Unknown' )
         ceType = ceDict.get( 'CEType', 'Unknown' )
-        ram = ceDict.get( 'HostRAM', 'Unknown' )
+        ram = ceDict.get( 'MaxRAM', 'Unknown' )
         submissionMode = ceDict.get( 'SubmissionMode', 'Unknown' )
   
         # Current BDII CE info
@@ -235,6 +234,9 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         if newCEType in ['ARC','CREAM']:
           newSubmissionMode = "Direct" 
         newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
+        # Protect from unreasonable values
+        if newRAM and int( newRAM ) > 150000:
+          newRAM = ''
 
         # Adding CE data to the change list
         addToChangeSet( ( ceSection, 'architecture', arch, newarch ), changeSet )
@@ -247,17 +249,18 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
   
         queues = ceInfo['Queues'].keys()
         for queue in queues:
+          queueInfo = ceInfo['Queues'][queue]
+          queueStatus = queueInfo['GlueCEStateStatus']
           queueSection = cfgPath( ceSection, 'Queues', queue )
           queueDict = {}
           result = gConfig.getOptionsDict( queueSection )
           if result['OK']:
             queueDict = result['Value']
           else:
-            log.notice( "Adding new queue %s to CE %s" % (queue, ce) )
-          queueInfo = ceInfo['Queues'][queue]
-          queueStatus = queueInfo['GlueCEStateStatus']
-          if queueStatus.lower() != "production":
-            continue
+            if queueStatus.lower() == "production":
+              log.notice( "Adding new queue %s to CE %s" % (queue, ce) )
+            else:
+              continue
   
           # Current CS queue info
           maxCPUTime = queueDict.get( 'maxCPUTime', 'Unknown' )
@@ -266,6 +269,8 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
   
           # Current BDII queue info
           newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
+          if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
+            newMaxCPUTime = ''
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
           if type( caps ) == type( '' ):

@@ -33,7 +33,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 import os
 PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
@@ -243,7 +243,7 @@ class StorageBase( object ):
 
     :param self: self reference
     :param bool withWSUrl: flag to include Web Service part of the url
-    :returns URL
+    :returns: URL
     """
     urlDict = dict( self.protocolParameters )
     if not withWSUrl:

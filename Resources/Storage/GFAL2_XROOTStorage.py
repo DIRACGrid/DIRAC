@@ -48,7 +48,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
     :param self: self reference
     :param str path: path of which we want extended attributes
-    :return S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
+    :return: S_OK( attributeDict ) if successful. Where the keys of the dict are the attributes and values the respective values
     """
 
     # hard coding the attributes list for xroot because the plugin returns the wrong values

@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os
@@ -43,6 +42,12 @@ class SSLTransport( BaseTransport ):
   def __unlock( self ):
     self.__locked = False
 
+  def setSocketTimeout( self, timeout ):
+    """
+    This method is used to chenge the default timeout of the socket
+    """
+    gSocketInfoFactory.setSocketTimeout( timeout )
+    
   def initAsClient( self ):
     retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     if not retVal[ 'OK' ]:
@@ -107,7 +112,7 @@ class SSLTransport( BaseTransport ):
 
   def acceptConnection( self ):
     oClientTransport = SSLTransport( self.stServerAddress )
-    oClientSocket, stClientAddress = self.oSocket.accept()
+    oClientSocket, _stClientAddress = self.oSocket.accept()
     retVal = self.oSocketInfo.clone()
     if not retVal[ 'OK' ]:
       return retVal
@@ -121,7 +126,7 @@ class SSLTransport( BaseTransport ):
     try:
       timeout = self.oSocketInfo.infoDict[ 'timeout' ]
       if timeout:
-         start = time.time()
+        start = time.time()
       while True:
         if timeout:
           if time.time() - start > timeout:
@@ -189,6 +194,7 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
+  certFile = ''
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:

@@ -47,9 +47,8 @@ if 'DIRACPLAT' in os.environ:
   DiracPlatform = os.environ['DIRACPLAT']
 else:
   platformPath = os.path.join( DiracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-  platFD = open( platformPath, "r" )
-  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-  platFD.close()
+  with open( platformPath, "r" ) as platFD:
+    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
   DiracPlatform = Platform.getPlatformString()
   if not DiracPlatform or DiracPlatform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
@@ -148,9 +147,8 @@ for rootModule in os.listdir( rootPath ):
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
       logDEBUG( " Wrapping %s" % scriptName[:-3] )
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
-      fd = open( fakeScriptPath, "w" )
-      fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
-      fd.close()
+      with open( fakeScriptPath, "w" ) as fd:
+        fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
     else:
       logDEBUG( " Copying %s" % scriptName )

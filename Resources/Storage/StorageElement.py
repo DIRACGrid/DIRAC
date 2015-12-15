@@ -1,6 +1,5 @@
 """ This is the StorageElement class.
 """
-from types import ListType
 
 __RCSID__ = "$Id$"
 # # custom duty
@@ -10,7 +9,8 @@ import datetime
 import copy
 import errno
 # # from DIRAC
-from DIRAC import gLogger, gConfig, DError, DErrno, siteName
+from DIRAC import gLogger, gConfig, siteName
+from DIRAC.Core.Utilities import DErrno, DError
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Resources.Utilities import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
@@ -126,7 +126,7 @@ class StorageElementItem( object ):
 
     :param str name: SE name
     :param list plugins: requested storage plugins
-    :param vo
+    :param: vo
     """
 
     self.methodName = None
@@ -432,7 +432,7 @@ class StorageElementItem( object ):
         :param sourceSE : storageElement instance of the sourceSE
         :param protocols: protocol restriction list
 
-        :return a list protocols that fits the needs, or None
+        :return: a list protocols that fits the needs, or None
 
     """
 
@@ -528,9 +528,9 @@ class StorageElementItem( object ):
 
     if not protocol:
       protocols = self.turlProtocols
-    elif type( protocol ) is ListType:
+    elif isinstance( protocol, list ):
       protocols = protocol
-    elif type( protocol ) == type( '' ):
+    elif isinstance( protocol, basestring ):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"
@@ -706,7 +706,7 @@ class StorageElementItem( object ):
         startTime = time.time()
         res = fcn( urlsToUse, *args, **kwargs )
         elapsedTime = time.time() - startTime
-        
+
 
         self.addAccountingOperation( urlsToUse, startDate, elapsedTime, storageParameters, res )
 

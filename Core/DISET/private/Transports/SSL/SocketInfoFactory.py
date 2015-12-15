@@ -15,12 +15,22 @@ from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 if GSI.__version__ < "0.5.0":
   raise Exception( "Required GSI version >= 0.5.0" )
 
 class SocketInfoFactory:
 
+  def __init__(self):
+    self.__timeout = 1
+  
+  def setSocketTimeout(self, timeout):
+    self.__timeout = timeout
+    
+  def getSocketTimeout(self):
+    return self.__timeout
+  
   def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True,
                  'hostname' : destinationHostname,
@@ -54,10 +64,16 @@ class SocketInfoFactory:
     return S_ERROR( ", ".join( errs ) )
 
   def __sockConnect( self, hostAddress, sockType, timeout, retries ):
-    osSocket = socket.socket( sockType, socket.SOCK_STREAM )
-    #osSocket.setblocking( 0 )
+    try:
+      osSocket = socket.socket( sockType, socket.SOCK_STREAM )
+    except socket.error as e:
+      gLogger.warn( "Exception while creating a socket:", str( e ) ) 
+      return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
+    # osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 5 )
+      tsocket = self.getSocketTimeout()
+      gLogger.info( "Connection timeout set to: ", tsocket )
+      osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
@@ -116,8 +132,9 @@ class SocketInfoFactory:
     retVal = Network.getIPsForHostName( hostName )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
-    ipList = List.randomize( retVal[ 'Value' ] )
-    for i in range( 3 ):
+    ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
+    
+    for _ in xrange( 1 ): #TODO: this retry can be reduced. 
       connected = False
       errorsList = []
       for ip in ipList :

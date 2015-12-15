@@ -21,9 +21,8 @@ def printVersion( log ):
 
   log.info( "Running %s" % " ".join( sys.argv ) )
   try:
-    fd = open( "%s.run" % sys.argv[0], "w" )
-    pickle.dump( sys.argv[1:], fd )
-    fd.close()
+    with open( "%s.run" % sys.argv[0], "w" ) as fd:
+      pickle.dump( sys.argv[1:], fd )
   except:
     pass
   log.info( "Version %s" % __RCSID__ )
@@ -244,21 +243,19 @@ class Logger( object ):
 
   def __outputMessage( self, msg, level, header ):
     if self.out:
-      outputFile = open( self.out, 'a' )
-    for _line in msg.split( "\n" ):
-      if header:
-        outLine = "%s UTC %s [%s] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ),
-                                          level,
-                                          self.name,
-                                          _line )
-        print outLine
-        if self.out:
-          outputFile.write( outLine + '\n' )
-      else:
-        print _line
-        outputFile.write( _line + '\n' )
-    if self.out:
-      outputFile.close()
+      with open( self.out, 'a' ) as outputFile:
+        for _line in msg.split( "\n" ):
+          if header:
+            outLine = "%s UTC %s [%s] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ),
+                                              level,
+                                              self.name,
+                                              _line )
+            print outLine
+            if self.out:
+              outputFile.write( outLine + '\n' )
+          else:
+            print _line
+            outputFile.write( _line + '\n' )
     sys.stdout.flush()
 
   def setDebug( self ):
@@ -354,10 +351,12 @@ class PilotParams( object ):
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
-    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC',
-                     'ConfigureBasics', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
+    self.commands = ['GetPilotVersion', 'CheckWorkerNode', 'InstallDIRAC', 'ConfigureBasics', 'CheckCECapabilities',
+                     'CheckWNCapabilities', 'ConfigureSite', 'ConfigureArchitecture', 'ConfigureCPURequirements',
                      'LaunchAgent']
     self.extensions = []
+    self.tags = []
+    self.processors = ""
     self.site = ""
     self.setup = ""
     self.configServer = ""
@@ -419,7 +418,7 @@ class PilotParams( object ):
                      ( 'G:', 'Group=', 'DIRAC Group to use' ),
                      ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
                      ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
-                     ( 'V:', 'VO=', 'Virtual Organization' ),
+                     ( 'V:', 'installation=', 'Installation configuration file' ),
                      ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
                      ( 's:', 'section=', 'Set base section for relative parsed options' ),
                      ( 'o:', 'option=', 'Option=value to add' ),
@@ -469,7 +468,6 @@ class PilotParams( object ):
         self.executeCmd = v
       elif o in ( '-O', '--OwnerDN' ):
         self.userDN = v
-
       elif o in ( '-V', '--installation' ):
         self.installation = v
       elif o == '-p' or o == '--platform':

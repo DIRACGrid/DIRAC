@@ -8,10 +8,10 @@ import commands
 import os.path
 import time
 import sys
-from types  import DictType, ListType
+import getopt
 
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
 from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
@@ -1066,7 +1066,15 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_ls(self,args):
     """ Lists directory entries at <path> 
 
-        usage: ls [-ltrn] <path>
+        usage: ls [-ltrnSh] <path>
+
+     -l  --long                : Long listing.
+     -t  --timeorder           : List ordering by time.
+     -r  --reverse             : Reverse list order.
+     -n  --numericid           : List with numeric value of UID and GID.
+     -S  --sizeorder           : List ordering by file size.
+     -H  --human-readable      : Print sizes in human readable format (e.g., 1Ki, 20Mi);
+                                 powers of 2 are used (1Mi = 2^20 B).
     """
     
     argss = args.split()
@@ -1075,24 +1083,58 @@ File Catalog Client $Revision: 1.17 $Date:
     reverse = False
     timeorder = False
     numericid = False
+    sizeorder = False
+    humanread = False
+    shortopts = 'ltrnSH'
+    longopts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
     path = self.cwd
     if len(argss) > 0:
-      if argss[0][0] == '-':
-        if 'l' in argss[0]:
+      try:
+        optlist, arguments = getopt.getopt(argss,shortopts,longopts)
+      except getopt.GetoptError, e:
+        print str(e)
+        print self.do_ls.__doc__
+        return
+      # Duplicated options are allowed: later options have precedence, e.g.,
+      # '-ltSt' will be order by time
+      # '-ltStS' will be order by size
+      options = [ opt for (opt, arg) in optlist]
+      for opt in options:
+        if opt in ['-l', '--long']:
           _long = True
-        if 'r' in  argss[0]:
+        elif opt in ['-r', '--reverse']:
           reverse = True
-        if 't' in argss[0]:
+        elif opt in ['-t', '--timeorder']:
           timeorder = True
-        if 'n' in argss[0]:
+        elif opt in ['-n', '--numericid']:
           numericid = True  
-        del argss[0]  
-          
+        elif opt in ['-S', '--sizeorder']:
+          sizeorder = True
+        elif opt in ['-H', '--human-readable']:
+          humanread = True
+
+      if timeorder and sizeorder:
+        options = [w.replace('--sizeorder','-S') for w in options]
+        options = [w.replace('--human-readable','-H') for w in options]
+        options.reverse()
+        # The last ['-S','-t'] provided is the one we use: reverse order
+        # means that the last provided has the smallest index.
+        if options.index('-S') < options.index('-t'):
+          timeorder = False
+        else:
+          sizeorder = False
+        
       # Get path    
-      if argss:        
-        path = argss[0]       
-        if path[0] != '/':
-          path = self.cwd+'/'+path      
+      if arguments:
+        inputpath = False
+        while arguments or not inputpath:
+          tmparg = arguments.pop()
+          # look for a non recognized option not starting with '-'
+          if tmparg[0] != '-':
+            path = tmparg
+            inputpath = True
+            if path[0] != '/':
+              path = self.cwd+'/'+path
     path = self.getPath(path)
     
     # Check if the target path is a file
@@ -1105,7 +1147,7 @@ File Catalog Client $Revision: 1.17 $Date:
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
       dList.addFile(os.path.basename(path),fileDict,{},numericid)
-      dList.printListing(reverse,timeorder)
+      dList.printListing(reverse,timeorder,sizeorder,humanread)
       return         
     
     # Get directory contents now
@@ -1150,7 +1192,7 @@ File Catalog Client $Revision: 1.17 $Date:
                 dList.addSimpleFile(dname)
               
           if _long:
-            dList.printListing(reverse,timeorder)      
+            dList.printListing(reverse,timeorder,sizeorder,humanread)
           else:
             dList.printOrdered()
       else:
@@ -1497,8 +1539,8 @@ File Catalog Client $Revision: 1.17 $Date:
                                                          -d  directory metadata
                                                          -f  file metadata
                                                          -r  remove the specified metadata index
-          meta set <path> <metaname> <metavalue> - set metadata value for directory or file
-          meta remove <path> <metaname>  - remove metadata value for directory or file
+          meta set <path> <metaname> <metavalue> [<metaname> <metavalue> ...]- set metadata values for directory or file
+          meta remove <path> <metaname> [<metaname> ...] - remove metadata values for directory or file
           meta get [-e] [<path>] - get metadata for the given directory or file
           meta tags <path> <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
                                                         the metadata selection
@@ -1512,7 +1554,7 @@ File Catalog Client $Revision: 1.17 $Date:
     option = argss[0]
     del argss[0]
     if option == 'set':
-      if (len(argss) != 3):
+      if (len(argss) < 3 or len(argss)%2 != 1):
         print self.do_meta.__doc__
         return
       return self.setMeta(argss)
@@ -1538,7 +1580,7 @@ File Catalog Client $Revision: 1.17 $Date:
     elif option == 'show':
       return self.showMeta()
     elif option == 'remove' or option == "rm":
-      if (len(argss) != 2):
+      if (len(argss) < 2):
         print self.do_meta.__doc__
         return
       return self.removeMeta(argss) 
@@ -1598,8 +1640,8 @@ File Catalog Client $Revision: 1.17 $Date:
   def setMeta(self,argss):
     """ Set metadata value for a directory
     """      
-    if len(argss) != 3:
-      print "Error: command requires 3 arguments, %d given" % len(argss)
+    if (len(argss) < 3 or len(argss)%2 != 1):
+      print "Error: command requires at least 3 arguments (or odd number of arguments > 3), %d given" % len(argss)
       return
     path = argss[0]
     if path == '.':
@@ -1607,11 +1649,11 @@ File Catalog Client $Revision: 1.17 $Date:
     elif path[0] != '/':
       path = self.cwd+'/'+path  
     path = self.getPath(path)
-    meta = argss[1]
-    value = argss[2]
-    print path,meta,value
-    metadict = {}
-    metadict[meta]=value
+    del argss[0]
+    meta = argss[::2]
+    value = argss[1::2]
+    metadict = {meta[n]:value[n] for n in range(len(meta))}
+    print path,metadict
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
       print ("Error: %s" % result['Message'])     
@@ -1989,7 +2031,7 @@ File Catalog Client $Revision: 1.17 $Date:
     metaDict = result['Value']
     datasetName = self.getPath( datasetName )
     
-    result = self.fc.addDataset( datasetName, metaDict )
+    result = returnSingleResult( self.fc.addDataset( { datasetName: metaDict } ) )
     if not result['OK']:
       print "ERROR: failed to add dataset:", result['Message']
     else:
@@ -2002,7 +2044,7 @@ File Catalog Client $Revision: 1.17 $Date:
     annotation = ' '.join( argss[1:] )
     datasetName = self.getPath( datasetName )
     
-    result = self.fc.addDatasetAnnotation( {datasetName: annotation} )
+    result = returnSingleResult( self.fc.addDatasetAnnotation( {datasetName: annotation} ) )
     if not result['OK']:
       print "ERROR: failed to add annotation:", result['Message']
     else:
@@ -2012,7 +2054,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Display the dataset status
     """
     datasetName = argss[0]
-    result = self.fc.getDatasetParameters( datasetName )
+    result = returnSingleResult( self.fc.getDatasetParameters( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to get status of dataset:", result['Message']
     else:
@@ -2024,7 +2066,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Remove the given dataset
     """
     datasetName = argss[0]
-    result = self.fc.removeDataset( datasetName )
+    result = returnSingleResult( self.fc.removeDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to remove dataset:", result['Message']
     else:
@@ -2034,7 +2076,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ check if the dataset parameters are still valid
     """
     datasetName = argss[0]
-    result = self.fc.checkDataset( datasetName )
+    result = returnSingleResult( self.fc.checkDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to check dataset:", result['Message']
     else:
@@ -2050,7 +2092,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Update the given dataset parameters
     """
     datasetName = argss[0]
-    result = self.fc.updateDataset( datasetName )
+    result = returnSingleResult( self.fc.updateDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to update dataset:", result['Message']
     else:
@@ -2060,7 +2102,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Freeze the given dataset
     """
     datasetName = argss[0]
-    result = self.fc.freezeDataset( datasetName )
+    result = returnSingleResult( self.fc.freezeDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to freeze dataset:", result['Message']
     else:
@@ -2070,7 +2112,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Release the given dataset
     """
     datasetName = argss[0]
-    result = self.fc.releaseDataset( datasetName )
+    result = returnSingleResult( self.fc.releaseDataset( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to release dataset:", result['Message']
     else:
@@ -2080,7 +2122,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Get the given dataset files
     """
     datasetName = argss[0]
-    result = self.fc.getDatasetFiles( datasetName )
+    result = returnSingleResult( self.fc.getDatasetFiles( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to get files for dataset:", result['Message']
     else:
@@ -2099,7 +2141,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if len( argss ) > 0:
       datasetName = argss[0]
 
-    result = self.fc.getDatasets( datasetName )
+    result = returnSingleResult( self.fc.getDatasets( datasetName ) )
     if not result['OK']:
       print "ERROR: failed to get datasets"
       return
@@ -2112,7 +2154,7 @@ File Catalog Client $Revision: 1.17 $Date:
       fields = ['Key','Value']
       datasets = datasetDict.keys()
       dsAnnotations = {}
-      resultAnno = self.fc.getDatasetAnnotation( datasets )
+      resultAnno = returnSingleResult( self.fc.getDatasetAnnotation( datasets ) )
       if resultAnno['OK']:
         dsAnnotations = resultAnno['Value']['Successful']
       for dName in datasets:

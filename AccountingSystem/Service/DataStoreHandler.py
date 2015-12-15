@@ -1,7 +1,12 @@
-# $HeadURL$
+""" DataStore is the service for inserting accounting reports (rows) in the Accounting DB
+"""
+
 __RCSID__ = "$Id$"
+
 import types
+
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -10,7 +15,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 class DataStoreHandler( RequestHandler ):
 
-  __acDB = False
+  __acDB = AccountingDB()
 
   @classmethod
   def initializeHandler( cls, svcInfoDict ):

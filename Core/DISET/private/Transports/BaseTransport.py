@@ -1,19 +1,15 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import time
 import select
 import cStringIO
-try:
-  from hashlib import md5
-except:
-  from md5 import md5
+from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.Core.Utilities import DEncode
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Utilities import DEncode
 
-class BaseTransport:
+class BaseTransport( object ):
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
@@ -135,6 +131,8 @@ class BaseTransport:
         if sentBytes == 0:
           return S_ERROR( "Connection closed by peer" )
         packSentBytes += sentBytes
+    del sCodedData
+    sCodedData=None
     return S_OK()
 
 
@@ -264,9 +262,9 @@ class BaseTransport:
     else:
       if self.waitingForKeepAlivePong:
         return S_OK()
-      id = self.keepAliveId + str( self.sentKeepAlives )
+      idK = self.keepAliveId + str( self.sentKeepAlives )
       self.sentKeepAlives += 1
-      kaData = S_OK( { 'id' : id, 'kaping' : True } )
+      kaData = S_OK( { 'id' : idK, 'kaping' : True } )
       self.waitingForKeepAlivePong = True
     return self.sendData( kaData , prefix = BaseTransport.keepAliveMagic )
 
@@ -280,3 +278,9 @@ class BaseTransport:
     if address[0].find( ":" ) > -1:
       return "([%s]:%s)%s" % ( address[0], address[1], peerId )
     return "(%s:%s)%s" % ( address[0], address[1], peerId )
+  
+  def setSocketTimeout(self, timeout):
+    """
+    This method has to be overwritten, if we want to increase the socket timeout.
+    """
+    pass

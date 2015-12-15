@@ -83,9 +83,9 @@ class Refresher( threading.Thread ):
     thd.start()
 
 
-  def forceRefresh( self ):
+  def forceRefresh( self, fromMaster = False ):
     if self.__refreshEnabled:
-      return self.__refresh()
+      return self.__refresh( fromMaster = fromMaster )
     return S_OK()
 
   def autoRefreshAndPublish( self, sURL ):
@@ -132,7 +132,7 @@ class Refresher( threading.Thread ):
       gLogger.warn( "No master server is specified in the configuration, trying to get data from other slaves" )
       return self.__refresh()[ 'OK' ]
 
-  def __refresh( self ):
+  def __refresh( self, fromMaster = False ):
     self.__lastUpdateTime = time.time()
     gLogger.debug( "Refreshing configuration..." )
     gatewayList = getGatewayURLs( "Configuration/Server" )
@@ -140,6 +140,10 @@ class Refresher( threading.Thread ):
     if gatewayList:
       initialServerList = gatewayList
       gLogger.debug( "Using configuration gateway", str( initialServerList[0] ) )
+    elif fromMaster:
+      masterServer = gConfigurationData.getMasterServer()
+      initialServerList = [masterServer]
+      gLogger.debug( "Refreshing from master %s" % masterServer )
     else:
       initialServerList = gConfigurationData.getServers()
       gLogger.debug( "Refreshing from list %s" % str( initialServerList ) )
