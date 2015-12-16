@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-fix-ld-lib
 # Author : Joel Closier
 ########################################################################
 __RCSID__ = "$Id$"
 """  This is a script to fix oversized LD_LIBRARY_PATH variables.
 """
-import sys, os, shutil, string, re
+import sys, os, shutil, re
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.Os import uniquePath
@@ -36,7 +35,7 @@ def fixLDPath( root, ldpath, directory ):
     print uniqueLD
     sys.stdout.flush()
 
-  ldlist = string.split( uniqueLD, ':' )
+  ldlist = uniqueLD.split( ':' )
   if DEBUG:
     print ''
     print 'LD List is:'
