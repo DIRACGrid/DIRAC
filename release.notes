@@ -1,3 +1,14 @@
+[v6r14p15]
+
+*Core
+FIX: VOMS.py - Fixed bug that generates proxies which are a mix between legacy and rfc proxies.
+
+*DMS
+CHANGE: Allow selecting disk replicas in getActiveReplicas() and getReplicas()
+
+*WMS
+CHANGE: Use the preferDisk option in the InputData optimizer, the TransformationAgent and in the Interface splitter
+
 [v6r14p14]
 
 *Core
