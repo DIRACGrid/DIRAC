@@ -1015,7 +1015,7 @@ class Dirac( API ):
   #       print self.pPrint.pformat( metaDict )
 
   #############################################################################
-  def getReplicas( self, lfns, active = True, printOutput = False ):
+  def getReplicas( self, lfns, active = True, preferDisk = False, diskOnly = False, printOutput = False ):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -1040,7 +1040,7 @@ class Dirac( API ):
     start = time.time()
     dm = DataManager()
     if active:
-      repsResult = dm.getActiveReplicas( lfns )
+      repsResult = dm.getActiveReplicas( lfns, diskOnly = diskOnly, preferDisk = preferDisk )
     else:
       repsResult = dm.getReplicas( lfns )
     timing = time.time() - start
@@ -1144,7 +1144,7 @@ class Dirac( API ):
       except Exception, x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
-    replicaDict = self.getReplicas( lfns, active = True )
+    replicaDict = self.getReplicas( lfns, active = True, preferDisk = True )
     if not replicaDict['OK']:
       return replicaDict
     if len( replicaDict['Value']['Successful'] ) == 0:
