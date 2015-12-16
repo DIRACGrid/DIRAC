@@ -39,21 +39,21 @@ def pythonPathCheck():
         if os.path.normpath( p ) in sys.path:
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove( os.path.normpath( p ) )
-      except Exception as x:
+      except Exception, x:
         print x
         print "[EXCEPTION-info] Failing path:", p, os.path.normpath( p )
         print "[EXCEPTION-info] sys.path:", sys.path
         raise x
-  except Exception as x:
+  except Exception, x:
     print x
     print "[EXCEPTION-info] sys.executable:", sys.executable
     print "[EXCEPTION-info] sys.version:", sys.version
     print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
-  
+
 def alarmTimeoutHandler( *args ):
-  raise Exception( 'Timeout' )  
-  
+  raise Exception( 'Timeout' )
+
 def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
@@ -69,7 +69,7 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception as x:
+    except Exception, x:
       expectedBytes = 0
     data = remoteFD.read()
     if fileName:
@@ -99,13 +99,13 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
   except urllib2.URLError:
     log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     return False
-  except Exception as x:
+  except Exception, x:
     if x == 'Timeout':
       log.error( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:
       signal.alarm( 0 )
-    raise x  
-  
+    raise x
+
 
 class ObjectLoader( object ):
   """ Simplified class for loading objects from a DIRAC installation.
@@ -186,17 +186,17 @@ class ObjectLoader( object ):
 def getCommand( params, commandName, log ):
   """ Get an instantiated command object for execution.
       Commands are looked in the following modules in the order:
-      
+
       1. <CommandExtension>Commands
       2. pilotCommands
       3. <Extension>.WorkloadManagementSystem.PilotAgent.<CommandExtension>Commands
       4. <Extension>.WorkloadManagementSystem.PilotAgent.pilotCommands
       5. DIRAC.WorkloadManagementSystem.PilotAgent.<CommandExtension>Commands
       6. DIRAC.WorkloadManagementSystem.PilotAgent.pilotCommands
-      
+
       Note that commands in 3.-6. can only be used of the the DIRAC installation
-      has been done. DIRAC extensions are taken from -e ( --extraPackages ) option 
-      of the pilot script.  
+      has been done. DIRAC extensions are taken from -e ( --extraPackages ) option
+      of the pilot script.
   """
   extensions = params.commandExtensions
   modules = [ m + 'Commands' for m in extensions + ['pilot'] ]
@@ -219,12 +219,12 @@ def getCommand( params, commandName, log ):
       if not ext.endswith( 'DIRAC' ):
         diracExtensions.append( ext + 'DIRAC' )
       else:
-        diracExtensions.append( ext )  
+        diracExtensions.append( ext )
     diracExtensions += ['DIRAC']
     ol = ObjectLoader( diracExtensions, log )
     for module in modules:
-      commandObject, modulePath = ol.loadObject( 'WorkloadManagementSystem.PilotAgent', 
-                                                 module, 
+      commandObject, modulePath = ol.loadObject( 'WorkloadManagementSystem.PilotAgent',
+                                                 module,
                                                  commandName )
       if commandObject:
         return commandObject( params ), modulePath
@@ -307,11 +307,11 @@ class CommandBase( object ):
       outData = _p.stdout.read().strip()
       for line in outData:
         sys.stdout.write( line )
-      sys.stdout.write( '\n' )  
+      sys.stdout.write( '\n' )
 
       for line in _p.stderr:
         sys.stdout.write( line )
-      sys.stdout.write( '\n' )    
+      sys.stdout.write( '\n' )
 
       # return code
       returnCode = _p.wait()
@@ -453,7 +453,7 @@ class PilotParams( object ):
       elif o == '-y' or o == '--CEType':
         self.ceType = v
       elif o == '-Q' or o == '--Queue':
-        self.queueName = v  
+        self.queueName = v
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
       elif o == '-d' or o == '--debug':
@@ -498,4 +498,3 @@ class PilotParams( object ):
           pass
       elif o in ( '-T', '--CPUTime' ):
         self.jobCPUReq = v
-
