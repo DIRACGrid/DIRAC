@@ -18,11 +18,11 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.addDefaultOptionValue( '/DIRAC/Security/UseServerCertificate', 'yes' )
 Script.addDefaultOptionValue( 'LogLevel', 'INFO' )
 Script.parseCommandLine()
-from DIRAC.Core.Utilities import InstallTools
+from FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-result = InstallTools.fixMySQLScripts()
+result = gComponentInstaller.fixMySQLScripts()
 if not result['OK']:
   print "ERROR:", result['Message']
   exit( -1 )

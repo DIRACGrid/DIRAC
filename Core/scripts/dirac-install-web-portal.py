@@ -9,10 +9,10 @@ Do the initial installation of a DIRAC Web portal
 """
 __RCSID__ = "$Id$"
 #
-from DIRAC.Core.Utilities import InstallTools
+from FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC import S_OK
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
@@ -32,6 +32,6 @@ Script.registerSwitch( "O", "--old", "install old Pylons based portal", setOld )
 Script.parseCommandLine()
 
 if old:
-  result = InstallTools.setupPortal()
+  result = gComponentInstaller.setupPortal()
 else:
-  result = InstallTools.setupNewPortal()  
+  result = gComponentInstaller.setupNewPortal()
