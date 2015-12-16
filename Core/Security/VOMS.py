@@ -140,7 +140,7 @@ class VOMS( BaseSecurity ):
         lines.append( "subject : %s" % creds[ 'subject' ] )
         lines.append( "issuer : %s" % creds[ 'issuer' ] )
         lines.append( "identity : %s" % creds[ 'identity' ] )
-        if proxyDict[ 'chain' ].isRFC():
+        if proxyDict[ 'chain' ].isRFC().get( 'Value' ):
           lines.append( "type : RFC compliant proxy" )
         else:
           lines.append( "type : proxy" )
@@ -259,7 +259,7 @@ class VOMS( BaseSecurity ):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
-    if chain.isRFC():
+    if chain.isRFC().get( 'Value' ):
       cmdArgs.append( "-r" )
 
     if not Os.which('voms-proxy-init'):
