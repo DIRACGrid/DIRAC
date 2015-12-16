@@ -65,6 +65,19 @@ FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request i
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
 
+
+[v6r14p15]
+
+*Core
+FIX: VOMS.py - Fixed bug that generates proxies which are a mix between legacy and rfc proxies.
+
+*DMS
+CHANGE: Allow selecting disk replicas in getActiveReplicas() and getReplicas()
+
+*WMS
+CHANGE: Use the preferDisk option in the InputData optimizer, the TransformationAgent and in the Interface splitter
+
+
 [v6r14p14]
 
 *Core

@@ -72,12 +72,12 @@ def executeWithUserProxy( fcn ):
                                                         requiredVOMSAttribute = vomsAttr,
                                                         filePath = proxyFilePath,
                                                         requiredTimeLeft = 3600,
-                                                        cacheTime =  3600 )
+                                                        cacheTime = 3600 )
       else:
         result = gProxyManager.downloadProxyToFile( userDN, userGroup,
                                                     filePath = proxyFilePath,
                                                     requiredTimeLeft = 3600,
-                                                    cacheTime =  3600 )
+                                                    cacheTime = 3600 )
 
       if not result['OK']:
         gLogger.warn( "Can't download proxy to file", result['Message'] )
@@ -92,19 +92,20 @@ def executeWithUserProxy( fcn ):
         gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
 
       try:
-        resultFcn = fcn( *args, **kwargs )
-      except Exception as x:
-        resultFcn = S_ERROR( "Exception: %s" % str( x ) )
+        return fcn( *args, **kwargs )
+      except Exception as lException:
+        value = ','.join( [str( arg ) for arg in lException.args] )
+        exceptType = lException.__class__.__name__
+        return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
+      finally:
+        # Restore the default host certificate usage if necessary
+        if useServerCertificate:
+          gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+        if originalUserProxy:
+          os.environ['X509_USER_PROXY'] = originalUserProxy
+        else:
+          os.environ.pop( 'X509_USER_PROXY' )
 
-      # Restore the default host certificate usage if necessary
-      if useServerCertificate:
-        gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
-      if originalUserProxy:
-        os.environ['X509_USER_PROXY'] = originalUserProxy
-      else:
-        os.environ.pop( 'X509_USER_PROXY' )
-
-      return resultFcn
     else:
       # No proxy substitution requested
       return fcn( *args, **kwargs )
