@@ -337,12 +337,12 @@ class ARCComputingElement( ComputingElement ):
       job.Update()
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
-      if ( arcState ): # Meaning arcState is filled. Is this good python?
+      if arcState: # Meaning arcState is filled. Is this good python?
         resultDict[jobID] = self.mapStates[arcState]
         # Renew proxy only of jobs which are running - and will expire within the next hour
-        if ( self.mapStates[arcState] == "Running" ):
+        if self.mapStates[arcState] == "Running":
           nextHour = arc.Time()+arc.Period(10000) # 2 hours, 46 minutes and 40 seconds
-          if ( job.ProxyExpirationTime < nextHour ):
+          if job.ProxyExpirationTime < nextHour:
             job.Renew()
             gLogger.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
       else:
