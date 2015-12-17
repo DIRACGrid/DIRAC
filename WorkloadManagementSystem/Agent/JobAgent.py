@@ -8,7 +8,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import os.path
 import sys
 import re
 import time
