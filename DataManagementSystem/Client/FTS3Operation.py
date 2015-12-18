@@ -253,7 +253,7 @@ class FTS3Operation( FTS3Serializable ):
 
     operation = request.getWaiting()
     if not operation["OK"]:
-      log.error( "Unable to find 'Scheduled' ReplicateAndRegister operation in request" )
+      log.error( "Unable to find 'Scheduled' operation in request" )
       res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
       if not res['OK']:
         log.error( "Could not put back the request !", res['Message'] )
@@ -426,92 +426,6 @@ class FTS3TransferOperation(FTS3Operation):
 
 
 
-class FTS3RemovalOperation( FTS3Operation ):
-  """ Class to be used for a Removal operation
-  """
-
-  def prepareNewJobs( self, maxFilesPerJob = 100, maxAttemptsPerFile = 10 ):
-
-    log = self._log.getSubLogger( "_prepareNewJobs", child = True )
-
-    filesToSubmit = self._getFilesToSubmit( maxAttemptsPerFile = maxAttemptsPerFile )
-    log.debug( "%s ftsFiles to submit" % len( filesToSubmit ) )
-
-
-    newJobs = []
-
-
-    # {targetSE : [FTS3Files] }
-    filesGroupedByTarget = FTS3Utilities.groupFilesByTarget( filesToSubmit )
-
-    for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
-
-      res = self._checkSEAccess( targetSE, 'RemoveAccess' )
-
-      if not res['OK']:
-        log.error( res )
-        continue
-
-
-
-      for ftsFilesChunk in breakListIntoChunks( ftsFiles, maxFilesPerJob ):
-
-        newJob = self._createNewJob( 'Removal', ftsFilesChunk, targetSE )
-
-        newJobs.append( newJob )
-
-
-    return S_OK( newJobs )
-
-
-  def _callback( self ):
-    """" After a Removal operation, we have to update the matching Request in the
-        RMS, and add the removal operation just before the RemoveReplica/RemoveFile one
-
-        NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
-    """
-
-    log = self._log.getSubLogger( "callback", child = True )
-
-    res = self._upadteRmsOperationStatus()
-
-    if not res['OK']:
-      return res
-
-    ftsFilesByTarget = res['Value']['ftsFilesByTarget']
-    request = res['Value']['request']
-    operation = res['Value']['operation']
-
-
-    log.info( "will create %s 'RegisterReplica' operations" % len( ftsFilesByTarget ) )
-
-    for target, ftsFileList in ftsFilesByTarget.iteritems():
-      log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target,
-                                                                                            len( ftsFileList ) ) )
-      registerOperation = rmsOperation()
-      registerOperation.Type = "RegisterReplica"
-      registerOperation.Status = "Waiting"
-      registerOperation.TargetSE = target
-
-      targetSE = StorageElement( target )
-      for ftsFile in ftsFileList:
-        opFile = rmsFile()
-        opFile.LFN = ftsFile.lfn
-        res = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
-
-        # This should never happen !
-        if not res["OK"]:
-          log.error( "Could not get url", res['Message'] )
-          continue
-        opFile.PFN = res["Value"]
-        registerOperation.addFile( opFile )
-
-      request.insertBefore( registerOperation, operation )
-
-
-    return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
-
-
 class FTS3StagingOperation( FTS3Operation ):
   """ Class to be used for a Staging operation
   """
@@ -549,6 +463,23 @@ class FTS3StagingOperation( FTS3Operation ):
     return S_OK( newJobs )
 
        
+  def _callback( self ):
+    """" After a Staging operation, we have to update the matching Request in the
+        RMS, and nothing more. If a callback is to be performed, it will be the next
+        operation in the request, and put by the caller
+
+        NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
+    """
+
+    res = self._upadteRmsOperationStatus()
+
+    if not res['OK']:
+      return res
+
+    request = res['Value']['request']
+
+
+    return self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
 
 
 

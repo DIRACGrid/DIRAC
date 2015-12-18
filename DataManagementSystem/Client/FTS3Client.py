@@ -1,7 +1,7 @@
 import json
 from DIRAC.Core.Base.Client import Client
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONEncoder, FTS3JSONDecoder
+from DIRAC.DataManagementSystem.private.FTS3Utilities import  FTS3JSONDecoder
 
 
 class FTS3Client(Client):

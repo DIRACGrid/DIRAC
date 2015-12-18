@@ -480,5 +480,8 @@ class FTS3Job( FTS3Serializable ):
   
 
 
+  @staticmethod
+  def generateContext( ftsServer, ucert ):
+    return fts3.Context( endpoint = ftsServer, ucert = ucert )
 
 
