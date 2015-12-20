@@ -10,6 +10,7 @@ import inspect
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure, reprReturnErrorStructure
 from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
 from DIRAC.Core.Utilities import ExitCallback
 import DIRAC
@@ -177,6 +178,11 @@ class Logger:
     return self.processMessage( messageObject )
 
   def debug( self, sMsg, sVarMsg = '' ):
+    # In case of S_ERROR structure make full string representation
+    if isReturnStructure( sMsg ):
+      sMsg = reprReturnErrorStructure( sMsg, full = True )
+    if isReturnStructure( sVarMsg ):
+      sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
     messageObject = Message( self._systemName,
                              self._logLevels.debug,
                              Time.dateTime(),

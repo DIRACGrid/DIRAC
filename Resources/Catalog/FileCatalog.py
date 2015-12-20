@@ -47,7 +47,7 @@
 import re
 
 from DIRAC                                               import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities                                import DError, DErrno
+from DIRAC.Core.Utilities                                import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 from DIRAC.Resources.Catalog.Utilities                   import checkArgumentFormat
@@ -307,7 +307,7 @@ class FileCatalog( object ):
         else:
           return res
     if not successful and not failed:
-      return DError( DErrno.EFCERR, "Failed to perform %s from any catalog" % self.call )
+      return S_ERROR( DErrno.EFCERR, "Failed to perform %s from any catalog" % self.call )
     return S_OK( {'Failed':failed, 'Successful':successful} )
 
   ###########################################################################################

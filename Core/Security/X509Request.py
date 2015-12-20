@@ -4,8 +4,8 @@
 __RCSID__ = "$Id$"
 
 import GSI
-from DIRAC import S_OK
-from DIRAC.Core.Utilities import DError, DErrno
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain
 
 class X509Request( object ):
@@ -38,11 +38,11 @@ class X509Request( object ):
     Get the request as a string
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
     try:
       reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj )
     except Exception, e:
-      return DError( DErrno.EX509, "Can't serialize request: %s" % e )
+      return S_ERROR( DErrno.EX509, "Can't serialize request: %s" % e )
     return S_OK( reqStr )
 
   def getPKey( self ):
@@ -56,11 +56,11 @@ class X509Request( object ):
     Get the pkey as a string
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
     try:
       pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
     except Exception, e:
-      return DError( DErrno.EX509, "Can't serialize pkey: %s" % e )
+      return S_ERROR( DErrno.EX509, "Can't serialize pkey: %s" % e )
     return S_OK( pkeyStr )
 
   def dumpAll( self ):
@@ -68,27 +68,27 @@ class X509Request( object ):
     Dump the contents into a string
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
 
     try:
       reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj )
     except Exception, e:
-      return DError( DErrno.EX509, "Can't serialize request: %s" % e )
+      return S_ERROR( DErrno.EX509, "Can't serialize request: %s" % e )
     try:
       pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
     except Exception, e:
-      return DError( DErrno.EX509, "Can't serialize pkey: %s" % e )
+      return S_ERROR( DErrno.EX509, "Can't serialize pkey: %s" % e )
     return S_OK( "%s%s" % ( reqStr, pkeyStr ) )
 
   def loadAllFromString( self, pemData ):
     try:
       self.__reqObj = GSI.crypto.load_certificate_request( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return DError( DErrno.ENOCERT, str( e ) )
+      return S_ERROR( DErrno.ENOCERT, str( e ) )
     try:
       self.__pkeyObj = GSI.crypto.load_privatekey( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return DError( DErrno.ENOPKEY, str( e ) )
+      return S_ERROR( DErrno.ENOPKEY, str( e ) )
     self.__valid = True
     return S_OK()
 
@@ -98,11 +98,11 @@ class X509Request( object ):
     Return : S_OK( X509Chain ) / S_ERROR
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
     try:
       certList = GSI.crypto.load_certificate_chain( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return DError( DErrno.ENOCERT, str( e ) )
+      return S_ERROR( DErrno.ENOCERT, str( e ) )
     chain = X509Chain()
     chain.setChain( certList )
     chain.setPKey( self.__pkeyObj )
@@ -114,7 +114,7 @@ class X509Request( object ):
     Return: S_OK( string )/S_ERROR
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__reqObj.get_subject().one_line() )
 
   def getIssuerDN( self ):
@@ -123,7 +123,7 @@ class X509Request( object ):
     Return: S_OK( string )/S_ERROR
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
     return S_OK( self.__reqObj.get_issuer().one_line() )
 
   def checkChain( self, chain ):
@@ -131,7 +131,7 @@ class X509Request( object ):
     Check that the chain matches the request
     """
     if not self.__valid:
-      return DError( DErrno.ENOCERT )
+      return S_ERROR( DErrno.ENOCERT )
     retVal = chain.getCertInChain()
     if not retVal[ 'OK' ]:
       return retVal
