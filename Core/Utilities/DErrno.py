@@ -178,19 +178,14 @@ dStrError = {
               EFCERR : "FileCatalog error"
 }
 
-
-# In case the error is returned as a string, and not as a DErrno object, 
-# these strings are used to test the error. 
-compatErrorString = {
-                     # ERRX : ['not found', 'X'],
-                       errno.ENOENT : ['File does not exist']
-                     }
-
 def strerror(code):
   """ This method wraps up os.strerror, and behave the same way.
       It completes it with the DIRAC specific errors.
   """
-  
+
+  if code == 0 :
+    return "Undefined error"
+
   errMsg = "Unknown error %s" % code
   
   try:
@@ -206,147 +201,36 @@ def strerror(code):
   
   return errMsg
 
-
-class DError( object ):
-  """ This class is used to propagate errors through DIRAC.
-      It contains a error code that should be one defined here or in errno python module.
-      It also contains an error message which is not a human readable description, but the real
-      low level technical message.
-      Its interface is to be compatible with the one of a string in order to keep compatibility
-      with the old error handling system
-      
-      CAUTION. The callstack attribute is used to print the sequence of events
-      that lead to the error. It is set automatically in the __init__.
-      It should be overwritten  only for serializing
-  """
-      
-
-  def __init__( self, errno, errmsg = "" ):
-    """ Initialize
-        :param errno : error code
-        :param errmsg : technical message
-    """
-
-    self.errno = errno
-    self.errmsg = errmsg
-
-    try:
-      self._callStack = traceback.format_stack()
-      self._callStack.pop()
-    except:
-      self._callStack = []
-
-  def __repr__( self ):
-    """ String representation """
-    reprStr = "%s ( %s : %s)" % ( strerror( self.errno ), self.errno, self.errmsg )
-
-    isVerbose = False
-    stack = traceback.extract_stack()
-
-    for filename, _linenb, function_name, _text in stack:
-      if 'FrameworkSystem/private/logging/Logger.py' in filename:
-        if function_name == 'debug':
-          isVerbose = True
-          break
-
-    if isVerbose:
-      reprStr += "\n" + "".join( self._callStack )
-
-    return reprStr
-
-  def __contains__( self, errorStr ):
-    """ For compatibility reasons.
-        Checks whether 'errorStr' is in the human readable form of the error msg or compat err msg
-        errorStr has to be an str
-    """
-    # Check if the errorStr is in the standard message
-    ret = ( errorStr in strerror( self.errno ) )
-    if ret:
-      return ret
-
-    # If not, check whether the errorStr is in one of the compatibility error message
-    ret = reduce( lambda x, y : x or ( errorStr in y ), compatErrorString.get( self.errno, [] ), False )
-
-    return ret
-  
-  def __cmp__( self, errorStr ):
-    """ For compatibility reasons.
-        Checks whether 'errorStr', which should be a string, is equal to the human readable form of the error msg
-    """
-    # !!! Caution, if there is equality, we have to return 0 (rules of __cmp__)
-
-    try:
-      if errorStr == strerror( self.errno ):
-        return 0
-    except:
-      pass
-
-    if errorStr in compatErrorString.get( self.errno, [] ):
-      return 0
-
-    return 1
-
-  def __getitem__( self, key ):
-    """ Emulate the behavior of S_ERROR
-    """
-    if key == 'OK':
-      return False
-    elif key == 'Message':
-      return "%s" % self
-    raise KeyError( "{0} does not exist".format( key ) )
-  
-  def get(self, key, defaultValue = None):
-    """ method like the "get" of a dictionary.
-        Returns the value matching the key if exists,
-        otherwise the default value
-
-        :param key: item to lookup for
-        :param defaultValue": if the key does not exist, return this value
-
-        :return: the value matching the key or the default value
-    """
-    try:
-      return self.__getitem__( key )
-    except KeyError:
-      return defaultValue
-
-
-
 def cmpError( inErr, candidate ):
-  """ This function compares an error (in its old form (a string...) or new (DError instance))
+  """ This function compares an error (in its old form (a string or dictionary) or in its int form
       with a candidate error code.
 
-      :param inErr : a string, an integer, a DError instance
-      :param candidate : error code to compare with
+      :param inErr : a string, an integer, a S_ERROR dictionary
+      :param int candidate : error code to compare with
 
       :return True or False
 
-      If a DError instance is passed, we compare the code with DError.errno
+      If an S_ERROR instance is passed, we compare the code with S_ERROR['Errno']
       If it is a Integer, we do a direct comparison
-      If it is a String, we use compatErrorString and strerror to check the error string
+      If it is a String, we use strerror to check the error string
   """
 
   if isinstance( inErr, basestring ) :  # old style
-    # Create a DError object to represent the candidate
-    derr = DError( candidate )
-    return inErr == derr
+    # Compare error message strings
+    errMsg = strerror( candidate )
+    return errMsg in inErr
   elif isinstance( inErr, dict ):  # if the S_ERROR structure is given
-    # Create a DError object to represent the candidate
-    derr = DError( candidate )
-    return inErr.get( 'Message' ) == derr
+    # Check if Errno defined in the dict
+    errorNumber = inErr.get( 'Errno' )
+    if errorNumber:
+      return errorNumber == candidate
+    else:
+      errMsg = strerror( candidate )
+      return errMsg in inErr.get( 'Message', '' )
   elif isinstance( inErr, int ):
     return inErr == candidate
-  elif isinstance( inErr, DError ):
-    return inErr.errno == candidate
-  elif isinstance( inErr, dict ):  # S_ERROR object is given
-    # Create a DError object to represent the candidate
-    derr = DError( candidate )
-    return inErr.get( 'Message', '' ) == derr
   else:
     raise TypeError( "Unknown input error type %s" % type( inErr ) )
-
-
-
 
 
 def includeExtensionErrors():
