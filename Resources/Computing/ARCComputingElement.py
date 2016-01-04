@@ -4,7 +4,7 @@
 # Update to use ARC API : Raja Nandakumar
 ########################################################################
 
-""" ARC Computing Element 
+""" ARC Computing Element
     Using the ARC API now
 """
 
@@ -65,7 +65,7 @@ class ARCComputingElement( ComputingElement ):
                        'Other'   : 'Done'
       }
     self.__getXRSLExtraString() # Do this after all other initialisations, in case something barks
-    
+
   #############################################################################
 
   def __getARCJob( self, jobID ):
@@ -144,7 +144,7 @@ class ARCComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-    
+
   #############################################################################
   def __writeXRSL( self, executableFile ):
     """ Create the JDL for submission
@@ -223,21 +223,21 @@ class ARCComputingElement( ComputingElement ):
         gLogger.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
         message = "Failed to submit job because "
-        if (result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED) ):
+        if (result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED) ): #pylint: disable=E1101
           gLogger.warn( "%s feature not implemented on CE? (weird I know - complain to site admins" % message )
-        if ( result.isSet(arc.SubmissionStatus.NO_SERVICES) ):
+        if ( result.isSet(arc.SubmissionStatus.NO_SERVICES) ): #pylint: disable=E1101
           gLogger.warn( "%s no services are running on CE? (open GGUS ticket to site admins" % message )
-        if ( result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED) ):
+        if ( result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED) ): #pylint: disable=E1101
           gLogger.warn( "%s endpoint was not even queried. (network ..?)" % message )
-        if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ):
+        if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ): #pylint: disable=E1101
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ):
+        if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ): #pylint: disable=E1101
           gLogger.warn( "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message )
-        if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ):
+        if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ): #pylint: disable=E1101
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ):
+        if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ): #pylint: disable=E1101
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
-        if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ):
+        if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ): #pylint: disable=E1101
           gLogger.warn( "%s some error from the CE - possibly CE problems?" % message )
         gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
@@ -253,7 +253,7 @@ class ARCComputingElement( ComputingElement ):
   def killJob( self, jobIDList ):
     """ Kill the specified jobs
     """
-    
+
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
@@ -278,7 +278,7 @@ class ARCComputingElement( ComputingElement ):
     else:
       gLogger.debug("Killed jobs %s" % jobIDList)
 
-      
+
     return S_OK()
 
   #############################################################################
@@ -325,7 +325,7 @@ class ARCComputingElement( ComputingElement ):
     jobList = []
     for j in jobTmpList:
       if ":::" in j:
-        job = j.split(":::")[0] 
+        job = j.split(":::")[0]
       else:
         job = j
       jobList.append( job )
@@ -356,8 +356,8 @@ class ARCComputingElement( ComputingElement ):
   #############################################################################
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
-        as strings. 
+        the output is returned as file in this directory. Otherwise, the output is returned
+        as strings.
     """
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
@@ -380,7 +380,7 @@ class ARCComputingElement( ComputingElement ):
     if "WorkingDirectory" in self.ceParameters:
       workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], arcID )
     else:
-      workingDirectory = arcID  
+      workingDirectory = arcID
     outFileName = os.path.join( workingDirectory, '%s.out' % stamp )
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
     gLogger.debug("Working directory for pilot output %s" % workingDirectory)
