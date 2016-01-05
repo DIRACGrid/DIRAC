@@ -13,7 +13,7 @@ from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputi
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ProcessPool                    import ProcessPool
-from DIRAC.Core.Utilities.Os                             import getNumberOfCores 
+from DIRAC.Core.Utilities.Os                             import getNumberOfCores
 
 MandatoryParameters = [ ]
 
@@ -36,7 +36,7 @@ class PoolComputingElement( ComputingElement ):
     self.submittedJobs = 0
     if cores > 0:
       self.cores = cores
-    else:  
+    else:
       self.cores = getNumberOfCores()
     self.pPool = ProcessPool( self.cores, self.cores, poolCallback = self.finalizeJob )
     self.taskID = 0
@@ -48,38 +48,38 @@ class PoolComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-    
+
   def getCoresInUse( self ):
-    """ 
-    """ 
+    """
+    """
     coresInUse = 0
     for _task, cores in self.coresPerTask.items():
-      coresInUse += cores 
-    return coresInUse  
+      coresInUse += cores
+    return coresInUse
 
   #############################################################################
   def submitJob( self, executableFile, proxy, **kwargs ):
-    """ Method to submit job, should be overridden in sub-class.
+    """ Method to submit job.
     """
-    
+
     self.pPool.processResults()
-    
+
     coresInUse = self.getCoresInUse()
     if "WholeNode" in kwargs and kwargs['WholeNode']:
       if coresInUse > 0:
         return S_ERROR('Can not take WholeNode job, %d/%d slots used' % (self.slotsInUse,self.slots) )
       else:
         requestedCores = self.cores
-    elif "NumberOfCores" in kwargs:           
+    elif "NumberOfCores" in kwargs:
       requestedCores = int( kwargs['NumberOfCores'] )
       if requestedCores > 0:
         if (coresInUse + requestedCores) > self.cores:
           return S_ERROR( 'Not enough slots: requested %d, available %d' % ( requestedCores, self.cores-coresInUse) )
     else:
-      requestedCores = 1   
+      requestedCores = 1
     if self.cores - coresInUse < requestedCores:
       return S_ERROR( 'Not enough slots: requested %d, available %d' % ( requestedCores, self.cores-coresInUse) )
-    
+
     ret = getProxyInfo()
     if not ret['OK']:
       pilotProxy = None
@@ -87,17 +87,17 @@ class PoolComputingElement( ComputingElement ):
       pilotProxy = ret['Value']['path']
     self.log.notice( 'Pilot Proxy:', pilotProxy )
 
-    result = self.pPool.createAndQueueTask( executeJob, 
+    result = self.pPool.createAndQueueTask( executeJob,
                                             [executableFile,proxy,self.taskID],None,
                                             self.taskID,
                                             usePoolCallbacks = True )
     self.taskID += 1
     self.coresPerTask[self.taskID] = requestedCores
-    
+
     self.pPool.processResults()
-    
+
     return result
-  
+
   def finalizeJob( self, taskID, result ):
     """ Finalize the job
     """
@@ -112,9 +112,9 @@ class PoolComputingElement( ComputingElement ):
     result['SubmittedJobs'] = 0
     nJobs = 0
     for _j, value in self.coresPerTask.items():
-      if value > 0: 
+      if value > 0:
         nJobs += 1
-    result['RunningJobs'] = nJobs 
+    result['RunningJobs'] = nJobs
     result['WaitingJobs'] = 0
     coresInUse = self.getCoresInUse()
     result['UsedCores'] = coresInUse
