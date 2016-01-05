@@ -67,7 +67,7 @@ class PoolComputingElement( ComputingElement ):
     coresInUse = self.getCoresInUse()
     if "WholeNode" in kwargs and kwargs['WholeNode']:
       if coresInUse > 0:
-        return S_ERROR('Can not take WholeNode job, %d/%d slots used' % (self.slotsInUse,self.slots) )
+        return S_ERROR('Can not take WholeNode job') #, %d/%d slots used' % (self.slotsInUse,self.slots) )
       else:
         requestedCores = self.cores
     elif "NumberOfCores" in kwargs:
