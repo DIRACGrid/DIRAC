@@ -65,6 +65,10 @@ FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request i
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
 
+[v6r14p16]
+
+*Resources
+CHANGE: ARC Computing Element automatically renew proxies of jobs when needed
 
 [v6r14p15]
 
