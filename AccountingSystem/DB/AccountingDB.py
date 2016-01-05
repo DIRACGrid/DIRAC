@@ -328,7 +328,7 @@ class AccountingDB( DB ):
     #Registering type
     fieldsDict = {}
     bucketFieldsDict = {}
-    inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
+    inbufferDict = { 'id' : 'BIGINT NOT NULL AUTO_INCREMENT' }
     bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] }
     uniqueIndexFields = ['startTime']
     for field in definitionKeyFields:
@@ -1471,4 +1471,3 @@ def _getTableName( tableType, typeName, keyName = None ):
     return "ac_%s_%s_%s" % ( tableType, typeName, keyName )
   else:
     raise Exception( "Call to _getTableName with tableType as key but with no keyName" )
-
