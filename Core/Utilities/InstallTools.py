@@ -1147,7 +1147,7 @@ def getStartupComponentStatus( componentTupleList ):
           runDict['MEM'] = values[2]
           runDict['VSZ'] = values[3]
           runDict['RSS'] = values[4]
-    
+
     runDict['Timeup'] = timeup
     runDict['PID'] = pid
     runDict['RunitStatus'] = "Unknown"
@@ -1345,15 +1345,16 @@ def runsvctrlComponent( system, component, mode ):
     result = execCommand( 0, ['runsvctrl', mode] + startComp )
     if not result['OK']:
       return result
-    time.sleep( 1 )
+    time.sleep( 2 )
 
   # Check the runsv status
   if system == '*' or component == '*':
-    time.sleep( 5 )
+    time.sleep( 10 )
 
   # Final check
   result = getStartupComponentStatus( [( system, component )] )
   if not result['OK']:
+    gLogger.error( 'Failed to start the component %s %s' %(system, component) )
     return S_ERROR( 'Failed to start the component' )
 
   return result
