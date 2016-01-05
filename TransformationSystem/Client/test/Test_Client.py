@@ -49,9 +49,10 @@ class ClientsTestCase( unittest.TestCase ):
                                   submissionClient = self.WMSClientMock,
                                   jobMonitoringClient = self.jobMonitoringClient,
                                   outputDataModule = "mock" )
+
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
-                                      requestClient = self.mockReqClient,
-                                      requestValidator = MagicMock() )
+                                      requestClient = self.mockReqClient
+                                      )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -132,8 +133,9 @@ class RequestTasksSuccess( ClientsTestCase ):
                 }
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
-
     self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
     for task in res['Value'].values():
       self.assert_( isinstance( task['TaskObject'], Request ) )
       self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
