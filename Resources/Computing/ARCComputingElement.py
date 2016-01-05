@@ -14,7 +14,7 @@ import os
 import stat
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger, shellCall
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
@@ -337,8 +337,14 @@ class ARCComputingElement( ComputingElement ):
       job.Update()
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
-      if ( arcState ): # Meaning arcState is filled. Is this good python?
+      if arcState: # Meaning arcState is filled. Is this good python?
         resultDict[jobID] = self.mapStates[arcState]
+        # Renew proxy only of jobs which are running - and will expire within the next hour
+        if self.mapStates[arcState] == "Running":
+          nextHour = arc.Time()+arc.Period(10000) # 2 hours, 46 minutes and 40 seconds
+          if job.ProxyExpirationTime < nextHour:
+            job.Renew()
+            gLogger.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
       else:
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
