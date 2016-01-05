@@ -141,7 +141,8 @@ class RequestTasksSuccess( ClientsTestCase ):
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
-    self.assertEqual( len( taskDict ), 3 )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
     for task in res['Value'].values():
       self.assert_( isinstance( task['TaskObject'], Request ) )
       self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
