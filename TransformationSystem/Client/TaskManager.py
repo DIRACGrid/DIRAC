@@ -524,7 +524,7 @@ class WorkflowTasks( TaskBase ):
     if isinstance( job, basestring ):
       try:
         oJob = self.jobClass( job )
-      except Exception, x:
+      except Exception as x:
         self._logException( "Failed to create job object", '', x )
         return S_ERROR( "Failed to create job object" )
     elif isinstance( job, self.jobClass ):

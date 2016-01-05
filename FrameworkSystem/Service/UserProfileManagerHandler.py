@@ -21,7 +21,7 @@ def initializeUserProfileManagerHandler( serviceInfo ):
   global gUPDB
   try:
     gUPDB = UserProfileDB()
-  except Exception, e:
+  except Exception as e:
     return S_ERROR( "Can't initialize UserProfileDB: %s" % str( e ) )
   return S_OK()
 

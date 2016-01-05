@@ -360,7 +360,7 @@ class Job( API ):
 
     return S_OK()
 
-  #############################################################################  
+  #############################################################################
   def setGenericParametricInput( self, inputlist ):
     """ Helper function
 
@@ -446,7 +446,7 @@ class Job( API ):
                           Element to store data or files, e.g. CERN-tape
        :type outputSE: string or list
        :type outputPath: string
-  
+
     """
     if outputSE == None:
       outputSE = []
@@ -695,25 +695,25 @@ class Job( API ):
     self._addParameter( self.workflow, 'JobType', 'JDL', jobType, 'User specified type' )
     self.type = jobType
     return S_OK()
-  
+
   #############################################################################
   def setTag( self, tags ):
     """ Set the Tags job requirements
-    
+
         Example usage:
 
         >>> job = Job()
-        >>> job.setTag( ['WholeNode','8GBMemory'] ) 
-    
+        >>> job.setTag( ['WholeNode','8GBMemory'] )
+
         :param tags: single tag string or a list of tags
         :type tags: string or list
     """
-    
+
     if isinstance( tags, basestring ):
       tagValue = tags
     elif isinstance( tags, list ):
       tagValue = ";".join( tags )
-    else:  
+    else:
       return self._reportError( 'Expected string or list for job tags', tags = tags )
 
     self._addParameter( self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags' )
@@ -831,7 +831,7 @@ class Job( API ):
 
     if environmentDict:
       environment = []
-      for var, val in environmentDict.items():
+      for var, val in environmentDict.iteritems():
         try:
           environment.append( '='.join( [str( var ), urllib.quote( str( val ) )] ) )
         except Exception:
@@ -874,7 +874,7 @@ class Job( API ):
     self.log.info( '--------------------------------------' )
     #print self.workflow.parameters
     #print params.getParametersNames()
-    for name, _props in paramsDict.items():
+    for name, _props in paramsDict.iteritems():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -1143,7 +1143,7 @@ class Job( API ):
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
-    for name, props in paramsDict.items():
+    for name, props in paramsDict.iteritems():
       ptype = props['type']
       value = props['value']
       if name.lower() == 'requirements' and ptype == 'JDL':

@@ -446,7 +446,7 @@ class Service( object ):
     try:
       handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
       handlerInstance.initialize()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Server error while loading handler: %s" % str( e ) )
       return S_ERROR( "Server error while loading handler" )
     return S_OK( handlerInstance )
@@ -495,7 +495,7 @@ class Service( object ):
   def _executeAction( self, trid, proposalTuple, handlerObj ):
     try:
       return handlerObj._rh_executeAction( proposalTuple )
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Exception while executing handler action" )
       return S_ERROR( "Server error while executing action: %s" % str( e ) )
 

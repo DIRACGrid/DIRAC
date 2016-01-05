@@ -870,7 +870,7 @@ class ComponentInstaller( object ):
                          rDict[comp]['Timeup'],
                          str( rDict[comp]['PID'] ) ] )
       printTable( fields, records )
-    except Exception, x:
+    except Exception as x:
       print "Exception while gathering data for printing: %s" % str( x )
     return S_OK()
 
@@ -898,7 +898,7 @@ class ComponentInstaller( object ):
             record.append( str( rDict[compType][system][component]['PID'] ) )
             records.append( record )
       printTable( fields, records )
-    except Exception, x:
+    except Exception as x:
       print "Exception while gathering data for printing: %s" % str( x )
 
     return S_OK()
@@ -2557,7 +2557,7 @@ class ComponentInstaller( object ):
             DIRAC.exit( -1 )
           return S_ERROR( error )
 
-    except Exception, e:
+    except Exception as e:
       gLogger.error( str( e ) )
       if self.exitOnError:
         DIRAC.exit( -1 )

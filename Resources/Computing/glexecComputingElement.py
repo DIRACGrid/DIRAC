@@ -100,7 +100,7 @@ class glexecComputingElement( ComputingElement ):
     self.log.info( 'Changing permissions of executable to 0755' )
     try:
       os.chmod( os.path.abspath( executableFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-    except Exception, x:
+    except Exception as x:
       self.log.error( 'Failed to change permissions of executable to 0755 with exception', 
                       '\n%s' % ( x ) )
 
@@ -123,7 +123,7 @@ class glexecComputingElement( ComputingElement ):
     try:
       self.log.info( 'Trying to explicitly change permissions for parent directory %s' % currentDir )
       os.chmod( currentDir, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-    except Exception, x:
+    except Exception as x:
       self.log.error( 'Problem changing directory permissions in parent directory', str( x ) )
 
     return S_OK()
@@ -162,7 +162,7 @@ class glexecComputingElement( ComputingElement ):
           toChange = os.path.join( dirName, toChange )
           if os.stat( toChange )[4] == userID and not os.path.islink( toChange ):
             os.chmod( toChange, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-      except Exception, x:
+      except Exception as x:
         self.log.error( 'Problem changing directory permissions', str( x ) )
 
     self.log.info( 'Permissions in current directory %s updated successfully' % ( currentDir ) )
@@ -254,7 +254,7 @@ class glexecComputingElement( ComputingElement ):
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
       os.chmod( os.path.abspath( testFile ), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )
-    except Exception, x:
+    except Exception as x:
       self.log.error( 'Failed to change permissions of test script to 0755 with exception', 
                       '\n%s' % ( x ) )
       return S_ERROR( 'Could not change permissions of test script' )

@@ -55,7 +55,7 @@ class JobManifest( object ):
     """
     try:
       self.__manifest.loadFromBuffer( cfgString )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't load manifest from cfg: %s" % str( e ) )
     return S_OK()
 

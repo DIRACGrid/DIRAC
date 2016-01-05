@@ -88,7 +88,7 @@ class SocketInfo:
   def clone( self ):
     try:
       return S_OK( SocketInfo( dict( self.infoDict ), self.sslContext ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def verifyCallback( self, *args, **kwargs ):

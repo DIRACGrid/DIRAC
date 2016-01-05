@@ -41,7 +41,7 @@ class X509Request( object ):
       return DError( DErrno.ENOCERT )
     try:
       reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.EX509, "Can't serialize request: %s" % e )
     return S_OK( reqStr )
 
@@ -59,7 +59,7 @@ class X509Request( object ):
       return DError( DErrno.ENOCERT )
     try:
       pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.EX509, "Can't serialize pkey: %s" % e )
     return S_OK( pkeyStr )
 
@@ -72,22 +72,22 @@ class X509Request( object ):
 
     try:
       reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.EX509, "Can't serialize request: %s" % e )
     try:
       pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.EX509, "Can't serialize pkey: %s" % e )
     return S_OK( "%s%s" % ( reqStr, pkeyStr ) )
 
   def loadAllFromString( self, pemData ):
     try:
       self.__reqObj = GSI.crypto.load_certificate_request( GSI.crypto.FILETYPE_PEM, pemData )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.ENOCERT, str( e ) )
     try:
       self.__pkeyObj = GSI.crypto.load_privatekey( GSI.crypto.FILETYPE_PEM, pemData )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.ENOPKEY, str( e ) )
     self.__valid = True
     return S_OK()
@@ -101,7 +101,7 @@ class X509Request( object ):
       return DError( DErrno.ENOCERT )
     try:
       certList = GSI.crypto.load_certificate_chain( GSI.crypto.FILETYPE_PEM, pemData )
-    except Exception, e:
+    except Exception as e:
       return DError( DErrno.ENOCERT, str( e ) )
     chain = X509Chain()
     chain.setChain( certList )

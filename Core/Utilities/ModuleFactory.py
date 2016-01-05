@@ -28,7 +28,7 @@ class ModuleFactory:
       moduleName = importString.split( '.' )[-1]
       modulePath = importString.replace( '.%s' % ( moduleName ), '' )
       importModule = __import__( '%s.%s' % ( modulePath, moduleName ), globals(), locals(), [moduleName] )
-    except Exception, x:
+    except Exception as x:
       msg = 'ModuleFactory could not import %s.%s' % ( modulePath, moduleName )
       self.log.warn( x )
       self.log.warn( msg )
@@ -38,7 +38,7 @@ class ModuleFactory:
       # FIXME: should we use imp module?
       moduleStr = 'importModule.%s(argumentsDict)' % ( moduleName )
       moduleInstance = eval( moduleStr )
-    except Exception, x:
+    except Exception as x:
       msg = 'ModuleFactory could not instantiate %s()' % ( moduleName )
       self.log.warn( x )
       self.log.warn( msg )

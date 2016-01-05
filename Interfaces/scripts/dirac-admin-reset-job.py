@@ -32,7 +32,7 @@ for job in args:
 
   try:
     job = int( job )
-  except Exception, x:
+  except Exception as x:
     errorList.append( ( 'Expected integer for jobID', job ) )
     exitCode = 2
     continue

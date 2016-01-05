@@ -437,7 +437,7 @@ class MessageForwarder:
         srvTrid = self.__byClient[ cliTrid ][ 'srvTrid' ]
         self.__byClient.pop( cliTrid )
         self.__srvToCliTrid.pop( srvTrid )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "This shouldn't happen!" )
     finally:
       self.__inOutLock.release()

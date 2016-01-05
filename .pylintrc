@@ -166,6 +166,8 @@ zope=no
 # system, and so shouldn't trigger E0201 when accessed.
 generated-members=REQUEST,acl_users,aq_parent
 
+# List of ignored modules
+ignored-modules = MySQLdb
 
 [VARIABLES]
 

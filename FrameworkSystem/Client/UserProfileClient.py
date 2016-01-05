@@ -49,14 +49,14 @@ class UserProfileClient:
   def storeVar( self, varName, data, perms = {} ):
     try:
       stub = DEncode.encode( data )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot encode data:%s" % str( e ) )
     return self.__getRPCClient().storeProfileVar( self.profile, varName, stub, perms )
 
   def __decodeVar( self, data, dataTypeRE ):
     try:
       dataObj, lenData = DEncode.decode( data )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )
     if dataTypeRE:
       result = self.checkTypeRe( dataObj, dataTypeRE )
@@ -89,7 +89,7 @@ class UserProfileClient:
       for k in encodedData:
         v, lenData = DEncode.decode( encodedData[k] )
         dataObj[ k ] = v
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )
     return S_OK( dataObj )
 

@@ -155,7 +155,7 @@ class Message( object ):
   def dumpAttrs( self ):
     try:
       return S_OK( ( self.__waitForAck, tuple( self.__values[ k ] for k in self.__order ) ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not dump message: %s doesn't have a value" % e )
 
   def loadAttrs( self, data ):
@@ -280,7 +280,7 @@ def loadObjects( path, reFilter = None, parentClass = None ):
                                globals(),
                                locals(), pythonClassName )
       objClass = getattr( objModule, pythonClassName )
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Can't load type %s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
       continue
     if parentClass == objClass:

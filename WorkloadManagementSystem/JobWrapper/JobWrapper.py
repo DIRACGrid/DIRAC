@@ -287,12 +287,12 @@ class JobWrapper( object ):
       self.log.info( 'Job %s has no CPU time limit specified, '
                      'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
-      
-    jobMemory = 0.  
+
+    jobMemory = 0.
     if "Memory" in self.jobArgs:
       # Job specifies memory in GB, internally use KB
-      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024. 
-      
+      jobMemory = int( self.jobArgs['Memory'] )*1024.*1024.
+
     if 'Executable' in self.jobArgs:
       executable = self.jobArgs['Executable'].strip()
     else:
@@ -415,7 +415,7 @@ class JobWrapper( object ):
 
     if watchdog.currentStats:
       self.log.info( 'Statistics collected by the Watchdog:\n ',
-                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.items() ] ) )
+                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.iteritems() ] ) )
     if outputs:
       status = threadResult['Value'][0]
       # Send final heartbeat of a configurable number of lines here
@@ -555,7 +555,7 @@ class JobWrapper( object ):
         optReplicas = optDict['Value']
         self.log.info( 'Found optimizer catalog result' )
         self.log.verbose( optReplicas )
-      except Exception, x:
+      except Exception as x:
         self.log.warn( str( x ) )
         self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalog directly' )
 
@@ -574,13 +574,13 @@ class JobWrapper( object ):
       resolvedData = result
 
     # add input data size to accounting report (since resolution successful)
-    for lfn, mdata in resolvedData['Value']['Successful'].items():
+    for lfn, mdata in resolvedData['Value']['Successful'].iteritems():
       if 'Size' in mdata:
         lfnSize = mdata['Size']
         if not isinstance( lfnSize, long ):
           try:
             lfnSize = long( lfnSize )
-          except Exception, x:
+          except Exception as x:
             lfnSize = 0
             self.log.info( 'File size for LFN:%s was not a long integer, setting size to 0' % ( lfn ) )
         self.inputDataSize += lfnSize
@@ -622,7 +622,7 @@ class JobWrapper( object ):
     self.log.verbose( replicas )
 
     failedGUIDs = []
-    for lfn, reps in replicas['Value']['Successful'].items():
+    for lfn, reps in replicas['Value']['Successful'].iteritems():
       if 'GUID' not in reps:
         failedGUIDs.append( lfn )
 
@@ -651,11 +651,11 @@ class JobWrapper( object ):
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    for lfn, cause in catalogResult.get( 'Failed', {} ).items():
+    for lfn, cause in catalogResult.get( 'Failed', {} ).iteritems():
       badLFNCount += 1
       badLFNs.append( 'LFN:%s Problem: %s' % ( lfn, cause ) )
 
-    for lfn, replicas in catalogResult.get( 'Successful', {} ).items():
+    for lfn, replicas in catalogResult.get( 'Successful', {} ).iteritems():
       if not replicas:
         badLFNCount += 1
         badLFNs.append( 'LFN:%s Problem: Null replica value' % ( lfn ) )
@@ -683,7 +683,7 @@ class JobWrapper( object ):
       self.log.warn( failed )
       return S_ERROR( 'Missing GUIDs' )
 
-    for lfn, reps in repsResult['Value']['Successful'].items():
+    for lfn, reps in repsResult['Value']['Successful'].iteritems():
       guidDict['Value']['Successful'][lfn].update( reps )
 
     catResult = guidDict
@@ -1068,7 +1068,7 @@ class JobWrapper( object ):
           tarFile = tarfile.open( possibleTarFile, 'r' )
           for member in tarFile.getmembers():
             tarFile.extract( member, os.getcwd() )
-      except Exception, x :
+      except Exception as x:
         return S_ERROR( 'Could not untar %s with exception %s' % ( possibleTarFile, str( x ) ) )
 
     if userFiles:
@@ -1246,7 +1246,7 @@ class JobWrapper( object ):
             self.jobReport.setJobParameter( 'PendingRequest', digest )
             break
           else:
-            self.log.error( 'Failed to set failover request', 
+            self.log.error( 'Failed to set failover request',
                             '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
             del requestClient
             time.sleep( counter ** 3 )

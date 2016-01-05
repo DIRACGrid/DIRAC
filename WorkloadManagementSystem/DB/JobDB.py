@@ -138,7 +138,7 @@ class JobDB( DB ):
             jobDict[attr_tmp_list[i]] = str( attrValues[i] )
         retDict[int( jobID )] = jobDict
       return S_OK( retDict )
-    except Exception, x:
+    except Exception as x:
       return S_ERROR( 'JobDB.getAttributesForJobList: Failed\n%s' % str( x ) )
 
 

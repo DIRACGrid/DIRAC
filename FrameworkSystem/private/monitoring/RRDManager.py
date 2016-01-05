@@ -54,7 +54,7 @@ class RRDManager( object ):
         else:
           fd.write( "OK    %s\n" % cmd )
         fd.close()
-      except Exception, e:
+      except Exception as e:
         self.log.warn( "Cannot write log %s: %s" % ( logFile, str( e ) ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -263,5 +263,5 @@ class RRDManager( object ):
   def deleteRRD( self, rrdFile ):
     try:
       os.unlink( "%s/%s" % ( self.rrdLocation, rrdFile ) )
-    except Exception, e:
+    except Exception as e:
       self.log.error( "Could not delete rrd file", "%s: %s" % ( rrdFile, str( e ) ) )

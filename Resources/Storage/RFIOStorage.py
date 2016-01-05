@@ -570,7 +570,7 @@ class RFIOStorage( StorageBase ):
       else:
         tURL = "castor:%s" % ( path )
       return S_OK( tURL )
-    except Exception, x:
+    except Exception as x:
       errStr = "RFIOStorage.__getTransportURL: Exception while creating turl."
       gLogger.exception( errStr, self.name, x )
       return S_ERROR( errStr )

@@ -41,7 +41,7 @@ class NotificationClient:
         if fromAddress:
           m._fromAddress = fromAddress
         result = m._send()
-      except Exception, x:
+      except Exception as x:
         self.log.warn( 'Sending mail failed with exception:\n%s' % ( str( x ) ) )
 
       if result['OK']:

@@ -827,7 +827,7 @@ try:
   for key in os.environ.keys():
     print key + '=' + os.environ[key]
   print '==========================================================='
-except Exception, x:
+except Exception as x:
   print >> sys.stderr, x
   shutil.rmtree( pilotWorkingDirectory )
   sys.exit(-1)

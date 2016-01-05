@@ -30,7 +30,6 @@ try:
   with open( diracInstallLocation, "r" ) as diFile:
     DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
 except Exception as excp:
-  raise excp
   gLogger.fatal( "Cannot find dirac-install! Aborting (%s)" % str( excp ) )
   sys.exit( 1 )
 
@@ -325,7 +324,7 @@ class DistributionMaker:
 
   def getUploadCmd( self ):
     result = self.relConf.getUploadCommand()
-    upCmd = False
+    upCmd = ''
     if result['OK']:
       upCmd = result[ 'Value' ]
 

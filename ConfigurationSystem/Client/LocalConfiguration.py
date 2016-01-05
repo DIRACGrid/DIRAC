@@ -155,7 +155,7 @@ class LocalConfiguration( object ):
       if isMandatoryMissing:
         return S_ERROR()
       return S_OK()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception()
       return S_ERROR( str( e ) )
 
@@ -179,7 +179,7 @@ class LocalConfiguration( object ):
       retVal = self.__checkMandatoryOptions()
       if not retVal[ 'OK' ]:
         return retVal
-    except Exception, e:
+    except Exception as e:
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
@@ -223,7 +223,7 @@ class LocalConfiguration( object ):
       if not retVal[ 'OK' ]:
         return retVal
 
-    except Exception, e:
+    except Exception as e:
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
@@ -316,7 +316,7 @@ class LocalConfiguration( object ):
           self.__setDefaultSection( "/Scripts/%s" % self.componentName )
       else:
         self.__setDefaultSection( "/" )
-    except Exception, e:
+    except Exception as e:
       errorsList.append( str( e ) )
 
     self.unprocessedSwitches = []

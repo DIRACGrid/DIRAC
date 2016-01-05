@@ -167,7 +167,7 @@ class StorageElementProxyHandler(RequestHandler):
     try:
       gLogger.debug("Removing temporary file", localFileName )
       os.remove( localFileName )
-    except Exception, x:
+    except Exception as x:
       gLogger.exception("Failed to remove local file", localFileName, x )
     return res
 

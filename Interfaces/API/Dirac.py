@@ -99,7 +99,7 @@ class Dirac( API ):
         return self._errorReport( 'Expected single %s string' % prefix )
       try:
         return S_OK( [fn.replace( '%s:' % prefix, '' ) for fn in fnList] )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected strings in list of %ss' % prefix )
     else:
       return self._errorReport( 'Expected single string or list of strings for %s(s)' % prefix )
@@ -116,7 +116,7 @@ class Dirac( API ):
         else:
           return self._errorReport( 'Expected int or string, not list' )
       return S_OK( jobID )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected %sinteger or string for existing jobID' % '(list of) ' if multiple else '' )
 
   #############################################################################
@@ -317,7 +317,7 @@ class Dirac( API ):
         formulationErrors = {}
 
       if formulationErrors:
-        for method, errorList in formulationErrors.items():
+        for method, errorList in formulationErrors.iteritems():
           self.log.error( '>>>> Error in %s() <<<<\n%s' % ( method, '\n'.join( errorList ) ) )
         return S_ERROR( formulationErrors )
 
@@ -328,7 +328,7 @@ class Dirac( API ):
         if not result['OK']:
           self.log.error( 'Pre-submission checks failed for job with message: "%s"' % ( result['Message'] ) )
           return result
-      except Exception, x:
+      except Exception as x:
         msg = 'Error in VO specific function preSubmissionChecks: "%s"' % ( x )
         self.log.error( msg )
         return S_ERROR( msg )
@@ -670,7 +670,7 @@ class Dirac( API ):
     guidDict = self.getMetadata( lfns )
     if not guidDict['OK']:
       return guidDict
-    for lfn, reps in replicaDict['Value']['Successful'].items():
+    for lfn, reps in replicaDict['Value']['Successful'].iteritems():
       guidDict['Value']['Successful'][lfn].update( reps )
     resolvedData = guidDict
     diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
@@ -705,7 +705,7 @@ class Dirac( API ):
 
     if catalogFailed:
       self.log.error( 'Replicas not found for the following files:' )
-      for key, value in catalogFailed.items():
+      for key, value in catalogFailed.iteritems():
         self.log.error( '%s %s' % ( key, value ) )
       if 'Failed' in result:
         result['Failed'] = catalogFailed.keys()
@@ -738,7 +738,7 @@ class Dirac( API ):
     guidDict = self.getMetadata( inputData )
     if not guidDict['OK']:
       return guidDict
-    for lfn, reps in replicaDict['Value']['Successful'].items():
+    for lfn, reps in replicaDict['Value']['Successful'].iteritems():
       guidDict['Value']['Successful'][lfn].update( reps )
     resolvedData = guidDict
     diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
@@ -762,7 +762,7 @@ class Dirac( API ):
 
     if catalogFailed:
       self.log.error( 'Replicas not found for the following files:' )
-      for key, value in catalogFailed.items():
+      for key, value in catalogFailed.iteritems():
         self.log.error( '%s %s' % ( key, value ) )
       if 'Failed' in result:
         result['Failed'] = catalogFailed.keys()
@@ -824,7 +824,7 @@ class Dirac( API ):
       guidDict = self.getMetadata( inputData )
       if not guidDict['OK']:
         return guidDict
-      for lfn, reps in replicaDict['Value']['Successful'].items():
+      for lfn, reps in replicaDict['Value']['Successful'].iteritems():
         guidDict['Value']['Successful'][lfn].update( reps )
       resolvedData = guidDict
       diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
@@ -1008,7 +1008,7 @@ class Dirac( API ):
   #     directory = directory[:-1]
   #
   #   if printOutput:
-  #     for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].items():
+  #     for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].iteritems():
   #       print '#' * len( fileKey )
   #       print fileKey
   #       print '#' * len( fileKey )
@@ -1055,7 +1055,7 @@ class Dirac( API ):
       records = []
       for lfn in repsResult['Value']['Successful']:
         lfnPrint = lfn
-        for se, url in repsResult['Value']['Successful'][lfn].items():
+        for se, url in repsResult['Value']['Successful'][lfn].iteritems():
           records.append( ( lfnPrint, se, url ) )
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
@@ -1141,7 +1141,7 @@ class Dirac( API ):
     if not isinstance( maxFilesPerJob, ( int, long ) ):
       try:
         maxFilesPerJob = int( maxFilesPerJob )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer for maxFilesPerJob' )
 
     replicaDict = self.getReplicas( lfns, active = True, preferDisk = True )
@@ -1150,7 +1150,7 @@ class Dirac( API ):
     if len( replicaDict['Value']['Successful'] ) == 0:
       return self._errorReport( replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information' )
     siteLfns = {}
-    for lfn, reps in replicaDict['Value']['Successful'].items():
+    for lfn, reps in replicaDict['Value']['Successful'].iteritems():
       possibleSites = set( [site for se in reps for site in ( sitesForSE[se] if se in sitesForSE else  sitesForSE.setdefault( se, getSitesForSE( se ).get( 'Value', [] ) ) )] )
       siteLfns.setdefault( ','.join( sorted( possibleSites ) ), [] ).append( lfn )
 
@@ -1564,7 +1564,7 @@ class Dirac( API ):
 
     try:
       os.mkdir( dirPath )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
     result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Input', dirPath )
@@ -1617,7 +1617,7 @@ class Dirac( API ):
     try:
       if not os.path.exists( dirPath ):
         os.makedirs( dirPath )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
 
     # New download
@@ -1805,15 +1805,15 @@ class Dirac( API ):
 
     result = {}
     repoDict = {}
-    for job, vals in statusDict['Value'].items():
+    for job, vals in statusDict['Value'].iteritems():
       result[job] = vals
       if self.jobRepo:
         repoDict[job] = {'State':vals['Status']}
     if self.jobRepo:
       self.jobRepo.updateJobs( repoDict )
-    for job, vals in siteDict['Value'].items():
+    for job, vals in siteDict['Value'].iteritems():
       result[job].update( vals )
-    for job, vals in minorStatusDict['Value'].items():
+    for job, vals in minorStatusDict['Value'].iteritems():
       result[job].update( vals )
     for job in result:
       result[job].pop( 'JobID', None )
@@ -1870,7 +1870,7 @@ class Dirac( API ):
     """
     try:
       jobID = int( jobID )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.parameters( jobID )
@@ -1909,7 +1909,7 @@ class Dirac( API ):
     """
     try:
       jobID = int( jobID )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.parameters( jobID )
@@ -1930,7 +1930,7 @@ class Dirac( API ):
       elif isinstance( outputFiles, list ):
         try:
           outputFiles = [os.path.basename( fname ) for fname in outputFiles]
-        except Exception, x:
+        except Exception as x:
           return self._errorReport( str( x ), 'Expected strings for output file names' )
       else:
         return self._errorReport( 'Expected strings for output file names' )
@@ -1997,15 +1997,15 @@ class Dirac( API ):
     options = {'Status':status, 'MinorStatus':minorStatus, 'ApplicationStatus':applicationStatus, 'Owner':owner,
                'Site':site, 'JobGroup':jobGroup, 'OwnerGroup':ownerGroup }
     try:
-      conditions = dict( [( key, str( value ) ) for key, value in options.items() if value] )
-    except Exception, x:
+      conditions = dict( [( key, str( value ) ) for key, value in options.iteritems() if value] )
+    except Exception as x:
       # Note: it is unlikely this will ever fire
       return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
     if date:
       try:
         date = str( date )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
     else:
       date = '%s' % Time.date()
@@ -2064,7 +2064,7 @@ class Dirac( API ):
     try:
       jobSummary = eval( result['Value'] )
       # self.log.info(self.pPrint.pformat(jobSummary))
-    except Exception, x:
+    except Exception as x:
       self.log.warn( 'Problem interpreting result from job monitoring service' )
       return S_ERROR( 'Problem while converting result from job monitoring' )
 
@@ -2084,7 +2084,7 @@ class Dirac( API ):
       if re.search( '/', dirPath ) and not os.path.exists( dirPath ):
         try:
           os.mkdir( dirPath )
-        except Exception, x:
+        except Exception as x:
           return self._errorReport( str( x ), 'Could not create directory %s' % ( dirPath ) )
 
       with open( outputFile, 'w' ) as fopen:
@@ -2092,10 +2092,10 @@ class Dirac( API ):
         for i in headers:
           line += i.ljust( 35 )
         fopen.write( line + '\n' )
-        for jobID, params in summary.items():
+        for jobID, params in summary.iteritems():
           line = str( jobID ).ljust( 12 )
           for header in headers:
-            for key, value in params.items():
+            for key, value in params.iteritems():
               if header == key:
                 line += value.ljust( 35 )
           fopen.write( line + '\n' )
@@ -2123,7 +2123,7 @@ class Dirac( API ):
     """
     try:
       jobID = int( jobID )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     result = self.status( jobID )
@@ -2136,7 +2136,7 @@ class Dirac( API ):
     debugDir = '%s/DEBUG_%s' % ( os.getcwd(), jobID )
     try:
       os.mkdir( debugDir )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Could not create directory in %s' % ( debugDir ) )
 
     try:
@@ -2146,7 +2146,7 @@ class Dirac( API ):
         msg.append( 'Output Sandbox: Retrieval Failed' )
       else:
         msg.append( 'Output Sandbox: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'Output Sandbox: Not Available' )
 
     try:
@@ -2155,7 +2155,7 @@ class Dirac( API ):
         msg.append( 'Input Sandbox: Retrieval Failed' )
       else:
         msg.append( 'Input Sandbox: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'Input Sandbox: Not Available' )
 
     try:
@@ -2165,7 +2165,7 @@ class Dirac( API ):
       else:
         self.__writeFile( result['Value'], '%s/JobParameters' % ( debugDir ) )
         msg.append( 'Job Parameters: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'Job Parameters: Not Available' )
 
     try:
@@ -2175,7 +2175,7 @@ class Dirac( API ):
       else:
         self.__writeFile( result['Value'], '%s/LastHeartBeat' % ( debugDir ) )
         msg.append( 'Last Heartbeat StdOut: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'Last Heartbeat StdOut: Not Available' )
 
     try:
@@ -2185,7 +2185,7 @@ class Dirac( API ):
       else:
         self.__writeFile( result['Value'], '%s/LoggingInfo' % ( debugDir ) )
         msg.append( 'Logging Info: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'Logging Info: Not Available' )
 
     try:
@@ -2195,7 +2195,7 @@ class Dirac( API ):
       else:
         self.__writeFile( result['Value'], '%s/Job%s.jdl' % ( debugDir, jobID ) )
         msg.append( 'Job JDL: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'Job JDL: Not Available' )
 
     try:
@@ -2205,7 +2205,7 @@ class Dirac( API ):
       else:
         self.__writeFile( result['Value'], '%s/JobCPUProfile' % ( debugDir ) )
         msg.append( 'CPU Profile: Retrieved' )
-    except Exception, x:
+    except Exception as x:
       msg.append( 'CPU Profile: Not Available' )
 
     self.log.info( 'Summary of debugging outputs for job %s retrieved in directory:\n%s\n' % ( jobID, debugDir ),
@@ -2460,7 +2460,7 @@ class Dirac( API ):
       result = client.ping()
       if result['OK']:
         result['Value']['service url'] = serviceURL
-    except Exception, x:
+    except Exception as x:
       self.log.warn( 'ping for %s/%s failed with exception:\n%s' % ( system, service, str( x ) ) )
       result['Message'] = str( x )
 
@@ -2519,7 +2519,7 @@ class Dirac( API ):
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents
-      for param, value in paramsDict.items():
+      for param, value in paramsDict.iteritems():
         if re.search( '{', value ):
           self.log.debug( 'Found list type parameter %s' % ( param ) )
           rawValues = value.replace( '{', '' ).replace( '}', '' ).replace( '"', '' ).replace( 'LFN:', '' ).split()
@@ -2534,7 +2534,7 @@ class Dirac( API ):
           self.log.debug( 'Found standard parameter %s' % ( param ) )
           parameters[param] = value.replace( '"', '' )
       return S_OK( parameters )
-    except Exception, x:
+    except Exception as x:
       self.log.exception( lException = x )
       return S_ERROR( 'Exception while extracting JDL parameters for job' )
 
