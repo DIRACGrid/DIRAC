@@ -490,7 +490,7 @@ class ConsistencyInspector( object ):
 
   def set_lfns( self, value ):
     """ Setter """
-    if isinstance( value , "" ):
+    if isinstance( value , basestring ):
       value = [value]
     value = [v.replace( ' ', '' ).replace( '//', '/' ) for v in value]
     self._lfns = value
@@ -513,7 +513,7 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
-    if isinstance( lfnDir, types.StringTypes):
+    if isinstance( lfnDir, basestring):
       lfnDir = [lfnDir]
     res = self.__getCatalogDirectoryContents( lfnDir )
     if not res['OK']:
@@ -532,7 +532,7 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the FC->SE check" )
     gLogger.info( "-" * 40 )
-    if isinstance( lfns, types.StringTypes):
+    if isinstance( lfns, basestring):
       lfns = [lfns]
     res = self.__getCatalogMetadata( lfns )
     if not res['OK']:
@@ -560,8 +560,8 @@ class ConsistencyInspector( object ):
     """ This obtains the physical file metadata and checks the metadata against the catalog entries
     """
     seLfns = {}
-    for lfn, replicaDict in replicas.items():
-      for se, _url in replicaDict.items():
+    for lfn, replicaDict in replicas.iteritems():
+      for se, _url in replicaDict.iteritems():
         if ( ses ) and ( se not in ses ):
           continue
         seLfns.setdefault( se, [] ).append( lfn )
@@ -579,7 +579,7 @@ class ConsistencyInspector( object ):
       if not res['OK']:
         gLogger.error( 'Failed to get physical file metadata.', res['Message'] )
         return res
-      for lfn, metadata in res['Value'].items():
+      for lfn, metadata in res['Value'].iteritems():
         if lfn in catalogMetadata:
           if ( metadata['Size'] != catalogMetadata[lfn]['Size'] ):                # and ( metadata['Size'] != 0 ):
             sizeMismatch.append( ( lfn, 'deprecatedUrl', se, 'CatalogPFNSizeMismatch' ) )
@@ -601,7 +601,7 @@ class ConsistencyInspector( object ):
     lfnMetadataDict = res['Value']['Successful']
     # If the replicas are completely missing
     missingReplicas = []
-    for lfn, reason in res['Value']['Failed'].items():
+    for lfn, reason in res['Value']['Failed'].iteritems():
       if re.search( 'File does not exist', reason ):
         missingReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNMissing' ) )
     if missingReplicas:
@@ -610,7 +610,7 @@ class ConsistencyInspector( object ):
     unavailableReplicas = []
     zeroSizeReplicas = []
     # If the files are not accessible
-    for lfn, lfnMetadata in lfnMetadataDict.items():
+    for lfn, lfnMetadata in lfnMetadataDict.iteritems():
       if lfnMetadata['Lost']:
         lostReplicas.append( ( lfn, 'deprecatedUrl', se, 'PFNLost' ) )
       if lfnMetadata['Unavailable']:
@@ -679,7 +679,7 @@ class ConsistencyInspector( object ):
       return res
     catalogMetadata = res['Value']
     sizeMismatch = []
-    for lfn, lfnCatalogMetadata in catalogMetadata.items():
+    for lfn, lfnCatalogMetadata in catalogMetadata.iteritems():
       lfnStorageMetadata = storageMetadata[lfn]
       if ( lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size'] ) and ( lfnStorageMetadata['Size'] != 0 ):
         sizeMismatch.append( ( lfn, 'deprecatedUrl', storageElement, 'CatalogPFNSizeMismatch' ) )
@@ -700,7 +700,7 @@ class ConsistencyInspector( object ):
     if not res['OK']:
       gLogger.error( "Failed to obtain existance of directories", res['Message'] )
       return res
-    for directory, error in res['Value']['Failed'].items():
+    for directory, error in res['Value']['Failed'].iteritems():
       gLogger.error( 'Failed to determine existance of directory', '%s %s' % ( directory, error ) )
     if res['Value']['Failed']:
       return S_ERROR( 'Failed to determine existance of directory' )
@@ -731,12 +731,12 @@ class ConsistencyInspector( object ):
           gLogger.error( 'Failed to get directory content LFNs', res['Message'] )
           return res
 
-        for url, error in res['Value']['Failed'].items():
+        for url, error in res['Value']['Failed'].iteritems():
           gLogger.error( "Failed to get LFN for URL", "%s %s" % ( url, error ) )
         if res['Value']['Failed']:
           return S_ERROR( "Failed to get LFNs for PFNs" )
         urlLfns = res['Value']['Successful']
-        for urlLfn, lfn in urlLfns.items():
+        for urlLfn, lfn in urlLfns.iteritems():
           fileMetadata[lfn] = fileURLMetadata[urlLfn]
         allFiles.update( fileMetadata )
 
@@ -780,9 +780,9 @@ class ConsistencyInspector( object ):
     zeroSizeFiles = []
     allReplicaDict = {}
     allMetadataDict = {}
-    for lfn, lfnDict in allFiles.items():
+    for lfn, lfnDict in allFiles.iteritems():
       lfnReplicas = {}
-      for se, replicaDict in lfnDict['Replicas'].items():
+      for se, replicaDict in lfnDict['Replicas'].iteritems():
         lfnReplicas[se] = replicaDict['PFN']
       if not lfnReplicas:
         zeroReplicaFiles.append( lfn )
@@ -811,7 +811,7 @@ class ConsistencyInspector( object ):
       gLogger.error( 'Failed to get catalog replicas', res['Message'] )
       return res
     allReplicas = res['Value']['Successful']
-    for lfn, error in res['Value']['Failed'].items():
+    for lfn, error in res['Value']['Failed'].iteritems():
       if re.search( 'File has zero replicas', error ):
         zeroReplicaFiles.append( lfn )
     if zeroReplicaFiles:
@@ -834,13 +834,13 @@ class ConsistencyInspector( object ):
       gLogger.error( 'Failed to get catalog metadata', res['Message'] )
       return res
     allMetadata = res['Value']['Successful']
-    for lfn, error in res['Value']['Failed'].items():
+    for lfn, error in res['Value']['Failed'].iteritems():
       if re.search( 'No such file or directory', error ):
         missingCatalogFiles.append( lfn )
     if missingCatalogFiles:
       if not self.interactive:
         self.__reportProblematicFiles( missingCatalogFiles, 'LFNCatalogMissing' )
-    for lfn, metadata in allMetadata.items():
+    for lfn, metadata in allMetadata.iteritems():
       if metadata['Size'] == 0:
         zeroSizeFiles.append( lfn )
     if zeroSizeFiles:
