@@ -2,6 +2,8 @@
 Class and utilities for managing dynamic monitoring logs in Elasticsearch
 """
 
+__RCSID__ = "$Id$"
+
 import datetime
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -18,8 +20,8 @@ class DynamicMonitoringDB( object ):
   def _dictToQuery( self, matchFieldsDict ):
     """
     Transforms a given dictionary with the fields to match into a query dictionary
-    Returns the query dictionary to be passed to the elasticsearch API library
-    matchFieldsDict is the dictionary with the fields that the 'match' part of the query should contain
+    :param dict matchFieldsDict: Dictionary with the fields that the 'match' part of the query should contain
+    :return: Returns the query dictionary to be passed to the elasticsearch API library
     """
     query = { 'bool': { 'must': [] } }
     for key in matchFieldsDict:
@@ -30,17 +32,17 @@ class DynamicMonitoringDB( object ):
   def insertLog( self, log ):
     """
     Creates a new log entry in ElasticSearch
-    log should be a dictionary containing the logging information to be stored
+    :param dict log: Should be a dictionary containing the logging information to be stored
     """
     return self.esDB.addToIndex( '%s_index' % self.docType.lower(), self.docType, log )
 
   def getLastLog( self, host, component, maxAge = 10 ):
     """
     Retrieves the last log for the given component
-    host is the name of the host where the component is installed
-    component is the name of the component in the form system_component
-    maxAge tells the method how many days in the past to look for the log
-    If after reaching maxAge days, no logs have been found, an error will be returned
+    :param str host: The name of the host where the component is installed
+    :param str component: The name of the component in the form system_component
+    :param int maxAge: Tells the method how many days in the past to look for the log. If after reaching maxAge days, no logs have been found, an error will be returned
+    :return: The latest log stored in the database for the given component
     """
     date = datetime.datetime.utcnow()
 
@@ -61,9 +63,10 @@ class DynamicMonitoringDB( object ):
   def getLogHistory( self, host, component, size = 10 ):
     """
     Returns a list with the log history for a given component
-    host is the name of the host where the component is installed
-    component is the name of the component in the form system_component
-    size indicates how many entries should be retrieved from the log
+    :param str host: The name of the host where the component is installed
+    :param str component: The name of the component in the form system_component
+    :param int size: Indicates how many entries should be retrieved from the log
+    :return: Up to size entries for the given component from the database
     """
     logs = []
     date = datetime.datetime.utcnow()
@@ -91,9 +94,12 @@ class DynamicMonitoringDB( object ):
 
   def getLogsPeriod( self, host, component, initialDate = '', endDate = '' ):
     """
-    Retrieves the history of logging entries for the given component during a given given time periodtime period
-    initialDate and endDate are strings indicating the start and end of the time period, respectively and
-    should be in the format 'DD/MM/YYYY hh:mm'
+    Retrieves the history of logging entries for the given component during a given given time period
+    :param str host: The name of the host where the component is installed
+    :param str component: The name of the component in the form system_component
+    :param str initialDate: Indicates the start of the time period in the format 'DD/MM/YYYY hh:mm'
+    :param str endDate: Indicate the end of the time period in the format 'DD/MM/YYYY hh:mm'
+    :return: Entries from the database for the given component recorded between the initial and the end dates
     """
 
     if not initialDate and not endDate:
@@ -141,7 +147,7 @@ class DynamicMonitoringDB( object ):
   def deleteLogs( self, matchFields ):
     """
     Deletes all the logs for the specified component regardless of date
-    matchFields is a dictionary containing pairs key-value that should match in the logs to be deleted
+    :param dict matchFields: Dictionary containing pairs key-value that should match in the logs to be deleted
     """
     try:
       self.esDB.deleteDocuments( { 'query': self._dictToQuery( matchFields ) } )
@@ -153,7 +159,7 @@ class DynamicMonitoringDB( object ):
   def deleteLogsByDate( self, dates ):
     """
     Deletes all the indexes and their logs for the dates specified
-    dates is a list of datetime objects with the dates from which logs are to be deleted
+    :param list dates: List of datetime objects with the dates from which logs are to be deleted
     """
     indexesToDelete = reduce( lambda x, y: [x] + [y], map( lambda x: '%s_index-%s' % ( self.docType.lower(), x.strftime( '%Y-%m-%d' ) ), dates ) )
 
