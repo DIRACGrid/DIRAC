@@ -1,3 +1,8 @@
+[v6r14p16]
+
+*Resources
+CHANGE: ARC Computing Element automatically renew proxies of jobs when needed
+
 [v6r14p15]
 
 *Core
