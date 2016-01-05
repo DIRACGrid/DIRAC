@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-create-svn-tag.py $
 # File :    dirac-create-svn-tag
 # Author :  Adria Casajus
 ########################################################################
@@ -112,7 +111,7 @@ for svnPackage in List.fromChar( svnPackages ):
   gLogger.notice( "Branch path will be %s" % ( branchPath ) )
 
   if packageDistribution.getDevPath().find( "https" ) == 0:
-    password = getpass.getpass( "Insert password for %s: " % versionsRoot )
+    password = getpass.getpass( "Insert password" )
     packageDistribution.setSVNPassword( password )
 
   if svnVersion.lower() in ( 'head', 'trunk' ):

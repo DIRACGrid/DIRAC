@@ -788,7 +788,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
     except Exception, x:
       logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
-        
+
     if fileName:
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -948,9 +948,9 @@ def fixBuildPaths():
     line = fd.readline()
     fd.close()
     buildPath = line[2:line.find( cliParams.platform ) - 1]
-    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath, 
-                                                                          binaryPath, 
-                                                                          buildPath, 
+    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath,
+                                                                          binaryPath,
+                                                                          buildPath,
                                                                           cliParams.targetPath )
     os.system( replaceCmd )
 
@@ -1483,4 +1483,3 @@ if __name__ == "__main__":
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
-

@@ -46,7 +46,7 @@ class JobDescription( object ):
     """
     try:
       self.__description.loadFromBuffer( cfgString )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
     return S_OK()
 

@@ -210,7 +210,7 @@ class ServiceInterface( threading.Thread ):
       backFile = os.path.join( gConfigurationData.getBackupDir(), backFile[1:] )
     try:
       prevRemoteConfData.loadConfigurationData( backFile )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not load original commiter's version: %s" % str( e ) )
     gLogger.info( "Loaded client original version %s" % prevRemoteConfData.getVersion() )
     return S_OK( prevRemoteConfData.getRemoteCFG() )

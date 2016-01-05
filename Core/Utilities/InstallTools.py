@@ -867,7 +867,7 @@ def printStartupStatus( rDict ):
                        rDict[comp]['Timeup'],
                        str( rDict[comp]['PID'] ) ] )
     printTable( fields, records )
-  except Exception, x:
+  except Exception as x:
     print "Exception while gathering data for printing: %s" % str( x )
   return S_OK()
 
@@ -895,7 +895,7 @@ def printOverallStatus( rDict ):
           record.append( str( rDict[compType][system][component]['PID'] ) )
           records.append( record )
     printTable( fields, records )
-  except Exception, x:
+  except Exception as x:
     print "Exception while gathering data for printing: %s" % str( x )
 
   return S_OK()
@@ -2554,7 +2554,7 @@ def installDatabase( dbName, monitorFlag = True ):
           DIRAC.exit( -1 )
         return S_ERROR( error )
 
-  except Exception, e:
+  except Exception as e:
     gLogger.error( str( e ) )
     if exitOnError:
       DIRAC.exit( -1 )

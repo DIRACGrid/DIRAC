@@ -66,7 +66,7 @@ class SecurityFileLog( threading.Thread ):
     try:
       gLogger.info( "Unlinking file %s" % filePath )
       os.unlink( filePath )
-    except Exception, e:
+    except Exception as e:
       gLogger.error( "Can't unlink old log file", "%s: %s" % ( filePath, str(e) ) )
       return 1
     return 0
@@ -83,7 +83,7 @@ class SecurityFileLog( threading.Thread ):
         buf = fO.read(2**31-1)
       fd.close()
       fO.close()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Can't compress old log file", filePath )
       return 1
     return self.__unlinkOldLog( filePath ) + 1
@@ -103,7 +103,7 @@ class SecurityFileLog( threading.Thread ):
           try:
             os.rmdir( entryPath )
             numEntries -= 1
-          except Exception, e:
+          except Exception as e:
             gLogger.error( "Can't delete directory", "%s: %s" % ( entryPath, str(e) ) )
       elif os.path.isfile( entryPath ):
         numEntries += 1

@@ -67,7 +67,7 @@ class MonitoringCatalog( object ):
       buff = buff[ limit : ]
       try:
         self.__dbExecute( sqlQuery )
-      except Exception, e:
+      except Exception as e:
         DIRAC.abort( 1, "Can't create tables", str( e ) )
 
   def createSchema( self ):
@@ -81,7 +81,7 @@ class MonitoringCatalog( object ):
       tablesList = c.fetchall()
       if len( tablesList ) < 2:
         self.__createTables()
-    except Exception, e:
+    except Exception as e:
       self.log.fatal( "Failed to startup db engine", str( e ) )
       return False
     return True

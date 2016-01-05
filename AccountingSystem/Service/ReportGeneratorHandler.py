@@ -205,7 +205,7 @@ class ReportGeneratorHandler( RequestHandler ):
       #Seems a request for a plot!
       try:
         result = self.__generatePlotFromFileId( fileId )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "Exception while generating plot" )
         result = S_ERROR( "Error while generating plot: %s" % str( e ) )
       if not result[ 'OK' ]:

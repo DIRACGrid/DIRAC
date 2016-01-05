@@ -60,9 +60,9 @@ class PoolXMLSlice( object ):
         xmlSlice = poolXMLCat.toXML( True )
         poolSlice_temp.write( xmlSlice )
         poolSlice_temp.close()
-      except Exception, x:
+      except Exception as x:
         self.log.warn( 'Attempted to write catalog also to %s.temp but this failed' % ( poolXMLCatName ) )
-    except Exception, x:
+    except Exception as x:
       self.log.error( str( x ) )
       return S_ERROR( 'Exception during construction of POOL XML slice' )
 

@@ -35,7 +35,7 @@ class TransferClient( BaseClient ):
       if not retVal[ 'OK' ]:
         return retVal
       return S_OK( ( trid, transport ) )
-    except Exception, e:
+    except Exception as e:
       self._disconnect( trid )
       return S_ERROR( "Cound not request transfer: %s" % str( e ) )
 

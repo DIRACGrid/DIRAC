@@ -390,7 +390,7 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
       f = open( filename, 'w' )
       f.write( '\n'.join( jdlList ) )
       f.close()
-    except Exception, x:
+    except Exception as x:
       self.log.exception( x )
       return ''
 

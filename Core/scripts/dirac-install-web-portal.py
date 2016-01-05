@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-install-web-portal
 # Author :  Ricardo Graciani
 ########################################################################
@@ -34,4 +33,4 @@ Script.parseCommandLine()
 if old:
   result = InstallTools.setupPortal()
 else:
-  result = InstallTools.setupNewPortal()  
+  result = InstallTools.setupNewPortal()

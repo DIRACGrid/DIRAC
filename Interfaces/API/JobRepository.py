@@ -68,7 +68,7 @@ class JobRepository( object ):
     try:
       shutil.move( tmpName, path )
       return True
-    except Exception, x:
+    except Exception as x:
       gLogger.error( "Failed to overwrite repository.", x )
       gLogger.info( "If your repository is corrupted a backup can be found %s" % tmpName )
       return False

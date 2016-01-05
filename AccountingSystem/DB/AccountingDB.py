@@ -982,12 +982,12 @@ class AccountingDB( DB ):
     if groupFields:
       try:
         groupFields[0] % tuple( groupFields[1] )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot format properly group string: %s" % str( e ) )
     if orderFields:
       try:
         orderFields[0] % tuple( orderFields[1] )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot format properly order string: %s" % str( e ) )
     #Calculate fields to retrieve
     realFieldList = []
@@ -1002,7 +1002,7 @@ class AccountingDB( DB ):
         realFieldList.append( "`%s`.`%s`" % ( tableName, rawFieldName ) )
     try:
       cmd += " %s" % selectFields[0] % tuple( realFieldList )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error generating select fields string: %s" % str( e ) )
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]

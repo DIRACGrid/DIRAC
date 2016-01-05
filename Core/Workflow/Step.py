@@ -313,7 +313,7 @@ class StepInstance( AttributeCollection ):
                 for vkey in result['Value'].keys():
                   self.step_commons[vkey] = result['Value'][vkey]
 
-      except Exception, x:
+      except Exception as x:
         print "Exception while module execution"
         print "Module", mod_inst_name, mod_inst.getType()
         print str( x )
