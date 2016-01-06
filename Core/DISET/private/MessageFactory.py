@@ -126,7 +126,7 @@ class Message( object ):
     for k in self.__order:
       if k not in self.__values:
         return False
-      if self.__fDef[k] != None and type( self.__values[k] ) not in self.__fDef[k]:
+      if self.__fDef[k] != None and not isinstance( self.__values[k], self.__fDef[k] ):
         return False
     return True
 
