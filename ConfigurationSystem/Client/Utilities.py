@@ -384,9 +384,9 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
     result = getBdiiSEInfo( vo )
     if not result['OK']:
       return result
-    seBdiiDict = result['Value']
+    seBdiiDict = dict( result['Value'] )
   else:
-    seBdiiDict = bdiiInfo
+    seBdiiDict = dict( bdiiInfo )
 
   srmSeDict = {}
   for site in siteSRMDict:

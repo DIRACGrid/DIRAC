@@ -1,6 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
 """ SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
 """
@@ -229,7 +226,7 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Dump incoming network data to temporal file
     """
-    tfd = False
+    tfd = None
     if not destFileName:
       try:
         tfd, destFileName = tempfile.mkstemp( prefix = "DSB." )
@@ -241,11 +238,11 @@ class SandboxStoreHandler( RequestHandler ):
     destFileName = os.path.realpath( destFileName )
     try:
       os.makedirs( os.path.dirname( destFileName ) )
-    except:
+    except Exception as e:
       pass
 
     try:
-      if tfd:
+      if tfd is not None:
         fd = tfd
       else:
         fd = open( destFileName, "wb" )

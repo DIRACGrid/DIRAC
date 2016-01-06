@@ -101,7 +101,7 @@ class ModuleBase( object ):
 
     if not self.step_number:
       # self.STEP_NUMBER is always set by the workflow
-      self.step_number = int( self.STEP_NUMBER )
+      self.step_number = int( self.STEP_NUMBER ) #pylint: disable=E1101
 
     if not self.step_id:
       self.step_id = '%d_%d_%d' % ( self.production_id, self.prod_job_id, self.step_number )
