@@ -32,3 +32,6 @@ Session.vim
 
 # Python
 .pyo
+
+# test stuff
+.cache
