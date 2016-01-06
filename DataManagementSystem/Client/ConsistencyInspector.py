@@ -467,7 +467,7 @@ class ConsistencyInspector( object ):
 
   def set_lfns( self, value ):
     """ Setter """
-    if type( value ) == type( "" ):
+    if isinstance( value, basestring ):
       value = [value]
     value = [v.replace( ' ', '' ).replace( '//', '/' ) for v in value]
     self._lfns = value

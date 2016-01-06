@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import StringType, DictType, StringTypes
+from types import StringTypes, DictType, StringTypes
 
 from DIRAC                                               import gLogger, S_OK, S_ERROR
 
@@ -72,7 +72,7 @@ class MatcherHandler( RequestHandler ):
     self.limiter = Limiter( jobDB = gJobDB )
 
 ##############################################################################
-  types_requestJob = [ [StringType, DictType] ]
+  types_requestJob = [ list( StringTypes ) + [DictType] ]
   def export_requestJob( self, resourceDescription ):
     """ Serve a job to the request of an agent which is the highest priority
         one matching the agent's site capacity

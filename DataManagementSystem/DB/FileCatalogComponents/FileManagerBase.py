@@ -409,7 +409,7 @@ class FileManagerBase( object ):
       originalFileID = lfnDict['FileID']
       originalDepth = lfnDict.get( 'AncestorDepth', 1 )
       ancestors = lfnDict.get( 'Ancestors', [] )
-      if type( ancestors ) == type( ' ' ):
+      if isinstance( ancestors, basestring ):
         ancestors = [ancestors]
       if lfn in ancestors:
         ancestors.remove( lfn )

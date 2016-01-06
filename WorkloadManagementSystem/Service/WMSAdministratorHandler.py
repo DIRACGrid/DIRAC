@@ -13,7 +13,7 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-from types import DictType, ListType, IntType, LongType, StringTypes, StringType, FloatType
+from types import DictType, ListType, IntType, LongType, StringTypes, FloatType
 from tempfile import mkdtemp
 import shutil
 
@@ -236,7 +236,7 @@ class WMSAdministratorHandler(RequestHandler):
                                 proxyUserDN = owner, proxyUserGroup = group )
 
   ##############################################################################
-  types_getJobPilotOutput = [[StringType, IntType, LongType]]
+  types_getJobPilotOutput = [list( StringTypes ) + [ IntType, LongType]]
   def export_getJobPilotOutput(self,jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
@@ -446,7 +446,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getPilots = [[StringType, IntType, LongType]]
+  types_getPilots = [list( StringTypes ) + [ IntType, LongType]]
   def export_getPilots(self,jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
@@ -542,7 +542,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
   ##############################################################################
-  types_setJobForPilot = [ [StringType, IntType, LongType], StringTypes]
+  types_setJobForPilot = [ list( StringTypes ) + [ IntType, LongType], StringTypes]
   def export_setJobForPilot(self,jobID,pilotRef,destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """

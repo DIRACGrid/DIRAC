@@ -162,7 +162,7 @@ class CE2CSAgent( AgentModule ):
           continue
         cluster = clusters[0]
         fkey = cluster.get( 'GlueForeignKey', [] )
-        if type( fkey ) == type( '' ):
+        if isinstance( fkey, basestring ):
           fkey = [fkey]
         nameBDII = None
         for entry in fkey:
@@ -470,7 +470,7 @@ class CE2CSAgent( AgentModule ):
               newSI00 = None
               try:
                 caps = queue['GlueCECapability']
-                if type( caps ) == type( '' ):
+                if isinstance( caps, basestring ):
                   caps = [caps]
                 for cap in caps:
                   if cap.count( 'CPUScalingReferenceSI00' ):
