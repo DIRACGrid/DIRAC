@@ -20,12 +20,12 @@ from DIRAC.Core.Utilities import Time
 class ReportGeneratorHandler( RequestHandler ):
 
   __acDB = False
-  __reportRequestDict = { 'typeName' : types.StringType,
-                        'reportName' : types.StringType,
+  __reportRequestDict = { 'typeName' : types.StringTypes,
+                        'reportName' : types.StringTypes,
                         'startTime' : Time._allDateTypes,
                         'endTime' : Time._allDateTypes,
                         'condDict' : types.DictType,
-                        'grouping' : types.StringType,
+                        'grouping' : types.StringTypes,
                         'extraArgs' : types.DictType
                       }
 
@@ -63,7 +63,7 @@ class ReportGeneratorHandler( RequestHandler ):
     #If extraArgs is not there add it
     if 'extraArgs' not in reportRequest:
       reportRequest[ 'extraArgs' ] = {}
-    if type( reportRequest[ 'extraArgs' ] ) != self.__reportRequestDict[ 'extraArgs' ]:
+    if not isinstance( reportRequest[ 'extraArgs' ], self.__reportRequestDict[ 'extraArgs' ] ):
       return S_ERROR( "Extra args has to be of type %s" % self.__reportRequestDict[ 'extraArgs' ] )
     reportRequestExtra = reportRequest[ 'extraArgs' ]
     #Check sliding plots
@@ -85,18 +85,14 @@ class ReportGeneratorHandler( RequestHandler ):
     for key in self.__reportRequestDict:
       if not key in reportRequest:
         return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
-      requestKeyType = type( reportRequest[ key ] )
+
+      if not isinstance( reportRequest[ key ], self.__reportRequestDict[ key ] ):
+        return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
+                                                                                  str( type( reportRequest[ key ] ) ),
+                                                                                  str( self.__reportRequestDict[ key ] ) ) )
       if key in ( 'startTime', 'endTime' ):
-        if requestKeyType not in self.__reportRequestDict[ key ]:
-          return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
-                                                                                    str( requestKeyType ),
-                                                                                    str( self.__reportRequestDict[ key ] ) ) )
         reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
-      else:
-        if requestKeyType != self.__reportRequestDict[ key ]:
-          return S_ERROR( "Type mismatch for field %s (%s), required %s" % ( key,
-                                                                             str( requestKeyType ),
-                                                                             str( self.__reportRequestDict[ key ] ) ) )
+
     return S_OK( reportRequest )
 
   types_generatePlot = [ types.DictType ]
@@ -139,7 +135,7 @@ class ReportGeneratorHandler( RequestHandler ):
     reportRequest[ 'generatePlot' ] = False
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
 
-  types_listReports = [ types.StringType ]
+  types_listReports = [ types.StringTypes ]
   def export_listReports( self, typeName ):
     """
     List all available plots
@@ -149,7 +145,7 @@ class ReportGeneratorHandler( RequestHandler ):
     reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     return reporter.list( typeName )
 
-  types_listUniqueKeyValues = [ types.StringType ]
+  types_listUniqueKeyValues = [ types.StringTypes ]
   def export_listUniqueKeyValues( self, typeName ):
     """
     List all values for all keys in a type
