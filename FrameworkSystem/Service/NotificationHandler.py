@@ -15,7 +15,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, StringType, ListType, DictType
+from types import IntType, LongType, StringTypes, ListType, DictType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -43,7 +43,7 @@ class NotificationHandler( RequestHandler ):
     self.client = credDict[ 'username' ]
 
   ###########################################################################
-  types_sendMail = [StringType, StringType, StringType, StringType]
+  types_sendMail = [StringTypes, StringTypes, StringTypes, StringTypes]
   def export_sendMail( self, address, subject, body, fromAddress ):
     """ Send an email with supplied body to the specified address using the Mail utility.
     """
@@ -64,7 +64,7 @@ class NotificationHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_sendSMS = [StringType, StringType, StringType]
+  types_sendSMS = [StringTypes, StringTypes, StringTypes]
   def export_sendSMS( self, userName, body, fromAddress ):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
     """
@@ -144,7 +144,7 @@ class NotificationHandler( RequestHandler ):
     """
     return gNotDB.deleteAlarmsByAlarmId( alarmsIdList )
 
-  types_deleteAlarmsByAlarmKey = [ ( ListType, StringType ) ]
+  types_deleteAlarmsByAlarmKey = [ list( StringTypes ) + [ListType] ]
   def export_deleteAlarmsByAlarmKey( self, alarmsKeyList ):
     """ Delete alarms by alarmId
     """
@@ -155,19 +155,19 @@ class NotificationHandler( RequestHandler ):
   # MANANGE ASSIGNEE GROUPS
   ###########################################################################
 
-  types_setAssigneeGroup = [ StringType, ListType ]
+  types_setAssigneeGroup = [ StringTypes, ListType ]
   def export_setAssigneeGroup( self, groupName, userList ):
     """ Create a group of users to be used as an assignee for an alarm
     """
     return gNotDB.setAssigneeGroup( groupName, userList )
 
-  types_getUsersInAssigneeGroup = [ StringType ]
+  types_getUsersInAssigneeGroup = [ StringTypes ]
   def export_getUsersInAssigneeGroup( self, groupName ):
     """ Get users in assignee group
     """
     return gNotDB.getUserAsignees( groupName )
 
-  types_deleteAssigneeGroup = [ StringType ]
+  types_deleteAssigneeGroup = [ StringTypes ]
   def export_deleteAssigneeGroup( self, groupName ):
     """ Delete an assignee group
     """
@@ -179,7 +179,7 @@ class NotificationHandler( RequestHandler ):
     """
     return gNotDB.getAssigneeGroups()
 
-  types_getAssigneeGroupsForUser = [ StringType ]
+  types_getAssigneeGroupsForUser = [ StringTypes ]
   def export_getAssigneeGroupsForUser( self, user ):
     """ Get all assignee groups and the users that belong to them
     """
@@ -192,7 +192,7 @@ class NotificationHandler( RequestHandler ):
   # MANAGE NOTIFICATIONS
   ###########################################################################
 
-  types_addNotificationForUser = [ StringType, StringType ]
+  types_addNotificationForUser = [ StringTypes, StringTypes ]
   def export_addNotificationForUser( self, user, message, lifetime = 604800, deferToMail = True ):
     """ Create a group of users to be used as an assignee for an alarm
     """
@@ -202,7 +202,7 @@ class NotificationHandler( RequestHandler ):
       return S_ERROR( "Message lifetime has to be a non decimal number" )
     return gNotDB.addNotificationForUser( user, message, lifetime, deferToMail )
 
-  types_removeNotificationsForUser = [ StringType, ListType ]
+  types_removeNotificationsForUser = [ StringTypes, ListType ]
   def export_removeNotificationsForUser( self, user, notIds ):
     """ Get users in assignee group
     """
@@ -211,7 +211,7 @@ class NotificationHandler( RequestHandler ):
       user = credDict[ 'username' ]
     return gNotDB.removeNotificationsForUser( user, notIds )
 
-  types_markNotificationsAsRead = [ StringType, ListType ]
+  types_markNotificationsAsRead = [ StringTypes, ListType ]
   def export_markNotificationsAsRead( self, user, notIds ):
     """ Delete an assignee group
     """
@@ -220,7 +220,7 @@ class NotificationHandler( RequestHandler ):
       user = credDict[ 'username' ]
     return gNotDB.markNotificationsSeen( user, True, notIds )
 
-  types_markNotificationsAsNotRead = [ StringType, ListType ]
+  types_markNotificationsAsNotRead = [ StringTypes, ListType ]
   def export_markNotificationsAsNotRead( self, user, notIds ):
     """ Delete an assignee group
     """
