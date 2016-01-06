@@ -147,7 +147,7 @@ class Operations( object ):
     if not section:
       return S_ERROR( "%s in Operations does not exist" % sectionPath )
     sectionCFG = section[ 'value' ]
-    if type( sectionCFG ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( sectionCFG, basestring ):
       return S_ERROR( "%s in Operations is not a section" % sectionPath )
     return S_OK( sectionCFG )
 
