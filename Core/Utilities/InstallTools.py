@@ -2082,8 +2082,8 @@ def setupNewPortal():
     os.makedirs( startDir )
 
   if not os.path.lexists( startCompDir ):
-      gLogger.notice( 'Creating startup link at', startCompDir )
-      os.symlink( runitCompDir, startCompDir )
+    gLogger.notice( 'Creating startup link at', startCompDir )
+    os.symlink( runitCompDir, startCompDir )
 
   time.sleep( 5 )
 
