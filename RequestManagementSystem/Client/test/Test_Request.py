@@ -36,7 +36,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest
 def optimizeRequest( req, printOutput = None ):
   from DIRAC import gLogger
   if printOutput:
-    if type( printOutput ) == type( '' ):
+    if isinstance( printOutput, basestring ):
       gLogger.always( 'Request %s:' % printOutput )
     printRequest( req )
     gLogger.always( '=========== Optimized ===============' )

@@ -448,12 +448,12 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
+    if isinstance( jobID, basestring ):
       try:
         jobID = int( jobID )
       except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
-    elif type( jobID ) == type( [] ):
+    elif isinstance( jobID, list ):
       try:
         jobID = [int( job ) for job in jobID]
       except Exception as x:
@@ -527,7 +527,7 @@ class DiracAdmin( API ):
        :type job: integer or string
        :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     if not directory:
@@ -585,7 +585,7 @@ class DiracAdmin( API ):
        :type gridReference: string
        :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -602,7 +602,7 @@ class DiracAdmin( API ):
        :param gridReference: Pilot Job Reference
        :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -639,7 +639,7 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
+    if isinstance( jobID, basestring ):
       try:
         jobID = int( jobID )
       except Exception as x:

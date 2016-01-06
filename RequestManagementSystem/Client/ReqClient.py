@@ -429,7 +429,7 @@ def prettyPrint( mainItem, key = '', offset = 0 ):
     for item in mainItem:
       prettyPrint( item, offset = offset + 2 )
     output += "%s%s\n" % ( blanks, ']' if type( mainItem ) == type( [] ) else ')' )
-  elif type( mainItem ) == type( '' ):
+  elif isinstance( mainItem, basestring ):
     if '\n' in mainItem:
       prettyPrint( mainItem.strip( '\n' ).split( '\n' ), offset = offset )
     else:
