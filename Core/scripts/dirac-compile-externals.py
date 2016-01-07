@@ -9,9 +9,7 @@ Compile DIRAC externals (does not require DIRAC code)
 __RCSID__ = "$Id$"
 
 import tempfile
-import urllib2
 import os
-import tarfile
 import getopt
 import sys
 import stat
@@ -122,7 +120,7 @@ if __name__ == "__main__":
               ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
               ( 'v:', 'version=', 'Version of the externals to compile (default will be the latest commit)' ),
               ( 'h', 'help', 'Show this help' ),
-              ( 'i:', 'pythonVersion=', 'Python version to compile (default 26)' ),
+              ( 'i:', 'pythonVersion=', 'Python version to compile (default 2.7)' ),
               ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
               ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
             )
@@ -133,7 +131,7 @@ if __name__ == "__main__":
   compExtSource = False
   onlyFixLinks = False
   makeArgs = []
-  compVersionDict = { 'PYTHONVERSION' : '2.6' }
+  compVersionDict = { 'PYTHONVERSION' : '2.7' }
 
   optList, args = getopt.getopt( sys.argv[1:],
                                  "".join( [ opt[0] for opt in cmdOpts ] ),
