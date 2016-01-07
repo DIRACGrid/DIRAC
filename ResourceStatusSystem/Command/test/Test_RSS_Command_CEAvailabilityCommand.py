@@ -168,7 +168,6 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
                                                               }]}
     command = self.testClass({"ce": "cygnus.grid.rug.nl"})
     res = command.doCommand()
-    print res
     self.assertEqual( res['Value']['Status'], 'Production' )
 
     #verify when it's not "Production"
@@ -262,7 +261,6 @@ class CEAvailabilityCommand_Success( CEAvailabilityCommand_TestCase ):
                                     }
     command = self.testClass({"ce": "cygnus.grid.rug.nl"})
     res = command.doCommand()
-    print res
     self.assertNotEqual( res['Value']['Status'], 'Production', "Test: it's not Production " )
 
 #############################################################################
