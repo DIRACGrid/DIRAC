@@ -10,7 +10,7 @@ import time
 import sys
 import types
 import re
-import errno
+#import errno
 import DIRAC
 
 from DIRAC                                                  import S_OK, S_ERROR, gLogger
@@ -23,7 +23,7 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient  import DataIntegrity
 from DIRAC.Resources.Storage.Utilities                      import checkArgumentFormat
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Core.Utilities.Adler                             import compareAdler
-from DIRAC.Core.Utilities                                   import DError
+#from DIRAC.Core.Utilities                                   import DError
 
 class ConsistencyInspector( object ):
   """ A class for handling some consistency checks
@@ -250,7 +250,7 @@ class ConsistencyInspector( object ):
           topDir = os.path.dirname( directory )
           res = self.fc.listDirectory( topDir )
           if not res['OK']:
-            return DError(errno.ENOENT, res['Message'] )
+            return S_ERROR(res['Message']) #DError(errno.ENOENT, res['Message'] )
           else:
             matchDir = directory.split( '...' )[0]
             directories += [d for d in res['Value']['Successful'].get( topDir, {} ).get( 'SubDirs', [] ) if d.startswith( matchDir )]
@@ -258,7 +258,7 @@ class ConsistencyInspector( object ):
         gLogger.always( 'Expanded list of %d directories:\n%s' % ( len( directories ), '\n'.join( directories ) ) )
       return directories
     else:                                                     
-      return DError(errno.ENOENT, 'Need to specify the directories')
+      return S_ERROR('Need to specify the directories')  #DError(errno.ENOENT, 'Need to specify the directories')
   ################################################################################
 
   def __write( self, text ):
@@ -346,7 +346,7 @@ class ConsistencyInspector( object ):
         replicasRes = self.fc.getReplicas( lfnChunk )
         if not replicasRes['OK']:
           gLogger.error( "error:  %s" % replicasRes['Message'] )
-          S_ERROR("error:  %s" % replicasRes['Message'])          
+          return S_ERROR("error:  %s" % replicasRes['Message'])          
         replicasRes = replicasRes['Value']
         if replicasRes['Failed']:
           retDict['NoReplicas'].update( replicasRes['Failed'] )
@@ -359,7 +359,7 @@ class ConsistencyInspector( object ):
       self.__write( '.' )
       res = self.fc.getFileMetadata( lfnChunk )
       if not res['OK']:
-        S_ERROR("error %s" % res['Message'])        
+        return S_ERROR("error %s" % res['Message'])        
       metadata.update( res['Value']['Successful'] )
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
@@ -390,7 +390,7 @@ class ConsistencyInspector( object ):
         surlRes = oSe.getFileMetadata( surlChunk )
         if not surlRes['OK']:
           gLogger.error( "error StorageElement.getFileMetadata returns %s" % ( surlRes['Message'] ) )
-          return DError(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) 
+          return S_ERROR('error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) #DError(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) 
         surlRes = surlRes['Value']
         for surl in surlRes['Failed']:
           lfn = surlLfn[surl]
@@ -446,7 +446,7 @@ class ConsistencyInspector( object ):
           retDict['SomeReplicasCorrupted'][ lfn ] = csDict[ lfn ]
 
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
-    return retDict
+    return S_OK(retDict)
 
   ################################################################################
   # properties
