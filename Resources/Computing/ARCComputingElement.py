@@ -14,7 +14,8 @@ import os
 import stat
 
 import arc # Has to work if this module is called
-from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger, shellCall
+from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
@@ -302,7 +303,7 @@ class ARCComputingElement( ComputingElement ):
 
     result = S_OK()
     result['SubmittedJobs'] = 0
-    if (vo eq '') :
+    if (vo == '') :
       # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
       # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
       endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
@@ -316,8 +317,8 @@ class ARCComputingElement( ComputingElement ):
       result['RunningJobs'] = ceStats.RunningJobs
       result['WaitingJobs'] = ceStats.WaitingJobs
     else:
-      # The system which works properly for ARC CEs that are configured correctly. But for this,
-      # we need the VO to be known
+      # The system which works properly at present for ARC CEs that are configured correctly.
+      # But for this we need the VO to be known
       cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
       res = shellCall( 0, cmd )
       if not res['OK']:
