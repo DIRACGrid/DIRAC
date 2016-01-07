@@ -5,7 +5,7 @@ Class and utilities for managing dynamic monitoring logs in Elasticsearch
 __RCSID__ = "$Id$"
 
 import datetime
-from ElasticSearchDB import ElasticSearchDB
+from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class DynamicMonitoringDB( object ):
