@@ -34,7 +34,6 @@ class CEAvailabilityCommand( Command ):
 
     ## INPUT PARAMETERS
     vos = getVOs()
-    print vos
     if vos[ 'OK' ]:
       vo = vos['Value'].pop()
     else:

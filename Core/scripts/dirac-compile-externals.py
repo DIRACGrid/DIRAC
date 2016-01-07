@@ -32,7 +32,10 @@ def downloadExternals( destPath, version = False ):
     return False
   return True
 
-def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = [] ):
+def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = None ):
+  if filterLines is None:
+    filterLines = []
+
   global DIRACRoot
   if not DIRACRoot:
     basePath = os.path.dirname( os.path.realpath( __file__ ) )
@@ -75,11 +78,11 @@ def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
   if compType not in buildCFG.listSections():
     return []
   typeCFG = buildCFG[ compType ]
-  for type in typeCFG.getOption( 'require', [] ):
-    if type in explored:
+  for tc in typeCFG.getOption( 'require', [] ):
+    if tc in explored:
       continue
-    explored.append( type )
-    newPackages = resolvePackagesToBuild( type, buildCFG, explored )
+    explored.append( tc )
+    newPackages = resolvePackagesToBuild( tc, buildCFG, explored )
     for pkg in newPackages:
       if pkg not in packagesToBuild:
         packagesToBuild.append( pkg )
