@@ -5,7 +5,7 @@ Class and utilities for managing dynamic monitoring logs in Elasticsearch
 __RCSID__ = "$Id$"
 
 import datetime
-from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
+from ElasticSearchDB import ElasticSearchDB
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 class DynamicMonitoringDB( object ):
@@ -48,15 +48,22 @@ class DynamicMonitoringDB( object ):
 
     for i in range( maxAge ):
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
-      try:
-        if self.esDB.checkIndex( indexName ):
+
+      result = self.esDB.checkIndex( indexName )
+      if result[ 'OK' ]:
+        if result[ 'Value' ]:
           result = self.esDB.query( indexName, { 'query': \
             { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } } \
             , 'sort': { 'timestamp': { 'order': 'desc' } }, 'size': 1 } )
-          if len( result[ 'hits' ][ 'hits' ] ) >= 1:
-            return S_OK( [ result[ 'hits' ][ 'hits' ][0] ] )
-      except Exception, e:
-        return S_ERROR( e )
+          if result[ 'OK' ]:
+            if len( result[ 'Value' ][ 'hits' ][ 'hits' ] ) >= 1:
+              return S_OK( [ result[ 'Value' ][ 'hits' ][ 'hits' ][0] ] )
+          else:
+            return result
+      else:
+        return result
+
+      date = date - datetime.timedelta( days = 1 )
 
     return S_ERROR( 'No logs for this component found' )
 
@@ -74,20 +81,23 @@ class DynamicMonitoringDB( object ):
     while len( logs ) < size:
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
 
-      try:
-        if self.esDB.checkIndex( indexName ):
+      result = self.esDB.checkIndex( indexName )
+      if result[ 'OK' ]:
+        if result[ 'Value' ]:
           result = self.esDB.query( indexName, { 'query': \
             { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } } \
             , 'sort': { 'timestamp': { 'order': 'desc' } }, 'size': size - len( logs ) } )
+          if not result[ 'OK' ]:
+            return result
         else:
           break
-      except Exception, e:
-        return S_ERROR( e )
+      else:
+        return result
 
-      logs = logs + result[ 'hits' ][ 'hits' ]
+      logs = logs + result[ 'Value' ][ 'hits' ][ 'hits' ]
       date = date - datetime.timedelta( days = 1 )
 
-    if len( logs ) > 0:
+    if logs:
       return S_OK( logs )
     else:
       return S_ERROR( 'No logs found for the component' )
@@ -107,17 +117,17 @@ class DynamicMonitoringDB( object ):
 
     logs = []
     if initialDate:
-      date1 = datetime.datetime.strptime( initialDate, '%d/%m/%Y %H:%M' )
+      initialDateFormatted = datetime.datetime.strptime( initialDate, '%d/%m/%Y %H:%M' )
     else:
-      date1 = datetime.datetime.min
+      initialDateFormatted = datetime.datetime.min
     if endDate:
-      date2 = datetime.datetime.strptime( endDate, '%d/%m/%Y %H:%M' )
+      endDateFormatted = datetime.datetime.strptime( endDate, '%d/%m/%Y %H:%M' )
     else:
-      date2 = datetime.datetime.utcnow()
+      endDateFormatted = datetime.datetime.utcnow()
 
-    date = date2
+    date = endDateFormatted
 
-    while date >= date1:
+    while date >= initialDateFormatted:
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
 
       result = self.esDB.getDocCount( indexName )
@@ -125,21 +135,24 @@ class DynamicMonitoringDB( object ):
         return result
       nDocs = result[ 'Value' ]
 
-      try:
-        if self.esDB.checkIndex( indexName ):
+      result = self.esDB.checkIndex( indexName )
+      if result[ 'OK' ]:
+        if result[ 'Value' ]:
           result = self.esDB.query( indexName, { 'query': { 'filtered': {
             'query': { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } }, \
-            'filter': { 'range': { 'timestamp': { 'from': date1, 'to': date2 } } } } }, \
+            'filter': { 'range': { 'timestamp': { 'from': initialDateFormatted, 'to': endDateFormatted } } } } }, \
             'sort': { 'timestamp': { 'order': 'desc' } }, 'size': nDocs } )
+          if not result[ 'OK' ]:
+            return result
         else:
           break
-      except Exception, e:
-        return S_ERROR( e )
+      else:
+        return result
 
-      logs = logs + result[ 'hits' ][ 'hits' ]
+      logs = logs + result[ 'Value' ][ 'hits' ][ 'hits' ]
       date = date - datetime.timedelta( days = 1 )
 
-    if len( logs ) > 0:
+    if logs:
       return S_OK( logs )
     else:
       return S_ERROR( 'No logs found for the component' )
@@ -149,10 +162,9 @@ class DynamicMonitoringDB( object ):
     Deletes all the logs for the specified component regardless of date
     :param dict matchFields: Dictionary containing pairs key-value that should match in the logs to be deleted
     """
-    try:
-      self.esDB.deleteDocuments( { 'query': self._dictToQuery( matchFields ) } )
-    except Exception, e:
-      return S_ERROR( e )
+    result = self.esDB.deleteDocuments( { 'query': self._dictToQuery( matchFields ) } )
+    if not result[ 'OK' ]:
+      return result
 
     return S_OK( 'Logs deleted correctly' )
 
@@ -163,9 +175,8 @@ class DynamicMonitoringDB( object ):
     """
     indexesToDelete = reduce( lambda x, y: [x] + [y], map( lambda x: '%s_index-%s' % ( self.docType.lower(), x.strftime( '%Y-%m-%d' ) ), dates ) )
 
-    try:
-      self.esDB.deleteIndexes( indexesToDelete )
-    except Exception, e:
-      return S_ERROR( e )
+    result = self.esDB.deleteIndexes( indexesToDelete )
+    if not result[ 'OK' ]:
+      return result
 
     return S_OK( 'Logs deleted correctly' )
