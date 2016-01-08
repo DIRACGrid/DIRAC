@@ -1,4 +1,5 @@
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Base.AgentModule import AgentModule
 
 from DIRAC import S_OK, S_ERROR
 
@@ -23,14 +24,16 @@ from multiprocessing.pool import ThreadPool
 
 
 
-class FTS3Agent(object):
+
+__RCSID__ = "$Id: $"
+AGENT_NAME = "DataManagement/FTS3Agent"
+
+class FTS3Agent( AgentModule ):
   
 
   def initialize( self ):
     """ agent's initialization """
     self.fts3db = FTS3DB()
-
-
 
     # Getting all the possible servers
     res = getFTS3Servers()
@@ -46,8 +49,9 @@ class FTS3Agent(object):
 
     self._globalContextCache = {}
 
-    maxNumberOfThreads = 10
-    self._threadPool = ThreadPool( maxNumberOfThreads )
+    self.maxNumberOfThreads = 10
+
+    return S_OK()
 
 
 
@@ -113,13 +117,22 @@ class FTS3Agent(object):
         * update the FTSFile status
         * update the FTSJob status
     """
-    log = gLogger.getSubLogger( "monitorJobs", child = True )
+    log = gLogger.getSubLogger( "_monitorJob/%s" % ftsJob.jobID, child = True )
 
-    context = self.getFTS3Context( ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer )
+    res = self.getFTS3Context( ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer )
+
+    if not res['OK']:
+      log.error( "Error getting context", res )
+      return ftsJob, res
+
+    context = res['Value']
+
+
     res = ftsJob.monitor( context = context )
 
     if not res['OK']:
-      return res
+      log.error( "Error monitoring job", res )
+      return ftsJob, res
 
     # { fileID : { Status, Error } }
     filesStatus = res['Value']
@@ -128,7 +141,7 @@ class FTS3Agent(object):
 
     if not res['OK']:
       log.error( "Error updating file fts status", "%s, %s" % ( ftsJob.ftsGUID, res ) )
-      return res
+      return ftsJob, res
 
 
     res = self.fts3db.updateJobStatus( {ftsJob.ftsJobID :  {'status' : ftsJob.status,
@@ -136,30 +149,81 @@ class FTS3Agent(object):
                                                             'completeness' : ftsJob.completeness,
                                                             'operationID' : ftsJob.operationID,
                                                             }
-                                        } )   
+                                        }
+                                     )
+
+    return ftsJob, res
   
-  def monitorJobs( self ):
+  
+  @staticmethod
+  def _monitorJobCallback( returnedValue ):
+    """ Callback when a job has been monitored
+        :param returnedValue: value returned by the _monitorJob method
+                              (ftsJob, standard dirac return struct)
+    """
+
+    ftsJob, res = returnedValue
+    log = gLogger.getSubLogger( "_monitorJobCallback/%s"%ftsJob.jobID, child = True )
+    if not res['OK']:
+      log.error( "Error updating job status", res )
+    else:
+      log.debug( "Successfully updated job status" )
+      
+
+  
+  def monitorJobsLoop( self ):
     """
         * fetch the active FTSJobs from the DB
-        * monitor each of them
+        * spawn a thread to monitor each of them
     """
 
     log = gLogger.getSubLogger( "monitorJobs", child = True )
 
+    thPool = ThreadPool( self.maxNumberOfThreads )
 
+    log.debug( "Getting active jobs" )
     # get jobs from DB
-    ret = self.fts3db.getActiveJobs()
+    res = self.fts3db.getActiveJobs()
 
-    activeJobs = ret['Value']
-    
+    if not res['OK']:
+      log.error( "Could not retrieve ftsJobs from the DB", res )
+      return res
+
+    activeJobs = res['Value']
+    log.info( "%s jobs to queue for monitoring" % len( activeJobs ) )
+
+    # Starting the monitoring threads
     for ftsJob in activeJobs:
+      log.debug( "Queuing executing of ftsJob %s" % ftsJob.jobID )
+      # queue the execution of self._monitorJob( ftsJob ) in the thread pool
+      # The returned value is passed to _monitorJobCallback
+      thPool.apply_async( self._monitorJob, ( ftsJob, ), callback = self._monitorJobCallback )
 
-      res = self._monitorJob( ftsJob )
+    log.debug( "All execution queued" )
 
-      if not res['OK']:
-        log.error( "Error updating job status", "%s, %s" % ( ftsJob.ftsGUID, res ) )
+    # Waiting for all the monitoring to finish
+    thPool.close()
+    thPool.join()
+    log.debug( "thPool joined" )
+    return S_OK()
 
 
+
+
+
+  @staticmethod
+  def _treatOperationCallback(returnedValue):
+    """ Callback when an operation has been treated
+        :param returnedValue: value returned by the _treatOperation method
+                              (ftsOperation, standard dirac return struct)
+    """
+
+    operation, res = returnedValue
+    log = gLogger.getSubLogger( "_treatOperationCallback/%s" % operation.operationID, child = True )
+    if not res['OK']:
+      log.error( "Error treating operation", res )
+    else:
+      log.debug( "Successfully treated operation" )
 
 
   def _treatOperation(self, operation):
@@ -178,7 +242,8 @@ class FTS3Agent(object):
       res = operation.callback()
 
       if not res['OK']:
-        return res
+        log.error( "Error performing the callback", res )
+        return operation, res
 
 
     else:
@@ -188,7 +253,7 @@ class FTS3Agent(object):
 
       if not res['OK']:
         log.error( "Cannot prepare new Jobs", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
-        return res
+        return operation, res
 
       newJobs = res['Value']
 
@@ -199,7 +264,9 @@ class FTS3Agent(object):
         if not res['OK']:
           log.error( res )
           continue
+
         ftsServer = res['Value']
+        log.debug( "Use %s server" % ftsServer )
 
         ftsJob.ftsServer = ftsServer
 
@@ -216,41 +283,76 @@ class FTS3Agent(object):
         log.info( "FTS3Operation %s: Submitted job for %s transfers" % ( operation.operationID, len( submittedFileIds ) ) )
 
 
+      # new jobs are put in the DB at the same time
+    res = self.fts3db.persistOperation( operation )
 
-  def treatOperations( self ):
+    if not res['OK']:
+      log.error( "Could not persist operation", res )
+
+    return operation, res
+
+  def treatOperationsLoop( self ):
     """ * Fetch all the FTSOperations which are not finished
-        * Do the call back of finished operation
-        * Generate the new jobs and submit them
+        * Spawn a thread to treat each operation
     """
     
     log = gLogger.getSubLogger( "treatOperations", child = True )
+
+    thPool = ThreadPool( self.maxNumberOfThreads )
+
+    log.info( "Getting non finished operations" )
 
     res = self.fts3db.getNonFinishedOperations()
 
     if not res['OK']:
       log.error( "Could not get incomplete operations", res )
       return res
-    
-    incompleteOperations = res['Value']
 
+    incompleteOperations = res['Value']
+    
     log.info( "Treating %s incomplete operations" % len( incompleteOperations ) )
 
     for operation in incompleteOperations:
-      
-      res = self._treatOperation( operation )
+      log.debug( "Queuing executing of operation %s" % operation.operationID )
+      # queue the execution of self._treatOperation( operation ) in the thread pool
+      # The returned value is passed to _treatOperationCallback
+      thPool.apply_async( self._treatOperation, ( operation, ), callback = self._treatOperationCallback )
 
-      if not res['OK']:
-        log.error( "Error treating Operation", "OperationID %s: %s" % ( operation.operationID, res ) )
-        continue
+
+    log.debug( "All execution queued" )
+
+    # Waiting for all the treatments to finish
+    thPool.close()
+    thPool.join()
+    log.debug( "thPool joined" )
+    return S_OK()
+
+
+
+  def finalize( self ):
+    """ finalize processing """
+    return S_OK()
+
+  def execute( self ):
+    """ one cycle execution """
+
+    log = gLogger.getSubLogger( "execute", child = True )
+
+    log.info( "Monitoring job" )
+    res = self.monitorJobsLoop()
+
+    if not res['OK']:
+      log.error( "Error monitoring jobs", res )
+      return res
+
+    log.info( "Treating operations" )
+    res = self.treatOperationsLoop()
     
-      # new jobs are put in the DB at the same time
-      self.fts3db.persistOperation( operation )
+    if not res['OK']:
+      log.error( "Error treating operations", res )
+      return res
 
-
-
-
-
-
+    return S_OK()
 
       
 
