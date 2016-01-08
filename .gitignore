@@ -49,3 +49,4 @@ Session.vim
 __pycache__
 pytests.xml
 nosetests.xml
+coverage.xml
