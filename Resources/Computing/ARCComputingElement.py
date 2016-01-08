@@ -303,7 +303,7 @@ class ARCComputingElement( ComputingElement ):
 
     result = S_OK()
     result['SubmittedJobs'] = 0
-    if (vo == '') :
+    if not vo:
       # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
       # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
       endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
@@ -318,7 +318,7 @@ class ARCComputingElement( ComputingElement ):
       result['WaitingJobs'] = ceStats.WaitingJobs
     else:
       # The system which works properly at present for ARC CEs that are configured correctly.
-      # But for this we need the VO to be known
+      # But for this we need the VO to be known - ask me (Raja) for the whole story if interested.
       cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
       res = shellCall( 0, cmd )
       if not res['OK']:
@@ -326,15 +326,12 @@ class ARCComputingElement( ComputingElement ):
         return res
       try:
         ldapValues = res['Value'][1].split("\n")
-        running = [y for y in ldapValues if 'GlueCEStateRunningJobs' in y]
-        waiting = [y for y in ldapValues if 'GlueCEStateWaitingJobs' in y]
+        running = [lValue for lValue in ldapValues if 'GlueCEStateRunningJobs' in lValue]
+        waiting = [lValue for lValue in ldapValues if 'GlueCEStateWaitingJobs' in lValue]
         result['RunningJobs'] = int(running[0].split(":")[1])
         result['WaitingJobs'] = int(waiting[0].split(":")[1])
       except IndexError:
         res = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
-        res['RunningJobs'] = 0
-        res['WaitingJobs'] = 0
-        res['SubmittedJobs'] = 0
         return res
 
     return result
