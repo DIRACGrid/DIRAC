@@ -5,6 +5,13 @@ from itertools import izip_longest
 import re
 
 
+class TaskInfoException(Exception):
+  """Exception when the task info is not recoverable"""
+
+  def __init__(self, message):
+    super(TaskInfoException, self).__init__(message)
+
+
 class JobInfo(object):
   """ hold information about jobs"""
 
@@ -74,7 +81,9 @@ class JobInfo(object):
 
     #dict( FileID=fileID, LFN=lfn, Status=status )
     if self.inputFile != taskDict['LFN']:
-      raise RuntimeError("Task info does not fit with job info: \n %s" % str(self))
+      raise TaskInfoException(
+          "InputFiles do not agree: %s vs . %s : \n %s" %
+          (self.inputFile, taskDict['LFN'], str(self)))
     self.fileStatus = taskDict['Status']
     self.taskFileID = taskDict['FileID']
 
