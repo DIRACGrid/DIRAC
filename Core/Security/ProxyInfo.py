@@ -6,8 +6,8 @@ __RCSID__ = "$Id$"
 
 import base64
 
-from DIRAC                                     import S_OK
-from DIRAC.Core.Utilities                      import DError, DErrno
+from DIRAC                                     import S_OK, S_ERROR
+from DIRAC.Core.Utilities                      import DErrno
 from DIRAC.Core.Security.X509Chain             import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS                  import VOMS
 from DIRAC.Core.Security                       import Locations
@@ -46,11 +46,11 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
     elif isinstance( proxy, basestring ):
       proxyLocation = proxy
     if not proxyLocation:
-      return DError( DErrno.EPROXYFIND )
+      return S_ERROR( DErrno.EPROXYFIND )
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( proxyLocation )
     if not retVal[ 'OK' ]:
-      return DError( DErrno.EPROXYREAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
+      return S_ERROR( DErrno.EPROXYREAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
   retVal = chain.getCredentials()
   if not retVal[ 'OK' ]:
