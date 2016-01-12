@@ -281,6 +281,8 @@ class TarModuleCreator( object ):
     self.replaceKeywordsWithGit( fDirName )
 
     shutil.rmtree( "%s/.git" % fDirName )
+    shutil.rmtree( "tests" )
+    shutil.rmtree( "docs" )
 
     if exportRes:
       return S_ERROR( "Error while exporting from git" )
