@@ -56,11 +56,7 @@ class DataStoreClient:
     if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
       return S_OK()
     
-    # a lock below can only prevent to send the register 
-    # with an 'earlier' commit what normally is not a problem at all
-    # self.__registersListLock.acquire()
     self.__registersList.append( copy.deepcopy( register.getValues() ) )
-    #self.__registersListLock.release()
     
     return S_OK()
 
@@ -87,7 +83,7 @@ class DataStoreClient:
     self.__registersListLock.release()
     
     try:
-      while len( registersList ) > 0:
+      while registersList:
         registersToSend = registersList[ :self.__maxRecordsInABundle ]
         retVal = rpcClient.commitRegisters( registersToSend )
         if retVal[ 'OK' ]:
@@ -108,18 +104,6 @@ class DataStoreClient:
     
     return S_OK( sent )  
   
-  def delayedCommit( self ):
-    """
-    If needed start a timer that will run the commit later
-    allowing to send more registers at once (reduces overheads).
-    """
-    
-    if not self.__commitTimer.isAlive():
-      self.__commitTimer = threading.Timer(5, self.commit)
-      self.__commitTimer.start()
-    
-    return S_OK()
-
   def remove( self, register ):
     """
     Remove a Register from the Accounting DataStore
