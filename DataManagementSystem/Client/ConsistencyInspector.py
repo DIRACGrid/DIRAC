@@ -8,9 +8,8 @@
 import os
 import time
 import sys
-import types
 import re
-#import errno
+import errno
 import DIRAC
 
 from DIRAC                                                  import S_OK, S_ERROR, gLogger
@@ -250,7 +249,7 @@ class ConsistencyInspector( object ):
           topDir = os.path.dirname( directory )
           res = self.fc.listDirectory( topDir )
           if not res['OK']:
-            return S_ERROR(res['Message']) #DError(errno.ENOENT, res['Message'] )
+            return S_ERROR(errno.ENOENT, res['Message']) #DError(errno.ENOENT, res['Message'] )
           else:
             matchDir = directory.split( '...' )[0]
             directories += [d for d in res['Value']['Successful'].get( topDir, {} ).get( 'SubDirs', [] ) if d.startswith( matchDir )]
@@ -258,7 +257,7 @@ class ConsistencyInspector( object ):
         gLogger.always( 'Expanded list of %d directories:\n%s' % ( len( directories ), '\n'.join( directories ) ) )
       return directories
     else:                                                     
-      return S_ERROR('Need to specify the directories')  #DError(errno.ENOENT, 'Need to specify the directories')
+      return S_ERROR(errno.ENOENT, 'Need to specify the directories')  #DError(errno.ENOENT, 'Need to specify the directories')
   ################################################################################
 
   def __write( self, text ):
@@ -346,7 +345,7 @@ class ConsistencyInspector( object ):
         replicasRes = self.fc.getReplicas( lfnChunk )
         if not replicasRes['OK']:
           gLogger.error( "error:  %s" % replicasRes['Message'] )
-          return S_ERROR("error:  %s" % replicasRes['Message'])          
+          return S_ERROR(errno.ENOENT, "error:  %s" % replicasRes['Message'])          
         replicasRes = replicasRes['Value']
         if replicasRes['Failed']:
           retDict['NoReplicas'].update( replicasRes['Failed'] )
@@ -359,7 +358,7 @@ class ConsistencyInspector( object ):
       self.__write( '.' )
       res = self.fc.getFileMetadata( lfnChunk )
       if not res['OK']:
-        return S_ERROR("error %s" % res['Message'])        
+        return S_ERROR(errno.ENOENT, "error %s" % res['Message'])        
       metadata.update( res['Value']['Successful'] )
     self.__write( ' (%.1f seconds)\n' % ( time.time() - startTime ) )
 
@@ -390,7 +389,7 @@ class ConsistencyInspector( object ):
         surlRes = oSe.getFileMetadata( surlChunk )
         if not surlRes['OK']:
           gLogger.error( "error StorageElement.getFileMetadata returns %s" % ( surlRes['Message'] ) )
-          return S_ERROR('error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) #DError(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) 
+          return S_ERROR(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) #DError(errno.ENOENT, 'error StorageElement.getFileMetadata returns %s' % ( surlRes['Message'] ) ) 
         surlRes = surlRes['Value']
         for surl in surlRes['Failed']:
           lfn = surlLfn[surl]
@@ -457,7 +456,7 @@ class ConsistencyInspector( object ):
       value = int( value )
       res = self.transClient.getTransformation( value, extraParams = False )
       if not res['OK']:
-        S_ERROR("Couldn't find transformation %d: %s" % ( value, res['Message'] ))     
+        S_ERROR(errno.ENOENT, "Couldn't find transformation %d: %s" % ( value, res['Message'] ))     
       else:
         self.transType = res['Value']['Type']
       if self.interactive:
@@ -637,7 +636,7 @@ class ConsistencyInspector( object ):
     gLogger.info( "-" * 40 )
     gLogger.info( "Performing the SE->FC check at %s" % storageElement )
     gLogger.info( "-" * 40 )
-    if isinstance( lfnDir, types.StringTypes):
+    if isinstance( lfnDir, basestring):
       lfnDir = [lfnDir]
     res = self.getStorageDirectoryContents( lfnDir, storageElement )
     if not res['OK']:
@@ -670,7 +669,7 @@ class ConsistencyInspector( object ):
     if notRegisteredLfns:
       self.dic.reportProblematicReplicas( notRegisteredLfns, storageElement, 'LFNNotRegistered' )
     if failedLfns:
-      return S_ERROR( 'Failed to obtain replicas' )
+      return S_ERROR(errno.ENOENT, 'Failed to obtain replicas' )
 
 
     # For the LFNs found to be registered obtain the file metadata from the catalog and verify against the storage metadata
@@ -703,7 +702,7 @@ class ConsistencyInspector( object ):
     for directory, error in res['Value']['Failed'].iteritems():
       gLogger.error( 'Failed to determine existance of directory', '%s %s' % ( directory, error ) )
     if res['Value']['Failed']:
-      return S_ERROR( 'Failed to determine existance of directory' )
+      return S_ERROR(errno.ENOENT, 'Failed to determine existance of directory' )
     directoryExists = res['Value']['Successful']
     activeDirs = []
     for directory in sorted( directoryExists ):
@@ -720,7 +719,7 @@ class ConsistencyInspector( object ):
         return res
       elif currentDir in res['Value']['Failed']:
         gLogger.error( 'Failed to get directory contents', '%s %s' % ( currentDir, res['Value']['Failed'][currentDir] ) )
-        return S_ERROR( res['Value']['Failed'][currentDir] )
+        return S_ERROR(errno.ENOENT, res['Value']['Failed'][currentDir] )
       else:
         dirContents = res['Value']['Successful'][currentDir]
         activeDirs.extend( se.getLFNFromURL( dirContents['SubDirs'] ).get( 'Value', {} ).get( 'Successful', [] ) )
@@ -734,7 +733,7 @@ class ConsistencyInspector( object ):
         for url, error in res['Value']['Failed'].iteritems():
           gLogger.error( "Failed to get LFN for URL", "%s %s" % ( url, error ) )
         if res['Value']['Failed']:
-          return S_ERROR( "Failed to get LFNs for PFNs" )
+          return S_ERROR(errno.ENOENT, "Failed to get LFNs for PFNs" )
         urlLfns = res['Value']['Successful']
         for urlLfn, lfn in urlLfns.iteritems():
           fileMetadata[lfn] = fileURLMetadata[urlLfn]
