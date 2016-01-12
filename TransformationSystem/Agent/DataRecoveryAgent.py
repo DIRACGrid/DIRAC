@@ -21,8 +21,6 @@ Send notification about changes
 
 """
 
-__RCSID__ = "$Id$"
-
 from collections import defaultdict
 import time
 import itertools
@@ -38,6 +36,8 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.TransformationSystem.Utilities import TransformationInfo
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'ILCTransformation/DataRecoveryAgent'
 
