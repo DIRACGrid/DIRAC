@@ -21,7 +21,7 @@ import errno
 # # from DIRAC
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Utilities import DErrno, DError
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -376,12 +376,12 @@ class DataManager( object ):
 
         if metadata['Size'] != res['Value']:
           errTuple = ( "Mismatch of sizes:", "downloaded = %d, catalog = %d" % ( res['Value'], metadata['Size'] ) )
-          errToReturn = DError( DErrno.EFILESIZE, errTuple[1] )
+          errToReturn = S_ERROR( DErrno.EFILESIZE, errTuple[1] )
 
 
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
           errTuple = ( "Mismatch of checksums:", "downloaded = %s, catalog = %s" % ( localAdler, metadata['Checksum'] ) )
-          errToReturn = DError( DErrno.EBADCKS, errTuple[1] )
+          errToReturn = S_ERROR( DErrno.EBADCKS, errTuple[1] )
         else:
           return S_OK( localFile )
       # If we are here, there was an error, log it debug level
