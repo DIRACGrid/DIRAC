@@ -85,7 +85,7 @@ class DataIntegrityClient( Client ):
       gLogger.error( "DataIntegrityClient.setReplicaProblematic: Failed to insert problematics to integrity DB" )
     return res
 
-  def __reportProblematicReplicas( self, replicaTuple, se, reason ):
+  def reportProblematicReplicas( self, replicaTuple, se, reason ):
     """ Simple wrapper function around setReplicaProblematic """
     gLogger.info( 'The following %s files had %s at %s' % ( len( replicaTuple ), reason, se ) )
     for lfn, _pfn, se, reason in sorted( replicaTuple ):
@@ -424,7 +424,7 @@ class DataIntegrityClient( Client ):
         res = self.__getStoragePathExists( [lfn], storageElementName )
         if lfn in res['Value']:
           gLogger.info( "LFNZeroReplicas file (%d) found storage file at %s" % ( fileID, storageElementName ) )
-          self.__reportProblematicReplicas( [( lfn, 'deprecatedUrl', storageElementName, 'PFNNotRegistered' )], storageElementName, 'PFNNotRegistered' )
+          self.reportProblematicReplicas( [( lfn, 'deprecatedUrl', storageElementName, 'PFNNotRegistered' )], storageElementName, 'PFNNotRegistered' )
           pfnsFound = True
       if not pfnsFound:
         gLogger.info( "LFNZeroReplicas file (%d) did not have storage files. Removing..." % fileID )
