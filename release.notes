@@ -1,3 +1,15 @@
+[v6r14p17]
+
+*Core
+FIX: Service.py - use the service name as defined in the corresponding section in the CS
+     and not the name defined in service Module option. This fixes the problem with the
+     StorageElement service not interpreting properly the PFN name and using a wrong local
+     data path. 
+
+*Resources
+CHANGE: ARCComputingElement - if the VO is not discoverable from the environment, use ARC API
+        call in the getCEStatus, use ldapsearch otherwise
+
 [v6r14p16]
 
 *Resources
