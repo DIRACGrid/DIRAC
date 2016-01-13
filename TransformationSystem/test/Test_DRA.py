@@ -3,9 +3,9 @@
 import unittest
 import sys
 from StringIO import StringIO
+from collections import defaultdict
 
 from mock import MagicMock as Mock, patch
-from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
@@ -14,7 +14,6 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 
 __RCSID__ = "$Id$"
 
-TINFOMOCK = Mock()
 
 
 class TestDRA(unittest.TestCase):
