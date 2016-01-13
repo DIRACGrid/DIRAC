@@ -9,7 +9,6 @@ import os
 import re
 import time
 import errno
-from types import StringType, StringTypes, ListType, IntType
 from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
 # # from DIRAC
 from DIRAC import gLogger, gConfig
@@ -310,9 +309,9 @@ class SRM2Storage( StorageBase ):
       if not protocols['OK']:
         return protocols
       listProtocols = protocols['Value']
-    elif type( protocols ) == StringType:
+    elif isinstance( protocols, basestring ):
       listProtocols = [protocols]
-    elif type( protocols ) == ListType:
+    elif isinstance( protocols, list ):
       listProtocols = protocols
     else:
       return S_ERROR( errno.EPROTO, "getTransportURL: Must supply desired protocols to this plug-in." )
@@ -838,16 +837,16 @@ class SRM2Storage( StorageBase ):
                                                dest_spacetokendesc,
                                                self.checksumType )
 
-      if type( errCode ) != IntType:
+      if not isinstance( errCode, int ):
         self.log.error( "__lcg_cp_wrapper: Returned errCode was not an integer",
                         "%s %s" % ( errCode, type( errCode ) ) )
-        if type( errCode ) == ListType:
+        if isinstance( errCode, list ):
           msg = []
           for err in errCode:
             msg.append( '%s of type %s' % ( err, type( err ) ) )
           self.log.error( "__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join( msg ) )
         return S_ERROR( DErrno.EGFAL, "__lcg_cp_wrapper: Returned errCode was not an integer %s" % msg )
-      if type( errStr ) not in StringTypes:
+      if not isinstance( errStr, basestring ):
         self.log.error( "__lcg_cp_wrapper: Returned errStr was not a string",
                        "%s %s" % ( errCode, type( errStr ) ) )
         return S_ERROR( DErrno.EGFAL, "__lcg_cp_wrapper: Returned errStr was not a string" )

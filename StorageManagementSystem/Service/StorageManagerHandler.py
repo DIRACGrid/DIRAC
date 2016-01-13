@@ -2,7 +2,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, DictType, ListType, StringType, LongType
+from types import IntType, DictType, ListType, StringTypes, LongType
 from DIRAC                                                 import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                       import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB  import StorageManagementDB
@@ -106,7 +106,7 @@ class StorageManagerHandler( RequestHandler ):
   # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
   #
 
-  types_setRequest = [DictType, StringType, StringType, IntType]
+  types_setRequest = [DictType, StringTypes, StringTypes, IntType]
   def export_setRequest( self, lfnDict, source, callbackMethod, taskID ):
     """ This method allows stage requests to be set into the StagerDB """
     res = storageDB.setRequest( lfnDict, source, callbackMethod, taskID )
@@ -119,7 +119,7 @@ class StorageManagerHandler( RequestHandler ):
   # The state transition of Replicas method
   #
 
-  types_updateReplicaStatus = [ListType, StringType]
+  types_updateReplicaStatus = [ListType, StringTypes]
   def export_updateReplicaStatus( self, replicaIDs, newReplicaStatus ):
     """ This allows to update the status of replicas """
     res = storageDB.updateReplicaStatus( replicaIDs, newReplicaStatus )
@@ -253,7 +253,7 @@ class StorageManagerHandler( RequestHandler ):
   # Methods for obtaining Tasks, Replicas with supplied state
   #
 
-  types_getTasksWithStatus = [StringType]
+  types_getTasksWithStatus = [StringTypes]
   def export_getTasksWithStatus( self, status ):
     """ This method allows to retrieve Tasks with the supplied status """
     res = storageDB.getTasksWithStatus( status )
@@ -261,7 +261,7 @@ class StorageManagerHandler( RequestHandler ):
       gLogger.error( 'getTasksWithStatus: Failed to get tasks with %s status' % status, res['Message'] )
     return res
 
-  types_getReplicasWithStatus = [StringType]
+  types_getReplicasWithStatus = [StringTypes]
   def export_getReplicasWithStatus( self, status ):
     """ This method allows to retrieve replicas with the supplied status """
     res = storageDB.getCacheReplicas( {'Status':status} )

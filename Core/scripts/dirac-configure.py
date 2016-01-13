@@ -282,7 +282,7 @@ if not useVersionsDir:
   newUseVersionsDir = DIRAC.gConfig.getValue( cfgInstallPath( 'UseVersionsDir' ), False )
   if newUseVersionsDir:
     setUseVersionsDir( newUseVersionsDir )
-    # Set proper Defaults in configuration (even if they will be properly overwrite by InstallTools
+    # Set proper Defaults in configuration (even if they will be properly overwrite by gComponentInstaller
     instancePath = os.path.dirname( os.path.dirname( DIRAC.rootPath ) )
     rootPath = os.path.join( instancePath, 'pro' )
     DIRAC.gConfig.setOptionValue( cfgInstallPath( 'InstancePath' ), instancePath )

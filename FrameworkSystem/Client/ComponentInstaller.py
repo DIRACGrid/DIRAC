@@ -1348,15 +1348,16 @@ class ComponentInstaller( object ):
       result = self.execCommand( 0, ['runsvctrl', mode] + startComp )
       if not result['OK']:
         return result
-      time.sleep( 1 )
+      time.sleep( 2 )
 
     # Check the runsv status
     if system == '*' or component == '*':
-      time.sleep( 5 )
+      time.sleep( 10 )
 
     # Final check
     result = self.getStartupComponentStatus( [( system, component )] )
     if not result['OK']:
+      gLogger.error( 'Failed to start the component %s %s' %(system, component) )
       return S_ERROR( 'Failed to start the component' )
 
     return result
@@ -1726,7 +1727,7 @@ class ComponentInstaller( object ):
 
     logConfigFile = os.path.join( logDir, 'config' )
     fd = open( logConfigFile, 'w' )
-    fd.write( 
+    fd.write(
   """s10000000
   n20
   """ )
@@ -1734,7 +1735,7 @@ class ComponentInstaller( object ):
 
     logRunFile = os.path.join( logDir, 'run' )
     fd = open( logRunFile, 'w' )
-    fd.write( 
+    fd.write(
   """#!/bin/bash
   #
   rcfile=%(bashrc)s
@@ -1814,7 +1815,7 @@ class ComponentInstaller( object ):
 
       runFile = os.path.join( runitCompDir, 'run' )
       fd = open( runFile, 'w' )
-      fd.write( 
+      fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -1839,7 +1840,7 @@ class ComponentInstaller( object ):
       if cTypeLower == 'agent' or cTypeLower == 'consumer':
         stopFile = os.path.join( runitCompDir, 'control', 't' )
         fd = open( stopFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   echo %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
   touch %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
@@ -1969,7 +1970,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitHttpdDir )
         runFile = os.path.join( runitHttpdDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2004,7 +2005,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitPasterDir )
         runFile = os.path.join( runitPasterDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2156,7 +2157,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitWebAppDir )
         runFile = os.path.join( runitWebAppDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile

@@ -280,7 +280,9 @@ class TarModuleCreator( object ):
     gLogger.notice( "Replacing keywords (can take a while)..." )
     self.replaceKeywordsWithGit( fDirName )
 
-    shutil.rmtree( "%s/.git" % fDirName )
+    shutil.rmtree( "%s/.git" % fDirName, ignore_errors=True )
+    shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
+    shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
 
     if exportRes:
       return S_ERROR( "Error while exporting from git" )

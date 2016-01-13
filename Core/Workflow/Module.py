@@ -1,25 +1,13 @@
-# $Id$
-"""
-    This is a comment
-"""
-""" Thank you very much!
-    Merci d'avance!
+""" Implementation of Module
 """
 
-__RCSID__ = "$Revision: 1.19 $"
-
-# $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
+__RCSID__ = "$Id:$"
 
 import copy
-import new, sys, os
+import os
 
 #try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
-
-#RICARDO PLEASE DO NOT CHANGE THIS BACK. IT BREAKS THE EXECUTION OF WORKFLOWS!
-#from DIRAC.Core.Workflow.Step import *
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
 
 class ModuleDefinition( AttributeCollection ):
 
@@ -348,4 +336,3 @@ class InstancesPool( list ):
           str = str + v.createParameterCode( 2, 'self' )
       str = str + '\n'
     return str
-

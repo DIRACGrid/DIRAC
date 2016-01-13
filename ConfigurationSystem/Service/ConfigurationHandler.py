@@ -23,7 +23,7 @@ class ConfigurationHandler( RequestHandler ):
     sData = gServiceInterface.getCompressedConfigurationData()
     return S_OK( sData )
 
-  types_getCompressedDataIfNewer = [ types.StringType ]
+  types_getCompressedDataIfNewer = [ types.StringTypes ]
   def export_getCompressedDataIfNewer( self, sClientVersion ):
     sVersion = gServiceInterface.getVersion()
     retDict = { 'newestVersion' : sVersion }
@@ -31,12 +31,12 @@ class ConfigurationHandler( RequestHandler ):
       retDict[ 'data' ] = gServiceInterface.getCompressedConfigurationData()
     return S_OK( retDict )
 
-  types_publishSlaveServer = [ types.StringType ]
+  types_publishSlaveServer = [ types.StringTypes ]
   def export_publishSlaveServer( self, sURL ):
     gServiceInterface.publishSlaveServer( sURL )
     return S_OK()
 
-  types_commitNewData = [ types.StringType ]
+  types_commitNewData = [ types.StringTypes ]
   def export_commitNewData( self, sData ):
     credDict = self.getRemoteCredentials()
     if not 'DN' in credDict or not 'username' in credDict:
@@ -67,7 +67,7 @@ class ConfigurationHandler( RequestHandler ):
         return S_ERROR( "Can't get contents for version %s: %s" % ( version, retVal[ 'Message' ] ) )
     return S_OK( contentsList )
 
-  types_rollbackToVersion = [ types.StringType ]
+  types_rollbackToVersion = [ types.StringTypes ]
   def export_rollbackToVersion( self, version ):
     retVal = gServiceInterface.getVersionContents( version )
     if not retVal[ 'OK' ]:

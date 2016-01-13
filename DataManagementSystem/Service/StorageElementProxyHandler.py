@@ -19,7 +19,7 @@ import SocketServer
 import threading
 import socket
 import random
-from types import DictType, ListType, StringType, StringTypes
+from types import DictType, ListType, StringTypes
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -106,7 +106,7 @@ class StorageElementProxyHandler(RequestHandler):
   .. class:: StorageElementProxyHandler
   """
 
-  types_callProxyMethod = [ StringType, StringType, ListType, DictType ]
+  types_callProxyMethod = [ StringTypes, StringTypes, ListType, DictType ]
   def export_callProxyMethod( self, se, name, args, kargs ):
     """ A generic method to call methods of the Storage Element.
     """
@@ -136,7 +136,7 @@ class StorageElementProxyHandler(RequestHandler):
       return S_ERROR( "Attribute '%s' isn't a method!" % name )
     return method( *args, **kargs )
 
-  types_uploadFile = [ StringType, StringType ]
+  types_uploadFile = [ StringTypes, StringTypes ]
   def export_uploadFile( self, se, pfn ):
     """ This method uploads a file present in the local cache to the specified storage element
     """
@@ -171,7 +171,7 @@ class StorageElementProxyHandler(RequestHandler):
       gLogger.exception("Failed to remove local file", localFileName, x )
     return res
 
-  types_prepareFile = [ StringType, StringType ]
+  types_prepareFile = [ StringTypes, StringTypes ]
   def export_prepareFile(self, se, pfn):
     """ This method simply gets the file to the local storage area
     """
