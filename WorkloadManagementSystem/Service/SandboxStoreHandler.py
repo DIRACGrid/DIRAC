@@ -238,7 +238,7 @@ class SandboxStoreHandler( RequestHandler ):
     destFileName = os.path.realpath( destFileName )
     try:
       os.makedirs( os.path.dirname( destFileName ) )
-    except Exception as e:
+    except Exception as _e:
       pass
 
     try:

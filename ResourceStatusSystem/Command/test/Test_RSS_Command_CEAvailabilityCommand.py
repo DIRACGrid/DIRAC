@@ -25,7 +25,7 @@ class CEAvailabilityCommand_TestCase( unittest.TestCase ):
 
     # Mock external libraries / modules not interesting for the unit test
     getVOs = mock.MagicMock()
-    getVOs.return_value = dict({"OK": True, "Value": ["lhcb", 'lhcb']})
+    getVOs.return_value = {"OK": True, "Value": ["lhcb", 'lhcb']}
 
     self.DAObjectMock = mock.MagicMock()
     self.DAMock = mock.MagicMock()
