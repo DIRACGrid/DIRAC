@@ -189,6 +189,7 @@ class DataRecoveryAgent(AgentModule):
                  ]
                  }
     self.jobCache = defaultdict(lambda: (0, 0))
+    self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
     ##Notification
     self.notesToSend = ""
     self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
@@ -211,6 +212,7 @@ class DataRecoveryAgent(AgentModule):
     self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
     self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
     self.addressFrom = self.am_getOption('MailFrom', "ilcdirac-admin@cern.ch")
+    self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
 
     return S_OK()
   #############################################################################
@@ -307,7 +309,7 @@ class DataRecoveryAgent(AgentModule):
     self.log.notice("Running over all the jobs")
     for job in jobs.values():
       counter += 1
-      if counter % 200 == 0:
+      if counter % self.printEveryNJobs == 0:
         self.log.notice("%d/%d: %3.1fs " % (counter, nJobs, float(time.time() - startTime)))
       while True:
         try:
