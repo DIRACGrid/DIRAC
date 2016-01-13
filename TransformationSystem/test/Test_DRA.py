@@ -5,6 +5,7 @@ import sys
 from StringIO import StringIO
 
 from mock import MagicMock as Mock, patch
+from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
@@ -596,6 +597,84 @@ class TestDRA(unittest.TestCase):
     tInfoMock.reset_mock()
     self.dra.checkAllJobs(mockJobs, tInfoMock)
     self.assertIn("ERROR: +++++ Exception:  ARGJob2", out.getvalue().strip())
+
+  def test_execute(self):
+    """test for DataRecoveryAgent execute .........................................................."""
+    self.dra.treatProduction = Mock()
+
+    out = StringIO()
+    sys.stdout = out
+    self.dra.productionsToIgnore = [123, 456, 789]
+    self.dra.jobCache = defaultdict(lambda: (0, 0))
+    self.dra.jobCache[123] = (10, 10)
+    self.dra.jobCache[124] = (10, 10)
+    self.dra.jobCache[125] = (10, 10)
+
+    # Eligible fails
+    self.dra.log.reset_mock()
+    self.dra.getEligibleTransformations = Mock(return_value=S_ERROR("outcast"))
+    res = self.dra.execute()
+    self.assertFalse(res["OK"])
+    self.assertIn("outcast", out.getvalue())
+    self.assertEqual("Failure to get transformations", res['Message'])
+
+    d123 = dict(TransformationID=123, TransformationName='TestProd123', Type='MCGeneration',
+                AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
+    d124 = dict(TransformationID=124, TransformationName='TestProd124', Type='MCGeneration',
+                AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
+    d125 = dict(TransformationID=125, TransformationName='TestProd125', Type='MCGeneration',
+                AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
+
+    # Eligible succeeds
+    self.dra.log.reset_mock()
+    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
+    res = self.dra.execute()
+    self.assertTrue(res["OK"])
+    self.assertIn("Will ignore the following productions: [123, 456, 789]", out.getvalue())
+    self.assertIn("Ignoring Production: 123", out.getvalue())
+    self.assertIn("Running over Production: 124", out.getvalue())
+
+    # Notes To Send
+    self.dra.log.reset_mock()
+    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
+    self.dra.notesToSend = "Da hast du deine Karte"
+    sendmailMock = Mock()
+    sendmailMock.sendMail.return_value = S_OK("Nice Card")
+    notificationMock = Mock(return_value=sendmailMock)
+    with patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.NotificationClient", new=notificationMock):
+      res = self.dra.execute()
+    self.assertTrue(res["OK"])
+    self.assertIn("Will ignore the following productions: [123, 456, 789]", out.getvalue())
+    self.assertIn("Ignoring Production: 123", out.getvalue())
+    self.assertIn("Running over Production: 124", out.getvalue())
+    self.assertNotIn(124, self.dra.jobCache)  # was popped
+    self.assertIn(125, self.dra.jobCache)  # was not popped
+    gLogger.notice("JobCache: %s" % self.dra.jobCache)
+
+    # sending notes fails
+    self.dra.log.reset_mock()
+    self.dra.notesToSend = "Da hast du deine Karte"
+    sendmailMock = Mock()
+    sendmailMock.sendMail.return_value = S_ERROR("No stamp")
+    notificationMock = Mock(return_value=sendmailMock)
+    with patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.NotificationClient", new=notificationMock):
+      res = self.dra.execute()
+    self.assertTrue(res["OK"])
+    self.assertNotIn(124, self.dra.jobCache)  # was popped
+    self.assertIn(125, self.dra.jobCache)  # was not popped
+    self.assertIn("Cannot send notification mail", out.getvalue())
+
+  def test_printSummary(self):
+    """test DataRecoveryAgent printSummary.........................................................."""
+    out = StringIO()
+    sys.stdout = out
+
+    self.dra.notesToSend = ""
+    self.dra.printSummary()
+    self.assertNotIn(" Other Tasks --> Keep                                    :     0", self.dra.notesToSend)
+
+    self.dra.notesToSend = "Note This"
+    self.dra.printSummary()
 
 
 if __name__ == "__main__":
