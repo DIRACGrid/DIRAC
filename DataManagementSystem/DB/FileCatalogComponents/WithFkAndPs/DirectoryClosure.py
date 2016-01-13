@@ -454,7 +454,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
     # Which procedure to use
     psName = None
-
+    print "TYPE %s" % type( pathOrDirId )
     # it is a path ...
     if type( pathOrDirId ) in StringTypes:
       psName = 'ps_get_all_directory_info'

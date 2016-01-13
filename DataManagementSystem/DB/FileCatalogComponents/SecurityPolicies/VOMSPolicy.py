@@ -189,8 +189,11 @@ class VOMSPolicy( SecurityManagerBase ):
     if not path:
       return S_ERROR( 'Empty path' )
 
+    print "COUCOU", path
+
     # We check what is the group stored in the DB for the given path
     res = self.db.dtree.getDirectoryParameters( path )
+    print res
     if not res['OK']:
       # If the error is not due to the directory not existing, we return
 
@@ -275,7 +278,6 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :returns Successful dictionary with True of False, and Failed.
     """
-
     parentDirs = {}
     for path in paths:
       parentDirs.setdefault( os.path.dirname( path ), [] ).append( path )
@@ -552,6 +554,7 @@ class VOMSPolicy( SecurityManagerBase ):
         :returns Successful dict with True or False, and Failed dict. In fact, it is not neccesarily
                 a boolean, rather an int (binary operation results)
     """
+
     # Check if admin access is granted first
     result = self.hasAdminAccess( credDict )
     if not result['OK']:

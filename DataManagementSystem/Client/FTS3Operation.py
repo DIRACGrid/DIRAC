@@ -20,6 +20,8 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOpera
 from DIRAC.RequestManagementSystem.Client.File import File as rmsFile
 
 from sqlalchemy import orm
+import datetime
+import json
 
 class FTS3Operation( FTS3Serializable ):
   """ Abstract class to represent an operation to be executed by FTS. It is a
@@ -48,7 +50,7 @@ class FTS3Operation( FTS3Serializable ):
                  'sourceSEs','ftsFiles','activity','priority',
                  'ftsJobs', 'creationTime', 'lastUpdate', 'error', 'status']
 
-  def __init__( self, ftsFiles = None, username = None, userGroup = None, rmsReqID = 0,
+  def __init__( self, ftsFiles = None, username = None, userGroup = None, rmsReqID = -1,
                 rmsOpID = 0, sourceSEs = None, activity = None, priority = None ):
     
     """
@@ -83,8 +85,10 @@ class FTS3Operation( FTS3Serializable ):
 
     self.ftsJobs = []
 
-    self.creationTime = None
-    self.lastUpdate = None
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
+
+    self.creationTime = now
+    self.lastUpdate = now
     self.error = None
     self.status = FTS3Operation.INIT_STATE
 
@@ -108,7 +112,7 @@ class FTS3Operation( FTS3Serializable ):
 
     self.rssClient = ResourceStatus()
 
-    opID = getattr( self, 'operationID' )
+    opID = getattr( self, 'operationID', None )
     loggerName = '%s/' % opID if opID else ''
     loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID )
     
@@ -147,23 +151,20 @@ class FTS3Operation( FTS3Serializable ):
     toSubmit = []
     
     for ftsFile in self.ftsFiles:
-      # The file was never submitted
-      if ftsFile.status == 'New':
-        toSubmit.append( ftsFile )
+      if ftsFile.attempt >= maxAttemptsPerFile:
+        ftsFile.status = 'Defunct'
+      # The file was never submitted or
       # The file failed from the point of view of FTS
-      elif ftsFile.status == 'Failed':
-        # If we don't make more attempts, put it in Defunct state
-        if ftsFile.attempt >= maxAttemptsPerFile:
-          ftsFile.status = 'Defunct'
-        else:
-          toSubmit.append( ftsFile )
+      # but no more than the maxAttemptsPerFile    
+      elif ftsFile.status in ('New', 'Failed'):
+        toSubmit.append( ftsFile )
 
     return toSubmit
 
       
 
-
-  def _checkSEAccess( self, seName, accessType ):
+  @staticmethod
+  def _checkSEAccess( seName, accessType ):
     """Check the Status of a storage element
         :param seName: name of the StorageElement
         :param accessType ReadAccess, WriteAccess,CheckAccess,RemoveAccess
@@ -171,12 +172,23 @@ class FTS3Operation( FTS3Serializable ):
         :return S_ERROR if not allowed or error, S_OK() otherwise
     """
     # Check that the target is writable
-    access = self.rssClient.getStorageElementStatus( seName, accessType )
-    if not access["OK"]:
-      return access
+#     access = self.rssClient.getStorageElementStatus( seName, accessType )
+#     if not access["OK"]:
+#       return access
+#     if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
+#       return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
 
-    if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
+
+    status = StorageElement( seName ).getStatus()
+    if not status['OK']:
+      return status
+
+    status = status['Value']
+
+    accessType = accessType.replace( 'Access', '' )
+    if not status[accessType]:
       return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
+
 
     return S_OK()
         
@@ -233,7 +245,7 @@ class FTS3Operation( FTS3Serializable ):
     raise NotImplementedError( "You should not be using the base class" )
   
 
-  def _upadteRmsOperationStatus( self ):
+  def _updateRmsOperationStatus( self ):
     """ Update the status of the Files in the rms operation
           :return: S_OK with a dict:
                         * request: rms Request object
@@ -241,7 +253,7 @@ class FTS3Operation( FTS3Serializable ):
                         * ftsFilesByTarget: dict where keys are the SE, and values the list of ftsFiles that were successful
     """
 
-    log = self._log.getSubLogger( "_upadteRmsOperationStatus/%s/%s" % ( getattr( self, 'operationID' ), self.rmsReqID ), child = True )
+    log = self._log.getSubLogger( "_updateRmsOperationStatus/%s/%s" % ( getattr( self, 'operationID' ), self.rmsReqID ), child = True )
 
 
 
@@ -251,8 +263,9 @@ class FTS3Operation( FTS3Serializable ):
 
     request = res['Value']
 
-    operation = request.getWaiting()
-    if not operation["OK"]:
+    res = request.getWaiting()
+
+    if not res["OK"]:
       log.error( "Unable to find 'Scheduled' operation in request" )
       res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
       if not res['OK']:
@@ -276,7 +289,7 @@ class FTS3Operation( FTS3Serializable ):
     for ftsFile in self.ftsFiles:
 
       if ftsFile.status == 'Defunct':
-        log.error( "File failed to transfer, setting it to failed in RMS", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
+        log.info( "File failed to transfer, setting it to failed in RMS", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
         defunctRmsFileIDs.add( ftsFile.rmsFileID )
         continue
       
@@ -286,7 +299,7 @@ class FTS3Operation( FTS3Serializable ):
         continue
 
       # SHOULD NEVER HAPPEN !
-      if ftsFile.status != 'Done':
+      if ftsFile.status != 'Finished':
         log.error( "Callback called with file in non terminal state", "%s %s" % ( ftsFile.lfn, ftsFile.targetSE ) )
         res = self.reqClient.putRequest( request, useFailoverProxy = False, retryMainService = 3 )
         if not res['OK']:
@@ -309,6 +322,39 @@ class FTS3Operation( FTS3Serializable ):
 
 
     return S_OK( { 'request' : request, 'operation' : operation, 'ftsFilesByTarget' : ftsFilesByTarget} )
+
+
+  @classmethod
+  def fromRMSObjects( cls, rmsReq, rmsOp, username ):
+    """ Construct an FTS3Operation object from the RMS Request and Operation corresponding.
+        The attributes taken are the OwnerGroup, Request and Operation IDS, sourceSE,
+        and activity and priority if they are defined in the Argument field of the operation
+        :param rmsReq: RMS Request object
+        :param rmsOp: RMS Operation object
+        :param username: username to which associate the FTS3Operation (normally comes from the Req OwnerDN)
+
+        :returns: FTS3Operation object
+    """
+
+    ftsOp = cls()
+    ftsOp.username = username
+    ftsOp.userGroup = rmsReq.OwnerGroup
+
+    ftsOp.rmsReqID = rmsReq.RequestID
+    ftsOp.rmsOpID = rmsOp.OperationID
+
+
+    ftsOp.sourceSEs = rmsOp.SourceSE
+
+    try:
+      argumentDic = json.loads( rmsOp.Arguments )
+    
+      ftsOp.activity = argumentDic['activity']
+      ftsOp.priority = argumentDic['priority']
+    except Exception as _e:
+      pass
+
+    return ftsOp
 
        
 
@@ -341,6 +387,8 @@ class FTS3TransferOperation(FTS3Operation):
 
       if not res['OK']:
         log.error( res )
+        for ftsFile in ftsFiles:
+          ftsFile.attempt += 1
         continue
 
 
@@ -383,7 +431,7 @@ class FTS3TransferOperation(FTS3Operation):
 
     log = self._log.getSubLogger( "callback", child = True )
 
-    res = self._upadteRmsOperationStatus()
+    res = self._updateRmsOperationStatus()
 
     if not res['OK']:
       return res
@@ -402,15 +450,18 @@ class FTS3TransferOperation(FTS3Operation):
       registerOperation.Type = "RegisterReplica"
       registerOperation.Status = "Waiting"
       registerOperation.TargetSE = target
-      registerOperation.Catalog = operation.Catalog
+      if operation.Catalog:
+        registerOperation.Catalog = operation.Catalog
 
       targetSE = StorageElement( target )
       for ftsFile in ftsFileList:
         opFile = rmsFile()
         opFile.LFN = ftsFile.lfn
-        opFile.LFN = ftsFile.checksum
+        opFile.Checksum = ftsFile.checksum
+        # TODO: are we really ever going to change type... ?
+        opFile.ChecksumType = 'ADLER32'
         opFile.Size = ftsFile.size
-        res = returnSingleResult( targetSE.getURL( ftsFile.LFN, protocol = 'srm' ) )
+        res = returnSingleResult( targetSE.getURL( ftsFile.lfn, protocol = 'srm' ) )
 
         # This should never happen !
         if not res["OK"]:
@@ -471,7 +522,7 @@ class FTS3StagingOperation( FTS3Operation ):
         NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
     """
 
-    res = self._upadteRmsOperationStatus()
+    res = self._updateRmsOperationStatus()
 
     if not res['OK']:
       return res

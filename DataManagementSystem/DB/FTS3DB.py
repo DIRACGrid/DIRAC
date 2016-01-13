@@ -11,7 +11,7 @@ import random
 import datetime
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation, FTS3RemovalOperation
+from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
@@ -23,7 +23,7 @@ from sqlalchemy.sql.expression import and_
 from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper, column_property, with_polymorphic
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey, \
-                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct, SmallInteger, select
+                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct, SmallInteger, select, Float
 
 import copy
 
@@ -61,6 +61,7 @@ fts3JobTable = Table( 'Jobs', metadata,
                       Column( 'submitTime', DateTime ),
                       Column( 'lastUpdate', DateTime ),
                       Column( 'lastMonitor', DateTime ),
+                      Column( 'completeness', Float ),
                       Column( 'username', String( 255 ) ),  # Could be fetched from Operation, but bad for perf
                       Column( 'userGroup', String( 255 ) ),  # Could be fetched from Operation, but bad for perf
                       Column( 'ftsGUID', String( 255 ) ),
@@ -81,7 +82,7 @@ fts3OperationTable = Table( 'Operations', metadata,
                             Column( 'operationID', Integer, primary_key = True ),
                             Column( 'username', String( 255 ) ),
                             Column( 'userGroup', String( 255 ) ),
-                            Column( 'rmsReqID', Integer, server_default = '0' ),
+                            Column( 'rmsReqID', Integer, server_default = '-1' ),  # -1 because with 0 we get any request
                             Column( 'rmsOpID', Integer, server_default = '0' ),
                             Column( 'sourceSEs', String( 255 ) ),
                             Column( 'activity', String( 255 ) ),
@@ -125,10 +126,6 @@ mapper( FTS3StagingOperation, fts3OperationTable,
         polymorphic_identity = 'Staging'
         )
 
-mapper( FTS3RemovalOperation, fts3OperationTable,
-        inherits = fts3Operation_mapper,
-        polymorphic_identity = 'Removal'
-        )
 
 
 ########################################################################
@@ -156,28 +153,6 @@ class FTS3DB( object ):
     self.dbPass = dbParameters[ 'Password' ]
     self.dbName = dbParameters[ 'DBName' ]
 
-#
-#   def __init__( self ):
-#     """c'tor
-#
-#     :param self: self reference
-#     """
-#
-#     self.log = gLogger.getSubLogger( 'RequestDB' )
-#     # Initialize the connection info
-#     self.__getDBConnectionInfo( 'RequestManagement/ReqDB' )
-#
-#
-#
-#     runDebug = ( gLogger.getLevel() == 'DEBUG' )
-#     self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
-#                                  echo = runDebug )
-#
-#     metadata.bind = self.engine
-#
-#     self.dbSession = sessionmaker( bind = self.engine )
-
-
 
   def __init__( self ):
     """c'tor
@@ -187,15 +162,37 @@ class FTS3DB( object ):
 
     self.log = gLogger.getSubLogger( 'FTS3DB' )
     # Initialize the connection info
+    self.__getDBConnectionInfo( 'DataManagement/FTS3DB' )
 
 
 
-    self.engine = create_engine( 'mysql://Dirac:Dirac@localhost:3306/FTS3DB' ,
-                                 echo = True )
+    runDebug = ( gLogger.getLevel() == 'DEBUG' )
+    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName ),
+                                 echo = runDebug )
 
     metadata.bind = self.engine
 
     self.dbSession = sessionmaker( bind = self.engine )
+
+
+
+#   def __init__( self ):
+#     """c'tor
+#
+#     :param self: self reference
+#     """
+#
+#     self.log = gLogger.getSubLogger( 'FTS3DB' )
+#     # Initialize the connection info
+#
+#
+#
+#     self.engine = create_engine( 'mysql://Dirac:Dirac@localhost:3306/FTS3DB' ,
+#                                  echo = True )
+#
+#     metadata.bind = self.engine
+#
+#     self.dbSession = sessionmaker( bind = self.engine )
 
   def createTables( self ):
     """ create tables """
@@ -318,11 +315,12 @@ class FTS3DB( object ):
 
 
         jobIds = [job.jobID for job in ftsJobs]
-        session.execute( update( FTS3Job )\
-                   .where( FTS3Job.jobID.in_( jobIds )
-                           )\
-                   .values( { 'assignment' : jobAssignmentTag} )
-                 )
+        if jobIds:
+          session.execute( update( FTS3Job )\
+                     .where( FTS3Job.jobID.in_( jobIds )
+                             )\
+                     .values( { 'assignment' : jobAssignmentTag} )
+                   )
 
       session.commit()
 

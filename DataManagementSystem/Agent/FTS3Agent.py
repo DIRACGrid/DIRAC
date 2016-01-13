@@ -3,24 +3,24 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
-from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
-
 from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
+
+from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities.DictCache import DictCache
 
-from threading import current_thread
+# from threading import current_thread
 from multiprocessing.pool import ThreadPool
+# We use the dummy module because we use the ThreadPool
+from multiprocessing.dummy import current_process
+
+
 
 
 
@@ -55,7 +55,7 @@ class FTS3Agent( AgentModule ):
 
 
 
-  def getFTS3Context( self, username, group, ftsServer ):
+  def getFTS3Context( self, username, group, ftsServer, threadID ):
     """ Returns an fts3 context for a given user, group and fts server
 
         The context pool is per thread, and there is one context
@@ -74,10 +74,13 @@ class FTS3Agent( AgentModule ):
 
     """
 
-    threadID = current_thread().ident
+    log = gLogger.getSubLogger( "getFTS3Context", child = True )
+
     contextes = self._globalContextCache.setdefault( threadID, DictCache() )
     
     idTuple =(username, group, ftsServer) 
+    log.debug( "Getting context for %s" % ( idTuple, ) )
+
     if not contextes.exists( idTuple, 2700 ):
       res = getDNForUsername(username)
       if not res['OK']:
@@ -85,6 +88,8 @@ class FTS3Agent( AgentModule ):
       # We take the first DN returned
       userDN = res['Value'][0]
       
+      log.debug( "UserDN %s" % userDN )
+
       # We dump the proxy to a file.
       # It has to have a lifetime of at least 2 hours
       # and we cache it for 1.5 hours
@@ -96,6 +101,7 @@ class FTS3Agent( AgentModule ):
         return res
       
       proxyFile = res['Value']
+      log.debug( "Proxy file %s" % proxyFile )
       
       # We generate the context
       res = FTS3Job.generateContext( ftsServer, proxyFile )
@@ -104,9 +110,9 @@ class FTS3Agent( AgentModule ):
       context = res['Value']
 
       # we add it to the cache for this thread for 1h
-      contextes[idTuple].add( idTuple, 3600, context )
+      contextes.add( idTuple, 3600, context )
 
-    return S_OK( contextes[idTuple] )
+    return S_OK( contextes.get( idTuple ) )
 
 
   
@@ -117,43 +123,48 @@ class FTS3Agent( AgentModule ):
         * update the FTSFile status
         * update the FTSJob status
     """
-    log = gLogger.getSubLogger( "_monitorJob/%s" % ftsJob.jobID, child = True )
-
-    res = self.getFTS3Context( ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer )
-
-    if not res['OK']:
-      log.error( "Error getting context", res )
-      return ftsJob, res
-
-    context = res['Value']
-
-
-    res = ftsJob.monitor( context = context )
-
-    if not res['OK']:
-      log.error( "Error monitoring job", res )
-      return ftsJob, res
-
-    # { fileID : { Status, Error } }
-    filesStatus = res['Value']
-
-    res = self.fts3db.updateFileStatus( filesStatus )
-
-    if not res['OK']:
-      log.error( "Error updating file fts status", "%s, %s" % ( ftsJob.ftsGUID, res ) )
-      return ftsJob, res
-
-
-    res = self.fts3db.updateJobStatus( {ftsJob.ftsJobID :  {'status' : ftsJob.status,
-                                                            'error' : ftsJob.error,
-                                                            'completeness' : ftsJob.completeness,
-                                                            'operationID' : ftsJob.operationID,
-                                                            }
-                                        }
-                                     )
-
-    return ftsJob, res
+    # General try catch to avoid that the tread dies
+    try:
+      threadID = current_process().name
+      log = gLogger.getSubLogger( "_monitorJob/%s" % ftsJob.jobID, child = True )
   
+      res = self.getFTS3Context( ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID = threadID )
+  
+      if not res['OK']:
+        log.error( "Error getting context", res )
+        return ftsJob, res
+  
+      context = res['Value']
+  
+  
+      res = ftsJob.monitor( context = context )
+  
+      if not res['OK']:
+        log.error( "Error monitoring job", res )
+        return ftsJob, res
+  
+      # { fileID : { Status, Error } }
+      filesStatus = res['Value']
+  
+      res = self.fts3db.updateFileStatus( filesStatus )
+  
+      if not res['OK']:
+        log.error( "Error updating file fts status", "%s, %s" % ( ftsJob.ftsGUID, res ) )
+        return ftsJob, res
+  
+
+      upDict = {ftsJob.jobID :  {'status' : ftsJob.status,
+                                                              'error' : ftsJob.error,
+                                                              'completeness' : ftsJob.completeness,
+                                                              'operationID' : ftsJob.operationID,
+                                                              }
+                                          }
+      res = self.fts3db.updateJobStatus( upDict )
+
+      return ftsJob, res
+
+    except Exception as e:
+      return ftsJob, S_ERROR( "Exception %s" % repr( e ) )
   
   @staticmethod
   def _monitorJobCallback( returnedValue ):
@@ -226,70 +237,90 @@ class FTS3Agent( AgentModule ):
       log.debug( "Successfully treated operation" )
 
 
-  def _treatOperation(self, operation):
+  def _treatOperation( self, operation ):
     """ Treat one operation:
           * does the callback if the operation is finished
           * generate new jobs and submits them
+
+          :param operation: the operation to treat
+          :param threadId: the id of the tread, it just has to be unique (used for the context cache)
     """
-
-    log = gLogger.getSubLogger( "treatOperation/%s" % operation.operationID, child = True )
-
-
-    # If the operation is totally processed
-    # we perform the callback
-    if operation.isTotallyProcessed():
-      log.debug( "FTS3Operation %s is totally processed" % operation.operationID )
-      res = operation.callback()
-
-      if not res['OK']:
-        log.error( "Error performing the callback", res )
-        return operation, res
+    try:
+      threadID = current_process().name
+      log = gLogger.getSubLogger( "treatOperation/%s" % operation.operationID, child = True )
 
 
-    else:
-      log.debug( "FTS3Operation %s is not totally processed yet" % operation.operationID )
-
-      res = operation.prepareNewJobs()
-
-      if not res['OK']:
-        log.error( "Cannot prepare new Jobs", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
-        return operation, res
-
-      newJobs = res['Value']
-
-      log.debug( "FTS3Operation %s: %s new jobs to be submitted" % ( operation.operationID, len( newJobs ) ) )
-
-      for ftsJob in newJobs:
-        res = self._serverPolicy.chooseFTS3Server()
-        if not res['OK']:
-          log.error( res )
-          continue
-
-        ftsServer = res['Value']
-        log.debug( "Use %s server" % ftsServer )
-
-        ftsJob.ftsServer = ftsServer
-
-        context = self.getFTS3Context( ftsJob.username, ftsJob.userGroup, ftsServer )
-        res = ftsJob.submit( context = context )
+      # If the operation is totally processed
+      # we perform the callback
+      if operation.isTotallyProcessed():
+        log.debug( "FTS3Operation %s is totally processed" % operation.operationID )
+        res = operation.callback()
 
         if not res['OK']:
-          log.error( "Could not submit FTS3Job", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
-          continue
+          log.error( "Error performing the callback", res )
+          log.info( "Putting back the operation" )
+          dbRes = self.fts3db.persistOperation( operation )
 
-        operation.ftsJobs.append( ftsJob )
+          if not dbRes['OK']:
+            log.error( "Could not persist operation", dbRes )
 
-        submittedFileIds = res['Value']
-        log.info( "FTS3Operation %s: Submitted job for %s transfers" % ( operation.operationID, len( submittedFileIds ) ) )
+          return operation, res
 
 
-      # new jobs are put in the DB at the same time
-    res = self.fts3db.persistOperation( operation )
+      else:
+        log.debug( "FTS3Operation %s is not totally processed yet" % operation.operationID )
 
-    if not res['OK']:
-      log.error( "Could not persist operation", res )
+        res = operation.prepareNewJobs()
 
-    return operation, res
+        if not res['OK']:
+          log.error( "Cannot prepare new Jobs", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
+          return operation, res
+
+        newJobs = res['Value']
+
+        log.debug( "FTS3Operation %s: %s new jobs to be submitted" % ( operation.operationID, len( newJobs ) ) )
+
+        for ftsJob in newJobs:
+          res = self._serverPolicy.chooseFTS3Server()
+          if not res['OK']:
+            log.error( res )
+            continue
+
+          ftsServer = res['Value']
+          log.debug( "Use %s server" % ftsServer )
+
+          ftsJob.ftsServer = ftsServer
+
+          res = self.getFTS3Context( ftsJob.username, ftsJob.userGroup, ftsServer, threadID = threadID )
+
+          if not res['OK']:
+            log.error( "Could not get context", res )
+            continue
+
+          context = res['Value']
+          res = ftsJob.submit( context = context )
+
+          if not res['OK']:
+            log.error( "Could not submit FTS3Job", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
+            continue
+
+          operation.ftsJobs.append( ftsJob )
+
+          submittedFileIds = res['Value']
+          log.info( "FTS3Operation %s: Submitted job for %s transfers" % ( operation.operationID, len( submittedFileIds ) ) )
+
+
+        # new jobs are put in the DB at the same time
+      res = self.fts3db.persistOperation( operation )
+
+      if not res['OK']:
+        log.error( "Could not persist operation", res )
+
+      return operation, res
+
+    except Exception as e:
+      log.exception( 'Exception in the thread', repr( e ) )
+      return operation, S_ERROR( "Exception %s" % repr( e ) )
 
   def treatOperationsLoop( self ):
     """ * Fetch all the FTSOperations which are not finished
@@ -317,6 +348,7 @@ class FTS3Agent( AgentModule ):
       # queue the execution of self._treatOperation( operation ) in the thread pool
       # The returned value is passed to _treatOperationCallback
       thPool.apply_async( self._treatOperation, ( operation, ), callback = self._treatOperationCallback )
+
 
 
     log.debug( "All execution queued" )

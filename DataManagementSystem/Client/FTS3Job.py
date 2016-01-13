@@ -221,6 +221,13 @@ class FTS3Job( FTS3Serializable ):
 
       sourceSURL = allSourceSURLs[ftsFile.lfn]
       targetSURL = allTargetSURLs[ftsFile.lfn]
+
+      if sourceSURL == targetSURL:
+        log.error( "sourceSURL equals to targetSURL", "%s" % ftsFile.lfn )
+        ftsFile.error = "sourceSURL equals to targetSURL"
+        ftsFile.status = 'Defunct'
+        continue
+
       trans = fts3.new_transfer( sourceSURL,
                                 targetSURL,
                                 checksum = ftsFile.checksum,
@@ -241,6 +248,9 @@ class FTS3Job( FTS3Serializable ):
 
 
 
+    if not transfers:
+      log.error( "No transfer possible!" )
+      return S_ERROR( "No transfer possible" )
 
     job = fts3.new_job( transfers = transfers,
                         overwrite = True,
@@ -456,15 +466,14 @@ class FTS3Job( FTS3Serializable ):
     setFileIdsInTheJob = set( fileIDsInTheJob )
 
     try:
-
       self.ftsGUID = fts3.submit( context, job )
       log.info( "Got GUID %s" % self.ftsGUID )
 
       # Only increase the amount of attempt
-      # if we succeeded in submitting
+      # if we succeeded in submitting -> no ! Why did I do that ??
       for ftsFile in self.filesToSubmit:
+        ftsFile.attempt += 1
         if ftsFile.fileID in setFileIdsInTheJob:
-          ftsFile.attempt += 1
           ftsFile.status = 'Submitted'
 
       now = datetime.datetime.utcnow().replace( microsecond = 0 )
@@ -473,6 +482,7 @@ class FTS3Job( FTS3Serializable ):
       self.lastMonitor = now
 
     except FTS3ClientException as e:
+      log.exception( "Error at submission", repr( e ) )
       return S_ERROR( "Error at submission: %s" % e )
 
 
@@ -482,6 +492,11 @@ class FTS3Job( FTS3Serializable ):
 
   @staticmethod
   def generateContext( ftsServer, ucert ):
-    return fts3.Context( endpoint = ftsServer, ucert = ucert )
+    try:
+      context = fts3.Context( endpoint = ftsServer, ucert = ucert )
+      return S_OK(context)
+    except FTS3ClientException as e:
+      gLogger.exception( "Error generating context", repr( e ) )
+      return S_ERROR( repr( e ) )
 
 

@@ -41,4 +41,24 @@ class FTS3File( FTS3Serializable ):
     self.error = None
 
     self.targetSE = None
+    
+    
+  @staticmethod
+  def fromRMSFile( rmsFile, targetSE ):
+    """ Returns an FTS3File constructed from an RMS File.
+        It takes the value of LFN, rmsFileID, checksum and Size
+
+        :param rmsFile: the RMS File to use as source
+        :param targetSE: the SE target
+
+        :returns: an FTS3File instance
+    """
+    ftsFile = FTS3File()
+    ftsFile.lfn = rmsFile.LFN
+    ftsFile.rmsFileID = rmsFile.FileID
+    ftsFile.checksum = rmsFile.Checksum
+    ftsFile.size = rmsFile.Size
+    ftsFile.targetSE = targetSE
+
+    return ftsFile
 
