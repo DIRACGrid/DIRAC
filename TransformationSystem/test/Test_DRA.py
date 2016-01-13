@@ -9,6 +9,7 @@ from mock import MagicMock as Mock, patch
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.TransformationSystem.Agent.DataRecoveryAgent import DataRecoveryAgent
+from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 
 __RCSID__ = "$Id$"
 
@@ -28,9 +29,20 @@ class TestDRA(unittest.TestCase):
     self.dra.tClient = Mock()
     self.dra.fcClient = Mock()
     self.dra.jobMon = Mock()
+    self.dra.printEveryNJobs = 10
 
   def tearDown(self):
     pass
+
+  def getTestMock(self):
+    """create a JobInfo object with mocks"""
+    testJob = Mock(name="jobInfoMock")
+    testJob.outputFiles = ["/my/stupid/file.lfn", "/my/stupid/file2.lfn"]
+    testJob.outputFileStatus = ["Exists", "Exists"]
+    testJob.inputFile = "inputfile.lfn"
+    testJob.pendingRequest = False
+    testJob.getTaskInfo = Mock()
+    return testJob
 
   @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
   @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
@@ -326,7 +338,7 @@ class TestDRA(unittest.TestCase):
     """test for DataRecoveryAgent checkAllJobs ....................................................."""
     from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
-    ### test with additional task dicts
+    # test with additional task dicts
     from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
     tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
     mockJobs = dict([(i, self.getTestMock()) for i in xrange(11)])
@@ -556,6 +568,34 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][13]["Counter"], 1)
+
+  def test_checkAllJob(self):
+    """test for DataRecoveryAgent checkAllJobs ....................................................."""
+    from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
+
+    ### test with additional task dicts
+    out = StringIO()
+    sys.stdout = out
+    tInfoMock = Mock(name="tInfoMock")
+    mockJobs = dict([(i, self.getTestMock()) for i in xrange(11)])
+    mockJobs[2].pendingRequest = True
+    mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError("ARGJob1"), None))
+    mockJobs[4].getTaskInfo = Mock(side_effect=(TaskInfoException("ARG1"), None))
+    taskDict = True
+    lfnTaskDict = True
+    self.dra.checkAllJobs(mockJobs, tInfoMock, taskDict, lfnTaskDict)
+    self.assertIn("ERROR: +++++ Exception:  ARGJob1", out.getvalue().strip())
+    self.assertIn("Skip Task, due to TaskInfoException: ARG1", out.getvalue().strip())
+
+    ### test without additional task dicts
+    out = StringIO()
+    sys.stdout = out
+    mockJobs = dict([(i, self.getTestMock()) for i in xrange(5)])
+    mockJobs[2].pendingRequest = True
+    mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError("ARGJob2"), None))
+    tInfoMock.reset_mock()
+    self.dra.checkAllJobs(mockJobs, tInfoMock)
+    self.assertIn("ERROR: +++++ Exception:  ARGJob2", out.getvalue().strip())
 
 
 if __name__ == "__main__":
