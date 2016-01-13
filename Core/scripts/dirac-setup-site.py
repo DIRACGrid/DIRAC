@@ -28,22 +28,22 @@ if len( args ) > 1:
 cfg = None
 if len( args ):
   cfg = args[0]
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-result = InstallTools.setupSite( Script.localCfg, cfg )
+result = gComponentInstaller.setupSite( Script.localCfg, cfg )
 if not result['OK']:
   print "ERROR:", result['Message']
   exit( -1 )
 #
-result = InstallTools.getStartupComponentStatus( [] )
+result = gComponentInstaller.getStartupComponentStatus( [] )
 if not result['OK']:
   print 'ERROR:', result['Message']
   exit( -1 )
 
 print "\nStatus of installed components:\n"
-result = InstallTools.printStartupStatus( result['Value'] )
+result = gComponentInstaller.printStartupStatus( result['Value'] )
 if not result['OK']:
   print 'ERROR:', result['Message']
   exit( -1 )
