@@ -3,9 +3,8 @@
 import unittest
 import sys
 from StringIO import StringIO
-from collections import defaultdict
 
-from mock import MagicMock as Mock, patch
+from mock import MagicMock as Mock
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
@@ -14,7 +13,8 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException, JobI
 gLogger.setLevel("DEBUG")
 
 __RCSID__ = "$Id$"
-#pylint: disable=W0212
+
+# pylint: disable=W0212, E1101
 
 
 class TestJI(unittest.TestCase):
