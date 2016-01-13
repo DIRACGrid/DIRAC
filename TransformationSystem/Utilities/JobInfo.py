@@ -1,8 +1,9 @@
 """Job Information"""
-__RCSID__ = "$Id$"
 
 from itertools import izip_longest
 import re
+
+__RCSID__ = "$Id$"
 
 
 class TaskInfoException(Exception):
@@ -57,6 +58,8 @@ class JobInfo(object):
 
   def allFilesMissing(self):
     """check if all files are missing"""
+    if not self.outputFileStatus:
+      return False
     return all("Missing" in status for status in self.outputFileStatus)
 
   def someFilesMissing(self):
