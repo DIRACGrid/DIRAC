@@ -1025,7 +1025,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'l:', 'project=', 'Project to install' ),
             ( 'e:', 'extraModules=', 'Extra modules to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
-            ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
+            ( 'i:', 'pythonVersion=', 'Python version to compile (27/26)' ),
             ( 'p:', 'platform=', 'Platform to install' ),
             ( 'P:', 'installationPath=', 'Path where to install (default current working dir)' ),
             ( 'b', 'build', 'Force local compilation' ),
@@ -1321,8 +1321,8 @@ def createBashrc():
                      'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
-                    'PYTHONPATH=""',
-                    'LD_LIBRARY_PATH=""'] )
+                     'PYTHONPATH=""',
+                     'LD_LIBRARY_PATH=""'] )
 
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',

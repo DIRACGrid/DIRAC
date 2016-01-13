@@ -7,7 +7,6 @@
 """
 
 import time
-from types                import StringTypes, IntType, LongType
 
 from DIRAC                import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
@@ -33,13 +32,12 @@ class JobLoggingDB( DB ):
 
 #############################################################################
   def addLoggingRecord( self,
-                       jobID,
-                       status = 'idem',
-                       minor = 'idem',
-                       application = 'idem',
-                       date = '',
-                       source = 'Unknown' ):
-
+                        jobID,
+                        status = 'idem',
+                        minor = 'idem',
+                        application = 'idem',
+                        date = '',
+                        source = 'Unknown' ):
     """ Add a new entry to the JobLoggingDB table. One, two or all the three status
         components can be specified. Optionaly the time stamp of the status can
         be provided in a form of a string in a format '%Y-%m-%d %H:%M:%S' or
@@ -57,14 +55,14 @@ class JobLoggingDB( DB ):
       time_order = round( epoc, 3 )
     else:
       try:
-        if type( date ) in StringTypes:
+        if isinstance( date, basestring ):
           # The date is provided as a string in UTC
           _date = Time.fromString( date )
           epoc = time.mktime( _date.timetuple() ) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
           time_order = round( epoc, 3 )
-        elif type( date ) == Time._dateTimeType:
+        elif isinstance( date, Time._dateTimeType ):
           _date = date
-          epoc = time.mktime( _date.timetuple() ) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
+          epoc = time.mktime( _date.timetuple() ) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER #pylint: disable=E1101
           time_order = round( epoc, 3 )
         else:
           self.gLogger.error( 'Incorrect date for the logging record' )
@@ -104,11 +102,11 @@ class JobLoggingDB( DB ):
       app = "Unknown"
     for row in result['Value']:
       if row[0] != "idem":
-        status = row[0];
+        status = row[0]
       if row[1] != "idem":
-        minor = row[1];
+        minor = row[1]
       if row[2] != "idem":
-        app = row[2];
+        app = row[2]
       return_value.append( ( status, minor, app, str( row[3] ), row[4] ) )
 
     return S_OK( return_value )
@@ -119,9 +117,9 @@ class JobLoggingDB( DB ):
     """
 
     # Make sure that we have a list of jobs
-    if type( jobID ) in [ IntType, LongType ]:
+    if isinstance( jobID, (int, long) ):
       jobList = [ str( jobID ) ]
-    elif type( jobID ) in StringTypes:
+    elif isinstance( jobID, basestring ):
       jobList = [ jobID ]
     else:
       jobList = list( jobID )
