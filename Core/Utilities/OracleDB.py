@@ -233,7 +233,7 @@ class OracleDB:
       result = None
       results = None
       if array != None and len(array) > 0:
-        if type(array[0]) == types.StringType:
+        if isinstance( type( array[0] ), basestring ):
           result = cursor.arrayvar( cx_Oracle.STRING, array )
           parameters += [result]
         elif type(array[0]) == types.LongType or type(array[0]) == types.IntType:

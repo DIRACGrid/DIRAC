@@ -5,7 +5,7 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-import types
+from types import StringTypes, ListType, DictType, TupleType
 import threading
 import tempfile
 
@@ -75,7 +75,7 @@ class SandboxStoreHandler( RequestHandler ):
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
-    if type( fileId ) in ( types.ListType, types.TupleType ):
+    if type( fileId ) in ( ListType, TupleType ):
       if len( fileId ) > 1:
         assignTo = fileId[1]
         fileId = fileId[0]
@@ -311,7 +311,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Assigning sbs to jobs
 
-  types_assignSandboxesToEntities = [ types.DictType ]
+  types_assignSandboxesToEntities = [ DictType ]
   def export_assignSandboxesToEntities( self, enDict, ownerName = "", ownerGroup = "", entitySetup = False ):
     """
     Assign sandboxes to jobs.
@@ -326,7 +326,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Unassign sbs to jobs
 
-  types_unassignEntities = [ ( types.ListType, types.TupleType ) ]
+  types_unassignEntities = [ ( ListType, TupleType ) ]
   def export_unassignEntities( self, entitiesList, entitiesSetup = False ):
     """
     Unassign a list of jobs
@@ -339,7 +339,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Getting assigned sandboxes
 
-  types_getSandboxesAssignedToEntity = [ types.StringType ]
+  types_getSandboxesAssignedToEntity = [ StringTypes ]
   def export_getSandboxesAssignedToEntity( self, entityId, entitySetup = False ):
     """
     Get the sandboxes associated to a job and the association type

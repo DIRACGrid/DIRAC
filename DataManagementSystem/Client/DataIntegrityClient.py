@@ -68,9 +68,9 @@ class DataIntegrityClient( Client ):
 
         sourceComponent is the component issuing the request.
     """
-    if type( lfn ) == types.ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == types.StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."

@@ -150,7 +150,7 @@ class SSHBatchComputingElement( SSHComputingElement ):
     """ Kill specified jobs
     """ 
     jobIDList = list( jobIDs )
-    if type( jobIDs ) == type( ' ' ):
+    if isinstance( jobIDs, basestring ):
       jobIDList = [jobIDs]
     
     hostDict = {}

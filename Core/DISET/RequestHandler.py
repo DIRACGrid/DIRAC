@@ -312,7 +312,7 @@ class RequestHandler( object ):
 #
 ####
 
-  __connectionCallbackTypes = { 'new' : [ types.StringType, types.DictType ],
+  __connectionCallbackTypes = { 'new' : [ types.StringTypes, types.DictType ],
                                 'connected' : [],
                                 'drop' : [] }
 
@@ -337,7 +337,7 @@ class RequestHandler( object ):
       if len( args ) != len( cbTypes ):
         return S_ERROR( "Expected %s arguments" % len( cbTypes ) )
       for i in range( len( cbTypes ) ):
-        if type( args[ i ] ) != cbTypes[i]:
+        if not isinstance( args[ i ], cbTypes[i] ):
           return S_ERROR( "Invalid type for argument %s" % i )
       self.__trPool.associateData( self.__trid, "connectData", args )
 

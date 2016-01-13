@@ -1110,7 +1110,7 @@ def loadConfiguration():
       opName = 'extraModules'
     if opName == 'installType':
       opName = 'externalsType'
-    if type( getattr( cliParams, opName ) ) == types.StringType:
+    if isinstance( getattr( cliParams, opName ), basestring ):
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
       setattr( cliParams, opName, opVal.lower() in ( "y", "yes", "true", "1" ) )

@@ -351,7 +351,7 @@ class ModuleBase( object ):
 
     if self._checkWFAndStepStatus( noPrint = True ):
       # The application status won't be updated in case the workflow or the step is failed already
-      if not type( status ) == type( '' ):
+      if not isinstance( status, basestring ):
         status = str( status )
       self.log.verbose( 'setJobApplicationStatus(%d, %s)' % ( self.jobID, status ) )
       jobStatus = self.jobReport.setApplicationStatus( status, sendFlag )

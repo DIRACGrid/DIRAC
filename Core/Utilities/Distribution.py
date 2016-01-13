@@ -324,7 +324,7 @@ def writeVersionToInit( rootPath, version ):
 def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = None ):
   tf = tarfile.open( tarballPath, "w:gz" )
   tf.add( directoryToTar, os.path.basename( os.path.abspath( directoryToTar ) ), recursive = True )
-  if type( additionalDirectoriesToTar ) in ( types.StringType, types.UnicodeType ):
+  if isinstance( additionalDirectoriesToTar, basestring ):
     additionalDirectoriesToTar = [ additionalDirectoriesToTar ]
   if additionalDirectoriesToTar:
     for dirToTar in additionalDirectoriesToTar:
@@ -351,7 +351,7 @@ gAllowedNoteTypes = ( "NEW", "CHANGE", "BUGFIX", 'FIX' )
 gNoteTypeAlias = { 'FIX' : 'BUGFIX' }
 
 def retrieveReleaseNotes( packages ):
-  if type( packages ) in ( types.StringType, types.UnicodeType ):
+  if isinstance( packages, basestring ):
     packages = [ str( packages ) ]
   packageCFGDict = {}
   #Get the versions.cfg
@@ -395,7 +395,7 @@ def retrieveReleaseNotes( packages ):
   return pkgNotesDict
 
 def generateReleaseNotes( packages, destinationPath, versionReleased = "", singleVersion = False ):
-  if type( packages ) in ( types.StringType, types.UnicodeType ):
+  if isinstance( packages, basestring ):
     packages = [ str( packages ) ]
   pkgNotesDict = retrieveReleaseNotes( packages )
   fileContents = []

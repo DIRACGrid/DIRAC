@@ -273,7 +273,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
             newMaxCPUTime = ''
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
-          if type( caps ) == type( '' ):
+          if isinstance( caps, basestring ):
             caps = [caps]
           for cap in caps:
             if 'CPUScalingReferenceSI00' in cap:

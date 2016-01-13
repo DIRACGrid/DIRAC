@@ -9,9 +9,8 @@
 __RCSID__ = "$Id$"
 
 import types
-import os
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig, rootPath
+from DIRAC import  S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.UserProfileDB import UserProfileDB
 from DIRAC.Core.Security import Properties
 
@@ -27,7 +26,7 @@ def initializeUserProfileManagerHandler( serviceInfo ):
 
 class UserProfileManagerHandler( RequestHandler ):
 
-  types_retrieveProfileVar = [ types.StringType, types.StringType ]
+  types_retrieveProfileVar = [ types.StringTypes, types.StringTypes ]
   def export_retrieveProfileVar( self, profileName, varName ):
     """ Get profile data for web
     """
@@ -38,7 +37,7 @@ class UserProfileManagerHandler( RequestHandler ):
                               userName, userGroup,
                               profileName, varName )
 
-  types_retrieveProfileVarFromUser = [ types.StringType, types.StringType, types.StringType, types.StringType ]
+  types_retrieveProfileVarFromUser = [ types.StringTypes, types.StringTypes, types.StringTypes, types.StringTypes ]
   def export_retrieveProfileVarFromUser( self, ownerName, ownerGroup, profileName, varName ):
     """ Get profile data for web for any user according to perms
     """
@@ -49,7 +48,7 @@ class UserProfileManagerHandler( RequestHandler ):
                               ownerName, ownerGroup,
                               profileName, varName )
 
-  types_retrieveProfileAllVars = [ types.StringType ]
+  types_retrieveProfileAllVars = [ types.StringTypes ]
   def export_retrieveProfileAllVars( self, profileName ):
     """ Get profile data for web
     """
@@ -58,7 +57,7 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.retrieveAllUserVars( userName, userGroup, profileName )
 
-  types_storeProfileVar = [ types.StringType, types.StringType, types.StringType, types.DictType ]
+  types_storeProfileVar = [ types.StringTypes, types.StringTypes, types.StringTypes, types.DictType ]
   def export_storeProfileVar( self, profileName, varName, data, perms ):
     """ Set profile data for web
     """
@@ -67,7 +66,7 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.storeVar( userName, userGroup, profileName, varName, data, perms )
 
-  types_deleteProfileVar = [ types.StringType, types.StringType ]
+  types_deleteProfileVar = [ types.StringTypes, types.StringTypes ]
   def export_deleteProfileVar( self, profileName, varName ):
     """ Set profile data for web
     """
@@ -76,7 +75,7 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.deleteVar( userName, userGroup, profileName, varName )
 
-  types_listAvailableProfileVars = [ types.StringType ]
+  types_listAvailableProfileVars = [ types.StringTypes ]
   def export_listAvailableProfileVars( self, profileName, filterDict = {} ):
     """ Set profile data for web
     """
@@ -94,7 +93,7 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.retrieveUserProfiles( userName, userGroup )
 
-  types_setProfileVarPermissions = [  types.StringType, types.StringType, types.DictType ]
+  types_setProfileVarPermissions = [  types.StringTypes, types.StringTypes, types.DictType ]
   def export_setProfileVarPermissions( self, profileName, varName, perms ):
     """ Set profile data for web
     """
@@ -103,7 +102,7 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.setUserVarPerms( userName, userGroup, profileName, varName, perms )
 
-  types_getProfileVarPermissions = [  types.StringType, types.StringType ]
+  types_getProfileVarPermissions = [  types.StringTypes, types.StringTypes ]
   def export_getProfileVarPermissions( self, profileName, varName ):
     """ Set profile data for web
     """
@@ -114,7 +113,7 @@ class UserProfileManagerHandler( RequestHandler ):
                                    userName, userGroup,
                                    profileName, varName )
 
-  types_storeHashTag = [ types.StringType ]
+  types_storeHashTag = [ types.StringTypes ]
   def export_storeHashTag( self, tagName ):
     """ Set hash tag
     """
@@ -123,7 +122,7 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.storeHashTag( userName, userGroup, tagName )
 
-  types_retrieveHashTag = [ types.StringType ]
+  types_retrieveHashTag = [ types.StringTypes ]
   def export_retrieveHashTag( self, hashTag ):
     """ Get hash tag
     """
