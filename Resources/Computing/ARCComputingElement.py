@@ -15,9 +15,11 @@ import stat
 
 import arc # Has to work if this module is called
 from DIRAC                                               import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.SiteCEMapping                  import getSiteForCE
 from DIRAC.Core.Utilities.File                           import makeGuid
+from DIRAC.Core.Security.ProxyInfo                       import getVOfromProxyGroup
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -284,6 +286,7 @@ class ARCComputingElement( ComputingElement ):
   #############################################################################
   def getCEStatus( self ):
     """ Method to return information on running and pending jobs.
+        We hope to satisfy both instances that use robot proxies and those which use proper configurations.
     """
 
     result = self._prepareProxy()
@@ -291,19 +294,46 @@ class ARCComputingElement( ComputingElement ):
     if not result['OK']:
       gLogger.error( 'ARCComputingElement: failed to set up proxy', result['Message'] )
       return result
-    endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
-                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
-    retriever = arc.ComputingServiceRetriever(self.usercfg, endpoints)
-    retriever.wait() # Takes a bit of time to get and parse the ldap information
-    targets = retriever.GetExecutionTargets()
-    ceStats = targets[0].ComputingShare
-    gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
-    gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+
+    # Try to find out which VO we are running for.
+    vo = ''
+    res = getVOfromProxyGroup()
+    if res['OK']:
+      vo = res['Value']
 
     result = S_OK()
-    result['RunningJobs'] = ceStats.RunningJobs
-    result['WaitingJobs'] = ceStats.WaitingJobs
     result['SubmittedJobs'] = 0
+    if not vo:
+      # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
+      # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
+      endpoints = [arc.Endpoint( "ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
+                               arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+      retriever = arc.ComputingServiceRetriever(self.usercfg, endpoints)
+      retriever.wait() # Takes a bit of time to get and parse the ldap information
+      targets = retriever.GetExecutionTargets()
+      ceStats = targets[0].ComputingShare
+      gLogger.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
+      gLogger.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+      result['RunningJobs'] = ceStats.RunningJobs
+      result['WaitingJobs'] = ceStats.WaitingJobs
+    else:
+      # The system which works properly at present for ARC CEs that are configured correctly.
+      # But for this we need the VO to be known - ask me (Raja) for the whole story if interested.
+      cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' %(self.ceHost, vo.lower())
+      res = shellCall( 0, cmd )
+      if not res['OK']:
+        gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
+        return res
+      try:
+        ldapValues = res['Value'][1].split("\n")
+        running = [lValue for lValue in ldapValues if 'GlueCEStateRunningJobs' in lValue]
+        waiting = [lValue for lValue in ldapValues if 'GlueCEStateWaitingJobs' in lValue]
+        result['RunningJobs'] = int(running[0].split(":")[1])
+        result['WaitingJobs'] = int(waiting[0].split(":")[1])
+      except IndexError:
+        res = S_ERROR('Unknown ldap failure for site %s' % self.ceHost)
+        return res
+
     return result
 
   #############################################################################
