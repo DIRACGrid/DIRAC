@@ -31,7 +31,7 @@ class TransformationInfo(object):
 
     res = self.tClient.getTransformationFiles(condDict={'TransformationID': self.tID})
     if not res['OK']:
-      raise RuntimeError("Failed to get transformation tasks", res['Message'])
+      raise RuntimeError("Failed to get transformation tasks: %s" % res['Message'])
 
     tasksDict = {}
     for task in res['Value']:
