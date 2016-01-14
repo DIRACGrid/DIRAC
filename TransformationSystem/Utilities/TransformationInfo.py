@@ -99,15 +99,20 @@ class TransformationInfo(object):
     else:
       return S_OK('DisabledMode')
 
-    if result['OK']:
-      if minorstatus:
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (jobID, minorstatus))
-        result = jobDB.setJobAttribute(jobID, 'MinorStatus', minorstatus, update=True)
+    if not result['OK']:
+      self.log.error("Failed to update job status", result['Message'])
+      raise RuntimeError("Failed to update job status")
 
     if minorstatus is None:  # Retain last minor status for stalled jobs
       result = jobDB.getJobAttributes(jobID, ['MinorStatus'])
       if result['OK']:
         minorstatus = result['Value']['MinorStatus']
+      else:
+        self.log.error("Failed to get Minor Status", result['Message'])
+        raise RuntimeError("Failed to get Minorstatus")
+    else:
+      self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (jobID, minorstatus))
+      result = jobDB.setJobAttribute(jobID, 'MinorStatus', minorstatus, update=True)
 
     logStatus = status
     from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
