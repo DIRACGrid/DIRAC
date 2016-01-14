@@ -188,10 +188,6 @@ class TransformationInfo(object):
     if 'Failed' in statusList:
       self.log.notice("Getting 'Failed' Jobs...")
       failed = self.__getJobs(["Failed"])
-    if not done['OK']:
-      raise RuntimeError("Failed to get Done Jobs")
-    if not failed['OK']:
-      raise RuntimeError("Failed to get Failed Jobs")
     done = done['Value']
     failed = failed['Value']
 
@@ -217,10 +213,9 @@ class TransformationInfo(object):
     #   appStates.remove( "Job Finished Successfully" )
     #   attrDict['ApplicationStatus'] = appStates
     res = self.jobMon.getJobs(attrDict)
-
     if res['OK']:
       self.log.debug("Found Prod jobs: %s" % res['Value'])
+      return res
     else:
       self.log.error("Error finding jobs: ", res['Message'])
       raise RuntimeError("Failed to get jobs")
-    return res
