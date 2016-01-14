@@ -1,18 +1,16 @@
 """TransformationInfo class to be used by ILCTransformation System"""
-__RCSID__ = "$Id$"
-
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.Workflow.Workflow import fromXMLString
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-
-from ILCDIRAC.Core.Utilities.ProductionData import constructProductionLFNs
-from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
 from collections import OrderedDict
 from itertools import izip_longest
 
+from DIRAC import gLogger, S_OK
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Core.Utilities.List import breakListIntoChunks
+
+from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
+
+__RCSID__ = "$Id$"
 
 class TransformationInfo(object):
   """ hold information about transformations """
@@ -26,47 +24,7 @@ class TransformationInfo(object):
     self.tClient = tClient
     self.jobMon = jobMon
     self.fcClient = fcClient
-    self.olist = self.__getOutputList()
     self.transType = transType
-
-  def __getTransformationWorkflow(self):
-    """return the workflow for the transformation"""
-    res = self.tClient.getTransformationParameters(self.tID, ['Body'])
-    if not res['OK']:
-      self.log.error('Could not get Body from TransformationDB')
-      return res
-    body = res['Value']
-    workflow = fromXMLString(body)
-    workflow.resolveGlobalVars()
-    return S_OK(workflow)
-
-  def __getOutputList(self):
-    """Get list of outputfiles"""
-    resWorkflow = self.__getTransformationWorkflow()
-    if not resWorkflow['OK']:
-      self.log.error("Failed to get Transformation Workflow")
-      raise RuntimeError("Failed to get outputlist")
-
-    workflow = resWorkflow['Value']
-    olist = []
-    for step in workflow.step_instances:
-      param = step.findParameter('listoutput')
-      if not param:
-        continue
-      olist.extend(param.value)
-    return olist
-
-  def getOutputFiles(self, taskID):
-    """returns list of expected lfns for given task"""
-    commons = {'outputList': self.olist,
-               'PRODUCTION_ID': int(self.tID),
-               'JOB_ID': int(taskID),
-               }
-    resFiles = constructProductionLFNs(commons)
-    if not resFiles['OK']:
-      raise RuntimeError("Failed to create productionLFNs")
-    expectedlfns = resFiles['Value']['ProductionOutputData']
-    return expectedlfns
 
   def checkTasksStatus(self):
     """Check the status for the task of given transformation and taskID"""
