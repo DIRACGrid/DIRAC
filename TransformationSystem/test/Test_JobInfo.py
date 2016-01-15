@@ -7,6 +7,7 @@ from StringIO import StringIO
 from mock import MagicMock as Mock
 
 from DIRAC import S_OK, S_ERROR, gLogger
+import DIRAC
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException, JobInfo
 
@@ -22,302 +23,462 @@ class TestJI(unittest.TestCase):
 
   def setUp(self):
     self.jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    self.diracAPI = Mock(name="dilcMock", spec=DIRAC.Interfaces.API.Dirac.Dirac)
-    self.jobMon = Mock(
-        name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
-    self.diracAPI.getJobJDL = Mock()
+    self.jobMonMock = Mock(
+        name="jobMonMock",
+        spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
+    self.jobMonMock.getJobJDL = Mock()
+    self.jdl2 = """
+[
+  LogTargetPath = "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar";
+  Executable = "$DIRACROOT/scripts/dirac-jobexec";
+  TaskID = 15;
+  SoftwareDistModule = "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation";
+  JobName = "00006326_00000015";
+  Priority = 1;
+  Platform = "x86_64-slc5-gcc43-opt";
+  JobRequirements =
+  [
+    OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+    VirtualOrganization = "ilc";
+    Setup = "ILC-Production";
+    CPUTime = 300000;
+    OwnerGroup = "ilc_prod";
+    Platforms =
+    {
+      "x86_64-slc6-gcc44-opt",
+      "x86_64-slc5-gcc43-opt",
+      "slc5_amd64_gcc43",
+      "Linux_x86_64_glibc-2.12",
+      "Linux_x86_64_glibc-2.5"
+    };
+    UserPriority = 1;
+    Sites =
+    {
+      "LCG.LAPP.fr",
+      "LCG.Freiburg.de",
+      "OSG.BNL.us",
+      "LCG.Tau.il",
+      "LCG.Weizmann.il",
+      "OSG.TTU.us",
+      "LCG.IFCA-LCG2.es",
+      "OSG.CIT.us",
+      "LCG.Bristol.uk",
+      "LCG.CERN.ch",
+      "LCG.Oxford.uk",
+      "LCG.IN2P3-IPNL.fr",
+      "LCG.Manchester.uk",
+      "LCG.Birmingham.uk",
+      "LCG.UKI-SOUTHGRID-CAM-HEP.uk",
+      "LCG.Bonn.de",
+      "LCG.USC-LCG2.es",
+      "OSG.UCSDT2.us",
+      "OSG.MIT.us",
+      "LCG.NIPNE.ro",
+      "OSG.SPRACE.br",
+      "LCG.UKI-NORTHGRID-LIV-HEP.uk",
+      "LCG.GRIF.fr",
+      "LCG.UKI-LT2-RHUL.uk",
+      "OSG.PNNL.us",
+      "LCG.DESY-HH.de",
+      "LCG.IN2P3-CC.fr",
+      "OSG.Arlington.us",
+      "OSG.GridUNESP_CENTRAL.br",
+      "LCG.QMUL.uk",
+      "LCG.Brunel.uk",
+      "OSG.UConn.us",
+      "LCG.TECHNION.il",
+      "TEST.CERN.ch",
+      "LCG.SCOTGRIDDURHAM.uk",
+      "LCG.Glasgow.uk",
+      "LCG.UKI-LT2-IC-HEP.uk",
+      "LCG.RAL-LCG2.uk",
+      "LCG.Cracow.pl",
+      "OSG.FNAL_FERMIGRID.us",
+      "LCG.DESYZN.de",
+      "LCG.UKI-SOUTHGRID-RALPP.uk"
+    };
+    BannedSites = "LCG.KEK.jp";
+    SubmitPools = "gLite";
+    JobTypes = "MCReconstruction_Overlay";
+  ];
+  Arguments = "jobDescription.xml -o LogLevel=verbose";
+  SoftwarePackages =
+  {
+    "overlayinput.1",
+    "marlin.v0111Prod"
+  };
+  DebugLFNs = "";
+  Status = "Created";
+  InputDataModule = "DIRAC.WorkloadManagementSystem.Client.InputDataResolution";
+  BannedSites = "LCG.KEK.jp";
+  LogLevel = "verbose";
+  InputSandbox =
+  {
+    "jobDescription.xml",
+    "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/5d3/92f/5d392f5266a796018ab6774ef84cbd31.tar.bz2"
+  };
+  SubmitPools = "gLite";
+  OwnerName = "sailer";
+  StdOutput = "std.out";
+  JobType = "MCReconstruction_Overlay";
+  GridEnv = "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example";
+  TransformationID = 6326;
+  DIRACSetup = "ILC-Production";
+  StdError = "std.err";
+  IS_PROD = "True";
+  CPUTime = 300000;
+  OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+  JobGroup = 00006326;
+  OutputSandbox =
+  {
+    "std.err",
+    "std.out"
+  };
+  JobID = 15756436;
+  Origin = "DIRAC";
+  VirtualOrganization = "ilc";
+  ProductionOutputData =
+  {
+    "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/000/yyveyx_o_rec_6326_15.slcio",
+    "/ilc/prod/clic/500gev/yyveyx_o/ILD/DST/00006326/000/yyveyx_o_dst_6326_15.slcio"
+  };
+  Site = "ANY";
+  OwnerGroup = "ilc_prod";
+  Owner = "sailer";
+  MaxCPUTime = 300000;
+  LogFilePath = "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/000";
+  InputData = "/ilc/prod/clic/500gev/yyveyx_o/ILD/SIM/00006325/000/yyveyx_o_sim_6325_17.slcio";
+]
+    """
 
-    self.jdl2 = {
-        'LogTargetPath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
-        'TaskID': 15,
-        'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
-        'JobName': "00006326_00000015",
-        'Priority': 1,
-        'Platform': "x86_64-slc5-gcc43-opt",
-        'JobRequirements': {
-            'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-            'VirtualOrganization': "ilc",
-            'Setup': "ILC-Production",
-            'CPUTime': 300000,
-            'OwnerGroup': "ilc_prod",
-            'Platforms': [
-                "x86_64-slc6-gcc44-opt",
-                "x86_64-slc5-gcc43-opt",
-                "slc5_amd64_gcc43",
-                "Linux_x86_64_glibc-2.12",
-                "Linux_x86_64_glibc-2.5",
-            ],
-            'UserPriority': 1,
-            'Sites': [
-                "LCG.LAPP.fr",
-                "LCG.UKI-SOUTHGRID-RALPP.uk",
-            ],
-            'BannedSites': "LCG.KEK.jp",
-            'SubmitPools': "gLite",
-            'JobTypes': "MCReconstruction_Overlay",
-        },
-        'Arguments': "jobDescription.xml -o LogLevel=verbose",
-        'SoftwarePackages': [
-            "overlayinput.1",
-            "marlin.v0111Prod",
-        ],
-        'DebugLFNs': "",
-        'Status': "Created",
-        'InputDataModule': "DIRAC.WorkloadManagementSystem.Client.InputDataResolution",
-        'BannedSites': "LCG.KEK.jp",
-        'LogLevel': "verbose",
-        'InputSandbox': [
-            "jobDescription.xml",
-            "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/5d3/92f/5d392f5266a796018ab6774ef84cbd31.tar.bz2",
-        ],
-        'SubmitPools': "gLite",
-        'OwnerName': "sailer",
-        'StdOutput': "std.out",
-        'JobType': "MCReconstruction_Overlay",
-        'GridEnv': "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example",
-        'TransformationID': 6326,
-        'DIRACSetup': "ILC-Production",
-        'StdError': "std.err",
-        'IS_PROD': "True",
-        'CPUTime': 300000,
-        'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-        'JobGroup': 0o0006326,
-        'OutputSandbox': [
-            "std.err",
-            "std.out",
-        ],
-        'JobID': 15756436,
-        'Origin': "DIRAC",
-        'VirtualOrganization': "ilc",
-        'ProductionOutputData': [
-            "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/000/yyveyx_o_rec_6326_15.slcio",
-            "/ilc/prod/clic/500gev/yyveyx_o/ILD/DST/00006326/000/yyveyx_o_dst_6326_15.slcio",
-        ],
-        'Site': "ANY",
-                'OwnerGroup': "ilc_prod",
-                'Owner': "sailer",
-                'MaxCPUTime': 300000,
-                'LogFilePath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/000",
-                'InputData': "/ilc/prod/clic/500gev/yyveyx_o/ILD/SIM/00006325/000/yyveyx_o_sim_6325_17.slcio",
-    }
+    self.jdlBrokenContent = """
+[
+  LogTargetPath = "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar";
+  Executable = "$DIRACROOT/scripts/dirac-jobexec";
+  TaskID = muahahaha;
+  SoftwareDistModule = "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation";
+  JobName = "00006326_00000015";
+  Priority = 1;
+  Platform = "x86_64-slc5-gcc43-opt";
+  JobRequirements =
+  [
+    OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+    VirtualOrganization = "ilc";
+    Setup = "ILC-Production";
+    CPUTime = 300000;
+    OwnerGroup = "ilc_prod";
+    Platforms =
+    {
+      "x86_64-slc6-gcc44-opt",
+      "x86_64-slc5-gcc43-opt",
+      "slc5_amd64_gcc43",
+      "Linux_x86_64_glibc-2.12",
+      "Linux_x86_64_glibc-2.5"
+    };
+    UserPriority = 1;
+    Sites =
+    {
+      "LCG.LAPP.fr",
+      "LCG.Freiburg.de",
+      "OSG.BNL.us",
+      "LCG.Tau.il",
+      "LCG.Weizmann.il",
+      "OSG.TTU.us",
+      "LCG.IFCA-LCG2.es",
+      "OSG.CIT.us",
+      "LCG.Bristol.uk",
+      "LCG.CERN.ch",
+      "LCG.Oxford.uk",
+      "LCG.IN2P3-IPNL.fr",
+      "LCG.Manchester.uk",
+      "LCG.Birmingham.uk",
+      "LCG.UKI-SOUTHGRID-CAM-HEP.uk",
+      "LCG.Bonn.de",
+      "LCG.USC-LCG2.es",
+      "OSG.UCSDT2.us",
+      "OSG.MIT.us",
+      "LCG.NIPNE.ro",
+      "OSG.SPRACE.br",
+      "LCG.UKI-NORTHGRID-LIV-HEP.uk",
+      "LCG.GRIF.fr",
+      "LCG.UKI-LT2-RHUL.uk",
+      "OSG.PNNL.us",
+      "LCG.DESY-HH.de",
+      "LCG.IN2P3-CC.fr",
+      "OSG.Arlington.us",
+      "OSG.GridUNESP_CENTRAL.br",
+      "LCG.QMUL.uk",
+      "LCG.Brunel.uk",
+      "OSG.UConn.us",
+      "LCG.TECHNION.il",
+      "TEST.CERN.ch",
+      "LCG.SCOTGRIDDURHAM.uk",
+      "LCG.Glasgow.uk",
+      "LCG.UKI-LT2-IC-HEP.uk",
+      "LCG.RAL-LCG2.uk",
+      "LCG.Cracow.pl",
+      "OSG.FNAL_FERMIGRID.us",
+      "LCG.DESYZN.de",
+      "LCG.UKI-SOUTHGRID-RALPP.uk"
+    };
+    BannedSites = "LCG.KEK.jp";
+    SubmitPools = "gLite";
+    JobTypes = "MCReconstruction_Overlay";
+  ];
+  Arguments = "jobDescription.xml -o LogLevel=verbose";
+  SoftwarePackages =
+  {
+    "overlayinput.1",
+    "marlin.v0111Prod"
+  };
+  DebugLFNs = "";
+  Status = "Created";
+  InputDataModule = "DIRAC.WorkloadManagementSystem.Client.InputDataResolution";
+  BannedSites = "LCG.KEK.jp";
+  LogLevel = "verbose";
+  InputSandbox =
+  {
+    "jobDescription.xml",
+    "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/5d3/92f/5d392f5266a796018ab6774ef84cbd31.tar.bz2"
+  };
+  SubmitPools = "gLite";
+  OwnerName = "sailer";
+  StdOutput = "std.out";
+  JobType = "MCReconstruction_Overlay";
+  GridEnv = "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example";
+  TransformationID = 6326;
+  DIRACSetup = "ILC-Production";
+  StdError = "std.err";
+  IS_PROD = "True";
+  CPUTime = 300000;
+  OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+  JobGroup = 00006326;
+  OutputSandbox =
+  {
+    "std.err",
+    "std.out"
+  };
+  JobID = 15756436;
+  Origin = "DIRAC";
+  VirtualOrganization = "ilc";
+  ProductionOutputData =
+  {
+    "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/000/yyveyx_o_rec_6326_15.slcio",
+    "/ilc/prod/clic/500gev/yyveyx_o/ILD/DST/00006326/000/yyveyx_o_dst_6326_15.slcio"
+  };
+  Site = "ANY";
+  OwnerGroup = "ilc_prod";
+  Owner = "sailer";
+  MaxCPUTime = 300000;
+  LogFilePath = "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/000";
+  InputData = "/ilc/prod/clic/500gev/yyveyx_o/ILD/SIM/00006325/000/yyveyx_o_sim_6325_17.slcio";
+]
+    """
 
-    self.jdlBrokenContent = {
-        'LogTargetPath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
-        'TaskID': 'muahahaha',
-        'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
-        'JobName': "00006326_00000015",
-        'Priority': 1,
-        'Platform': "x86_64-slc5-gcc43-opt",
-        'JobRequirements': {
-            'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-            'VirtualOrganization': "ilc",
-            'Setup': "ILC-Production",
-            'CPUTime': 300000,
-            'OwnerGroup': "ilc_prod",
-            'Platforms': [
-                "x86_64-slc6-gcc44-opt",
-                "x86_64-slc5-gcc43-opt",
-                "slc5_amd64_gcc43",
-                "Linux_x86_64_glibc-2.12",
-                "Linux_x86_64_glibc-2.5",
-            ],
-            'UserPriority': 1,
-            'Sites': [
-                "LCG.LAPP.fr",
-                "LCG.UKI-SOUTHGRID-RALPP.uk",
-            ],
-            'BannedSites': "LCG.KEK.jp",
-            'SubmitPools': "gLite",
-            'JobTypes': "MCReconstruction_Overlay",
-        },
-        'Arguments': "jobDescription.xml -o LogLevel=verbose",
-        'SoftwarePackages': [
-            "overlayinput.1",
-            "marlin.v0111Prod",
-        ],
-        'DebugLFNs': "",
-        'Status': "Created",
-        'InputDataModule': "DIRAC.WorkloadManagementSystem.Client.InputDataResolution",
-        'BannedSites': "LCG.KEK.jp",
-        'LogLevel': "verbose",
-        'InputSandbox': [
-            "jobDescription.xml",
-            "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/5d3/92f/5d392f5266a796018ab6774ef84cbd31.tar.bz2",
-        ],
-        'SubmitPools': "gLite",
-        'OwnerName': "sailer",
-        'StdOutput': "std.out",
-        'JobType': "MCReconstruction_Overlay",
-        'GridEnv': "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example",
-        'TransformationID': 6326,
-        'DIRACSetup': "ILC-Production",
-        'StdError': "std.err",
-        'IS_PROD': "True",
-        'CPUTime': 300000,
-        'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-        'JobGroup': 0o0006326,
-        'OutputSandbox': [
-            "std.err",
-            "std.out",
-        ],
-        'JobID': 15756436,
-        'Origin': "DIRAC",
-        'VirtualOrganization': "ilc",
-        'ProductionOutputData': [
-            "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/000/yyveyx_o_rec_6326_15.slcio",
-            "/ilc/prod/clic/500gev/yyveyx_o/ILD/DST/00006326/000/yyveyx_o_dst_6326_15.slcio",
-        ],
-        'Site': "ANY",
-                'OwnerGroup': "ilc_prod",
-                'Owner': "sailer",
-                'MaxCPUTime': 300000,
-                'LogFilePath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/000",
-                'InputData': "/ilc/prod/clic/500gev/yyveyx_o/ILD/SIM/00006325/000/yyveyx_o_sim_6325_17.slcio",
-    }
+    ### jdl with single outputdata
+    self.jdl1 = """
+[
+  LogTargetPath = "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/LOG/00006301_10256.tar";
+  Executable = "$DIRACROOT/scripts/dirac-jobexec";
+  TaskID = 10256;
+  SoftwareDistModule = "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation";
+  JobName = "00006301_00010256";
+  Priority = 1;
+  Platform = "x86_64-slc5-gcc43-opt";
+  JobRequirements =
+  [
+    OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+    VirtualOrganization = "ilc";
+    Setup = "ILC-Production";
+    CPUTime = 300000;
+    OwnerGroup = "ilc_prod";
+    Platforms =
+    {
+      "x86_64-slc6-gcc44-opt",
+      "x86_64-slc5-gcc43-opt",
+      "slc5_amd64_gcc43",
+      "Linux_x86_64_glibc-2.12",
+      "Linux_x86_64_glibc-2.5"
+    };
+    UserPriority = 1;
+    Sites =
+    {
+      "LCG.LAPP.fr",
+      "LCG.Freiburg.de",
+      "LCG.Tau.il",
+      "LCG.Weizmann.il",
+      "LCG.IFCA-LCG2.es",
+      "LCG.Bristol.uk",
+      "LCG.CERN.ch",
+      "LCG.Oxford.uk",
+      "LCG.Birmingham.uk",
+      "LCG.UKI-SOUTHGRID-CAM-HEP.uk",
+      "LCG.Bonn.de",
+      "LCG.USC-LCG2.es",
+      "LCG.Brunel.uk",
+      "LCG.NIPNE.ro",
+      "LCG.UKI-NORTHGRID-LIV-HEP.uk",
+      "LCG.DESY-HH.de",
+      "LCG.UKI-LT2-RHUL.uk",
+      "LCG.GRIF.fr",
+      "LCG.IN2P3-CC.fr",
+      "LCG.QMUL.uk",
+      "LCG.Manchester.uk",
+      "LCG.TECHNION.il",
+      "TEST.CERN.ch",
+      "LCG.SCOTGRIDDURHAM.uk",
+      "LCG.Glasgow.uk",
+      "LCG.UKI-LT2-IC-HEP.uk",
+      "LCG.RAL-LCG2.uk",
+      "LCG.Cracow.pl",
+      "LCG.IN2P3-IPNL.fr",
+      "LCG.DESYZN.de",
+      "LCG.UKI-SOUTHGRID-RALPP.uk"
+    };
+    BannedSites =
+    {
+      "OSG.BNL.us",
+      "OSG.PNNL.us",
+      "OSG.Arlington.us",
+      "OSG.FNAL_FERMIGRID.us",
+      "OSG.TTU.us",
+      "LCG.KEK.jp",
+      "OSG.GridUNESP_CENTRAL.br",
+      "OSG.CIT.us",
+      "OSG.UCSDT2.us",
+      "OSG.UConn.us",
+      "OSG.MIT.us",
+      "OSG.SPRACE.br"
+    };
+    SubmitPools = "gLite";
+    JobTypes = "MCSimulation";
+  ];
+  Arguments = "jobDescription.xml -o LogLevel=verbose";
+  SoftwarePackages = "slic.v2r9p8";
+  DebugLFNs = "";
+  Status = "Created";
+  InputDataModule = "DIRAC.WorkloadManagementSystem.Client.InputDataResolution";
+  BannedSites =
+  {
+    "OSG.BNL.us",
+    "OSG.PNNL.us",
+    "OSG.Arlington.us",
+    "OSG.FNAL_FERMIGRID.us",
+    "OSG.TTU.us",
+    "LCG.KEK.jp",
+    "OSG.GridUNESP_CENTRAL.br",
+    "OSG.CIT.us",
+    "OSG.UCSDT2.us",
+    "OSG.UConn.us",
+    "OSG.MIT.us",
+    "OSG.SPRACE.br"
+  };
+  LogLevel = "verbose";
+  InputSandbox =
+  {
+    "jobDescription.xml",
+    "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/042/d64/042d64cb0fe73720cbd114a73506c582.tar.bz2"
+  };
+  SubmitPools = "gLite";
+  OwnerName = "sailer";
+  StdOutput = "std.out";
+  JobType = "MCSimulation";
+  GridEnv = "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example";
+  TransformationID = 6301;
+  DIRACSetup = "ILC-Production";
+  StdError = "std.err";
+  IS_PROD = "True";
+  CPUTime = 300000;
+  OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+  JobGroup = 00006301;
+  OutputSandbox =
+  {
+    "std.err",
+    "std.out"
+  };
+  JobID = 15756456;
+  Origin = "DIRAC";
+  VirtualOrganization = "ilc";
+  ProductionOutputData = "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio";
+  Site = "ANY";
+  OwnerGroup = "ilc_prod";
+  Owner = "sailer";
+  MaxCPUTime = 300000;
+  LogFilePath = "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/LOG/010";
+  InputData = "/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep";
+]
+  """
 
-
-    ### jdl with single outputdata,
-    self.jdl1 = {
-        'LogTargetPath': "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/LOG/00006301_10256.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
-        'TaskID': 10256,
-        'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
-        'JobName': "00006301_00010256",
-        'Priority': 1,
-        'Platform': "x86_64-slc5-gcc43-opt",
-        'JobRequirements': {
-            'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-            'VirtualOrganization': "ilc",
-            'Setup': "ILC-Production",
-            'CPUTime': 300000,
-            'OwnerGroup': "ilc_prod",
-            'Platforms': [
-                "x86_64-slc6-gcc44-opt",
-                "x86_64-slc5-gcc43-opt",
-                "slc5_amd64_gcc43",
-                "Linux_x86_64_glibc-2.12",
-                "Linux_x86_64_glibc-2.5",
-            ],
-            'UserPriority': 1,
-            'Sites': [
-                "LCG.LAPP.fr",
-                "LCG.UKI-SOUTHGRID-RALPP.uk",
-            ],
-            'BannedSites': [
-                "OSG.MIT.us",
-                "OSG.SPRACE.br",
-            ],
-            'SubmitPools': "gLite",
-            'JobTypes': "MCSimulation",
-        },
-        'Arguments': "jobDescription.xml -o LogLevel=verbose",
-        'SoftwarePackages': "slic.v2r9p8",
-        'DebugLFNs': "",
-        'Status': "Created",
-        'InputDataModule': "DIRAC.WorkloadManagementSystem.Client.InputDataResolution",
-        'BannedSites': [
-            "OSG.MIT.us",
-            "OSG.SPRACE.br",
-        ],
-        'LogLevel': "verbose",
-        'InputSandbox': [
-            "jobDescription.xml",
-            "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/042/d64/042d64cb0fe73720cbd114a73506c582.tar.bz2",
-        ],
-        'SubmitPools': "gLite",
-        'OwnerName': "sailer",
-        'StdOutput': "std.out",
-        'JobType': "MCSimulation",
-        'GridEnv': "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example",
-        'TransformationID': 6301,
-        'DIRACSetup': "ILC-Production",
-        'StdError': "std.err",
-        'IS_PROD': "True",
-        'CPUTime': 300000,
-        'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-        'JobGroup': '00006301',
-        'OutputSandbox': [
-            "std.err",
-            "std.out",
-        ],
-        'JobID': 15756456,
-        'Origin': "DIRAC",
-        'VirtualOrganization': "ilc",
-        'ProductionOutputData': "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio",
-        'Site': "ANY",
-                'OwnerGroup': "ilc_prod",
-                'Owner': "sailer",
-                'MaxCPUTime': 300000,
-                'LogFilePath': "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/LOG/010",
-                'InputData': "/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep",
-    }
-
-    self.jdlNoInput = {
-        'LogTargetPath': "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/LOG/00006498_1307.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
-        'TaskID': 1307,
-        'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
-        'JobName': "00006498_00001307",
-        'Priority': 1,
-        'Platform': "x86_64-slc5-gcc43-opt",
-        'JobRequirements': {
-            'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-            'VirtualOrganization': "ilc",
-            'Setup': "ILC-Production",
-            'CPUTime': 300000,
-            'OwnerGroup': "ilc_prod",
-            'Platforms': [
-                "x86_64-slc6-gcc44-opt",
-                "x86_64-slc5-gcc43-opt",
-                "slc5_amd64_gcc43",
-                "Linux_x86_64_glibc-2.12",
-                "Linux_x86_64_glibc-2.5",
-            ],
-            'UserPriority': 1,
-            'BannedSites': "LCG.KEK.jp",
-            'SubmitPools': "gLite",
-            'JobTypes': "MCGeneration",
-        },
-        'Arguments': "jobDescription.xml -o LogLevel=verbose",
-        'SoftwarePackages': "whizard.SM_V57",
-        'DebugLFNs': "",
-        'Status': "Created",
-        'InputDataModule': "DIRAC.WorkloadManagementSystem.Client.InputDataResolution",
-        'BannedSites': "LCG.KEK.jp",
-        'LogLevel': "verbose",
-        'InputSandbox': [
-            "jobDescription.xml",
-            "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/b2a/d98/b2ad98c3e240361a4253c4bb277be478.tar.bz2",
-        ],
-        'SubmitPools': "gLite",
-        'OwnerName': "sailer",
-        'StdOutput': "std.out",
-        'JobType': "MCGeneration",
-        'GridEnv': "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example",
-        'TransformationID': 6498,
-        'DIRACSetup': "ILC-Production",
-        'StdError': "std.err",
-        'IS_PROD': "True",
-        'CPUTime': 300000,
-        'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-        'JobGroup': '00006498',
-        'OutputSandbox': [
-            "std.err",
-            "std.out",
-        ],
-        'JobID': 15762268,
-        'Origin': "DIRAC",
-        'VirtualOrganization': "ilc",
-        'ProductionOutputData': "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/001/ea_qqqqnu_gen_6498_1307.stdhep",
-        'Site': "ANY",
-        'OwnerGroup': "ilc_prod",
-        'Owner': "sailer",
-        'MaxCPUTime': 300000,
-        'LogFilePath': "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/LOG/001",
-        'InputData': "",
-    }
+    self.jdlNoInput = """
+[
+  LogTargetPath = "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/LOG/00006498_1307.tar";
+  Executable = "$DIRACROOT/scripts/dirac-jobexec";
+  TaskID = 1307;
+  SoftwareDistModule = "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation";
+  JobName = "00006498_00001307";
+  Priority = 1;
+  Platform = "x86_64-slc5-gcc43-opt";
+  JobRequirements =
+  [
+    OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+    VirtualOrganization = "ilc";
+    Setup = "ILC-Production";
+    CPUTime = 300000;
+    OwnerGroup = "ilc_prod";
+    Platforms =
+    {
+      "x86_64-slc6-gcc44-opt",
+      "x86_64-slc5-gcc43-opt",
+      "slc5_amd64_gcc43",
+      "Linux_x86_64_glibc-2.12",
+      "Linux_x86_64_glibc-2.5"
+    };
+    UserPriority = 1;
+    BannedSites = "LCG.KEK.jp";
+    SubmitPools = "gLite";
+    JobTypes = "MCGeneration";
+  ];
+  Arguments = "jobDescription.xml -o LogLevel=verbose";
+  SoftwarePackages = "whizard.SM_V57";
+  DebugLFNs = "";
+  Status = "Created";
+  InputDataModule = "DIRAC.WorkloadManagementSystem.Client.InputDataResolution";
+  BannedSites = "LCG.KEK.jp";
+  LogLevel = "verbose";
+  InputSandbox =
+  {
+    "jobDescription.xml",
+    "SB:ProductionSandboxSE2|/SandBox/i/ilc_prod/b2a/d98/b2ad98c3e240361a4253c4bb277be478.tar.bz2"
+  };
+  SubmitPools = "gLite";
+  OwnerName = "sailer";
+  StdOutput = "std.out";
+  JobType = "MCGeneration";
+  GridEnv = "/cvmfs/grid.cern.ch/emi-ui-3.7.3-1_sl6v2/etc/profile.d/setup-emi3-ui-example";
+  TransformationID = 6498;
+  DIRACSetup = "ILC-Production";
+  StdError = "std.err";
+  IS_PROD = "True";
+  CPUTime = 300000;
+  OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer";
+  JobGroup = 00006498;
+  OutputSandbox =
+  {
+    "std.err",
+    "std.out"
+  };
+  JobID = 15762268;
+  Origin = "DIRAC";
+  VirtualOrganization = "ilc";
+  ProductionOutputData = "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/001/ea_qqqqnu_gen_6498_1307.stdhep";
+  Site = "ANY";
+  OwnerGroup = "ilc_prod";
+  Owner = "sailer";
+  MaxCPUTime = 300000;
+  LogFilePath = "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/LOG/001";
+  InputData = "";
+]
+  """
 
   def tearDown(self):
     pass
@@ -481,7 +642,7 @@ class TestJI(unittest.TestCase):
     ## no request
     reqMock = Mock()
     reqMock.Status = "Done"
-    reqClient = Mock(name="ReqMock")
+    reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
     reqClient.readRequestsForJobs.return_value = S_OK({"Successful": {}})
     self.jbi.jobID = 1234
     self.jbi.checkRequests(reqClient)
@@ -490,23 +651,41 @@ class TestJI(unittest.TestCase):
     ## no pending request
     reqMock = Mock()
     reqMock.Status = "Done"
-    reqClient = Mock(name="ReqMock")
+    reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
     reqClient.readRequestsForJobs.return_value = S_OK({"Successful": {1234: reqMock}})
     self.jbi.jobID = 1234
     self.jbi.checkRequests(reqClient)
     self.assertFalse(self.jbi.pendingRequest)
 
-  def test_checkFileExistence(self):
-    """Transformation.Utilities.JobInfo.checkFileExistance......................................."""
+    ## pending request
+    reqMock = Mock()
+    reqMock.Status = "Waiting"
+    reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
+    reqClient.readRequestsForJobs.return_value = S_OK({"Successful": {1234: reqMock}})
+    self.jbi.jobID = 1234
+    self.jbi.checkRequests(reqClient)
+    self.assertTrue(self.jbi.pendingRequest)
+
+    ## Failed to get Request
+    reqMock = Mock()
+    reqMock.Status = "Waiting"
+    reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
+    reqClient.readRequestsForJobs.return_value = S_ERROR("Request Denied")
+    with self.assertRaises(RuntimeError) as cme:
+      self.jbi.checkRequests(reqClient)
+    self.assertIn("Failed to check Requests", str(cme.exception))
+
+  def test_checkFileExistance(self):
+    """ILCTransformation.Utilities.JobInfo.checkFileExistance......................................."""
+    fcMock = Mock(name="fcMock", spec=DIRAC.Resources.Catalog.FileCatalogClient.FileCatalogClient)
+
     # input and output files
-    repStatus = {'inputFile1': True, 'inputFile2': False, 'outputFile1': False, 'outputFile2': True}
-    self.jbi.inputFiles = ['inputFile1', 'inputFile2', 'inputFile3']
-    self.jbi.outputFiles = ['outputFile1', 'outputFile2', 'unknownFile']
-    self.jbi.checkFileExistence(repStatus)
-    self.assertTrue(self.jbi.inputFilesExist[0])
-    self.assertFalse(self.jbi.inputFilesExist[1])
-    self.assertFalse(self.jbi.inputFilesExist[2])
-    self.assertEqual(self.jbi.inputFileStatus, ["Exists", "Missing", "Unknown"])
+    repStatus = {"Successful": {"inputFile": True, "outputFile1": False, "outputFile2": True}}
+    self.jbi.inputFile = "inputFile"
+    self.jbi.outputFiles = ["outputFile1", "outputFile2", "unknownFile"]
+    fcMock.exists = Mock(return_value=S_OK(repStatus))
+    self.jbi.checkFileExistance(fcMock)
+    self.assertTrue(self.jbi.inputFileExists)
     self.assertEqual(self.jbi.outputFileStatus, ["Missing", "Exists", "Unknown"])
 
     # just output files
@@ -514,7 +693,6 @@ class TestJI(unittest.TestCase):
     repStatus = {"Successful": {"inputFile": True, "outputFile1": False, "outputFile2": True}}
     self.jbi.inputFile = ""
     self.jbi.outputFiles = ["outputFile1", "outputFile2", "unknownFile"]
-    fcMock = Mock()
     fcMock.exists.return_value = S_OK(repStatus)
     self.jbi.checkFileExistance(fcMock)
     self.assertEqual(self.jbi.outputFileStatus, ["Missing", "Exists", "Unknown"])
@@ -524,11 +702,11 @@ class TestJI(unittest.TestCase):
     repStatus = {"Successful": {"inputFile": True, "outputFile1": False, "outputFile2": True}}
     self.jbi.inputFile = ""
     self.jbi.outputFiles = ["outputFile1", "outputFile2", "unknownFile"]
-    fcMock = Mock()
     fcMock.exists.return_value = S_ERROR("No FC")
     with self.assertRaises(RuntimeError) as cme:
       self.jbi.checkFileExistance(fcMock)
     self.assertIn("Failed to check existance: No FC", str(cme.exception))
+
 
   def test__str__(self):
     """ILCTransformation.Utilities.JobInfo.__str__.................................................."""

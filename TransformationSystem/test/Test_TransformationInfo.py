@@ -8,6 +8,7 @@ from collections import OrderedDict
 from mock import MagicMock as Mock, patch
 
 from DIRAC import S_OK, S_ERROR, gLogger
+import DIRAC
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
@@ -22,10 +23,10 @@ class TestTI(unittest.TestCase):
 
   def setUp(self):
 
-    tMock = Mock(name="transMock")
+    tMock = Mock(name="transMock", spec=DIRAC.TransformationSystem.Client.TransformationClient.TransformationClient)
     tMock.setFileStatusForTransformation = Mock(name="setFileStat")
-    fcMock = Mock(name="fcMock")
-    jmMock = Mock(name="jobMonMock")
+    fcMock = Mock(name="fcMock", spec=DIRAC.Resources.Catalog.FileCatalogClient.FileCatalogClient)
+    jmMock = Mock(name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
 
     self.tri = TransformationInfo(transformationID=1234,
                                   transName="TestTrans",
@@ -74,7 +75,7 @@ class TestTI(unittest.TestCase):
 
   def test_setJob_Status(self):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo setJob functions..............."""
-    job = Mock()
+    job = Mock(spec=JobInfo)
     job.jobID = 5678
     self.tri.enabled = False
     self.tri._TransformationInfo__setTaskStatus = Mock()
@@ -126,7 +127,7 @@ class TestTI(unittest.TestCase):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo setInput functions............."""
     self.tri._TransformationInfo__setInputStatus = Mock()
     self.tri.enabled = False
-    job = Mock()
+    job = Mock(spec=JobInfo)
 
     self.tri._TransformationInfo__setInputStatus.reset_mock()
     self.tri.setInputUnused(job)
@@ -142,7 +143,8 @@ class TestTI(unittest.TestCase):
 
   def test_setInputStatus(self):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo setInputStatus................."""
-    job = Mock()
+    job = Mock(spec=JobInfo)
+    job.inputFile = "dummylfn"
     status = "Unused"
 
     self.tri.enabled = False
@@ -159,7 +161,7 @@ class TestTI(unittest.TestCase):
 
   def test_setTaskStatus(self):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo setTaskStatus.................."""
-    job = Mock()
+    job = Mock(spec=JobInfo)
     job.taskID = 1234
     self.tri.tClient.setTaskStatus = Mock(return_value=S_OK("Done"))
     self.tri._TransformationInfo__setTaskStatus(job, "Processed")
@@ -183,7 +185,9 @@ class TestTI(unittest.TestCase):
     jobDBMock.return_value = dbMock
     logDBMock = Mock()
     logDBMock.return_value = logMock
+#    with patch("DIRAC.WorkloadManagementSystem.DB.JobDB", new=Mock() ):
     with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
+      #      with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB", new=Mock() ):
       with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
         self.tri.enabled = False
         res = self.tri._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
@@ -261,12 +265,11 @@ class TestTI(unittest.TestCase):
     descList = self.tri._TransformationInfo__findAllDescendants(lfnList=[])
     self.assertEqual(descList, [])
 
-  @patch("DIRAC.DataManagementSystem.Client.DataManager.DataManager", new=Mock())
   def test_cleanOutputs(self):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo cleanOutputs..................."""
     descList = ["lfnDD1", "lfnDD2", "lfnD1", "lfnD2"]
 
-    jobInfo = Mock()
+    jobInfo = Mock(spec=JobInfo)
     jobInfo.outputFiles = ["lfn1", "lfn2"]
     jobInfo.outputFileStatus = ["Exists", "Missing"]
 
@@ -281,13 +284,14 @@ class TestTI(unittest.TestCase):
 
     remMock = Mock(name="remmock")
     remMock.removeFile.return_value = S_ERROR("arg")
-    dataMock = Mock(return_value=remMock)
 
     self.tri.enabled = True
     self.tri._TransformationInfo__findAllDescendants = Mock(return_value=descList)
     out = StringIO()
     sys.stdout = out
-    with patch("DIRAC.TransformationSystem.Utilities.TransformationInfo.DataManager", new=dataMock):
+    with patch("DIRAC.TransformationSystem.Utilities.TransformationInfo.DataManager",
+               return_value=remMock,
+               autospec=True):
       with self.assertRaisesRegexp(RuntimeError, "Failed to remove LFNs: arg"):
         self.tri.cleanOutputs(jobInfo)
 
@@ -297,21 +301,22 @@ class TestTI(unittest.TestCase):
                                                        "lfnD3": "SomeReason",
                                                        "lfnDD2": "SomeOtherReason"}})
 
-    dataMock = Mock(return_value=remMock)
     self.tri.enabled = True
-    with patch("DIRAC.TransformationSystem.Utilities.TransformationInfo.DataManager", new=dataMock):
+    with patch("DIRAC.TransformationSystem.Utilities.TransformationInfo.DataManager",
+               autospec=True,
+               return_value=remMock):
       self.tri.cleanOutputs(jobInfo)
     self.assertIn("Successfully removed 2 files", out.getvalue())
 
     ### nothing to remove
-    jobInfo = Mock()
+    jobInfo = Mock(spec=JobInfo)
     jobInfo.outputFiles = []
     self.tri._TransformationInfo__findAllDescendants = Mock(return_value=descList)
     self.tri.cleanOutputs(jobInfo)
     self.tri._TransformationInfo__findAllDescendants.assert_not_called()
 
     ### nothing to remove
-    jobInfo = Mock()
+    jobInfo = Mock(spec=JobInfo)
     jobInfo.outputFiles = ["lfn1", "lfn2"]
     jobInfo.outputFileStatus = ["Missing", "Missing"]
     self.tri._TransformationInfo__findAllDescendants = Mock(return_value=[])

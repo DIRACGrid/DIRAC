@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from mock import MagicMock as Mock, patch
 
+import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.TransformationSystem.Agent.DataRecoveryAgent import DataRecoveryAgent
@@ -25,10 +26,14 @@ class TestDRA(unittest.TestCase):
   @patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.ReqClient", new=Mock())
   def setUp(self):
     self.dra = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
-    self.dra.reqClient = Mock()
-    self.dra.tClient = Mock()
-    self.dra.fcClient = Mock()
-    self.dra.jobMon = Mock()
+    self.dra.reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
+    self.dra.tClient = Mock(
+        name="transMock",
+        spec=DIRAC.TransformationSystem.Client.TransformationClient.TransformationClient)
+    self.dra.fcClient = Mock(name="fcMock", spec=DIRAC.Resources.Catalog.FileCatalogClient.FileCatalogClient)
+    self.dra.jobMon = Mock(
+        name="jobMonMock",
+        spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
     self.dra.printEveryNJobs = 10
 
   def tearDown(self):
@@ -36,7 +41,14 @@ class TestDRA(unittest.TestCase):
 
   def getTestMock(self):
     """create a JobInfo object with mocks"""
-    testJob = Mock(name="jobInfoMock")
+    from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
+    testJob = Mock(name="jobInfoMock", spec=JobInfo)
+    testJob.jobID = 1234567
+    testJob.tType = "testType"
+    testJob.otherTasks = None
+    testJob.inputFileExists = True
+    testJob.status = "Done"
+    testJob.fileStatus = "Assigned"
     testJob.outputFiles = ["/my/stupid/file.lfn", "/my/stupid/file2.lfn"]
     testJob.outputFileStatus = ["Exists", "Exists"]
     testJob.inputFile = "inputfile.lfn"
@@ -111,7 +123,6 @@ class TestDRA(unittest.TestCase):
     """test for DataRecoveryAgent treatProduction skip.............................................."""
     getJobMock = Mock(name="getJobMOck")
     getJobMock.getJobs.return_value = (Mock(name="jobsMock"), 50, 50)
-    tinfoMock = Mock(name="infoMock", return_value=getJobMock)
     self.dra.checkAllJobs = Mock()
     self.dra.jobCache[1234] = (50, 50)
     # catch the printout to check path taken
@@ -124,10 +135,12 @@ class TestDRA(unittest.TestCase):
       self.dra.treatProduction(prodID=1234, transInfoDict=transInfoDict)  # returns None
     self.dra.log.notice.assert_called_with(MatchStringWith("Skipping production 1234"))
 
+
   def test_checkJob(self):
     """test for DataRecoveryAgent checkJob MCGeneration............................................."""
 
-    tInfoMock = Mock(name="tInfoMock")
+    from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+    tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
 
     from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
@@ -163,7 +176,8 @@ class TestDRA(unittest.TestCase):
   def test_checkJob_others(self):
     """test for DataRecoveryAgent checkJob other ProductionTypes ..................................."""
 
-    tInfoMock = Mock(name="tInfoMock")
+    from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+    tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
 
     from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
@@ -576,7 +590,8 @@ class TestDRA(unittest.TestCase):
     ### test with additional task dicts
     out = StringIO()
     sys.stdout = out
-    tInfoMock = Mock(name="tInfoMock")
+    from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+    tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
     mockJobs = dict([(i, self.getTestMock()) for i in xrange(11)])
     mockJobs[2].pendingRequest = True
     mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError("ARGJob1"), None))
