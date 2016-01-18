@@ -1,6 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """
 Utilities to execute a function with a given proxy.
 
@@ -58,29 +55,20 @@ def executeWithUserProxy( fcn ):
 
       # Setup user proxy
       originalUserProxy = os.environ.get( 'X509_USER_PROXY' )
-      if not userDN:
+      if userDN:
+        userDNs = [userDN]
+      else:
         result = getDNForUsername( userName )
         if not result[ 'OK' ]:
           return result
-        userDN = result[ 'Value' ][0]
+        userDNs = result['Value'] # a same user may have more than one DN
       vomsAttr = ''
       if vomsFlag:
         vomsAttr = getVOMSAttributeForGroup( userGroup )
 
-      if vomsAttr:
-        result = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
-                                                        requiredVOMSAttribute = vomsAttr,
-                                                        filePath = proxyFilePath,
-                                                        requiredTimeLeft = 3600,
-                                                        cacheTime = 3600 )
-      else:
-        result = gProxyManager.downloadProxyToFile( userDN, userGroup,
-                                                    filePath = proxyFilePath,
-                                                    requiredTimeLeft = 3600,
-                                                    cacheTime = 3600 )
+      result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
 
       if not result['OK']:
-        gLogger.warn( "Can't download proxy to file", result['Message'] )
         return result
 
       proxyFile = result['Value']
@@ -111,3 +99,27 @@ def executeWithUserProxy( fcn ):
       return fcn( *args, **kwargs )
 
   return wrapped_fcn
+
+
+def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
+  """ do the actual download of the proxy, trying the different DNs
+  """
+  for userDN in userDNs:
+    if vomsAttr:
+      result = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
+                                                      requiredVOMSAttribute = vomsAttr,
+                                                      filePath = proxyFilePath,
+                                                      requiredTimeLeft = 3600,
+                                                      cacheTime = 3600 )
+    else:
+      result = gProxyManager.downloadProxyToFile( userDN, userGroup,
+                                                  filePath = proxyFilePath,
+                                                  requiredTimeLeft = 3600,
+                                                  cacheTime = 3600 )
+
+    if not result['OK']:
+      gLogger.warn( "Can't download proxy of '%s' to file" %userDN, result['Message'] )
+    else:
+      return result
+
+    return S_ERROR("Can't download proxy")
