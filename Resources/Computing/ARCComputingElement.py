@@ -422,22 +422,18 @@ class ARCComputingElement( ComputingElement ):
     gLogger.debug("Working directory for pilot output %s" % workingDirectory)
 
     isItOkay = job.Retrieve( self.usercfg, arc.URL( workingDirectory ), False )
-    if ( isItOkay ):
+    if isItOkay:
+      output = None
+      error  = None
       try:
         with open(outFileName, 'r') as outFile:
           output = outFile.read()
+        os.unlink( outFileName )
+        with open(errFileName, 'r') as errFile:
+          error = errFile.read()
+        os.unlink( errFileName )
       except IOError as e:
         return S_ERROR("Error downloading outputs", repr(e))
-      # if not os.path.isfile(outFileName):
-      #   return S_ERROR("Error downloading outputs - log file %s does not exist." % outFileName)
-      outFile = open( outFileName, 'r' )
-      output = outFile.read()
-      outFile.close()
-      os.unlink( outFileName )
-      errFile = open( errFileName, 'r' )
-      error = errFile.read()
-      errFile.close()
-      os.unlink( errFileName )
       gLogger.debug("Pilot output = %s" % output)
       gLogger.debug("Pilot error = %s" % error)
     else:
