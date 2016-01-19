@@ -423,7 +423,7 @@ class ARCComputingElement( ComputingElement ):
 
     isItOkay = job.Retrieve( self.usercfg, arc.URL( workingDirectory ), False )
     if ( isItOkay ):
-      if !os.path.isfile(outFileName):
+      if not os.path.isfile(outFileName):
         return S_ERROR("Error downloading outputs - log file %s does not exist." % outFileName)
       outFile = open( outFileName, 'r' )
       output = outFile.read()
