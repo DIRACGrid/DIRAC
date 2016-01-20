@@ -243,14 +243,13 @@ class FTSJob( object ):
     if value:
       self.__data__["FailedFiles"] = value
     else:
-      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self
-                                           if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedFiles"] = len( [ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES] )
 
   @property
   def Size( self ):
     """ size getter """
     # if not self.__data__["Size"]:
-    self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+    self.__data__["Size"] = sum( ftsFile.Size for ftsFile in self )
     return self.__data__["Size"]
 
   @Size.setter
@@ -259,14 +258,13 @@ class FTSJob( object ):
     if value:
       self.__data__["Size"] = value
     else:
-      self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+      self.__data__["Size"] = sum( ftsFile.Size for ftsFile in self )
 
   @property
   def FailedSize( self ):
     """ size getter """
     if not self.__data__["FailedSize"]:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self
-                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedSize"] = sum( ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES )
     return self.__data__["FailedSize"]
 
   @FailedSize.setter
@@ -275,8 +273,7 @@ class FTSJob( object ):
     if value:
       self.__data__["FailedSize"] = value
     else:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self
-                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedSize"] = sum( ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES )
 
   @property
   def CreationTime( self ):
@@ -512,7 +509,7 @@ class FTSJob( object ):
         statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
 
     total = sum( statusSummary.values() )
-    completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
+    completed = sum( statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES )
     self.Completeness = 100 * completed / total if total else 0
 
     if not full:
@@ -611,7 +608,7 @@ class FTSJob( object ):
       context = self._fts3context
       self.FTSGUID = fts3.submit( context, job )
 
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error at submission: %s" % e )
 
 
@@ -632,7 +629,7 @@ class FTSJob( object ):
         self._fts3context = fts3.Context( endpoint = self.FTSServer )
       context = self._fts3context
       jobStatusDict = fts3.get_job_status( context, self.FTSGUID, list_files = True )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error getting the job status %s" % e )
 
     self.Status = jobStatusDict['job_state'].capitalize()

@@ -1,6 +1,8 @@
 """ Container for TaskManager plug-ins, to handle the destination of the tasks
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.List import fromChar
@@ -145,6 +147,8 @@ class TaskManagerPlugin( PluginBase ):
     gLogger.debug( "Allowed sites for %s task: %s" % ( jobType, ','.join( allowed ) ) )
 
     # 6. Allowing sites that should be allowed
+    if not self.params['TargetSE'] or self.params['TargetSE'] == 'Unknown':
+      gLogger.warn( "TargetSE is not set: the destination sites list will be incomplete" )
     taskSiteDestination = self._BySE()
   
     for destSite, fromSites in allowed.iteritems():

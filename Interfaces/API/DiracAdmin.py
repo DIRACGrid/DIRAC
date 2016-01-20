@@ -56,12 +56,12 @@ class DiracAdmin( API ):
          >>> print diracAdmin.uploadProxy('lhcb_pilot')
          {'OK': True, 'Value': 0L}
 
-       @param group: DIRAC Group
-       @type job: string
-       @return: S_OK,S_ERROR
+       :param group: DIRAC Group
+       :type job: string
+       :return: S_OK,S_ERROR
 
-       @param permanent: Indefinitely update proxy
-       @type permanent: boolean
+       :param permanent: Indefinitely update proxy
+       :type permanent: boolean
 
     """
     return gProxyManager.uploadProxy( diracGroup = group )
@@ -75,13 +75,13 @@ class DiracAdmin( API ):
          >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
          {'OK': True }
 
-       @param userDN: User DN
-       @type userDN: string
-       @param userGroup: DIRAC Group
-       @type userGroup: string
-       @param persistent: Persistent flag
-       @type persistent: boolean
-       @return: S_OK,S_ERROR
+       :param userDN: User DN
+       :type userDN: string
+       :param userGroup: DIRAC Group
+       :type userGroup: string
+       :param persistent: Persistent flag
+       :type persistent: boolean
+       :return: S_OK,S_ERROR
     """
     return gProxyManager.setPersistency( userDN, userGroup, persistent )
 
@@ -94,13 +94,13 @@ class DiracAdmin( API ):
          >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
          {'OK': True, 'Value' : True/False }
 
-       @param userDN: User DN
-       @type userDN: string
-       @param userGroup: DIRAC Group
-       @type userGroup: string
-       @param requiredTime: Required life time of the uploaded proxy
-       @type requiredTime: boolean
-       @return: S_OK,S_ERROR
+       :param userDN: User DN
+       :type userDN: string
+       :param userGroup: DIRAC Group
+       :type userGroup: string
+       :param requiredTime: Required life time of the uploaded proxy
+       :type requiredTime: boolean
+       :return: S_OK,S_ERROR
     """
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
 
@@ -113,7 +113,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getSiteMask()
          {'OK': True, 'Value': 0L}
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -136,7 +136,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getBannedSites()
          {'OK': True, 'Value': []}
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -178,7 +178,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getSiteSection('LCG.CERN.ch')
          {'OK': True, 'Value':}
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
     """
     gridType = site.split( '.' )[0]
     if not gConfig.getSections( '/Resources/Sites/%s' % ( gridType ) )['OK']:
@@ -198,7 +198,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.addSiteInMask()
          {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     result = self.__checkSiteIsValid( site )
@@ -231,7 +231,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getSiteMaskLogging('LCG.AUVER.fr')
          {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
     """
     result = self.__checkSiteIsValid( site )
     if not result['OK']:
@@ -253,7 +253,7 @@ class DiracAdmin( API ):
         print '\nAll Site Mask Logging Info\n'
 
       siteDict = result['Value']
-      for site, tupleList in siteDict.items():
+      for site, tupleList in siteDict.iteritems():
         if not site:
           print '\n===> %s\n' % site
         for tup in tupleList:
@@ -271,7 +271,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.banSiteFromMask()
          {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     result = self.__checkSiteIsValid( site )
@@ -318,7 +318,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.clearMask()
          {'OK': True, 'Value':''}
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -335,7 +335,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getServicePorts()
          {'OK': True, 'Value':''}
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     if not setup:
@@ -394,7 +394,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getProxy()
          {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     return gProxyManager.downloadProxy( userDN, userGroup, limited = limited,
@@ -410,7 +410,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getVOMSProxy()
          {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
     return gProxyManager.downloadVOMSProxy( userDN, userGroup, limited = limited,
@@ -427,7 +427,7 @@ class DiracAdmin( API ):
          >>> print diracAdmin.getVOMSProxy()
          {'OK': True, 'Value': }
 
-       @return: S_OK,S_ERROR
+       :return: S_OK,S_ERROR
 
     """
 
@@ -443,20 +443,20 @@ class DiracAdmin( API ):
          >>> print dirac.reset(12345)
          {'OK': True, 'Value': [12345]}
 
-       @param job: JobID
-       @type job: integer or list of integers
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or list of integers
+       :return: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
+    if isinstance( jobID, basestring ):
       try:
         jobID = int( jobID )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
-    elif type( jobID ) == type( [] ):
+    elif isinstance( jobID, list ):
       try:
         jobID = [int( job ) for job in jobID]
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False )
@@ -472,9 +472,9 @@ class DiracAdmin( API ):
          >>> print dirac.getJobPilotOutput(12345)
          {'OK': True, StdOut:'',StdError:''}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :return: S_OK,S_ERROR
     """
     if not directory:
       directory = self.currentDir
@@ -499,18 +499,16 @@ class DiracAdmin( API ):
     outputs = result['Value']
     if outputs.has_key( 'StdOut' ):
       stdout = '%s/std.out' % ( outputPath )
-      fopen = open( stdout, 'w' )
-      fopen.write( outputs['StdOut'] )
-      fopen.close()
+      with open( stdout, 'w' ) as fopen:
+        fopen.write( outputs['StdOut'] )
       self.log.verbose( 'Standard output written to %s' % ( stdout ) )
     else:
       self.log.warn( 'No standard output returned' )
 
     if outputs.has_key( 'StdError' ):
       stderr = '%s/std.err' % ( outputPath )
-      fopen = open( stderr, 'w' )
-      fopen.write( outputs['StdError'] )
-      fopen.close()
+      with open( stderr, 'w' ) as fopen:
+        fopen.write( outputs['StdError'] )
       self.log.verbose( 'Standard error written to %s' % ( stderr ) )
     else:
       self.log.warn( 'No standard error returned' )
@@ -525,11 +523,11 @@ class DiracAdmin( API ):
          >>> print dirac.getJobPilotOutput(12345)
          {'OK': True, 'Value': {}}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     if not directory:
@@ -559,18 +557,16 @@ class DiracAdmin( API ):
     outputs = result['Value']
     if outputs.has_key( 'StdOut' ):
       stdout = '%s/std.out' % ( outputPath )
-      fopen = open( stdout, 'w' )
-      fopen.write( outputs['StdOut'] )
-      fopen.close()
+      with open( stdout, 'w' ) as fopen:
+        fopen.write( outputs['StdOut'] )
       self.log.info( 'Standard output written to %s' % ( stdout ) )
     else:
       self.log.warn( 'No standard output returned' )
 
     if outputs.has_key( 'StdErr' ):
       stderr = '%s/std.err' % ( outputPath )
-      fopen = open( stderr, 'w' )
-      fopen.write( outputs['StdErr'] )
-      fopen.close()
+      with open( stderr, 'w' ) as fopen:
+        fopen.write( outputs['StdErr'] )
       self.log.info( 'Standard error written to %s' % ( stderr ) )
     else:
       self.log.warn( 'No standard error returned' )
@@ -585,11 +581,11 @@ class DiracAdmin( API ):
          >>> print dirac.getPilotInfo(12345)
          {'OK': True, 'Value': {}}
 
-       @param gridReference: Pilot Job Reference
-       @type gridReference: string
-       @return: S_OK,S_ERROR
+       :param gridReference: Pilot Job Reference
+       :type gridReference: string
+       :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -603,10 +599,10 @@ class DiracAdmin( API ):
          >>> print dirac.getPilotInfo(12345)
          {'OK': True, 'Value': {}}
 
-       @param gridReference: Pilot Job Reference
-       @return: S_OK,S_ERROR
+       :param gridReference: Pilot Job Reference
+       :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -620,9 +616,9 @@ class DiracAdmin( API ):
          >>> print dirac.getPilotLoggingInfo(12345)
          {'OK': True, 'Value': {"The output of the command"}}
 
-       @param gridReference: Gridp pilot job reference Id
-       @type gridReference: string
-       @return: S_OK,S_ERROR
+       :param gridReference: Gridp pilot job reference Id
+       :type gridReference: string
+       :return: S_OK,S_ERROR
     """
     if type( gridReference ) not in types.StringTypes:
       return self._errorReport( 'Expected string for pilot reference' )
@@ -638,15 +634,15 @@ class DiracAdmin( API ):
          >>> print dirac.getJobPilots()
          {'OK': True, 'Value': {PilotID:{StatusDict}}}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :return: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
+    if isinstance( jobID, basestring ):
       try:
         jobID = int( jobID )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -663,9 +659,9 @@ class DiracAdmin( API ):
          >>> print dirac.getPilotSummary()
          {'OK': True, 'Value': {CE:{Status:Count}}}
 
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
+       :param job: JobID
+       :type job: integer or string
+       :return: S_OK,S_ERROR
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.getPilotSummary( startDate, endDate )
@@ -675,7 +671,7 @@ class DiracAdmin( API ):
     ceDict = result['Value']
     headers = 'CE'.ljust( 28 )
     i = 0
-    for ce, summary in ceDict.items():
+    for ce, summary in ceDict.iteritems():
       states = summary.keys()
       if len( states ) > i:
         i = len( states )
@@ -684,7 +680,7 @@ class DiracAdmin( API ):
       headers += 'Status'.ljust( 12 ) + 'Count'.ljust( 12 )
     print headers
 
-    for ce, summary in ceDict.items():
+    for ce, summary in ceDict.iteritems():
       line = ce.ljust( 28 )
       states = summary.keys()
       states.sort()
@@ -718,17 +714,17 @@ class DiracAdmin( API ):
                'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
 
     conditions = {}
-    for key, value in options.items():
+    for key, value in options.iteritems():
       if value:
         try:
           conditions[key] = str( value )
-        except Exception, x:
+        except Exception as x:
           return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
     try:
       requestStart = int( requestStart )
       limit = int( limit )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected integer for %s field' % limit )
 
     self.log.verbose( 'Will select requests with the following conditions' )
@@ -741,7 +737,7 @@ class DiracAdmin( API ):
 
     requestIDs = result['Value']
     conds = []
-    for key, value in conditions.items():
+    for key, value in conditions.iteritems():
       if value:
         conds.append( '%s = %s' % ( key, value ) )
     self.log.verbose( '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ),
@@ -792,7 +788,7 @@ class DiracAdmin( API ):
       gLogger.info( infoStr )
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
       gLogger.info( infoStr )
-    except Exception, x:
+    except Exception as x:
       errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % ( x )
       gLogger.exception( errStr )
 
@@ -802,7 +798,7 @@ class DiracAdmin( API ):
       gLogger.info( infoStr )
       infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
       gLogger.info( infoStr )
-    except Exception, x:
+    except Exception as x:
       errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( x )
       gLogger.warn( errStr )
       try:
@@ -811,7 +807,7 @@ class DiracAdmin( API ):
         gLogger.info( infoStr )
         infoStr = "The version of gfal is %s" % gfal.gfal_version()
         gLogger.info( infoStr )
-      except Exception, x:
+      except Exception as x:
         errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % ( x )
         gLogger.exception( errStr )
 
@@ -853,7 +849,7 @@ class DiracAdmin( API ):
     if printOutput:
       print '\nSummary of protocols for StorageElements at site %s' % site
       print '\nStorageElement'.ljust( 30 ) + 'ProtocolsList'.ljust( 30 ) + '\n'
-      for se, protocols in seInfo.items():
+      for se, protocols in seInfo.iteritems():
         print se.ljust( 30 ) + ', '.join( protocols ).ljust( 30 )
 
     return S_OK( seInfo )

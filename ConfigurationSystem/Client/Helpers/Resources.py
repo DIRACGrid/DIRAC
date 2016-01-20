@@ -6,7 +6,7 @@ from distutils.version import LooseVersion
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-from DIRAC.Core.Utilities.List                          import uniqueElements
+from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
 
 
 gBaseResourcesSection = "/Resources"
@@ -135,18 +135,29 @@ def getStorageElementOptions( seName ):
 def getQueue( site, ce, queue ):
   """ Get parameters of the specified queue
   """
+  Tags = []
   grid = site.split( '.' )[0]
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
   if not result['OK']:
     return result
   resultDict = result['Value']
+  ceTags = resultDict.get( 'Tag' )
+  if ceTags:
+    Tags = fromChar( ceTags )
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
   if not result['OK']:
     return result
   resultDict.update( result['Value'] )
+  queueTags = resultDict.get( 'Tag' )
+  if queueTags:
+    queueTags = fromChar( queueTags )
+    Tags = list( set( Tags + queueTags ) )
+  if Tags:
+    resultDict['Tag'] = Tags
   resultDict['Queue'] = queue
-
   return S_OK( resultDict )
+
+
 
 def getQueues( siteList = None, ceList = None, ceTypeList = None, community = None, mode = None ):
   """ Get CE/queue options according to the specified selection
@@ -215,7 +226,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list
   """
-  if type( originalPlatforms ) == type( ' ' ):
+  if isinstance( originalPlatforms, basestring ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )
@@ -226,7 +237,7 @@ def getCompatiblePlatforms( originalPlatforms ):
   if not ( result['OK'] and result['Value'] ):
     return S_ERROR( "OS compatibility info not found" )
 
-  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  platformsDict = dict( ( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems() )
   for k, v in platformsDict.iteritems():
     if k not in v:
       v.append( k )
@@ -253,7 +264,7 @@ def getDIRACPlatform( OS ):
   if not ( result['OK'] and result['Value'] ):
     return S_ERROR( "OS compatibility info not found" )
 
-  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  platformsDict = dict( ( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems() )
   for k, v in platformsDict.iteritems():
     if k not in v:
       v.append( k )

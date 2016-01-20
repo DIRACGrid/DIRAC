@@ -1,8 +1,7 @@
-# $HeadURL$
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
 
-   The LHCb distributed data production and analysis system.
+   The distributed data production and analysis system of LHCb and other VOs.
 
    DIRAC is a software framework for distributed computing which
    allows to integrate various computing resources in a single
@@ -76,7 +75,7 @@ import sys, os
 # Define Version
 
 majorVersion = 6
-minorVersion = 13
+minorVersion = 15
 patchLevel = 0
 preVersion = 0
 
@@ -120,10 +119,8 @@ import DIRAC.Core.Utilities.ExitCallback as ExitCallback
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.DErrno import DError
 
-#Logger
+# Logger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 #Configuration client
@@ -139,6 +136,34 @@ else:
   _siteName = 'DIRAC.Client.local'
 
 __siteName = False
+
+
+
+# # Update DErrno with the extensions errors
+# from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+# from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+# allExtensions = CSGlobals.getCSExtensions()
+#
+# # Update for each extension. Careful to conflict :-)
+# for extension in allExtensions:
+#   ol = ObjectLoader( baseModules = ["%sDIRAC" % extension] )
+#   extraErrorModule = ol.loadModule( 'Core.Utilities.DErrno' )
+#   if extraErrorModule['OK']:
+#     extraErrorModule = extraErrorModule['Value']
+#
+#     # The next 3 dictionary MUST be present for consistency
+#
+#     # Global name of errors
+#     DErrno.__dict__.update( extraErrorModule.extra_dErrName )
+#     # Dictionary with the error codes
+#     DErrno.dErrorCode.update( extraErrorModule.extra_dErrorCode )
+#     # Error description string
+#     DErrno.dStrError.update( extraErrorModule.extra_dStrError )
+#
+#     # extra_compatErrorString is optional
+#     for err in getattr( extraErrorModule, 'extra_compatErrorString', [] ) :
+#       DErrno.compatErrorString.setdefault( err, [] ).extend( extraErrorModule.extra_compatErrorString[err] )
+
 
 def siteName():
   """

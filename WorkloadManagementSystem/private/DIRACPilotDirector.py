@@ -19,11 +19,10 @@ import os, sys, tempfile, shutil, time, base64, bz2
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-from DIRAC.Resources.Computing.ComputingElement import getResourceDict
-from DIRAC.Core.Security import CS
+from DIRAC.Core.Security                                  import CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC                                                import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.DictCache                       import DictCache
 
 ERROR_CE         = 'No CE available'
 ERROR_JDL        = 'Could not create Pilot script'
@@ -34,6 +33,29 @@ COMPUTING_ELEMENTS = []
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 50
 MAX_NUMBER_JOBS = 10000
+
+def getResourceDict( ceName = None ):
+  """Look into LocalSite for Resource Requirements
+  """
+  ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
+  if not ret['OK']:
+    resourceDict = {}
+  else:
+    resourceDict = dict( ret['Value'] )
+
+  # if a CE Name is given, check the corresponding section
+  if ceName:
+    ret = gConfig.getOptionsDict( '/LocalSite/%s/ResourceDict' % ceName )
+    if ret['OK']:
+      resourceDict.update( dict( ret['Value'] ) )
+
+  # now add some defaults
+  resourceDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'None' )
+  if not 'CPUTime' in resourceDict:
+    from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
+    resourceDict['CPUTime'] = gConfig.getValue( '/LocalSite/CPUTime', maxCPUSegments[-1] )
+
+  return resourceDict
 
 class DIRACPilotDirector(PilotDirector):
   """
@@ -181,20 +203,6 @@ class DIRACPilotDirector(PilotDirector):
 
       ceConfigDict = self.computingElementDict[CE]
 
-      if 'ClientPlatform' in ceConfigDict:
-        pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
-
-      if 'SharedArea' in ceConfigDict:
-        pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
-
-#       if 'CPUScalingFactor' in ceConfigDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
-#
-#       if 'CPUNormalizationFactor' in ceConfigDict:
-#         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
-
-        self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
-
       httpProxy = ''
       if 'HttpProxy' in ceConfigDict:
         httpProxy = ceConfigDict['HttpProxy']
@@ -306,7 +314,7 @@ try:
   for key in os.environ.keys():
     print key + '=' + os.environ[key]
   print '==========================================================='
-except Exception, x:
+except Exception as x:
   print >> sys.stderr, x
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"

@@ -3,6 +3,7 @@
 """
 Do the initial installation and configuration of a DIRAC component
 """
+
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
@@ -10,10 +11,9 @@ from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC import exit as DIRACexit
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+import DIRAC.FrameworkSystem.Client.ComponentInstaller as gComponentInstaller
 
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 
 overwrite = False
 def setOverwrite( opVal ):
@@ -49,7 +49,7 @@ Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
 if len( args ) == 1:
-  args = args.split( '/' )
+  args = args[0].split( '/' )
 
 if len( args ) != 2:
   Script.showHelp()
@@ -59,7 +59,7 @@ cType = None
 system = args[0]
 component = args[1]
 
-result = InstallTools.getSoftwareComponents( getCSExtensions() )
+result = gComponentInstaller.getSoftwareComponents( getCSExtensions() )
 if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
@@ -76,16 +76,16 @@ if not cType:
   DIRACexit( 1 )
 
 if module:
-  result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, module,
+  result = gComponentInstaller.addDefaultOptionsToCS( gConfig, cType, system, module,
                                                getCSExtensions(),
                                                overwrite = overwrite )
-  result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, component,
+  result = gComponentInstaller.addDefaultOptionsToCS( gConfig, cType, system, component,
                                                getCSExtensions(),
                                                specialOptions = specialOptions,
                                                overwrite = overwrite,
                                                addDefaultOptions = False )
 else:
-  result = InstallTools.addDefaultOptionsToCS( gConfig, cType, system, component,
+  result = gComponentInstaller.addDefaultOptionsToCS( gConfig, cType, system, component,
                                                getCSExtensions(),
                                                specialOptions = specialOptions,
                                                overwrite = overwrite )
@@ -94,13 +94,13 @@ if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
 else:
-  result = InstallTools.installComponent( cType, system, component, getCSExtensions(), module )
+  result = gComponentInstaller.installComponent( cType, system, component, getCSExtensions(), module )
   if not result[ 'OK' ]:
     gLogger.error( result[ 'Message' ] )
     DIRACexit( 1 )
   else:
     gLogger.notice( 'Successfully installed component %s in %s system, now setting it up' % ( component, system ) )
-    result = InstallTools.setupComponent( cType, system, component, getCSExtensions(), module )
+    result = gComponentInstaller.setupComponent( cType, system, component, getCSExtensions(), module )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       DIRACexit( 1 )

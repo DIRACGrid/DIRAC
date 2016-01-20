@@ -26,7 +26,6 @@ __RCSID__ = "$Id$"
 
 import re
 import os
-import types
 import urllib
 import StringIO
 
@@ -105,31 +104,31 @@ class Job( API ):
 
        These can be either:
 
-        - Submission of a python or shell script to DIRAC
-           - Can be inline scripts e.g. C{'/bin/ls'}
-           - Scripts as executables e.g. python or shell script file
+       - Submission of a python or shell script to DIRAC
+          - Can be inline scripts e.g. C{'/bin/ls'}
+          - Scripts as executables e.g. python or shell script file
 
        Example usage:
 
        >>> job = Job()
        >>> job.setExecutable('myScript.py')
 
-       @param executable: Executable
-       @type executable: string
-       @param arguments: Optional arguments to executable
-       @type arguments: string
-       @param logFile: Optional log file name
-       @type logFile: string
-       @param modulesList: Optional list of modules (to be used mostly when extending this method)
-       @type modulesList: list
-       @param parameters: Optional list of parameters (to be used mostly when extending this method)
-       @type parameters: list of tuples
-       @param paramValues: Optional list of parameters values (to be used mostly when extending this method)
-       @type parameters: list of tuples
+       :param executable: Executable
+       :type executable: string
+       :param arguments: Optional arguments to executable
+       :type arguments: string
+       :param logFile: Optional log file name
+       :type logFile: string
+       :param modulesList: Optional list of modules (to be used mostly when extending this method)
+       :type modulesList: list
+       :param parameters: Optional list of parameters (to be used mostly when extending this method)
+       :type parameters: list of tuples
+       :param paramValues: Optional list of parameters values (to be used mostly when extending this method)
+       :type parameters: list of tuples
     """
     kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
-    if not type( executable ) == type( ' ' ) or not type( arguments ) == type( ' ' ) or \
-       not type( logFile ) == type( ' ' ):
+    if not isinstance( executable, basestring ) or not isinstance( arguments, basestring ) or \
+       not isinstance( logFile, basestring ):
       return self._reportError( 'Expected strings for executable and arguments', **kwargs )
 
     if os.path.exists( executable ):
@@ -144,7 +143,7 @@ class Job( API ):
     stepName = 'RunScriptStep%s' % ( self.stepCount )
 
     if logFile:
-      if type( logFile ) == type( ' ' ):
+      if isinstance( logFile, basestring ):
         logName = str(logFile)
     else:
       logName = "Script%s_%s" %( self.stepCount, logName )
@@ -188,7 +187,7 @@ class Job( API ):
        :type jobName: string
     """
     kwargs = {'jobname':jobName}
-    if not type( jobName ) == type( ' ' ):
+    if not isinstance( jobName, basestring ):
       return self._reportError( 'Expected strings for job name', **kwargs )
     else:
       self.workflow.setName( jobName )
@@ -225,7 +224,7 @@ class Job( API ):
       description = 'Input sandbox file list'
       self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
       #self.sandboxFiles=resolvedFiles
-    elif type( files ) == type( " " ):
+    elif isinstance( files, basestring ):
       resolvedFiles = self._resolveInputSandbox( [files] )
       fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file'
@@ -260,7 +259,7 @@ class Job( API ):
       resolvedFiles = self._resolveInputSandbox( files )
       self.parametric['InputSandbox'] = resolvedFiles
       #self.sandboxFiles=resolvedFiles
-    elif type( files ) == type( " " ):
+    elif isinstance( files, basestring ):
       if not files.lower().count( "lfn:" ):
         return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( [files] )
@@ -288,11 +287,11 @@ class Job( API ):
        :type files: Single string or list of strings ['','']
 
     """
-    if type( files ) == list and len( files ):
+    if isinstance( files, list ) and files:
       fileList = ';'.join( files )
       description = 'Output sandbox file list'
       self._addParameter( self.workflow, 'OutputSandbox', 'JDL', fileList, description )
-    elif type( files ) == type( " " ):
+    elif isinstance( files, basestring ):
       description = 'Output sandbox file'
       self._addParameter( self.workflow, 'OutputSandbox', 'JDL', files, description )
     else:
@@ -315,14 +314,14 @@ class Job( API ):
        :param lfns: Logical File Names
        :type lfns: Single LFN string or list of LFNs
     """
-    if type( lfns ) == list and len( lfns ):
+    if isinstance( lfns, list ) and lfns :
       for i in xrange( len( lfns ) ):
         lfns[i] = lfns[i].replace( 'LFN:', '' )
       inputData = ['LFN:' + x for x in lfns ]
       inputDataStr = ';'.join( inputData )
       description = 'List of input data specified by LFNs'
       self._addParameter( self.workflow, 'InputData', 'JDL', inputDataStr, description )
-    elif type( lfns ) == type( ' ' ):  #single LFN
+    elif isinstance( lfns, basestring ):  # single LFN
       description = 'Input data specified by LFN'
       self._addParameter( self.workflow, 'InputData', 'JDL', lfns, description )
     else:
@@ -345,7 +344,7 @@ class Job( API ):
        :param lfns: Logical File Names
        :type lfns: Single LFN string or list of LFNs
     """
-    if type( lfns ) == list and len( lfns ):
+    if isinstance( lfns, list ) and lfns:
       for i in xrange( len( lfns ) ):
         if type( lfns[i] ) == list and len( lfns[i] ):
           for k in xrange( len( lfns[i] ) ):
@@ -353,7 +352,7 @@ class Job( API ):
         else:
           lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
       self.parametric['InputData'] = lfns
-    elif type( lfns ) == type( ' ' ):  #single LFN
+    elif isinstance( lfns, basestring ):  # single LFN
       self.parametric['InputData'] = lfns
     else:
       kwargs = {'lfns':lfns}
@@ -361,7 +360,7 @@ class Job( API ):
 
     return S_OK()
 
-  #############################################################################  
+  #############################################################################
   def setGenericParametricInput( self, inputlist ):
     """ Helper function
 
@@ -447,16 +446,16 @@ class Job( API ):
                           Element to store data or files, e.g. CERN-tape
        :type outputSE: string or list
        :type outputPath: string
-  
+
     """
     if outputSE == None:
       outputSE = []
     kwargs = {'lfns':lfns, 'OutputSE':outputSE, 'OutputPath':outputPath}
-    if type( lfns ) == list and len( lfns ):
+    if isinstance( lfns, list ) and lfns:
       outputDataStr = ';'.join( lfns )
       description = 'List of output data files'
       self._addParameter( self.workflow, 'OutputData', 'JDL', outputDataStr, description )
-    elif type( lfns ) == type( " " ):
+    elif isinstance( lfns, basestring ):
       description = 'Output data file'
       self._addParameter( self.workflow, 'OutputData', 'JDL', lfns, description )
     else:
@@ -464,19 +463,19 @@ class Job( API ):
 
     if outputSE:
       description = 'User specified Output SE'
-      if type( outputSE ) in types.StringTypes:
+      if isinstance( outputSE, basestring ):
         outputSE = [outputSE]
-      elif type( outputSE ) != types.ListType:
+      elif not isinstance( outputSE, list ):
         return self._reportError( 'Expected string or list for OutputSE', **kwargs )
       outputSE = ';'.join( outputSE )
       self._addParameter( self.workflow, 'OutputSE', 'JDL', outputSE, description )
 
     if outputPath:
       description = 'User specified Output Path'
-      if not type( outputPath ) in types.StringTypes:
+      if not isinstance( outputPath, basestring ):
         return self._reportError( 'Expected string for OutputPath', **kwargs )
       # Remove leading "/" that might cause problems with os.path.join
-      # FIXME: this will prevent to set OutputPath outside the Home of the User
+      # This will prevent to set OutputPath outside the Home of the User
       while outputPath[0] == '/':
         outputPath = outputPath[1:]
       self._addParameter( self.workflow, 'OutputPath', 'JDL', outputPath, description )
@@ -491,7 +490,7 @@ class Job( API ):
     """
     kwargs = {'platform':platform}
 
-    if not type( platform ) == type( " " ):
+    if not isinstance( platform, basestring ):
       return self._reportError( "Expected string for platform", **kwargs )
 
     if not platform.lower() == 'any':
@@ -514,7 +513,7 @@ class Job( API ):
     """
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
-    if not type( backend ) in types.StringTypes:
+    if not isinstance( backend, basestring ):
       return self._reportError( 'Expected string for SubmitPool', **kwargs )
 
     if not backend.lower() == 'any':
@@ -565,14 +564,14 @@ class Job( API ):
        :type destination: string or list
     """
     kwargs = {'destination':destination}
-    if type( destination ) == type( "  " ):
+    if isinstance( destination, basestring ):
       if not re.search( '^DIRAC.', destination ) and not destination.lower() == 'any':
         result = self.__checkSiteIsValid( destination )
         if not result['OK']:
           return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
       description = 'User specified destination site'
       self._addParameter( self.workflow, 'Site', 'JDL', destination, description )
-    elif type( destination ) == list:
+    elif isinstance( destination, list ):
       for site in destination:
         if not re.search( '^DIRAC.', site ) and not site.lower() == 'any':
           result = self.__checkSiteIsValid( site )
@@ -636,11 +635,11 @@ class Job( API ):
        :param sites: single site string or list
        :type sites: string or list
     """
-    if type( sites ) == list and len( sites ):
+    if isinstance( sites, list ) and sites:
       bannedSites = ';'.join( sites )
       description = 'List of sites excluded by user'
       self._addParameter( self.workflow, 'BannedSites', 'JDL', bannedSites, description )
-    elif type( sites ) == type( " " ):
+    elif isinstance( sites, basestring ):
       description = 'Site excluded by user'
       self._addParameter( self.workflow, 'BannedSites', 'JDL', sites, description )
     else:
@@ -654,7 +653,7 @@ class Job( API ):
 
        Normally users should always specify their immutable DIRAC nickname.
     """
-    if not type( ownerProvided ) == type( " " ):
+    if not isinstance( ownerProvided, basestring ):
       return self._reportError( 'Expected string for owner', **{'ownerProvided':ownerProvided} )
 
     self._addParameter( self.workflow, 'Owner', 'JDL', ownerProvided, 'User specified ID' )
@@ -666,7 +665,7 @@ class Job( API ):
 
        Allows to force expected owner group of proxy.
     """
-    if not type( ownerGroup ) == type( " " ):
+    if not isinstance( ownerGroup, basestring ):
       return self._reportError( 'Expected string for job owner group', **{'ownerGroup':ownerGroup} )
 
     self._addParameter( self.workflow, 'OwnerGroup', 'JDL', ownerGroup, 'User specified owner group.' )
@@ -678,7 +677,7 @@ class Job( API ):
 
        Allows to force expected owner DN of proxy.
     """
-    if not type( ownerDN ) == type( " " ):
+    if not isinstance( ownerDN, basestring ):
       return self._reportError( 'Expected string for job owner DN', **{'ownerGroup':ownerDN} )
 
     self._addParameter( self.workflow, 'OwnerDN', 'JDL', ownerDN, 'User specified owner DN.' )
@@ -690,31 +689,31 @@ class Job( API ):
 
        Specify job type for testing purposes.
     """
-    if not type( jobType ) == type( " " ):
+    if not isinstance( jobType, basestring ):
       return self._reportError( 'Expected string for job type', **{'jobType':jobType} )
 
     self._addParameter( self.workflow, 'JobType', 'JDL', jobType, 'User specified type' )
     self.type = jobType
     return S_OK()
-  
+
   #############################################################################
   def setTag( self, tags ):
     """ Set the Tags job requirements
-    
+
         Example usage:
 
         >>> job = Job()
-        >>> job.setTag( ['WholeNode','8GBMemory'] ) 
-    
+        >>> job.setTag( ['WholeNode','8GBMemory'] )
+
         :param tags: single tag string or a list of tags
         :type tags: string or list
     """
-    
-    if type( tags ) in types.StringTypes:
+
+    if isinstance( tags, basestring ):
       tagValue = tags
-    elif type( tags ) == types.ListType:
+    elif isinstance( tags, list ):
       tagValue = ";".join( tags )
-    else:  
+    else:
       return self._reportError( 'Expected string or list for job tags', tags = tags )
 
     self._addParameter( self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags' )
@@ -736,9 +735,9 @@ class Job( API ):
        :param tags: software tags
        :type tags: string or list
     """
-    if type( tags ) == type( " " ):
+    if isinstance( tags, basestring ):
       self._addParameter( self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag' )
-    elif type( tags ) == list:
+    elif isinstance( tags, list ):
       swTags = ';'.join( tags )
       self._addParameter( self.workflow, 'SoftwareTag', 'JDL', swTags, 'List of VO software tags' )
     else:
@@ -761,7 +760,7 @@ class Job( API ):
        :param jobGroup: JobGroup name
        :type jobGroup: string
     """
-    if not type( jobGroup ) == type( " " ):
+    if not isinstance( jobGroup, basestring ):
       return self._reportError( 'Expected string for job group name', **{'jobGroup':jobGroup} )
 
     description = 'User specified job group'
@@ -785,7 +784,7 @@ class Job( API ):
        :type logLevel: string
     """
     kwargs = {'logLevel':logLevel}
-    if type( logLevel ) in types.StringTypes:
+    if isinstance( logLevel, basestring ):
       if logLevel.upper() in gLogger._logLevels.getLevels():
         description = 'User specified logging level'
         self.logLevel = logLevel
@@ -801,7 +800,7 @@ class Job( API ):
     """Developer function. Allow to pass arbitrary settings to the payload
        configuration service environment.
     """
-    if not type( cfgString ) == type( " " ):
+    if not isinstance( cfgString, basestring ):
       return self._reportError( 'Expected string for DIRAC Job Config Args', **{'cfgString':cfgString} )
 
     description = 'User specified cfg settings'
@@ -832,7 +831,7 @@ class Job( API ):
 
     if environmentDict:
       environment = []
-      for var, val in environmentDict.items():
+      for var, val in environmentDict.iteritems():
         try:
           environment.append( '='.join( [str( var ), urllib.quote( str( val ) )] ) )
         except Exception:
@@ -875,7 +874,7 @@ class Job( API ):
     self.log.info( '--------------------------------------' )
     #print self.workflow.parameters
     #print params.getParametersNames()
-    for name, _props in paramsDict.items():
+    for name, _props in paramsDict.iteritems():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -1144,7 +1143,7 @@ class Job( API ):
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
-    for name, props in paramsDict.items():
+    for name, props in paramsDict.iteritems():
       ptype = props['type']
       value = props['value']
       if name.lower() == 'requirements' and ptype == 'JDL':

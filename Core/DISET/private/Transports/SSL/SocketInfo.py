@@ -59,7 +59,10 @@ class SocketInfo:
     isProxyChain = peerChain.isProxy()['Value']
     isLimitedProxyChain = peerChain.isLimitedProxy()['Value']
     if isProxyChain:
-      identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
+      if peerChain.isPUSP()['Value']:
+        identitySubject = peerChain.getCertInChain( -2 )['Value'].getSubjectNameObject()[ 'Value' ]
+      else:
+        identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()[ 'Value' ]
     else:
       identitySubject = peerChain.getCertInChain( 0 )['Value'].getSubjectNameObject()[ 'Value' ]
     credDict = { 'DN' : identitySubject.one_line(),
@@ -85,7 +88,7 @@ class SocketInfo:
   def clone( self ):
     try:
       return S_OK( SocketInfo( dict( self.infoDict ), self.sslContext ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def verifyCallback( self, *args, **kwargs ):

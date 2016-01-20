@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import IntType, LongType, ListType, DictType, StringTypes, StringType, NoneType, BooleanType
+from types import IntType, LongType, ListType, DictType, StringTypes, NoneType, BooleanType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -242,6 +242,14 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobLoggingDB.getJobLoggingInfo( jobID )
 
 ##############################################################################
+  types_getJobsParameters = [ ListType, ListType ]
+  @staticmethod
+  def export_getJobsParameters ( jobIDs, parameters ):
+    if not ( jobIDs and parameters ) : 
+      return S_OK( {} )
+    return gJobDB.getAttributesForJobList( jobIDs, parameters )
+
+##############################################################################
   types_getJobsStatus = [ ListType ]
   @staticmethod
   def export_getJobsStatus ( jobIDs ):
@@ -440,7 +448,7 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getAttributesForJobList( jobIDs, PRIMARY_SUMMARY )
 
 ##############################################################################
-  types_getJobParameter = [ [StringType, IntType, LongType] , StringTypes ]
+  types_getJobParameter = [ list( StringTypes ) + [ IntType, LongType] , StringTypes ]
   @staticmethod
   def export_getJobParameter( jobID, parName ):
     return gJobDB.getJobParameters( jobID, [parName] )
@@ -452,13 +460,17 @@ class JobMonitoringHandler( RequestHandler ):
     return gJobDB.getJobParameters( jobID )
 
 ##############################################################################
-  types_traceJobParameter = [ StringTypes, [IntType, StringType, LongType, ListType], StringTypes, [StringType, NoneType], [StringType, NoneType] ]
+  types_traceJobParameter = [ StringTypes, list( StringTypes ) + [IntType, LongType, ListType],
+                              StringTypes, list( StringTypes ) + [NoneType],
+                              list( StringTypes ) + [ NoneType] ]
   @staticmethod
   def export_traceJobParameter( site, localID, parameter, date, until ):
     return gJobDB.traceJobParameter( site, localID, parameter, date, until )
 
 ##############################################################################
-  types_traceJobParameters = [ StringTypes, [IntType, StringType, LongType, ListType], [ListType, NoneType], [ListType, NoneType], [StringType, NoneType], [StringType, NoneType] ]
+  types_traceJobParameters = [ StringTypes, list( StringTypes ) + [IntType, LongType, ListType],
+                               [ListType, NoneType], [ListType, NoneType],
+                               list( StringTypes ) + [ NoneType], list( StringTypes ) + [ NoneType] ]
   @staticmethod
   def export_traceJobParameters( site, localID, parameterList, attributeList, date, until ):
     return gJobDB.traceJobParameters( site, localID, parameterList, attributeList, date, until )

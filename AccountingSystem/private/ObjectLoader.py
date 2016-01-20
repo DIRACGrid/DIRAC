@@ -37,7 +37,7 @@ def loadObjects( path, reFilter = None, parentClass = None ):
                                globals(),
                                locals(), pythonClassName )
       objClass = getattr( objModule, pythonClassName )
-    except Exception, e:
+    except Exception as e:
       gLogger.error( "Can't load type", "%s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
       continue
     if parentClass == objClass:

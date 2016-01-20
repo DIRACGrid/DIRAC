@@ -187,7 +187,7 @@ class CSAPI( object ):
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
-    if type( users ) == types.StringType:
+    if isinstance( users, basestring ):
       users = [ users ]
     usersData = self.describeUsers( users )['Value']
     for username in users:
@@ -230,6 +230,7 @@ class CSAPI( object ):
   def addUser( self, username, properties ):
     """
     Add a user to the cs
+
       :param str username: group name
       :param dict properties: dictionary describing user properties:
 
@@ -237,7 +238,7 @@ class CSAPI( object ):
         - groups
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -268,6 +269,7 @@ class CSAPI( object ):
   def modifyUser( self, username, properties, createIfNonExistant = False ):
     """
     Modify a user
+
       :param str username: group name
       :param dict properties: dictionary describing user properties:
 
@@ -275,7 +277,7 @@ class CSAPI( object ):
         - Groups
         - <extra params>
 
-      :return True/False
+      :return: S_OK, Value = True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -317,16 +319,19 @@ class CSAPI( object ):
       for group in groupsToBeAddedTo:
         self.__addUserToGroup( group, username )
         gLogger.info( "Added user %s to group %s" % ( username, group ) )
+    modified = False
     if modifiedUser:
+      modified = True
       gLogger.info( "Modified user %s" % username )
       self.__csModified = True
     else:
       gLogger.info( "Nothing to modify for user %s" % username )
-    return S_OK( True )
+    return S_OK( modified )
 
   def addGroup( self, groupname, properties ):
     """
     Add a group to the cs
+
       :param str groupname: group name
       :param dict properties: dictionary describing group properties:
 
@@ -334,7 +339,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -350,7 +355,8 @@ class CSAPI( object ):
 
   def modifyGroup( self, groupname, properties, createIfNonExistant = False ):
     """
-    Modify a user
+    Modify a group
+
       :param str groupname: group name
       :param dict properties: dictionary describing group properties:
 
@@ -358,7 +364,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -393,7 +399,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
@@ -521,7 +527,7 @@ class CSAPI( object ):
         - Properties
         - <extra params>
 
-      :return True/False
+      :return: True/False
     """
     if not self.__initialized[ 'OK' ]:
       return self.__initialized

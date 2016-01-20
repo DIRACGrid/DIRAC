@@ -44,6 +44,14 @@ FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
+def getSubmitPools( group = None, vo = None ):
+  if group:
+    return Registry.getGroupOption( group, 'SubmitPools', '' )
+  if vo:
+    return Registry.getVOOption( vo, 'SubmitPools', '' )
+  return ''
+
+
 class SiteDirector( AgentModule ):
   """
       The specific agents must provide the following methods:
@@ -55,11 +63,10 @@ class SiteDirector( AgentModule ):
                  for the agent restart
   """
 
-  def initialize( self ):
-    """ Standard constructor
+  def __init__( self, *args, **kwargs ):
+    """ c'tor
     """
-    self.am_setOption( "PollingTime", 60.0 )
-    self.am_setOption( "maxPilotWaitingHours", 6 )
+    AgentModule.__init__( self, *args, **kwargs )
     self.queueDict = {}
     self.queueCECache = {}
     self.queueSlots = {}
@@ -67,6 +74,28 @@ class SiteDirector( AgentModule ):
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
+
+    self.gridEnv = ''
+    self.vo = ''
+    self.group = ''
+    # self.voGroups contain all the eligible user groups for pilots submitted by this SiteDirector
+    self.voGroups = []
+    self.pilotDN = ''
+    self.pilotGroup = ''
+    self.platforms = []
+    self.sites = []
+
+    self.proxy = None
+
+    self.updateStatus = True
+    self.getOutput = False
+    self.sendAccounting = True
+
+  def initialize( self ):
+    """ Standard constructor
+    """
+    self.am_setOption( "PollingTime", 60.0 )
+    self.am_setOption( "maxPilotWaitingHours", 6 )
     return S_OK()
 
   def beginExecution( self ):
@@ -80,8 +109,6 @@ class SiteDirector( AgentModule ):
       self.vo = CSGlobals.getVO()
     # The SiteDirector is for a particular user group
     self.group = self.am_getOption( "Group", '' )
-    # self.voGroups contain all the eligible user groups for pilots submutted by this SiteDirector
-    self.voGroups = []
 
     # Choose the group for which pilots will be submitted. This is a hack until
     # we will be able to match pilots to VOs.
@@ -103,13 +130,7 @@ class SiteDirector( AgentModule ):
     self.pilotDN = self.am_getOption( "PilotDN", self.pilotDN )
     self.pilotGroup = self.am_getOption( "PilotGroup", self.pilotGroup )
 
-    self.platforms = []
-    self.sites = []
-    self.defaultSubmitPools = ''
-    if self.group:
-      self.defaultSubmitPools = Registry.getGroupOption( self.group, 'SubmitPools', '' )
-    elif self.vo:
-      self.defaultSubmitPools = Registry.getVOOption( self.vo, 'SubmitPools', '' )
+    self.defaultSubmitPools = getSubmitPools( self.group, self.vo )
 
     self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
@@ -122,11 +143,11 @@ class SiteDirector( AgentModule ):
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 3600 )
     self.failedQueueCycleFactor = self.am_getOption( 'FailedQueueCycleFactor', 10 )
-    self.pilotStatusUpdateCycleFactor = self.am_getOption( 'PilotStatusUpdateCycleFactor', 10 ) 
+    self.pilotStatusUpdateCycleFactor = self.am_getOption( 'PilotStatusUpdateCycleFactor', 10 )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
-    self.getOutput = self.am_getOption( 'GetPilotOutput', True )
+    self.getOutput = self.am_getOption( 'GetPilotOutput', False )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
 
     # Get the site description dictionary
@@ -209,9 +230,10 @@ class SiteDirector( AgentModule ):
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
-        ceTags = ceDict.get( 'Tag' )
+        ceTags = ceDict.get( 'Tag', [] )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
+        ceMaxRAM = ceDict.get( 'MaxRAM', None )
         qDict = ceDict.pop( 'Queues' )
         for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
@@ -232,6 +254,7 @@ class SiteDirector( AgentModule ):
             si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
             queueCPUTime = 60. / 250. * maxCPUTime * si00
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+
           queueTags = self.queueDict[queueName]['ParametersDict'].get( 'Tag' )
           if queueTags and isinstance( queueTags, basestring ):
             queueTags = fromChar( queueTags )
@@ -243,14 +266,11 @@ class SiteDirector( AgentModule ):
             else:
               self.queueDict[queueName]['ParametersDict']['Tag'] = ceTags
 
-          maxMemory = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM', None )
-          if maxMemory:
-            # MaxRAM value is supposed to be in MB
-            maxMemoryList = range( 1, int( maxMemory )/1000 + 1 )
-            memoryTags = [ '%dGB' % mem for mem in maxMemoryList ]
-            if memoryTags:
-              self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-              self.queueDict[queueName]['ParametersDict']['Tag'] += memoryTags
+          maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
+          maxRAM = ceMaxRAM if not maxRAM else maxRAM
+          if maxRAM:
+            self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
+
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
@@ -455,7 +475,7 @@ class SiteDirector( AgentModule ):
 
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
-      
+
       result = Resources.getCompatiblePlatforms( platform )
       if not result['OK']:
         continue
@@ -525,8 +545,8 @@ class SiteDirector( AgentModule ):
 
         bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
         jobExecDir = ''
-        jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )          
-        httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )          
+        jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
+        httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
 
         result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
@@ -607,16 +627,16 @@ class SiteDirector( AgentModule ):
     availableSlotsCount = self.queueSlots[queue].setdefault( 'AvailableSlotsCount', 0 )
     if totalSlots == 0:
       if availableSlotsCount % 10 == 0:
-        
+
         # Get the list of already existing pilots for this queue
         jobIDList = None
         result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                               'Queue':queueName,
-                                              'Status': TRANSIENT_PILOT_STATUS } )                                              
+                                              'Status': TRANSIENT_PILOT_STATUS } )
 
         if result['OK']:
           jobIDList = result['Value']
-          
+
         result = ce.available( jobIDList )
         if not result['OK']:
           self.log.warn( 'Failed to check the availability of queue %s: \n%s' % ( queue, result['Message'] ) )
@@ -705,7 +725,7 @@ class SiteDirector( AgentModule ):
       pilotsToSubmit = newPilotsToSubmit
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
-      pilotOptions.append( '-d' )
+      pilotOptions.append( '-ddd' )
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
@@ -752,21 +772,17 @@ class SiteDirector( AgentModule ):
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
 
-    if "Tag" in queueDict:
-      tagString = ','.join( queueDict['Tag'] )
-      pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%s' % tagString )
-
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
 
     return [ pilotOptions, pilotsToSubmit ]
 
 #####################################################################################
-  def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None, 
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy = None,
                          httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
     """
-    
+
     try:
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
@@ -789,8 +805,8 @@ class SiteDirector( AgentModule ):
       mString = """open( '%s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%s\"\"\" ) ) )""" % \
                 ( moduleName, compressedAndEncodedExtra[moduleName] )
       mStringList.append( mString )
-    extraModuleString = '\n  '.join( mStringList ) 
-  
+    extraModuleString = '\n  '.join( mStringList )
+
     localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 #
@@ -822,7 +838,7 @@ try:
   for key in os.environ.keys():
     print key + '=' + os.environ[key]
   print '==========================================================='
-except Exception, x:
+except Exception as x:
   print >> sys.stderr, x
   shutil.rmtree( pilotWorkingDirectory )
   sys.exit(-1)
@@ -954,7 +970,7 @@ EOF
 
       # If something wrong in the queue, make a pause for the job submission
       if abortedPilots:
-        self.failedQueues[queue] += 1 
+        self.failedQueues[queue] += 1
 
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
@@ -1007,11 +1023,11 @@ EOF
       # Check if the accounting is to be sent
       if self.sendAccounting:
         result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
-                                             'Queue':queueName,
-                                             'GridType':ceType,
-                                             'GridSite':siteName,
-                                             'AccountingSent':'False',
-                                             'Status':FINAL_PILOT_STATUS} )
+                                              'Queue':queueName,
+                                              'GridType':ceType,
+                                              'GridSite':siteName,
+                                              'AccountingSent':'False',
+                                              'Status':FINAL_PILOT_STATUS} )
 
         if not result['OK']:
           self.log.error( 'Failed to select pilots', result['Message'] )

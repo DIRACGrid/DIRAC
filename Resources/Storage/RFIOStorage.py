@@ -9,7 +9,7 @@ import os
 import time
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.Utilities                  import checkArgumentFormat
+from DIRAC.Resources.Storage.Utilities          import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from DIRAC.Core.Utilities.Subprocess            import shellCall
 from DIRAC.Core.Utilities.List                  import breakListIntoChunks
@@ -157,7 +157,7 @@ class RFIOStorage( StorageBase ):
 
   def __permissionsToInt( self, permissions ):
     mode = permissions[1:]
-    return sum( [ pow( 2, 8 - i ) * int( mode[i] != '-' ) for i in range( 0, 9 )] )
+    return sum( pow( 2, 8 - i ) * int( mode[i] != '-' ) for i in range( 0, 9 ) )
 
   def __getFileMetadata( self, urls ):
     gLogger.debug( "RFIOStorage.__getPathMetadata: Attempting to get additional metadata for %s files." % ( len( urls ) ) )
@@ -570,7 +570,7 @@ class RFIOStorage( StorageBase ):
       else:
         tURL = "castor:%s" % ( path )
       return S_OK( tURL )
-    except Exception, x:
+    except Exception as x:
       errStr = "RFIOStorage.__getTransportURL: Exception while creating turl."
       gLogger.exception( errStr, self.name, x )
       return S_ERROR( errStr )

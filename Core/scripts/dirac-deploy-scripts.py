@@ -16,23 +16,6 @@ import re
 import time
 import sys
 
-def logDEBUG( msg ):
-  if False:
-    for line in msg.split( "\n" ):
-      print "%s UTC dirac-deploy-scripts [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
-    sys.stdout.flush()
-
-def logERROR( msg ):
-  for line in msg.split( "\n" ):
-    print "%s UTC dirac-deploy-scripts [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
-  sys.stdout.flush()
-
-def logNOTICE( msg ):
-  for line in msg.split( "\n" ):
-    print " ", line
-    # print "%s UTC dirac-deploy-scripts [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
-  sys.stdout.flush()
-
 moduleSuffix = "DIRAC"
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 excludeMask = [ '__init__.py' ]
@@ -47,9 +30,8 @@ if 'DIRACPLAT' in os.environ:
   DiracPlatform = os.environ['DIRACPLAT']
 else:
   platformPath = os.path.join( DiracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-  platFD = open( platformPath, "r" )
-  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-  platFD.close()
+  with open( platformPath, "r" ) as platFD:
+    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
   DiracPlatform = Platform.getPlatformString()
   if not DiracPlatform or DiracPlatform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
@@ -120,12 +102,12 @@ def findDIRACRoot( path ):
 
 rootPath = findDIRACRoot( os.path.dirname( os.path.realpath( __file__ ) ) )
 if not rootPath:
-  logERROR( "Error: Cannot find DIRAC root!" )
+  print "Error: Cannot find DIRAC root!"
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
 pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|d[a-zA-Z0-9-]+).py" )
-logNOTICE( "Scripts will be deployed at %s" % targetScriptsPath )
+print "Scripts will be deployed at %s" % targetScriptsPath
 
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
@@ -137,7 +119,7 @@ for rootModule in os.listdir( rootPath ):
   extSuffixPos = rootModule.find( moduleSuffix )
   if extSuffixPos == -1 or extSuffixPos != len( rootModule ) - len( moduleSuffix ):
     continue
-  logNOTICE( "Inspecting %s module" % rootModule )
+  print "Inspecting %s module" % rootModule
   scripts = lookForScriptsInPath( modulePath, rootModule )
   for script in scripts:
     scriptPath = script[0]
@@ -146,14 +128,13 @@ for rootModule in os.listdir( rootPath ):
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
-      logDEBUG( " Wrapping %s" % scriptName[:-3] )
+      print " Wrapping %s" % scriptName[:-3]
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
-      fd = open( fakeScriptPath, "w" )
-      fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
-      fd.close()
+      with open( fakeScriptPath, "w" ) as fd:
+        fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
     else:
-      logDEBUG( " Copying %s" % scriptName )
+      print " Copying %s" % scriptName
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
       os.chmod( copyPath, gDefaultPerms )

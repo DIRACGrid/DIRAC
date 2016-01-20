@@ -720,7 +720,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   sectionName = result[ 'Value' ]
 
   componentModule = component
-  if "Module" in specialOptions:
+  if "Module" in specialOptions and specialOptions[ 'Module' ]:
     componentModule = specialOptions['Module']
 
   compCfg = CFG()
@@ -867,7 +867,7 @@ def printStartupStatus( rDict ):
                        rDict[comp]['Timeup'],
                        str( rDict[comp]['PID'] ) ] )
     printTable( fields, records )
-  except Exception, x:
+  except Exception as x:
     print "Exception while gathering data for printing: %s" % str( x )
   return S_OK()
 
@@ -895,7 +895,7 @@ def printOverallStatus( rDict ):
           record.append( str( rDict[compType][system][component]['PID'] ) )
           records.append( record )
     printTable( fields, records )
-  except Exception, x:
+  except Exception as x:
     print "Exception while gathering data for printing: %s" % str( x )
 
   return S_OK()
@@ -1132,6 +1132,22 @@ def getStartupComponentStatus( componentTupleList ):
       runsv = "Not running"
 
     runDict = {}
+    runDict['CPU'] = -1
+    runDict['MEM'] = -1
+    runDict['VSZ'] = -1
+    runDict['RSS'] = -1
+    if pid:  # check the process CPU usage and memory
+      # PID %CPU %MEM VSZ
+      result = execCommand( 0, ['ps', '-q', pid, 'au'] )
+      if result['OK'] and len( result['Value'] ) > 0:
+        stats = result['Value'][1]
+        values = re.findall( r"\d*\.\d+|\d+", stats )
+        if len( values ) > 0:
+          runDict['CPU'] = values[1]
+          runDict['MEM'] = values[2]
+          runDict['VSZ'] = values[3]
+          runDict['RSS'] = values[4]
+
     runDict['Timeup'] = timeup
     runDict['PID'] = pid
     runDict['RunitStatus'] = "Unknown"
@@ -1225,6 +1241,10 @@ def getOverallStatus( extensions ):
               resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
               resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
               resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
+              resultDict[compType][system][component]['CPU'] = runitDict[compDir]['CPU']
+              resultDict[compType][system][component]['MEM'] = runitDict[compDir]['MEM']
+              resultDict[compType][system][component]['RSS'] = runitDict[compDir]['RSS']
+              resultDict[compType][system][component]['VSZ'] = runitDict[compDir]['VSZ']
           except Exception:
             #print str(x)
             pass
@@ -1255,6 +1275,10 @@ def getOverallStatus( extensions ):
               resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
               resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
               resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
+              resultDict[compType][system][component]['CPU'] = runitDict[compDir]['CPU']
+              resultDict[compType][system][component]['MEM'] = runitDict[compDir]['MEM']
+              resultDict[compType][system][component]['RSS'] = runitDict[compDir]['RSS']
+              resultDict[compType][system][component]['VSZ'] = runitDict[compDir]['VSZ']
           except Exception:
             #print str(x)
             pass
@@ -1321,15 +1345,16 @@ def runsvctrlComponent( system, component, mode ):
     result = execCommand( 0, ['runsvctrl', mode] + startComp )
     if not result['OK']:
       return result
-    time.sleep( 1 )
+    time.sleep( 2 )
 
   # Check the runsv status
   if system == '*' or component == '*':
-    time.sleep( 5 )
+    time.sleep( 10 )
 
   # Final check
   result = getStartupComponentStatus( [( system, component )] )
   if not result['OK']:
+    gLogger.error( 'Failed to start the component %s %s' %(system, component) )
     return S_ERROR( 'Failed to start the component' )
 
   return result
@@ -2057,8 +2082,8 @@ def setupNewPortal():
     os.makedirs( startDir )
 
   if not os.path.lexists( startCompDir ):
-      gLogger.notice( 'Creating startup link at', startCompDir )
-      os.symlink( runitCompDir, startCompDir )
+    gLogger.notice( 'Creating startup link at', startCompDir )
+    os.symlink( runitCompDir, startCompDir )
 
   time.sleep( 5 )
 
@@ -2481,7 +2506,7 @@ def installDatabase( dbName, monitorFlag = True ):
 
   # now creating the Database
   result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
-  if not result['OK']:
+  if not result['OK'] and not 'database exists' in result[ 'Message' ]:
     gLogger.error( 'Failed to create databases', result['Message'] )
     if exitOnError:
       DIRAC.exit( -1 )
@@ -2530,7 +2555,7 @@ def installDatabase( dbName, monitorFlag = True ):
           DIRAC.exit( -1 )
         return S_ERROR( error )
 
-  except Exception, e:
+  except Exception as e:
     gLogger.error( str( e ) )
     if exitOnError:
       DIRAC.exit( -1 )
@@ -2676,28 +2701,6 @@ def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' )
   gLogger.always( str( localCfg['LocalSite'] ) )
 
   return S_OK( ceNameList )
-
-def configureLocalDirector( ceNameList = '' ):
-  """
-  Install a Local DIRAC TaskQueueDirector, basically write the proper configuration file
-  """
-  if ceNameList:
-    result = setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
-    if not result['OK']:
-      return result
-    result = MonitoringUtilities.monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
-    if not result[ 'OK' ]:
-      return result
-    # Now write a local Configuration for the Director
-
-  directorCfg = CFG()
-  directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by InstallTools' )
-  directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by InstallTools' )
-  directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by InstallTools' )
-  result = addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
-  if not result['OK']:
-    return result
-  return runsvctrlComponent( 'WorkloadManagement', 'TaskQueueDirector', 't' )
 
 def execCommand( timeout, cmd ):
   """

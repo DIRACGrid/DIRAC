@@ -140,16 +140,19 @@ class RequestTasks( TaskBase ):
       except AttributeError:
         pass
 
+    # Do not remove sorted, we might pop elements in the loop
     for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
+
+      transID = paramDict['TransformationID']
+
+      oRequest = Request()
+      transfer = Operation()
+      transfer.Type = requestOperation
+      transfer.TargetSE = paramDict['TargetSE']
+
+      # If there are input files
       if paramDict['InputData']:
-        transID = paramDict['TransformationID']
-
-        oRequest = Request()
-        transfer = Operation()
-        transfer.Type = requestOperation
-        transfer.TargetSE = paramDict['TargetSE']
-
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
@@ -160,14 +163,18 @@ class RequestTasks( TaskBase ):
 
           transfer.addFile( trFile )
 
-        oRequest.addOperation( transfer )
-        oRequest.RequestName = _requestName( transID, taskID )
-        oRequest.OwnerDN = ownerDN
-        oRequest.OwnerGroup = ownerGroup
+      oRequest.addOperation( transfer )
+      oRequest.RequestName = _requestName( transID, taskID )
+      oRequest.OwnerDN = ownerDN
+      oRequest.OwnerGroup = ownerGroup
+
 
       isValid = self.requestValidator.validate( oRequest )
       if not isValid['OK']:
-        return isValid
+        self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
+        # This works because we loop over a copy of the keys !
+        taskDict.pop( taskID )
+        continue
 
       taskDict[taskID]['TaskObject'] = oRequest
 
@@ -258,23 +265,19 @@ class RequestTasks( TaskBase ):
       transID = fileDict['TransformationID']
       taskID = int( fileDict['TaskID'] )
       if taskID in submittedTasks[transID]:
-        requestID = externalIds[taskID]
-        taskFiles.setdefault( requestID, {} )[fileDict['LFN']] = fileDict['Status']
+        taskFiles.setdefault( externalIds[taskID], [] ).append( fileDict['LFN'] )
 
     updateDict = {}
     for requestID in sorted( taskFiles ):
-      lfnDict = taskFiles[requestID]
-      statusDict = self.requestClient.getRequestFileStatus( requestID, lfnDict.keys() )
+      lfnList = taskFiles[requestID]
+      statusDict = self.requestClient.getRequestFileStatus( requestID, lfnList )
       if not statusDict['OK']:
         log = self._logVerbose if 'not exist' in statusDict['Message'] else self.log.warn
         log( "getSubmittedFileStatus: Failed to get files status for request", '%s' % statusDict['Message'] )
         continue
 
-      statusDict = statusDict['Value']
-      for lfn, newStatus in statusDict.items():
-        if newStatus == lfnDict[lfn]:
-          pass
-        elif newStatus == 'Done':
+      for lfn, newStatus in statusDict['Value'].items():
+        if newStatus == 'Done':
           updateDict[lfn] = 'Processed'
         elif newStatus == 'Failed':
           updateDict[lfn] = 'Problematic'
@@ -402,7 +405,7 @@ class WorkflowTasks( TaskBase ):
           continue
         for name, output in res['Value'].items():
           oJob._addJDLParameter( name, ';'.join( output ) )
-      taskDict[taskNumber]['TaskObject'] = self.jobClass( oJob._toXML() )
+      taskDict[taskNumber]['TaskObject'] = oJob
     return S_OK( taskDict )
 
   #############################################################################
@@ -528,7 +531,7 @@ class WorkflowTasks( TaskBase ):
     if isinstance( job, basestring ):
       try:
         oJob = self.jobClass( job )
-      except Exception, x:
+      except Exception as x:
         self._logException( "Failed to create job object", '', x )
         return S_ERROR( "Failed to create job object" )
     elif isinstance( job, self.jobClass ):

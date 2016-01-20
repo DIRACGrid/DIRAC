@@ -37,9 +37,10 @@ class DirectoryClosure( DirectoryTreeBase ):
 
   def findDir( self, path, connection = False ):
     """  Find directory ID for the given path
+
       :param path : path of the directory
 
-      :returns S_OK(id) and res['Level'] as the depth
+      :returns: S_OK(id) and res['Level'] as the depth
     """
 
     dpath = os.path.normpath( path )
@@ -57,9 +58,10 @@ class DirectoryClosure( DirectoryTreeBase ):
 
   def findDirs( self, paths, connection = False ):
     """ Find DirIDs for the given path list
-        :param paths list of path
 
-        :returns S_OK( { path : ID} )
+        :param paths: list of path
+
+        :returns: S_OK( { path : ID} )
     """
 
     dirDict = {}
@@ -81,7 +83,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         :param path : path of the dir
 
-        :returns S_OK() and res['DirID'] the id of the directory removed
+        :returns: S_OK() and res['DirID'] the id of the directory removed
     """
 
     # Find the directory ID
@@ -128,7 +130,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         :param dirID : directory ID
 
-        :returns S_OK(dir name), or S_ERROR if it does not exist
+        :returns: S_OK(dir name), or S_ERROR if it does not exist
 
     """
 
@@ -175,7 +177,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         :param path : path of the directory
 
-        :returns S_OK( list of ids ), S_ERROR if not found
+        :returns: S_OK( list of ids ), S_ERROR if not found
     """
 
     result = self.findDir( path )
@@ -196,7 +198,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         :param dirID : id of the dictionary
 
-        :returns S_OK( list of ids )
+        :returns: S_OK( list of ids )
 
     """
 
@@ -237,7 +239,7 @@ class DirectoryClosure( DirectoryTreeBase ):
         :param requestString : if true, returns an sql query to get the information
         :param includeParent : if true, the parent (dirID) will be included
 
-        :returns S_OK ( { dirID, depth } ) if requestString is False
+        :returns: S_OK ( { dirID, depth } ) if requestString is False
                  S_OK(request) if requestString is True
 
     """
@@ -261,7 +263,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """ Get IDs of all the subdirectories of directories in a given list
 
         :param dirList : list of dir Ids
-        :returns S_OK([ unordered dir ids ])
+        :returns: S_OK([ unordered dir ids ])
     """
 
     dirs = dirIdList
@@ -284,7 +286,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         :param path : path of the directory
 
-        :returns S_OK ( { dirID, depth } )
+        :returns: S_OK ( { dirID, depth } )
     """
 
     result = self.findDir( path )
@@ -304,7 +306,7 @@ class DirectoryClosure( DirectoryTreeBase ):
         :param dirID : id of the directory
         :param includeParent : count itself
 
-        :returns S_OK(value)
+        :returns: S_OK(value)
     """
 
     result = self.db.executeStoredProcedure( 'ps_count_sub_directories',
@@ -340,9 +342,9 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         :param path : has to be an absolute path. The parent dir has to exist
         :param credDict : credential dict of the owner of the directory
-        :param status ????
+        :param: status ????
 
-        :returns S_OK (dirID) with a flag res['NewDirectory'] to True or False
+        :returns: S_OK (dirID) with a flag res['NewDirectory'] to True or False
                 S_ERROR if there is a problem, or if there is no parent
     """
 
@@ -410,7 +412,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
       :param path : path of the directory
 
-      :returns S_OK(true) if there are no file nor directorie, S_OK(False) otherwise
+      :returns: S_OK(true) if there are no file nor directorie, S_OK(False) otherwise
     """
 
     result = self.findDir( path )
@@ -494,7 +496,7 @@ class DirectoryClosure( DirectoryTreeBase ):
       :param pname : name of the parameter to set
       :param pvalue : value of the parameter (an id or a value)
 
-      :returns S_OK(nb of row changed). It should always be 1 !
+      :returns: S_OK(nb of row changed). It should always be 1 !
               S_ERROR if the directory does not exist
     """
 

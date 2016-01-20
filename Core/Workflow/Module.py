@@ -1,21 +1,13 @@
-# $Id$
+""" Implementation of Module
 """
-    This is a comment
-"""
-__RCSID__ = "$Revision: 1.19 $"
 
-# $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/Module.py,v $
+__RCSID__ = "$Id:$"
 
 import copy
-import new, sys, os
+import os
 
 #try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
-
-#RICARDO PLEASE DO NOT CHANGE THIS BACK. IT BREAKS THE EXECUTION OF WORKFLOWS!
-#from DIRAC.Core.Workflow.Step import *
-#except: # this part is to import code without DIRAC
-#  from Parameter import *
 
 class ModuleDefinition( AttributeCollection ):
 
@@ -70,9 +62,8 @@ class ModuleDefinition( AttributeCollection ):
   def toXMLFile( self, outFile ):
     if os.path.exists( outFile ):
       os.remove( outFile )
-    xmlfile = open( outFile, 'w' )
-    xmlfile.write( self.toXML() )
-    xmlfile.close()
+    with open( outFile, 'w' ) as xmlfile:
+      xmlfile.write( self.toXML() )
 
   def loadCode( self ):
     #print 'Loading code of the Module =', self.getType()
@@ -345,4 +336,3 @@ class InstancesPool( list ):
           str = str + v.createParameterCode( 2, 'self' )
       str = str + '\n'
     return str
-

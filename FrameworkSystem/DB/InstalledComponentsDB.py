@@ -4,6 +4,7 @@ Classes and functions for easier management of the InstalledComponents database
 
 __RCSID__ = "$Id$"
 
+import re
 import datetime
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
@@ -239,6 +240,98 @@ class InstalledComponent( Base ):
 
     return S_OK( dictionary )
 
+class HostLogging( Base ):
+  """
+  This class defines the schema of the HostLogging table in the
+  InstalledComponentsDB database
+  """
+
+  __tablename__ = 'HostLogging'
+  __table_args__ = {
+    'mysql_engine': 'InnoDB',
+    'mysql_charset': 'utf8'
+  }
+
+  hostName = Column( 'HostName', String( 32 ), nullable = False, primary_key = True )
+  # status
+  DIRAC = Column( 'DIRACVersion', String( 32 ) )
+  Load1 = Column( 'Load1', String( 32 ) ) # float
+  Load5 = Column( 'Load5', String( 32 ) ) # float
+  Load15 = Column( 'Load15', String( 32 ) ) # float
+  Memory = Column( 'Memory', String( 32 ) )
+  DiskOccupancy = Column( 'DiskOccupancy', String( 32 ) )
+  Swap = Column( 'Swap', String( 32 ) )
+  CPUClock = Column( 'CPUClock', String( 32 ) ) # float
+  CPUModel = Column( 'CPUModel', String( 64 ) )
+  CertificateDN = Column( 'CertificateDN', String( 64 ) )
+  CertificateIssuer = Column( 'CertificateIssuer', String( 64 ) )
+  CertificateValidity = Column( 'CertificateValidity', String( 64 ) )
+  Cores = Column( 'Cores', Integer )
+  PhysicalCores = Column( 'PhysicalCores', Integer )
+  OpenFiles = Column( 'OpenFiles', Integer )
+  OpenPipes = Column( 'OpenPipes', Integer )
+  OpenSockets = Column( 'OpenSockets', Integer )
+  Setup = Column( 'Setup', String( 32 ) )
+  Uptime = Column( 'Uptime', String( 64 ) )
+  Timestamp = Column( 'Timestamp', DateTime )
+
+  def __init__( self, host = null(), **kwargs ):
+    self.hostName = host
+    fields = dir( self )
+
+    for key, value in kwargs.iteritems():
+      if key in fields and not re.match( '_.*', key ):
+        setattr( self, key, value )
+
+  def fromDict( self, dictionary ):
+    """
+    Fill the fields of the HostLogging object from a dictionary
+    """
+    fields = dir( self )
+
+    if dictionary.get( 'DIRACVersion' ):
+      dictionary[ 'DIRAC' ] = dictionary.get( 'DIRACVersion' )
+
+    try:
+      for key, value in dictionary.iteritems():
+        if key in fields and not re.match( '_.*', key ):
+          setattr( self, key, value )
+    except Exception as e:
+      return S_ERROR( e )
+
+    return S_OK( 'Successfully read from dictionary' )
+
+  def toDict( self ):
+    """
+    Return the object as a dictionary
+    """
+
+    dictionary = {
+                  'HostName': self.hostName,
+                  'DIRACVersion': self.DIRAC,
+                  'Load1': self.Load1,
+                  'Load5': self.Load5,
+                  'Load15': self.Load15,
+                  'Memory': self.Memory,
+                  'DiskOccupancy': self.DiskOccupancy,
+                  'Swap': self.Swap,
+                  'CPUClock': self.CPUClock,
+                  'CPUModel': self.CPUModel,
+                  'CertificateDN': self.CertificateDN,
+                  'CertificateIssuer': self.CertificateIssuer,
+                  'CertificateValidity': self.CertificateValidity,
+                  'Cores': self.Cores,
+                  'PhysicalCores': self.PhysicalCores,
+                  'OpenFiles': self.OpenFiles,
+                  'OpenPipes': self.OpenPipes,
+                  'OpenSockets': self.OpenSockets,
+                  'Setup': self.Setup,
+                  'Uptime': self.Uptime,
+                  'Timestamp': self.Timestamp
+                  }
+
+    return S_OK( dictionary )
+
 class InstalledComponentsDB( object ):
   """
   Class used to work with the InstalledComponentsDB database.
@@ -283,7 +376,7 @@ class InstalledComponentsDB( object ):
     if not 'Components' in tablesInDB:
       try:
         Component.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'Components\' already exists' )
@@ -292,7 +385,7 @@ class InstalledComponentsDB( object ):
     if not 'Hosts' in tablesInDB:
       try:
         Host.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'Hosts\' already exists' )
@@ -301,10 +394,19 @@ class InstalledComponentsDB( object ):
     if not 'InstalledComponents' in tablesInDB:
       try:
         InstalledComponent.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'InstalledComponents\' already exists' )
+
+    # HostLogging
+    if not 'HostLogging' in tablesInDB:
+      try:
+        HostLogging.__table__.create( self.engine )
+      except Exception as e:
+        return S_ERROR( e )
+    else:
+      gLogger.debug( 'Table \'HostLogging\' already exists' )
 
     return S_OK( 'Tables created' )
 
@@ -365,7 +467,7 @@ class InstalledComponentsDB( object ):
       try:
         session.execute( filteredTemp )
         session.commit()
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( 'Could not filter the fields: %s' % ( e ) )
       filtered = filteredTemp
 
@@ -480,14 +582,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( component )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add Component: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -521,7 +623,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -596,7 +698,7 @@ class InstalledComponentsDB( object ):
                           .filter( text( Component.system == component.system ) )\
                           .filter( text( Component.module == component.module ) )\
                           .filter( text( Component.cType == component.cType ) )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 
@@ -638,7 +740,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -662,14 +764,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( host )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add Host: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -703,7 +805,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -778,7 +880,7 @@ class InstalledComponentsDB( object ):
       query = session.query( Host )\
                           .filter( text( Host.hostName == host.hostName ) )\
                           .filter( text( Host.cpu == host.cpu ) )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not check the existence of the host: %s' % ( e ) )
@@ -818,7 +920,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -901,14 +1003,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( installation )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add installation: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -982,7 +1084,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1019,10 +1121,136 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
 
     session.close()
     return S_OK( 'InstalledComponents successfully removed' )
+
+  def addLog( self, newLog ):
+    """
+    Add a new log to the database
+    newLog argument should be a dictionary with the log fields and
+    its values.
+    Valid keys for newLog include fields that are present in a HostLogging object:
+    HostName, DIRACVersion, Load1, Load5, ... of which only HostName is mandatory
+    """
+    session = self.Session()
+
+    log = HostLogging()
+    log.fromDict( newLog )
+
+    try:
+      session.add( log )
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not add log: %s' % ( e ) )
+
+    try:
+      session.commit()
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Log successfully added' )
+
+  def removeLogs( self, matchFields = {} ):
+    """
+    Removes logs with matches in the given fields
+    matchFields argument should be a dictionary with the fields and values
+    to match
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    matchFields argument can be empty to remove all the logs
+    """
+
+    session = self.Session()
+
+    result = self.__filterFields( session, HostLogging, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    for log in result[ 'Value' ]:
+      session.delete( log )
+
+    try:
+      session.commit()
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Logs successfully removed' )
+
+  def getLogs( self, matchFields = {} ):
+    """
+    Returns a list with all the logs with matches in the given fields
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    """
+
+    session = self.Session()
+
+    result = self.__filterFields( session, HostLogging, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    logs = result[ 'Value' ]
+    if not logs:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'No matching logs were found' )
+
+    dictLogs = []
+    for log in logs:
+      dictLogs.append( log.toDict()[ 'Value' ] )
+
+    session.commit()
+    session.close()
+    return S_OK( dictLogs )
+
+  def updateLogs( self, matchFields = {}, updates = {} ):
+    """
+    Updates logs matching the given criteria
+    matchFields argument should be a dictionary with the fields to match or
+    empty to get all the instances
+    matchFields also accepts fields of the form <Field.bigger> and
+    <Field.smaller> to filter using > and < relationships
+    updates argument should be a dictionary with the logs fields and
+    their new updated values
+    """
+
+    session = self.Session()
+
+    result = self.__filterFields( session, HostLogging, matchFields )
+    if not result[ 'OK' ]:
+      session.rollback()
+      session.close()
+      return result
+
+    logs = result[ 'Value' ]
+
+    for log in logs:
+      log.fromDict( updates )
+
+    try:
+      session.commit()
+    except Exception as e:
+      session.rollback()
+      session.close()
+      return S_ERROR( 'Could not commit changes: %s' % ( e ) )
+
+    session.close()
+    return S_OK( 'Log(s) updated' )

@@ -1,4 +1,6 @@
-# $HeadURL$
+"""
+"""
+
 __RCSID__ = "$Id$"
 
 import sys
@@ -15,7 +17,7 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
 from DIRAC.Core.Utilities.Devloader import Devloader
 
-class LocalConfiguration:
+class LocalConfiguration( object ):
   """
   Main class to interface with Configuration of a running DIRAC Component.
 
@@ -41,7 +43,7 @@ class LocalConfiguration:
     self.componentType = False
     self.loggingSection = "/DIRAC"
     self.initialized = False
-    self.__usageMessage = False
+    self.__usageMessage = ''
     self.__debugMode = 0
 
   def disableParsingCommandLine( self ):
@@ -153,7 +155,7 @@ class LocalConfiguration:
       if isMandatoryMissing:
         return S_ERROR()
       return S_OK()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception()
       return S_ERROR( str( e ) )
 
@@ -177,7 +179,7 @@ class LocalConfiguration:
       retVal = self.__checkMandatoryOptions()
       if not retVal[ 'OK' ]:
         return retVal
-    except Exception, e:
+    except Exception as e:
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
@@ -221,7 +223,7 @@ class LocalConfiguration:
       if not retVal[ 'OK' ]:
         return retVal
 
-    except Exception, e:
+    except Exception as e:
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
@@ -250,7 +252,7 @@ class LocalConfiguration:
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( x ) )
       self.showHelp( exitCode = 2 )
 
-    for o, v in opts:
+    for o, _ in opts:
       if o in ( '-h', '--help' ):
         self.showHelp()
         sys.exit(2)
@@ -314,7 +316,7 @@ class LocalConfiguration:
           self.__setDefaultSection( "/Scripts/%s" % self.componentName )
       else:
         self.__setDefaultSection( "/" )
-    except Exception, e:
+    except Exception as e:
       errorsList.append( str( e ) )
 
     self.unprocessedSwitches = []

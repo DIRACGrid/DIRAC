@@ -41,7 +41,6 @@ class DiracSiteAgent( AgentModule ):
 
     self.logLevel = gConfig.getValue( 'DIRAC/LogLevel', 'INFO' )
     self.siteRoot = gConfig.getValue( 'LocalSite/Root', DIRAC.rootPath )
-    self.localArea = gConfig.getValue( 'LocalSite/LocalArea', '/tmp' )
     self.siteName = gConfig.getValue( 'LocalSite/Site', 'Unknown' )
     self.cpuFactor = gConfig.getValue( 'LocalSite/CPUScalingFactor', 'Unknown' )
     self.maxPilots = gConfig.getValue( 'LocalSite/MaxPilots', 100 )
@@ -62,7 +61,7 @@ class DiracSiteAgent( AgentModule ):
       try:
         prop = gConfig.getValue( propLocation, propDefault ).replace( '"', '' )
         self.propertiesDict[propLocation] = str( prop )
-      except Exception, e:
+      except Exception as e:
         print e
         return S_ERROR( 'Expected string for %s field' % propLocation )
 
@@ -80,16 +79,12 @@ class DiracSiteAgent( AgentModule ):
                       }
 
     #options to pass to the pilot
-    self.pilotOptions = {
-                         '/LocalSite/SharedArea' : '',
-                         '/LocalSite/LocalArea' : '',
-                         '/LocalSite/Architecture' : '',
+    self.pilotOptions = {'/LocalSite/Architecture' : '',
                          '/LocalSite/CPUScalingFactor' : '',
                          '/LocalSite/LocalCE' : 'InProcess',
                          '/LocalSite/Site' : '',
                          '/LocalSite/ConcurrentJobs' : '',
-                         '/LocalSite/MaxCPUTime' : ''
-                         }
+                         '/LocalSite/MaxCPUTime' : ''}
     for optName, optDefault in self.pilotOptions.items():
       self.pilotOptions[optName] = gConfig.getValue( '%(optName)s' % {'optName':optName}, optDefault )
 

@@ -76,9 +76,9 @@ class SSH( object ):
   def __ssh_call( self, command, timeout ):
 
     try:
-      import DIRAC.Resources.Computing.pexpect as pexpect
+      import pexpect
       expectFlag = True
-    except Exception, x:
+    except Exception as x:
       from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
@@ -113,7 +113,7 @@ class SSH( object ):
           return S_OK( ( 0, child.before, '' ) )
         else:
           return S_ERROR( ( -2, child.before, '' ) )
-      except Exception, x:
+      except Exception as x:
         res = ( -1 , 'Encountered exception %s: %s' % ( Exception, str( x ) ) )
         return S_ERROR( res )  
     else:

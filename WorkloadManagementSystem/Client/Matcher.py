@@ -6,7 +6,6 @@
 __RCSID__ = "$Id"
 
 import time
-from types import StringTypes
 
 from DIRAC import gLogger
 
@@ -69,11 +68,11 @@ class Matcher( object ):
     result = self.tqDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
 
     if not result['OK']:
-      return result
+      raise RuntimeError( result['Message'] )
     result = result['Value']
     if not result['matchFound']:
       self.log.info( "No match found" )
-      raise RuntimeError( "No match found" )
+      return {}
 
     jobID = result['jobId']
     resAtt = self.jobDB.getJobAttributes( jobID, ['OwnerDN', 'OwnerGroup', 'Status'] )
@@ -85,7 +84,7 @@ class Matcher( object ):
       self.log.error( 'Job matched by the TQ is not in Waiting state', str( jobID ) )
       result = self.tqDB.deleteJob( jobID )
       if not result[ 'OK' ]:
-        return result
+        raise RuntimeError( result['Message'] )
       raise RuntimeError( "Job %s is not in Waiting state" % str( jobID ) )
 
     self._reportStatus( resourceDict, jobID )
@@ -118,7 +117,8 @@ class Matcher( object ):
 
     pilotInfoReportedFlag = resourceDict.get( 'PilotInfoReportedFlag', False )
     if not pilotInfoReportedFlag:
-      self._updatePilotInfo( resourceDict, jobID )
+      self._updatePilotInfo( resourceDict )
+    self._updatePilotJobMapping( resourceDict, jobID )
 
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
@@ -150,7 +150,7 @@ class Matcher( object ):
     """
 
     resourceDict = {}
-    if type( resourceDescription ) in StringTypes:
+    if isinstance( resourceDescription, basestring ):
       classAdAgent = ClassAd( resourceDescription )
       if not classAdAgent.isOK():
         raise ValueError( 'Illegal Resource JDL' )
@@ -187,8 +187,24 @@ class Matcher( object ):
         if resourceDescription.has_key( name ):
           resourceDict[name] = resourceDescription[name]
 
-      if resourceDescription.has_key( 'JobID' ):
+      if 'JobID' in resourceDescription:
         resourceDict['JobID'] = resourceDescription['JobID']
+
+      # Convert MaxRAM and NumberOfCores parameters into a list of tags
+      maxRAM = resourceDescription.get( 'MaxRAM' )
+      nCores = resourceDescription.get( 'NumberOfProcessors' )
+      for param, key in [ ( maxRAM, 'GB' ), ( nCores, 'Cores' ) ]:
+        if param:
+          try:
+            intValue = int( param )/1000
+            if intValue <= 128:
+              paramList = range( 1, intValue + 1 )
+              paramTags = [ '%d%s' % ( par, key ) for par in paramList ]
+              resourceDict.setdefault( "Tag", [] ).extend( paramTags )
+          except ValueError:
+            pass
+      if 'Tag' in resourceDict:
+        resourceDict['Tag'] = list( set( resourceDict['Tag'] ) )
 
       for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
                  'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag' ):
@@ -243,11 +259,8 @@ class Matcher( object ):
 
     return True
 
-  def _updatePilotInfo( self, resourceDict, jobID ):
+  def _updatePilotInfo( self, resourceDict ):
     """ Update pilot information - do not fail if we don't manage to do it
-
-        FIXME:  this part should not be done here, by the matcher. Instead, it should be done by the pilot itself.
-                Also, updating the job for pilot should be done by the JobAgent, since the jobAgent knows what job is running
     """
     pilotReference = resourceDict.get( 'PilotReference', '' )
     if pilotReference:
@@ -261,6 +274,12 @@ class Matcher( object ):
       if not result['OK']:
         self.log.error( "Problem updating pilot information",
                         "; setPilotStatus. pilotReference: %s; %s" % ( pilotReference, result['Message'] ) )
+
+  def _updatePilotJobMapping( self, resourceDict, jobID ):
+    """ Update pilot to job mapping information
+    """
+    pilotReference = resourceDict.get( 'PilotReference', '' )
+    if pilotReference:
       result = self.pilotAgentsDB.setCurrentJobID( pilotReference, jobID )
       if not result['OK']:
         self.log.error( "Problem updating pilot information",
@@ -273,10 +292,14 @@ class Matcher( object ):
   def _checkCredentials( self, resourceDict, credDict ):
     """ Check if we can get a job given the passed credentials
     """
-    # Check credentials if not generic pilot
     if Properties.GENERIC_PILOT in credDict[ 'properties' ]:
       # You can only match groups in the same VO
-      vo = Registry.getVOForGroup( credDict[ 'group' ] )
+      if credDict[ 'group' ] == "hosts":
+        # for the host case the VirtualOrganization parameter
+        # is mandatory in resourceDict
+        vo = resourceDict.get( 'VirtualOrganization', '' )
+      else:
+        vo = Registry.getVOForGroup( credDict[ 'group' ] )
       result = Registry.getGroupsForVO( vo )
       if result[ 'OK' ]:
         resourceDict[ 'OwnerGroup' ] = result[ 'Value' ]

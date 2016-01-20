@@ -1,17 +1,13 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
-import time, random, copy
+import time, random, copy, threading
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
-from DIRAC.Core.Utilities.ThreadSafe                import Synchronizer
 from DIRAC.Core.Utilities                           import DEncode
 from DIRAC.RequestManagementSystem.Client.Request   import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
-
-gAccountingSynchro = Synchronizer()
 random.seed()
 
 class DataStoreClient:
@@ -28,6 +24,8 @@ class DataStoreClient:
     self.__maxTimeRetrying = retryGraceTime
     self.__lastSuccessfulCommit = time.time()
     self.__failoverEnabled = not gConfig.getValue( '/LocalSite/DisableFailover', False )
+    self.__registersListLock = threading.RLock()
+    self.__commitTimer = threading.Timer(5, self.commit)
 
   def setRetryGraceTime( self, retryGraceTime ):
     """
@@ -46,7 +44,6 @@ class DataStoreClient:
         return True
     return False
 
-  @gAccountingSynchro
   def addRegister( self, register ):
     """
     Add a register to the list to be sent
@@ -58,7 +55,9 @@ class DataStoreClient:
       return retVal
     if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
       return S_OK()
+    
     self.__registersList.append( copy.deepcopy( register.getValues() ) )
+    
     return S_OK()
 
   def disableFailover( self ):
@@ -69,30 +68,42 @@ class DataStoreClient:
       return RPCClient( "Accounting/DataStore", setup = self.__setup, timeout = 3600 )
     return RPCClient( "Accounting/DataStore", timeout = 3600 )
 
-  @gAccountingSynchro
   def commit( self ):
     """
     Send the registers in a bundle mode
     """
     rpcClient = self.__getRPCClient()
     sent = 0
-    while len( self.__registersList ) > 0:
-      registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
-      retVal = rpcClient.commitRegisters( registersToSend )
-      if retVal[ 'OK' ]:
-        self.__lastSuccessfulCommit = time.time()
-      else:
-        if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
-          gLogger.verbose( "Sending accounting records to failover" )
-          result = _sendToFailover( retVal[ 'rpcStub' ] )
-          if not result[ 'OK' ]:
-            return result
+    
+    # create a local reference and prevent other running commits
+    # to take the same data second time 
+    self.__registersListLock.acquire()
+    registersList = self.__registersList
+    self.__registersList = []
+    self.__registersListLock.release()
+    
+    try:
+      while registersList:
+        registersToSend = registersList[ :self.__maxRecordsInABundle ]
+        retVal = rpcClient.commitRegisters( registersToSend )
+        if retVal[ 'OK' ]:
+          self.__lastSuccessfulCommit = time.time()
         else:
-          return S_ERROR( "Cannot commit data to DataStore service" )
-      sent += len( registersToSend )
-      del( self.__registersList[ :self.__maxRecordsInABundle ] )
-    return S_OK( sent )
-
+          if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
+            gLogger.verbose( "Sending accounting records to failover" )
+            result = _sendToFailover( retVal[ 'rpcStub' ] )
+            if not result[ 'OK' ]:
+              return result
+          else:
+            return S_ERROR( "Cannot commit data to DataStore service" )
+        sent += len( registersToSend )
+        del( registersList[ :self.__maxRecordsInABundle ] )
+    finally:
+      # if something is left because of an error return it to the main list
+      self.__registersList.extend(registersList)
+    
+    return S_OK( sent )  
+  
   def remove( self, register ):
     """
     Remove a Register from the Accounting DataStore

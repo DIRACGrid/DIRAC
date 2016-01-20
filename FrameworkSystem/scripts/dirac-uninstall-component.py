@@ -14,10 +14,9 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-InstallTools = getattr( Utils.voimport( 'DIRAC.Core.Utilities.InstallTools' ), 'InstallTools' )
+import DIRAC.FrameworkSystem.Client.ComponentInstaller as gComponentInstaller
 
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 
 force = False
 def setForce( opVal ):
@@ -36,6 +35,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
+if len( args ) == 1:
+  args = args[0].split( '/' )
+
 if len( args ) < 2:
   Script.showHelp()
   DIRACexit( 1 )
@@ -51,7 +53,7 @@ if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )
 if len( result[ 'Value' ] ) < 1:
-  gLogger.error( 'Given component does not exist' )
+  gLogger.warn( 'Given component does not exist' )
   DIRACexit( 1 )
 if len( result[ 'Value' ] ) > 1:
   gLogger.error( 'Too many components match' )
@@ -61,7 +63,7 @@ removeLogs = False
 if force:
   removeLogs = True
 else:
-  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in InstallTools.COMPONENT_TYPES:
+  if result[ 'Value' ][0][ 'Component' ][ 'Type' ] in gComponentInstaller.COMPONENT_TYPES:
     result = promptUser( 'Remove logs?', [ 'y', 'n' ], 'n' )
     if result[ 'OK' ]:
       removeLogs = result[ 'Value' ] == 'y'
@@ -69,7 +71,7 @@ else:
       gLogger.error( result[ 'Message' ] )
       DIRACexit( 1 )
 
-result = InstallTools.uninstallComponent( system, component, removeLogs )
+result = gComponentInstaller.uninstallComponent( system, component, removeLogs )
 if not result['OK']:
   gLogger.error( result[ 'Message' ] )
   DIRACexit( 1 )

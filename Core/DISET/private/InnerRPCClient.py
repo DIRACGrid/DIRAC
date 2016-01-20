@@ -19,13 +19,17 @@ class InnerRPCClient( BaseClient ):
     trid, transport = retVal[ 'Value' ]
     try:
       retVal = self._proposeAction( transport, ( "RPC", functionName ) )
-      if not retVal[ 'OK' ]:
-        if self.__retry < 3:
-          self.__retry += 1
-          return self.executeRPC( functionName, args )
-        else:
+      if not retVal['OK']:
+        if retVal['Message'] == "Unauthorized query":  # TODO: DErno will help!:
           retVal[ 'rpcStub' ] = stub
           return retVal
+        else:  # we have network problem or the service is not responding  
+          if self.__retry < 3:
+            self.__retry += 1
+            return self.executeRPC( functionName, args )
+          else:
+            retVal[ 'rpcStub' ] = stub
+            return retVal
 
       retVal = transport.sendData( S_OK( args ) )
       if not retVal[ 'OK' ]:

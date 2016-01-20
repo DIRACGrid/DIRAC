@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 """ File Catalog Client Command Line Interface. """
 
 __RCSID__ = "$Id$"
@@ -12,12 +11,13 @@ import os
 import atexit
 import readline
 import datetime
+import time
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-import DIRAC.Core.Utilities.InstallTools as InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
-  """
+  """ Line oriented command interpreter for administering DIRAC components
   """
   def __errMsg( self, errMsg ):
     gLogger.error( "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg ) )
@@ -43,7 +43,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     self.cwd = ''  
     self.previous_cwd = ''
     self.homeDir = ''
-    self.runitComponents = [ "service", "agent", "executor" ]
+    self.runitComponents = [ "service", "agent", "executor", "consumer" ]
 
     # store history
     histfilename = os.path.basename(sys.argv[0])
@@ -219,10 +219,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         printTable(fields,records)        
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
-      if not InstallTools.mysqlPassword:
-        InstallTools.mysqlPassword = "LocalConfig"
-      InstallTools.getMySQLPasswords()
-      result = client.getDatabases( InstallTools.mysqlRootPwd )
+      if not gComponentInstaller.mysqlPassword:
+        gComponentInstaller.mysqlPassword = "LocalConfig"
+      gComponentInstaller.getMySQLPasswords()
+      result = client.getDatabases( gComponentInstaller.mysqlRootPwd )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -524,10 +524,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "mysql":
       gLogger.notice( "Installing MySQL database, this can take a while ..." )
       client = SystemAdministratorClient( self.host, self.port )
-      if InstallTools.mysqlPassword == 'LocalConfig':
-        InstallTools.mysqlPassword = ''
-      InstallTools.getMySQLPasswords()
-      result = client.installMySQL( InstallTools.mysqlRootPwd, InstallTools.mysqlPassword )
+      if gComponentInstaller.mysqlPassword == 'LocalConfig':
+        gComponentInstaller.mysqlPassword = ''
+      gComponentInstaller.getMySQLPasswords()
+      result = client.installMySQL( gComponentInstaller.mysqlRootPwd, gComponentInstaller.mysqlPassword )
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
@@ -558,10 +558,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( "\tAdd new instance with 'add instance %s <instance_name>'" % system )
         return
 
-      if not InstallTools.mysqlPassword:
-        InstallTools.mysqlPassword = 'LocalConfig'
-      InstallTools.getMySQLPasswords()
-      result = client.installDatabase( database, InstallTools.mysqlRootPwd )
+      if not gComponentInstaller.mysqlPassword:
+        gComponentInstaller.mysqlPassword = 'LocalConfig'
+      gComponentInstaller.getMySQLPasswords()
+      result = client.installDatabase( database, gComponentInstaller.mysqlRootPwd )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -584,12 +584,12 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           self.__errMsg( result['Message'] )
           return
       # result = client.addDatabaseOptionsToCS( system, database )
-      InstallTools.mysqlHost = self.host
+      gComponentInstaller.mysqlHost = self.host
       result = client.getInfo()
       if not result['OK']:
         self.__errMsg( result['Message'] )
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDatabaseOptionsToCS( gConfig, system, database, hostSetup, overwrite = True )
+      result = gComponentInstaller.addDatabaseOptionsToCS( gConfig, system, database, hostSetup, overwrite = True )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -619,7 +619,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
-      InstallTools.host = self.host
+      gComponentInstaller.host = self.host
       result = client.getInfo()
       if not result['OK']:
         self.__errMsg( result['Message'] )
@@ -628,15 +628,15 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       
       # Install Module section if not yet there
       if module:
-        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, module, 
+        result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, module,
                                                      getCSExtensions(), hostSetup )
         # Add component section with specific parameters only
-        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+        result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
                                                      getCSExtensions(), hostSetup, specialOptions, 
-                                                     addDefaultOptions = False )
+                                                     addDefaultOptions = True )
       else:  
         # Install component section
-        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+        result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
                                                      getCSExtensions(), hostSetup, specialOptions )
     
       if not result['OK']:
@@ -660,6 +660,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         cpu = result[ 'Value' ][ 'CPUModel' ]
       hostname = self.host
       if component == 'ComponentMonitoring':
+        # Make sure that the service is running before trying to use it
+        nTries = 0
+        maxTries = 5
+        mClient = ComponentMonitoringClient()
+        result = mClient.ping()
+        while not result[ 'OK' ] and nTries < maxTries:
+          time.sleep( 3 )
+          result = mClient.ping()
+          nTries = nTries + 1
+
+        if not result[ 'OK' ]:
+          self.__errMsg( 'ComponentMonitoring service taking too long to start. Installation will not be logged into the database' )
+          return
+
         result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
         if not result['OK']:
           self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
@@ -911,7 +925,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           lcgVersion = argss[1]  
           del argss[0]
           del argss[0]
-    except Exception, x:
+    except Exception as x:
       gLogger.notice( "ERROR: wrong input:", str( x ) )
       gLogger.notice( self.do_update.__doc__ )
       return  
@@ -971,7 +985,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         else:
           self.__errMsg( "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup ) )
         return
-      result = InstallTools.addSystemInstance( system, instance, hostSetup )
+      result = gComponentInstaller.addSystemInstance( system, instance, hostSetup )
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
@@ -1014,9 +1028,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     argss = args.split()
     fname = argss[0]
-    execfile = open( fname, 'r' )
-    lines = execfile.readlines()
-    execfile.close()
+    with open( fname, 'r' ) as executedfile:
+      lines = executedfile.readlines()
 
     for line in lines:
       if line.find( '#' ) != -1 :

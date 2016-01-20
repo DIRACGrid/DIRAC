@@ -152,12 +152,12 @@ class WorkingProcess( multiprocessing.Process ):
     """ c'tor
 
     :param self: self reference
-    :param : pendingQueue: queue storing ProcessTask before exection
-    :type multiprocessing.Queue pendingQueue
+    :param pendingQueue: queue storing ProcessTask before exection
+    :type pendingQueue: multiprocessing.Queue
     :param resultsQueue: queue storing callbacks and exceptionCallbacks
-    :type multiprocessing.Queue 
-    :param  stopEvent: event to stop processing
-    :type multiprocessing.Event
+    :type resultsQueue: multiprocessing.Queue
+    :param stopEvent: event to stop processing
+    :type stopEvent: multiprocessing.Event
     """
     multiprocessing.Process.__init__( self )
     ## daemonize
@@ -522,7 +522,7 @@ class ProcessTask( object ):
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
-    except Exception, x:
+    except Exception as x:
       self.__exceptionRaised = True
       if gLogger:
         gLogger.exception( "Exception in process of pool" )

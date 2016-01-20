@@ -25,7 +25,7 @@ CREATE TABLE Transformations (
     TransformationID INTEGER NOT NULL AUTO_INCREMENT,
     TransformationName VARCHAR(255) NOT NULL,
     Description VARCHAR(255),
-    LongDescription  BLOB,
+    LongDescription BLOB,
     CreationDate DATETIME,
     LastUpdate DATETIME,
     AuthorDN VARCHAR(255) NOT NULL,
@@ -138,7 +138,7 @@ DROP TABLE IF EXISTS TaskInputs;
 CREATE TABLE TaskInputs (
 	TransformationID INTEGER NOT NULL,
 	TaskID INTEGER NOT NULL,
-	InputVector BLOB,
+	InputVector MEDIUMTEXT,
 	PRIMARY KEY(TransformationID,TaskID),
 	FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

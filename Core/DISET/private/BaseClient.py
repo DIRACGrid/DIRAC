@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import time
@@ -48,6 +47,9 @@ class BaseClient:
     self.__enableThreadCheck = False
     self.__retry = 0
     self.__retryDelay = 0
+    self.__nbOfUrls = 1 #by default we always have 1 url for example: RPCClient('dips://volhcb38.cern.ch:9162/Framework/SystemAdministrator')
+    self.__nbOfRetry = 3 # by default we try try times
+    self.__retryCounter = 1
     self.__bannedUrls = []
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
@@ -93,7 +95,7 @@ class BaseClient:
     #Calculate final URL
     try:
       result = self.__findServiceURL()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
     if not result[ 'OK' ]:
       return result
@@ -197,30 +199,70 @@ class BaseClient:
 
     try:
       urls = getServiceURL( self._destinationSrv, setup = self.setup )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self._destinationSrv, self.setup, str( e ) ) )
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
-    
+
     urls = List.fromChar( urls, "," )
-    self.numberOfURLs = len( urls )
-      
+    self.__nbOfUrls = len( urls )
+    self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3 # we retry 2 times all services, if we run more than 2 services
     if len( urls ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
-      self.__retryDelay = 5 / len ( urls )  # we run only one service! In that case we increase the retry delay.
-      gLogger.debug( "Retrying again all URLs" )      
-      
+      gLogger.debug( "Retrying again all URLs" )
+
     if len( self.__bannedUrls ) > 0 and len( urls ) > 1 :
       # we have host which is not accessible. We remove that host from the list.
       # We only remove if we have more than one instance
       for i in self.__bannedUrls:
         gLogger.debug( "Removing banned URL", "%s" % i )
         urls.remove( i )
-        
-    sURL = List.randomize( urls )[0]
 
+    randUrls = List.randomize( urls )
+    sURL = randUrls[0]
+
+    if len( self.__bannedUrls ) > 0 and self.__nbOfUrls > 2:  # when we have multiple services then we can have a situation
+      # when two service are running on the same machine with different port...
+
+      retVal = Network.splitURL( sURL )
+      nexturl = None
+      if retVal['OK']:
+        nexturl = retVal['Value']
+
+        found = False
+        for i in self.__bannedUrls:
+          retVal = Network.splitURL( i )
+          if retVal['OK']:
+            bannedurl = retVal['Value']
+          else:
+            break
+
+          if nexturl[1] == bannedurl[1]:
+            found = True
+            break
+        if found:
+          nexturl = self.__selectUrl( nexturl, randUrls[1:] )
+          if nexturl:  # an url found which is in different host
+            sURL = nexturl
     gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )
     return S_OK( sURL )
+
+  def __selectUrl( self, notselect, urls ):
+    """In case when multiple services are running in the same host, a new url has to be in a different host
+    Note: If we do not have different host we will use the selected url...
+    """
+
+    url = None
+    for i in urls:
+      retVal = Network.splitURL( i )
+      if retVal['OK']:
+        if retVal['Value'][1] != notselect[1]:  # the hots are different
+          url = i
+          break
+        else:
+          gLogger.error( retVal['Message'] )
+    return url
+
 
   def __checkThreadID( self ):
     if not self.__initStatus[ 'OK' ]:
@@ -242,6 +284,7 @@ and this is thread %s
 
 
   def _connect( self ):
+
     self.__discoverExtraCredentials()
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
@@ -250,22 +293,30 @@ and this is thread %s
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
       transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs )
+      #the socket timeout is the default value which is 1.
+      #later we increase to 5
       retVal = transport.initAsClient()
       if not retVal[ 'OK' ]:
-        if self.__retry < 5:
+        if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
           url = "%s://%s:%d/%s" % ( self.__URLTuple[0], self.__URLTuple[1], int( self.__URLTuple[2] ), self.__URLTuple[3] )
           if url not in self.__bannedUrls:
             self.__bannedUrls += [url]
-            if len( self.__bannedUrls ) < self.numberOfURLs:
+            if len( self.__bannedUrls ) < self.__nbOfUrls:
               gLogger.notice( "Non-responding URL temporarily banned", "%s" % url )
           self.__retry += 1
+          if self.__retryCounter == self.__nbOfRetry - 1:
+            transport.setSocketTimeout( 5 ) # we increase the socket timeout in case the network is not good
           gLogger.info( "Retry connection: ", "%d" % self.__retry )
-          time.sleep( self.__retryDelay )
+          if len(self.__bannedUrls) == self.__nbOfUrls:
+            self.__retryCounter += 1
+            self.__retryDelay = 3. / self.__nbOfUrls  if self.__nbOfUrls > 1 else 2  # we run only one service! In that case we increase the retry delay.
+            gLogger.info( "Waiting %f  second before retry all service(s)" % self.__retryDelay )
+            time.sleep( self.__retryDelay )
           self.__discoverURL()
           return self._connect()
         else:
           return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
     trid = getGlobalTransportPool().add( transport )
     return S_OK( ( trid, transport ) )

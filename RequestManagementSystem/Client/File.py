@@ -74,7 +74,7 @@ class File( object ):
                else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
                else {}
 
-    for attrName, attrValue in fromDict.items():
+    for attrName, attrValue in fromDict.iteritems():
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
       # One would need to replace all the '== str' with 'in StringTypes'
@@ -150,11 +150,11 @@ class File( object ):
 
     if value == 'Done':
       self.Error = ''
-      
+
     updateTime = ( self._Status != value )
     if updateTime and self._parent:
-      self._parent.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )  
-      
+      self._parent.LastUpdate = datetime.datetime.utcnow().replace( microsecond = 0 )
+
     self._Status = value
 
     if self._parent:
@@ -198,4 +198,3 @@ class File( object ):
         jsonData[attrName] = value
 
     return jsonData
-

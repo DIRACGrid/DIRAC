@@ -337,25 +337,25 @@ class GraphData:
       try:
         s = "Max: " + pretty_float( max_value ) + " " + unitString
         tmpList.append( s.strip() )
-      except Exception, e:
+      except Exception as e:
         pass
     if min_value:
       try:
         s = "Min: " + pretty_float( min_value ) + " " + unitString
         tmpList.append( s.strip() )
-      except Exception, e:
+      except Exception as e:
         pass
     if average:
       try:
         s = "Average: " + pretty_float( average ) + " " + unitString
         tmpList.append( s.strip() )
-      except Exception, e:
+      except Exception as e:
         pass
     if current:
       try:
         s = "Current: " + pretty_float( current ) + " " + unitString
         tmpList.append( s.strip() )
-      except Exception, e:
+      except Exception as e:
         pass
 
     resultString = ', '.join( tmpList )

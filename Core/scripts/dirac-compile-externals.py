@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-compile-externals
 # Author : Adria Casajus
 ########################################################################
@@ -10,9 +9,7 @@ Compile DIRAC externals (does not require DIRAC code)
 __RCSID__ = "$Id$"
 
 import tempfile
-import urllib2
 import os
-import tarfile
 import getopt
 import sys
 import stat
@@ -28,40 +25,41 @@ DIRACRoot = False
 def downloadExternals( destPath, version = False ):
   destPath = os.path.join( destPath, "Externals" )
   if 0 != os.system( "git clone %s %s" % ( gitRepo, destPath ) ):
-      print "Cannot clone git repo"
-      return False
+    print "Cannot clone git repo"
+    return False
   if version and 0 != os.system( "cd '%s'; git checkout -b 'comp-%s' '%s'" % ( destPath, version, version ) ):
     print "Cannot find version %s" % version
     return False
   return True
 
-def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = [] ):
+def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = None ):
+  if filterLines is None:
+    filterLines = []
+
   global DIRACRoot
   if not DIRACRoot:
     basePath = os.path.dirname( os.path.realpath( __file__ ) )
     DIRACRoot = findDIRACRoot( basePath )
   try:
-    fd = open( os.path.join( DIRACRoot, filePath ), "r" )
-    data = fd.readlines()
-    fd.close()
+    with open( os.path.join( DIRACRoot, filePath ), "r" ) as fd:
+      data = fd.readlines()
   except IOError, e:
     print "Could not open %s: %s" % ( filePath, e )
     sys.exit( 1 )
   destFilePath = os.path.join( destPath, os.path.basename( filePath ) )
   try:
-    fd = open( destFilePath, "w" )
-  except IOError, e:
+    with open( destFilePath, "w" ) as fd:
+      for line in data:
+        found = False
+        for fstr in filterLines:
+          if line.find( fstr ) > -1:
+            found = True
+            break
+        if not found:
+          fd.write( line )
+  except IOError as e:
     print "Could not write into %s: %s" % ( destFilePath, e )
     sys.exit( 1 )
-  for line in data:
-    found = False
-    for fstr in filterLines:
-      if line.find( fstr ) > -1:
-        found = True
-        break
-    if not found:
-      fd.write( line )
-  fd.close()
   if isExecutable:
     os.chmod( destFilePath, executablePerms )
 
@@ -80,11 +78,11 @@ def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
   if compType not in buildCFG.listSections():
     return []
   typeCFG = buildCFG[ compType ]
-  for type in typeCFG.getOption( 'require', [] ):
-    if type in explored:
+  for tc in typeCFG.getOption( 'require', [] ):
+    if tc in explored:
       continue
-    explored.append( type )
-    newPackages = resolvePackagesToBuild( type, buildCFG, explored )
+    explored.append( tc )
+    newPackages = resolvePackagesToBuild( tc, buildCFG, explored )
     for pkg in newPackages:
       if pkg not in packagesToBuild:
         packagesToBuild.append( pkg )
@@ -125,19 +123,19 @@ if __name__ == "__main__":
               ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
               ( 'v:', 'version=', 'Version of the externals to compile (default will be the latest commit)' ),
               ( 'h', 'help', 'Show this help' ),
-              ( 'i:', 'pythonVersion=', 'Python version to compile (default 26)' ),
+              ( 'i:', 'pythonVersion=', 'Python version to compile (default 2.7)' ),
               ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
               ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
             )
-  
+
   compExtVersion = False
   compType = 'client'
   compDest = False
   compExtSource = False
   onlyFixLinks = False
   makeArgs = []
-  compVersionDict = { 'PYTHONVERSION' : '2.6' }
-  
+  compVersionDict = { 'PYTHONVERSION' : '2.7' }
+
   optList, args = getopt.getopt( sys.argv[1:],
                                  "".join( [ opt[0] for opt in cmdOpts ] ),
                                  [ opt[1] for opt in cmdOpts ] )
@@ -171,17 +169,16 @@ if __name__ == "__main__":
         print "Value for makeJobs mas to be greater than 0 (%s)" % v
         sys.exit( 1 )
       makeArgs.append( "-j %d" % int( v ) )
-  
+
   #Find platform
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
   DIRACRoot = findDIRACRoot( basePath )
   if DIRACRoot:
     platformPath = os.path.join( DIRACRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-    platFD = open( platformPath, "r" )
-    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-    platFD.close()
+    with open( platformPath, "r" ) as platFD:
+      Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
     platform = Platform.getPlatformString()
-  
+
   if not compDest:
     if not DIRACRoot:
       print "Error: Could not find DIRAC root"
@@ -191,12 +188,12 @@ if __name__ == "__main__":
       print >> sys.stderr, "Can not determine local platform"
       sys.exit( -1 )
     compDest = os.path.join( DIRACRoot, platform )
-  
+
   if onlyFixLinks:
     print "Fixing absolute links"
     fixAbsoluteLinks( compDest )
     sys.exit( 0 )
-  
+
   if compDest:
     if os.path.isdir( compDest ):
       oldCompDest = compDest + '.old'
@@ -204,7 +201,7 @@ if __name__ == "__main__":
       if os.path.exists( oldCompDest ):
         shutil.rmtree( oldCompDest )
       os.rename( compDest, oldCompDest )
-  
+
   if not compExtSource:
     workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
     print "Creating temporary work dir at %s" % workDir
@@ -215,35 +212,33 @@ if __name__ == "__main__":
     externalsDir = os.path.join( workDir, "Externals" )
   else:
     externalsDir = compExtSource
-  
+
   copyFromDIRAC( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
   copyFromDIRAC( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
-  
+
   #Load CFG
   cfgPath = os.path.join( externalsDir, "CFG.py" )
-  cfgFD = open( cfgPath, "r" )
-  CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
-  cfgFD.close()
-  
+  with open( cfgPath, "r" ) as cfgFD:
+    CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
   buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
-  
+
   if compType not in buildCFG.listSections():
     print "Invalid compilation type %s" % compType
     print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
     sys.exit( 1 )
-  
+
   packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
-  
-  
+
+
   if compDest:
     makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
-  
+
   #Substitution of versions
   finalPackages = []
   for prog in packagesToBuild:
     for k in compVersionDict:
       finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
-  
+
   print "Trying to get a raw environment"
   patDet = os.path.join( DIRACRoot, platform )
   for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
@@ -256,7 +251,7 @@ if __name__ == "__main__":
       if value.find( patDet ) != 0:
         fixedValList.append( value )
     os.environ[ envVar ] = ":".join( fixedValList )
-  
+
   makeArgs = " ".join( makeArgs )
   print "Building %s" % ", ".join ( finalPackages )
   for prog in finalPackages:
@@ -272,9 +267,6 @@ if __name__ == "__main__":
       print "Oops! Error while compiling %s" % prog
       print "Take a look at %s for more info" % buildOutPath
       sys.exit( 1 )
-  
+
   print "Fixing absolute links"
   fixAbsoluteLinks( compDest )
-  
-  
-  

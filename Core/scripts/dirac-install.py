@@ -7,17 +7,17 @@ __RCSID__ = "$Id$"
 import sys
 import os
 import getopt
-import tarfile
 import urllib2
 import imp
 import signal
-import re
 import time
 import stat
 import types
 import shutil
-import zipfile
-import hashlib as md5
+try:
+  import hashlib as md5
+except ImportError:
+  import md5
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
@@ -405,7 +405,7 @@ class ReleaseConfig( object ):
   def loadInstallationLocalDefaults( self, fileName ):
     try:
       fd = open( fileName, "r" )
-      #TODO: Merge with installation CFG
+      # TODO: Merge with installation CFG
       cfg = ReleaseConfig.CFG().parse( fd.read() )
       fd.close()
     except Exception, excp :
@@ -627,7 +627,7 @@ class ReleaseConfig( object ):
       #Default modules with the same version as the release version
       modules = self.getReleaseOption( project, release, "DefaultModules" )
       if modules:
-        modules = dict( [ ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() ] )
+        modules = dict( ( modName.strip() , release ) for modName in modules.split( "," ) if modName.strip() )
       else:
         #Mod = project and same version
         modules = { project : release }
@@ -788,7 +788,7 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
     except Exception, x:
       logWARN( 'Content-Length parameter not returned, skipping expectedBytes check' )
-        
+
     if fileName:
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -948,9 +948,9 @@ def fixBuildPaths():
     line = fd.readline()
     fd.close()
     buildPath = line[2:line.find( cliParams.platform ) - 1]
-    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath, 
-                                                                          binaryPath, 
-                                                                          buildPath, 
+    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath,
+                                                                          binaryPath,
+                                                                          buildPath,
                                                                           cliParams.targetPath )
     os.system( replaceCmd )
 
@@ -1025,7 +1025,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'l:', 'project=', 'Project to install' ),
             ( 'e:', 'extraModules=', 'Extra modules to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
-            ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
+            ( 'i:', 'pythonVersion=', 'Python version to compile (27/26)' ),
             ( 'p:', 'platform=', 'Platform to install' ),
             ( 'P:', 'installationPath=', 'Path where to install (default current working dir)' ),
             ( 'b', 'build', 'Force local compilation' ),
@@ -1110,7 +1110,7 @@ def loadConfiguration():
       opName = 'extraModules'
     if opName == 'installType':
       opName = 'externalsType'
-    if type( getattr( cliParams, opName ) ) == types.StringType:
+    if isinstance( getattr( cliParams, opName ), basestring ):
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
       setattr( cliParams, opName, opVal.lower() in ( "y", "yes", "true", "1" ) )
@@ -1321,8 +1321,8 @@ def createBashrc():
                      'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
       lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
-                    'PYTHONPATH=""',
-                    'LD_LIBRARY_PATH=""'] )
+                     'PYTHONPATH=""',
+                     'LD_LIBRARY_PATH=""'] )
 
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
@@ -1421,7 +1421,10 @@ def writeDefaultConfiguration():
 
 def __getTerminfoLocations( defaultLocation=None ):
   """returns the terminfo locations as a colon separated string"""
-  terminfoLocations = [ defaultLocation ] if defaultLocation else []
+
+  terminfoLocations = []
+  if defaultLocation:
+    terminfoLocations = [ defaultLocation ]
 
   for termpath in [ '/usr/share/terminfo', '/etc/terminfo' ]:
     if os.path.exists( termpath ):
@@ -1480,4 +1483,3 @@ if __name__ == "__main__":
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
-

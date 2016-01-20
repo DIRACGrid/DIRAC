@@ -1,6 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
 """ SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
 """
@@ -8,11 +5,11 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-import random
-import types
+from types import StringTypes, ListType, DictType, TupleType
 import threading
 import tempfile
-from DIRAC import gLogger, S_OK, S_ERROR  # , gConfig
+
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
@@ -22,15 +19,12 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security import Properties
-# from DIRAC.Core.Utilities import List
 
 sandboxDB = False
 
 def initializeSandboxStoreHandler( serviceInfo ):
   global sandboxDB, gSBDeletionPool
-  random.seed()
   sandboxDB = SandboxMetadataDB()
-  print sandboxDB
   return S_OK()
 
 class SandboxStoreHandler( RequestHandler ):
@@ -81,7 +75,7 @@ class SandboxStoreHandler( RequestHandler ):
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
-    if type( fileId ) in ( types.ListType, types.TupleType ):
+    if type( fileId ) in ( ListType, TupleType ):
       if len( fileId ) > 1:
         assignTo = fileId[1]
         fileId = fileId[0]
@@ -186,7 +180,7 @@ class SandboxStoreHandler( RequestHandler ):
     if not result[ 'OK' ]:
       self.__secureUnlinkFile( tmpFilePath )
       return result
-    sbid, newSandbox = result[ 'Value' ]
+    sbid, _newSandbox = result[ 'Value' ]
     gLogger.info( "Registered in DB", "with SBId %s" % sbid )
 
     result = self.__moveToFinalLocation( tmpFilePath, sbPath )
@@ -232,34 +226,40 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Dump incoming network data to temporal file
     """
-    tfd = False
+    tfd = None
     if not destFileName:
       try:
         tfd, destFileName = tempfile.mkstemp( prefix = "DSB." )
-      except Exception, e:
-        return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
+        tfd.close()
+      except Exception as e:
+        gLogger.error( "%s" % repr( e ).replace( ',)', ')' ) )
+        return S_ERROR( "Cannot create temporary file" )
+
     destFileName = os.path.realpath( destFileName )
     try:
       os.makedirs( os.path.dirname( destFileName ) )
-    except:
+    except Exception as _e:
       pass
+
     try:
-      fd = open( destFileName, "wb" )
-    except Exception, e:
-      return S_ERROR( "Cannot open to write destination file %s" % destFileName )
-    result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
+      if tfd is not None:
+        fd = tfd
+      else:
+        fd = open( destFileName, "wb" )
+      result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
+      fd.close()
+    except Exception as e:
+      gLogger.error( "Cannot open to write destination file", "%s: %s" % ( destFileName, repr( e ).replace( ',)', ')' ) ) )
+      return S_ERROR( "Cannot open to write destination file" )
     if not result[ 'OK' ]:
       return result
-    if tfd:
-      os.close( tfd )
-    fd.close()
     return S_OK( destFileName )
 
   def __secureUnlinkFile( self, filePath ):
     try:
       os.unlink( filePath )
-    except Exception, e:
-      gLogger.warn( " Could not unlink file %s: %s" % ( filePath, str( e ) ) )
+    except Exception as e:
+      gLogger.warn( "Could not unlink file %s: %s" % ( filePath, repr( e ).replace( ',)', ')' ) ) )
       return False
     return True
 
@@ -278,10 +278,10 @@ class SandboxStoreHandler( RequestHandler ):
             pass
         try:
           os.rename( localFilePath, hdFilePath )
-        except Exception, e:
+        except Exception as e:
           errMsg = "Cannot move temporal file to final path"
-          gLogger.error( errMsg, str( e ) )
-          result = S_ERROR( "%s: %s" % ( errMsg, str( e ) ) )
+          gLogger.error( errMsg, repr( e ).replace( ',)', ')' ) )
+          result = S_ERROR( errMsg )
     else:
       result = self.__copyToExternalSE( localFilePath, sbPath )
 
@@ -304,13 +304,14 @@ class SandboxStoreHandler( RequestHandler ):
         gLogger.verbose( "Ooops, SB transfer wasn't in the successful ones", str( result ) )
         return S_ERROR( "RM returned OK to the action but SB transfer wasn't in the successful ones" )
       return S_OK( ( self.__externalSEName, okTrans[ sbPath ] ) )
-    except Exception, e:
-      return S_ERROR( "Error while moving sandbox to SE: %s" % str( e ) )
+    except Exception as e:
+      gLogger.error( "Error while moving sandbox to SE", "%s" % repr( e ).replace( ',)', ')' ) )
+      return S_ERROR( "Error while moving sandbox to SE" )
 
   ##################
   # Assigning sbs to jobs
 
-  types_assignSandboxesToEntities = [ types.DictType ]
+  types_assignSandboxesToEntities = [ DictType ]
   def export_assignSandboxesToEntities( self, enDict, ownerName = "", ownerGroup = "", entitySetup = False ):
     """
     Assign sandboxes to jobs.
@@ -325,7 +326,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Unassign sbs to jobs
 
-  types_unassignEntities = [ ( types.ListType, types.TupleType ) ]
+  types_unassignEntities = [ ( ListType, TupleType ) ]
   def export_unassignEntities( self, entitiesList, entitiesSetup = False ):
     """
     Unassign a list of jobs
@@ -338,7 +339,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Getting assigned sandboxes
 
-  types_getSandboxesAssignedToEntity = [ types.StringType ]
+  types_getSandboxesAssignedToEntity = [ StringTypes ]
   def export_getSandboxesAssignedToEntity( self, entityId, entitySetup = False ):
     """
     Get the sandboxes associated to a job and the association type
@@ -409,7 +410,6 @@ class SandboxStoreHandler( RequestHandler ):
       return result
     sbList = result[ 'Value' ]
     gLogger.info( "Got %s sandboxes to purge" % len( sbList ) )
-    deletedFromSE = []
     for sbId, SEName, SEPFN in sbList:
       self.__purgeSandbox( sbId, SEName, SEPFN )
 
@@ -434,13 +434,13 @@ class SandboxStoreHandler( RequestHandler ):
       try:
         if not os.path.isfile( hdPath ):
           return S_OK()
-      except Exception, e:
-        gLogger.error( "Cannot perform isfile", "%s : %s" % ( hdPath, str( e ) ) )
+      except Exception as e:
+        gLogger.error( "Cannot perform isfile", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
         return S_ERROR( "Error checking %s" % hdPath )
       try:
         os.unlink( hdPath )
-      except Exception, e:
-        gLogger.error( "Cannot delete local sandbox", "%s : %s" % ( hdPath, str( e ) ) )
+      except Exception as e:
+        gLogger.error( "Cannot delete local sandbox", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
       while hdPath:
         hdPath = os.path.dirname( hdPath )
         gLogger.info( "Checking if dir %s is empty" % hdPath )
@@ -452,8 +452,8 @@ class SandboxStoreHandler( RequestHandler ):
           gLogger.info( "Trying to clean dir %s" % hdPath )
           # Empty dir!
           os.rmdir( hdPath )
-        except Exception, e:
-          gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, str( e ) ) )
+        except Exception as e:
+          gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
           break
     return S_OK()
 
@@ -472,13 +472,13 @@ class SandboxStoreHandler( RequestHandler ):
         physicalRemoval.addFile( fileToRemove )
         request.addOperation( physicalRemoval )
         return ReqClient().putRequest( request )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "Exception while setting deletion request" )
         return S_ERROR( "Cannot set deletion request: %s" % str( e ) )
     else:
       gLogger.info( "Deleting external Sandbox" )
       try:
         return StorageElement( SEName ).removeFile( SEPFN )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "RM raised an exception while trying to delete a remote sandbox" )
         return S_ERROR( "RM raised an exception while trying to delete a remote sandbox" )

@@ -12,7 +12,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import StringType, IntType, ListType
+from types import StringTypes, IntType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -88,7 +88,7 @@ class JobManagerHandler( RequestHandler ):
     self.log.info( "Optimize msg sent for %s jobs" % len( jids ) )
 
   ###########################################################################
-  types_submitJob = [ StringType ]
+  types_submitJob = [ StringTypes ]
   def export_submitJob( self, jobDesc ):
     """ Submit a single job to DIRAC WMS
     """
@@ -111,7 +111,7 @@ class JobManagerHandler( RequestHandler ):
     if jobDesc[-1] != "]":
       jobDesc = "%s]" % jobDesc
 
-    # Check if the job is a parameteric one
+    # Check if the job is a parametric one
     jobClassAd = ClassAd( jobDesc )
     parametricJob = False
     if jobClassAd.lookupAttribute( 'Parameters' ):
@@ -203,7 +203,7 @@ class JobManagerHandler( RequestHandler ):
 
     result['JobID'] = result['Value']
     result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
-    self.__sendJobsToOptimizationMind( [ jobID ] )
+    self.__sendJobsToOptimizationMind( jobIDList )
     return result
 
 ###########################################################################
@@ -229,15 +229,15 @@ class JobManagerHandler( RequestHandler ):
     """ Evaluate the jobInput into a list of ints
     """
 
-    if type( jobInput ) == IntType:
+    if isinstance( jobInput, int ):
       return [jobInput]
-    if type( jobInput ) == StringType:
+    if isinstance( jobInput, basestring ):
       try:
         ijob = int( jobInput )
         return [ijob]
       except:
         return []
-    if type( jobInput ) == ListType:
+    if isinstance( jobInput, list ):
       try:
         ljob = [ int( x ) for x in jobInput ]
         return ljob

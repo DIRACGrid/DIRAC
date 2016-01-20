@@ -11,7 +11,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                              import S_OK, S_ERROR
+from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                        import AgentModule
 from DIRAC.Core.Utilities.Grid                          import getBdiiCEInfo, getBdiiSEInfo
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
@@ -82,6 +82,9 @@ class Bdii2CSAgent( AgentModule ):
     result = self.csAPI.downloadCSData()
     if not result['OK']:
       self.log.warn( "Could not download a fresh copy of the CS data", result[ 'Message' ] )
+
+    # Refresh the configuration from the master server
+    gConfig.forceRefresh( fromMaster = True )
 
     if self.processCEs:
       self.__lookForNewCEs()

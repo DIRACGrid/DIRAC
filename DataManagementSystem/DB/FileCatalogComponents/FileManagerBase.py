@@ -179,7 +179,7 @@ class FileManagerBase( object ):
 
         :param dirID : directory id
 
-        :returns S_OK(value) or S_ERROR
+        :returns: S_OK(value) or S_ERROR
     """
     return S_ERROR( "To be implemented on derived class" )
 
@@ -409,7 +409,7 @@ class FileManagerBase( object ):
       originalFileID = lfnDict['FileID']
       originalDepth = lfnDict.get( 'AncestorDepth', 1 )
       ancestors = lfnDict.get( 'Ancestors', [] )
-      if type( ancestors ) == type( ' ' ):
+      if isinstance( ancestors, basestring ):
         ancestors = [ancestors]
       if lfn in ancestors:
         ancestors.remove( lfn )
@@ -1181,7 +1181,8 @@ class FileManagerBase( object ):
   def _getFileDirectories( self, lfns ):
     """ For a list of lfn, returns a dictionary with key the directory, and value
         the files in that directory. It does not make any query, just splits the names
-        :param lfns list of lfns
+
+        :param lfns: list of lfns
     """
     dirDict = {}
     for lfn in lfns:

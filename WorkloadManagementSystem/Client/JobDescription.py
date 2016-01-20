@@ -3,14 +3,14 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
+from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import getSubmitPools
 
-class JobDescription:
+class JobDescription( object ):
 
   def __init__( self ):
     self.__description = CFG()
@@ -46,7 +46,7 @@ class JobDescription:
     """
     try:
       self.__description.loadFromBuffer( cfgString )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
     return S_OK()
 
@@ -141,11 +141,12 @@ class JobDescription:
     result = self.__checkNumericalVarInDescription( "Priority", 1, 0, 10 )
     if not result[ 'OK' ]:
       return result
-    allowedSubmitPools = []
-    for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools += gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ),
-                                                          option ),
-                                             [] )
+
+    allowedSubmitPools = getSubmitPools( self.__description['OwnerGroup'] )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    if not result[ 'OK' ]:
+      return result
+
     result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result

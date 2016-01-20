@@ -1,24 +1,23 @@
-########################################################################
-# $HeadURL$
-########################################################################
+""" QualityGraph represents a Quality Map of entities as a special color schema
 
-""" QualityGraph represents a Quality Map of entities as a special color schema 
-    
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
-from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.BarGraph import BarGraph
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
+import datetime
 from pylab import setp
 from matplotlib.colors import normalize, LinearSegmentedColormap
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 from matplotlib.dates import date2num
+
+from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
+from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
+from DIRAC.Core.Utilities.Graphs.BarGraph import BarGraph
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pixelToPoint, PrettyDateLocator, \
+                                                       PrettyDateFormatter, PrettyScalarFormatter
 
 cdict = {'red': ( ( 0.0, 1., 1.0 ),
                  ( 0.5, .0, .0 ),
@@ -52,9 +51,9 @@ class QualityMapGraph( PlotBase ):
   def __init__( self, data, ax, prefs, *args, **kw ):
 
     PlotBase.__init__( self, data, ax, prefs, *args, **kw )
-    if type( data ) == types.DictType:
+    if isinstance( data, dict ):
       self.gdata = GraphData( data )
-    elif type( data ) == types.InstanceType and data.__class__ == GraphData:
+    elif isinstance( data, type ) and data.__class__ == GraphData:
       self.gdata = data
     if self.prefs.has_key( 'span' ):
       self.width = self.prefs['span']
@@ -69,7 +68,7 @@ class QualityMapGraph( PlotBase ):
     #self.cmap = cm.RdYlGn
     self.norms = normalize( 0, 100 )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
-    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms )
+    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=E1101
     def get_alpha( *args, **kw ):
       return 1.0
     mapper.get_alpha = get_alpha
@@ -82,8 +81,6 @@ class QualityMapGraph( PlotBase ):
 
     if self.gdata.isEmpty():
       return None
-
-    tmp_x = []; tmp_y = []
 
     # Evaluate the bar width
     width = float( self.width )
@@ -110,9 +107,9 @@ class QualityMapGraph( PlotBase ):
     colors = []
     xmin = None
     xmax = None
-    for label, num in labels:
+    for label, _num in labels:
       labelNames.append( label )
-      for key, value, error in self.gdata.getPlotNumData( label ):
+      for key, value, _error in self.gdata.getPlotNumData( label ):
 
         if xmin is None or xmin > ( key + offset ):
           xmin = key + offset
@@ -150,9 +147,9 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
-    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms )
+    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=E1101
     cb.draw_all()
-    #cb = self.ax.colorbar( self.mapper, format="%d%%", 
+    #cb = self.ax.colorbar( self.mapper, format="%d%%",
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
     #setp( cb.outline, linewidth=.5 )
     #setp( cb.ax.get_xticklabels(), size=10 )
@@ -200,6 +197,6 @@ class QualityMapGraph( PlotBase ):
 
     else:
       try:
-        super( BarGraph, self ).x_formatter_cb( ax )
+        super( QualityMapGraph, self ).x_formatter_cb( ax )
       except:
         return None

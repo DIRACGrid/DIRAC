@@ -312,7 +312,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     ordering = ''
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer , timeStamp = 'MessageTime' )
-    except Exception, x:
+    except Exception as x:
       return S_ERROR ( str( x ) )
 
     if not showFieldList:

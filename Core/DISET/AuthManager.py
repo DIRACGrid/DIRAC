@@ -27,8 +27,8 @@ class AuthManager( object ):
     """
     Constructor
 
-    @type authSection: string
-    @param authSection: Section containing the authorization rules
+    :type authSection: string
+    :param authSection: Section containing the authorization rules
     """
     self.authSection = authSection
 
@@ -36,12 +36,12 @@ class AuthManager( object ):
     """
     Check if the query is authorized for a credentials dictionary
 
-    @type  methodQuery: string
-    @param methodQuery: Method to test
-    @type  credDict: dictionary
-    @param credDict: dictionary containing credentials for test. The dictionary can contain the DN
+    :type  methodQuery: string
+    :param methodQuery: Method to test
+    :type  credDict: dictionary
+    :param credDict: dictionary containing credentials for test. The dictionary can contain the DN
                         and selected group.
-    @return: Boolean result of test
+    :return: Boolean result of test
     """
     userString = ""
     if self.KW_DN in credDict:
@@ -74,7 +74,7 @@ class AuthManager( object ):
     #Check for invalid forwarding
     if self.KW_EXTRA_CREDENTIALS in credDict:
       #Invalid forwarding?
-      if type( credDict[ self.KW_EXTRA_CREDENTIALS ] ) not in  ( types.StringType, types.UnicodeType ):
+      if not isinstance ( credDict[ self.KW_EXTRA_CREDENTIALS ], basestring ):
         self.__authLogger.verbose( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
         return False
     #Is it a host?
@@ -128,9 +128,9 @@ class AuthManager( object ):
     Discover the host nickname associated to the DN.
     The nickname will be included in the credentials dictionary.
 
-    @type  credDict: dictionary
-    @param credDict: Credentials to ckeck
-    @return: Boolean specifying whether the nickname was found
+    :type  credDict: dictionary
+    :param credDict: Credentials to ckeck
+    :return: Boolean specifying whether the nickname was found
     """
     if not self.KW_DN in credDict:
       return True
@@ -148,9 +148,9 @@ class AuthManager( object ):
     """
     Get all authorized groups for calling a method
 
-    @type  method: string
-    @param method: Method to test
-    @return: List containing the allowed groups
+    :type  method: string
+    :param method: Method to test
+    :return: List containing the allowed groups
     """
     authProps = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if authProps:
@@ -172,9 +172,9 @@ class AuthManager( object ):
     """
     Check whether the credentials are being forwarded by a valid source
 
-    @type  credDict: dictionary
-    @param credDict: Credentials to ckeck
-    @return: Boolean with the result
+    :type  credDict: dictionary
+    :param credDict: Credentials to ckeck
+    :return: Boolean with the result
     """
     if self.KW_EXTRA_CREDENTIALS in credDict and type( credDict[ self.KW_EXTRA_CREDENTIALS ] ) == types.TupleType:
       if self.KW_DN in credDict:
@@ -189,8 +189,8 @@ class AuthManager( object ):
     """
     Extract the forwarded credentials
 
-    @type  credDict: dictionary
-    @param credDict: Credentials to unpack
+    :type  credDict: dictionary
+    :param credDict: Credentials to unpack
     """
     credDict[ self.KW_DN ] = credDict[ self.KW_EXTRA_CREDENTIALS ][0]
     credDict[ self.KW_GROUP ] = credDict[ self.KW_EXTRA_CREDENTIALS ][1]
@@ -202,9 +202,9 @@ class AuthManager( object ):
     Discover the username associated to the DN. It will check if the selected group is valid.
     The username will be included in the credentials dictionary.
 
-    @type  credDict: dictionary
-    @param credDict: Credentials to ckeck
-    @return: Boolean specifying whether the username was found
+    :type  credDict: dictionary
+    :param credDict: Credentials to ckeck
+    :return: Boolean specifying whether the username was found
     """
     if not self.KW_DN in credDict:
       return True
@@ -226,17 +226,17 @@ class AuthManager( object ):
   def matchProperties( self, credDict, validProps, caseSensitive = False ):
     """
     Return True if one or more properties are in the valid list of properties
-    @type  props: list
-    @param props: List of properties to match
-    @type  validProps: list
-    @param validProps: List of valid properties
-    @return: Boolean specifying whether any property has matched the valid ones
+    :type  props: list
+    :param props: List of properties to match
+    :type  validProps: list
+    :param validProps: List of valid properties
+    :return: Boolean specifying whether any property has matched the valid ones
     """
     #HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
     if not caseSensitive:
-      validProps = dict( [ ( prop.lower(), prop ) for prop in validProps ] )
+      validProps = dict( ( prop.lower(), prop ) for prop in validProps )
     else:
-      validProps = dict( [ ( prop, prop ) for prop in validProps ] )
+      validProps = dict( ( prop, prop ) for prop in validProps )
     groupProperties = credDict[ self.KW_PROPERTIES ]
     foundProps = []
     for prop in groupProperties:
