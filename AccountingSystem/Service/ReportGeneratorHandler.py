@@ -1,8 +1,12 @@
-# $HeadURL$
+""" Module that holds the ReportGeneratorHandler class
+"""
+
 __RCSID__ = "$Id$"
+
 import types
 import os
 import datetime
+import errno
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -18,16 +22,17 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 
 class ReportGeneratorHandler( RequestHandler ):
+  """ DIRAC service class to retrieve information from the AccountingDB
+  """
 
   __acDB = False
   __reportRequestDict = { 'typeName' : types.StringTypes,
-                        'reportName' : types.StringTypes,
-                        'startTime' : Time._allDateTypes,
-                        'endTime' : Time._allDateTypes,
-                        'condDict' : types.DictType,
-                        'grouping' : types.StringTypes,
-                        'extraArgs' : types.DictType
-                      }
+                          'reportName' : types.StringTypes,
+                          'startTime' : (datetime.datetime, datetime.date),
+                          'endTime' : (datetime.datetime, datetime.date),
+                          'condDict' : types.DictType,
+                          'grouping' : types.StringTypes,
+                          'extraArgs' : types.DictType}
 
   @classmethod
   def initializeHandler( cls, serviceInfo ):
@@ -42,8 +47,9 @@ class ReportGeneratorHandler( RequestHandler ):
     gLogger.info( "Data will be written into %s" % dataPath )
     try:
       os.makedirs( dataPath )
-    except:
-      pass
+    except OSError as e:
+      if e.errno != errno.EEXIST:
+        raise
     try:
       testFile = "%s/acc.jarl.test" % dataPath
       fd = file( testFile, "w" )
