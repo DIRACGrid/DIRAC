@@ -3,7 +3,7 @@
 
 __RCSID__ = "$Id$"
 
-import types
+from types import StringTypes, DictType, IntType, ListType, LongType, TupleType
 import os
 
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -44,14 +44,14 @@ def initializeMonitoringHandler( serviceInfo ):
 
 class MonitoringHandler( RequestHandler ):
 
-  types_registerActivities = [ types.DictType, types.DictType ]
+  types_registerActivities = [ DictType, DictType ]
   def export_registerActivities( self, sourceDict, activitiesDict, componentExtraInfo = {} ):
     """
     Registers new activities
     """
     return gServiceInterface.registerActivities( sourceDict, activitiesDict, componentExtraInfo )
 
-  types_commitMarks = [ types.IntType, types.DictType ]
+  types_commitMarks = [ IntType, DictType ]
   def export_commitMarks( self, sourceId, activitiesDict, componentExtraInfo = {} ):
     """
     Adds marks for activities
@@ -71,7 +71,7 @@ class MonitoringHandler( RequestHandler ):
       del( activitiesDict[ acName ] )
     return gServiceInterface.commitMarks( sourceId, activitiesDict, componentExtraInfo )
 
-  types_queryField = [ types.StringType, types.DictType ]
+  types_queryField = [ StringTypes, DictType ]
   def export_queryField( self, field, definedFields ):
     """
     Returns available values for a field., given a set of fields and values,
@@ -79,7 +79,7 @@ class MonitoringHandler( RequestHandler ):
     definedFields[ 'sources.setup' ] = self.serviceInfoDict[ 'clientSetup' ]
     return gServiceInterface.fieldValue( field, definedFields )
 
-  types_tryView = [ types.IntType, types.IntType, types.StringType ]
+  types_tryView = [ IntType, IntType, StringTypes ]
   def export_tryView( self, fromSecs, toSecs, viewDescriptionStub ):
     """
       Generates plots based on a DEncoded view description
@@ -91,7 +91,7 @@ class MonitoringHandler( RequestHandler ):
     defDict[ 'sources.setup' ] = self.serviceInfoDict[ 'clientSetup' ]
     return gServiceInterface.generatePlots( fromSecs, toSecs, viewDescription )
 
-  types_saveView = [ types.StringType, types.StringType ]
+  types_saveView = [ StringTypes, StringTypes ]
   def export_saveView( self, viewName, viewDescriptionStub ):
     """
     Saves a view
@@ -112,7 +112,7 @@ class MonitoringHandler( RequestHandler ):
     """
     return gServiceInterface.getViews( onlyStatic )
 
-  types_plotView = [ types.DictType ]
+  types_plotView = [ DictType ]
   def export_plotView( self, viewRequest ):
     """
     Generates plots for a view
@@ -128,14 +128,14 @@ class MonitoringHandler( RequestHandler ):
       return S_ERROR( "Invalid size" )
     return gServiceInterface.plotView( viewRequest )
 
-  types_deleteView = [ types.IntType ]
+  types_deleteView = [ IntType ]
   def export_deleteView( self, viewId ):
     """
     Deletes a view
     """
     return gServiceInterface.deleteView( viewId )
 
-  types_deleteViews = [ types.ListType ]
+  types_deleteViews = [ ListType ]
   def export_deleteViews( self, viewList ):
     """
     Deletes a view
@@ -154,8 +154,8 @@ class MonitoringHandler( RequestHandler ):
     dbCondition = { 'sources.setup' : self.serviceInfoDict[ 'clientSetup' ] }
     return S_OK( gServiceInterface.getActivities( dbCondition ) )
 
-  types_getActivitiesContents = [ types.DictType, ( types.ListType, types.TupleType ),
-                       ( types.IntType, types.LongType ), ( types.IntType, types.LongType ) ]
+  types_getActivitiesContents = [ DictType, ( ListType, TupleType ),
+                       ( IntType, LongType ), ( IntType, LongType ) ]
   def export_getActivitiesContents( self, selDict, sortList, start, limit ):
     """
     Retrieve the contents of the activity db
@@ -170,14 +170,14 @@ class MonitoringHandler( RequestHandler ):
     result[ 'TotalRecords' ] = gServiceInterface.getNumberOfActivities( setupCond )
     return S_OK( result )
 
-  types_deleteActivity = [ types.IntType, types.IntType ]
+  types_deleteActivity = [ IntType, IntType ]
   def export_deleteActivity( self, sourceId, activityId ):
     """
     Deletes an activity
     """
     return gServiceInterface.deleteActivity( sourceId, activityId )
 
-  types_deleteActivities = [ types.ListType ]
+  types_deleteActivities = [ ListType ]
   def export_deleteActivities( self, deletionList ):
     """
     Deletes a list of activities
@@ -192,7 +192,7 @@ class MonitoringHandler( RequestHandler ):
     return S_OK()
 
   #Component monitoring functions
-  types_getComponentsStatus = [ types.DictType ]
+  types_getComponentsStatus = [ DictType ]
   def export_getComponentsStatus( self, condDict ):
     if 'Setup' not in condDict:
       condDict[ 'Setup' ] = self.serviceInfoDict[ 'clientSetup' ]

@@ -107,7 +107,7 @@ class CFG( object ):
       if not recDict:
         return S_ERROR( "Parent section does not exist %s" % sectionName )
       parentSection = recDict[ 'value' ]
-      if type( parentSection ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( parentSection, basestring ):
         raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
       return parentSection.createNewSection( recDict[ 'levelsBelow' ], comment, contents )
     self.__addEntry( sectionName, comment )
@@ -152,7 +152,7 @@ class CFG( object ):
       if not recDict:
         return S_ERROR( "Parent section does not exist %s" % optionName )
       parentSection = recDict[ 'value' ]
-      if type( parentSection ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( parentSection, basestring ):
         raise KeyError( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
       return parentSection.setOption( recDict[ 'levelsBelow' ], value, comment )
     self.__addEntry( optionName, comment )
@@ -266,9 +266,9 @@ class CFG( object ):
     :return: List with the option names
     """
     if ordered:
-      return [ sKey for sKey in self.__orderedList if type( self.__dataDict[ sKey ] ) == types.StringType ]
+      return [ sKey for sKey in self.__orderedList if isinstance( self.__dataDict[ sKey ], basestring ) ]
     else:
-      return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
+      return [ sKey for sKey in self.__dataDict.keys() if isinstance( self.__dataDict[ sKey ], basestring ) ]
 
   @gCFGSynchro
   def listSections( self, ordered = True ):
@@ -280,9 +280,9 @@ class CFG( object ):
     :return: List with the subsection names
     """
     if ordered:
-      return [ sKey for sKey in self.__orderedList if type( self.__dataDict[ sKey ] ) != types.StringType ]
+      return [ sKey for sKey in self.__orderedList if not isinstance( self.__dataDict[ sKey ], basestring ) ]
     else:
-      return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
+      return [ sKey for sKey in self.__dataDict.keys() if not isinstance( self.__dataDict[ sKey ], basestring ) ]
 
   @gCFGSynchro
   def isSection( self, key ):
@@ -298,11 +298,11 @@ class CFG( object ):
       if not keyDict:
         return False
       section = keyDict[ 'value' ]
-      if type( section ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( section, basestring ):
         return False
       secKey = keyDict[ 'levelsBelow' ]
       return section.isSection( secKey )
-    return key in self.__dataDict and type( self.__dataDict[ key ] ) not in ( types.StringType, types.UnicodeType )
+    return key in self.__dataDict and not isinstance( self.__dataDict[ key ], basestring )
 
   @gCFGSynchro
   def isOption( self, key ):
@@ -318,11 +318,11 @@ class CFG( object ):
       if not keyDict:
         return False
       section = keyDict[ 'value' ]
-      if type( section ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( section, basestring ):
         return False
       secKey = keyDict[ 'levelsBelow' ]
       return section.isOption( secKey )
-    return key in self.__dataDict and type( self.__dataDict[ key ] ) == types.StringType
+    return key in self.__dataDict and isinstance( self.__dataDict[ key ], basestring )
 
   def listAll( self ):
     """
@@ -406,7 +406,7 @@ class CFG( object ):
         return defaultValue
       dataD = dataV
 
-    if type( dataV ) != types.StringType:
+    if not isinstance( dataV, basestring ):
       optionValue = defaultValue
     else:
       optionValue = dataV
@@ -456,7 +456,7 @@ class CFG( object ):
       if not reqDict:
         return resVal
       keyCfg = reqDict[ 'value' ]
-      if type( keyCfg ) in ( types.StringType, types.UnicodeType ):
+      if isinstance( keyCfg, basestring ):
         return resVal
       return keyCfg.getAsDict()
     for op in self.listOptions():

@@ -5,8 +5,7 @@ __RCSID__ = "$Id$"
 
 import errno
 
-from DIRAC import S_OK
-from DIRAC.Core.Utilities.DErrno import DError
+from DIRAC import S_OK, S_ERROR
 
 def checkArgumentFormat( path ):
   """ returns {'/this/is/an/lfn.1':False, '/this/is/an/lfn.2':False ...}
@@ -20,4 +19,4 @@ def checkArgumentFormat( path ):
     returnDict = path.copy()
     return S_OK( returnDict )
   else:
-    return DError( errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
+    return S_ERROR( errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format." )

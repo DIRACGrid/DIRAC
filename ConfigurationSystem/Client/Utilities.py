@@ -273,7 +273,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
             newMaxCPUTime = ''
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
-          if type( caps ) == type( '' ):
+          if isinstance( caps, basestring ):
             caps = [caps]
           for cap in caps:
             if 'CPUScalingReferenceSI00' in cap:
@@ -384,9 +384,9 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
     result = getBdiiSEInfo( vo )
     if not result['OK']:
       return result
-    seBdiiDict = result['Value']
+    seBdiiDict = dict( result['Value'] )
   else:
-    seBdiiDict = bdiiInfo
+    seBdiiDict = dict( bdiiInfo )
 
   srmSeDict = {}
   for site in siteSRMDict:

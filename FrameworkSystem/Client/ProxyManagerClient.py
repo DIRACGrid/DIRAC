@@ -4,7 +4,6 @@ __RCSID__ = "$Id$"
 
 import os
 import datetime
-import types
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Locations, CS
@@ -136,7 +135,7 @@ class ProxyManagerClient:
         proxyLocation = Locations.getProxyLocation()
         if not proxyLocation:
           return S_ERROR( "Can't find a valid proxy" )
-      elif type( proxy ) in ( types.StringType, types.UnicodeType ):
+      elif isinstance( proxy, basestring ):
         proxyLocation = proxy
       else:
         return S_ERROR( "Can't find a valid proxy" )
