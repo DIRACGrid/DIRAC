@@ -76,8 +76,9 @@ class ReportGeneratorHandler( RequestHandler ):
     if 'lastSeconds' in reportRequestExtra:
       try:
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
-      except:
-        return S_ERROR( "lastSeconds key must be a number" )
+      except ValueError:
+        gLogger.error( "lastSeconds key must be a number" )
+        return S_ERROR( "Value Error" )
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime()
