@@ -324,8 +324,8 @@ class ReplicateAndRegister( DMSRequestOperationsBase ):
     if filesToScheduleList:
 
       ftsSchedule = FTSClient().ftsSchedule( self.request.RequestID,
-                                                self.operation.OperationID,
-                                                filesToScheduleList )
+                                             self.operation.OperationID,
+                                             filesToScheduleList )
       if not ftsSchedule["OK"]:
         self.log.error( "Completely failed to schedule to FTS:", ftsSchedule["Message"] )
         return ftsSchedule

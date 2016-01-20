@@ -84,45 +84,6 @@ class FTS3Client(Client):
     return self._getRPC( **kwargs ).updateJobStatus( jobStatusDict )
 
 
-#   def getProcessedOperations( self, limit = 20, **kwargs ):
-#     """ Get all the FTS3Operations that are missing a callback, i.e.
-#         in 'Processed' state
-#         :param limit: max number of operations to retrieve
-#         :return: json list of FTS3Operation
-#     """
-#
-#     res = self._getRPC( **kwargs ).getProcessedOperations( limit )
-#     if not res['OK']:
-#       return res
-#
-#     operationsJSON = res['Value']
-#
-#     try:
-#       operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
-#       return S_OK( operations )
-#     except Exception as e:
-#       return S_ERROR( "Exception when decoding the processed operations json %s" % e )
-
-
-#   def getOperationsWithFilesToSubmit( self, limit = 20, **kwargs ):
-#     """ Get all the FTS3Operations that have files in New or Failed state
-#         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
-#          can retry)
-#          :param limit: max number of jobs to retrieve
-#         :return: json list of FTS3Operation
-#     """
-#
-#     res = self._getRPC( **kwargs ).getOperationsWithFilesToSubmit( limit )
-#     if not res['OK']:
-#       return res
-#
-#     operationsJSON = res['Value']
-#
-#     try:
-#       operations = json.loads( operationsJSON, cls = FTS3JSONDecoder )
-#       return S_OK( operations )
-#     except Exception as e:
-#       return S_ERROR( "Exception when decoding the operations with files to submit json %s" % e )
 
   def getNonFinishedOperations( self, limit = 20, operationAssignmentTag = "Assigned", **kwargs ):
     """ Get all the FTS3Operations that have files in New or Failed state

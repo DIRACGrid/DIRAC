@@ -1,12 +1,6 @@
-########################################################################
-# File: RequestDB.py
-# Date: 2012/12/04 08:06:30
-########################################################################
 __RCSID__ = "$Id $"
 
 # pylint: disable=no-member
-
-import random
 
 import datetime
 # # from DIRAC
@@ -17,15 +11,13 @@ from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm.util import polymorphic_union
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import and_
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper, column_property, with_polymorphic
+from sqlalchemy.orm import relationship, sessionmaker, mapper
 from sqlalchemy.sql import update
-from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey, \
-                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct, SmallInteger, select, Float
+from sqlalchemy import create_engine, Table, Column, MetaData, ForeignKey, \
+                       Integer, String, DateTime, Enum, BigInteger, SmallInteger, Float
 
-import copy
 
 metadata = MetaData()
 
@@ -176,24 +168,6 @@ class FTS3DB( object ):
 
 
 
-#   def __init__( self ):
-#     """c'tor
-#
-#     :param self: self reference
-#     """
-#
-#     self.log = gLogger.getSubLogger( 'FTS3DB' )
-#     # Initialize the connection info
-#
-#
-#
-#     self.engine = create_engine( 'mysql://Dirac:Dirac@localhost:3306/FTS3DB' ,
-#                                  echo = True )
-#
-#     metadata.bind = self.engine
-#
-#     self.dbSession = sessionmaker( bind = self.engine )
-
   def createTables( self ):
     """ create tables """
     try:
@@ -247,12 +221,7 @@ class FTS3DB( object ):
     session = self.dbSession( expire_on_commit = False )
 
     try:
-      # the joinedload_all is to force the non-lazy loading of all the attributes
-#       operation = session.query( FTS3Operation )\
-#                          .options( joinedload_all( 'ftsFiles' ) )\
-#                          .options( joinedload_all( 'ftsJobs' ) )\
-#                          .filter( getattr( FTS3Operation, 'operationID' ) == operationID )\
-#                         .one()
+
       operation = session.query( FTS3Operation )\
                          .filter( getattr( FTS3Operation, 'operationID' ) == operationID )\
                          .one()
@@ -304,7 +273,7 @@ class FTS3DB( object ):
         ftsJobsQuery = ftsJobsQuery.with_for_update()
 
 
-
+      ftsJobsQuery = ftsJobsQuery.order_by( FTS3Job.lastMonitor.desc() )
       ftsJobsQuery = ftsJobsQuery.limit( limit )
 
       ftsJobs = ftsJobsQuery.all()
@@ -365,15 +334,7 @@ class FTS3DB( object ):
                                 )\
                          .values( updateDict )
                        )
-#         session.execute( update( FTS3File )\
-#                          .where( FTS3File.fileID == fileID
-#
-#                                 )\
-#                          .values( {FTS3File.status : valueDict['status'],  # pylint: disable=no-member
-#                                    FTS3File.error : valueDict.get( 'error' ),  # pylint: disable=no-member
-#                                   }
-#                                  )
-#                         )
+
       session.commit()
 
       return S_OK()
@@ -432,43 +393,6 @@ class FTS3DB( object ):
     finally:
       session.close()
 
-#   def getProcessedOperations( self, limit = 20 ):
-#     """ Get all the FTS3Operations that are missing a callback, i.e.
-#         in 'Processed' state
-#         :param limit: max number of operations to retrieve
-#         :return: list of Operations
-#     """
-#
-#     session = self.dbSession( expire_on_commit = False )
-#
-#     try:
-#
-#       ftsOperations = []
-#
-#       # We need to do the select in two times because the join clause that makes the limit difficult
-#       operationIDs = session.query( FTS3Operation.operationID )\
-#                         .filter( FTS3Operation.status == 'Processed' )\
-#                         .limit( limit )\
-#                         .all()
-#
-#       operationIDs = [oidTuple[0] for oidTuple in operationIDs]
-#
-#       if operationIDs:
-#         # Fetch the operation object for these IDs
-#         ftsOperations = session.query( FTS3Operation )\
-#                           .filter( FTS3Operation.operationID.in_( operationIDs ) )\
-#                           .all()
-#
-#
-#       session.expunge_all()
-#
-#       return S_OK( ftsOperations )
-#
-#     except SQLAlchemyError, e:
-#       session.rollback()
-#       return S_ERROR( "getAllProcessedOperations: unexpected exception : %s" % e )
-#     finally:
-#       session.close()
 
 
   def getNonFinishedOperations( self, limit = 20, operationAssignmentTag = "Assigned" ):
@@ -533,49 +457,3 @@ class FTS3DB( object ):
 
 
 
-
-  # USELESS ?
-#
-#   def getOperationsWithFilesToSubmit( self, limit = 20 ):
-#     """ Get all the FTS3Operations that have files in New or Failed state
-#         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
-#          can retry)
-#         :param limit: max number of operations to retrieve
-#         :return: list of Operations
-#     """
-#
-#     session = self.dbSession( expire_on_commit = False )
-#
-#     try:
-#       ftsOperations = []
-#
-#       # unfortunately we cannot use subquery because even the latest MySQL/MariaDB
-#       # versions do not support using limit statement in subqueries
-#
-#       # Find all the operationIDs that have files in state New and Failed
-#       operationIDs = session.query( FTS3File.operationID )\
-#                         .distinct( FTS3File.operationID )\
-#                         .filter( FTS3File.status.in_( ( 'New', 'Failed' ) ) )\
-#                         .limit( limit )\
-#                         .all()
-#
-#       operationIDs = [oidTuple[0] for oidTuple in operationIDs]
-#
-#       if operationIDs:
-#         # Fetch the operation object for these IDs
-#         ftsOperations = session.query( FTS3Operation )\
-#                           .options( joinedload_all( 'ftsFiles' ) )\
-#                           .options( joinedload_all( 'ftsJobs' ) )\
-#                           .filter( FTS3Operation.operationID.in_( operationIDs ) )\
-#                           .all()
-#
-#
-#       session.expunge_all()
-#
-#       return S_OK( ftsOperations )
-#
-#     except SQLAlchemyError, e:
-#       session.rollback()
-#       return S_ERROR( "getAllNonFinishedOperations: unexpected exception : %s" % e )
-#     finally:
-#       session.close()

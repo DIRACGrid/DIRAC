@@ -2,6 +2,9 @@ import datetime
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 
 class FTS3File( FTS3Serializable ):
+  """ This class represents an a File on which a given Operation
+      (Transfer, Staging) should be executed
+   """
 
   ALL_STATES = [ 'New',  # Nothing was attempted yet on this file
                  'Submitted', # From FTS: Initial state of a file as soon it's dropped into the database

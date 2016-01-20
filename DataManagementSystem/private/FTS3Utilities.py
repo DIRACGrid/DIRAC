@@ -1,14 +1,17 @@
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.DErrno import DError
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
 import json
 import datetime
 import random
 
 def _checkSourceReplicas( ftsFiles ):
   """ Check the active replicas
+      :params ftsFiles: list of FT3Files
+
+      :returns: Successful/Failed {lfn : { SE1 : PFN1, SE2 : PFN2 } , ... }
   """
 
   lfns = list( set( [f.lfn for f in ftsFiles] ) )
@@ -20,6 +23,10 @@ def _checkSourceReplicas( ftsFiles ):
 
 def selectUniqueSourceforTransfers( multipleSourceTransfers ):
   """
+      When we have several possible source for a given SE, choose one.
+      In this particular case, we always choose the one that has the biggest
+      amount of replicas,
+
       :param multipleSourceTransfers : { sourceSE : [FTSFiles] }
                            
 
@@ -291,6 +298,26 @@ class FTS3ServerPolicy( object ):
     return random.choice( self._serverList )
 
 
+  @staticmethod
+  def _getFTSServerStatus( ftsServer ):
+    """ Fetch the status of the FTS server from RSS """
+    pub = RPCClient( 'ResourceStatus/Publisher' )
+    res = pub.getElementStatuses( 'Resource', ftsServer, None, None, None, None )
+
+    if not res['OK']:
+      return res
+
+    if not res['Value']:
+      return S_ERROR( "No FTS Server %s known to RSS" % ftsServer )
+
+    rssDict = dict( zip( res['Columns'], res['Value'][0] ) )
+
+    if rssDict['Status'] == 'Active':
+      return S_OK( True )
+
+    return S_OK( False )
+
+
   def chooseFTS3Server( self ):
     """
       Choose the appropriate FTS3 server depending on the policy
@@ -298,19 +325,23 @@ class FTS3ServerPolicy( object ):
 
     fts3Server = None
     attempt = 0
-    # FIXME : need to get real value from RSS
-    ftsServerStatus = True
 
     while not fts3Server and attempt < self._maxAttempts:
       fts3Server = self._failoverServerPolicy( attempt = attempt )
+
+      res = self._getFTSServerStatus( fts3Server )
+      if not res['OK']:
+        self.log.warn( "Error getting the RSS status for %s: %s" % ( fts3Server, res ) )
+        fts3Server = None
+        attempt += 1
+        continue
       
-        # FIXME : I need to get the FTS server status from RSS
-#       ftsStatusFromRss = rss.ftsStatusOrSomethingLikeThat
+      ftsServerStatus = res['Value']
 
       if not ftsServerStatus:
         self.log.warn( 'FTS server %s is not in good shape. Choose another one' % fts3Server )
         fts3Server = None
-      attempt += 1
+        attempt += 1
 
 
     if fts3Server:

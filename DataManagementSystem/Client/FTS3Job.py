@@ -25,7 +25,7 @@ class FTS3Job( FTS3Serializable ):
                 'Finished', # All files Finished gracefully
                 'Canceled', # Job canceled
                 'Failed', # All files Failed
-                'Finisheddirty', # All files Failed
+                'Finisheddirty',  # Some files Failed
                ]
   
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
@@ -492,6 +492,12 @@ class FTS3Job( FTS3Serializable ):
 
   @staticmethod
   def generateContext( ftsServer, ucert ):
+    """ This method generates an fts3 context
+        :param ftsServer: address of the fts3 server
+        :param ucert: the path to the certificate to be used
+
+        :returns: an fts3 context
+    """
     try:
       context = fts3.Context( endpoint = ftsServer, ucert = ucert )
       return S_OK(context)

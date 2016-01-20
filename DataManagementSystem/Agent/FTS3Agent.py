@@ -1,3 +1,7 @@
+"""
+  FTS3Agent implementation
+"""
+
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -19,8 +23,9 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from multiprocessing.pool import ThreadPool
 # We use the dummy module because we use the ThreadPool
 from multiprocessing.dummy import current_process
+from socket import gethostname
 
-
+# pylint: disable=attribute-defined-outside-init
 
 
 
@@ -29,7 +34,17 @@ __RCSID__ = "$Id: $"
 AGENT_NAME = "DataManagement/FTS3Agent"
 
 class FTS3Agent( AgentModule ):
+  """
+    This Agent is responsible of interacting with the FTS3 services.
+    Several of them can run in parallel.
+    It first treats the Operations, by creating new FTS jobs and performing
+    callback.
+    Then, it monitors the current jobs.
+
+    CAUTION: This agent and the FTSAgent cannot run together.
   
+  """
+
 
   def initialize( self ):
     """ agent's initialization """
@@ -49,7 +64,17 @@ class FTS3Agent( AgentModule ):
 
     self._globalContextCache = {}
 
-    self.maxNumberOfThreads = 10
+    self.maxNumberOfThreads = self.am_getOption( "MaxThreads", 10 )
+
+    # Number of Operation we treat in one loop
+    self.operationBulkSize = self.am_getOption( "OperationBulkSize", 20 )
+    # Number of Jobs we treat in one loop
+    self.jobBulkSize = self.am_getOption( "JobBulkSize", 20 )
+    self.maxFilesPerJob = self.am_getOption( "MaxFilesPerJob", 100 )
+    self.maxAttemptsPerFile = self.am_getOption( "maxAttemptsPerFile", 256 )
+    
+    # name that will be used in DB for assignment tag
+    self.assignmentTag = gethostname().split( '.' )[0]
 
     return S_OK()
 
@@ -194,7 +219,7 @@ class FTS3Agent( AgentModule ):
 
     log.debug( "Getting active jobs" )
     # get jobs from DB
-    res = self.fts3db.getActiveJobs()
+    res = self.fts3db.getActiveJobs( limit = self.jobBulkSize, jobAssignmentTag = self.assignmentTag )
 
     if not res['OK']:
       log.error( "Could not retrieve ftsJobs from the DB", res )
@@ -270,7 +295,7 @@ class FTS3Agent( AgentModule ):
       else:
         log.debug( "FTS3Operation %s is not totally processed yet" % operation.operationID )
 
-        res = operation.prepareNewJobs()
+        res = operation.prepareNewJobs( maxFilesPerJob = self.maxFilesPerJob, maxAttemptsPerFile = self.maxAttemptsPerFile )
 
         if not res['OK']:
           log.error( "Cannot prepare new Jobs", "FTS3Operation %s : %s" % ( operation.operationID, res ) )
@@ -333,7 +358,7 @@ class FTS3Agent( AgentModule ):
 
     log.info( "Getting non finished operations" )
 
-    res = self.fts3db.getNonFinishedOperations()
+    res = self.fts3db.getNonFinishedOperations( limit = self.operationBulkSize, operationAssignmentTag = self.assignmentTag )
 
     if not res['OK']:
       log.error( "Could not get incomplete operations", res )
@@ -348,7 +373,6 @@ class FTS3Agent( AgentModule ):
       # queue the execution of self._treatOperation( operation ) in the thread pool
       # The returned value is passed to _treatOperationCallback
       thPool.apply_async( self._treatOperation, ( operation, ), callback = self._treatOperationCallback )
-
 
 
     log.debug( "All execution queued" )

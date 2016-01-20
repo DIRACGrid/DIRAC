@@ -191,11 +191,8 @@ class VOMSPolicy( SecurityManagerBase ):
     if not path:
       return S_ERROR( 'Empty path' )
 
-    print "COUCOU", path
-
     # We check what is the group stored in the DB for the given path
     res = self.db.dtree.getDirectoryParameters( path )
-    print res
     if not res['OK']:
       # If the error is not due to the directory not existing, we return
 

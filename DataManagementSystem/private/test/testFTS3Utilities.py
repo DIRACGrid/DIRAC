@@ -1,6 +1,6 @@
 """ Test the FTS3Utilities"""
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 
 __RCSID__ = "$Id $"
 
