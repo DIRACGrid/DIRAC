@@ -6,7 +6,7 @@ InstalledComponentsDB database
 __RCSID__ = "$Id$"
 
 import types
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB, Component, Host, InstalledComponent, HostLogging
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -24,14 +24,15 @@ class ComponentMonitoringHandler( RequestHandler ):
     try:
       ComponentMonitoringHandler.db = InstalledComponentsDB()
     except Exception as e:
-      return S_ERROR( 'Could not connect to the database: %s' % ( e ) )
+      gLogger.error( 'Could not connect to the database', ': %s' % ( e ) )
+      return S_ERROR( 'Could not connect to the database' )
 
     return S_OK( 'Initialization went well' )
 
   def __joinInstallationMatch( self,
-                                  installationFields,
-                                  componentFields,
-                                  hostFields ):
+                               installationFields,
+                               componentFields,
+                               hostFields ):
     matchFields = installationFields
     for key in componentFields.keys():
       matchFields[ 'Component.' + key ] = componentFields[ key ]
@@ -63,9 +64,9 @@ class ComponentMonitoringHandler( RequestHandler ):
 
   types_getComponents = [ types.DictType, types.BooleanType, types.BooleanType ]
   def export_getComponents( self,
-                                matchFields,
-                                includeInstallations,
-                                includeHosts ):
+                            matchFields,
+                            includeInstallations,
+                            includeHosts ):
     """
     Returns a list of all the Components in the database
     matchFields argument should be a dictionary with the fields to match or
@@ -132,9 +133,9 @@ class ComponentMonitoringHandler( RequestHandler ):
 
   types_getHosts = [ types.DictType, types.BooleanType, types.BooleanType ]
   def export_getHosts( self,
-                          matchFields,
-                          includeInstallations,
-                          includeComponents ):
+                       matchFields,
+                       includeInstallations,
+                       includeComponents ):
     """
     Returns a list of all the Hosts in the database
     matchFields argument should be a dictionary with the fields to match or
@@ -184,10 +185,10 @@ class ComponentMonitoringHandler( RequestHandler ):
                             types.DictType,
                             types.BooleanType ]
   def export_addInstallation( self,
-                                  installation,
-                                  componentDict,
-                                  hostDict,
-                                  forceCreate ):
+                              installation,
+                              componentDict,
+                              hostDict,
+                              forceCreate ):
     """
     Creates a new InstalledComponent object on the database
     installation argument should be a dictionary with the InstalledComponent
@@ -205,9 +206,9 @@ class ComponentMonitoringHandler( RequestHandler ):
 
   types_installationExists = [ types.DictType, types.DictType, types.DictType ]
   def export_installationExists( self,
-                                    installationFields,
-                                    componentFields,
-                                    hostFields ):
+                                 installationFields,
+                                 componentFields,
+                                 hostFields ):
     """
     Returns whether installations matching the given criteria exist
     installationFields argument should be a dictionary with the fields to
@@ -229,10 +230,10 @@ class ComponentMonitoringHandler( RequestHandler ):
                              types.DictType,
                              types.BooleanType ]
   def export_getInstallations( self,
-                                  installationFields,
-                                  componentFields,
-                                  hostFields,
-                                  installationsInfo ):
+                               installationFields,
+                               componentFields,
+                               hostFields,
+                               installationsInfo ):
     """
     Returns a list of installations matching the given criteria
     installationFields argument should be a dictionary with the fields to
@@ -256,10 +257,10 @@ class ComponentMonitoringHandler( RequestHandler ):
                                 types.DictType,
                                 types.DictType ]
   def export_updateInstallations( self,
-                                      installationFields,
-                                      componentFields,
-                                      hostFields,
-                                      updates ):
+                                  installationFields,
+                                  componentFields,
+                                  hostFields,
+                                  updates ):
     """
     Updates installations matching the given criteria
     installationFields argument should be a dictionary with the fields to
@@ -281,9 +282,9 @@ class ComponentMonitoringHandler( RequestHandler ):
 
   types_removeInstallations = [ types.DictType, types.DictType, types.DictType ]
   def export_removeInstallations( self,
-                                      installationFields,
-                                      componentFields,
-                                      hostFields ):
+                                  installationFields,
+                                  componentFields,
+                                  hostFields ):
     """
     Removes installations matching the given criteria
     installationFields argument should be a dictionary with the fields to
