@@ -40,6 +40,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Adler            import fileAdler
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
@@ -136,8 +137,12 @@ class StorageElementHandler( RequestHandler ):
     resultDict['Exists'] = True
     mode = statTuple[ST_MODE]
     resultDict['Type'] = "File"
+    resultDict['File'] = True
+    resultDict['Directory'] = False
     if S_ISDIR( mode ):
       resultDict['Type'] = "Directory"
+      resultDict['File'] = False
+    resultDict['Directory'] = True
     resultDict['Size'] = statTuple[ST_SIZE]
     resultDict['TimeStamps'] = ( statTuple[ST_ATIME], statTuple[ST_MTIME], statTuple[ST_CTIME] )
     resultDict['Cached'] = 1
@@ -145,9 +150,16 @@ class StorageElementHandler( RequestHandler ):
     resultDict['Lost'] = 0
     resultDict['Unavailable'] = 0
     resultDict['Mode'] = S_IMODE( mode )
-    resultDict = StorageBase._addCommonMetadata( resultDict
+    
 
-                                                  )
+    if resultDict['File']:
+      cks = fileAdler( path )
+      resultDict['Checksum'] = cks
+
+    
+    resultDict = StorageBase._addCommonMetadata( resultDict )
+
+
     return S_OK( resultDict )
 
   types_exists = [StringTypes]
