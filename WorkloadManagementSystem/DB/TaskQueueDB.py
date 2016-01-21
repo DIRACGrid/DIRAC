@@ -186,13 +186,12 @@ class TaskQueueDB( DB ):
     for field in singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
-      fieldValueType = type( tqDefDict[ field ] )
       if field in [ "CPUTime" ]:
-        if fieldValueType not in ( types.IntType, types.LongType ):
-          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        if not isinstance( tqDefDict[field], ( int, long ) ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, type( tqDefDict[field] ) ) )
       else:
-        if not isinstance( fieldValueType, basestring ):
-          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        if not isinstance( tqDefDict[field], basestring ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, type( tqDefDict[field] ) ) )
         result = self._escapeString( tqDefDict[ field ] )
         if not result[ 'OK' ]:
           return result
@@ -200,9 +199,8 @@ class TaskQueueDB( DB ):
     for field in multiValueDefFields:
       if field not in tqDefDict:
         continue
-      fieldValueType = type( tqDefDict[ field ] )
-      if fieldValueType not in ( types.ListType, types.TupleType ):
-        return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, fieldValueType ) )
+      if not isinstance( tqDefDict[field], ( list, tuple ) ):
+        return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, type( tqDefDict[field] ) ) )
       result = self._escapeValues( tqDefDict[ field ] )
       if not result[ 'OK' ]:
         return result
