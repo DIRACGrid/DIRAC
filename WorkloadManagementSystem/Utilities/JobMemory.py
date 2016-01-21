@@ -1,4 +1,4 @@
-""" DIRAC Workload Management System Client module to get available memory from mjf
+""" DIRAC Workload Management System utility module to get available memory from mjf
 """
 __RCSID__ = "$Id$"
 

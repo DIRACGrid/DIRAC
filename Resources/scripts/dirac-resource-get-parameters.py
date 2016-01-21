@@ -10,7 +10,7 @@ from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
-Script.setUsageMessage( '\n'.join( ['Get the Tag of a CE',
+Script.setUsageMessage( '\n'.join( ['Get the parameters of a CE',
                                     'Usage:',
                                     '%s [option]... [cfgfile]' % Script.scriptName,
                                     'Arguments:',
@@ -45,6 +45,7 @@ if len( args ) > 1:
 
 
 result = Resources.getQueue( Site, ceName, Queue )
+
 if not result['OK']:
   gLogger.error( "Could not retrieve resource parameters", ": " + result['Message'] )
   DIRACExit( 1 )

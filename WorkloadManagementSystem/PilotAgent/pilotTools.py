@@ -359,7 +359,6 @@ class PilotParams( object ):
                      'LaunchAgent']
     self.extensions = []
     self.tags = []
-    self.processors = ""
     self.site = ""
     self.setup = ""
     self.configServer = ""

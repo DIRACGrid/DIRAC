@@ -417,7 +417,14 @@ class CheckWNCapabilities( CommandBase ):
     """ Discover #Processors and memory
     """
 
-    retCode, result = self.executeAndGetOutput( 'dirac-wms-get-wn-parameters' , self.pp.installEnv )
+    if self.pp.useServerCertificate:
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
+    if self.pp.localConfigFile:
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
+
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
+                                                                       " ".join( self.cfg ) )
+    retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
     result = result.split( ' ' )
     NumberOfProcessor = result[0]
     MaxRAM = result[1]
