@@ -126,7 +126,7 @@ class Message( object ):
     for k in self.__order:
       if k not in self.__values:
         return False
-      if self.__fDef[k] != None and type( self.__values[k] ) not in self.__fDef[k]:
+      if self.__fDef[k] != None and not isinstance( self.__values[k], self.__fDef[k] ):
         return False
     return True
 
@@ -155,7 +155,7 @@ class Message( object ):
   def dumpAttrs( self ):
     try:
       return S_OK( ( self.__waitForAck, tuple( self.__values[ k ] for k in self.__order ) ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not dump message: %s doesn't have a value" % e )
 
   def loadAttrs( self, data ):
@@ -280,7 +280,7 @@ def loadObjects( path, reFilter = None, parentClass = None ):
                                globals(),
                                locals(), pythonClassName )
       objClass = getattr( objModule, pythonClassName )
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Can't load type %s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
       continue
     if parentClass == objClass:

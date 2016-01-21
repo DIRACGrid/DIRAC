@@ -328,7 +328,7 @@ class AccountingDB( DB ):
     #Registering type
     fieldsDict = {}
     bucketFieldsDict = {}
-    inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
+    inbufferDict = { 'id' : 'BIGINT NOT NULL AUTO_INCREMENT' }
     bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] }
     uniqueIndexFields = ['startTime']
     for field in definitionKeyFields:
@@ -982,12 +982,12 @@ class AccountingDB( DB ):
     if groupFields:
       try:
         groupFields[0] % tuple( groupFields[1] )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot format properly group string: %s" % str( e ) )
     if orderFields:
       try:
         orderFields[0] % tuple( orderFields[1] )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot format properly order string: %s" % str( e ) )
     #Calculate fields to retrieve
     realFieldList = []
@@ -1002,7 +1002,7 @@ class AccountingDB( DB ):
         realFieldList.append( "`%s`.`%s`" % ( tableName, rawFieldName ) )
     try:
       cmd += " %s" % selectFields[0] % tuple( realFieldList )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error generating select fields string: %s" % str( e ) )
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]
@@ -1471,4 +1471,3 @@ def _getTableName( tableType, typeName, keyName = None ):
     return "ac_%s_%s_%s" % ( tableType, typeName, keyName )
   else:
     raise Exception( "Call to _getTableName with tableType as key but with no keyName" )
-

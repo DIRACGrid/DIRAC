@@ -89,6 +89,8 @@ def reprReturnErrorStructure( struct, full = False ):
     callStack = struct.get( "CallStack" )
     if callStack:
       reprStr += "\n" + "".join( callStack )
+      
+  return reprStr    
 
 def returnSingleResult( dictRes ):
   """ Transform the S_OK{Successful/Failed} dictionary convention into

@@ -56,7 +56,7 @@ class ComputingElementFactory( object ):
         computingElement.setParameters( ceParametersDict )
       else:
         computingElement._reset()
-    except Exception, x:
+    except Exception as x:
       msg = 'ComputingElementFactory could not instantiate %s object: %s' % ( subClassName, str( x ) )
       self.log.exception()
       self.log.warn( msg )

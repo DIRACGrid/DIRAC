@@ -17,7 +17,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdminis
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-import DIRAC.Core.Utilities.InstallTools as InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -219,10 +219,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         printTable(fields,records)        
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
-      if not InstallTools.mysqlPassword:
-        InstallTools.mysqlPassword = "LocalConfig"
-      InstallTools.getMySQLPasswords()
-      result = client.getDatabases( InstallTools.mysqlRootPwd )
+      if not gComponentInstaller.mysqlPassword:
+        gComponentInstaller.mysqlPassword = "LocalConfig"
+      gComponentInstaller.getMySQLPasswords()
+      result = client.getDatabases( gComponentInstaller.mysqlRootPwd )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -524,10 +524,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "mysql":
       gLogger.notice( "Installing MySQL database, this can take a while ..." )
       client = SystemAdministratorClient( self.host, self.port )
-      if InstallTools.mysqlPassword == 'LocalConfig':
-        InstallTools.mysqlPassword = ''
-      InstallTools.getMySQLPasswords()
-      result = client.installMySQL( InstallTools.mysqlRootPwd, InstallTools.mysqlPassword )
+      if gComponentInstaller.mysqlPassword == 'LocalConfig':
+        gComponentInstaller.mysqlPassword = ''
+      gComponentInstaller.getMySQLPasswords()
+      result = client.installMySQL( gComponentInstaller.mysqlRootPwd, gComponentInstaller.mysqlPassword )
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
@@ -558,10 +558,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( "\tAdd new instance with 'add instance %s <instance_name>'" % system )
         return
 
-      if not InstallTools.mysqlPassword:
-        InstallTools.mysqlPassword = 'LocalConfig'
-      InstallTools.getMySQLPasswords()
-      result = client.installDatabase( database, InstallTools.mysqlRootPwd )
+      if not gComponentInstaller.mysqlPassword:
+        gComponentInstaller.mysqlPassword = 'LocalConfig'
+      gComponentInstaller.getMySQLPasswords()
+      result = client.installDatabase( database, gComponentInstaller.mysqlRootPwd )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -584,12 +584,12 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           self.__errMsg( result['Message'] )
           return
       # result = client.addDatabaseOptionsToCS( system, database )
-      InstallTools.mysqlHost = self.host
+      gComponentInstaller.mysqlHost = self.host
       result = client.getInfo()
       if not result['OK']:
         self.__errMsg( result['Message'] )
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDatabaseOptionsToCS( gConfig, system, database, hostSetup, overwrite = True )
+      result = gComponentInstaller.addDatabaseOptionsToCS( gConfig, system, database, hostSetup, overwrite = True )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -619,7 +619,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
-      InstallTools.host = self.host
+      gComponentInstaller.host = self.host
       result = client.getInfo()
       if not result['OK']:
         self.__errMsg( result['Message'] )
@@ -628,15 +628,15 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       
       # Install Module section if not yet there
       if module:
-        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, module, 
+        result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, module,
                                                      getCSExtensions(), hostSetup )
         # Add component section with specific parameters only
-        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+        result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
                                                      getCSExtensions(), hostSetup, specialOptions, 
                                                      addDefaultOptions = True )
       else:  
         # Install component section
-        result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+        result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
                                                      getCSExtensions(), hostSetup, specialOptions )
     
       if not result['OK']:
@@ -925,7 +925,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           lcgVersion = argss[1]  
           del argss[0]
           del argss[0]
-    except Exception, x:
+    except Exception as x:
       gLogger.notice( "ERROR: wrong input:", str( x ) )
       gLogger.notice( self.do_update.__doc__ )
       return  
@@ -985,7 +985,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         else:
           self.__errMsg( "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup ) )
         return
-      result = InstallTools.addSystemInstance( system, instance, hostSetup )
+      result = gComponentInstaller.addSystemInstance( system, instance, hostSetup )
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:

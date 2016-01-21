@@ -49,7 +49,7 @@ class ConfigurationClient( object ):
       if fileName:
         with open( fileName, "w" ) as fd:
           fd.write( strData )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't write to file %s: %s" % ( fileName, str( e ) ) )
     return S_OK( strData )
 

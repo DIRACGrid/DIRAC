@@ -1,6 +1,5 @@
 
 import re
-import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import DEncode, Time
@@ -18,23 +17,23 @@ class UserProfileClient:
     return self.rpcClientFunctor( "Framework/UserProfileManager" )
 
   def __generateTypeDest( self, dataObj ):
-    cType = type( dataObj )
-    if cType == types.BooleanType:
+    if isinstance( dataObj, bool ):
       return "b"
-    if cType == types.NoneType:
+    if dataObj is None:
       return "o"
-    if cType in ( types.IntType, types.LongType, types.FloatType ):
+    if isinstance( dataObj, ( int, long, float ) ):
       return "n"
-    if cType in ( types.StringType, types.UnicodeType ):
+    if isinstance( dataObj, basestring ):
       return "s"
-    if cType in Time._allTypes:
+    # Not even trying here...
+    if type( dataObj ) in Time._allTypes:
       return "t"
-    if cType in ( types.ListType, types.TupleType ):
+    if isinstance( dataObj, ( list, tuple ) ):
       return "l%se" % "".join( [ self.__generateTypeDest( so ) for so in dataObj ] )
-    if cType == types.DictType:
+    if isinstance( dataObj, dict ):
       return "d%se" % "".join( [ "%s%s" % ( self.__generateTypeDest( k ),
                                             self.__generateTypeDest( dataObj[k] ) ) for k in dataObj ] )
-      return ""
+    return ""
 
   def checkTypeRe( self, dataObj, typeRE ):
     if typeRE[0] != "^":
@@ -49,14 +48,14 @@ class UserProfileClient:
   def storeVar( self, varName, data, perms = {} ):
     try:
       stub = DEncode.encode( data )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot encode data:%s" % str( e ) )
     return self.__getRPCClient().storeProfileVar( self.profile, varName, stub, perms )
 
   def __decodeVar( self, data, dataTypeRE ):
     try:
       dataObj, lenData = DEncode.decode( data )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )
     if dataTypeRE:
       result = self.checkTypeRe( dataObj, dataTypeRE )
@@ -89,7 +88,7 @@ class UserProfileClient:
       for k in encodedData:
         v, lenData = DEncode.decode( encodedData[k] )
         dataObj[ k ] = v
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )
     return S_OK( dataObj )
 

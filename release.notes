@@ -1,9 +1,16 @@
-[v6r15-pre10]
+[v6r15-pre12]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
+Made service handlers systematically working with unicode string arguments
+
+*Accounting
+CHANGE: INTEGER -> BIGINT for "id" in "in" accountingDB tables
 
 *Core
-NEW: New class DError for reporting errors in output results of DIRAC functions 
+NEW: The S_ERROR has an enhanced structure containing also the error code and the call
+     stack from where the structure was created
+NEW: DErrno module to contain definitions of the DIRAC error numbers and standard
+     descriptions to be used from now on in any error code check      
 CHANGE: gMonitor instantiation removed from DIRAC.__init__.py to avoid problems in
         documentation generation
 CHANGE: removed Core.Utilities.List.sortList (sorted does the job)
@@ -18,6 +25,7 @@ CHANGE: DISET components - improved logic of service URL retries to speedup quer
 NEW: dirac-rss-policy-manager - allows to interactively modify and test only the 
      policy section of Dirac.cfg     
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
+FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
 
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
@@ -29,6 +37,10 @@ CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in par
 CHANGE: InstalledComponentsDB - table to cache host status information populated
         by a periodic task    
 NEW: ComponentInstaller Client class            
+
+*Accounting
+FIX: DataStoreClient - Synchronizer based decorators have been replaced with a simple 
+     lock as they were blocking addRegister() during every commit(); 
 
 *RSS
 NEW: CE Availability policy, closing #2373
@@ -49,12 +61,15 @@ NEW: FileCatalog - conditional FileCatalog instantiation based on the configured
 
 *TS
 CHANGE: TransformationDB table TaskInputs: InputVector column from BLOB to MEDIUMTEXT
+FIX: TaskManager - fix bug in case there is no InputData for a task, the Request created 
+     for the previous task was reassigned
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
      site( pilot ) to the jobs to select ones with required properties
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
+CHANGE: SiteDirector - flag to always download pilot output is set to False by default
 
 *RMS
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
@@ -65,6 +80,22 @@ FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request i
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
 
+[v6r14p17]
+
+*Core
+FIX: Service.py - use the service name as defined in the corresponding section in the CS
+     and not the name defined in service Module option. This fixes the problem with the
+     StorageElement service not interpreting properly the PFN name and using a wrong local
+     data path. 
+
+*Resources
+CHANGE: ARCComputingElement - if the VO is not discoverable from the environment, use ARC API
+        call in the getCEStatus, use ldapsearch otherwise
+
+[v6r14p16]
+
+*Resources
+CHANGE: ARC Computing Element automatically renew proxies of jobs when needed
 
 [v6r14p15]
 

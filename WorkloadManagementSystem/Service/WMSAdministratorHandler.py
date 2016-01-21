@@ -13,7 +13,7 @@ Access to the pilot data:
 
 __RCSID__ = "$Id$"
 
-from types import DictType, ListType, IntType, LongType, StringTypes, StringType, FloatType
+from types import DictType, ListType, IntType, LongType, StringTypes, FloatType
 from tempfile import mkdtemp
 import shutil
 
@@ -232,11 +232,11 @@ class WMSAdministratorHandler(RequestHandler):
     group = pilotDict['OwnerGroup']
     gridType = pilotDict['GridType']
 
-    return getPilotLoggingInfo( gridType, pilotReference,
+    return getPilotLoggingInfo( gridType, pilotReference, #pylint: disable=E1123
                                 proxyUserDN = owner, proxyUserGroup = group )
 
   ##############################################################################
-  types_getJobPilotOutput = [[StringType, IntType, LongType]]
+  types_getJobPilotOutput = [list( StringTypes ) + [ IntType, LongType]]
   def export_getJobPilotOutput(self,jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
@@ -296,7 +296,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     gridType = pilotDict['GridType']
     if gridType == "gLite":
-      result = getWMSPilotOutput( pilotReference, proxyUserDN = owner, proxyUserGroup = group)
+      result = getWMSPilotOutput( pilotReference, proxyUserDN = owner, proxyUserGroup = group) #pylint: disable=E1123
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -446,7 +446,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  types_getPilots = [[StringType, IntType, LongType]]
+  types_getPilots = [list( StringTypes ) + [ IntType, LongType]]
   def export_getPilots(self,jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
@@ -476,7 +476,7 @@ class WMSAdministratorHandler(RequestHandler):
       return S_ERROR( 'Failed to get pilot for Job %d' % int( jobID ) )
 
     return pilotDB.getPilotInfo(pilotID=pilots)
-  
+
   ##############################################################################
   types_killPilot = [ list(StringTypes)+[ListType] ]
   def export_killPilot(self, pilotRefList ):
@@ -486,14 +486,14 @@ class WMSAdministratorHandler(RequestHandler):
     pilotRefs = list( pilotRefList )
     if type( pilotRefList ) in StringTypes:
       pilotRefs = [pilotRefList]
-    
+
     # Regroup pilots per site and per owner
     pilotRefDict = {}
     for pilotReference in pilotRefs:
       result = pilotDB.getPilotInfo(pilotReference)
       if not result['OK'] or not result[ 'Value' ]:
         return S_ERROR('Failed to get info for pilot ' + pilotReference)
-  
+
       pilotDict = result['Value'][pilotReference]
       owner = pilotDict['OwnerDN']
       group = pilotDict['OwnerGroup']
@@ -503,12 +503,12 @@ class WMSAdministratorHandler(RequestHandler):
       pilotRefDict[queue].setdefault( 'PilotList', [] )
       pilotRefDict[queue]['PilotList'].append( pilotReference )
       pilotRefDict[queue]['GridType'] = gridType
-      
-    # Do the work now queue by queue  
+
+    # Do the work now queue by queue
     ceFactory = ComputingElementFactory()
     failed = []
     for key, pilotDict in pilotRefDict.items():
-      
+
       owner,group,site,ce,queue = key.split( '@@@' )
       result = getQueue( site, ce, queue )
       if not result['OK']:
@@ -519,7 +519,7 @@ class WMSAdministratorHandler(RequestHandler):
       if not result['OK']:
         return result
       ce = result['Value']
-  
+
       # FIXME: quite hacky. Should be either removed, or based on some flag
       if gridType in ["LCG", "gLite", "CREAM", "ARC", "Globus"]:
         group = getGroupOption(group,'VOMSRole',group)
@@ -535,14 +535,14 @@ class WMSAdministratorHandler(RequestHandler):
       result = ce.killJob( pilotList )
       if not result['OK']:
         failed.extend( pilotList )
-      
+
     if failed:
       return S_ERROR('Failed to kill at least some pilots')
-    
-    return S_OK()  
+
+    return S_OK()
 
   ##############################################################################
-  types_setJobForPilot = [ [StringType, IntType, LongType], StringTypes]
+  types_setJobForPilot = [ list( StringTypes ) + [ IntType, LongType], StringTypes]
   def export_setJobForPilot(self,jobID,pilotRef,destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
@@ -601,18 +601,18 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = pilotDB.getCounters( table, keys, condDict, newer=newer, timeStamp=timeStamp )
     return result
-  
+
   ##############################################################################
   types_getPilotStatistics = [ StringTypes, DictType ]
   @staticmethod
   def export_getPilotStatistics ( attribute, selectDict ):
     """ Get pilot statistics distribution per attribute value with a given selection
     """
-    
+
     startDate = selectDict.get( 'FromDate', None )
     if startDate:
       del selectDict['FromDate']
-    
+
     if startDate is None:
       startDate = selectDict.get( 'LastUpdate', None )
       if startDate:
@@ -620,7 +620,7 @@ class WMSAdministratorHandler(RequestHandler):
     endDate = selectDict.get( 'ToDate', None )
     if endDate:
       del selectDict['ToDate']
-      
+
 
     result = pilotDB.getCounters( 'PilotAgents', [attribute], selectDict,
                                   newer = startDate,
@@ -632,9 +632,9 @@ class WMSAdministratorHandler(RequestHandler):
         if "OwnerDN" in status:
           userName = getUsernameForDN( status['OwnerDN'] )
           if userName['OK']:
-            status['OwnerDN'] = userName['Value'] 
+            status['OwnerDN'] = userName['Value']
           statistics[ status['OwnerDN'] ] = count
         else:
           statistics[ status[attribute] ] = count
-          
+
     return S_OK( statistics )

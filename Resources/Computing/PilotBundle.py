@@ -28,7 +28,7 @@ try:
   os.chmod('proxy', stat.S_IRUSR | stat.S_IWUSR)
   os.chmod('%(executable)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
   os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
-except Exception, x:
+except Exception as x:
   print >> sys.stderr, x
   sys.exit(-1)
 cmd = "./%(executable)s"

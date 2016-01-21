@@ -152,7 +152,7 @@ class OptimizerModule( AgentModule ):
       else:
         try:
           return S_OK( eval( value ) )
-        except Exception, x:
+        except Exception as x:
           return S_ERROR( 'Could not evaluate optimizer parameters' )
 
     return result

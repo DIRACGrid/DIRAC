@@ -226,7 +226,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list
   """
-  if type( originalPlatforms ) == type( ' ' ):
+  if isinstance( originalPlatforms, basestring ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )

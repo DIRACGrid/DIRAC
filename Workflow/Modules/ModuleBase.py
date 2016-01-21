@@ -101,7 +101,7 @@ class ModuleBase( object ):
 
     if not self.step_number:
       # self.STEP_NUMBER is always set by the workflow
-      self.step_number = int( self.STEP_NUMBER )
+      self.step_number = int( self.STEP_NUMBER ) #pylint: disable=E1101
 
     if not self.step_id:
       self.step_id = '%d_%d_%d' % ( self.production_id, self.prod_job_id, self.step_number )
@@ -128,7 +128,7 @@ class ModuleBase( object ):
       return S_ERROR( e )
 
     # This catches everything that is not voluntarily thrown (here, really writing an exception)
-    except Exception, e:
+    except Exception as e:
       self.log.exception( e )
       self.setApplicationStatus( e )
       return S_ERROR( e )
@@ -351,7 +351,7 @@ class ModuleBase( object ):
 
     if self._checkWFAndStepStatus( noPrint = True ):
       # The application status won't be updated in case the workflow or the step is failed already
-      if not type( status ) == type( '' ):
+      if not isinstance( status, basestring ):
         status = str( status )
       self.log.verbose( 'setJobApplicationStatus(%d, %s)' % ( self.jobID, status ) )
       jobStatus = self.jobReport.setApplicationStatus( status, sendFlag )

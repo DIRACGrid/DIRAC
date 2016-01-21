@@ -328,7 +328,7 @@ class Logger:
       sExtendedException += "Frame %s in %s at line %s\n" % ( frame.f_code.co_name,
                                            frame.f_code.co_filename,
                                            frame.f_lineno )
-      for key, value in frame.f_locals.items():
+      for key, value in frame.f_locals.iteritems():
         # We have to be careful not to cause a new error in our error
         # printer! Calling str() on an unknown object could cause an
         # error we don't want.
@@ -363,4 +363,3 @@ class Logger:
     """
     if DEBUG:
       print debugString
-

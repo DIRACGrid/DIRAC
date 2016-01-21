@@ -23,7 +23,7 @@ class ComponentMonitoringHandler( RequestHandler ):
 
     try:
       ComponentMonitoringHandler.db = InstalledComponentsDB()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( 'Could not connect to the database: %s' % ( e ) )
 
     return S_OK( 'Initialization went well' )

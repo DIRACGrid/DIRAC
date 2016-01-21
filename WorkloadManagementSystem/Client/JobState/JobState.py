@@ -3,9 +3,8 @@
 
 __RCSID__ = "$Id"
 
-import types
+import datetime
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
@@ -154,9 +153,9 @@ class JobState( object ):
   @RemoteMethod
   def commitCache( self, initialState, cache, jobLog ):
     try:
-      self.__checkType( initialState , types.DictType )
-      self.__checkType( cache , types.DictType )
-      self.__checkType( jobLog , ( types.ListType, types.TupleType ) )
+      self.__checkType( initialState , dict )
+      self.__checkType( cache , dict )
+      self.__checkType( jobLog , ( list, tuple ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = self.getAttributes( initialState.keys() )
@@ -213,21 +212,30 @@ class JobState( object ):
 # Status
 #
 
-  def __checkType( self, value, tList ):
-    if type( tList ) not in ( types.ListType, types.TupleType ):
-      tList = [ tList ]
-    if type( value ) not in tList:
+
+  def __checkType( self, value, tList, canBeNone = False ):
+    """ Raise TypeError if the value does not have one of the expected types
+
+       :param value: the value to test
+       :param tList: type or tuple of types
+       :param canBeNone: boolean, since there is no type for None to be used with isinstance
+
+    """
+    if canBeNone:
+      if value is None:
+        return
+    if not isinstance( value, tList ):
       raise TypeError( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
 
   right_setStatus = RIGHT_GET_INFO
   @RemoteMethod
   def setStatus( self, majorStatus, minorStatus = None, appStatus = None, source = None, updateTime = None ):
     try:
-      self.__checkType( majorStatus, types.StringType )
-      self.__checkType( minorStatus, ( types.StringType, types.NoneType ) )
-      self.__checkType( appStatus, ( types.StringType, types.NoneType ) )
-      self.__checkType( source, ( types.StringType, types.NoneType ) )
-      self.__checkType( updateTime, ( types.NoneType, Time._dateTimeType ) )
+      self.__checkType( majorStatus, basestring )
+      self.__checkType( minorStatus, basestring, canBeNone = True )
+      self.__checkType( appStatus, basestring, canBeNone = True )
+      self.__checkType( source, basestring, canBeNone = True )
+      self.__checkType( updateTime, datetime.datetime, canBeNone = True )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, majorStatus, minorStatus, appStatus )
@@ -245,8 +253,8 @@ class JobState( object ):
   @RemoteMethod
   def setMinorStatus( self, minorStatus, source = None, updateTime = None ):
     try:
-      self.__checkType( minorStatus, types.StringType )
-      self.__checkType( source, ( types.StringType, types.NoneType ) )
+      self.__checkType( minorStatus, basestring )
+      self.__checkType( source, basestring, canBeNone = True )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, minor = minorStatus )
@@ -272,8 +280,8 @@ class JobState( object ):
   @RemoteMethod
   def setAppStatus( self, appStatus, source = None, updateTime = None ):
     try:
-      self.__checkType( appStatus, types.StringType )
-      self.__checkType( source, ( types.StringType, types.NoneType ) )
+      self.__checkType( appStatus, basestring )
+      self.__checkType( source, basestring, canBeNone = True )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, application = appStatus )
@@ -298,8 +306,8 @@ class JobState( object ):
   @RemoteMethod
   def setAttribute( self, name, value ):
     try:
-      self.__checkType( name, types.StringType )
-      self.__checkType( value, types.StringType )
+      self.__checkType( name, basestring )
+      self.__checkType( value, basestring )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobAttribute( self.__jid, name, value )
@@ -308,7 +316,7 @@ class JobState( object ):
   @RemoteMethod
   def setAttributes( self, attDict ):
     try:
-      self.__checkType( attDict, types.DictType )
+      self.__checkType( attDict, dict )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     keys = [ key for key in attDict ]
@@ -319,7 +327,7 @@ class JobState( object ):
   @RemoteMethod
   def getAttribute( self, name ):
     try:
-      self.__checkType( name , types.StringTypes )
+      self.__checkType( name , basestring )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobAttribute( self.__jid, name )
@@ -328,8 +336,7 @@ class JobState( object ):
   @RemoteMethod
   def getAttributes( self, nameList = None ):
     try:
-      self.__checkType( nameList , ( types.ListType, types.TupleType,
-                                     types.NoneType ) )
+      self.__checkType( nameList , ( list, tuple ), canBeNone = True )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobAttributes( self.__jid, nameList )
@@ -340,8 +347,8 @@ class JobState( object ):
   @RemoteMethod
   def setParameter( self, name, value ):
     try:
-      self.__checkType( name, types.StringType )
-      self.__checkType( value, types.StringType )
+      self.__checkType( name, basestring )
+      self.__checkType( value, basestring )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobParameter( self.__jid, name, value )
@@ -350,7 +357,7 @@ class JobState( object ):
   @RemoteMethod
   def setParameters( self, pDict ):
     try:
-      self.__checkType( pDict, types.DictType )
+      self.__checkType( pDict, dict )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     pList = []
@@ -362,7 +369,7 @@ class JobState( object ):
   @RemoteMethod
   def getParameter( self, name ):
     try:
-      self.__checkType( name, types.StringType )
+      self.__checkType( name, basestring )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobParameter( self.__jid, name )
@@ -371,8 +378,7 @@ class JobState( object ):
   @RemoteMethod
   def getParameters( self, nameList = None ):
     try:
-      self.__checkType( nameList, ( types.ListType, types.TupleType,
-                                     types.NoneType ) )
+      self.__checkType( nameList, ( list, tuple ), canBeNone = True )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobParameters( self.__jid, nameList )
@@ -384,8 +390,8 @@ class JobState( object ):
   @RemoteMethod
   def setOptParameter( self, name, value ):
     try:
-      self.__checkType( name, types.StringType )
-      self.__checkType( value, types.StringType )
+      self.__checkType( name, basestring )
+      self.__checkType( value, basestring )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.setJobOptParameter( self.__jid, name, value )
@@ -394,7 +400,7 @@ class JobState( object ):
   @RemoteMethod
   def setOptParameters( self, pDict ):
     try:
-      self.__checkType( pDict, types.DictType )
+      self.__checkType( pDict, dict )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     for name in pDict:
@@ -406,10 +412,10 @@ class JobState( object ):
   right_removeOptParameters = RIGHT_GET_INFO
   @RemoteMethod
   def removeOptParameters( self, nameList ):
-    if type( nameList ) in types.StringTypes:
+    if isinstance( nameList, basestring ):
       nameList = [ nameList ]
     try:
-      self.__checkType( nameList, ( types.ListType, types.TupleType ) )
+      self.__checkType( nameList, ( list, tuple ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     for name in nameList:
@@ -422,7 +428,7 @@ class JobState( object ):
   @RemoteMethod
   def getOptParameter( self, name ):
     try:
-      self.__checkType( name, types.StringType )
+      self.__checkType( name, basestring )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobOptParameter( self.__jid, name )
@@ -431,8 +437,7 @@ class JobState( object ):
   @RemoteMethod
   def getOptParameters( self, nameList = None ):
     try:
-      self.__checkType( nameList, ( types.ListType, types.TupleType,
-                                     types.NoneType ) )
+      self.__checkType( nameList, ( list, tuple ), canBeNone = True )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobOptParameters( self.__jid, nameList )
@@ -494,7 +499,7 @@ class JobState( object ):
 
   @classmethod
   def checkInputDataStructure( self, pDict ):
-    if type( pDict ) != types.DictType:
+    if not isinstance( pDict, dict ):
       return S_ERROR( "Input data has to be a dictionary" )
     for lfn in pDict:
       if 'Replicas' not in pDict[ lfn ]:

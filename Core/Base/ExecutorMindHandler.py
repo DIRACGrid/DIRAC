@@ -14,20 +14,20 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 class ExecutorMindHandler( RequestHandler ):
 
   MSG_DEFINITIONS = { 'ProcessTask' : { 'taskId' : ( types.IntType, types.LongType ),
-                                        'taskStub' : types.StringType,
-                                        'eType' : types.StringType },
+                                        'taskStub' : types.StringTypes,
+                                        'eType' : types.StringTypes },
                       'TaskDone' : { 'taskId' : ( types.IntType, types.LongType ),
-                                     'taskStub' : types.StringType },
+                                     'taskStub' : types.StringTypes },
                       'TaskFreeze' : { 'taskId' : ( types.IntType, types.LongType ),
-                                       'taskStub' : types.StringType,
+                                       'taskStub' : types.StringTypes,
                                        'freezeTime' : ( types.IntType, types.LongType ) },
                       'TaskError' : { 'taskId': ( types.IntType, types.LongType ),
-                                      'errorMsg' : types.StringType,
-                                      'taskStub' : types.StringType,
-                                      'eType' : types.StringType},
+                                      'errorMsg' : types.StringTypes,
+                                      'taskStub' : types.StringTypes,
+                                      'eType' : types.StringTypes},
                       'ExecutorError' : { 'taskId': ( types.IntType, types.LongType ),
-                                          'errorMsg' : types.StringType,
-                                          'eType' : types.StringType } }
+                                          'errorMsg' : types.StringTypes,
+                                          'eType' : types.StringTypes } }
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
 
@@ -81,7 +81,7 @@ class ExecutorMindHandler( RequestHandler ):
 
   @classmethod
   def setAllowedClients( cls, aClients ):
-    if type( aClients ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( aClients, (list, tuple) ):
       aClients = ( aClients, )
     cls.__allowedClients = aClients
 
@@ -292,4 +292,3 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def exec_taskFreeze( cls, taskId, taskObj, eType ):
     return S_OK()
-

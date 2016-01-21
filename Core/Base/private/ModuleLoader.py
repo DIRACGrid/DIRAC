@@ -199,7 +199,7 @@ class ModuleLoader( object ):
     return S_OK()
 
   def __recurseImport( self, modName, parentModule = False, hideExceptions = False ):
-    if type( modName ) in types.StringTypes:
+    if isinstance( modName, basestring):
       modName = List.fromChar( modName, "." )
     try:
       if parentModule:
@@ -220,6 +220,3 @@ class ModuleLoader( object ):
     if len( modName ) == 1:
       return S_OK( impModule )
     return self.__recurseImport( modName[1:], impModule )
-
-
-

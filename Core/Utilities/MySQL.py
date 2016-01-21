@@ -161,7 +161,7 @@ import warnings
 with warnings.catch_warnings():
   warnings.simplefilter( 'ignore', DeprecationWarning )
   import MySQLdb
-  
+
 # This is for proper initialization of embedded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
@@ -492,7 +492,7 @@ class MySQL( object ):
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
-    except Exception, x:
+    except Exception as x:
       self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
       return self._except( '__escape_string', x, 'Could not escape string' )
 
@@ -540,20 +540,20 @@ class MySQL( object ):
       return S_OK( inEscapeValues )
 
     for value in inValues:
-      if type( value ) in StringTypes:
+      if isinstance( value, basestring ):
         retDict = self.__escapeString( value )
         if not retDict['OK']:
           return retDict
         inEscapeValues.append( retDict['Value'] )
-      elif type( value ) == TupleType or type( value ) == ListType:
-        tupleValues = []  
+      elif isinstance( value, ( tuple, list )):
+        tupleValues = []
         for v in list( value ):
           retDict = self.__escapeString( v )
           if not retDict['OK']:
             return retDict
           tupleValues.append( retDict['Value'] )
-        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' ) 
-      elif type( value ) == BooleanType:
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
+      elif isinstance( value, bool ):
         inEscapeValues = [str( value )]
       else:
         retDict = self.__escapeString( str( value ) )
@@ -585,7 +585,7 @@ class MySQL( object ):
       self.log.verbose( '_connect: Connected.' )
       self._connected = True
       return S_OK()
-    except Exception, x:
+    except Exception as x:
       print x
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
@@ -683,7 +683,7 @@ class MySQL( object ):
       retDict = S_OK( res )
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
-    except Exception, x:
+    except Exception as x:
       self.log.warn( '_update: %s: %s' % ( cmd, str( x ) ) )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
@@ -746,12 +746,12 @@ class MySQL( object ):
     if force:
       gLogger.debug( viewsDict )
 
-      for viewName, viewDict in viewsDict.items():
+      for viewName, viewDict in viewsDict.iteritems():
 
         viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" % ( colDef, colName )
-                             for colName, colDef in  viewDict.get( "Fields", {} ).items() ] )
+                             for colName, colDef in  viewDict.get( "Fields", {} ).iteritems() ] )
         tables = viewDict.get( "SelectFrom", "" )
         if columns and tables:
           viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
@@ -825,7 +825,7 @@ class MySQL( object ):
     for table in tableList:
       thisTable = tableDict[table]
       # Check if Table is properly described with a dictionary
-      if type( thisTable ) != DictType:
+      if not isinstance( thisTable, dict ):
         return S_ERROR( DErrno.EMYSQL, 'Table description is not a dictionary: %s( %s )'
                         % ( type( thisTable ), thisTable ) )
       if not 'Fields' in thisTable:
@@ -849,7 +849,7 @@ class MySQL( object ):
         thisTable = tableDict[table]
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
-          for key, auxTable in thisKeys.items():
+          for key, auxTable in thisKeys.iteritems():
             forTable = auxTable.split( '.' )[0]
             forKey = key
             if forTable != auxTable:
@@ -886,7 +886,7 @@ class MySQL( object ):
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
         if thisTable.has_key( 'PrimaryKey' ):
-          if type( thisTable['PrimaryKey'] ) in StringTypes:
+          if isinstance( thisTable['PrimaryKey'], basestring ):
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
@@ -904,7 +904,7 @@ class MySQL( object ):
             cmdList.append( 'UNIQUE INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
-          for key, auxTable in thisKeys.items():
+          for key, auxTable in thisKeys.iteritems():
 
             forTable = auxTable.split( '.' )[0]
             forKey = key
@@ -925,7 +925,7 @@ class MySQL( object ):
         else:
           charset = 'latin1'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( 
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % (
                table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
@@ -1138,16 +1138,16 @@ class MySQL( object ):
     conjunction = "WHERE"
 
     if condDict != None:
-      for aName, attrValue in condDict.items():
-        if type( aName ) in StringTypes:
+      for aName, attrValue in condDict.iteritems():
+        if isinstance( aName, basestring ):
           attrName = _quotedList( [aName] )
-        elif type( aName ) == TupleType:
-          attrName = '('+_quotedList( list( aName ) )+')'   
+        elif isinstance( aName, tuple ):
+          attrName = '('+_quotedList( list( aName ) )+')'
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )
           raise Exception( error )
-        if type( attrValue ) == ListType:
+        if isinstance( attrValue, list ):
           retDict = self._escapeValues( attrValue )
           if not retDict['OK']:
             self.log.warn( 'buildCondition:', retDict['Message'] )
@@ -1203,8 +1203,8 @@ class MySQL( object ):
                                              timeStamp,
                                              escapeInValue )
 
-    if type( greater ) == DictType:
-      for attrName, attrValue in greater.items():
+    if isinstance( greater, dict ):
+      for attrName, attrValue in greater.iteritems():
         attrName = _quotedList( [attrName] )
         if not attrName:
           error = 'Invalid greater argument'
@@ -1223,8 +1223,8 @@ class MySQL( object ):
                                              escapeInValue )
           conjunction = "AND"
 
-    if type( smaller ) == DictType:
-      for attrName, attrValue in smaller.items():
+    if isinstance( smaller, dict ):
+      for attrName, attrValue in smaller.iteritems():
         attrName = _quotedList( [attrName] )
         if not attrName:
           error = 'Invalid smaller argument'
@@ -1246,12 +1246,12 @@ class MySQL( object ):
 
     orderList = []
     orderAttrList = orderAttribute
-    if type( orderAttrList ) != ListType:
+    if not isinstance( orderAttrList, list ):
       orderAttrList = [ orderAttribute ]
     for orderAttr in orderAttrList:
       if orderAttr == None:
         continue
-      if type( orderAttr ) not in StringTypes:
+      if not isinstance( orderAttr, basestring ):
         error = 'Invalid orderAttribute argument'
         self.log.warn( 'buildCondition:', error )
         raise Exception( error )

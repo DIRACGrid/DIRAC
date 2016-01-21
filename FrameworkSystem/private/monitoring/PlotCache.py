@@ -76,7 +76,7 @@ class PlotCache( object ):
       try:
         filePath = "%s/%s" % ( self.plotsLocation, cachedFile )
         os.unlink( filePath )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't delete plot file", "%s: %s" % ( filePath, str( e ) ) )
       del( self.cachedPlots[ cachedFile ] )
 

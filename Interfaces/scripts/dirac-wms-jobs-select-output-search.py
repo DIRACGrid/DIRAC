@@ -91,7 +91,7 @@ for job in jobs:
       lines = []
       try:
         lines = open( os.path.join( job, filename ) ).readlines()
-      except Exception, x:
+      except Exception as x:
         errorList.append( ( job, x ) )
       for line in lines:
         if line.count( searchstring ):
