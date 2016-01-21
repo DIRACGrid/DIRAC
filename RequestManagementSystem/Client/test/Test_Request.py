@@ -36,7 +36,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest
 def optimizeRequest( req, printOutput = None ):
   from DIRAC import gLogger
   if printOutput:
-    if type( printOutput ) == type( '' ):
+    if isinstance( printOutput, basestring ):
       gLogger.always( 'Request %s:' % printOutput )
     printRequest( req )
     gLogger.always( '=========== Optimized ===============' )
@@ -128,7 +128,7 @@ class RequestTests( unittest.TestCase ):
     """ tear down """
     del self.fromDict
 
-  def test01CtorSerilization( self ):
+  def test_01CtorSerilization( self ):
     """ c'tor and serialization """
     # # empty c'tor
     req = Request()
@@ -149,7 +149,7 @@ class RequestTests( unittest.TestCase ):
     req = Request( fromJSON )
 
 
-  def test02Props( self ):
+  def test_02Props( self ):
     """ props """
     # # valid values
     req = Request()
@@ -180,7 +180,7 @@ class RequestTests( unittest.TestCase ):
 
     req.Error = ""
 
-  def test04Operations( self ):
+  def test_04Operations( self ):
     """ operations arithmetic and state machine """
     req = Request()
     self.assertEqual( len( req ), 0 )
@@ -245,7 +245,7 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
-  def test05FTS( self ):
+  def test_05FTS( self ):
     """ FTS state machine """
 
     req = Request()
@@ -308,7 +308,7 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( req.Status, "Done", "5. wrong status for request: %s" % req.Status )
 
 
-  def test06StateMachine( self ):
+  def test_06StateMachine( self ):
     """ state machine tests """
     r = Request( {"RequestName": "SMT"} )
     self.assertEqual( r.Status, "Waiting", "1. wrong status %s" % r.Status )
@@ -381,7 +381,7 @@ class RequestTests( unittest.TestCase ):
     r[2].Status = "Done"
     self.assertEqual( r.Status, "Waiting", "22. wrong status %s" % r.Status )
 
-  def test07List( self ):
+  def test_07List( self ):
     """ setitem, delitem, getitem and dirty """
 
     r = Request()
@@ -404,7 +404,7 @@ class RequestTests( unittest.TestCase ):
 
 
 
-  def test08Optimize( self ):
+  def test_08Optimize( self ):
     title = {
              0: 'Simple Failover',
              1: 'Double Failover',
@@ -474,6 +474,6 @@ class RequestTests( unittest.TestCase ):
 
 # # test execution
 if __name__ == "__main__":
-  testLoader = unittest.TestLoader()
-  suite = testLoader.loadTestsFromTestCase( RequestTests )
-  unittest.TextTestRunner( verbosity = 3 ).run( suite )
+
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( RequestTests )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )

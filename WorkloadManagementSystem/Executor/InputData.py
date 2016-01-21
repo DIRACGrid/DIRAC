@@ -60,7 +60,7 @@ class InputData( OptimizerExecutor ):
         self.log.exception( msg )
         return None
       return self.__dataManDict[vo]
-   
+
   def __getFileCatalog( self, vo ):
     if vo in self.__fcDict:
       return self.__fcDict[vo]
@@ -71,7 +71,7 @@ class InputData( OptimizerExecutor ):
         msg = 'Failed to create FileCatalog'
         self.log.exception( msg )
         return None
-      return self.__fcDict[vo]   
+      return self.__fcDict[vo]
 
   def optimizeJob( self, jid, jobState ):
     """ This is the method that needs to be implemented by each and every Executor
@@ -117,7 +117,7 @@ class InputData( OptimizerExecutor ):
         if not result['OK']:
           return S_ERROR( "Could not retrieve job owner group" )
         userGroup = result['Value']
-        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup )
+        result = self._resolveInputData( jobState, inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=E1123
       else:
         result = self._resolveInputData( jobState, inputData )
       if not result['OK']:
@@ -143,13 +143,14 @@ class InputData( OptimizerExecutor ):
     if not result['OK']:
       return result
     manifest = result['Value']
-    vo = manifest.getOption( 'VirtualOrganization' ) 
+    vo = manifest.getOption( 'VirtualOrganization' )
     startTime = time.time()
     dm = self.__getDataManager( vo )
     if dm is None:
-      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )  
+      return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
     else:
-      result = dm.getActiveReplicas( lfns )  # This will return already active replicas, excluding banned SEs
+      # This will return already active replicas, excluding banned SEs, and removing tape replicas if there are disk replicas
+      result = dm.getActiveReplicas( lfns, preferDisk = True )
     self.jobLog.info( 'Catalog replicas lookup time: %.2f seconds ' % ( time.time() - startTime ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
@@ -171,7 +172,7 @@ class InputData( OptimizerExecutor ):
       if not result['OK']:
         return result
       manifest = result['Value']
-      vo = manifest.getOption( 'VirtualOrganization' )  
+      vo = manifest.getOption( 'VirtualOrganization' )
       fc = self.__getFileCatalog( vo )
       if fc is None:
         return S_ERROR( 'Failed to instantiate FileCatalog for vo %s' % vo )
@@ -244,11 +245,11 @@ class InputData( OptimizerExecutor ):
     if not result['OK']:
       return result
     manifest = result['Value']
-    vo = manifest.getOption( 'VirtualOrganization' ) 
+    vo = manifest.getOption( 'VirtualOrganization' )
     dm = self.__getDataManager( vo )
     if dm is None:
       return S_ERROR( 'Failed to instantiate DataManager for vo %s' % vo )
-    else:  
+    else:
       result = dm.checkActiveReplicas( replicaDict )
     self.jobLog.info( "Active replica check took %.2f secs" % ( time.time() - startTime ) )
     if not result['OK']:
@@ -268,7 +269,7 @@ class InputData( OptimizerExecutor ):
       return S_ERROR( msg )
 
     resolvedData = {}
-    #THIS IS ONE OF THE MOST HORRIBLE HACKS. I hate the creator of the Value of Value of Successful of crap...
+    # THIS IS ONE OF THE MOST HORRIBLE HACKS. I hate the creator of the Value of Value of Successful of crap...
     resolvedData['Value'] = S_OK( activeReplicaDict )
     resolvedData['SiteCandidates'] = result['Value']
     result = self.storeOptimizerParam( self.ex_getProperty( 'optimizerName' ), resolvedData )
@@ -318,25 +319,25 @@ class InputData( OptimizerExecutor ):
     if not lfnSEs:
       return S_ERROR( "No candidate sites available" )
 
-    #This makes an intersection of all sets in the dictionary and returns a set with it
+    # This makes an intersection of all sets in the dictionary and returns a set with it
     siteCandidates = set.intersection( *[ lfnSEs[ lfn ] for lfn in lfnSEs ] )
 
     if not siteCandidates:
       return S_ERROR( 'No candidate sites available' )
 
-    #In addition, check number of files on tape and disk for each site
-    #for optimizations during scheduling
+    # In addition, check number of files on tape and disk for each site
+    # for optimizations during scheduling
     sitesData = {}
     for siteName in siteCandidates:
       sitesData[ siteName ] = { 'disk': set(), 'tape': set() }
 
-    #Loop time!
+    # Loop time!
     seDict = {}
     for lfn in okReplicas:
       replicas = okReplicas[ lfn ]
-      #Check each SE in the replicas
+      # Check each SE in the replicas
       for seName in replicas:
-        #If not already "loaded" the add it to the dict
+        # If not already "loaded" the add it to the dict
         if seName not in seDict:
           result = self.__getSitesForSE( seName )
           if not result['OK']:
@@ -350,19 +351,19 @@ class InputData( OptimizerExecutor ):
             continue
           seStatus = result[ 'Value' ]
           seDict[ seName ] = { 'Sites': siteList, 'Status': seStatus }
-        #Get SE info from the dict
+        # Get SE info from the dict
         seData = seDict[ seName ]
         siteList = seData[ 'Sites' ]
         seStatus = seData[ 'Status' ]
         for siteName in siteList:
-          #If not a candidate site then skip it
+          # If not a candidate site then skip it
           if siteName not in siteCandidates:
             continue
-          #Add the LFNs to the disk/tape lists
+          # Add the LFNs to the disk/tape lists
           diskLFNs = sitesData[ siteName ][ 'disk' ]
           tapeLFNs = sitesData[ siteName ][ 'tape' ]
           if seStatus[ 'DiskSE' ]:
-            #Sets contain only unique elements, no need to check if it's there
+            # Sets contain only unique elements, no need to check if it's there
             diskLFNs.add( lfn )
             if lfn in tapeLFNs:
               tapeLFNs.remove( lfn )
@@ -375,4 +376,4 @@ class InputData( OptimizerExecutor ):
       sitesData[siteName]['tape'] = len( sitesData[siteName]['tape'] )
     return S_OK( sitesData )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

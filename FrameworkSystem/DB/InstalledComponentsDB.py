@@ -296,7 +296,7 @@ class HostLogging( Base ):
       for key, value in dictionary.iteritems():
         if key in fields and not re.match( '_.*', key ):
           setattr( self, key, value )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
 
     return S_OK( 'Successfully read from dictionary' )
@@ -376,7 +376,7 @@ class InstalledComponentsDB( object ):
     if not 'Components' in tablesInDB:
       try:
         Component.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'Components\' already exists' )
@@ -385,7 +385,7 @@ class InstalledComponentsDB( object ):
     if not 'Hosts' in tablesInDB:
       try:
         Host.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'Hosts\' already exists' )
@@ -394,7 +394,7 @@ class InstalledComponentsDB( object ):
     if not 'InstalledComponents' in tablesInDB:
       try:
         InstalledComponent.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'InstalledComponents\' already exists' )
@@ -403,7 +403,7 @@ class InstalledComponentsDB( object ):
     if not 'HostLogging' in tablesInDB:
       try:
         HostLogging.__table__.create( self.engine )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( e )
     else:
       gLogger.debug( 'Table \'HostLogging\' already exists' )
@@ -467,7 +467,7 @@ class InstalledComponentsDB( object ):
       try:
         session.execute( filteredTemp )
         session.commit()
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( 'Could not filter the fields: %s' % ( e ) )
       filtered = filteredTemp
 
@@ -582,14 +582,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( component )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add Component: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -623,7 +623,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -698,7 +698,7 @@ class InstalledComponentsDB( object ):
                           .filter( text( Component.system == component.system ) )\
                           .filter( text( Component.module == component.module ) )\
                           .filter( text( Component.cType == component.cType ) )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 
@@ -740,7 +740,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -764,14 +764,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( host )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add Host: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -805,7 +805,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -880,7 +880,7 @@ class InstalledComponentsDB( object ):
       query = session.query( Host )\
                           .filter( text( Host.hostName == host.hostName ) )\
                           .filter( text( Host.cpu == host.cpu ) )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not check the existence of the host: %s' % ( e ) )
@@ -920,7 +920,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1003,14 +1003,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( installation )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add installation: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1084,7 +1084,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1121,7 +1121,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1144,14 +1144,14 @@ class InstalledComponentsDB( object ):
 
     try:
       session.add( log )
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not add log: %s' % ( e ) )
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1182,7 +1182,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )
@@ -1247,7 +1247,7 @@ class InstalledComponentsDB( object ):
 
     try:
       session.commit()
-    except Exception, e:
+    except Exception as e:
       session.rollback()
       session.close()
       return S_ERROR( 'Could not commit changes: %s' % ( e ) )

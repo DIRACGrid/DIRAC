@@ -44,7 +44,7 @@ class Mail( object ):
     try:
       smtp.connect()
       smtp.sendmail( self._fromAddress, addresses, mail.as_string() )
-    except Exception, x:
+    except Exception as x:
       return S_ERROR( "Sending mail failed %s" % str( x ) )
 
     smtp.quit()

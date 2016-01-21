@@ -29,12 +29,12 @@ try:
       if os.path.normpath( p ) in sys.path:
         # In case a given directory is twice in PYTHONPATH it has to removed only once
         sys.path.remove( os.path.normpath( p ) )
-    except Exception, x:
+    except Exception as x:
       print 'Directories in PYTHONPATH:', pythonpath
       print 'Failing path:', p, os.path.normpath( p )
       print 'sys.path:', sys.path
       raise x
-except Exception, x:
+except Exception as x:
   print sys.executable
   print sys.version
   print os.uname()
@@ -145,7 +145,7 @@ if not os.path.isfile( installScript ):
     localFD.write( remoteFD.read() )
     localFD.close()
     remoteFD.close()
-  except Exception, e:
+  except Exception as e:
     logERROR( "Could not download %s..: %s" % ( remoteLocation, str( e ) ) )
     sys.exit( 1 )
 
@@ -293,7 +293,7 @@ if not os.path.isfile( installScript ):
     localFD.write( remoteFD.read() )
     localFD.close()
     remoteFD.close()
-  except Exception, e:
+  except Exception as e:
     logERROR( "Could not download %s..: %s" % ( remoteLocation, str( e ) ) )
     sys.exit( 1 )
 
@@ -481,7 +481,7 @@ if cliParams.flavour == "OSG":
   try:
     import shutil
     shutil.copy( installScript, os.path.join( osgDir, installScriptName ) )
-  except Exception, x:
+  except Exception as x:
     print sys.executable
     print sys.version
     print os.uname()

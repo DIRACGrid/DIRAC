@@ -10,8 +10,7 @@ __RCSID__ = "$Id$"
 import os
 import errno
 
-from DIRAC import S_OK
-from DIRAC.Core.Utilities.DErrno import DError
+from DIRAC import S_OK, S_ERROR
 
 def checkArgumentFormat( path, generateMap = False ):
   """ Bring the various possible form of arguments to FileCatalog methods to
@@ -29,11 +28,11 @@ def checkArgumentFormat( path, generateMap = False ):
     elif isinstance( path, dict ):
       urls = path
     else:
-      return DError( errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
+      return S_ERROR( errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
     return S_OK( urls )
 
   if not path:
-    return DError( errno.EINVAL, 'Empty input: %s' % str( path ) )
+    return S_ERROR( errno.EINVAL, 'Empty input: %s' % str( path ) )
 
   result = checkArgumentDict( path )
   if not result['OK']:

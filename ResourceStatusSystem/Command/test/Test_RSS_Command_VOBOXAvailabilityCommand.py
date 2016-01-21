@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' Test_RSS_Command_VOBOXAvailabilityCommand
 
 '''
@@ -58,7 +57,7 @@ class VOBOXAvailabilityCommand_Success( VOBOXAvailabilityCommand_TestCase ):
     '''
     
     command = self.testClass()  
-    self.assertEqual( {}, command.args )      
+    self.assertEqual( {'onlyCache': False}, command.args )
     self.assertEqual( {}, command.apis )
     
   def test_doCommand( self ):  

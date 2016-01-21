@@ -115,7 +115,7 @@ class SandboxStoreClient( object ):
     try:
       fd, tmpFilePath = tempfile.mkstemp( prefix = "LDSB." )
       os.close( fd )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
@@ -136,12 +136,11 @@ class SandboxStoreClient( object ):
         return result
 
     oMD5 = hashlib.md5()
-    fd = open( tmpFilePath, "rb" )
-    bData = fd.read( 10240 )
-    while bData:
-      oMD5.update( bData )
+    with open( tmpFilePath, "rb" ) as fd:
       bData = fd.read( 10240 )
-    fd.close()
+      while bData:
+        oMD5.update( bData )
+        bData = fd.read( 10240 )
 
     transferClient = self.__getTransferClient()
     result = transferClient.sendFile( tmpFilePath, ( "%s.tar.bz2" % oMD5.hexdigest(), assignTo ) )
@@ -180,7 +179,7 @@ class SandboxStoreClient( object ):
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     se = StorageElement( SEName, vo = self.__vo )
@@ -200,7 +199,7 @@ class SandboxStoreClient( object ):
         tfile.close()
         os.unlink( tarFileName )
         os.rmdir( tmpSBDir )
-      except Exception, e:
+      except Exception as e:
         os.unlink( tarFileName )
         os.rmdir( tmpSBDir )
         return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
@@ -218,13 +217,13 @@ class SandboxStoreClient( object ):
         sandboxSize += tarinfo.size
       tf.close()
       result[ 'Value' ] = sandboxSize
-    except Exception, e:
+    except Exception as e:
       result = S_ERROR( "Could not open bundle: %s" % str( e ) )
 
     try:
       os.unlink( tarFileName )
       os.rmdir( tmpSBDir )
-    except Exception, e:
+    except Exception as e:
       gLogger.warn( "Could not remove temporary dir %s: %s" % ( tmpSBDir, str( e ) ) )
 
     return result

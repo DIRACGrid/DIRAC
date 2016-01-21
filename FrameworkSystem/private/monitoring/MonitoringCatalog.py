@@ -67,7 +67,7 @@ class MonitoringCatalog( object ):
       buff = buff[ limit : ]
       try:
         self.__dbExecute( sqlQuery )
-      except Exception, e:
+      except Exception as e:
         DIRAC.abort( 1, "Can't create tables", str( e ) )
 
   def createSchema( self ):
@@ -81,7 +81,7 @@ class MonitoringCatalog( object ):
       tablesList = c.fetchall()
       if len( tablesList ) < 2:
         self.__createTables()
-    except Exception, e:
+    except Exception as e:
       self.log.fatal( "Failed to startup db engine", str( e ) )
       return False
     return True
@@ -124,7 +124,7 @@ class MonitoringCatalog( object ):
       else:
         valuesList.append( dataDict[ key ] )
         keysList.append( "%s = ?" % key )
-    if type( fields ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( fields, basestring ):
       fields = [ fields ]
     if len( keysList ) > 0:
       whereCond = "WHERE %s" % ( " AND ".join( keysList ) )
@@ -339,7 +339,7 @@ class MonitoringCatalog( object ):
     """
     Get a view for a given id
     """
-    if type( viewId ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( viewId, basestring ):
       return self.__select( "definition, variableFields", "views", { "name" : viewId } )
     else:
       return self.__select( "definition, variableFields", "views", { "id" : viewId } )

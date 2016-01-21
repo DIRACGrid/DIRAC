@@ -10,6 +10,7 @@ import inspect
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure, reprReturnErrorStructure
 from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
 from DIRAC.Core.Utilities import ExitCallback
 import DIRAC
@@ -177,6 +178,11 @@ class Logger:
     return self.processMessage( messageObject )
 
   def debug( self, sMsg, sVarMsg = '' ):
+    # In case of S_ERROR structure make full string representation
+    if isReturnStructure( sMsg ):
+      sMsg = reprReturnErrorStructure( sMsg, full = True )
+    if isReturnStructure( sVarMsg ):
+      sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
     messageObject = Message( self._systemName,
                              self._logLevels.debug,
                              Time.dateTime(),
@@ -322,7 +328,7 @@ class Logger:
       sExtendedException += "Frame %s in %s at line %s\n" % ( frame.f_code.co_name,
                                            frame.f_code.co_filename,
                                            frame.f_lineno )
-      for key, value in frame.f_locals.items():
+      for key, value in frame.f_locals.iteritems():
         # We have to be careful not to cause a new error in our error
         # printer! Calling str() on an unknown object could cause an
         # error we don't want.
@@ -357,4 +363,3 @@ class Logger:
     """
     if DEBUG:
       print debugString
-

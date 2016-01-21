@@ -133,8 +133,11 @@ class RequestHandler( object ):
       gLogger.error( message )
       retVal = S_ERROR( message )
     self.__logRemoteQueryResponse( retVal, time.time() - startTime )
-    return self.__trPool.send( self.__trid, retVal )
-
+    result = self.__trPool.send( self.__trid, retVal ) #this will delete the value from the S_OK(value)
+    del retVal
+    retVal = None
+    return result
+    
 #####
 #
 # File to/from Server Methods
@@ -187,6 +190,8 @@ class RequestHandler( object ):
         if uRetVal[ 'OK' ] and not fileHelper.finishedTransmission():
           gLogger.error( "You haven't finished receiving/sending the file", str( fileInfo ) )
           return S_ERROR( "Incomplete transfer" )
+        del fileHelper
+        fileHelper = None
         return uRetVal
       finally:
         self.__lockManager.unlock( "FileTransfer/%s" % sDirection )
@@ -307,7 +312,7 @@ class RequestHandler( object ):
 #
 ####
 
-  __connectionCallbackTypes = { 'new' : [ types.StringType, types.DictType ],
+  __connectionCallbackTypes = { 'new' : [ types.StringTypes, types.DictType ],
                                 'connected' : [],
                                 'drop' : [] }
 
@@ -332,7 +337,7 @@ class RequestHandler( object ):
       if len( args ) != len( cbTypes ):
         return S_ERROR( "Expected %s arguments" % len( cbTypes ) )
       for i in range( len( cbTypes ) ):
-        if type( args[ i ] ) != cbTypes[i]:
+        if not isinstance( args[ i ], cbTypes[i] ):
           return S_ERROR( "Invalid type for argument %s" % i )
       self.__trPool.associateData( self.__trid, "connectData", args )
 

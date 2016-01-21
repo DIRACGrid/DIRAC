@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ GraphUtilities is a a collection of utility functions and classes used
     in the DIRAC Graphs package.
     
@@ -56,7 +52,7 @@ def convert_to_datetime( string ):
       pass
     else:
       raise ValueError( "Unknown datetime type!" )
-  except Exception, e:
+  except Exception as e:
     t = None
     for dateformat in datestrings:
       try:
@@ -403,9 +399,8 @@ def makeDataFromCSV( csv ):
   """
 
   if os.path.exists( csv ):
-    fdata = open( csv, 'r' )
-    flines = fdata.readlines()
-    fdata.close()
+    with open( csv, 'r' ) as fdata:
+      flines = fdata.readlines()
   else:
     flines = csv.split( '\n' )
 

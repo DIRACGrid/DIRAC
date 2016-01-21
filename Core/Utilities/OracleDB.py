@@ -137,7 +137,7 @@ class OracleDB:
       self.logger.debug( '%s: %s' % ( methodName, err ),
                      '%s' % ( e ) )
       return S_ERROR( '%s: ( %s )' % ( err, e ) )
-    except Exception, x:
+    except Exception as x:
       self.logger.debug( '%s: %s' % ( methodName, err ), str( x ) )
       return S_ERROR( '%s: (%s)' % ( err, str( x ) ) )
 
@@ -167,7 +167,7 @@ class OracleDB:
       self.logger.debug( '_connect: Connected.' )
       self._connected = True
       return S_OK()
-    except Exception, x:
+    except Exception as x:
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -233,7 +233,7 @@ class OracleDB:
       result = None
       results = None
       if array != None and len(array) > 0:
-        if type(array[0]) == types.StringType:
+        if isinstance( type( array[0] ), basestring ):
           result = cursor.arrayvar( cx_Oracle.STRING, array )
           parameters += [result]
         elif type(array[0]) == types.LongType or type(array[0]) == types.IntType:
@@ -320,7 +320,7 @@ class OracleDB:
         connection.close()
       except Exception:
         pass
-    except Exception, x:
+    except Exception as x:
       self._except( '__putConnection', x, 'Failed to put Connection in Queue' )
 
   def _getConnection( self ):
@@ -369,14 +369,14 @@ class OracleDB:
         try:
           self.__newConnection()
           return self.__getConnection()
-        except Exception, x:
+        except Exception as x:
           self.logger.debug( '__getConnection: Fails to get connection from Queue', x )
           time.sleep( trial * 5.0 )
           newtrial = trial + 1
           return self.__getConnection( trial = newtrial )
-      except Exception, x:
+      except Exception as x:
         return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
-    except Exception, x:
+    except Exception as x:
       return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
 
 

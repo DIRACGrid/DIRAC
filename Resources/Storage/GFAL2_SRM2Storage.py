@@ -5,7 +5,6 @@
     :synopsis: SRM2 module based on the GFAL2_StorageBase class.
 """
 
-from types import StringType, ListType
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -109,9 +108,9 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
       if not protocols['OK']:
         return protocols
       listProtocols = protocols['Value']
-    elif type( protocols ) == StringType:
+    elif isinstance( protocols, basestring ):
       listProtocols = [protocols]
-    elif type( protocols ) == ListType:
+    elif isinstance( protocols, list ):
       listProtocols = protocols
     else:
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )

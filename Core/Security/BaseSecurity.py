@@ -8,8 +8,8 @@ import os
 import tempfile
 
 import DIRAC
-from DIRAC import gConfig, S_OK
-from DIRAC.Core.Utilities import DError, DErrno
+from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
 
@@ -74,7 +74,7 @@ class BaseSecurity( object ):
       fd, filename = tempfile.mkstemp()
       os.close( fd )
     except IOError:
-      return DError( DErrno.ECTMPF )
+      return S_ERROR( DErrno.ECTMPF )
     return S_OK( filename )
 
   def _getUsername( self, proxyChain ):
@@ -83,10 +83,10 @@ class BaseSecurity( object ):
       return retVal
     credDict = retVal[ 'Value' ]
     if not credDict[ 'isProxy' ]:
-      return DError( DErrno.EX509, "chain does not contain a proxy" )
+      return S_ERROR( DErrno.EX509, "chain does not contain a proxy" )
     if not credDict[ 'validDN' ]:
-      return DError( DErrno.EDISET, "DN %s is not known in dirac" % credDict[ 'subject' ] )
+      return S_ERROR( DErrno.EDISET, "DN %s is not known in dirac" % credDict[ 'subject' ] )
     if not credDict[ 'validGroup' ]:
-      return DError( DErrno.EDISET, "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
+      return S_ERROR( DErrno.EDISET, "Group %s is invalid for DN %s" % ( credDict[ 'group' ], credDict[ 'subject' ] ) )
     mpUsername = "%s:%s" % ( credDict[ 'group' ], credDict[ 'username' ] )
     return S_OK( mpUsername )

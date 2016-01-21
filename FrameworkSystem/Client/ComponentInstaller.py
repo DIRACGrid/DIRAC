@@ -870,7 +870,7 @@ class ComponentInstaller( object ):
                          rDict[comp]['Timeup'],
                          str( rDict[comp]['PID'] ) ] )
       printTable( fields, records )
-    except Exception, x:
+    except Exception as x:
       print "Exception while gathering data for printing: %s" % str( x )
     return S_OK()
 
@@ -898,7 +898,7 @@ class ComponentInstaller( object ):
             record.append( str( rDict[compType][system][component]['PID'] ) )
             records.append( record )
       printTable( fields, records )
-    except Exception, x:
+    except Exception as x:
       print "Exception while gathering data for printing: %s" % str( x )
 
     return S_OK()
@@ -1141,7 +1141,7 @@ class ComponentInstaller( object ):
       runDict['RSS'] = -1
       if pid: # check the process CPU usage and memory
         # PID %CPU %MEM VSZ
-        result = execCommand( 0, ['ps', '-q', pid, 'au'] )
+        result = self.execCommand( 0, ['ps', '-q', pid, 'au'] )
         if result['OK'] and len( result['Value'] ) > 0:
           stats = result['Value'][1]
           values = re.findall( r"\d*\.\d+|\d+", stats )
@@ -1348,15 +1348,16 @@ class ComponentInstaller( object ):
       result = self.execCommand( 0, ['runsvctrl', mode] + startComp )
       if not result['OK']:
         return result
-      time.sleep( 1 )
+      time.sleep( 2 )
 
     # Check the runsv status
     if system == '*' or component == '*':
-      time.sleep( 5 )
+      time.sleep( 10 )
 
     # Final check
     result = self.getStartupComponentStatus( [( system, component )] )
     if not result['OK']:
+      gLogger.error( 'Failed to start the component %s %s' %(system, component) )
       return S_ERROR( 'Failed to start the component' )
 
     return result
@@ -1726,7 +1727,7 @@ class ComponentInstaller( object ):
 
     logConfigFile = os.path.join( logDir, 'config' )
     fd = open( logConfigFile, 'w' )
-    fd.write( 
+    fd.write(
   """s10000000
   n20
   """ )
@@ -1734,7 +1735,7 @@ class ComponentInstaller( object ):
 
     logRunFile = os.path.join( logDir, 'run' )
     fd = open( logRunFile, 'w' )
-    fd.write( 
+    fd.write(
   """#!/bin/bash
   #
   rcfile=%(bashrc)s
@@ -1814,7 +1815,7 @@ class ComponentInstaller( object ):
 
       runFile = os.path.join( runitCompDir, 'run' )
       fd = open( runFile, 'w' )
-      fd.write( 
+      fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -1839,7 +1840,7 @@ class ComponentInstaller( object ):
       if cTypeLower == 'agent' or cTypeLower == 'consumer':
         stopFile = os.path.join( runitCompDir, 'control', 't' )
         fd = open( stopFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   echo %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
   touch %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
@@ -1969,7 +1970,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitHttpdDir )
         runFile = os.path.join( runitHttpdDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2004,7 +2005,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitPasterDir )
         runFile = os.path.join( runitPasterDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2156,7 +2157,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitWebAppDir )
         runFile = os.path.join( runitWebAppDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2508,7 +2509,7 @@ class ComponentInstaller( object ):
 
     # now creating the Database
     result = self.execMySQL( 'CREATE DATABASE `%s`' % dbName )
-    if not result['OK'] and not 'database exists' in result[ 'Value' ]:
+    if not result['OK'] and not 'database exists' in result[ 'Message' ]:
       gLogger.error( 'Failed to create databases', result['Message'] )
       if self.exitOnError:
         DIRAC.exit( -1 )
@@ -2557,7 +2558,7 @@ class ComponentInstaller( object ):
             DIRAC.exit( -1 )
           return S_ERROR( error )
 
-    except Exception, e:
+    except Exception as e:
       gLogger.error( str( e ) )
       if self.exitOnError:
         DIRAC.exit( -1 )
@@ -2702,28 +2703,6 @@ class ComponentInstaller( object ):
     gLogger.always( str( self.localCfg['LocalSite'] ) )
 
     return S_OK( ceNameList )
-
-  def configureLocalDirector( self, ceNameList = '' ):
-    """
-    Install a Local DIRAC TaskQueueDirector, basically write the proper configuration file
-    """
-    if ceNameList:
-      result = self.setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
-      if not result['OK']:
-        return result
-      result = MonitoringUtilities.monitorInstallation( 'agent', 'WorkloadManagement', 'TaskQueueDirector' )
-      if not result[ 'OK' ]:
-        return result
-      # Now write a local Configuration for the Director
-
-    directorCfg = CFG()
-    directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by InstallTools' )
-    directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by InstallTools' )
-    directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by InstallTools' )
-    result = self.addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
-    if not result['OK']:
-      return result
-    return self.runsvctrlComponent( 'WorkloadManagement', 'TaskQueueDirector', 't' )
 
   def execCommand( self, timeout, cmd ):
     """

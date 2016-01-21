@@ -19,7 +19,6 @@ import os
 import sys
 import errno
 import shutil
-#from DIRAC.Core.Utilities import DError
 from DIRAC.Core.Base      import Script
 from DIRAC                import S_OK, S_ERROR
 
@@ -65,8 +64,6 @@ def __runSystemDefaults(jobID, vo):
       S_OK("Temporary directory already exists.")
     elif sys.exc_info()[1][0] == 30:
       print sys.exc_info()[1], "Unable to create temporary directory"
-#      DError(errno.EROFS, "Unable to create temporary directory")
-
     
   basepath = os.getcwd()
   return basepath + os.path.sep + tempdir + os.path.sep
@@ -160,7 +157,7 @@ if __name__ == "__main__":
     
     __downloadPilotScripts(_path, _diracPath)
     
-    __configurePilot(_path)
+    __configurePilot(_path, _vo)
     
     __runJobLocally(_jobID, _path, _vo)
     

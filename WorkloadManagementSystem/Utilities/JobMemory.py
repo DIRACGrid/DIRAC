@@ -29,7 +29,8 @@ def getMemoryFromMJF():
     return None
 
 def getMemoryFromProc():
-    meminfo = dict( ( i.split()[0].rstrip( ':' ), int( i.split()[1] ) ) for i in open( '/proc/meminfo' ).readlines() )
+  with open( '/proc/meminfo' ) as meminfoFile:
+    meminfo = dict( ( i.split()[0].rstrip( ':' ), int( i.split()[1] ) ) for i in meminfoFile.readlines() )
     MaxRAM = meminfo['MemTotal']
     if MaxRAM:
       return MaxRAM / 1024

@@ -80,7 +80,7 @@ def execute ( arguments ):
         if not result['OK']:
           gLogger.warn( result['Message'] )
           raise JobWrapperError( result['Message'] )
-      except Exception, x:
+      except Exception as x:
         gLogger.exception( 'JobWrapper failed to resolve input data' )
         rescheduleResult = rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
         job.sendJobAccounting( rescheduleResult, 'Input Data Resolution' )
@@ -98,7 +98,7 @@ def execute ( arguments ):
     if not result['OK']:
       gLogger.error( 'Failed to execute job', result['Message'] )
       raise JobWrapperError( result['Message'] )
-  except Exception, x:
+  except Exception as x:
     if str( x ) == '0':
       gLogger.verbose( 'JobWrapper exited with status=0 after execution' )
     else:
@@ -114,7 +114,7 @@ def execute ( arguments ):
       if not result['OK']:
         gLogger.warn( result['Message'] )
         raise JobWrapperError( result['Message'] )
-    except Exception, x:
+    except Exception as x:
       gLogger.exception( 'JobWrapper failed to process output files' )
       gJobReport.setJobParameter( 'Error Message', str( x ), sendFlag = False )
       gJobReport.setJobStatus( 'Failed', 'Uploading Job Outputs', sendFlag = False )

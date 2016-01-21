@@ -226,7 +226,7 @@ def getQueues( siteList = None, ceList = None, ceTypeList = None, community = No
 def getCompatiblePlatforms( originalPlatforms ):
   """ Get a list of platforms compatible with the given list
   """
-  if type( originalPlatforms ) == type( ' ' ):
+  if isinstance( originalPlatforms, basestring ):
     platforms = [originalPlatforms]
   else:
     platforms = list( originalPlatforms )
@@ -237,7 +237,7 @@ def getCompatiblePlatforms( originalPlatforms ):
   if not ( result['OK'] and result['Value'] ):
     return S_ERROR( "OS compatibility info not found" )
 
-  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  platformsDict = dict( ( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems() )
   for k, v in platformsDict.iteritems():
     if k not in v:
       v.append( k )
@@ -264,7 +264,7 @@ def getDIRACPlatform( OS ):
   if not ( result['OK'] and result['Value'] ):
     return S_ERROR( "OS compatibility info not found" )
 
-  platformsDict = dict( [( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems()] )
+  platformsDict = dict( ( k, v.replace( ' ', '' ).split( ',' ) ) for k, v in result['Value'].iteritems() )
   for k, v in platformsDict.iteritems():
     if k not in v:
       v.append( k )

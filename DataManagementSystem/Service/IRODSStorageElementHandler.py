@@ -31,7 +31,7 @@ __RCSID__ = "$Id$"
 import os
 import stat
 import re
-from types import StringType, StringTypes, ListType
+from types import  StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -246,14 +246,14 @@ class IRODSStorageElementHandler( RequestHandler ):
         return S_OK( True )
     return S_OK( False )  
 
-  types_getMetadata = [StringType]
+  types_getMetadata = [StringTypes]
   def export_getMetadata( self, fileID ):
     """
     Get metadata for the file or directory specified by fileID
     """
     return self.__getFileStat( fileID )
 
-  types_createDirectory = [StringType]
+  types_createDirectory = [StringTypes]
   def export_createDirectory( self, dir_path ):
     """
     Creates the directory on the storage
@@ -274,7 +274,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         return S_ERROR( 'Failed to create directory' )
     return S_OK()
 
-  types_listDirectory = [StringType, StringType]
+  types_listDirectory = [StringTypes, StringTypes]
   def export_listDirectory( self, dir_path, mode ):
     """
     Return the dir_path directory listing
@@ -469,7 +469,7 @@ token is used for access rights confirmation.
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
 
-  types_remove = [StringType, StringType]
+  types_remove = [StringTypes, StringTypes]
   def export_remove( self, fileID, token ):
     """ Remove fileID from the storage. token is used for access rights confirmation. """
     return self.__removeFile( fileID, token )
@@ -514,7 +514,7 @@ token is used for access rights confirmation.
     else:
       return S_ERROR( 'File removal %s not authorized' % fileID )
 
-  types_getDirectorySize = [StringType]
+  types_getDirectorySize = [StringTypes]
   def export_getDirectorySize( self, fileID ):
     """ Get the size occupied by the given directory
 """
@@ -529,7 +529,7 @@ token is used for access rights confirmation.
     else:
       return S_ERROR( "Directory does not exists" )
 
-  types_removeDirectory = [StringType, StringType]
+  types_removeDirectory = [StringTypes, StringTypes]
   def export_removeDirectory( self, fileID, token ):
     """ Remove the given directory from the storage
 """
@@ -553,7 +553,7 @@ token is used for access rights confirmation.
     
     return S_ERROR()
 
-  types_removeFileList = [ ListType, StringType ]
+  types_removeFileList = [ ListType, StringTypes ]
   def export_removeFileList( self, fileList, token ):
     """ Remove files in the given list
 """

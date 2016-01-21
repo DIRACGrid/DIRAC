@@ -729,7 +729,7 @@ class ProxyDB( DB ):
       vomsSecsLeft1 = int( retVal1[ 'Value' ].strip() )
       vomsSecsLeft2 = int( retVal2[ 'Value' ].strip() )
       vomsSecsLeft = min( vomsSecsLeft1, vomsSecsLeft2 )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't parse VOMS time left: %s" % str( e ) )
     secsLeft = min( vomsSecsLeft, chain.getRemainingSecs()[ 'Value' ] )
     pemData = chain.dumpAllToString()[ 'Value' ]

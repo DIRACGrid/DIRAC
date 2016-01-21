@@ -9,8 +9,8 @@ __RCSID__ = "$Id$"
 
 import os
 import threading
-import types
 import time
+
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -142,7 +142,7 @@ class AgentModule( object ):
                                                                         '.shifterCred' )
 
 
-    if type( properties ) == types.DictType:
+    if isinstance( properties, dict):
       for key in properties:
         self.__moduleProperties[ key ] = properties[ key ]
       self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
@@ -226,9 +226,8 @@ class AgentModule( object ):
 
   def am_createStopAgentFile( self ):
     try:
-      fd = open( self.am_getStopAgentFile(), 'w' )
-      fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
-      fd.close()
+      with open( self.am_getStopAgentFile(), 'w' ) as fd:
+        fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
     except Exception:
       pass
 
@@ -318,7 +317,7 @@ class AgentModule( object ):
       if not isReturnStructure( result ):
         raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
-    except Exception, e:
+    except Exception as e:
       self.log.exception( "Agent exception while calling method", name )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 

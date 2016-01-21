@@ -189,6 +189,8 @@ class PluginUtilities( object ):
             taskSize = 0
     if flush and taskLfns:
       tasks.append( ( replicaSE, taskLfns ) )
+    if not tasks and not flush and taskLfns:
+      self.logVerbose( 'Not enough data to create a task, and flush not set (%d bytes for groupSize %d)' % ( taskSize, self.groupSize ) )
     return tasks
 
 
@@ -362,7 +364,7 @@ class PluginUtilities( object ):
 
   @staticmethod
   def _normaliseShares( originalShares ):
-    total = sum( [ float( share ) for share in originalShares.values()] )
+    total = sum( float( share ) for share in originalShares.values() )
     return dict( [ ( site, 100.*float( share ) / total if total else 0. ) for site, share in originalShares.items()] )
 
   def uniqueSEs( self, ses ):

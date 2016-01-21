@@ -596,11 +596,10 @@ class AttributeCollection( dict ):
     return self.toXML()
 
   def toXMLFile( self, filename ):
-    f = open( filename, 'w+' )
-    sarray = self.toXML()
-    for element in sarray:
-      f.write( element )
-    f.close()
+    with open( filename, 'w+' ) as f:
+      sarray = self.toXML()
+      for element in sarray:
+        f.write( element )
     return
 
   def toXML( self ):

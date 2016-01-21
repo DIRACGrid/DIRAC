@@ -9,11 +9,11 @@ Create a new DB on the local MySQL server
 """
 __RCSID__ = "$Id$"
 #
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 #
 from DIRAC import gConfig
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -29,14 +29,14 @@ if len( args ) < 1:
   Script.showHelp()
   exit( -1 )
 
-InstallTools.getMySQLPasswords()
+gComponentInstaller.getMySQLPasswords()
 for db in args:
-  result = InstallTools.installDatabase( db )
+  result = gComponentInstaller.installDatabase( db )
   if not result['OK']:
     print "ERROR: failed to correctly install %s" % db, result['Message']
   else:
     extension, system = result['Value']
-    InstallTools.addDatabaseOptionsToCS( gConfig, system, db, overwrite = True )
+    gComponentInstaller.addDatabaseOptionsToCS( gConfig, system, db, overwrite = True )
 
     if db != 'InstalledComponentsDB':
       result = MonitoringUtilities.monitorInstallation( 'DB', system, db )

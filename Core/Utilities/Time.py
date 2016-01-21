@@ -46,6 +46,8 @@ def timeThis( method ):
   """
 
   def timed( *args, **kw ):
+    """ What actually times
+    """
 
     ts = nativetime.time()
     result = method( *args, **kw )
@@ -59,9 +61,12 @@ def timeThis( method ):
       try:
         pre += args[0].log._systemName + '    TIME: ' + args[0].transString
       except AttributeError:
-        pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+        try:
+          pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+        except AttributeError:
+          pre += 'TIME: '
     except IndexError:
-      pre += '  TIME : '
+      pre += 'TIME: '
 
     argsLen = ''
     if args:
@@ -76,7 +81,7 @@ def timeThis( method ):
           except IndexError:
             argsLen = ''
 
-    print( "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts ) )
+    print "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts )
     return result
 
   return timed
@@ -182,14 +187,14 @@ def fromString( myDate = None ):
         return ( datetime.datetime( year = dateTuple[0],
                                     month = dateTuple[1],
                                     day = dateTuple[2] ) +
-               fromString( dateTimeTuple[1] ) )
+                 fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
       except:
         return ( datetime.datetime( year = int( dateTuple[0] ),
                                     month = int( dateTuple[1] ),
                                     day = int( dateTuple[2] ) ) +
-               fromString( dateTimeTuple[1] ) )
+                fromString( dateTimeTuple[1] ) )
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
         return None
@@ -261,10 +266,10 @@ def queryTime(f):
   """ Decorator to measure the function call time
   """
   def measureQueryTime(*args, **kwargs):
-    start = time.time()
+    start = nativetime.time()
     result = f(*args, **kwargs)
     if result['OK'] and not 'QueryTime' in result:
-      result['QueryTime'] = time.time() - start
+      result['QueryTime'] = nativetime.time() - start
     return result
   return measureQueryTime
 
@@ -275,5 +280,3 @@ _timeType = type( time() )
 _allTimeTypes = ( _dateTimeType, _timeType )
 _allDateTypes = ( _dateTimeType, _dateType )
 _allTypes = ( _dateTimeType, _dateType, _timeType )
-
-

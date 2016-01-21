@@ -74,7 +74,7 @@ class AuthManager( object ):
     #Check for invalid forwarding
     if self.KW_EXTRA_CREDENTIALS in credDict:
       #Invalid forwarding?
-      if type( credDict[ self.KW_EXTRA_CREDENTIALS ] ) not in  ( types.StringType, types.UnicodeType ):
+      if not isinstance ( credDict[ self.KW_EXTRA_CREDENTIALS ], basestring ):
         self.__authLogger.verbose( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
         return False
     #Is it a host?
@@ -234,9 +234,9 @@ class AuthManager( object ):
     """
     #HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
     if not caseSensitive:
-      validProps = dict( [ ( prop.lower(), prop ) for prop in validProps ] )
+      validProps = dict( ( prop.lower(), prop ) for prop in validProps )
     else:
-      validProps = dict( [ ( prop, prop ) for prop in validProps ] )
+      validProps = dict( ( prop, prop ) for prop in validProps )
     groupProperties = credDict[ self.KW_PROPERTIES ]
     foundProps = []
     for prop in groupProperties:

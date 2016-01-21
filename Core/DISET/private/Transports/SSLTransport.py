@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os
@@ -43,6 +42,12 @@ class SSLTransport( BaseTransport ):
   def __unlock( self ):
     self.__locked = False
 
+  def setSocketTimeout( self, timeout ):
+    """
+    This method is used to chenge the default timeout of the socket
+    """
+    gSocketInfoFactory.setSocketTimeout( timeout )
+    
   def initAsClient( self ):
     retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     if not retVal[ 'OK' ]:
@@ -107,7 +112,7 @@ class SSLTransport( BaseTransport ):
 
   def acceptConnection( self ):
     oClientTransport = SSLTransport( self.stServerAddress )
-    oClientSocket, stClientAddress = self.oSocket.accept()
+    oClientSocket, _stClientAddress = self.oSocket.accept()
     retVal = self.oSocketInfo.clone()
     if not retVal[ 'OK' ]:
       return retVal
@@ -121,7 +126,7 @@ class SSLTransport( BaseTransport ):
     try:
       timeout = self.oSocketInfo.infoDict[ 'timeout' ]
       if timeout:
-         start = time.time()
+        start = time.time()
       while True:
         if timeout:
           if time.time() - start > timeout:
@@ -134,7 +139,7 @@ class SSLTransport( BaseTransport ):
           time.sleep( 0.001 )
         except GSI.SSL.ZeroReturnError:
           return S_OK( "" )
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
     finally:
       self.__unlock()
@@ -155,7 +160,7 @@ class SSLTransport( BaseTransport ):
           if ok:
             try:
               ok = self.oSocket.do_handshake()
-            except Exception, e:
+            except Exception as e:
               return S_ERROR( "Renegotiation failed: %s" % str( e ) )
 
 
@@ -177,7 +182,7 @@ class SSLTransport( BaseTransport ):
           time.sleep( 0.001 )
         except GSI.SSL.WantReadError:
           time.sleep( 0.001 )
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Error while sending: %s" % str( e ) )
       return S_OK( sentBytes )
     finally:
@@ -189,6 +194,7 @@ def checkSanity( urlTuple, kwargs ):
   Check that all ssl environment is ok
   """
   useCerts = False
+  certFile = ''
   if "useCertificates" in kwargs and kwargs[ 'useCertificates' ]:
     certTuple = Locations.getHostCertificateAndKeyLocation()
     if not certTuple:
@@ -197,7 +203,7 @@ def checkSanity( urlTuple, kwargs ):
     certFile = certTuple[0]
     useCerts = True
   elif "proxyString" in kwargs:
-    if type( kwargs[ 'proxyString' ] ) != types.StringType:
+    if not isinstance( kwargs[ 'proxyString' ], basestring ):
       gLogger.error( "proxyString parameter is not a valid type", str( type( kwargs[ 'proxyString' ] ) ) )
       return S_ERROR( "proxyString parameter is not a valid type" )
   else:

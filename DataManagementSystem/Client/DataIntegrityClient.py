@@ -6,15 +6,15 @@ correctly updated in the FileCatalog.
 
 __RCSID__ = "$Id$"
 
+import re
+import types
+
 from DIRAC                                                import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
-from DIRAC.Core.Utilities.List                            import sortList
 from DIRAC.Core.Base.Client                               import Client
-import re
-import types
 
 class DataIntegrityClient( Client ):
 
@@ -68,9 +68,9 @@ class DataIntegrityClient( Client ):
 
         sourceComponent is the component issuing the request.
     """
-    if type( lfn ) == types.ListType:
+    if isinstance( lfn, list ):
       lfns = lfn
-    elif type( lfn ) == types.StringType:
+    elif isinstance( lfn, basestring ):
       lfns = [lfn]
     else:
       errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."
@@ -85,10 +85,10 @@ class DataIntegrityClient( Client ):
       gLogger.error( "DataIntegrityClient.setReplicaProblematic: Failed to insert problematics to integrity DB" )
     return res
 
-  def __reportProblematicReplicas( self, replicaTuple, se, reason ):
+  def reportProblematicReplicas( self, replicaTuple, se, reason ):
     """ Simple wrapper function around setReplicaProblematic """
     gLogger.info( 'The following %s files had %s at %s' % ( len( replicaTuple ), reason, se ) )
-    for lfn, _pfn, se, reason in sortList( replicaTuple ):
+    for lfn, _pfn, se, reason in sorted( replicaTuple ):
       if lfn:
         gLogger.info( lfn )
     res = self.setReplicaProblematic( replicaTuple, sourceComponent = 'DataIntegrityClient' )
@@ -424,7 +424,7 @@ class DataIntegrityClient( Client ):
         res = self.__getStoragePathExists( [lfn], storageElementName )
         if lfn in res['Value']:
           gLogger.info( "LFNZeroReplicas file (%d) found storage file at %s" % ( fileID, storageElementName ) )
-          self.__reportProblematicReplicas( [( lfn, 'deprecatedUrl', storageElementName, 'PFNNotRegistered' )], storageElementName, 'PFNNotRegistered' )
+          self.reportProblematicReplicas( [( lfn, 'deprecatedUrl', storageElementName, 'PFNNotRegistered' )], storageElementName, 'PFNNotRegistered' )
           pfnsFound = True
       if not pfnsFound:
         gLogger.info( "LFNZeroReplicas file (%d) did not have storage files. Removing..." % fileID )

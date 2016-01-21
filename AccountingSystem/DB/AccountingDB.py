@@ -1,10 +1,13 @@
-# $HeadURL$
+""" Frontend to MySQL DB AccountingDB
+"""
+
 __RCSID__ = "$Id$"
 
-import datetime, time
-import types
+import datetime
+import time
 import threading
 import random
+
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -304,7 +307,7 @@ class AccountingDB( DB ):
       if field in keyFieldsList:
         return S_ERROR( "Value field %s is also in the list of key fields" % field )
     for bucket in bucketsLength:
-      if type( bucket ) != types.TupleType:
+      if not isinstance( bucket, tuple ):
         return S_ERROR( "Length of buckets should be a list of tuples" )
       if len( bucket ) != 2:
         return S_ERROR( "Length of buckets should have 2d tuples" )
@@ -325,7 +328,7 @@ class AccountingDB( DB ):
     #Registering type
     fieldsDict = {}
     bucketFieldsDict = {}
-    inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
+    inbufferDict = { 'id' : 'BIGINT NOT NULL AUTO_INCREMENT' }
     bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] }
     uniqueIndexFields = ['startTime']
     for field in definitionKeyFields:
@@ -486,7 +489,7 @@ class AccountingDB( DB ):
       Adds a key value to a key table if not existant
     """
     #Cast to string just in case
-    if type( keyValue ) != types.StringType:
+    if not isinstance( keyValue, basestring ):
       keyValue = str( keyValue )
     #No more than 64 chars for keys
     if len( keyValue ) > 64:
@@ -979,12 +982,12 @@ class AccountingDB( DB ):
     if groupFields:
       try:
         groupFields[0] % tuple( groupFields[1] )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot format properly group string: %s" % str( e ) )
     if orderFields:
       try:
         orderFields[0] % tuple( orderFields[1] )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot format properly order string: %s" % str( e ) )
     #Calculate fields to retrieve
     realFieldList = []
@@ -999,7 +1002,7 @@ class AccountingDB( DB ):
         realFieldList.append( "`%s`.`%s`" % ( tableName, rawFieldName ) )
     try:
       cmd += " %s" % selectFields[0] % tuple( realFieldList )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error generating select fields string: %s" % str( e ) )
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]
@@ -1035,7 +1038,7 @@ class AccountingDB( DB ):
                                                                     keyName,
                                                                     _getTableName( "key", typeName, keyName )
                                                                     ) )
-      if type( condDict[ keyName ] ) not in ( types.ListType, types.TupleType ):
+      if not isinstance( condDict[ keyName ], ( list, tuple ) ):
         condDict[ keyName ] = [ condDict[ keyName ] ]
       for keyValue in condDict[ keyName ]:
         retVal = self._escapeString( keyValue )
@@ -1468,4 +1471,3 @@ def _getTableName( tableType, typeName, keyName = None ):
     return "ac_%s_%s_%s" % ( tableType, typeName, keyName )
   else:
     raise Exception( "Call to _getTableName with tableType as key but with no keyName" )
-

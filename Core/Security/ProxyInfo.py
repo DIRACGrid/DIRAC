@@ -5,10 +5,9 @@
 __RCSID__ = "$Id$"
 
 import base64
-import types
 
-from DIRAC                                     import S_OK
-from DIRAC.Core.Utilities                      import DError, DErrno
+from DIRAC                                     import S_OK, S_ERROR
+from DIRAC.Core.Utilities                      import DErrno
 from DIRAC.Core.Security.X509Chain             import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS                  import VOMS
 from DIRAC.Core.Security                       import Locations
@@ -44,14 +43,14 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
   else:
     if not proxy:
       proxyLocation = Locations.getProxyLocation()
-    elif type( proxy ) in ( types.StringType, types.UnicodeType ):
+    elif isinstance( proxy, basestring ):
       proxyLocation = proxy
     if not proxyLocation:
-      return DError( DErrno.EPROXYFIND )
+      return S_ERROR( DErrno.EPROXYFIND )
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( proxyLocation )
     if not retVal[ 'OK' ]:
-      return DError( DErrno.EPROXYREAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
+      return S_ERROR( DErrno.EPROXYREAD, "%s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
 
   retVal = chain.getCredentials()
   if not retVal[ 'OK' ]:
@@ -91,7 +90,7 @@ def formatProxyInfoAsString( infoDict ):
   for field in ( 'subject', 'issuer', 'identity', 'subproxyUser', ( 'secondsLeft', 'timeleft' ),
                  ( 'group', 'DIRAC group' ), 'rfc', 'path', 'username', ( 'groupProperties', "properties" ),
                  ( 'hasVOMS', 'VOMS' ), ( 'VOMS', 'VOMS fqan' ), ( 'VOMSError', 'VOMS Error' ) ):
-    if type( field ) == types.StringType:
+    if isinstance( field, basestring ):
       dispField = field
     else:
       dispField = field[1]

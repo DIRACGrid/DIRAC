@@ -35,7 +35,8 @@ class FileCatalogClientBase( Client ):
 #  The following methods must be implemented in derived classes
 #######################################################################################
 
-  def getInterfaceMethods( self ):
+  @staticmethod
+  def getInterfaceMethods():
     """ Get the methods implemented by the File Catalog client
 
     :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )

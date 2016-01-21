@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: OperationTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/14 14:30:20
@@ -26,7 +25,6 @@ __RCSID__ = "$Id $"
 # # imports
 import unittest
 # # from DIRAC
-from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.File import File
 # # SUT
 from DIRAC.RequestManagementSystem.Client.Operation import Operation

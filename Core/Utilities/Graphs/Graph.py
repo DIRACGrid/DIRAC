@@ -321,7 +321,7 @@ class Graph(object):
       ax_wm.axis('off')
       ax_wm.set_frame_on( False )
       ax_wm.set_clip_on( False )
-    except Exception, e:
+    except Exception as e:
       print e 
       
   def writeGraph( self, fname, fileFormat = 'PNG' ):

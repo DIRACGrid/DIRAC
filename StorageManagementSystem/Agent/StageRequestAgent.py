@@ -4,7 +4,6 @@ from DIRAC import gLogger, gConfig, S_OK
 
 from DIRAC.Core.Base.AgentModule                                  import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
-from DIRAC.Core.Utilities.List                                    import sortList
 from DIRAC.Resources.Storage.StorageElement                       import StorageElement
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
 
@@ -48,7 +47,7 @@ class StageRequestAgent( AgentModule ):
     self.storageElementUsage = res['Value']
     if self.storageElementUsage:
       gLogger.info( "StageRequest.getStorageUsage: Active stage/pin requests found at the following sites:" )
-      for storageElement in sortList( self.storageElementUsage.keys() ):
+      for storageElement in sorted( self.storageElementUsage.keys() ):
         seDict = self.storageElementUsage[storageElement]
         # Convert to GB for printout
         seDict['TotalSize'] = seDict['TotalSize'] / ( 1000 * 1000 * 1000.0 )

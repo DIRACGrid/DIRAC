@@ -8,8 +8,6 @@
 
 __RCSID__ = "$Id$"
 
-import types
-import os
 import cStringIO
 import tarfile
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -106,9 +104,9 @@ class BundleDeliveryHandler( RequestHandler ):
   def transfer_toClient( self, fileId, token, fileHelper ):
     global gBundleManager
     version = ""
-    if type( fileId ) in ( types.StringType, types.UnicodeType ):
+    if isinstance( fileId, basestring ):
       bId = fileId
-    elif type( fileId ) in ( types.ListType, types.TupleType ):
+    elif isinstance( fileId, ( list, tuple ) ):
       if len( fileId ) == 0:
         fileHelper.markAsTransferred()
         return S_ERROR( "No bundle specified!" )

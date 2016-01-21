@@ -8,8 +8,8 @@ import stat
 import tempfile
 import shutil
 
-from DIRAC import S_OK, gConfig, rootPath
-from DIRAC.Core.Utilities import DError, DErrno
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
@@ -31,7 +31,7 @@ class VOMS( BaseSecurity ):
     # Get all possible info from voms proxy
     result = self.getVOMSProxyInfo( proxy, "all" )
     if not result["OK"]:
-      return DError( DErrno.EVOMS, 'Failed to extract info from proxy: %s' % result[ 'Message' ] )
+      return S_ERROR( DErrno.EVOMS, 'Failed to extract info from proxy: %s' % result[ 'Message' ] )
 
     vomsInfoOutput = List.fromChar( result["Value"], "\n" )
 
@@ -108,7 +108,7 @@ class VOMS( BaseSecurity ):
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option:
       if option not in validOptions:
-        DError( DErrno.EVOMS, "valid option %s" % option )
+        S_ERROR( DErrno.EVOMS, "valid option %s" % option )
 
     retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
@@ -140,7 +140,7 @@ class VOMS( BaseSecurity ):
         lines.append( "subject : %s" % creds[ 'subject' ] )
         lines.append( "issuer : %s" % creds[ 'issuer' ] )
         lines.append( "identity : %s" % creds[ 'identity' ] )
-        if proxyDict[ 'chain' ].isRFC():
+        if proxyDict[ 'chain' ].isRFC().get( 'Value' ):
           lines.append( "type : RFC compliant proxy" )
         else:
           lines.append( "type : proxy" )
@@ -166,7 +166,7 @@ class VOMS( BaseSecurity ):
 
         return S_OK( "\n".join( lines ) )
       else:
-        return DError( DErrno.EVOMS, "NOT IMP" )
+        return S_ERROR( DErrno.EVOMS, "NOT IMP" )
 
     finally:
       if proxyDict[ 'tempFile' ]:
@@ -223,7 +223,7 @@ class VOMS( BaseSecurity ):
     """ Sets voms attributes to a proxy
     """
     if not vo:
-      return DError( DErrno.EVOMS, "No vo specified, and can't get default in the configuration" )
+      return S_ERROR( DErrno.EVOMS, "No vo specified, and can't get default in the configuration" )
 
     retVal = multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
@@ -234,7 +234,7 @@ class VOMS( BaseSecurity ):
 
     secs = chain.getRemainingSecs()[ 'Value' ] - 300
     if secs < 0:
-      return DError( DErrno.EVOMS, "Proxy length is less that 300 secs" )
+      return S_ERROR( DErrno.EVOMS, "Proxy length is less that 300 secs" )
     hours = int( secs / 3600 )
     mins = int( ( secs - hours * 3600 ) / 60 )
 
@@ -259,9 +259,11 @@ class VOMS( BaseSecurity ):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append( '-vomses "%s"' % vomsesPath )
+    if chain.isRFC().get( 'Value' ):
+      cmdArgs.append( "-r" )
 
     if not Os.which('voms-proxy-init'):
-      return DError( DErrno.EVOMS, "Missing voms-proxy-init" )
+      return S_ERROR( DErrno.EVOMS, "Missing voms-proxy-init" )
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
@@ -272,19 +274,19 @@ class VOMS( BaseSecurity ):
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
-      return DError( DErrno.EVOMS, 'Failed to call voms-proxy-init: %s' % result['Message'] )
+      return S_ERROR( DErrno.EVOMS, 'Failed to call voms-proxy-init: %s' % result['Message'] )
 
     status, output, error = result['Value']
 
     if status:
       self._unlinkFiles( newProxyLocation )
-      return DError( DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
+      return S_ERROR( DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile( newProxyLocation )
     self._unlinkFiles( newProxyLocation )
     if not retVal[ 'OK' ]:
-      return DError( DErrno.EVOMS, "Can't load new proxy: %s" % retVal[ 'Message' ] )
+      return S_ERROR( DErrno.EVOMS, "Can't load new proxy: %s" % retVal[ 'Message' ] )
 
     return S_OK( newChain )
 
@@ -293,7 +295,7 @@ class VOMS( BaseSecurity ):
     Is voms info available?
     """
     if not Os.which("voms-proxy-info"):
-      return DError( DErrno.EVOMS, "Missing voms-proxy-info" )
+      return S_ERROR( DErrno.EVOMS, "Missing voms-proxy-info" )
     cmd = 'voms-proxy-info -h'
     result = shellCall( self._secCmdTimeout, cmd )
     if not result['OK']:

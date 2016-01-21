@@ -69,7 +69,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # prepare lfn dict
-    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
+    toRemoveDict = dict( ( opFile.LFN, opFile ) for opFile in waitingFiles )
 
     targetSEs = self.operation.targetSEList
     gMonitor.addMark( "PhysicalRemovalAtt", len( toRemoveDict ) * len( targetSEs ) )
@@ -97,7 +97,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
         opFile.Error = removalStatus[lfn][targetSE]
 
       # # 2nd - single file removal
-      toRetry = dict( [ ( lfn, opFile ) for lfn, opFile in toRemoveDict.items() if lfn in bulkRemoval["Failed"] ] )
+      toRetry = dict( ( lfn, opFile ) for lfn, opFile in toRemoveDict.items() if lfn in bulkRemoval["Failed"] )
       for lfn, opFile in toRetry.items():
         self.singleRemoval( opFile, targetSE )
         if not opFile.Error:

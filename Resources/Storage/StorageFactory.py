@@ -340,7 +340,7 @@ class StorageFactory( object ):
     storageClass = result['Value']
     try:
       storage = storageClass( storageName, parameters )
-    except Exception, x:
+    except Exception as x:
       errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s: %s" % ( storageName, x )
       gLogger.exception( errStr )
       return S_ERROR( errStr )
