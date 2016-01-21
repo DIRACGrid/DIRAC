@@ -1199,6 +1199,47 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if silentHosts:
         print "\n %d out of %d hosts did not respond" % ( len( silentHosts ), len( respondingHosts ) )
 
+  def do_retire( self, args ):
+    """
+        Retire a host and all its installed components from the DIRAC installation
+
+        usage:
+
+          retire <hostname>
+    """
+
+    argss = args.split()
+    if not argss:
+      gLogger.notice( self.do_retire.__doc__ )
+      return
+
+    option = argss[0]
+    del argss[0]
+
+    client = ComponentMonitoringClient()
+    result = client.hostExists( { 'HostName': option } )
+    if not result[ 'OK' ]:
+      self.__errMsg( result[ 'Message' ] )
+    else:
+      if not result[ 'Value' ]:
+        self.__errMsg( 'Given host does not exist' )
+      else:
+        result = client.getHosts( {'HostName': option }, True, False )
+        if not result[ 'OK' ]:
+          self.__errMsg( result[ 'Message' ] )
+        else:
+          host = result[ 'Value' ][0]
+          # Remove every installation associated with the host
+          for installation in host[ 'Installations' ]:
+            result = client.removeInstallations( installation, {}, { 'HostName': option } )
+            if not result[ 'OK' ]:
+              self.__errMsg( result[ 'Message' ] )
+              break
+          # Finally remove the host
+          result = client.removeHosts( { 'HostName': option } )
+          if not result[ 'OK' ]:
+            self.__errMsg( result[ 'Message' ] )
+
   def default( self, args ):
 
     argss = args.split()
