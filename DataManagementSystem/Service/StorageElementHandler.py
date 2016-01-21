@@ -41,6 +41,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
+from DIRAC.Resources.Storage.StorageBase import StorageBase
+
 BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
@@ -143,6 +145,9 @@ class StorageElementHandler( RequestHandler ):
     resultDict['Lost'] = 0
     resultDict['Unavailable'] = 0
     resultDict['Mode'] = S_IMODE( mode )
+    resultDict = StorageBase._addCommonMetadata( resultDict
+
+                                                  )
     return S_OK( resultDict )
 
   types_exists = [StringTypes]

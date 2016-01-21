@@ -37,6 +37,8 @@ from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
+from DIRAC.Resources.Storage.StorageBase import StorageBase
+
 from irods import rcConnect , rcDisconnect , clientLoginWithPassword, \
                   irodsCollection, irodsOpen, \
                   getResources , getResource
@@ -208,6 +210,7 @@ class IRODSStorageElementHandler( RequestHandler ):
       resultDict['Lost'] = 0
       resultDict['Unavailable'] = 0
       resultDict['Mode'] = 0o755
+      resultDict = StorageBase._addCommonMetadata( resultDict )
       return S_OK( resultDict )
     else:
       coll = irodsCollection( conn, file_path )
@@ -221,6 +224,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         resultDict['Lost'] = 0
         resultDict['Unavailable'] = 0
         resultDict['Mode'] = 0o755
+        resultDict = StorageBase._addCommonMetadata( resultDict )
         return S_OK( resultDict )
       else:
         return S_ERROR( 'Path does not exist' )

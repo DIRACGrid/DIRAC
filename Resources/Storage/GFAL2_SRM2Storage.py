@@ -83,6 +83,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     metadataDict['Migrated'] = int( 'NEARLINE' in user_status )
     metadataDict['Lost'] = int( user_status == 'LOST' )
     metadataDict['Unavailable'] = int( user_status == 'UNAVAILABLE' )
+    metadataDict['Accessible'] = not metadataDict['Lost'] and metadataDict['Cached'] and not metadataDict['Unavailable']
 
   def getTransportURL( self, path, protocols = False ):
     """ obtain the tURLs for the supplied path and protocols

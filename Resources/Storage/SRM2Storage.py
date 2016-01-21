@@ -1520,8 +1520,13 @@ class SRM2Storage( StorageBase ):
         statDict['Unavailable'] = 0
         if re.search( 'UNAVAILABLE', urlLocality ):
           statDict['Unavailable'] = 1
+        
+        statDict['Accessible'] = not statDict['Lost'] and statDict['Cached'] and not statDict['Unavailable']
 
-    return statDict
+
+    
+    return self._addCommonMetadata( statDict )
+
 
   def __getProtocols( self ):
     """ returns list of protocols to use at a given site

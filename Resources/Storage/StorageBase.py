@@ -352,3 +352,26 @@ class StorageBase( object ):
     urlDict = res['Value']
     return S_OK( urlDict['Protocol'] == self.protocolParameters['Protocol'] )
   
+  @staticmethod
+  def _addCommonMetadata( metadataDict ):
+    """ To make the output of getFileMetadata uniform throughout the protocols
+        this returns a minimum set of metadata with default value,
+        that are then complemented with the protocol specific metadata
+
+        :param metadataDict: specific metadata of the protocol
+
+        :returns: dictionnary with all the metadata (specific and basic)
+    """
+    commonMetadata = { 'Checksum' : '',
+                       'Directory' : False,
+                       'File' : False,
+                       'Mode' : 0o000,
+                       'Size' : 0,
+                       'Accessible' : True,
+                      }
+
+    commonMetadata.update( metadataDict )
+
+    return commonMetadata
+
+
