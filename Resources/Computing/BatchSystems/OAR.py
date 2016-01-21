@@ -60,7 +60,7 @@ class OAR( object ):
   
       lines = output.split( '\n' )
       jid = ''
-      if lines[ -1 ].find( "OAR_JOB_ID" ) >= 0:
+      if "OAR_JOB_ID" in lines[ -1 ]:
         _prefix , jid = lines[ -1 ].split( "=" )
   
       if not jid:
