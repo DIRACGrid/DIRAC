@@ -1522,6 +1522,12 @@ class SRM2Storage( StorageBase ):
           statDict['Unavailable'] = 1
         
         statDict['Accessible'] = not statDict['Lost'] and statDict['Cached'] and not statDict['Unavailable']
+      else:
+        statDict['Cached'] = 0
+        statDict['Migrated'] = 0
+        statDict['Lost'] = 0
+        statDict['Unavailable'] = 1
+        statDict['Accessible'] = False
 
 
     

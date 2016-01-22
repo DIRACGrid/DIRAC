@@ -202,6 +202,8 @@ class IRODSStorageElementHandler( RequestHandler ):
     irodsFile = irodsOpen( conn , file_path , "r" )
     if irodsFile:
       resultDict['Exists'] = True
+      resultDict['File'] = True
+      resultDict['Directory'] = False
       resultDict['Type'] = "File"
       resultDict['Size'] = irodsFile.getSize()
       resultDict['TimeStamps'] = ( irodsFile.getCreateTs(), irodsFile.getModifyTs(), irodsFile.getCreateTs() )
@@ -217,6 +219,8 @@ class IRODSStorageElementHandler( RequestHandler ):
       if coll:
         resultDict['Exists'] = True
         resultDict['Type'] = "Directory"
+        resultDict['File'] = False
+        resultDict['Directory'] = True
         resultDict['Size'] = 0
         resultDict['TimeStamps'] = ( 0,0,0 )
         resultDict['Cached'] = 1
