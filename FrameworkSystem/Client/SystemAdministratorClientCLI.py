@@ -1199,13 +1199,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if silentHosts:
         print "\n %d out of %d hosts did not respond" % ( len( silentHosts ), len( respondingHosts ) )
 
-  def do_retire( self, args ):
+  def do_remove( self, args ):
     """
-        Retire a host and all its installed components from the DIRAC installation
+        Remove a host and all its installed components from the DIRAC installation
 
         usage:
 
-          retire <hostname>
+          remove <hostname>
     """
 
     argss = args.split()
@@ -1239,6 +1239,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           result = client.removeHosts( { 'HostName': option } )
           if not result[ 'OK' ]:
             self.__errMsg( result[ 'Message' ] )
+          else:
+            gLogger.notice( 'Host %s was successfully removed' % option )
 
   def default( self, args ):
 
