@@ -3,7 +3,7 @@
 __RCSID__ = "$Id$"
 
 import os
-import urllib
+
 
 def getJobFeatures():
   features = {}
@@ -13,7 +13,9 @@ def getJobFeatures():
                 'jobstart_secs', 'mem_limit_MB', 'allocated_CPU ', 'shutdowntime_job' ):
     fname = os.path.join( os.environ['JOBFEATURES'], item )
     try:
-      val = urllib.urlopen( fname ).read()
+      f = open( fname, 'r' )
+      val = f.read()
+      f.close()
     except:
       val = 0
     features[item] = val
@@ -23,10 +25,8 @@ def getJobFeatures():
 def getMemoryFromMJF():
   features = getJobFeatures()
   MaxRAM = features.get( 'mem_limit_MB' )
-  if MaxRAM:
-    return MaxRAM
-  else:
-    return None
+  return MaxRAM
+
 
 def getMemoryFromProc():
   with open( '/proc/meminfo' ) as meminfoFile:

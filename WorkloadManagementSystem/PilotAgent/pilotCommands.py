@@ -438,7 +438,7 @@ class CheckWNCapabilities( CommandBase ):
       cfg.append( self.pp.localConfigFile )  # this file is as input
 
     checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
-                                                                       " ".join( self.cfg ) )
+                                                                       " ".join( cfg ) )
     retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
 
     result = result.split( ' ' )

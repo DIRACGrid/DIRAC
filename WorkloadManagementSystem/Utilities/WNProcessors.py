@@ -3,7 +3,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import urllib
 
 def getMachineFeatures():
   features = {}
@@ -12,7 +11,9 @@ def getMachineFeatures():
   for item in ( 'hs06', 'shutdowntime', 'jobslots', ' phys_cores ', 'log_cores ', 'shutdown_command' ):
     fname = os.path.join( os.environ['MACHINEFEATURES'], item )
     try:
-      val = urllib.urlopen( fname ).read()
+      f = open( fname, 'r' )
+      val = f.read()
+      f.close()
     except:
       val = 0
     features[item] = val
@@ -21,9 +22,6 @@ def getMachineFeatures():
 
 def getProcessorFromMJF():
   features = getMachineFeatures()
-  NumberOfProcessor = features.get( ' log_cores ' )
-  if NumberOfProcessor:
-    return NumberOfProcessor
-  else:
-    return None
+  NumberOfProcessor = features.get( 'log_cores' )
+  return NumberOfProcessor
 
