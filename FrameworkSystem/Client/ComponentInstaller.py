@@ -1681,7 +1681,7 @@ class ComponentInstaller( object ):
         gLogger.error( result['Message'] )
       result = MonitoringUtilities.monitorInstallation( 'service', system, service )
       if not result['OK']:
-        self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 5.- Now the agents
     for system, agent in setupAgents:
@@ -1690,7 +1690,7 @@ class ComponentInstaller( object ):
         gLogger.error( result['Message'] )
       result = MonitoringUtilities.monitorInstallation( 'agent', system, agent )
       if not result['OK']:
-        self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 6.- Now the executors
     for system, executor in setupExecutors:
@@ -1699,7 +1699,7 @@ class ComponentInstaller( object ):
         gLogger.error( result['Message'] )
       result = MonitoringUtilities.monitorInstallation( 'executor', system, executor )
       if not result['OK']:
-        self.__errMsg( 'Error registering installation into database: %s' % result[ 'Message' ] )
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 7.- And finally the Portal
     if setupWeb:
