@@ -1,4 +1,4 @@
-[v6r15-pre12]
+[v6r15-pre13]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -26,6 +26,7 @@ NEW: dirac-rss-policy-manager - allows to interactively modify and test only the
      policy section of Dirac.cfg     
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
 FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
+CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all of them
 
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
@@ -79,6 +80,7 @@ FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request i
 *Resources
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
+CHANGE: Add standard metadata in the output of all the Storage plugins     
 
 [v6r14p17]
 
