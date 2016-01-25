@@ -11,9 +11,8 @@ def getMachineFeatures():
   for item in ( 'hs06', 'shutdowntime', 'jobslots', ' phys_cores ', 'log_cores ', 'shutdown_command' ):
     fname = os.path.join( os.environ['MACHINEFEATURES'], item )
     try:
-      f = open( fname, 'r' )
-      val = f.read()
-      f.close()
+      with open( fname, "r" ) as f:
+        val = f.read()
     except:
       val = 0
     features[item] = val
