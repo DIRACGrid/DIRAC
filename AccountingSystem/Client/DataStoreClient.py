@@ -1,6 +1,13 @@
+""" Module that holds the DataStore Client class
+"""
+
 __RCSID__ = "$Id$"
 
-import time, random, copy, threading
+import time
+import random
+import copy
+import threading
+
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.Utilities                           import DEncode
@@ -10,7 +17,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 random.seed()
 
-class DataStoreClient:
+class DataStoreClient(object):
   """
     Class providing front end access to DIRAC Accounting DataStore Service
      - It allows to reduce the interactions with the server by building and list of
@@ -55,9 +62,9 @@ class DataStoreClient:
       return retVal
     if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
       return S_OK()
-    
+
     self.__registersList.append( copy.deepcopy( register.getValues() ) )
-    
+
     return S_OK()
 
   def disableFailover( self ):
@@ -74,14 +81,14 @@ class DataStoreClient:
     """
     rpcClient = self.__getRPCClient()
     sent = 0
-    
+
     # create a local reference and prevent other running commits
-    # to take the same data second time 
+    # to take the same data second time
     self.__registersListLock.acquire()
     registersList = self.__registersList
     self.__registersList = []
     self.__registersListLock.release()
-    
+
     try:
       while registersList:
         registersToSend = registersList[ :self.__maxRecordsInABundle ]
@@ -97,13 +104,13 @@ class DataStoreClient:
           else:
             return S_ERROR( "Cannot commit data to DataStore service" )
         sent += len( registersToSend )
-        del( registersList[ :self.__maxRecordsInABundle ] )
+        del registersList[ :self.__maxRecordsInABundle ]
     finally:
       # if something is left because of an error return it to the main list
       self.__registersList.extend(registersList)
-    
-    return S_OK( sent )  
-  
+
+    return S_OK( sent )
+
   def remove( self, register ):
     """
     Remove a Register from the Accounting DataStore
