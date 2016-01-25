@@ -99,9 +99,9 @@ class VOMSService:
 
     if result is not None:
       if 'listUserAttributesReturn' in dir( result ):
-        return S_OK( result.listUserAttributesReturn[0].value )
+        return S_OK( str( result.listUserAttributesReturn[0].value ) )
 
-      return S_OK( result[0].value )
+      return S_OK( str( result[0].value ) )
     else:
       return S_ERROR( result )
 
