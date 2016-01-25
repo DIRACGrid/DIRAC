@@ -634,6 +634,8 @@ class XROOTStorage( StorageBase ):
       metadataDict['Lost'] = 0
       metadataDict['Cached'] = 1
       metadataDict['Unavailable'] = 0
+
+      metadataDict = self._addCommonMetadata( metadataDict )
       # If we expect a given type, we return a boolean
       if expectedType:
         isExpectedType = metadataDict[expectedType]
