@@ -72,7 +72,7 @@ class SocketInfoFactory:
     # osSocket.setblocking( 0 )
     if timeout:
       tsocket = self.getSocketTimeout()
-      gLogger.info( "Connection timeout set to: ", tsocket )
+      gLogger.verbose( "Connection timeout set to: ", tsocket )
       osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )

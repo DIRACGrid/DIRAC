@@ -59,8 +59,9 @@ class OAR( object ):
         break
   
       lines = output.split( '\n' )
-      if lines[ -1 ].find( "[JOB START]" ) >= 0:
-        _prefix , jid = lines[ -1 ].split( ":" )
+      jid = ''
+      if "OAR_JOB_ID" in lines[ -1 ]:
+        _prefix , jid = lines[ -1 ].split( "=" )
   
       if not jid:
         break
@@ -74,6 +75,7 @@ class OAR( object ):
     else:
       resultDict['Status'] = status
       resultDict['Message'] = output
+      resultDict['Jobs'] = jobIDs
     return resultDict
   
   
@@ -214,6 +216,11 @@ class OAR( object ):
   
     status , output = commands.getstatusoutput( 'oarstat -u %s -J' % user )
     if status != 0:
+      if "arrayref expected" in output:
+        resultDict['Status'] = 0
+        resultDict["Waiting"] = 0
+        resultDict["Running"] = 0
+        return resultDict
       resultDict['Status'] = status
       resultDict['Message'] = output
       return resultDict

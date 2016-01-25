@@ -16,6 +16,8 @@ import re
 import time
 import sys
 
+DEBUG = False
+
 moduleSuffix = "DIRAC"
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 excludeMask = [ '__init__.py' ]
@@ -128,13 +130,15 @@ for rootModule in os.listdir( rootPath ):
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
-      print " Wrapping %s" % scriptName[:-3]
+      if DEBUG:
+        print " Wrapping %s" % scriptName[:-3]
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
     else:
-      print " Copying %s" % scriptName
+      if DEBUG:
+        print " Copying %s" % scriptName
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
       os.chmod( copyPath, gDefaultPerms )
