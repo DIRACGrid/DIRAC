@@ -83,6 +83,29 @@ FIX: SRM2Storage - do not add accounting to the output structure as it is done i
      the container StorageElement class
 CHANGE: Add standard metadata in the output of all the Storage plugins     
 
+[v6r14p18]
+
+*Core
+FIX: VOMSService - attGetUserNickname() can only return string type values
+FIX: dirac-deploy-scripts - install DIRAC scripts first so that they can be 
+     overwritten by versions from extensions
+
+*Framework
+FIX: dirac-populate-component-db - bug fixed to avoid duplicate entries in the
+     database
+
+*TS
+FIX: TaskManager - do not use ReqProxy when submitting Request for Tasks, otherwise
+     no RequestID can be obtained
+
+*Interfaces
+CHANGE: Dirac.py - increase verbosity of a error log message in selectJobs
+
+*Resources
+FIX: XROOTStorage - fixed KeyError exception while checking file existence
+FIX: ARCComputingElement - in getJobOutput test for existence of an already 
+     downloaded pilot log
+
 [v6r14p17]
 
 *Core

@@ -20,6 +20,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
   import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
   import ComponentMonitoringClient
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -190,7 +191,9 @@ monitoringClient = ComponentMonitoringClient()
 
 # Add the installations to the database
 for record in records:
-  result = monitoringClient.addInstallation \
-    ( record[ 'Installation' ], record[ 'Component' ], record[ 'Host' ], True )
+  result = MonitoringUtilities.monitorInstallation( 
+      record[ 'Component' ][ 'Type' ], record[ 'Component' ][ 'System' ],
+      record[ 'Component' ][ 'Module' ], record[ 'Installation' ][ 'Instance'],
+      record[ 'Host' ][ 'CPU' ], record[ 'Host' ][ 'HostName' ] )
   if not result[ 'OK' ]:
     gLogger.error( result[ 'Message' ] )

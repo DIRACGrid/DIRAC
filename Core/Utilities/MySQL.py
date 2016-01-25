@@ -1532,7 +1532,7 @@ class MySQL( object ):
     cursor = connection.cursor()
     try:
 #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
-      execStr = "call %s(%s);" % ( packageName, ",".join( ["\"%s\"" % param if type( param ) is ( str ) else str( param ) for param in parameters] ) )
+      execStr = "call %s(%s);" % ( packageName, ",".join( ["\"%s\"" % param if isinstance( param, basestring ) else str( param ) for param in parameters] ) )
       cursor.execute( execStr )
       rows = cursor.fetchall()
       retDict = S_OK( rows )

@@ -404,7 +404,7 @@ class XROOTStorage( StorageBase ):
       gLogger.debug( errStr, res['Message'] )
 
     # This is true only if the file exists. Then we remove it
-    if res['Value']:
+    if res.get('Value'):
       self.log.debug( "XROOTStorage.__putSingleFile: Remote file exists and needs to be removed" )
       res = self.__removeSingleFile( dest_url )
       # Fatal error during removal
