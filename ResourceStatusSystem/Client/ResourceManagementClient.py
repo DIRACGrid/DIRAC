@@ -182,7 +182,7 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'select', 'DowntimeCache', locals() )
 
@@ -223,7 +223,7 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'DowntimeCache', locals() )
 
@@ -295,7 +295,7 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'select', 'JobCache', locals() )
 
@@ -322,7 +322,7 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'JobCache', locals() )
 
@@ -380,7 +380,7 @@ class ResourceManagementClient( object ):
 #
 #    :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'select', 'TransferCache', locals() )
 
@@ -407,7 +407,7 @@ class ResourceManagementClient( object ):
 #
 #    :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'TransferCache', locals() )
 
@@ -469,7 +469,7 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'select', 'PilotCache', locals() )
 
@@ -498,7 +498,7 @@ class ResourceManagementClient( object ):
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()    '''
-    # Unused argument    
+    # Unused argument
     # pylint: disable-msg=W0613
     return self._query( 'delete', 'PilotCache', locals() )
 
@@ -1024,7 +1024,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613    
+    # pylint: disable-msg=W0613
     return self._query( 'select', 'ErrorReportBuffer', locals() )
 
 
@@ -1032,7 +1032,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613    
+    # pylint: disable-msg=W0613
     return self._query( 'delete', 'ErrorReportBuffer', locals() )
 
 

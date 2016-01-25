@@ -202,6 +202,12 @@ class RFIOStorage( StorageBase ):
     for pfn in urls:
       if not successful[pfn].has_key( 'Migrated' ):
         successful[pfn]['Migrated'] = False
+        
+        
+    # Update all the metadata with the common one
+    for lfn in successful:
+      successful[lfn] = self._addCommonMetadata( successful[lfn] )
+
     resDict = {'Failed':{}, 'Successful':successful}
     return S_OK( resDict )
 

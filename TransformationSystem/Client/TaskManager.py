@@ -209,7 +209,7 @@ class RequestTasks( TaskBase ):
     """ Submits a request using ReqClient
     """
     if isinstance( oRequest, self.requestClass ):
-      return self.requestClient.putRequest( oRequest )
+      return self.requestClient.putRequest( oRequest, useFailoverProxy = False, retryMainService = 2 )
     else:
       return S_ERROR( "Request should be a Request object" )
 

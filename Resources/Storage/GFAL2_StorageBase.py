@@ -684,11 +684,14 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         metadataDict['Checksum'] = ""
 
+    metadataDict = self._addCommonMetadata( metadataDict )
+
     res = self._getExtendedAttributes( path )
     # add extended attributes to the dict if available
     if res['OK']:
       attributeDict = res.get( 'Value', {} )
       self._updateMetadataDict( metadataDict, attributeDict )
+
 
     return S_OK ( metadataDict )
 

@@ -14,8 +14,9 @@ import unittest
 
 import DIRAC.Resources.Storage.XROOTStorage as moduleTested
 
+from DIRAC import S_ERROR, S_OK
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
 ################################################################################
 
@@ -978,10 +979,17 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( {}, res['Value']['Successful'] )
     self.assertEqual( "remoteA", res['Value']['Failed'].keys()[0] )
 
-
     # Bad input
     res = resource.putFile( "remoteA" )
     self.assertEqual( False, res['OK'] )
+
+
+    # Error, but not 3011 when checking existance of file, and then successful anyway
+    statusMock.makeOk()
+    resource._XROOTStorage__singleExists = MagicMock( return_value = S_OK( S_ERROR ( "error checking existance " ) ) )
+    res = resource.putFile( {"remoteA" : "localA"} )
+    self.assertEqual( True, res['OK'] )
+    self.assertEqual(  {'remoteA': 1}, res['Value']['Successful'] )
 
 
   def test_putDirectory( self ):

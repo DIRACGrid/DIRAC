@@ -2022,7 +2022,8 @@ class Dirac( API ):
     jobIDs = result['Value']
     self.log.verbose( '%s job(s) selected' % ( len( jobIDs ) ) )
     if not jobIDs:
-      return S_ERROR( 'No jobs selected for conditions: %s' % conditions )
+      self.log.error( "No jobs selected", "with date '%s' for conditions: %s" % (str(date), conditions))
+      return S_ERROR( "No jobs selected" )
     else:
       return result
 

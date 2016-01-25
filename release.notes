@@ -1,4 +1,4 @@
-[v6r15-pre12]
+[v6r15-pre13]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -26,6 +26,7 @@ NEW: dirac-rss-policy-manager - allows to interactively modify and test only the
      policy section of Dirac.cfg     
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
 FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
+CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all of them
 
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
@@ -36,7 +37,8 @@ CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in par
         to speed up the operation
 CHANGE: InstalledComponentsDB - table to cache host status information populated
         by a periodic task    
-NEW: ComponentInstaller Client class            
+NEW: ComponentInstaller Client class to encapsulate all the installation utilities
+     from InstallTools module            
 
 *Accounting
 FIX: DataStoreClient - Synchronizer based decorators have been replaced with a simple 
@@ -79,6 +81,30 @@ FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request i
 *Resources
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
+CHANGE: Add standard metadata in the output of all the Storage plugins     
+
+[v6r14p18]
+
+*Core
+FIX: VOMSService - attGetUserNickname() can only return string type values
+FIX: dirac-deploy-scripts - install DIRAC scripts first so that they can be 
+     overwritten by versions from extensions
+
+*Framework
+FIX: dirac-populate-component-db - bug fixed to avoid duplicate entries in the
+     database
+
+*TS
+FIX: TaskManager - do not use ReqProxy when submitting Request for Tasks, otherwise
+     no RequestID can be obtained
+
+*Interfaces
+CHANGE: Dirac.py - increase verbosity of a error log message in selectJobs
+
+*Resources
+FIX: XROOTStorage - fixed KeyError exception while checking file existence
+FIX: ARCComputingElement - in getJobOutput test for existence of an already 
+     downloaded pilot log
 
 [v6r14p17]
 

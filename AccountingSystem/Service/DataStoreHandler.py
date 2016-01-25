@@ -3,9 +3,9 @@
 
 __RCSID__ = "$Id$"
 
-import types
+import datetime
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -28,7 +28,7 @@ class DataStoreHandler( RequestHandler ):
     gThreadScheduler.addPeriodicTask( 60, cls.__acDB.loadPendingRecords )
     return S_OK()
 
-  types_registerType = [ types.StringTypes, types.ListType, types.ListType, types.ListType ]
+  types_registerType = [ basestring, list, list, list ]
   def export_registerType( self, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ):
     """
       Register a new type. (Only for all powerful admins)
@@ -46,7 +46,7 @@ class DataStoreHandler( RequestHandler ):
       return S_ERROR( "Error while registering type:\n %s" % "\n ".join( errorsList ) )
     return S_OK()
 
-  types_setBucketsLength = [ types.StringTypes, types.ListType ]
+  types_setBucketsLength = [ basestring, list ]
   def export_setBucketsLength( self, typeName, bucketsLength ):
     """
       Change the buckets Length. (Only for all powerful admins)
@@ -64,7 +64,7 @@ class DataStoreHandler( RequestHandler ):
       return S_ERROR( "Error while changing bucketsLength type:\n %s" % "\n ".join( errorsList ) )
     return S_OK()
 
-  types_regenerateBuckets = [ types.StringTypes ]
+  types_regenerateBuckets = [ basestring ]
   def export_regenerateBuckets( self, typeName ):
     """
       Recalculate buckets. (Only for all powerful admins)
@@ -90,7 +90,7 @@ class DataStoreHandler( RequestHandler ):
     """
     return self.__acDB.getRegisteredTypes()
 
-  types_deleteType = [ types.StringTypes ]
+  types_deleteType = [ basestring ]
   def export_deleteType( self, typeName ):
     """
       Delete accounting type and ALL its contents. VERY DANGEROUS! (Only for all powerful admins)
@@ -108,7 +108,7 @@ class DataStoreHandler( RequestHandler ):
       return S_ERROR( "Error while deleting type:\n %s" % "\n ".join( errorsList ) )
     return S_OK()
 
-  types_commit = [ types.StringTypes, Time._dateTimeType, Time._dateTimeType, types.ListType ]
+  types_commit = [ basestring, datetime.datetime, datetime.datetime, list ]
   def export_commit( self, typeName, startTime, endTime, valuesList ):
     """
       Add a record for a type
@@ -118,19 +118,21 @@ class DataStoreHandler( RequestHandler ):
     endTime = int( Time.toEpoch( endTime ) )
     return self.__acDB.insertRecordThroughQueue( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=E1121
 
-  types_commitRegisters = [ types.ListType ]
+  types_commitRegisters = [ list ]
   def export_commitRegisters( self, entriesList ):
     """
       Add a record for a type
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    expectedTypes = [ types.StringTypes, Time._dateTimeType, Time._dateTimeType, types.ListType ]
+    expectedTypes = [ basestring, datetime.datetime, datetime.datetime, list ]
     for entry in entriesList:
       if len( entry ) != 4:
         return S_ERROR( "Invalid records" )
       for i in range( len( entry ) ):
-        if type( entry[i] ) != expectedTypes[i]:
-          return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
+        if not isinstance(entry[i], expectedTypes[i]):
+          gLogger.error( "Unexpected type in report",
+                         ": field %d in the records should be %s (and it is %s)" % ( i, expectedTypes[i], type(entry[i])) )
+          return S_ERROR( "Unexpected type in report" )
     records = []
     for entry in entriesList:
       startTime = int( Time.toEpoch( entry[1] ) )
@@ -146,7 +148,7 @@ class DataStoreHandler( RequestHandler ):
     """
     return self.__acDB.compactBuckets()
 
-  types_remove = [ types.StringTypes, Time._dateTimeType, Time._dateTimeType, types.ListType ]
+  types_remove = [ basestring, datetime.datetime, datetime.datetime, list ]
   def export_remove( self, typeName, startTime, endTime, valuesList ):
     """
       Remove a record for a type
@@ -156,18 +158,18 @@ class DataStoreHandler( RequestHandler ):
     endTime = int( Time.toEpoch( endTime ) )
     return self.__acDB.deleteRecord( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=E1121
 
-  types_removeRegisters = [ types.ListType ]
+  types_removeRegisters = [ list ]
   def export_removeRegisters( self, entriesList ):
     """
       Remove a record for a type
     """
     setup = self.serviceInfoDict[ 'clientSetup' ]
-    expectedTypes = [ types.StringTypes, Time._dateTimeType, Time._dateTimeType, types.ListType ]
+    expectedTypes = [ basestring, datetime.datetime, datetime.datetime, list ]
     for entry in entriesList:
       if len( entry ) != 4:
         return S_ERROR( "Invalid records" )
       for i in range( len( entry ) ):
-        if type( entry[i] ) != expectedTypes[i]:
+        if not isinstance( entry[i], expectedTypes[i] ):
           return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
     ok = 0
     for entry in entriesList:
