@@ -37,7 +37,8 @@ CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in par
         to speed up the operation
 CHANGE: InstalledComponentsDB - table to cache host status information populated
         by a periodic task    
-NEW: ComponentInstaller Client class            
+NEW: ComponentInstaller Client class to encapsulate all the installation utilities
+     from InstallTools module            
 
 *Accounting
 FIX: DataStoreClient - Synchronizer based decorators have been replaced with a simple 
