@@ -130,7 +130,15 @@ logNOTICE( "Scripts will be deployed at %s" % targetScriptsPath )
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
 
-for rootModule in os.listdir( rootPath ):
+
+# DIRAC scripts need to be treated first, so that its scripts
+# can be overwritten by the extensions
+listDir = os.listdir( rootPath )
+if 'DIRAC' in listDir:  # should always be true...
+  listDir.remove( 'DIRAC' )
+  listDir.insert( 0, 'DIRAC' )
+
+for rootModule in listDir:
   modulePath = os.path.join( rootPath, rootModule )
   if not os.path.isdir( modulePath ):
     continue
