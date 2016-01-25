@@ -4,7 +4,7 @@
 # Update to use ARC API : Raja Nandakumar
 ########################################################################
 
-""" ARC Computing Element 
+""" ARC Computing Element
     Using the ARC API now
 """
 
@@ -67,7 +67,7 @@ class ARCComputingElement( ComputingElement ):
                        'Other'   : 'Done'
       }
     self.__getXRSLExtraString() # Do this after all other initialisations, in case something barks
-    
+
   #############################################################################
 
   def __getARCJob( self, jobID ):
@@ -146,7 +146,7 @@ class ARCComputingElement( ComputingElement ):
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
-    
+
   #############################################################################
   def __writeXRSL( self, executableFile ):
     """ Create the JDL for submission
@@ -255,7 +255,7 @@ class ARCComputingElement( ComputingElement ):
   def killJob( self, jobIDList ):
     """ Kill the specified jobs
     """
-    
+
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
     if not result['OK']:
@@ -280,7 +280,7 @@ class ARCComputingElement( ComputingElement ):
     else:
       gLogger.debug("Killed jobs %s" % jobIDList)
 
-      
+
     return S_OK()
 
   #############################################################################
@@ -355,7 +355,7 @@ class ARCComputingElement( ComputingElement ):
     jobList = []
     for j in jobTmpList:
       if ":::" in j:
-        job = j.split(":::")[0] 
+        job = j.split(":::")[0]
       else:
         job = j
       jobList.append( job )
@@ -392,8 +392,8 @@ class ARCComputingElement( ComputingElement ):
   #############################################################################
   def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned 
-        as strings. 
+        the output is returned as file in this directory. Otherwise, the output is returned
+        as strings.
     """
     result = self._prepareProxy()
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
@@ -416,7 +416,7 @@ class ARCComputingElement( ComputingElement ):
     if "WorkingDirectory" in self.ceParameters:
       workingDirectory = os.path.join( self.ceParameters['WorkingDirectory'], arcID )
     else:
-      workingDirectory = arcID  
+      workingDirectory = arcID
     outFileName = os.path.join( workingDirectory, '%s.out' % stamp )
     errFileName = os.path.join( workingDirectory, '%s.err' % stamp )
     gLogger.debug("Working directory for pilot output %s" % workingDirectory)
@@ -433,7 +433,8 @@ class ARCComputingElement( ComputingElement ):
           error = errFile.read()
         os.unlink( errFileName )
       except IOError as e:
-        return S_ERROR("Error downloading outputs", repr(e))
+        gLogger.error( "Error downloading outputs", repr(e) )
+        return S_ERROR( "Error downloading outputs" )
       gLogger.debug("Pilot output = %s" % output)
       gLogger.debug("Pilot error = %s" % error)
     else:
