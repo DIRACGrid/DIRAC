@@ -3,6 +3,7 @@
 __RCSID__ = "$Id$"
 
 import os
+import urllib
 
 
 def getJobFeatures():
@@ -13,8 +14,7 @@ def getJobFeatures():
                 'jobstart_secs', 'mem_limit_MB', 'allocated_CPU ', 'shutdowntime_job' ):
     fname = os.path.join( os.environ['JOBFEATURES'], item )
     try:
-      with open( fname, "r" ) as f:
-        val = f.read()
+      val = urllib.urlopen( fname ).read()
     except:
       val = 0
     features[item] = val
