@@ -22,6 +22,7 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -584,6 +585,26 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_OK( result[ 'Value' ][0] )
     else:
       return self.__readHostInfo()
+
+  types_getPorts = []
+  def export_getPorts( self ):
+    result = InstallTools.getSetupComponents()
+    if not result[ 'OK' ]:
+      return result
+
+    services = result[ 'Value' ][ 'Services' ]
+    ports = {}
+    for system in services:
+      ports[ system ] = {}
+      for service in services[ system ]:
+        url = PathFinder.getServiceURL( '%s/%s' % ( system, service ) )
+        port = re.search( ':(\d{4,5})/', url )
+        if port:
+          ports[ system ][ service ] = port.group( 1 )
+        else:
+          ports[ system ][ service ] = 'None'
+
+    return S_OK( ports )
 
   types_getComponentDocumentation = [ StringTypes, StringTypes, StringTypes ]
   def export_getComponentDocumentation( self, cType, system, module ):

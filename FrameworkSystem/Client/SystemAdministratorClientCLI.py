@@ -140,6 +140,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                              - show documentation for a given service or agent
           show host          - show host related parameters
           show hosts         - show all available hosts
+          show ports [host]  - show all ports used by a host. If no host is given, the host currently connected to is used
           show installations [ list | current | -n <Name> | -h <Host> | -s <System> | -m <Module> | -t <Type> | -itb <InstallationTime before>
                               | -ita <InstallationTime after> | -utb <UnInstallationTime before> | -uta <UnInstallationTime after> ]*
                              - show all the installations of components that match the given parameters
@@ -297,6 +298,30 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           gLogger.notice( '|' + element[ 'HostName' ].center( 32 ) + '|' + element[ 'CPU' ].center( 34 ) + '|' )
         gLogger.notice( ( '-' * 69 ) )
         gLogger.notice( '' )
+    elif option == "ports":
+      if not argss:
+        client = SystemAdministratorClient( self.host )
+      else:
+        hostname = argss[0]
+        del argss[0]
+
+        client = ComponentMonitoringClient()
+        result = client.hostExists( { 'HostName': hostname } )
+        if not result[ 'OK' ]:
+          self.__errMsg( result[ 'Message' ] )
+          return
+        else:
+          if not result[ 'Value' ]:
+            self.__errMsg( 'Given host does not exist' )
+            return
+
+        client = SystemAdministratorClient( hostname )
+
+      result = client.getPorts()
+      if not result[ 'OK' ]:
+        self.__errMsg( result[ 'Message' ] )
+        return
+      pprint.pprint( result[ 'Value' ] )
     elif option == "errors":
       self.getErrors( argss )
     elif option == "installations":
