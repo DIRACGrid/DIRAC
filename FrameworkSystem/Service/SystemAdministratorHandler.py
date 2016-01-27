@@ -586,8 +586,12 @@ class SystemAdministratorHandler( RequestHandler ):
     else:
       return self.__readHostInfo()
 
-  types_getPorts = []
-  def export_getPorts( self ):
+  types_getUsedPorts = []
+  def export_getUsedPorts( self ):
+    """
+    Retrieve the ports in use by services on this host
+    :return: Returns a dictionary containing, for each system, which port is being used by which service
+    """
     result = InstallTools.getSetupComponents()
     if not result[ 'OK' ]:
       return result

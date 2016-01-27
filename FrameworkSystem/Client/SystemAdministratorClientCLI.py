@@ -317,7 +317,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
         client = SystemAdministratorClient( hostname )
 
-      result = client.getPorts()
+      result = client.getUsedPorts()
       if not result[ 'OK' ]:
         self.__errMsg( result[ 'Message' ] )
         return
