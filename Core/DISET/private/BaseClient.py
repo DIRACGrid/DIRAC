@@ -140,7 +140,7 @@ class BaseClient:
     if self.KW_PROXY_CHAIN in self.kwargs:
       try:
         self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
-        del( self.kwargs[ self.KW_PROXY_CHAIN ] )
+        del self.kwargs[ self.KW_PROXY_CHAIN ]
       except:
         return S_ERROR( "Invalid proxy chain specified on instantiation" )
     return S_OK()
@@ -204,21 +204,21 @@ class BaseClient:
     if not urls:
       return S_ERROR( "URL for service %s not found" % self._destinationSrv )
 
-    urls = List.fromChar( urls, "," )
-    self.__nbOfUrls = len( urls )
+    urlsList = List.fromChar( urls, "," )
+    self.__nbOfUrls = len( urlsList )
     self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3 # we retry 2 times all services, if we run more than 2 services
-    if len( urls ) == len( self.__bannedUrls ):
+    if len( urlsList ) == len( self.__bannedUrls ):
       self.__bannedUrls = []  # retry all urls
       gLogger.debug( "Retrying again all URLs" )
 
-    if len( self.__bannedUrls ) > 0 and len( urls ) > 1 :
+    if len( self.__bannedUrls ) > 0 and len( urlsList ) > 1 :
       # we have host which is not accessible. We remove that host from the list.
       # We only remove if we have more than one instance
       for i in self.__bannedUrls:
         gLogger.debug( "Removing banned URL", "%s" % i )
-        urls.remove( i )
+        urlsList.remove( i )
 
-    randUrls = List.randomize( urls )
+    randUrls = List.randomize( urlsList )
     sURL = randUrls[0]
 
     if len( self.__bannedUrls ) > 0 and self.__nbOfUrls > 2:  # when we have multiple services then we can have a situation
@@ -277,8 +277,8 @@ Client %s
 can only run on thread %s
 and this is thread %s
 ===============================================================""" % ( str( self ),
-                                                                         self.__allowedThreadID,
-                                                                         cThID )
+                                                                       self.__allowedThreadID,
+                                                                       cThID )
       gLogger.error( "DISET client thread safety error", msgTxt )
       #raise Exception( msgTxt )
 
