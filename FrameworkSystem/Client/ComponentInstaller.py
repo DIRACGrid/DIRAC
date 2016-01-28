@@ -184,6 +184,12 @@ class ComponentInstaller( object ):
     self.mysqlMyCnf = os.path.join( self.mysqlDir, '.my.cnf' )
 
     self.mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
+    # With the new versions of MySQL server the startup script is in a different location
+    if not os.path.exists( self.mysqlStartupScript ):
+      startupScript = os.path.join( rootPath, 'mysql', 'support-files', 'mysql.server' )
+      if os.path.exists( startupScript ):
+        os.makedirs( os.path.dirname( self.mysqlStartupScript ) )
+        shutil.copy( startupScript, self.mysqlStartupScript )
 
     self.mysqlRootPwd = self.localCfg.getOption( cfgInstallPath( 'Database', 'RootPwd' ), self.mysqlRootPwd )
     if verbose and self.mysqlRootPwd:
