@@ -1206,6 +1206,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     gLogger.notice( '' )
     sys.exit( 0 )
 
+  def do_EOF(self):
+    """ Exit on EOF
+    """
+    sys.exit(0)
+
   def emptyline( self ):
     pass
 
