@@ -2257,9 +2257,10 @@ File Catalog Client $Revision: 1.17 $Date:
   def emptyline(self): 
     pass
   
-  def do_EOF(self):
+  def do_EOF(self, args):
     """ Exit on EOF, duh!
     """
+    print "\n"
     sys.exit(0)
       
 if __name__ == "__main__":
