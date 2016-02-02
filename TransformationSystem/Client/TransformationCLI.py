@@ -54,6 +54,11 @@ class TransformationCLI( cmd.Cmd, API ):
         Usage: quit
     """
     sys.exit( 0 )
+  
+  def do_EOF( self ):
+    """ Exit on EOF
+    """
+    sys.exit( 0 )
 
   def do_help( self, args ):
     """ Default version of the help command
