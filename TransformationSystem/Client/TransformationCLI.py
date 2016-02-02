@@ -55,9 +55,10 @@ class TransformationCLI( cmd.Cmd, API ):
     """
     sys.exit( 0 )
   
-  def do_EOF( self ):
+  def do_EOF( self, args ):
     """ Exit on EOF
     """
+    print "\n"
     sys.exit( 0 )
 
   def do_help( self, args ):
