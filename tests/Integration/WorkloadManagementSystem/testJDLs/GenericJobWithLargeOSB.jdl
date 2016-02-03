@@ -1,0 +1,14 @@
+[
+    Executable = "$DIRACROOT/scripts/dirac-proxy-info";
+    Arguments = "&& dd if=/dev/urandom of=LargeOutputSB bs=10240 count=10240";
+    JobName = "GenericJob";
+    OutputSandbox =
+        {
+            "std.err",
+            "std.out",
+            "LargeOutputSB"
+        };
+    StdError = "std.err";
+    StdOutput = "std.out";
+    MaxCPUTime = "10";
+]
