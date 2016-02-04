@@ -5,7 +5,6 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-import cmd
 import sys
 import signal
 import types
@@ -13,7 +12,7 @@ import atexit
 import os
 import readline
 
-from DIRAC.Core.Utilities.ColorCLI import colorize
+from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -39,10 +38,10 @@ def _appendExtensionIfMissing( filename ):
   return "%s.cfg" % filename
 
 
-class CSCLI( cmd.Cmd ):
+class CSCLI( CLI ):
 
   def __init__( self ):
-    cmd.Cmd.__init__( self )
+    CLI.__init__( self )
     self.connected = False
     self.masterURL = "unset"
     self.writeEnabled = False
@@ -56,8 +55,6 @@ class CSCLI( cmd.Cmd ):
     self.identSpace = 20
     self.backupFilename = "dataChanges"
     self._initSignals()
-    #User friendly hack
-    self.do_exit = self.do_quit
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
@@ -81,7 +78,12 @@ class CSCLI( cmd.Cmd ):
       self.cmdloop()
     except KeyboardInterrupt:
       gLogger.warn( "Received a keyboard interrupt." )
-      self.do_quit( "" )
+      self.do_quit( self )
+
+  def _handleSignal( self, sig, frame ):
+
+    print "\nReceived signal", sig
+    self.do_quit( self )
 
   def _initSignals( self ):
     """
@@ -89,7 +91,7 @@ class CSCLI( cmd.Cmd ):
     """
     for sigNum in ( signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM ):
       try:
-        signal.signal( sigNum, self.do_quit )
+        signal.signal( sigNum, self._handleSignal )
       except:
         pass
 
@@ -118,18 +120,12 @@ class CSCLI( cmd.Cmd ):
 
     Usage: quit
     """
+    print
     if self.modifiedData:
       print "Changes are about to be written to file for later use."
       self.do_writeToFile( self.backupFilename )
       print "Changes written to %s.cfg" % self.backupFilename
     sys.exit( 0 )
-
-  def do_EOF( self, args ):
-    """
-    Accepts ctrl^D to quit CLI
-    """
-    print ""
-    self.do_quit( args )
 
   def do_help( self, args ):
     """
