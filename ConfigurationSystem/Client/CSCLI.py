@@ -54,7 +54,6 @@ class CSCLI( CLI ):
       self.modificator = Modificator()
     self.identSpace = 20
     self.backupFilename = "dataChanges"
-    self._initSignals()
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
@@ -79,21 +78,6 @@ class CSCLI( CLI ):
     except KeyboardInterrupt:
       gLogger.warn( "Received a keyboard interrupt." )
       self.do_quit( self )
-
-  def _handleSignal( self, sig, frame ):
-
-    print "\nReceived signal", sig
-    self.do_quit( self )
-
-  def _initSignals( self ):
-    """
-    Registers signal handlers
-    """
-    for sigNum in ( signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM ):
-      try:
-        signal.signal( sigNum, self._handleSignal )
-      except:
-        pass
 
   def _setConnected( self, connected, writeEnabled ):
     self.connected = connected
