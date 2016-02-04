@@ -17,7 +17,6 @@ class AccountingCLI( CLI ):
   def __init__( self ):
     CLI.__init__( self )
     self.do_connect( None )
-    self.identSpace = 20
     ExitCallback.registerExitCallback( self.do_quit )
 
   def start( self ):
