@@ -18,7 +18,7 @@ class ReportCLI( CLI ):
   def __init__( self ):
     CLI.__init__( self )
     self.do_connect( None )
-    self.identSpace = 20
+    self.indentSpace = 20
     ExitCallback.registerExitCallback( self.do_quit )
 
   def start( self ):
@@ -48,9 +48,9 @@ class ReportCLI( CLI ):
 
   def printPair( self, key, value, separator=":" ):
     valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.identSpace - len( key ) ), separator, valueList[0].strip() )
+    print "%s%s%s %s" % ( key, " " * ( self.indentSpace - len( key ) ), separator, valueList[0].strip() )
     for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.identSpace, valueLine.strip() )
+      print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
 
   def printComment( self, comment ):
     commentList = comment.split( "\n" )
