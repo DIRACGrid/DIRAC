@@ -77,7 +77,7 @@ class CSCLI( CLI ):
       self.cmdloop()
     except KeyboardInterrupt:
       gLogger.warn( "Received a keyboard interrupt." )
-      self.do_quit( self )
+      self.do_quit( "" )
 
   def _setConnected( self, connected, writeEnabled ):
     self.connected = connected
