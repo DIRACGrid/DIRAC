@@ -52,7 +52,7 @@ class CSCLI( CLI ):
       self.modificator = Modificator ( self.rpcClient )
     else:
       self.modificator = Modificator()
-    self.identSpace = 20
+    self.indentSpace = 20
     self.backupFilename = "dataChanges"
     # store history
     histfilename = os.path.basename(sys.argv[0])
@@ -91,13 +91,6 @@ class CSCLI( CLI ):
     else:
       self.prompt = "(%s)-%s> " % ( self.masterURL, colorize( "Disconnected", "red" ) )
 
-
-  def _printPair( self, key, value, separator = ":" ):
-    valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.identSpace - len( key ) ), separator, valueList[0].strip() )
-    for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.identSpace, valueLine.strip() )
-
   def do_quit( self, dummy ):
     """
     Exits the application without sending changes to server
@@ -111,31 +104,6 @@ class CSCLI( CLI ):
       print "Changes written to %s.cfg" % self.backupFilename
     sys.exit( 0 )
 
-  def do_help( self, args ):
-    """
-    Shows help information
-
-    Usage: help <command>
-
-    If no command is specified all commands are shown
-
-    """
-    if len( args ) == 0:
-      print "\nAvailable commands:\n"
-      attrList = dir( self )
-      attrList.sort()
-      for attribute in attrList:
-        if attribute.find( "do_" ) == 0:
-          self._printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-          print ""
-    else:
-      command = args.split()[0].strip()
-      try:
-        obj = getattr( self, "do_%s" % command )
-      except:
-        print "There's no such %s command" % command
-        return
-      self._printPair( command, obj.__doc__[1:] )
 
 #  def retrieveData( self ):
 #    if not self.connected:
@@ -216,7 +184,7 @@ class CSCLI( CLI ):
         return
       for section in sectionList:
         section = "%s/%s" % ( baseSection, section )
-        self._printPair( section, self.modificator.getComment( section ) , "#" )
+        self.printPair( section, self.modificator.getComment( section ) , "#" )
     except:
       _showTraceback()
 
@@ -242,7 +210,7 @@ class CSCLI( CLI ):
         return
       for option in optionsList:
         _printComment( self.modificator.getComment( "%s/%s" % ( section, option ) ) )
-        self._printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
+        self.printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
     except:
       _showTraceback()
 
@@ -262,7 +230,7 @@ class CSCLI( CLI ):
       if self.modificator.existsOption( optionPath ):
         option = optionPath.split( "/" )[-1]
         _printComment( self.modificator.getComment( optionPath ) )
-        self._printPair( option, self.modificator.getValue( optionPath ), "=" )
+        self.printPair( option, self.modificator.getValue( optionPath ), "=" )
       else:
         print "Option %s does not exist" % optionPath
     except:
@@ -482,7 +450,7 @@ class CSCLI( CLI ):
       history = self.modificator.getHistory( limit )
       print "%s recent commits:" % limit
       for entry in history:
-        self._printPair( entry[0], entry[1], "@" )
+        self.printPair( entry[0], entry[1], "@" )
     except:
       _showTraceback()
 
