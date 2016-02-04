@@ -27,7 +27,7 @@ class AccountingCLI( CLI ):
       gLogger.error( "Client is not connected" )
     try:
       self.cmdloop()
-    except KeyboardInterrupt, v:
+    except KeyboardInterrupt as v:
       gLogger.warn( "Received a keyboard interrupt." )
       self.do_quit( "" )
 
@@ -107,7 +107,7 @@ class AccountingCLI( CLI ):
                                   globals(),
                                   locals(), typeName )
         typeClass  = getattr( typeModule, typeName )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
         return
       gLogger.info( "Loaded type %s"  % typeClass.__name__ )
@@ -141,7 +141,7 @@ class AccountingCLI( CLI ):
                                   globals(),
                                   locals(), typeName )
         typeClass  = getattr( typeModule, typeName )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
         return
       gLogger.info( "Loaded type %s"  % typeClass.__name__ )
@@ -175,7 +175,7 @@ class AccountingCLI( CLI ):
                                   globals(),
                                   locals(), typeName )
         typeClass  = getattr( typeModule, typeName )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
         return
       gLogger.info( "Loaded type %s"  % typeClass.__name__ )
