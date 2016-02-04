@@ -184,7 +184,7 @@ class CSCLI( CLI ):
         return
       for section in sectionList:
         section = "%s/%s" % ( baseSection, section )
-        self.printPair( section, self.modificator.getComment( section ) , "#" )
+        self.printPair( section, self.modificator.getComment( section ) , " #" )
     except:
       _showTraceback()
 
