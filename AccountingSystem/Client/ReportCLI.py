@@ -18,7 +18,6 @@ class ReportCLI( CLI ):
   def __init__( self ):
     CLI.__init__( self )
     self.do_connect( None )
-    self.indentSpace = 20
     ExitCallback.registerExitCallback( self.do_quit )
 
   def start( self ):
@@ -46,12 +45,6 @@ class ReportCLI( CLI ):
       self.prompt = "(%s)> " % colorize( "Connected", "green" )
       self.connected = True
 
-  def printPair( self, key, value, separator=":" ):
-    valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.indentSpace - len( key ) ), separator, valueList[0].strip() )
-    for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
-
   def printComment( self, comment ):
     commentList = comment.split( "\n" )
     for commentLine in commentList[ :-1 ]:
@@ -64,29 +57,6 @@ class ReportCLI( CLI ):
     print "Exception", type, ":", value
     traceback.print_tb( sys.exc_info()[2] )
     print "________________________\n"
-
-  def do_help( self, args ):
-    """
-    Shows help information
-        Usage: help <command>
-        If no command is specified all commands are shown
-    """
-    if len( args ) == 0:
-      print "\nAvailable commands:\n"
-      attrList = dir( self )
-      attrList.sort()
-      for attribute in attrList:
-        if attribute.find( "do_" ) == 0:
-          self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-          print ""
-    else:
-      command = args.split()[0].strip()
-      try:
-        obj = getattr( self, "do_%s" % command )
-      except:
-        print "There's no such %s command" % command
-        return
-      self.printPair( command, obj.__doc__[1:] )
 
   def __getDatetimeFromArg( self, dtString ):
     if len( dtString ) != 12:
