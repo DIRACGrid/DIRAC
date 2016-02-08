@@ -184,6 +184,8 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         newcoor = "%s:%s" % ( longitude, latitude )
       newmail = ceBdiiDict[site].get( 'GlueSiteSysAdminContact', '' ).replace( 'mailto:', '' ).strip()
       newdescription = ceBdiiDict[site].get( 'GlueSiteDescription', '' ).strip()
+      newdescription = ", ".join( [ line.strip() for line in newdescription.split( "," ) ] )
+
       # Adding site data to the changes list
       addToChangeSet( ( siteSection, 'Coordinates', coor, newcoor ), changeSet )
       addToChangeSet( ( siteSection, 'Mail', mail, newmail ), changeSet )
