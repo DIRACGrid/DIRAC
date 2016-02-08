@@ -2,6 +2,7 @@
 """
 import os
 import random
+import re
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
@@ -19,6 +20,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
   def getQueues( self, resourceDict ):
     """ Get the list of relevant CEs and their descriptions
     """
+
     result = SiteDirector.getQueues( self, resourceDict )
     if not result['OK']: return result
 
@@ -33,19 +35,19 @@ class MultiProcessorSiteDirector( SiteDirector ):
         maxProcessorsList = range( 1, int( maxProcessors ) + 1 )
         processorsTags = ['%dProcessors' % processors for processors in maxProcessorsList]
         if processorsTags:
-          self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-          self.queueDict[queueName]['ParametersDict']['Tag'] += processorsTags
+          self.queueDict[queueName]['ParametersDict'].setdefault( 'Tags', [] )
+          self.queueDict[queueName]['ParametersDict']['Tags'] += processorsTags
 
       ceWholeNode = ceDef.get( 'WholeNode', 'false' )
       wholeNode = self.queueDict[queueName]['ParametersDict'].get( 'WholeNode', ceWholeNode )
       if wholeNode.lower() in ( 'yes', 'true' ):
-        self.queueDict[queueName]['ParametersDict'].setdefault( 'Tag', [] )
-        self.queueDict[queueName]['ParametersDict']['Tag'].append( 'WholeNode' )
+        self.queueDict[queueName]['ParametersDict'].setdefault( 'Tags', [] )
+        self.queueDict[queueName]['ParametersDict']['Tags'].append( 'WholeNode' )
 
-      if 'Tag' not in self.queueDict[queueName]['ParametersDict']:
+      if 'Tags' not in self.queueDict[queueName]['ParametersDict']:
         del self.queueDict[queueName]
       else:
-        tags = self.queueDict[queueName]['ParametersDict']['Tag']
+        tags = self.queueDict[queueName]['ParametersDict']['Tags']
         if '2Processors' not in tags and 'WholeNode' not in tags:
           del self.queueDict[queueName]
 
@@ -54,6 +56,8 @@ class MultiProcessorSiteDirector( SiteDirector ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
+
+    queues = self.queueDict.keys()
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
@@ -70,7 +74,11 @@ class MultiProcessorSiteDirector( SiteDirector ):
       return result
     tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
-    tqDict['Tag'] = []
+    tags = []
+    for queue in queues:
+      tags += self.queueDict[queue]['ParametersDict']['Tags']
+    tqDict['Tag'] = list( set( tags ) )
+
     self.log.verbose( 'Checking overall TQ availability with requirements' )
     self.log.verbose( tqDict )
 
@@ -107,12 +115,12 @@ class MultiProcessorSiteDirector( SiteDirector ):
     result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                           'Status': WAITING_PILOT_STATUS },
                                            None )
-    totalWaitingPilots = 0
+    tagWaitingPilots = 0
     if result['OK']:
-      totalWaitingPilots = result['Value']
-    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' % ( totalWaitingJobs, len( tqIDList ), totalWaitingPilots ) )
+      tagWaitingPilots = result['Value']
+    self.log.info( 'Total %d jobs in %d task queues with %d waiting pilots' % ( totalWaitingJobs, len( tqIDList ), tagWaitingPilots ) )
     self.log.info( 'Queues: ', self.queueDict.keys() )
-    # if totalWaitingPilots >= totalWaitingJobs:
+    # if tagWaitingPilots >= totalWaitingJobs:
     #  self.log.info( 'No more pilots to be submitted in this cycle' )
     #  return S_OK()
 
@@ -122,7 +130,6 @@ class MultiProcessorSiteDirector( SiteDirector ):
       return S_ERROR( 'Can not get the site mask' )
     siteMaskList = result['Value']
 
-    queues = self.queueDict.keys()
     random.shuffle( queues )
     totalSubmittedPilots = 0
     matchedQueues = 0
@@ -141,7 +148,15 @@ class MultiProcessorSiteDirector( SiteDirector ):
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
+      queueTags = self.queueDict[queue]['ParametersDict']['Tags']
       siteMask = siteName in siteMaskList
+      processorTags = []
+
+      for tag in queueTags:
+        if re.match( r'^[0-9]+Processors$', tag ):
+          processorTags.append( tag )
+      if 'WholeNode' in queueTags:
+        processorTags.append( 'WholeNode' )
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % ( queueName, siteName ) )
@@ -180,6 +195,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
         continue
       ceDict['Platform'] = result['Value']
 
+      ceDict['Tag'] = processorTags
       # Get the number of eligible jobs for the target site/queue
       result = rpcMatcher.getMatchingTaskQueues( ceDict )
       if not result['OK']:
@@ -192,124 +208,156 @@ class MultiProcessorSiteDirector( SiteDirector ):
 
       matchedQueues += 1
       totalTQJobs = 0
+      totalTQJobsByProcessors = {}
       tqIDList = taskQueueDict.keys()
+      tqIDListByProcessors = {}
       for tq in taskQueueDict:
+        if 'Tags' not in taskQueueDict[tq]:
+          # skip non multiprocessor tqs
+          continue
+        for tag in taskQueueDict[tq]['Tags']:
+          if tag in processorTags:
+            tqIDListByProcessors.setdefault( tag, [] )
+            tqIDListByProcessors[tag].append( tq )
+
+            totalTQJobsByProcessors.setdefault( tag, 0 )
+            totalTQJobsByProcessors[tag] += taskQueueDict[tq]['Jobs']
+
         totalTQJobs += taskQueueDict[tq]['Jobs']
 
       self.log.verbose( '%d job(s) from %d task queue(s) are eligible for %s queue' % ( totalTQJobs, len( tqIDList ), queue ) )
 
-      # Get the number of already waiting pilots for these task queues
-      totalWaitingPilots = 0
-      if self.pilotWaitingFlag:
-        lastUpdateTime = dateTime() - self.pilotWaitingTime * second
-        result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
-                                              'Status': WAITING_PILOT_STATUS },
-                                              None, lastUpdateTime )
-        if not result['OK']:
-          self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
-          totalWaitingPilots = 0
-        else:
-          totalWaitingPilots = result['Value']
-          self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
-      if totalWaitingPilots >= totalTQJobs:
-        self.log.verbose( "%d waiting pilots already for all the available jobs" % totalWaitingPilots )
-        continue
+      queueSubmittedPilots = 0
+      for tag in tqIDListByProcessors.keys():
 
-      self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % ( totalWaitingPilots, totalTQJobs, queue ) )
+        self.log.verbose("Try to submit pilots for Tag=%s (TQs=%s)" % (tag, tqIDListByProcessors[tag]))
 
-      # Get the working proxy
-      cpuTime = queueCPUTime + 86400
-      self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
-      result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
-      if not result['OK']:
-        return result
-      self.proxy = result['Value']
-      ce.setProxy( self.proxy, cpuTime - 60 )
+        processors = 1
 
-      # Get the number of available slots on the target site/queue
-      totalSlots = self.__getQueueSlots( queue )
-      if totalSlots == 0:
-        self.log.debug( '%s: No slots available' % queue )
-        continue
+        m = re.match( r'^(?P<processors>[0-9]+)Processors$', tag )
+        if m:
+          processors = int( m.group( 'processors' ) )
+        if tag == 'WholeNode' :
+          processors = -1
 
-      pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
-      self.log.info( '%s: Slots=%d, TQ jobs=%d, Pilots: waiting %d, to submit=%d' % \
-                              ( queue, totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
+        tagTQJobs = totalTQJobsByProcessors[tag]
+        tagTqIDList = tqIDListByProcessors[tag]
 
-      # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
-      pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
-
-      while pilotsToSubmit > 0:
-        self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
-
-        bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
-        jobExecDir = ''
-        jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
-        httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
-
-        result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
-        if not result['OK']:
-          return result
-
-        executable, pilotSubmissionChunk = result['Value']
-        result = ce.submitJob( executable, '', pilotSubmissionChunk )
-        # ## FIXME: The condor thing only transfers the file with some
-        # ## delay, so when we unlink here the script is gone
-        # ## FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-        if ceType != 'HTCondorCE':
-          os.unlink( executable )
-        if not result['OK']:
-          self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
-          pilotsToSubmit = 0
-          self.failedQueues[queue] += 1
+        # Get the number of already waiting pilots for these task queues
+        tagWaitingPilots = 0
+        if self.pilotWaitingFlag:
+          lastUpdateTime = dateTime() - self.pilotWaitingTime * second
+          result = pilotAgentsDB.countPilots( {'TaskQueueID': tagTqIDList,
+                                               'Status': WAITING_PILOT_STATUS},
+                                               None, lastUpdateTime )
+          if not result['OK']:
+            self.log.error( 'Failed to get Number of Waiting pilots', result['Message'] )
+            tagWaitingPilots = 0
+          else:
+            tagWaitingPilots = result['Value']
+            self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tagTqIDList, tagWaitingPilots )
+        if tagWaitingPilots >= tagTQJobs:
+          self.log.verbose( "%d waiting pilots already for all the available jobs" % tagWaitingPilots )
           continue
 
-        pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
-        # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
-        # task queue priorities
-        pilotList = result['Value']
-        self.queueSlots[queue]['AvailableSlots'] -= len( pilotList )
-        totalSubmittedPilots += len( pilotList )
-        self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
-        stampDict = {}
-        if result.has_key( 'PilotStampDict' ):
-          stampDict = result['PilotStampDict']
-        tqPriorityList = []
-        sumPriority = 0.
-        for tq in taskQueueDict:
-          sumPriority += taskQueueDict[tq]['Priority']
-          tqPriorityList.append( ( tq, sumPriority ) )
-        rndm = random.random() * sumPriority
-        tqDict = {}
-        for pilotID in pilotList:
-          rndm = random.random() * sumPriority
-          for tq, prio in tqPriorityList:
-            if rndm < prio:
-              tqID = tq
-              break
-          if not tqDict.has_key( tqID ):
-            tqDict[tqID] = []
-          tqDict[tqID].append( pilotID )
+        self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % ( tagWaitingPilots, tagTQJobs, queue ) )
 
-        for tqID, pilotList in tqDict.items():
-          result = pilotAgentsDB.addPilotTQReference( pilotList,
-                                                      tqID,
-                                                      self.pilotDN,
-                                                      self.pilotGroup,
-                                                      self.localhost,
-                                                      ceType,
-                                                      '',
-                                                      stampDict )
+        # Get the working proxy
+        cpuTime = queueCPUTime + 86400
+        self.log.verbose( "Getting pilot proxy for %s/%s %d long" % ( self.pilotDN, self.pilotGroup, cpuTime ) )
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.pilotDN, self.pilotGroup, cpuTime )
+        if not result['OK']:
+          return result
+        self.proxy = result['Value']
+        ce.setProxy( self.proxy, cpuTime - 60 )
+
+        # Get the number of available slots on the target site/queue
+        totalSlots = super( MultiProcessorSiteDirector, self ).getQueueSlots( queue )
+        if totalSlots == 0:
+          self.log.debug( '%s: No slots available' % queue )
+          continue
+
+        # Note: comparing slots to job numbers is not accurate in multiprocessor case.
+        #       This could lead to over submission.
+        pilotsToSubmit = max( 0, min( totalSlots, tagTQJobs - tagWaitingPilots ) )
+        self.log.info( '%s: Slots=%d, TQ jobs=%d, Pilots: waiting %d, to submit=%d' % \
+                       ( queue, totalSlots, tagTQJobs, tagWaitingPilots, pilotsToSubmit ) )
+
+        # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
+        pilotsToSubmit = min( self.maxPilotsToSubmit - queueSubmittedPilots, pilotsToSubmit )
+
+        while pilotsToSubmit > 0:
+          self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
+  
+          bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
+          jobExecDir = ''
+          jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
+          httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
+  
+          result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir, processors )
           if not result['OK']:
-            self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
+            return result
+  
+          executable, pilotSubmissionChunk = result['Value']
+          result = ce.submitJob( executable, '', pilotSubmissionChunk, processors = processors )
+          # ## FIXME: The condor thing only transfers the file with some
+          # ## delay, so when we unlink here the script is gone
+          # ## FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
+          if ceType != 'HTCondorCE':
+            os.unlink( executable )
+          if not result['OK']:
+            self.log.error( 'Failed submission to queue %s:\n' % queue, result['Message'] )
+            pilotsToSubmit = 0
+            self.failedQueues[queue] += 1
             continue
-          for pilot in pilotList:
-            result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
-                                                  'Successfully submitted by the SiteDirector',
-                                                  siteName, queueName )
+  
+          pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
+          queueSubmittedPilots += pilotSubmissionChunk
+          # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
+          # task queue priorities
+          pilotList = result['Value']
+          self.queueSlots[queue]['AvailableSlots'] -= len( pilotList )
+          totalSubmittedPilots += len( pilotList )
+          self.log.info( 'Submitted %d pilots to %s@%s' % ( len( pilotList ), queueName, ceName ) )
+          stampDict = {}
+          if result.has_key( 'PilotStampDict' ):
+            stampDict = result['PilotStampDict']
+          tqPriorityList = []
+          sumPriority = 0.
+          for tq in tagTqIDList:
+            sumPriority += taskQueueDict[tq]['Priority']
+            tqPriorityList.append( ( tq, sumPriority ) )
+          rndm = random.random() * sumPriority
+          tqDict = {}
+          for pilotID in pilotList:
+            rndm = random.random() * sumPriority
+            for tq, prio in tqPriorityList:
+              if rndm < prio:
+                tqID = tq
+                break
+            if not tqDict.has_key( tqID ):
+              tqDict[tqID] = []
+            tqDict[tqID].append( pilotID )
+  
+          for tqID, pilotList in tqDict.items():
+            result = pilotAgentsDB.addPilotTQReference( pilotList,
+                                                        tqID,
+                                                        self.pilotDN,
+                                                        self.pilotGroup,
+                                                        self.localhost,
+                                                        ceType,
+                                                        '',
+                                                        stampDict )
             if not result['OK']:
-              self.log.error( 'Failed to set pilot status: ', result['Message'] )
+              self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
               continue
+            for pilot in pilotList:
+              result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
+                                                    'Successfully submitted by the SiteDirector',
+                                                    siteName, queueName )
+              if not result['OK']:
+                self.log.error( 'Failed to set pilot status: ', result['Message'] )
+                continue
 
     self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
