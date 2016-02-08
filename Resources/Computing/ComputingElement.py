@@ -438,7 +438,7 @@ class ComputingElement(object):
     print line
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, dummy = None ):
+  def submitJob( self, executableFile, proxy, dummy = None, processors = 1 ):
     """ Method to submit job, should be overridden in sub-class.
     """
     name = 'submitJob()'
