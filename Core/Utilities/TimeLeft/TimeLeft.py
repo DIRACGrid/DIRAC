@@ -176,7 +176,7 @@ class TimeLeft( object ):
       batchSystemName = "%sTimeLeft" % ( name )
       batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
                                 batchSystemName, globals(), locals(), [batchSystemName] )
-    except Exception, x:
+    except Exception as x:
       msg = 'Could not import DIRAC.Core.Utilities.TimeLeft.%s' % ( batchSystemName )
       self.log.warn( x )
       self.log.warn( msg )
@@ -185,7 +185,7 @@ class TimeLeft( object ):
     try:
       batchStr = 'batchPlugin.%s()' % ( batchSystemName )
       batchInstance = eval( batchStr )
-    except Exception, x:
+    except Exception as x:
       msg = 'Could not instantiate %s()' % ( batchSystemName )
       self.log.warn( x )
       self.log.warn( msg )

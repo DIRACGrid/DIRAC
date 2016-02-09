@@ -31,11 +31,13 @@ __RCSID__ = "$Id$"
 import os
 import stat
 import re
-from types import StringType, StringTypes, ListType
+from types import  StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+
+from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 from irods import rcConnect , rcDisconnect , clientLoginWithPassword, \
                   irodsCollection, irodsOpen, \
@@ -200,6 +202,8 @@ class IRODSStorageElementHandler( RequestHandler ):
     irodsFile = irodsOpen( conn , file_path , "r" )
     if irodsFile:
       resultDict['Exists'] = True
+      resultDict['File'] = True
+      resultDict['Directory'] = False
       resultDict['Type'] = "File"
       resultDict['Size'] = irodsFile.getSize()
       resultDict['TimeStamps'] = ( irodsFile.getCreateTs(), irodsFile.getModifyTs(), irodsFile.getCreateTs() )
@@ -208,12 +212,15 @@ class IRODSStorageElementHandler( RequestHandler ):
       resultDict['Lost'] = 0
       resultDict['Unavailable'] = 0
       resultDict['Mode'] = 0o755
+      resultDict = StorageBase._addCommonMetadata( resultDict )
       return S_OK( resultDict )
     else:
       coll = irodsCollection( conn, file_path )
       if coll:
         resultDict['Exists'] = True
         resultDict['Type'] = "Directory"
+        resultDict['File'] = False
+        resultDict['Directory'] = True
         resultDict['Size'] = 0
         resultDict['TimeStamps'] = ( 0,0,0 )
         resultDict['Cached'] = 1
@@ -221,6 +228,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         resultDict['Lost'] = 0
         resultDict['Unavailable'] = 0
         resultDict['Mode'] = 0o755
+        resultDict = StorageBase._addCommonMetadata( resultDict )
         return S_OK( resultDict )
       else:
         return S_ERROR( 'Path does not exist' )
@@ -246,14 +254,14 @@ class IRODSStorageElementHandler( RequestHandler ):
         return S_OK( True )
     return S_OK( False )  
 
-  types_getMetadata = [StringType]
+  types_getMetadata = [StringTypes]
   def export_getMetadata( self, fileID ):
     """
     Get metadata for the file or directory specified by fileID
     """
     return self.__getFileStat( fileID )
 
-  types_createDirectory = [StringType]
+  types_createDirectory = [StringTypes]
   def export_createDirectory( self, dir_path ):
     """
     Creates the directory on the storage
@@ -274,7 +282,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         return S_ERROR( 'Failed to create directory' )
     return S_OK()
 
-  types_listDirectory = [StringType, StringType]
+  types_listDirectory = [StringTypes, StringTypes]
   def export_listDirectory( self, dir_path, mode ):
     """
     Return the dir_path directory listing
@@ -469,7 +477,7 @@ token is used for access rights confirmation.
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
 
-  types_remove = [StringType, StringType]
+  types_remove = [StringTypes, StringTypes]
   def export_remove( self, fileID, token ):
     """ Remove fileID from the storage. token is used for access rights confirmation. """
     return self.__removeFile( fileID, token )
@@ -514,7 +522,7 @@ token is used for access rights confirmation.
     else:
       return S_ERROR( 'File removal %s not authorized' % fileID )
 
-  types_getDirectorySize = [StringType]
+  types_getDirectorySize = [StringTypes]
   def export_getDirectorySize( self, fileID ):
     """ Get the size occupied by the given directory
 """
@@ -529,7 +537,7 @@ token is used for access rights confirmation.
     else:
       return S_ERROR( "Directory does not exists" )
 
-  types_removeDirectory = [StringType, StringType]
+  types_removeDirectory = [StringTypes, StringTypes]
   def export_removeDirectory( self, fileID, token ):
     """ Remove the given directory from the storage
 """
@@ -553,7 +561,7 @@ token is used for access rights confirmation.
     
     return S_ERROR()
 
-  types_removeFileList = [ ListType, StringType ]
+  types_removeFileList = [ ListType, StringTypes ]
   def export_removeFileList( self, fileList, token ):
     """ Remove files in the given list
 """

@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities import Time
 import json
 try:
   import pika
-except Exception, e:
+except Exception as e:
   from DIRAC.Core.Utilities.Subprocess import systemCall
   result = systemCall( False, ["pip", "install", "pika"] )
   if not result['OK']:
@@ -101,7 +101,7 @@ class StatesMonitoringAgent( AgentModule ):
                         properties = pika.BasicProperties( 
                         delivery_mode = 2,  # make message persistent
                       ) )
-    except Exception, e:
+    except Exception as e:
       gLogger.error( "Connection closed:" + str( e ) )
       self.connection = pika.BlockingConnection( pika.ConnectionParameters( host = self.host, credentials = self.credentials ) )
       self.channel = self.connection.channel()

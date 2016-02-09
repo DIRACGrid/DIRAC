@@ -17,12 +17,12 @@ Script.parseCommandLine()
 
 
 #
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
-InstallTools.getMySQLPasswords()
+gComponentInstaller.getMySQLPasswords()
 #
-InstallTools.installMySQL()
+gComponentInstaller.installMySQL()
 #
-InstallTools._addMySQLToDiracCfg()
+gComponentInstaller._addMySQLToDiracCfg()

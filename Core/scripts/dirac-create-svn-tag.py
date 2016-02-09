@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-create-svn-tag
 # Author :  Adria Casajus
 ########################################################################
@@ -9,11 +8,11 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, Distribution
 
-import sys, os, tempfile, shutil, getpass
+import sys, os, tempfile, getpass
 
 svnPackages = 'DIRAC'
 svnVersions = ""
@@ -60,28 +59,28 @@ if not svnVersions:
   Script.showHelp()
 
 def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased ):
-    tmpDir = tempfile.mkdtemp()
-    packageName = packageDistribution.getPackageName()
-    gLogger.notice( "Generating release notes for %s under %s" % ( packageName, tmpDir ) )
-    for suffix, singleVersion in ( ( "history", False ), ( "notes", True ) ):
-      gLogger.notice( "Generating %s rst" % suffix )
-      rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
-      htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
-      Distribution.generateReleaseNotes( packageName, rstHistory, versionReleased, singleVersion )
-      try:
-        Distribution.generateHTMLReleaseNotesFromRST( rstHistory, htmlHistory )
-      except Exception, x:
-        print "Failed to generate html version of the notes:", str( x )
-      # Attempt to generate pdf as well  
-      os.system( 'rst2pdf %s' % rstHistory )
+  tmpDir = tempfile.mkdtemp()
+  packageName = packageDistribution.getPackageName()
+  gLogger.notice( "Generating release notes for %s under %s" % ( packageName, tmpDir ) )
+  for suffix, singleVersion in ( ( "history", False ), ( "notes", True ) ):
+    gLogger.notice( "Generating %s rst" % suffix )
+    rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
+    htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
+    Distribution.generateReleaseNotes( packageName, rstHistory, versionReleased, singleVersion )
+    try:
+      Distribution.generateHTMLReleaseNotesFromRST( rstHistory, htmlHistory )
+    except Exception as x:
+      print "Failed to generate html version of the notes:", str( x )
+  # Attempt to generate pdf as well
+  os.system( 'rst2pdf %s' % rstHistory )
 
-    packageDistribution.queueImport( tmpDir, svnPath, 'Release notes for version %s' % versionReleased )
-    if not packageDistribution.executeCommandQueue():
-      gLogger.error( "Could not upload release notes" )
-      sys.exit( 1 )
+  packageDistribution.queueImport( tmpDir, svnPath, 'Release notes for version %s' % versionReleased )
+  if not packageDistribution.executeCommandQueue():
+    gLogger.error( "Could not upload release notes" )
+    sys.exit( 1 )
 
-    os.system( "rm -rf '%s'" % tmpDir )
-    gLogger.notice( "Release notes committed" )
+  os.system( "rm -rf '%s'" % tmpDir )
+  gLogger.notice( "Release notes committed" )
 
 ##
 #End of helper functions
@@ -177,4 +176,3 @@ for svnPackage in List.fromChar( svnPackages ):
 
     #Generate release notes for version
     generateAndUploadReleaseNotes( packageDistribution, versionPath, svnVersion )
-

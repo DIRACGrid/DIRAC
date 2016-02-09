@@ -42,19 +42,19 @@ def extractRequestFromFileId( fileId ):
     gLogger.info( "Compressed request, uncompressing" )
     try:
       stub = base64.urlsafe_b64decode( stub )
-    except Exception, e:
+    except Exception as e:
       gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
       return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
     try:
       stub = zlib.decompress( stub )
-    except Exception, e:
+    except Exception as e:
       gLogger.error( "Oops! Plot request is invalid!", str( e ) )
       return S_ERROR( "Oops! Plot request is invalid!: %s" % str( e ) )
   elif compressType == 'S':
     gLogger.info( "Base64 request, decoding" )
     try:
       stub = base64.urlsafe_b64decode( stub )
-    except Exception, e:
+    except Exception as e:
       gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
       return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
   elif compressType == 'R':

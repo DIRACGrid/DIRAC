@@ -870,7 +870,7 @@ class ComponentInstaller( object ):
                          rDict[comp]['Timeup'],
                          str( rDict[comp]['PID'] ) ] )
       printTable( fields, records )
-    except Exception, x:
+    except Exception as x:
       print "Exception while gathering data for printing: %s" % str( x )
     return S_OK()
 
@@ -898,7 +898,7 @@ class ComponentInstaller( object ):
             record.append( str( rDict[compType][system][component]['PID'] ) )
             records.append( record )
       printTable( fields, records )
-    except Exception, x:
+    except Exception as x:
       print "Exception while gathering data for printing: %s" % str( x )
 
     return S_OK()
@@ -1348,15 +1348,16 @@ class ComponentInstaller( object ):
       result = self.execCommand( 0, ['runsvctrl', mode] + startComp )
       if not result['OK']:
         return result
-      time.sleep( 1 )
+      time.sleep( 2 )
 
     # Check the runsv status
     if system == '*' or component == '*':
-      time.sleep( 5 )
+      time.sleep( 10 )
 
     # Final check
     result = self.getStartupComponentStatus( [( system, component )] )
     if not result['OK']:
+      gLogger.error( 'Failed to start the component %s %s' %(system, component) )
       return S_ERROR( 'Failed to start the component' )
 
     return result
@@ -1678,18 +1679,30 @@ class ComponentInstaller( object ):
       result = self.setupComponent( 'service', system, service, extensions, monitorFlag = False )
       if not result['OK']:
         gLogger.error( result['Message'] )
+        continue
+      result = MonitoringUtilities.monitorInstallation( 'service', system, service )
+      if not result['OK']:
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 5.- Now the agents
     for system, agent in setupAgents:
       result = self.setupComponent( 'agent', system, agent, extensions, monitorFlag = False )
       if not result['OK']:
         gLogger.error( result['Message'] )
+        continue
+      result = MonitoringUtilities.monitorInstallation( 'agent', system, agent )
+      if not result['OK']:
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 6.- Now the executors
     for system, executor in setupExecutors:
       result = self.setupComponent( 'executor', system, executor, extensions, monitorFlag = False )
       if not result['OK']:
         gLogger.error( result['Message'] )
+        continue
+      result = MonitoringUtilities.monitorInstallation( 'executor', system, executor )
+      if not result['OK']:
+        gLogger.error( 'Error registering installation into database: %s' % result[ 'Message' ] )
 
     # 7.- And finally the Portal
     if setupWeb:
@@ -1726,7 +1739,7 @@ class ComponentInstaller( object ):
 
     logConfigFile = os.path.join( logDir, 'config' )
     fd = open( logConfigFile, 'w' )
-    fd.write( 
+    fd.write(
   """s10000000
   n20
   """ )
@@ -1734,7 +1747,7 @@ class ComponentInstaller( object ):
 
     logRunFile = os.path.join( logDir, 'run' )
     fd = open( logRunFile, 'w' )
-    fd.write( 
+    fd.write(
   """#!/bin/bash
   #
   rcfile=%(bashrc)s
@@ -1814,7 +1827,7 @@ class ComponentInstaller( object ):
 
       runFile = os.path.join( runitCompDir, 'run' )
       fd = open( runFile, 'w' )
-      fd.write( 
+      fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -1839,7 +1852,7 @@ class ComponentInstaller( object ):
       if cTypeLower == 'agent' or cTypeLower == 'consumer':
         stopFile = os.path.join( runitCompDir, 'control', 't' )
         fd = open( stopFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   echo %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
   touch %(self.controlDir)s/%(system)s/%(component)s/stop_%(type)s
@@ -1969,7 +1982,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitHttpdDir )
         runFile = os.path.join( runitHttpdDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2004,7 +2017,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitPasterDir )
         runFile = os.path.join( runitPasterDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2156,7 +2169,7 @@ class ComponentInstaller( object ):
         self._createRunitLog( runitWebAppDir )
         runFile = os.path.join( runitWebAppDir, 'run' )
         fd = open( runFile, 'w' )
-        fd.write( 
+        fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2557,7 +2570,7 @@ class ComponentInstaller( object ):
             DIRAC.exit( -1 )
           return S_ERROR( error )
 
-    except Exception, e:
+    except Exception as e:
       gLogger.error( str( e ) )
       if self.exitOnError:
         DIRAC.exit( -1 )

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-externals-refresh
 # Author : Adri
 ########################################################################
@@ -10,7 +9,7 @@ __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-from DIRAC import gLogger, rootPath, S_OK, S_ERROR
+from DIRAC import gLogger, rootPath, S_OK
 from DIRAC.Core.Utilities.CFG import CFG
 import os, sys
 try:
@@ -39,15 +38,15 @@ for entry in os.listdir( rootPath ):
     continue
   reqFile = os.path.join( rootPath, entry, "releases.cfg" )
   try:
-   with open( reqFile, "r" ) as extfd:
-     reqCFG = CFG().loadFromBuffer( extfd.read() )
+    with open( reqFile, "r" ) as extfd:
+      reqCFG = CFG().loadFromBuffer( extfd.read() )
   except:
     gLogger.warn( "%s not found" % reqFile )
     continue
   reqs = reqCFG.getOption( "/RequiredExternals/%s" % instType.capitalize(), [] )
   if not reqs:
-   gLogger.warn( "%s does not have requirements for %s installation" % ( entry, instType ) )
-   continue
+    gLogger.warn( "%s does not have requirements for %s installation" % ( entry, instType ) )
+    continue
   for req in reqs:
     reqName = False
     reqCond = ""
@@ -74,7 +73,7 @@ from pip.index import PackageFinder
 from pip.req import InstallRequirement, RequirementSet
 from pip.locations import build_prefix, src_prefix
 
-requirement_set = RequirementSet( 
+requirement_set = RequirementSet(
     build_dir = build_prefix,
     src_dir = src_prefix,
     download_dir = None
@@ -93,4 +92,3 @@ requirement_set.install( install_options, global_options )
 
 
 gLogger.notice( "Installed %s" % "".join( [ str( package.name ) for package in requirement_set.successfully_installed ] ) )
-

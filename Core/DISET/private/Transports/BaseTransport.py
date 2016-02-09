@@ -104,7 +104,7 @@ class BaseTransport( object ):
           return S_OK( data )
       else:
         return S_ERROR( "Connection seems stalled. Closing..." )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def _write( self, buffer ):
@@ -126,7 +126,7 @@ class BaseTransport( object ):
           if not result[ 'OK' ]:
             return result
           sentBytes = result[ 'Value' ]
-        except Exception, e:
+        except Exception as e:
           return S_ERROR( "Exception while sending data: %s" % e )
         if sentBytes == 0:
           return S_ERROR( "Connection closed by peer" )
@@ -205,13 +205,13 @@ class BaseTransport( object ):
           self.byteStream = pkgMem.read()
       try:
         data = DEncode.decode( data )[0]
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Could not decode received data: %s" % str( e ) )
       if idleReceive:
         self.receivedMessages.append( data )
         return S_OK()
       return data
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Network error while receiving data" )
       return S_ERROR( "Network error while receiving data: %s" % str( e ) )
 
@@ -278,3 +278,9 @@ class BaseTransport( object ):
     if address[0].find( ":" ) > -1:
       return "([%s]:%s)%s" % ( address[0], address[1], peerId )
     return "(%s:%s)%s" % ( address[0], address[1], peerId )
+  
+  def setSocketTimeout(self, timeout):
+    """
+    This method has to be overwritten, if we want to increase the socket timeout.
+    """
+    pass

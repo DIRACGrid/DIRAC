@@ -46,7 +46,7 @@ class PlottingClient:
     transferClient = self.__getTransferClient()
     try:
       destFile = file( fileName, "wb" )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't open file %s for writing: %s" % ( fileName, str( e ) ) )
     retVal = transferClient.receiveFile( destFile, plotName )
     if not retVal[ 'OK' ]:

@@ -1,8 +1,12 @@
-# $HeadURL$
+""" Module that holds the ReportGeneratorHandler class
+"""
+
 __RCSID__ = "$Id$"
+
 import types
 import os
 import datetime
+import errno
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -18,16 +22,17 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 
 class ReportGeneratorHandler( RequestHandler ):
+  """ DIRAC service class to retrieve information from the AccountingDB
+  """
 
   __acDB = False
-  __reportRequestDict = { 'typeName' : types.StringType,
-                        'reportName' : types.StringType,
-                        'startTime' : Time._allDateTypes,
-                        'endTime' : Time._allDateTypes,
-                        'condDict' : types.DictType,
-                        'grouping' : types.StringType,
-                        'extraArgs' : types.DictType
-                      }
+  __reportRequestDict = { 'typeName' : types.StringTypes,
+                          'reportName' : types.StringTypes,
+                          'startTime' : (datetime.datetime, datetime.date),
+                          'endTime' : (datetime.datetime, datetime.date),
+                          'condDict' : types.DictType,
+                          'grouping' : types.StringTypes,
+                          'extraArgs' : types.DictType}
 
   @classmethod
   def initializeHandler( cls, serviceInfo ):
@@ -42,8 +47,9 @@ class ReportGeneratorHandler( RequestHandler ):
     gLogger.info( "Data will be written into %s" % dataPath )
     try:
       os.makedirs( dataPath )
-    except:
-      pass
+    except OSError as e:
+      if e.errno != errno.EEXIST:
+        raise
     try:
       testFile = "%s/acc.jarl.test" % dataPath
       fd = file( testFile, "w" )
@@ -63,15 +69,16 @@ class ReportGeneratorHandler( RequestHandler ):
     #If extraArgs is not there add it
     if 'extraArgs' not in reportRequest:
       reportRequest[ 'extraArgs' ] = {}
-    if type( reportRequest[ 'extraArgs' ] ) != self.__reportRequestDict[ 'extraArgs' ]:
+    if not isinstance( reportRequest[ 'extraArgs' ], self.__reportRequestDict[ 'extraArgs' ] ):
       return S_ERROR( "Extra args has to be of type %s" % self.__reportRequestDict[ 'extraArgs' ] )
     reportRequestExtra = reportRequest[ 'extraArgs' ]
     #Check sliding plots
     if 'lastSeconds' in reportRequestExtra:
       try:
         lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
-      except:
-        return S_ERROR( "lastSeconds key must be a number" )
+      except ValueError:
+        gLogger.error( "lastSeconds key must be a number" )
+        return S_ERROR( "Value Error" )
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.dateTime()
@@ -85,18 +92,14 @@ class ReportGeneratorHandler( RequestHandler ):
     for key in self.__reportRequestDict:
       if not key in reportRequest:
         return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
-      requestKeyType = type( reportRequest[ key ] )
+
+      if not isinstance( reportRequest[ key ], self.__reportRequestDict[ key ] ):
+        return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
+                                                                                  str( type( reportRequest[ key ] ) ),
+                                                                                  str( self.__reportRequestDict[ key ] ) ) )
       if key in ( 'startTime', 'endTime' ):
-        if requestKeyType not in self.__reportRequestDict[ key ]:
-          return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
-                                                                                    str( requestKeyType ),
-                                                                                    str( self.__reportRequestDict[ key ] ) ) )
         reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
-      else:
-        if requestKeyType != self.__reportRequestDict[ key ]:
-          return S_ERROR( "Type mismatch for field %s (%s), required %s" % ( key,
-                                                                             str( requestKeyType ),
-                                                                             str( self.__reportRequestDict[ key ] ) ) )
+
     return S_OK( reportRequest )
 
   types_generatePlot = [ types.DictType ]
@@ -139,7 +142,7 @@ class ReportGeneratorHandler( RequestHandler ):
     reportRequest[ 'generatePlot' ] = False
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
 
-  types_listReports = [ types.StringType ]
+  types_listReports = [ types.StringTypes ]
   def export_listReports( self, typeName ):
     """
     List all available plots
@@ -149,7 +152,7 @@ class ReportGeneratorHandler( RequestHandler ):
     reporter = MainReporter( self.__acDB, self.serviceInfoDict[ 'clientSetup' ] )
     return reporter.list( typeName )
 
-  types_listUniqueKeyValues = [ types.StringType ]
+  types_listUniqueKeyValues = [ types.StringTypes ]
   def export_listUniqueKeyValues( self, typeName ):
     """
     List all values for all keys in a type
@@ -205,7 +208,7 @@ class ReportGeneratorHandler( RequestHandler ):
       #Seems a request for a plot!
       try:
         result = self.__generatePlotFromFileId( fileId )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "Exception while generating plot" )
         result = S_ERROR( "Error while generating plot: %s" % str( e ) )
       if not result[ 'OK' ]:

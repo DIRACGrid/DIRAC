@@ -16,7 +16,7 @@
 __RCSID__ = "$Id$"
 
 ## imports
-from types import DictType, IntType, LongType, ListType, StringType
+from types import DictType, IntType, LongType, ListType, StringTypes
 ## from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK
@@ -72,7 +72,7 @@ class DataIntegrityHandler( RequestHandler ):
       gLogger.error( "DataIntegrityHandler.getProblematic: Failed to get problematic file to resolve.", res['Message'] )
     return res
 
-  types_getPrognosisProblematics = [StringType]
+  types_getPrognosisProblematics = [StringTypes]
   @staticmethod
   def export_getPrognosisProblematics( prognosis ):
     """ Get problematic files from the problematics table of the IntegrityDB
@@ -83,7 +83,7 @@ class DataIntegrityHandler( RequestHandler ):
       gLogger.error( "DataIntegrityHandler.getPrognosisProblematics: Failed to get prognosis files.", res['Message'] )
     return res
 
-  types_setProblematicStatus = [[IntType, LongType], StringType]
+  types_setProblematicStatus = [[IntType, LongType], StringTypes]
   @staticmethod
   def export_setProblematicStatus( fileID, status ):
     """ Update the status of the problematics with the provided fileID
@@ -105,7 +105,7 @@ class DataIntegrityHandler( RequestHandler ):
       gLogger.error( "DataIntegrityHandler.incrementProblematicRetry: Failed to increment retries.", res['Message'] )
     return res
 
-  types_insertProblematic = [StringType, DictType]
+  types_insertProblematic = [StringTypes, DictType]
   @staticmethod
   def export_insertProblematic( source, fileMetadata ):
     """ Insert problematic files into the problematics table of the IntegrityDB

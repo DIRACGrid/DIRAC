@@ -1,6 +1,3 @@
-########################################################################
-# $Id$
-########################################################################
 """ SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
 """
@@ -8,7 +5,7 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-import types
+from types import StringTypes, ListType, DictType, TupleType
 import threading
 import tempfile
 
@@ -78,7 +75,7 @@ class SandboxStoreHandler( RequestHandler ):
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
-    if type( fileId ) in ( types.ListType, types.TupleType ):
+    if type( fileId ) in ( ListType, TupleType ):
       if len( fileId ) > 1:
         assignTo = fileId[1]
         fileId = fileId[0]
@@ -229,7 +226,7 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Dump incoming network data to temporal file
     """
-    tfd = False
+    tfd = None
     if not destFileName:
       try:
         tfd, destFileName = tempfile.mkstemp( prefix = "DSB." )
@@ -241,11 +238,11 @@ class SandboxStoreHandler( RequestHandler ):
     destFileName = os.path.realpath( destFileName )
     try:
       os.makedirs( os.path.dirname( destFileName ) )
-    except:
+    except Exception as _e:
       pass
 
     try:
-      if tfd:
+      if tfd is not None:
         fd = tfd
       else:
         fd = open( destFileName, "wb" )
@@ -281,7 +278,7 @@ class SandboxStoreHandler( RequestHandler ):
             pass
         try:
           os.rename( localFilePath, hdFilePath )
-        except Exception, e:
+        except Exception as e:
           errMsg = "Cannot move temporal file to final path"
           gLogger.error( errMsg, repr( e ).replace( ',)', ')' ) )
           result = S_ERROR( errMsg )
@@ -307,13 +304,14 @@ class SandboxStoreHandler( RequestHandler ):
         gLogger.verbose( "Ooops, SB transfer wasn't in the successful ones", str( result ) )
         return S_ERROR( "RM returned OK to the action but SB transfer wasn't in the successful ones" )
       return S_OK( ( self.__externalSEName, okTrans[ sbPath ] ) )
-    except Exception, e:
-      return S_ERROR( "Error while moving sandbox to SE", "%s" % repr( e ).replace( ',)', ')' ) )
+    except Exception as e:
+      gLogger.error( "Error while moving sandbox to SE", "%s" % repr( e ).replace( ',)', ')' ) )
+      return S_ERROR( "Error while moving sandbox to SE" )
 
   ##################
   # Assigning sbs to jobs
 
-  types_assignSandboxesToEntities = [ types.DictType ]
+  types_assignSandboxesToEntities = [ DictType ]
   def export_assignSandboxesToEntities( self, enDict, ownerName = "", ownerGroup = "", entitySetup = False ):
     """
     Assign sandboxes to jobs.
@@ -328,7 +326,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Unassign sbs to jobs
 
-  types_unassignEntities = [ ( types.ListType, types.TupleType ) ]
+  types_unassignEntities = [ ( ListType, TupleType ) ]
   def export_unassignEntities( self, entitiesList, entitiesSetup = False ):
     """
     Unassign a list of jobs
@@ -341,7 +339,7 @@ class SandboxStoreHandler( RequestHandler ):
   ##################
   # Getting assigned sandboxes
 
-  types_getSandboxesAssignedToEntity = [ types.StringType ]
+  types_getSandboxesAssignedToEntity = [ StringTypes ]
   def export_getSandboxesAssignedToEntity( self, entityId, entitySetup = False ):
     """
     Get the sandboxes associated to a job and the association type
@@ -454,7 +452,7 @@ class SandboxStoreHandler( RequestHandler ):
           gLogger.info( "Trying to clean dir %s" % hdPath )
           # Empty dir!
           os.rmdir( hdPath )
-        except Exception, e:
+        except Exception as e:
           gLogger.error( "Cannot clean directory", "%s : %s" % ( hdPath, repr( e ).replace( ',)', ')' ) ) )
           break
     return S_OK()
@@ -474,13 +472,13 @@ class SandboxStoreHandler( RequestHandler ):
         physicalRemoval.addFile( fileToRemove )
         request.addOperation( physicalRemoval )
         return ReqClient().putRequest( request )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "Exception while setting deletion request" )
         return S_ERROR( "Cannot set deletion request: %s" % str( e ) )
     else:
       gLogger.info( "Deleting external Sandbox" )
       try:
         return StorageElement( SEName ).removeFile( SEPFN )
-      except Exception, e:
+      except Exception as e:
         gLogger.exception( "RM raised an exception while trying to delete a remote sandbox" )
         return S_ERROR( "RM raised an exception while trying to delete a remote sandbox" )

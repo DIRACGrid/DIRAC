@@ -46,7 +46,7 @@ class JobDescription( object ):
     """
     try:
       self.__description.loadFromBuffer( cfgString )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
     return S_OK()
 
@@ -141,12 +141,12 @@ class JobDescription( object ):
     result = self.__checkNumericalVarInDescription( "Priority", 1, 0, 10 )
     if not result[ 'OK' ]:
       return result
-    
+
     allowedSubmitPools = getSubmitPools( self.__description['OwnerGroup'] )
-    result = self.__checkMultiChoice( "SubmitPools", list( set( allowedSubmitPools ) ) )
+    result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result
-    
+
     result = self.__checkMultiChoiceInDescription( "SubmitPools", list( set( allowedSubmitPools ) ) )
     if not result[ 'OK' ]:
       return result

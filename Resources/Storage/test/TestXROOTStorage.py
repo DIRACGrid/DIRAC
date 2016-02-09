@@ -14,8 +14,9 @@ import unittest
 
 import DIRAC.Resources.Storage.XROOTStorage as moduleTested
 
+from DIRAC import S_ERROR, S_OK
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
 ################################################################################
 
@@ -38,7 +39,7 @@ class XROOTStorage_TestCase( unittest.TestCase ):
                              Path='path',
                              Host='host',
                              Port='',
-                             SpaceTolen='spaceToken',
+                             SpaceToken='spaceToken',
                              WSPath='wspath',
                             )
     self.testClass = self.moduleTested.XROOTStorage
@@ -191,7 +192,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( 'path'       , resource.protocolParameters['Path'] )
     self.assertEqual( 'host'       , resource.protocolParameters['Host'] )
     self.assertEqual( 0       , resource.protocolParameters['Port'] )
-    self.assertEqual( 0       , resource.protocolParameters['SpaceToken'] )
+    self.assertEqual( 'spaceToken' , resource.protocolParameters['SpaceToken'] )
     self.assertEqual( 0       , resource.protocolParameters['WSUrl'] )
 
   def test_getParameters( self ):
@@ -206,7 +207,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( 'path'       , res['Path'] )
     self.assertEqual( 'host'       , res['Host'] )
     self.assertEqual( 0       , res['Port'] )
-    self.assertEqual( 0 , res['SpaceToken'] )
+    self.assertEqual( 'spaceToken' , res['SpaceToken'] )
     self.assertEqual( 0     , res['WSUrl'] )
 
   # def test_getProtocolPfn( self ):
@@ -771,6 +772,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
 
     # This test should be completely okay
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.getFile( "a", "/tmp" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"a" :-1}, res['Value']['Successful'] )
@@ -864,6 +868,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     resource.xrootClient.dirlist = MagicMock( side_effect = [( statusStatDirMock, directoryListMock1 ), ( statusStatDirMock, directoryListMock2 ), ( statusStatDirMock, directoryListMock3 )] )
 
     # This test should get the 3 files
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.getDirectory( "A" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"A" : { "Files" : 3, "Size" :-3}}, res['Value']['Successful'] )
@@ -940,6 +947,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
 
     # This test should be completely okay
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.putFile( {"remoteA" : "localA"} )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"remoteA" : 1}, res['Value']['Successful'] )
@@ -969,10 +979,17 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( {}, res['Value']['Successful'] )
     self.assertEqual( "remoteA", res['Value']['Failed'].keys()[0] )
 
-
     # Bad input
     res = resource.putFile( "remoteA" )
     self.assertEqual( False, res['OK'] )
+
+
+    # Error, but not 3011 when checking existance of file, and then successful anyway
+    statusMock.makeOk()
+    resource._XROOTStorage__singleExists = MagicMock( return_value = S_OK( S_ERROR ( "error checking existance " ) ) )
+    res = resource.putFile( {"remoteA" : "localA"} )
+    self.assertEqual( True, res['OK'] )
+    self.assertEqual(  {'remoteA': 1}, res['Value']['Successful'] )
 
 
   def test_putDirectory( self ):
@@ -1017,6 +1034,9 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
 
     # This test should upload the 3 files
+    copymock = mock.Mock()
+    copymock.run.return_value = (statusCopyMock, None)
+    self.moduleTested.client.CopyProcess = mock.Mock(return_value=copymock)
     res = resource.putDirectory( {"remoteA" : "localA"} )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"remoteA" : { "Files" : 3, "Size" :3}}, res['Value']['Successful'] )
@@ -1045,7 +1065,25 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( {"remoteA" : { "Files" : 0, "Size" : 0}}, res['Value']['Failed'] )
 
 
+  def test_constructURLFromLFN( self ):
 
+    resource = self.testClass( 'storageName', self.parameterDict )
+    resource.se  = MagicMock()
+    voName = "voName"
+    resource.se.vo = voName
+    testLFN= "/%s/path/to/filename" % voName
+
+    ## with spaceToken
+    res = resource.constructURLFromLFN( testLFN )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( "protocol://host/path%s?svcClass=%s" % ( testLFN, self.parameterDict['SpaceToken'] )
+                      , res['Value'] )
+
+    ## no spaceToken
+    resource.protocolParameters['SpaceToken']  = ""
+    res = resource.constructURLFromLFN( testLFN )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( "protocol://host/path%s" % ( testLFN,  ) , res['Value'] )
 
 
 if __name__ == '__main__':

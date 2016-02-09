@@ -128,7 +128,7 @@ class AccountingCLI( cmd.Cmd ):
                                   globals(),
                                   locals(), typeName )
         typeClass  = getattr( typeModule, typeName )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
         return
       gLogger.info( "Loaded type %s"  % typeClass.__name__ )
@@ -162,7 +162,7 @@ class AccountingCLI( cmd.Cmd ):
                                   globals(),
                                   locals(), typeName )
         typeClass  = getattr( typeModule, typeName )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
         return
       gLogger.info( "Loaded type %s"  % typeClass.__name__ )
@@ -196,7 +196,7 @@ class AccountingCLI( cmd.Cmd ):
                                   globals(),
                                   locals(), typeName )
         typeClass  = getattr( typeModule, typeName )
-      except Exception, e:
+      except Exception as e:
         gLogger.error( "Can't load type %s: %s" % ( typeName, str(e) ) )
         return
       gLogger.info( "Loaded type %s"  % typeClass.__name__ )

@@ -11,9 +11,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
+from DIRAC.Core.Utilities import Distribution,  Subprocess
 
-import sys, os, shutil, tempfile, getpass, subprocess
+import sys, os, shutil, tempfile, subprocess
 
 class TarModuleCreator( object ):
 
@@ -95,7 +95,7 @@ class TarModuleCreator( object ):
     if not os.path.isdir( self.params.destination ):
       try:
         os.makedirs( self.params.destination )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Cannot write to destination: %s" % str( e ) )
 
     return S_OK()
@@ -153,7 +153,7 @@ class TarModuleCreator( object ):
                          os.path.join( self.params.destination, self.params.name ),
                          symlinks = True,
                          ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Could not copy data from source URL: %s" % str( e ) )
     return S_OK()
 
@@ -280,7 +280,9 @@ class TarModuleCreator( object ):
     gLogger.notice( "Replacing keywords (can take a while)..." )
     self.replaceKeywordsWithGit( fDirName )
 
-    shutil.rmtree( "%s/.git" % fDirName )
+    shutil.rmtree( "%s/.git" % fDirName, ignore_errors=True )
+    shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
+    shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
 
     if exportRes:
       return S_ERROR( "Error while exporting from git" )

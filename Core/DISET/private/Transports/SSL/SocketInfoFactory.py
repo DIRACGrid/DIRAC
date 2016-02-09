@@ -22,6 +22,15 @@ if GSI.__version__ < "0.5.0":
 
 class SocketInfoFactory:
 
+  def __init__(self):
+    self.__timeout = 1
+  
+  def setSocketTimeout(self, timeout):
+    self.__timeout = timeout
+    
+  def getSocketTimeout(self):
+    return self.__timeout
+  
   def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True,
                  'hostname' : destinationHostname,
@@ -31,7 +40,7 @@ class SocketInfoFactory:
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while creating SSL context: %s" % str( e ) )
 
   def generateServerInfo( self, kwargs ):
@@ -40,7 +49,7 @@ class SocketInfoFactory:
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
@@ -62,7 +71,9 @@ class SocketInfoFactory:
       return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
     # osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 1 ) # we try to connect 3 times with 1 second timeout
+      tsocket = self.getSocketTimeout()
+      gLogger.verbose( "Connection timeout set to: ", tsocket )
+      osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
@@ -121,8 +132,9 @@ class SocketInfoFactory:
     retVal = Network.getIPsForHostName( hostName )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
-    ipList = List.randomize( retVal[ 'Value' ] )
-    for i in range( 3 ):
+    ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
+    
+    for _ in xrange( 1 ): #TODO: this retry can be reduced. 
       connected = False
       errorsList = []
       for ip in ipList :

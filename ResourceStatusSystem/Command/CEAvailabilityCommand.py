@@ -1,5 +1,4 @@
-# $HeadURL:  $
-''' CEAvailabilityCommand module 
+''' CEAvailabilityCommand module
 '''
 
 from DIRAC                                                      import S_OK, S_ERROR
@@ -12,45 +11,45 @@ __RCSID__ = '$Id:  $'
 class CEAvailabilityCommand( Command ):
   '''
     It returns the status of a given CE.
-  ''' 
+  '''
 
   def __init__( self, args = None ):
     '''
-      
+
       :params: args: dictionary specifying following values
-        :attr:`ce`: Computing Element (mandatory)  
+        :attr:`ce`: Computing Element (mandatory)
         :attr:`host`: BDII server (optional)
     '''
     super( CEAvailabilityCommand, self ).__init__( args )
-  
+
   def doCommand( self ):
-    '''  
-      It returns the status of a given CE.
-      
-      :return:
-        a dictionary with status of each CE queues, 
-        and 'status' and 'reason' of the CE itself     
-       
     '''
-    
+      It returns the status of a given CE.
+
+      :return:
+        a dictionary with status of each CE queues,
+        and 'status' and 'reason' of the CE itself
+
+    '''
+
     ## INPUT PARAMETERS
     vos = getVOs()
     if vos[ 'OK' ]:
       vo = vos['Value'].pop()
     else:
       return S_ERROR( "No appropriate VO was found! %s" % vos['Message'] )
-    
+
     if 'ce' not in self.args:
       return S_ERROR( "No computing element 'ce' has been specified!" )
     else:
       ce = self.args['ce']
-    
+
     host = self.args.get('host')
 
     #getting BDII info
     diracAdmin = DiracAdmin()
-    ceQueues = diracAdmin.getBDIICEState( ce, 
-                                          useVO = vo, 
+    ceQueues = diracAdmin.getBDIICEState( ce,
+                                          useVO = vo,
                                           host = host )
     if not ceQueues['OK']:
       return S_ERROR( '"CE" not found on BDII' )
@@ -59,22 +58,22 @@ class CEAvailabilityCommand( Command ):
     #extracting the list of CE queues and their status
     result = {}
     for element in elements:
-      queue = element.get('GlueCEUniqueID','Unknown')
-      statusQueue = element.get('GlueCEStateStatus','Unknown')
+      queue = element.get('GlueCEUniqueID','Unknown') #pylint: disable=E1101
+      statusQueue = element.get('GlueCEStateStatus','Unknown') #pylint: disable=E1101
       result[queue] = statusQueue.capitalize()
-    
+
     #establishing the status of the CE itself
     result['Status'] = 'Production'
     result['Reason'] = "All queues in 'Production'"
     for key, value in result.items():
       #warning: it may not be the case that all queues for a given CE
-      #show the same status. In case of mismatch, the status of the CE 
-      #will be associated to a non-production status 
+      #show the same status. In case of mismatch, the status of the CE
+      #will be associated to a non-production status
       if key not in ['Status', 'Reason'] and value != 'Production':
         result['Status'] = value
         result['Reason'] = "Queue %s is in status %s" % ( queue, value )
-    
+
     return S_OK( result )
-      
-################################################################################      
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

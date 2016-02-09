@@ -120,7 +120,7 @@ class JobScheduling( OptimizerExecutor ):
         return userGroup
       userGroup = userGroup['Value']
 
-      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup )
+      res = getFilesToStage( inputData, proxyUserName = userName, proxyUserGroup = userGroup ) #pylint: disable=E1123
 
       if not res['OK']:
         return self.__holdJob( jobState, res['Message'] )

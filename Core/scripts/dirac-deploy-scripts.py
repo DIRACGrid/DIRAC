@@ -16,22 +16,7 @@ import re
 import time
 import sys
 
-def logDEBUG( msg ):
-  if False:
-    for line in msg.split( "\n" ):
-      print "%s UTC dirac-deploy-scripts [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
-    sys.stdout.flush()
-
-def logERROR( msg ):
-  for line in msg.split( "\n" ):
-    print "%s UTC dirac-deploy-scripts [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
-  sys.stdout.flush()
-
-def logNOTICE( msg ):
-  for line in msg.split( "\n" ):
-    print " ", line
-    # print "%s UTC dirac-deploy-scripts [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
-  sys.stdout.flush()
+DEBUG = False
 
 moduleSuffix = "DIRAC"
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
@@ -119,24 +104,32 @@ def findDIRACRoot( path ):
 
 rootPath = findDIRACRoot( os.path.dirname( os.path.realpath( __file__ ) ) )
 if not rootPath:
-  logERROR( "Error: Cannot find DIRAC root!" )
+  print "Error: Cannot find DIRAC root!"
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
 pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|d[a-zA-Z0-9-]+).py" )
-logNOTICE( "Scripts will be deployed at %s" % targetScriptsPath )
+print "Scripts will be deployed at %s" % targetScriptsPath
 
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
 
-for rootModule in os.listdir( rootPath ):
+
+# DIRAC scripts need to be treated first, so that its scripts
+# can be overwritten by the extensions
+listDir = os.listdir( rootPath )
+if 'DIRAC' in listDir:  # should always be true...
+  listDir.remove( 'DIRAC' )
+  listDir.insert( 0, 'DIRAC' )
+
+for rootModule in listDir:
   modulePath = os.path.join( rootPath, rootModule )
   if not os.path.isdir( modulePath ):
     continue
   extSuffixPos = rootModule.find( moduleSuffix )
   if extSuffixPos == -1 or extSuffixPos != len( rootModule ) - len( moduleSuffix ):
     continue
-  logNOTICE( "Inspecting %s module" % rootModule )
+  print "Inspecting %s module" % rootModule
   scripts = lookForScriptsInPath( modulePath, rootModule )
   for script in scripts:
     scriptPath = script[0]
@@ -145,13 +138,15 @@ for rootModule in os.listdir( rootPath ):
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
-      logDEBUG( " Wrapping %s" % scriptName[:-3] )
+      if DEBUG:
+        print " Wrapping %s" % scriptName[:-3]
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
     else:
-      logDEBUG( " Copying %s" % scriptName )
+      if DEBUG:
+        print " Copying %s" % scriptName
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
       os.chmod( copyPath, gDefaultPerms )

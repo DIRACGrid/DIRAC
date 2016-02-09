@@ -28,7 +28,7 @@ class Service( object ):
 
   def __init__( self, serviceData ):
     self._svcData = serviceData
-    self._name = serviceData[ 'loadName' ]
+    self._name = serviceData[ 'modName' ]
     self._startTime = Time.dateTime()
     self._validNames = [ serviceData[ 'modName' ]  ]
     if serviceData[ 'loadName' ] not in self._validNames:
@@ -115,28 +115,6 @@ class Service( object ):
     gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 
     return S_OK()
-
-  def _discoverHandlerLocation( self ):
-    handlerLocation = self._cfg.getHandlerLocation()
-    if handlerLocation:
-      if handlerLocation.find( "Handler.py" ) != len( handlerLocation ) - 10:
-        return S_ERROR( "CS defined file %s does not have a valid handler name" % handlerLocation )
-      return handlerLocation
-    fields = [ field.strip() for field in self._name.split( "/" ) if field.strip() ]
-    if len( fields ) != 2:
-      gLogger.error( "Oops. Invalid service name!", self._name )
-      return False
-    gLogger.debug( "Trying to auto discover handler" )
-    rootModulesToLook = [ "%sDIRAC" % ext for ext in gConfig.getValue( "/DIRAC/Extensions", [] ) ] + [ 'DIRAC' ]
-    for rootModule in rootModulesToLook:
-      gLogger.debug( "Trying to find handler in %s root module" % rootModule )
-      filePath = os.path.join( rootModule, "%sSystem" % fields[0], "Service", "%sHandler.py" % fields[1] )
-      absPath = os.path.join ( DIRAC.rootPath, filePath )
-      if os.path.isfile( absPath ):
-        gLogger.debug( "Auto discovered handler %s" % filePath )
-        return filePath
-      gLogger.debug( "%s is not a valid file" % filePath )
-    return False
 
   def __searchInitFunctions( self, handlerClass, currentClass = None ):
     if not currentClass:
@@ -446,7 +424,7 @@ class Service( object ):
     try:
       handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
       handlerInstance.initialize()
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Server error while loading handler: %s" % str( e ) )
       return S_ERROR( "Server error while loading handler" )
     return S_OK( handlerInstance )
@@ -495,7 +473,7 @@ class Service( object ):
   def _executeAction( self, trid, proposalTuple, handlerObj ):
     try:
       return handlerObj._rh_executeAction( proposalTuple )
-    except Exception, e:
+    except Exception as e:
       gLogger.exception( "Exception while executing handler action" )
       return S_ERROR( "Server error while executing action: %s" % str( e ) )
 

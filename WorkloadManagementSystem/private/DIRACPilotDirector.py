@@ -314,7 +314,7 @@ try:
   for key in os.environ.keys():
     print key + '=' + os.environ[key]
   print '==========================================================='
-except Exception, x:
+except Exception as x:
   print >> sys.stderr, x
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"

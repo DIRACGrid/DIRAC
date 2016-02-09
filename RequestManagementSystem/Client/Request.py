@@ -138,7 +138,7 @@ class Request( object ):
       opStatus, op = opStatusList.pop( 0 )
 
       # # Failed -> Failed
-      if opStatus == "Failed":
+      if opStatus == "Failed" and self.__waiting is None:
         rStatus = "Failed"
         break
 

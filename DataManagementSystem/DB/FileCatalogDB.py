@@ -70,7 +70,7 @@ class FileCatalogDB( DB ):
       self.datasetManager = eval( "%s(self)" % databaseConfig['DatasetManager'] )
       self.dmeta = eval( "%s(self)" % databaseConfig['DirectoryMetadata'] )
       self.fmeta = eval( "%s(self)" % databaseConfig['FileMetadata'] )
-    except Exception, x:
+    except Exception as x:
       gLogger.fatal( "Failed to create database objects", x )
       return S_ERROR( "Failed to create database objects" )
 

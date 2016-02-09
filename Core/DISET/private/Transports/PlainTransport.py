@@ -80,7 +80,7 @@ class PlainTransport( BaseTransport ):
           time.sleep( 0.001 )
         else:
           return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def _write( self, buffer ):
@@ -105,7 +105,7 @@ class PlainTransport( BaseTransport ):
           time.sleep( 0.001 )
         else:
           return S_ERROR( "Exception while sending to peer: %s" % str( e ) )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Error while sending: %s" % str( e ) )
     return S_OK( sentBytes )
 

@@ -1,0 +1,124 @@
+""" Test the ProxyPlugin class"""
+
+__RCSID__ = "$Id $"
+
+
+import unittest
+import mock
+from DIRAC import S_OK
+from DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin import ProxyPlugin
+
+
+def mock_getProxyInfo():
+  return S_OK( {'VOMS': ['/lhcb/Role=user'],
+            'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen]',
+            'group': 'lhcb_user',
+            'groupProperties': ['NormalUser', 'SuperProperty'],
+            'hasVOMS': True,
+            'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen',
+            'isLimitedProxy': False,
+            'isProxy': True,
+            'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
+            'path': '/tmp/x509up_u12345',
+            'rfc': False,
+            'secondsLeft': 86026,
+            'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
+            'username': 'chaen',
+            'validDN': True,
+            'validGroup': True} )
+
+class TestProxyPlugin( unittest.TestCase ):
+  """ Test the FilenamePlugin class"""
+  
+
+  @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
+  def test_01_username( self, _mockProxyInfo ):
+    """ Testing username attribute"""
+
+    # the username is chaen
+    self.assert_( not ProxyPlugin( 'username.in(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'username.not_in(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'username.in(toto, chaen)' ).eval() )
+    self.assert_( not ProxyPlugin( 'username.not_in(toto, chaen)' ).eval() )
+
+    # Testing some more formating with spaces and quotes
+
+    self.assert_( not ProxyPlugin( 'username.in( toto )' ).eval() )
+    self.assert_( ProxyPlugin( 'username.not_in("toto")' ).eval() )
+    self.assert_( ProxyPlugin( 'username.in(toto,"chaen")' ).eval() )
+    self.assert_( not ProxyPlugin( "username.not_in('toto' ,chaen)" ).eval() )
+
+
+  @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
+  def test_02_group( self, _mockProxyInfo ):
+    """ Testing group attribute"""
+
+    # the group is lhcb_user
+    self.assert_( not ProxyPlugin( 'group.in(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'group.not_in(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'group.in(toto, lhcb_user)' ).eval() )
+    self.assert_( not ProxyPlugin( 'group.not_in(toto, lhcb_user)' ).eval() )
+
+    # Testing some more formating with spaces and quotes
+
+    self.assert_( not ProxyPlugin( 'group.in( toto )' ).eval() )
+    self.assert_( ProxyPlugin( 'group.not_in("toto")' ).eval() )
+    self.assert_( ProxyPlugin( 'group.in(toto,"lhcb_user")' ).eval() )
+    self.assert_( not ProxyPlugin( "group.not_in('toto' ,lhcb_user)" ).eval() )
+
+
+  @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
+  def test_03_property( self, _mockProxyInfo ):
+    """ Testing property attribute"""
+
+    # the properties are 'NormalUser', 'SuperProperty'
+    self.assert_( not ProxyPlugin( 'property.has(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'property.has_not(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'property.has(SuperProperty)' ).eval() )
+    self.assert_( not ProxyPlugin( 'property.has_not(SuperProperty)' ).eval() )
+
+  @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
+  def test_04_voms( self, _mockProxyInfo ):
+    """ Testing voms attribute"""
+
+    # the voms role is /lhcb/Role=user
+    self.assert_( not ProxyPlugin( 'voms.has(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'voms.has_not(toto)' ).eval() )
+    self.assert_( ProxyPlugin( 'voms.has(/lhcb/Role->user)' ).eval() )
+    self.assert_( not ProxyPlugin( 'voms.has_not(/lhcb/Role->user)' ).eval() )
+
+
+  @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
+  def test_05_errors( self, _mockProxyInfo ):
+    """ Testing errors handling"""
+
+
+    # Non existing attribute
+    with self.assertRaises( RuntimeError ):
+      ProxyPlugin( 'boom.boom(something)' ).eval()
+
+
+    # Non matching predicate with the attribute
+    with self.assertRaises( RuntimeError ):
+      ProxyPlugin( 'username.boom(something)' ).eval()
+
+    with self.assertRaises( RuntimeError ):
+      ProxyPlugin( 'group.boom(something)' ).eval()
+
+    with self.assertRaises( RuntimeError ):
+      ProxyPlugin( 'property.boom(something)' ).eval()
+
+    with self.assertRaises( RuntimeError ):
+      ProxyPlugin( 'voms.boom(something)' ).eval()
+
+    # impossible parsing
+    with self.assertRaises( AttributeError ):
+      ProxyPlugin( 'cannotbeparsed' ).eval()
+
+
+
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestProxyPlugin )
+
+  unittest.TextTestRunner( verbosity = 2 ).run( suite )

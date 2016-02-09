@@ -349,7 +349,7 @@ class Watchdog( object ):
         self.log.error( "CPU time consumed found to be 0" )
         return S_ERROR()
 
-    except Exception, e:
+    except Exception as e:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
       self.log.exception( e )
       return S_ERROR( "Could not determine CPU time consumed with exception" )
@@ -503,7 +503,7 @@ class Watchdog( object ):
           return S_OK()
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
-    except Exception, e:
+    except Exception as e:
       self.log.error( "Cannot convert CPU consumed from string to int", str( e ) )
 
     return S_OK()
@@ -525,7 +525,7 @@ class Watchdog( object ):
       mins = float( cpuHMS[1] ) * 60
       secs = float( cpuHMS[2] )
       cpuValue = float( hours + mins + secs )
-    except Exception, x:
+    except Exception as x:
       self.log.warn( str( x ) )
       return S_ERROR( 'Could not calculate CPU time' )
 
@@ -815,7 +815,7 @@ class Watchdog( object ):
         self.__setJobParamList( parameters )
 
       self.log.info( '==========================================================' )
-    except Exception, x:
+    except Exception as x:
       self.log.warn( 'Problem while reporting parameters' )
       self.log.warn( str( x ) )
 

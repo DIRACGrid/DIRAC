@@ -76,7 +76,7 @@ class DataCache( object ):
       fd = file( filename, "rb" )
       data = fd.read()
       fd.close()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( e ) ) )
     return S_OK( data )
 

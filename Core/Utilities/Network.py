@@ -94,7 +94,7 @@ def splitURL( url ):
 def getIPsForHostName( hostName ):
   try:
     ips = [ t[4][0] for t in socket.getaddrinfo( hostName, 0 ) ]
-  except Exception, e:
+  except Exception as e:
     return S_ERROR( "Can't get info for host %s: %s" % ( hostName, str( e ) ) )
   uniqueIPs = []
   for ip in ips:

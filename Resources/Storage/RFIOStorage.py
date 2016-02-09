@@ -202,6 +202,12 @@ class RFIOStorage( StorageBase ):
     for pfn in urls:
       if not successful[pfn].has_key( 'Migrated' ):
         successful[pfn]['Migrated'] = False
+        
+        
+    # Update all the metadata with the common one
+    for lfn in successful:
+      successful[lfn] = self._addCommonMetadata( successful[lfn] )
+
     resDict = {'Failed':{}, 'Successful':successful}
     return S_OK( resDict )
 
@@ -570,7 +576,7 @@ class RFIOStorage( StorageBase ):
       else:
         tURL = "castor:%s" % ( path )
       return S_OK( tURL )
-    except Exception, x:
+    except Exception as x:
       errStr = "RFIOStorage.__getTransportURL: Exception while creating turl."
       gLogger.exception( errStr, self.name, x )
       return S_ERROR( errStr )

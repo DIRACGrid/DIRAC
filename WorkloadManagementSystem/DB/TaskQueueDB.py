@@ -186,13 +186,12 @@ class TaskQueueDB( DB ):
     for field in singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR( "Missing mandatory field '%s' in task queue definition" % field )
-      fieldValueType = type( tqDefDict[ field ] )
       if field in [ "CPUTime" ]:
-        if fieldValueType not in ( types.IntType, types.LongType ):
-          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        if not isinstance( tqDefDict[field], ( int, long ) ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, type( tqDefDict[field] ) ) )
       else:
-        if fieldValueType not in ( types.StringType, types.UnicodeType ):
-          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        if not isinstance( tqDefDict[field], basestring ):
+          return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, type( tqDefDict[field] ) ) )
         result = self._escapeString( tqDefDict[ field ] )
         if not result[ 'OK' ]:
           return result
@@ -200,9 +199,8 @@ class TaskQueueDB( DB ):
     for field in multiValueDefFields:
       if field not in tqDefDict:
         continue
-      fieldValueType = type( tqDefDict[ field ] )
-      if fieldValueType not in ( types.ListType, types.TupleType ):
-        return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, fieldValueType ) )
+      if not isinstance( tqDefDict[field], ( list, tuple ) ):
+        return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, type( tqDefDict[field] ) ) )
       result = self._escapeValues( tqDefDict[ field ] )
       if not result[ 'OK' ]:
         return result
@@ -220,18 +218,16 @@ class TaskQueueDB( DB ):
     Check a task queue match dict is valid
     """
     def travelAndCheckType( value, validTypes, escapeValues = True ):
-      valueType = type( value )
-      if valueType in ( types.ListType, types.TupleType ):
+      if isinstance( value, ( list, tuple ) ):
         for subValue in value:
-          subValueType = type( subValue )
-          if subValueType not in validTypes:
-            return S_ERROR( "List contained type %s is not valid -> %s" % ( subValueType, validTypes ) )
+          if not isinstance( subValue, validTypes ):
+            return S_ERROR( "List contained type %s is not valid -> %s" % ( type( subValue ), validTypes ) )
         if escapeValues:
           return self._escapeValues( value )
         return S_OK( value )
       else:
-        if valueType not in validTypes:
-          return S_ERROR( "Type %s is not valid -> %s" % ( valueType, validTypes ) )
+        if not isinstance( value, validTypes ):
+          return S_ERROR( "Type %s is not valid -> %s" % ( type( value ), validTypes ) )
         if escapeValues:
           return self._escapeString( value )
         return S_OK( value )
@@ -250,9 +246,9 @@ class TaskQueueDB( DB ):
         continue
       fieldValue = tqMatchDict[ field ]
       if field in [ "CPUTime" ]:
-        result = travelAndCheckType( fieldValue, ( types.IntType, types.LongType ), escapeValues = False )
+        result = travelAndCheckType( fieldValue, ( int, long ), escapeValues = False )
       else:
-        result = travelAndCheckType( fieldValue, ( types.StringType, types.UnicodeType ) )
+        result = travelAndCheckType( fieldValue, basestring )
       if not result[ 'OK' ]:
         return S_ERROR( "Match definition field %s failed : %s" % ( field, result[ 'Message' ] ) )
       tqMatchDict[ field ] = result[ 'Value' ]
@@ -261,7 +257,7 @@ class TaskQueueDB( DB ):
       for field in ( multiField, "Banned%s" % multiField, "Required%s" % multiField ):
         if field in tqMatchDict:
           fieldValue = tqMatchDict[ field ]
-          result = travelAndCheckType( fieldValue, ( types.StringType, types.UnicodeType ) )
+          result = travelAndCheckType( fieldValue, basestring )
           if not result[ 'OK' ]:
             return S_ERROR( "Match definition field %s failed : %s" % ( field, result[ 'Message' ] ) )
           tqMatchDict[ field ] = result[ 'Value' ]
