@@ -46,7 +46,7 @@ class DynamicMonitoringDB( object ):
     """
     date = datetime.datetime.utcnow()
 
-    for i in range( maxAge ):
+    for i in xrange( maxAge ):
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
 
       result = self.esDB.checkIndex( indexName )
@@ -65,7 +65,7 @@ class DynamicMonitoringDB( object ):
 
       date = date - datetime.timedelta( days = 1 )
 
-    return S_ERROR( 'No logs for this component found' )
+    return S_ERROR( 'No logs found for the component' )
 
   def getLogHistory( self, host, component, size = 10 ):
     """
