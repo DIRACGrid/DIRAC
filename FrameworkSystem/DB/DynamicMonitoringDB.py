@@ -5,16 +5,16 @@ Class and utilities for managing dynamic monitoring logs in Elasticsearch
 __RCSID__ = "$Id$"
 
 import datetime
-from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
+from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-class DynamicMonitoringDB( object ):
+class DynamicMonitoringDB( ElasticDB ):
   """
   This class manages logs stored in Elasticsearch
   """
 
-  def __init__( self, address, port ):
-    self.esDB = ElasticSearchDB( address, port )
+  def __init__( self, name = 'Framework/ComponentMonitoringDB' ):
+    ElasticDB.__init__( self, 'ComponentMonitoringDB', name )
     self.docType = 'ComponentMonitoring'
 
   def _dictToQuery( self, matchFieldsDict ):
@@ -34,7 +34,7 @@ class DynamicMonitoringDB( object ):
     Creates a new log entry in ElasticSearch
     :param dict log: Should be a dictionary containing the logging information to be stored
     """
-    return self.esDB.addToIndex( '%s_index' % self.docType.lower(), self.docType, log )
+    return self.addToIndex( '%s_index' % self.docType.lower(), self.docType, log )
 
   def getLastLog( self, host, component, maxAge = 10 ):
     """
@@ -49,10 +49,10 @@ class DynamicMonitoringDB( object ):
     for i in xrange( maxAge ):
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
 
-      result = self.esDB.checkIndex( indexName )
+      result = self.checkIndex( indexName )
       if result[ 'OK' ]:
         if result[ 'Value' ]:
-          result = self.esDB.query( indexName, { 'query': \
+          result = self.query( indexName, { 'query': \
             { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } } \
             , 'sort': { 'timestamp': { 'order': 'desc' } }, 'size': 1 } )
           if result[ 'OK' ]:
@@ -81,10 +81,10 @@ class DynamicMonitoringDB( object ):
     while len( logs ) < size:
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
 
-      result = self.esDB.checkIndex( indexName )
+      result = self.checkIndex( indexName )
       if result[ 'OK' ]:
         if result[ 'Value' ]:
-          result = self.esDB.query( indexName, { 'query': \
+          result = self.query( indexName, { 'query': \
             { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } } \
             , 'sort': { 'timestamp': { 'order': 'desc' } }, 'size': size - len( logs ) } )
           if not result[ 'OK' ]:
@@ -130,15 +130,15 @@ class DynamicMonitoringDB( object ):
     while date >= initialDateFormatted:
       indexName = '%s_index-%s' % ( self.docType.lower(), date.strftime( '%Y-%m-%d' ) )
 
-      result = self.esDB.getDocCount( indexName )
+      result = self.getDocCount( indexName )
       if not result[ 'OK' ]:
         return result
       nDocs = result[ 'Value' ]
 
-      result = self.esDB.checkIndex( indexName )
+      result = self.checkIndex( indexName )
       if result[ 'OK' ]:
         if result[ 'Value' ]:
-          result = self.esDB.query( indexName, { 'query': { 'filtered': {
+          result = self.query( indexName, { 'query': { 'filtered': {
             'query': { 'bool' : { 'must': [ { 'match': { 'host': host } }, { 'match': { 'component': component } } ] } }, \
             'filter': { 'range': { 'timestamp': { 'from': initialDateFormatted, 'to': endDateFormatted } } } } }, \
             'sort': { 'timestamp': { 'order': 'desc' } }, 'size': nDocs } )
@@ -162,7 +162,7 @@ class DynamicMonitoringDB( object ):
     Deletes all the logs for the specified component regardless of date
     :param dict matchFields: Dictionary containing pairs key-value that should match in the logs to be deleted
     """
-    result = self.esDB.deleteDocuments( { 'query': self._dictToQuery( matchFields ) } )
+    result = self.deleteDocuments( { 'query': self._dictToQuery( matchFields ) } )
     if not result[ 'OK' ]:
       return result
 
@@ -175,7 +175,7 @@ class DynamicMonitoringDB( object ):
     """
     indexesToDelete = reduce( lambda x, y: [x] + [y], map( lambda x: '%s_index-%s' % ( self.docType.lower(), x.strftime( '%Y-%m-%d' ) ), dates ) )
 
-    result = self.esDB.deleteIndexes( indexesToDelete )
+    result = self.deleteIndexes( indexesToDelete )
     if not result[ 'OK' ]:
       return result
 
