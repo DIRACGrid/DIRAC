@@ -1,8 +1,8 @@
 # $HeadURL:  $
 ''' BaseAction
-  
+
   Base class for Actions.
-  
+
 '''
 
 from DIRAC import gLogger
@@ -13,16 +13,16 @@ class BaseAction( object ):
   '''
     Base class for all actions. It defines a constructor an a run main method.
   '''
-  
+
   def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults, clients ):
 
     # enforcementResult supposed to look like:
-    # { 
+    # {
     #   'Status'        : <str>,
-    #   'Reason'        : <str>, 
+    #   'Reason'        : <str>,
     #   'PolicyActions' : <list>,
     #   [ 'EndDate' : <str> ]
-    # } 
+    # }
 
     # decisionParams supposed to look like:
     # {
@@ -47,7 +47,7 @@ class BaseAction( object ):
     '''
       Method to be over written by the real actions
     '''
-    
+
     self.log.warn( '%s: you may want to overwrite this method' % self.actionName )
 
 ################################################################################

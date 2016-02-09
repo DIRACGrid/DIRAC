@@ -44,6 +44,10 @@ pip-log.txt
 *.un~
 Session.vim
 
+# Intellij
+.idea/
+DIRAC.iml
+
 # test stuff
 .cache
 __pycache__
