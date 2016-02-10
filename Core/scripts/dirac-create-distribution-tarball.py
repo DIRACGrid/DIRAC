@@ -284,8 +284,6 @@ class TarModuleCreator( object ):
     self.replaceKeywordsWithGit( fDirName )
 
     shutil.rmtree( "%s/.git" % fDirName, ignore_errors=True )
-    shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
-    shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
 
     if exportRes:
       return S_ERROR( "Error while exporting from git" )
@@ -511,6 +509,8 @@ class TarModuleCreator( object ):
     result = self.__checkoutSource()
     if not result[ 'OK' ]:
       return result
+    shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
+    shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
