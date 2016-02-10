@@ -5,7 +5,6 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-import cmd
 import sys
 import signal
 import types
@@ -13,7 +12,7 @@ import atexit
 import os
 import readline
 
-from DIRAC.Core.Utilities.ColorCLI import colorize
+from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -39,10 +38,10 @@ def _appendExtensionIfMissing( filename ):
   return "%s.cfg" % filename
 
 
-class CSCLI( cmd.Cmd ):
+class CSCLI( CLI ):
 
   def __init__( self ):
-    cmd.Cmd.__init__( self )
+    CLI.__init__( self )
     self.connected = False
     self.masterURL = "unset"
     self.writeEnabled = False
@@ -53,11 +52,8 @@ class CSCLI( cmd.Cmd ):
       self.modificator = Modificator ( self.rpcClient )
     else:
       self.modificator = Modificator()
-    self.identSpace = 20
+    self.indentSpace = 20
     self.backupFilename = "dataChanges"
-    self._initSignals()
-    #User friendly hack
-    self.do_exit = self.do_quit
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
@@ -83,16 +79,6 @@ class CSCLI( cmd.Cmd ):
       gLogger.warn( "Received a keyboard interrupt." )
       self.do_quit( "" )
 
-  def _initSignals( self ):
-    """
-    Registers signal handlers
-    """
-    for sigNum in ( signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM ):
-      try:
-        signal.signal( sigNum, self.do_quit )
-      except:
-        pass
-
   def _setConnected( self, connected, writeEnabled ):
     self.connected = connected
     self.modifiedData = False
@@ -105,57 +91,19 @@ class CSCLI( cmd.Cmd ):
     else:
       self.prompt = "(%s)-%s> " % ( self.masterURL, colorize( "Disconnected", "red" ) )
 
-
-  def _printPair( self, key, value, separator = ":" ):
-    valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.identSpace - len( key ) ), separator, valueList[0].strip() )
-    for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.identSpace, valueLine.strip() )
-
   def do_quit( self, dummy ):
     """
     Exits the application without sending changes to server
 
     Usage: quit
     """
+    print
     if self.modifiedData:
       print "Changes are about to be written to file for later use."
       self.do_writeToFile( self.backupFilename )
       print "Changes written to %s.cfg" % self.backupFilename
     sys.exit( 0 )
 
-  def do_EOF( self, args ):
-    """
-    Accepts ctrl^D to quit CLI
-    """
-    print ""
-    self.do_quit( args )
-
-  def do_help( self, args ):
-    """
-    Shows help information
-
-    Usage: help <command>
-
-    If no command is specified all commands are shown
-
-    """
-    if len( args ) == 0:
-      print "\nAvailable commands:\n"
-      attrList = dir( self )
-      attrList.sort()
-      for attribute in attrList:
-        if attribute.find( "do_" ) == 0:
-          self._printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-          print ""
-    else:
-      command = args.split()[0].strip()
-      try:
-        obj = getattr( self, "do_%s" % command )
-      except:
-        print "There's no such %s command" % command
-        return
-      self._printPair( command, obj.__doc__[1:] )
 
 #  def retrieveData( self ):
 #    if not self.connected:
@@ -236,7 +184,7 @@ class CSCLI( cmd.Cmd ):
         return
       for section in sectionList:
         section = "%s/%s" % ( baseSection, section )
-        self._printPair( section, self.modificator.getComment( section ) , "#" )
+        self.printPair( section, self.modificator.getComment( section ) , " #" )
     except:
       _showTraceback()
 
@@ -262,7 +210,7 @@ class CSCLI( cmd.Cmd ):
         return
       for option in optionsList:
         _printComment( self.modificator.getComment( "%s/%s" % ( section, option ) ) )
-        self._printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
+        self.printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
     except:
       _showTraceback()
 
@@ -282,7 +230,7 @@ class CSCLI( cmd.Cmd ):
       if self.modificator.existsOption( optionPath ):
         option = optionPath.split( "/" )[-1]
         _printComment( self.modificator.getComment( optionPath ) )
-        self._printPair( option, self.modificator.getValue( optionPath ), "=" )
+        self.printPair( option, self.modificator.getValue( optionPath ), "=" )
       else:
         print "Option %s does not exist" % optionPath
     except:
@@ -502,7 +450,7 @@ class CSCLI( cmd.Cmd ):
       history = self.modificator.getHistory( limit )
       print "%s recent commits:" % limit
       for entry in history:
-        self._printPair( entry[0], entry[1], "@" )
+        self.printPair( entry[0], entry[1], "@" )
     except:
       _showTraceback()
 

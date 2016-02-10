@@ -79,12 +79,15 @@ class RegisterFile( OperationHandlerBase ):
         gMonitor.addMark( "RegisterFail", 1 )
 #        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
-        reason = registerFile.get( "Message", registerFile.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) )
+        reason = str( registerFile.get( "Message", registerFile.get( "Value", {} ).get( "Failed", {} ).get( lfn, 'Unknown' ) ) )
         errorStr = "failed to register LFN"
         opFile.Error = "%s: %s" % ( errorStr, reason )
         if 'GUID already registered' in reason:
           opFile.Status = 'Failed'
           self.log.error( errorStr, "%s: %s" % ( lfn, reason ) )
+        elif 'File already registered with no replicas' in reason:
+          self.log.warn( errorStr, "%s: %s, will remove it and retry" % ( lfn, reason ) )
+          dm.removeFile( lfn )
         else:
           self.log.warn( errorStr, "%s: %s" % ( lfn, reason ) )
         failedFiles += 1
