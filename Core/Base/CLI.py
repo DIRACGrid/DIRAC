@@ -43,6 +43,7 @@ class CLI( cmd.Cmd ):
   def __init__( self ):
 
     cmd.Cmd.__init__( self )
+    self.indentSpace = 20
     self._initSignals()
 
   def _handleSignal( self, sig, frame ):
@@ -115,3 +116,32 @@ class CLI( cmd.Cmd ):
         self._errMsg( str( error ) )
         break
     return
+
+  def printPair( self, key, value, separator=":" ):
+    valueList = value.split( "\n" )
+    print "%s%s%s %s" % ( key, " " * ( self.indentSpace - len( key ) ), separator, valueList[0].strip() )
+    for valueLine in valueList[ 1:-1 ]:
+      print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
+
+  def do_help( self, args ):
+    """
+    Shows help information
+        Usage: help <command>
+        If no command is specified all commands are shown
+    """
+    if len( args ) == 0:
+      print "\nAvailable commands:\n"
+      attrList = dir( self )
+      attrList.sort()
+      for attribute in attrList:
+        if attribute.startswith("do_"):
+          self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
+          print ""
+    else:
+      command = args.split()[0].strip()
+      try:
+        obj = getattr( self, "do_%s" % command )
+      except:
+        print "There's no such %s command" % command
+        return
+      self.printPair( command, obj.__doc__[1:] )
