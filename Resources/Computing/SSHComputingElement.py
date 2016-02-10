@@ -271,6 +271,8 @@ class SSHComputingElement( ComputingElement ):
     """ Process CE parameters and make necessary adjustments
     """
     self.batchSystem = self.ceParameters.get( 'BatchSystem', 'Host' )
+    if not 'BatchSystem' in self.ceParameters:
+      self.ceParameters['BatchSystem'] = self.batchSystem
     self.loadBatchSystem()
 
     self.user = self.ceParameters['SSHUser']
