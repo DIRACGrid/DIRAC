@@ -910,7 +910,7 @@ DELIMITER ;
 
 
 -- ps_delete_files : delete files from file ids and update the DirectoryUsage table. 
---                   CAREFUL : the cascade delete also removes the replicas but will not update DierctoryUsage
+--                   CAREFUL : the cascade delete also removes the replicas but will not update DirectoryUsage
 -- file_ids list of file ids
 -- output 0, 'OK'
 
