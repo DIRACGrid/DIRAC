@@ -63,6 +63,7 @@ class ComputingElement(object):
     self.valid = None
     self.mandatoryParameters = []
     self.batch = None
+    self.batchSystem = None
 
     self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
@@ -175,7 +176,8 @@ class ComputingElement(object):
   def loadBatchSystem( self ):
     """ Instantiate object representing the backend batch system
     """
-    self.batchSystem = self.ceParameters['BatchSystem']
+    if self.batchSystem is None:
+      self.batchSystem = self.ceParameters['BatchSystem']
     objectLoader = ObjectLoader()
     result = objectLoader.loadObject( 'Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem )
     if not result['OK']:
