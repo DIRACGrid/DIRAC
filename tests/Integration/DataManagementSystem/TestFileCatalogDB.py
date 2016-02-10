@@ -625,30 +625,51 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
         and return the tuple (files, size) for a given
         directory and a se
     """
-    try:
-      val = sizeDict[dirName]['PhysicalSize'][seName]
-      files = val['Files']
-      size = val['Size']
-      return ( files, size )
     
-    except Exception as e:
-      raise
+    val = sizeDict[dirName]['PhysicalSize'][seName]
+    files = val['Files']
+    size = val['Size']
+    return ( files, size )
+
 
   def getLogicalSize( self, sizeDict, dirName ):
     """ Extract the information from a ret dictionary
         and return the tuple (files, size) for a given
         directory and a se
     """
-    try:
-      files = sizeDict[dirName]['LogicalFiles']
-      size = sizeDict[dirName]['LogicalSize']
-      return ( files, size )
+    files = sizeDict[dirName]['LogicalFiles']
+    size = sizeDict[dirName]['LogicalSize']
+    return ( files, size )
 
-    except Exception as e:
-#       print e
-#       print "sizeDict %s" % sizeDict
-#       print "dirName %s" % dirName
-      raise
+
+  def getAndCompareDirectorySize( self, dirList ):
+    """ Fetch the directory size from the DirectoryUsage table
+        and calculate it, compare the results, and then return
+        the values
+    """
+    
+    
+    retTable = self.db.getDirectorySize( dirList, True, False, credDict )
+    retCalc = self.db.getDirectorySize( dirList, True, True, credDict )
+
+    self.assert_( retTable["OK"] )
+    self.assert_( retCalc["OK"] )
+    
+
+    succTable = retTable['Value']['Successful']
+    succCalc = retCalc['Value']['Successful']
+
+    # Since we have simple type, the == is recursive for dict :-)
+    retEquals = ( succTable == succCalc )
+
+    self.assert_( retEquals, "Calc and table results different %s %s" % ( succTable, succCalc ) )
+
+    return retTable
+
+
+
+
+
 
   def test_directoryUsage( self ):
     """Testing DirectoryUsage related operation"""
@@ -684,7 +705,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
                                          'SE': 'se1' ,
                                          'Size':f1Size,
-                                         'GUID':'1000',
+                                         'GUID':'1002',
                                          'Checksum':'1' },
                              f2: { 'PFN': 'f2se2',
                                          'SE': 'se2' ,
@@ -693,9 +714,11 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
                                          'Checksum':'2' } }, credDict )
 
 
+
     self.assert_( ret["OK"] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
+
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -713,7 +736,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
 
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -731,7 +754,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.removeFile( [f1], credDict )
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -753,7 +776,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.removeReplica( {f2 : { "SE" : "se2"}}, credDict )
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -773,18 +796,18 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
                                          'SE': 'se1' ,
                                          'Size':f1Size,
-                                         'GUID':'1000',
+                                         'GUID':'1002',
                                          'Checksum':'1' },
                              f3: { 'PFN': 'f3se3',
                                          'SE': 'se3' ,
                                          'Size':f3Size,
-                                         'GUID':'1002',
+                                         'GUID':'1003',
                                          'Checksum':'3' } }, credDict )
 
 
     self.assert_( ret["OK"] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -804,7 +827,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.removeReplica( {f1 : { "SE" : "se1"}}, credDict )
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -830,7 +853,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.removeFile( [f1], credDict )
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -856,7 +879,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
                                   f3 : { "SE" : "se3"}}, credDict )
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -889,7 +912,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     ret = self.db.removeFile( [f2, f3], credDict )
     self.assert_( ret['OK'] )
 
-    ret = self.db.getDirectorySize( [d1, d2], True, False, credDict )
+    ret = self.getAndCompareDirectorySize( [d1, d2] )
     self.assert_( ret["OK"] )
     val = ret['Value']['Successful']
 
@@ -918,20 +941,69 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     self.assertEqual( d2l , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d2l, ( 0, 0 ) ) )
 
 
-#     self.assert_( testDir in result["Value"]["Successful"], "getDirectorySize : %s should be in Successful %s" % ( testDir, result ) )
-#     self.assertEqual( result["Value"]["Successful"][testDir], {'LogicalFiles': 1, 'LogicalDirectories': 0, 'LogicalSize': 123}, "getDirectorySize got incorrect directory size %s" % result )
-#     self.assert_( nonExistingDir in result["Value"]["Failed"], "getDirectorySize : %s should be in Failed %s" % ( nonExistingDir, result ) )
-#
-#
-#     result = self.db.getDirectorySize( [testDir, nonExistingDir], False, True, credDict )
-#     self.assert_( result["OK"], "getDirectorySize (calc) failed: %s" % result )
-#     self.assert_( testDir in result["Value"]["Successful"], "getDirectorySize (calc): %s should be in Successful %s" % ( testDir, result ) )
-#     self.assertEqual( result["Value"]["Successful"][testDir], {'LogicalFiles': 1, 'LogicalDirectories': 0, 'LogicalSize': 123}, "getDirectorySize got incorrect directory size %s" % result )
-#     self.assert_( nonExistingDir in result["Value"]["Failed"], "getDirectorySize (calc) : %s should be in Failed %s" % ( nonExistingDir, result ) )
+
+    # Removing Replicas and Files from the same directory
 
 
+    ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
+                                         'SE': 'se1' ,
+                                         'Size':f1Size,
+                                         'GUID':'1002',
+                                         'Checksum':'1' },
+                             f2: { 'PFN': 'f2se2',
+                                         'SE': 'se1' ,
+                                         'Size':f2Size,
+                                         'GUID':'1001',
+                                         'Checksum':'2' } }, credDict )
 
 
+    ret = self.db.removeReplica( {f1 : { "SE" : "se1"},
+                                  f2 : { "SE" : "se1"}}, credDict )
+    self.assert_( ret['OK'] )
+
+    ret = self.getAndCompareDirectorySize( [d1] )
+    self.assert_( ret["OK"] )
+    val = ret['Value']['Successful']
+
+
+    try:
+      d1s1 = self.getPhysicalSize( val, d1, 'se1' )
+    except KeyError:
+      d1s1 = ( 0, 0 )
+    self.assertEqual( d1s1 , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1s1, ( 0, 0 ) ) )
+
+
+    ret = self.db.removeFile( [f1, f2], credDict )
+    self.assert_( ret['OK'] )
+
+    ret = self.getAndCompareDirectorySize( [d1] )
+    self.assert_( ret["OK"] )
+    val = ret['Value']['Successful']
+    d1l = self.getLogicalSize( val, d1 )
+    self.assertEqual( d1l , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1l, ( 0, 0 ) ) )
+    
+    
+    # Try removing a replica from a non existing SE
+    
+    ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
+                                         'SE': 'se1' ,
+                                         'Size':f1Size,
+                                         'GUID':'1002',
+                                         'Checksum':'1' }}, credDict )
+
+    ret = self.db.removeReplica( {f1 : { "SE" : "se2"}}, credDict )
+
+    self.assert_( ret['OK'] )
+
+    ret = self.getAndCompareDirectorySize( [d1] )
+    self.assert_( ret["OK"] )
+    val = ret['Value']['Successful']
+
+    try:
+      d1s2 = self.getPhysicalSize( val, d1, 'se2' )
+    except KeyError:
+      d1s2 = ( 0, 0 )
+    self.assertEqual( d1s2 , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1s2, ( 0, 0 ) ) )
 
 
 if __name__ == '__main__':
