@@ -1,3 +1,25 @@
+[v6r14p19]
+
+*Core
+NEW: CLI base class for all the DIRAC CLI consoles, common methods moved to the new class,
+     XXXCLI classes updated to inherit the base class
+FIX: Network - fix crash when path is empty string, fixes partly #2413     
+     
+*Configuration
+FIX: Utilities.addToChangeSet() - fix the case when comma is in the BDII Site description 
+     followed by a white space, the description string was constantly updated in the CS
+
+*Interfaces
+FIX: Dirac.py - in retrieveRepositorySandboxes/Data - "Retrieved" and "OutputData" key values
+     are strings '0' in the jobDict when a repository file is read, need to cast it to int
+
+*DMS
+FIX: RegisterReplica - if operation fails on a file that no longer exists and has no 
+     replica at that SE, consider the operation as Done.
+
+*Resources
+FIX: ARCComputingElement - bug fix in getJobOutput in using the S_ERROR()
+
 [v6r14p18]
 
 *Core
