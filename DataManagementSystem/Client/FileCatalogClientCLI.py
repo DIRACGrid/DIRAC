@@ -2223,7 +2223,7 @@ File Catalog Client $Revision: 1.17 $Date:
       return 
       
     total = time.time() - start
-    print "Catalog repaired in %.2f sec", total
+    print "Catalog repaired in %.2f sec" % total
       
 if __name__ == "__main__":
   
