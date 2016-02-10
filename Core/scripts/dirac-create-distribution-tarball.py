@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 ########################################################################
 # $HeadURL$
-# File :    dirac-distribution-create-tarball
+# File :    dirac-create-distribution-tarball
 # Author :  Adria Casajus
 ########################################################################
 """
@@ -283,7 +283,7 @@ class TarModuleCreator( object ):
     gLogger.notice( "Replacing keywords (can take a while)..." )
     self.replaceKeywordsWithGit( fDirName )
 
-    shutil.rmtree( "%s/.git" % fDirName )
+    shutil.rmtree( "%s/.git" % fDirName, ignore_errors=True )
 
     if exportRes:
       return S_ERROR( "Error while exporting from git" )
@@ -486,6 +486,8 @@ class TarModuleCreator( object ):
     tarName = "%s-%s.tar.gz" % ( self.params.name, self.params.version )
     tarfilePath = os.path.join( destDir, tarName )
     dirToTar = os.path.join( self.params.destination, self.params.name )
+    if self.params.name in os.listdir(self.params.destination ):
+      dirToTar = os.path.join(dirToTar, self.params.name)
     result = Distribution.writeVersionToInit( dirToTar, self.params.version )
     if not result[ 'OK' ]:
       return result
@@ -509,6 +511,8 @@ class TarModuleCreator( object ):
     result = self.__checkoutSource()
     if not result[ 'OK' ]:
       return result
+    shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
+    shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
