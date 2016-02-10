@@ -2227,6 +2227,26 @@ File Catalog Client $Revision: 1.17 $Date:
     total = time.time() - start
     print "Catalog repaired in %.2f sec", total      
       
+  def do_execfile( self, args ):
+    """ Execute a file, line by line
+    
+        Usage:
+            execfile my_favorite_file_path
+    """
+    args = args.split()
+    fname = args[0]
+    if not os.path.exists(fname):
+      print "Error: File not found %s" % fname
+      return
+    with open(fname, "r") as input_cmd:
+      contents = input_cmd.readlines()
+    for line in contents:
+      try:
+        self.onecmd(line)
+      except Exception as error:
+        print error
+    return
+    
   def do_exit(self, args):
     """ Exit the shell.
 
@@ -2235,7 +2255,13 @@ File Catalog Client $Revision: 1.17 $Date:
     sys.exit(0)
 
   def emptyline(self): 
-    pass      
+    pass
+  
+  def do_EOF(self, args):
+    """ Exit on EOF, duh!
+    """
+    print "\n"
+    sys.exit(0)
       
 if __name__ == "__main__":
   
