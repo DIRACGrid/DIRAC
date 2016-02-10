@@ -207,8 +207,8 @@ class SiteDirector( AgentModule ):
         self.log.always( "Agent will serve queues:" )
         for queue in self.queueDict:
           self.log.always( "Site: %s, CE: %s, Queue: %s" % ( self.queueDict[queue]['Site'],
-                                                           self.queueDict[queue]['CEName'],
-                                                           queue ) )
+                                                             self.queueDict[queue]['CEName'],
+                                                             queue ) )
     self.firstPass = False
     return S_OK()
 
@@ -408,7 +408,7 @@ class SiteDirector( AgentModule ):
     tqIDList = result['Value'].keys()
     result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
                                           'Status': WAITING_PILOT_STATUS },
-                                           None )
+                                          None )
     totalWaitingPilots = 0
     if result['OK']:
       totalWaitingPilots = result['Value']
@@ -605,7 +605,7 @@ class SiteDirector( AgentModule ):
             self.log.error( 'Failed add pilots to the PilotAgentsDB: ', result['Message'] )
             continue
           for pilot in pilotList:
-            result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
+            result = pilotAgentsDB.setPilotStatus(pilot, 'Submitted', ceName,
                                                   'Successfully submitted by the SiteDirector',
                                                   siteName, queueName )
             if not result['OK']:
@@ -987,11 +987,11 @@ EOF
       ceType = self.queueDict[queue]['CEType']
       siteName = self.queueDict[queue]['Site']
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
-                                           'Queue':queueName,
-                                           'GridType':ceType,
-                                           'GridSite':siteName,
-                                           'OutputReady':'False',
-                                           'Status':FINAL_PILOT_STATUS} )
+                                            'Queue':queueName,
+                                            'GridType':ceType,
+                                            'GridSite':siteName,
+                                            'OutputReady':'False',
+                                            'Status':FINAL_PILOT_STATUS} )
 
       if not result['OK']:
         self.log.error( 'Failed to select pilots', result['Message'] )
