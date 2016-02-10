@@ -280,8 +280,14 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         
         fields = ['Parameter','Value']
         records = []
-        for key, value in result['Value'].items():
-          records.append( [key, str( value ) ] )
+        for parameter in result['Value'].iteritems():
+          if parameter[0] == 'Extension':
+            extensions = parameter[1].split( ',' )
+            for extension in extensions:
+              extensionName, extensionVersion = extension.split( ':' )
+              records.append( [ '%sVersion' % extensionName, str( extensionVersion ) ] )
+          else:
+            records.append( [ parameter[0], str( parameter[1] ) ] )
           
         printTable( fields, records )  
     elif option == "hosts":
