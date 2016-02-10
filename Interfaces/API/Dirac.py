@@ -190,7 +190,8 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        if not jobDict.get( 'Retrieved' ) :
+        ## Value of 'Retrieved' is a string, e.g. '0' when read from file
+        if not int( jobDict.get( 'Retrieved' ) ) :
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
 
@@ -217,7 +218,8 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        if not jobDict.get( 'OutputData' ):
+        ## Value of 'OutputData' is a string, e.g. '0' when read from file
+        if not int( jobDict.get( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
             destDir = "%s/%s" % ( destinationDirectory, jobID )

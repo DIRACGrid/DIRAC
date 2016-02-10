@@ -14,39 +14,39 @@ class SMSAction( BaseAction ):
     Action that sends a brief SMS to the user with a few keywords that will make
     him run to his or her office.
   '''
-  
+
   def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
                 clients = None ):
-    
+
     super( SMSAction, self ).__init__( name, decisionParams, enforcementResult,
                                        singlePolicyResults, clients )
   def run( self ):
     '''
       Checks it has the parameters it needs and tries to send an sms to the users
       that apply.
-    '''    
+    '''
     # Minor security checks
-    
+
     element = self.decisionParams[ 'element' ]
     if element is None:
       return S_ERROR( 'element should not be None' )
-   
+
     name = self.decisionParams[ 'name' ]
     if name is None:
       return S_ERROR( 'name should not be None' )
-    
+
     statusType = self.decisionParams[ 'statusType' ]
     if statusType is None:
       return S_ERROR( 'statusType should not be None' )
-    
-    status = self.enforcementResult[ 'Status' ]    
+
+    status = self.enforcementResult[ 'Status' ]
     if status is None:
       return S_ERROR( 'status should not be None' )
 
     reason = self.enforcementResult[ 'Reason' ]
     if reason is None:
       return S_ERROR( 'reason should not be None' )
-    
+
     if self.decisionParams[ 'status' ] == status:
       # If status has not changed, we skip
       return S_OK()
@@ -54,39 +54,39 @@ class SMSAction( BaseAction ):
     if self.decisionParams[ 'reason' ] == reason:
       # If reason has not changed, we skip
       return S_OK()
-      
-    text = '%s %s is %s ( %s )' % ( name, statusType, status, reason )   
 
-    return self._sendSMS( text )    
+    text = '%s %s is %s ( %s )' % ( name, statusType, status, reason )
+
+    return self._sendSMS( text )
 
   def _sendSMS( self, text ):
-    
+
     #FIXME: implement it !
-    return S_ERROR( 'Not implemented yet' ) 
-    
+    return S_ERROR( 'Not implemented yet' )
+
 #    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 #    diracAdmin = DiracAdmin()
-#    
+#
 #    address = InfoGetter().getNotificationsThatApply( self.decisionParams, self.actionName )
 #    if not address[ 'OK' ]:
-#      return address 
+#      return address
 #    address = address[ 'Value' ]
-#    
+#
 #    for addressDict in address:
 #      if not 'name' in addressDict:
-#        return S_ERROR( 'Malformed address dict %s' % addressDict ) 
+#        return S_ERROR( 'Malformed address dict %s' % addressDict )
 #      if not 'users' in addressDict:
-#        return S_ERROR( 'Malformed address dict %s' % addressDict )     
-#      
+#        return S_ERROR( 'Malformed address dict %s' % addressDict )
+#
 #      for user in addressDict[ 'users' ]:
-#      
+#
 #        # Where are the SMS numbers defined ?
-#      
+#
 #        resSMS = diracAdmin.sendSMS( user, text )
 #        if not resSMS[ 'OK' ]:
-#          return S_ERROR( 'Cannot send SMS to user "%s"' % user )    
-#      
-#    return resSMS 
+#          return S_ERROR( 'Cannot send SMS to user "%s"' % user )
+#
+#    return resSMS
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

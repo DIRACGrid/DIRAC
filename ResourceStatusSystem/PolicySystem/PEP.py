@@ -2,13 +2,13 @@
 
   PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
   Any interaction with it must go through the PEP to ensure a smooth flow.
-  
+
   Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
   module doing all dirty work ( finding policies, running them, merging their
   results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
   of parameters ( decisionParams ) and enforces the actions that apply ( also
   determined by the PDP output ).
-  
+
 """
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
@@ -25,22 +25,22 @@ class PEP( object ):
 
   def __init__( self, clients = dict() ):
     """ Constructor
-    
+
     examples:
       >>> pep = PEP()
       >>> pep1 = PEP( { 'ResourceStatusClient' : ResourceStatusClient() } )
       >>> pep2 = PEP( { 'ResourceStatusClient' : ResourceStatusClient(), 'ClientY' : None } )
-    
+
     :Parameters:
       **clients** - [ None, `dict` ]
         dictionary with clients to be used in the commands issued by the policies.
         If not defined, the commands will import them. It is a measure to avoid
         opening the same connection every time a policy is evaluated.
-        
+
     """
-   
+
     self.clients = dict( clients )
-   
+
     # Creating the client in the PEP is a convenience for the PDP, that
     # uses internally the two TSS clients: ResourceStatusClient and ResouceManagementClient
     if 'ResourceStatusClient' not in clients:
@@ -60,19 +60,19 @@ class PEP( object ):
     three key-pair values: the original decisionParams ( `decisionParams` ), all
     the policies evaluated ( `singlePolicyResults` ) and the computed final result
     ( `policyCombinedResult` ).
-    
+
     To know more about decisionParams, please read PDP.setup where the decisionParams
     are sanitized.
-    
+
     examples:
        >>> pep.enforce( { 'element' : 'Site', 'name' : 'MySite' } )
        >>> pep.enforce( { 'element' : 'Resource', 'name' : 'myce.domain.ch' } )
-    
+
     :Parameters:
       **decisionParams** - `dict`
         dictionary with the parameters that will be used to match policies.
-    
-    """ 
+
+    """
     if not decisionParams:
       self.log.warn( "No decision params...?" )
       return S_OK()
@@ -96,7 +96,7 @@ class PEP( object ):
         self.log.verbose( "Enforce - statusType: %s, status: %s" % ( standardParamsDict['statusType'],
                                                                      standardParamsDict['status'] ) )
     decisionParams = dict( standardParamsDict )
-    
+
     # Setup PDP with new parameters dictionary
     self.pdp.setup( decisionParams )
 
@@ -106,7 +106,7 @@ class PEP( object ):
       self.log.error( "Something went wrong, not enforcing policies", '%s' % decisionParams )
       return resDecisions
     resDecisions = resDecisions[ 'Value' ]
-    
+
     # We take from PDP the decision parameters used to find the policies
     decisionParams = resDecisions[ 'decisionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
@@ -117,9 +117,9 @@ class PEP( object ):
     isNotUpdated = self.__isNotUpdated( decisionParams )
     if not isNotUpdated[ 'OK' ]:
       return isNotUpdated
-                
+
     for policyActionName, policyActionType in policyCombinedResult['PolicyAction']:
-      
+
       try:
         actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyActionType )
       except ImportError:
@@ -130,54 +130,54 @@ class PEP( object ):
         action = getattr( actionMod, policyActionType )
       except AttributeError:
         self.log.error( 'Error importing %s action class' % policyActionType )
-        continue  
-              
+        continue
+
       actionObj = action( policyActionName, decisionParams, policyCombinedResult,
                           singlePolicyResults, self.clients )
-      
+
       self.log.debug( ( policyActionName, policyActionType ) )
-      
+
       actionResult = actionObj.run()
       if not actionResult[ 'OK' ]:
         self.log.error( actionResult[ 'Message' ] )
-        
+
     return S_OK( resDecisions )
 
 
   def __isNotUpdated( self, decisionParams ):
     """ Checks for the existence of the element as it was passed to the PEP. It may
-    happen that while being the element processed by the PEP an user through the 
+    happen that while being the element processed by the PEP an user through the
     web interface or the CLI has updated the status for this particular element. As
     a result, the PEP would overwrite whatever the user had set. This check is not
     perfect, as still an user action can happen while executing the actions, but
     the probability is close to 0. However, if there is an action that takes seconds
     to be executed, this must be re-evaluated. !
-    
+
     :Parameters:
       **decisionParams** - `dict`
         dictionary with the parameters that will be used to match policies
-        
+
     :return: S_OK / S_ERROR
-    
+
     """
-    
+
     # Copy original dictionary and get rid of one key we cannot pass as kwarg
     selectParams = dict( decisionParams )
     del selectParams[ 'element' ]
     del selectParams[ 'active' ]
-    
+
     # We expect to have an exact match. If not, then something has changed and
-    # we cannot proceed with the actions.    
+    # we cannot proceed with the actions.
     unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams[ 'element' ],
                                                                              'Status', **selectParams )
     if not unchangedRow[ 'OK' ]:
       return unchangedRow
-    
+
     if not unchangedRow[ 'Value' ]:
       msg = '%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running' % selectParams
       self.log.error( msg )
       return S_ERROR( msg )
-    
+
     return S_OK()
 
 #...............................................................................

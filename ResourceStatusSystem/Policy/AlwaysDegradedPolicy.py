@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' AlwaysDegradedPolicy module 
+''' AlwaysDegradedPolicy module
 '''
 
 from DIRAC                                              import S_OK
@@ -9,8 +9,8 @@ __RCSID__ = '$Id:  $'
 
 class AlwaysDegradedPolicy( PolicyBase ):
   '''
-    The AlwaysDegradedPolicy is a dummy module that can be used as example, it 
-    always returns Degraded status.   
+    The AlwaysDegradedPolicy is a dummy module that can be used as example, it
+    always returns Degraded status.
   '''
 
   @staticmethod
@@ -20,12 +20,12 @@ class AlwaysDegradedPolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = { 
-                     'Status' : 'Degraded', 
-                     'Reason' : 'AlwaysDegraded' 
+    policyResult = {
+                     'Status' : 'Degraded',
+                     'Reason' : 'AlwaysDegraded'
                    }
-    
+
     return S_OK( policyResult )
-  
-################################################################################ 
+
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

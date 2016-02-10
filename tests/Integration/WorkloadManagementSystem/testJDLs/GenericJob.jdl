@@ -1,0 +1,12 @@
+[
+    Executable = "$DIRACROOT/scripts/dirac-proxy-info";
+    JobName = "GenericJob";
+    OutputSandbox =
+        {
+            "std.err",
+            "std.out"
+        };
+    StdError = "std.err";
+    StdOutput = "std.out";
+    MaxCPUTime = "10";
+]

@@ -3,7 +3,7 @@
 
   Policy that calculates the efficiency following the formula:
     done / ( failed + aborted + done )
-  if the denominator is smaller than 10, it does not take any decision.  
+  if the denominator is smaller than 10, it does not take any decision.
 """
 
 from DIRAC                                              import S_OK
@@ -14,17 +14,17 @@ __RCSID__ = '$Id: $'
 class PilotEfficiencyPolicy( PolicyBase ):
   """ PilotEfficiencyPolicy class, extends PolicyBase
   """
-  
+
   @staticmethod
   def _evaluate( commandResult ):
     """ _evaluate
-    
+
     efficiency < 0.5 :: Banned
     efficiency < 0.9 :: Degraded
-    
+
     """
 
-    result = { 
+    result = {
                'Status' : None,
                'Reason' : None
               }
@@ -32,7 +32,7 @@ class PilotEfficiencyPolicy( PolicyBase ):
     if not commandResult[ 'OK' ]:
       result[ 'Status' ] = 'Error'
       result[ 'Reason' ] = commandResult[ 'Message' ]
-      return S_OK( result )    
+      return S_OK( result )
 
     commandResult = commandResult[ 'Value' ]
 
@@ -40,7 +40,7 @@ class PilotEfficiencyPolicy( PolicyBase ):
       result[ 'Status' ] = 'Unknown'
       result[ 'Reason' ] = 'No values to take a decision'
       return S_OK( result )
-    
+
     commandResult = commandResult[ 0 ]
 
     if not commandResult:
@@ -61,18 +61,18 @@ class PilotEfficiencyPolicy( PolicyBase ):
       result[ 'Status' ] = 'Unknown'
       result[ 'Reason' ] = 'Not enough pilots to take a decision'
       return S_OK( result )
-    
+
     efficiency = done / total
 
     if efficiency < 0.5:
       result[ 'Status' ] = 'Banned'
     elif efficiency < 0.9:
-      result[ 'Status' ] = 'Degraded'  
-    else:   
-      result[ 'Status' ] = 'Active'    
-          
+      result[ 'Status' ] = 'Degraded'
+    else:
+      result[ 'Status' ] = 'Active'
+
     result[ 'Reason' ] = 'Pilots Efficiency of %.2f' % efficiency
     return S_OK( result )
-       
+
 #...............................................................................
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

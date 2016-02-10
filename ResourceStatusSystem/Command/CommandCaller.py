@@ -17,22 +17,22 @@ def commandInvocation( commandTuple, pArgs = None, decisionParams = None, client
   Returns a command object, given commandTuple
 
   :params:
-    `commandTuple`: a tuple, where commandTuple[0] is a module name and 
+    `commandTuple`: a tuple, where commandTuple[0] is a module name and
     commandTuple[1] is a class name (inside the module)
   '''
-    
+
   if commandTuple is None:
     return S_OK( None )
-  
+
   # decission params can be a dictionary passed with all the element parameters
-  # used mostly by the PDP to inject all relevant information  
+  # used mostly by the PDP to inject all relevant information
   if decisionParams is None:
     decisionParams = {}
-      
+
   # arguments hardcoded on Configurations.py for the policy
   if pArgs is None:
-    pArgs = {}  
-    
+    pArgs = {}
+
   try:
     cModule = commandTuple[ 0 ]
     cClass  = commandTuple[ 1 ]
@@ -42,14 +42,14 @@ def commandInvocation( commandTuple, pArgs = None, decisionParams = None, client
 
   if not hasattr( commandModule, cClass ):
     return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
-    
+
   # We merge decision parameters and policy arguments.
   newArgs = copy.deepcopy( decisionParams )
   newArgs.update( pArgs )
-      
-  commandObject = getattr( commandModule, cClass )( newArgs, clients ) 
 
-  return S_OK( commandObject ) 
+  commandObject = getattr( commandModule, cClass )( newArgs, clients )
+
+  return S_OK( commandObject )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -25,7 +25,7 @@ class CacheFeederAgent( AgentModule ):
   '''
 
   # Too many public methods
-  # pylint: disable-msg=R0904
+  # pylint: disable=R0904
 
   def __init__( self, *args, **kwargs ):
 

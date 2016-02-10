@@ -433,7 +433,8 @@ class ARCComputingElement( ComputingElement ):
           error = errFile.read()
         os.unlink( errFileName )
       except IOError as e:
-        return S_ERROR("Error downloading outputs", repr(e))
+        gLogger.error( "Error downloading outputs", repr(e) )
+        return S_ERROR( "Error downloading outputs" )
       gLogger.debug("Pilot output = %s" % output)
       gLogger.debug("Pilot error = %s" % error)
     else:

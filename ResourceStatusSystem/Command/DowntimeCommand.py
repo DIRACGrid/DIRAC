@@ -52,15 +52,15 @@ class DowntimeCommand( Command ):
                                                          link = dt[ 'Link' ],
                                                          gocdbServiceType = dt[ 'GOCDBServiceType' ] )
     return resQuery
-  
-  
+
+
   def _cleanCommand( self, element, elementNames):
     '''
       Clear Cache from expired DT.
     '''
-    
+
     resQuery = []
-    
+
     for elementName in elementNames:
       #get the list of all DTs stored in the cache
       result = self.rmClient.selectDowntimeCache( element = element,
@@ -70,25 +70,25 @@ class DowntimeCommand( Command ):
         return result
 
       uniformResult = [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ]
-    
+
       currentDate = datetime.utcnow()
-    
+
       if len(uniformResult) == 0:
-        return S_OK( None ) 
-      
+        return S_OK( None )
+
       #get the list of all ongoing DTs from GocDB
-      gDTLinkList = self.gClient.getCurrentDTLinkList()  
+      gDTLinkList = self.gClient.getCurrentDTLinkList()
       if not gDTLinkList[ 'OK' ]:
-        return gDTLinkList   
-    
+        return gDTLinkList
+
       for dt in uniformResult:
         #if DT expired or DT not in the list of current DTs, then we remove it from the cache
         if dt[ 'EndDate' ] < currentDate or dt[ 'Link' ] not in gDTLinkList[ 'Value' ]:
-          result = self.rmClient.deleteDowntimeCache ( 
-                               downtimeID = dt[ 'DowntimeID' ]
-                               )
+          result = self.rmClient.deleteDowntimeCache (
+                   downtimeID = dt[ 'DowntimeID' ]
+          )
           resQuery.append(result)
-          
+
     return S_OK( resQuery )
 
 
@@ -151,7 +151,7 @@ class DowntimeCommand( Command ):
       if not seHost:
         return S_ERROR( 'No seHost for %s' % elementName )
       elementName = seHost
-      
+
     elif elementType in ['FTS','FTS3']:
       gocdbServiceType = 'FTS'
       try:
@@ -204,13 +204,13 @@ class DowntimeCommand( Command ):
 
     if results is None:
       return S_OK( None )
-    
-    
+
+
     #cleaning the Cache
     cleanRes = self._cleanCommand(element, elementNames)
     if not cleanRes[ 'OK' ]:
       return cleanRes
-    
+
 
     uniformResult = []
 
@@ -218,22 +218,22 @@ class DowntimeCommand( Command ):
     for downtime, downDic in results.items():
 
       dt = {}
-      
+
       if 'HOSTNAME' in downDic.keys():
         dt[ 'Name' ] = downDic[ 'HOSTNAME' ]
       elif 'SITENAME' in downDic.keys():
         dt[ 'Name' ] = downDic[ 'SITENAME' ]
       else:
         return S_ERROR( "SITENAME or HOSTNAME are missing" )
-         
-      
+
+
       if 'SERVICE_TYPE' in downDic.keys():
         dt[ 'GOCDBServiceType' ] = downDic[ 'SERVICE_TYPE' ]
         if gocdbServiceType:
           gocdbST = gocdbServiceType.lower()
           csST = downDic[ 'SERVICE_TYPE' ].lower()
           if gocdbST != csST:
-            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )          
+            return S_ERROR( "SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST, csST, dt[ 'Name' ]) )
       else:
         #WARNING: do we want None as default value?
         dt[ 'GOCDBServiceType' ] = None
@@ -276,13 +276,13 @@ class DowntimeCommand( Command ):
 
     #'targetDate' can be either now or some 'hours' later in the future
     targetDate = datetime.utcnow()
-      
-    #dtOverlapping is a buffer to assure only one dt is returned 
+
+    #dtOverlapping is a buffer to assure only one dt is returned
     #when there are overlapping outage/warning dt for same element
-    #on top of the buffer we put the most recent outages 
+    #on top of the buffer we put the most recent outages
     #while at the bottom the most recent warnings,
     #assumption: uniformResult list is already ordered by resource/site name, severity, startdate
-    dtOverlapping = [] 
+    dtOverlapping = []
 
     if hours is not None:
       #IN THE FUTURE
@@ -290,7 +290,7 @@ class DowntimeCommand( Command ):
       #sorting by 'StartDate' b/c if we look for DTs in the future
       #then we are interested in the earliest DTs
       uniformResult.sort(key=itemgetter('Name','Severity','StartDate'))
-    
+
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < targetDate ) and ( dt[ 'EndDate' ] > targetDate ):
           #the list is already ordered in a way that outages come first over warnings
@@ -304,7 +304,7 @@ class DowntimeCommand( Command ):
       #sorting by 'EndDate' b/c if we look for DTs in the present
       #then we are interested in those DTs that last longer
       uniformResult.sort(key=itemgetter('Name','Severity','EndDate'))
-    
+
       for dt in uniformResult:
         if ( dt[ 'StartDate' ] < targetDate ) and ( dt[ 'EndDate' ] > targetDate ):
           #if outage, we put it on top of the overlapping buffer
@@ -315,7 +315,7 @@ class DowntimeCommand( Command ):
           #i.e. the latest ending warning is at the bottom
           elif  dt['Severity'].upper() == 'WARNING':
             dtOverlapping.append(dt)
-    
+
     result = None
     if len(dtOverlapping) > 0:
       dtTop = dtOverlapping[0]
@@ -346,13 +346,13 @@ class DowntimeCommand( Command ):
     sesHosts = sesHosts[ 'Value' ]
 
     resources = sesHosts
-    
+
     ftsServer = getFTS3Servers()
     if ftsServer[ 'OK' ]:
       resources.extend( ftsServer[ 'Value' ] )
-      
+
     #TODO: file catalogs need also to use their hosts
-   
+
     #fc = CSHelpers.getFileCatalogs()
     #if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
@@ -360,7 +360,7 @@ class DowntimeCommand( Command ):
     ce = CSHelpers.getComputingElements()
     if ce[ 'OK' ]:
       resources.extend( ce[ 'Value' ] )
-       
+
 
     self.log.verbose( 'Processing Sites: %s' % ', '.join( gocSites ) )
 

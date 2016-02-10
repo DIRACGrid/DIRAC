@@ -30,7 +30,7 @@ for inputFileName in args:
   else:
     lfns.append( inputFileName )
 
-from DIRAC.Core.Utilities.List import sortList, breakListIntoChunks
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 dm = DataManager()
 

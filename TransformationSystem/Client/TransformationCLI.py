@@ -7,8 +7,9 @@ __RCSID__ = '$Id:  $'
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import sys, cmd
+import sys
 
+from DIRAC.Core.Base.CLI import                              CLI
 from DIRAC.Core.Base.API                                     import API
 from DIRAC.Core.Utilities.Subprocess                         import shellCall
 from DIRAC.TransformationSystem.Client.Transformation        import Transformation
@@ -29,12 +30,12 @@ def printDict( dictionary ):
   for key, value in dictionary.items():
     print key.rjust( key_max ), ' : ', str( value ).ljust( value_max )
 
-class TransformationCLI( cmd.Cmd, API ):
+class TransformationCLI( CLI, API ):
 
   def __init__( self ):
     self.server = TransformationClient()
     self.indentSpace = 4
-    cmd.Cmd.__init__( self )
+    CLI.__init__( self )
     API.__init__( self )
 
   def printPair( self, key, value, separator = ":" ):
@@ -43,23 +44,11 @@ class TransformationCLI( cmd.Cmd, API ):
     for valueLine in valueList[ 1:-1 ]:
       print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
 
-  def do_exit( self, args ):
-    """ Exits the shell.
-        usage: exit
-    """
-    sys.exit( 0 )
-
-  def do_quit( self, *args ):
-    """ Exits the shell.
-        Usage: quit
-    """
-    sys.exit( 0 )
-
   def do_help( self, args ):
     """ Default version of the help command
        Usage: help <command>
        OR use helpall to see description for all commands"""
-    cmd.Cmd.do_help( self, args )
+    CLI.do_help( self, args )
 
   # overriting default help command
   def do_helpall( self, args ):

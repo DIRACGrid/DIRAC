@@ -9,15 +9,15 @@ __RCSID__ = '$Id:  $'
 
 class CEAvailabilityPolicy( PolicyBase ):
   '''
-    The CEAvailabilityPolicy checks if the CE is in 'Production' or not on the BDII. 
+    The CEAvailabilityPolicy checks if the CE is in 'Production' or not on the BDII.
   '''
 
   @staticmethod
   def _evaluate( commandResult ):
     '''
-      It returns Active status if CE is in 'Production'. 
+      It returns Active status if CE is in 'Production'.
       Banned if the CE is different from 'Production'.
-      
+
       commandResult is a dictionary like:
         {'OK': True,
         'Value': {
@@ -27,11 +27,11 @@ class CEAvailabilityPolicy( PolicyBase ):
           'cccreamceli05.in2p3.fr:8443/cream-sge-verylong': 'Production'
           }
         }
-      
+
       Otherwise, it returns error.
     '''
 
-    result = { 
+    result = {
                'Status' : None,
                'Reason' : None
               }
@@ -40,14 +40,14 @@ class CEAvailabilityPolicy( PolicyBase ):
       result[ 'Status' ] = 'Error'
       result[ 'Reason' ] = commandResult[ 'Message' ]
       return S_OK( result )
-    
+
     commandResult = commandResult[ 'Value' ]
 
     if commandResult['Status'] == 'Production':
       result[ 'Status' ] = 'Active'
     else:
       result[ 'Status' ] = 'Banned'
-    
+
     result[ 'Reason' ] = commandResult['Reason']
 
     return S_OK( result )
