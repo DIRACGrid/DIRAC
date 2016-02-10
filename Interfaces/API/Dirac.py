@@ -190,7 +190,7 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        if not jobDict.get( 'Retrieved' ) :
+        if not int( jobDict.get( 'Retrieved' ) ) :
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
 
@@ -217,7 +217,7 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        if not jobDict.get( 'OutputData' ):
+        if not int( jobDict.get( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
             destDir = "%s/%s" % ( destinationDirectory, jobID )
