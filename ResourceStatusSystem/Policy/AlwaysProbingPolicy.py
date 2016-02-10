@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' AlwaysProbingPolicy module 
+''' AlwaysProbingPolicy module
 '''
 
 from DIRAC                                              import S_OK
@@ -9,8 +9,8 @@ __RCSID__ = '$Id:  $'
 
 class AlwaysProbingPolicy( PolicyBase ):
   '''
-    The AlwaysProbingPolicy is a dummy module that can be used as example, it 
-    always returns Probing status.   
+    The AlwaysProbingPolicy is a dummy module that can be used as example, it
+    always returns Probing status.
   '''
 
   @staticmethod
@@ -20,12 +20,12 @@ class AlwaysProbingPolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = { 
-                     'Status' : 'Probing', 
-                     'Reason' : 'AlwaysProbing' 
+    policyResult = {
+                     'Status' : 'Probing',
+                     'Reason' : 'AlwaysProbing'
                    }
-    
+
     return S_OK( policyResult )
-  
-################################################################################ 
+
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

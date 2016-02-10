@@ -1,9 +1,9 @@
 """ JobRunningWaitingRatioPolicy
-  
+
   Policy that calculates the efficiency following the formula:
     ( running ) / ( running + waiting + staging )
   if the denominator is smaller than 10, it does not take any decision.
-  
+
 """
 
 from DIRAC                                              import S_OK
@@ -14,23 +14,23 @@ __RCSID__ = '$Id: JobRunningWaitingRatioPolicy.py 60769 2013-01-18 11:50:36Z ube
 
 class JobRunningWaitingRatioPolicy( PolicyBase ):
   """
-  The JobRunningWaitingRatioPolicy class is a policy that checks the efficiency of the 
+  The JobRunningWaitingRatioPolicy class is a policy that checks the efficiency of the
   jobs according to what is on JobDB.
-  
+
     Evaluates the JobRunningWaitingRatioPolicy results given by the JobCommand.JobCommand
   """
-  
-  
+
+
   @staticmethod
   def _evaluate( commandResult ):
     """ _evaluate
-    
+
     efficiency < 0.5 :: Banned
     efficiency < 0.9 :: Degraded
-    
+
     """
 
-    result = { 
+    result = {
               'Status' : None,
               'Reason' : None
               }
@@ -65,16 +65,16 @@ class JobRunningWaitingRatioPolicy( PolicyBase ):
       result[ 'Status' ] = 'Unknown'
       result[ 'Reason' ] = 'Not enough jobs to take a decision'
       return S_OK( result )
-    
+
     efficiency = running / total
 
     if efficiency < 0.4:
       result[ 'Status' ] = 'Banned'
     elif efficiency < 0.65:
-      result[ 'Status' ] = 'Degraded'  
-    else:   
-      result[ 'Status' ] = 'Active'    
-          
+      result[ 'Status' ] = 'Degraded'
+    else:
+      result[ 'Status' ] = 'Active'
+
     result[ 'Reason' ] = 'Job Running / Waiting ratio of %.2f' % efficiency
     return S_OK( result )
 

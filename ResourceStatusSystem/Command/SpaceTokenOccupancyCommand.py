@@ -61,7 +61,7 @@ class SpaceTokenOccupancyCommand( Command ):
       which are used to query the srm interface.
     '''
 
-    if not 'name' in self.args:
+    if 'name' not in self.args:
       return S_ERROR( '"name" not found in self.args' )
     elementName = self.args[ 'name' ]
 
