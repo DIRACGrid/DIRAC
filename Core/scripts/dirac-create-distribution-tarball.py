@@ -486,8 +486,8 @@ class TarModuleCreator( object ):
     tarName = "%s-%s.tar.gz" % ( self.params.name, self.params.version )
     tarfilePath = os.path.join( destDir, tarName )
     dirToTar = os.path.join( self.params.destination, self.params.name )
-    if self.params.name in os.listdir(self.params.destination ):
-      dirToTar = os.path.join(dirToTar, self.params.name)
+    if self.params.name in os.listdir( dirToTar ):
+      dirToTar = os.path.join( dirToTar, self.params.name )
     result = Distribution.writeVersionToInit( dirToTar, self.params.version )
     if not result[ 'OK' ]:
       return result
