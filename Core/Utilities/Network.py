@@ -87,8 +87,7 @@ def splitURL( url ):
   if o.scheme == "":
     return S_ERROR( "'%s' URL is missing protocol" % url )
   path = o.path
-  while path[0] == '/':
-    path = path[1:]
+  path = path.lstrip("/")
   return S_OK( ( o.scheme, o.hostname or "", o.port or 0, path ) )
 
 def getIPsForHostName( hostName ):
