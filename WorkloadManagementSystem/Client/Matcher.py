@@ -190,10 +190,10 @@ class Matcher( object ):
       if 'JobID' in resourceDescription:
         resourceDict['JobID'] = resourceDescription['JobID']
 
-      # Convert MaxRAM and NumberOfCores parameters into a list of tags
+      # Convert MaxRAM and NumberOfProcessors parameters into a list of tags
       maxRAM = resourceDescription.get( 'MaxRAM' )
-      nCores = resourceDescription.get( 'NumberOfProcessors' )
-      for param, key in [ ( maxRAM, 'GB' ), ( nCores, 'Cores' ) ]:
+      nProcessors = resourceDescription.get( 'NumberOfProcessors' )
+      for param, key in [ ( maxRAM, 'GB' ), ( nProcessors, 'Processors' ) ]:
         if param:
           try:
             intValue = int( param )/1000
