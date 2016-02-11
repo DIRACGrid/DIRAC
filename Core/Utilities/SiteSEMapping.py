@@ -5,6 +5,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
+
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
