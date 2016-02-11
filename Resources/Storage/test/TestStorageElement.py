@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 __RCSID__ = "$Id$"
 
@@ -426,7 +426,7 @@ class DirectoryTestCases( StorageElementTestCase ):
     directory = "%s/%s" % ( self.destDirectory, 'createDirectoryTest' )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( directory ) )
     #directoryPfn = pfnForLfnRes['Value']
-    
+
     createDirRes = self.storageElement.createDirectory( directory )
     # Remove the target dir
     removeDirRes = self.storageElement.removeDirectory( directory, recursive = True )
@@ -659,7 +659,7 @@ class DirectoryTestCases( StorageElementTestCase ):
     # Now remove the remove directory
     removeDirRes = self.storageElement.removeDirectory( destDirectory, recursive = True )
     #Clean up the locally created directory
-    if os.path.exists( localDir ): 
+    if os.path.exists( localDir ):
       shutil.rmtree( localDir )
 
     # Perform the checks for the put dir operation
@@ -696,4 +696,3 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCases ) )
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GetInfoTestCase))
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

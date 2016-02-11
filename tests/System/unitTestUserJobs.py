@@ -10,7 +10,7 @@ import time
 from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-from TestDIRAC.Utilities.testJobDefinitions import helloWorld, mpJob
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob
 
 gLogger.setLevel( 'VERBOSE' )
 
