@@ -1,3 +1,9 @@
+[v6r14p20]
+
+*WMS
+FIX: SandboxMetadataDB - escape values in SandboxMetadataDB SQL queries to accommodate
+     DNs containing apostrophe 
+
 [v6r14p19]
 
 *Core
