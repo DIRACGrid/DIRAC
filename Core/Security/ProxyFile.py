@@ -7,8 +7,8 @@ import os
 import stat
 import tempfile
 
-from DIRAC import S_OK
-from DIRAC.Core.Utilities import DError, DErrno
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import g_X509ChainType, X509Chain
 from DIRAC.Core.Security.Locations import getProxyLocation
 
@@ -23,17 +23,17 @@ def writeToProxyFile( proxyContents, fileName = False ):
       fd, proxyLocation = tempfile.mkstemp()
       os.close( fd )
     except IOError:
-      return DError( DErrno.ECTMPF )
+      return S_ERROR( DErrno.ECTMPF )
     fileName = proxyLocation
   try:
     with open( fileName, 'w' ) as fd:
       fd.write( proxyContents )
   except Exception as e:
-    return DError( DErrno.EWF, " %s: %s" % ( fileName, repr( e ).replace( ',)', ')' ) ) )
+    return S_ERROR( DErrno.EWF, " %s: %s" % ( fileName, repr( e ).replace( ',)', ')' ) ) )
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception as e:
-    return DError( DErrno.ESPF, "%s: %s" % ( fileName, repr( e ).replace( ',)', ')' ) ) )
+    return S_ERROR( DErrno.ESPF, "%s: %s" % ( fileName, repr( e ).replace( ',)', ')' ) ) )
   return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
@@ -57,7 +57,7 @@ def writeChainToTemporaryFile( proxyChain ):
     fd, proxyLocation = tempfile.mkstemp()
     os.close( fd )
   except IOError:
-    return DError( DErrno.ECTMPF )
+    return S_ERROR( DErrno.ECTMPF )
   retVal = writeChainToProxyFile( proxyChain, proxyLocation )
   if not retVal[ 'OK' ]:
     try:
@@ -103,14 +103,14 @@ def multiProxyArgument( proxy = False ):
     if not proxy:
       proxyLoc = getProxyLocation()
       if not proxyLoc:
-        return DError( DErrno.EPROXYFIND )
+        return S_ERROR( DErrno.EPROXYFIND )
     if isinstance( proxy, basestring ):
       proxyLoc = proxy
     # Load proxy
     proxy = X509Chain()
     retVal = proxy.loadProxyFromFile( proxyLoc )
     if not retVal[ 'OK' ]:
-      return DError( DErrno.EPROXYREAD, "ProxyLocation: %s" % proxyLoc )
+      return S_ERROR( DErrno.EPROXYREAD, "ProxyLocation: %s" % proxyLoc )
   return S_OK( { 'file' : proxyLoc,
                  'chain' : proxy,
                  'tempFile' : tempFile } )

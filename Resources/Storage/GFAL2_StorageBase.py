@@ -9,7 +9,6 @@ import os
 import datetime
 import errno
 import gfal2
-from types import StringType
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
@@ -685,11 +684,14 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         metadataDict['Checksum'] = ""
 
+    metadataDict = self._addCommonMetadata( metadataDict )
+
     res = self._getExtendedAttributes( path )
     # add extended attributes to the dict if available
     if res['OK']:
       attributeDict = res.get( 'Value', {} )
       self._updateMetadataDict( metadataDict, attributeDict )
+
 
     return S_OK ( metadataDict )
 
@@ -796,7 +798,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     self.log.debug( "GFAL2_StorageBase.__prestageSingleFileStatus: Checking prestage file status for %s" % path )
     # also allow int as token - converting them to strings
-    if not type( token ) == StringType:
+    if not isinstance( token, basestring ):
       token = str( token )
     try:
       self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )
@@ -928,7 +930,7 @@ class GFAL2_StorageBase( StorageBase ):
     """
 
     self.log.debug( "GFAL2_StorageBase.__releaseSingleFile: Attempting to release single file: %s" % path )
-    if not type( token ) == StringType:
+    if not isinstance( token, basestring ):
       token = str( token )
     try:
       self.gfal2.set_opt_boolean( "BDII", "ENABLE", True )

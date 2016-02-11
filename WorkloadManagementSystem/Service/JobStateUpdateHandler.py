@@ -13,7 +13,7 @@
 
 __RCSID__ = "$Id$"
 
-from types import StringType, IntType, LongType, ListType, DictType
+from types import StringTypes, IntType, LongType, ListType, DictType
 # from types import *
 import time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -39,7 +39,7 @@ def initializeJobStateUpdateHandler( serviceInfo ):
 class JobStateUpdateHandler( RequestHandler ):
 
   ###########################################################################
-  types_updateJobFromStager = [[StringType, IntType, LongType], StringType]
+  types_updateJobFromStager = [list( StringTypes ) + [ IntType, LongType], StringTypes]
   def export_updateJobFromStager( self, jobID, status ):
     """ Simple call back method to be used by the stager. """
     if status == 'Done':
@@ -78,7 +78,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobStatus = [[StringType, IntType, LongType], StringType, StringType, StringType]
+  types_setJobStatus = [list( StringTypes ) + [ IntType, LongType], StringTypes, StringTypes, StringTypes]
   def export_setJobStatus( self, jobID, status, minorStatus, source = 'Unknown', datetime = None ):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
@@ -87,7 +87,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return self.__setJobStatus( int( jobID ), status, minorStatus, source, datetime )
 
   ###########################################################################
-  types_setJobsStatus = [ListType, StringType, StringType, StringType]
+  types_setJobsStatus = [ListType, StringTypes, StringTypes, StringTypes]
   def export_setJobsStatus( self, jobIDs, status, minorStatus, source = 'Unknown', datetime = None ):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
@@ -124,7 +124,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobStatusBulk = [[StringType, IntType, LongType], DictType]
+  types_setJobStatusBulk = [list( StringTypes ) + [ IntType, LongType], DictType]
   def export_setJobStatusBulk( self, jobID, statusDict ):
     """ Set various status fields for job specified by its JobId.
         Set only the last status in the JobDB, updating all the status
@@ -226,7 +226,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return S_OK()
 
   ###########################################################################
-  types_setJobSite = [[StringType, IntType, LongType], StringType]
+  types_setJobSite = [list( StringTypes ) + [ IntType, LongType], StringTypes]
   def export_setJobSite( self, jobID, site ):
     """Allows the site attribute to be set for a job specified by its jobID.
     """
@@ -234,7 +234,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobFlag = [[StringType, IntType, LongType], StringType]
+  types_setJobFlag = [list( StringTypes ) + [IntType, LongType], StringTypes]
   def export_setJobFlag( self, jobID, flag ):
     """ Set job flag for job with jobID
     """
@@ -242,7 +242,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_unsetJobFlag = [[StringType, IntType, LongType], StringType]
+  types_unsetJobFlag = [list( StringTypes ) + [IntType, LongType], StringTypes]
   def export_unsetJobFlag( self, jobID, flag ):
     """ Unset job flag for job with jobID
     """
@@ -250,7 +250,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobApplicationStatus = [[StringType, IntType, LongType], StringType, StringType]
+  types_setJobApplicationStatus = [list( StringTypes ) + [IntType, LongType], StringTypes, StringTypes]
   def export_setJobApplicationStatus( self, jobID, appStatus, source = 'Unknown' ):
     """ Set the application status for job specified by its JobId.
     """
@@ -278,7 +278,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return result
 
   ###########################################################################
-  types_setJobParameter = [[StringType, IntType, LongType], StringType, StringType]
+  types_setJobParameter = [list( StringTypes ) + [IntType, LongType], StringTypes, StringTypes]
   def export_setJobParameter( self, jobID, name, value ):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
@@ -298,7 +298,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return S_OK()
 
   ###########################################################################
-  types_setJobParameters = [[StringType, IntType, LongType], ListType]
+  types_setJobParameters = [list( StringTypes ) + [ IntType, LongType], ListType]
   def export_setJobParameters( self, jobID, parameters ):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
@@ -311,7 +311,7 @@ class JobStateUpdateHandler( RequestHandler ):
     return S_OK( 'All parameters stored for job' )
 
   ###########################################################################
-  types_sendHeartBeat = [[StringType, IntType, LongType], DictType, DictType]
+  types_sendHeartBeat = [list( StringTypes ) + [ IntType, LongType], DictType, DictType]
   def export_sendHeartBeat( self, jobID, dynamicData, staticData ):
     """ Send a heart beat sign of life for a job jobID
     """

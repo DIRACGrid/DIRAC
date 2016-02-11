@@ -140,16 +140,19 @@ class RequestTasks( TaskBase ):
       except AttributeError:
         pass
 
+    # Do not remove sorted, we might pop elements in the loop
     for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
+
+      transID = paramDict['TransformationID']
+
+      oRequest = Request()
+      transfer = Operation()
+      transfer.Type = requestOperation
+      transfer.TargetSE = paramDict['TargetSE']
+
+      # If there are input files
       if paramDict['InputData']:
-        transID = paramDict['TransformationID']
-
-        oRequest = Request()
-        transfer = Operation()
-        transfer.Type = requestOperation
-        transfer.TargetSE = paramDict['TargetSE']
-
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
@@ -160,14 +163,18 @@ class RequestTasks( TaskBase ):
 
           transfer.addFile( trFile )
 
-        oRequest.addOperation( transfer )
-        oRequest.RequestName = _requestName( transID, taskID )
-        oRequest.OwnerDN = ownerDN
-        oRequest.OwnerGroup = ownerGroup
+      oRequest.addOperation( transfer )
+      oRequest.RequestName = _requestName( transID, taskID )
+      oRequest.OwnerDN = ownerDN
+      oRequest.OwnerGroup = ownerGroup
+
 
       isValid = self.requestValidator.validate( oRequest )
       if not isValid['OK']:
-        return isValid
+        self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
+        # This works because we loop over a copy of the keys !
+        taskDict.pop( taskID )
+        continue
 
       taskDict[taskID]['TaskObject'] = oRequest
 
@@ -202,7 +209,7 @@ class RequestTasks( TaskBase ):
     """ Submits a request using ReqClient
     """
     if isinstance( oRequest, self.requestClass ):
-      return self.requestClient.putRequest( oRequest )
+      return self.requestClient.putRequest( oRequest, useFailoverProxy = False, retryMainService = 2 )
     else:
       return S_ERROR( "Request should be a Request object" )
 
@@ -524,7 +531,7 @@ class WorkflowTasks( TaskBase ):
     if isinstance( job, basestring ):
       try:
         oJob = self.jobClass( job )
-      except Exception, x:
+      except Exception as x:
         self._logException( "Failed to create job object", '', x )
         return S_ERROR( "Failed to create job object" )
     elif isinstance( job, self.jobClass ):

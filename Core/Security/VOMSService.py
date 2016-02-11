@@ -3,8 +3,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, S_OK
-from DIRAC.Core.Utilities import DError, DErrno
+from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.SOAPFactory import getSOAPClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
@@ -79,7 +79,7 @@ class VOMSService( object ):
     try:
       result = self.__soapClients[ 'Admin' ].service.listMembers()
     except Exception as e:
-      return DError( DErrno.EVOMS, "Error in function listMembers: %s" % e )
+      return S_ERROR( DErrno.EVOMS, "Error in function listMembers: %s" % e )
     if 'listMembersReturn' in dir( result ):
       return S_OK( _processListDictReturn( result.listMembersReturn ) )
     return S_OK( _processListDictReturn( result ) )
@@ -90,7 +90,7 @@ class VOMSService( object ):
       UserID = self.__soapClients[ 'Certificates' ].service.getUserIdFromDn( dn, ca )
       result = self.__soapClients[ 'Certificates' ].service.getCertificates( UserID )
     except Exception as e:
-      return DError( DErrno.EVOMS, "Error in function getCertificates: %s" % e )
+      return S_ERROR( DErrno.EVOMS, "Error in function getCertificates: %s" % e )
     if 'listCertificatesReturn' in dir( result ):
       return S_OK( _processListDictReturn( result.listCertificatesReturn ) )
     return S_OK( _processListDictReturn( result ) )
@@ -99,7 +99,7 @@ class VOMSService( object ):
     try:
       result = self.__soapClients[ 'Admin' ].service.listRoles()
     except Exception as e:
-      return DError( DErrno.EVOMS, "Error in function listRoles: %s" % e )
+      return S_ERROR( DErrno.EVOMS, "Error in function listRoles: %s" % e )
     if 'listRolesReturn' in dir( result ):
       return S_OK( _processListReturn( result.listRolesReturn ) )
     return S_OK( _processListReturn( result ) )
@@ -109,7 +109,7 @@ class VOMSService( object ):
     try:
       result = self.__soapClients[ 'Admin' ].service.listUsersWithRole( group, role )
     except Exception as e:
-      return DError( DErrno.EVOMS, "Error in function listUsersWithRole: %s" % e )
+      return S_ERROR( DErrno.EVOMS, "Error in function listUsersWithRole: %s" % e )
     if 'listUsersWithRoleReturn' in dir( result ):
       return S_OK( _processListDictReturn( result.listUsersWithRoleReturn ) )
     return S_OK( _processListDictReturn( result ) )
@@ -118,7 +118,7 @@ class VOMSService( object ):
     try:
       result = self.__soapClients[ 'Admin' ].service.getVOName()
     except Exception as e:
-      return DError( DErrno.EVOMS, "Error in function getVOName: %s" % e )
+      return S_ERROR( DErrno.EVOMS, "Error in function getVOName: %s" % e )
     return S_OK( result )
 
   def attGetUserNickname( self, dn, ca ):
@@ -128,15 +128,15 @@ class VOMSService( object ):
     try:
       result = self.__soapClients[ 'Attributes' ].service.listUserAttributes( user )
     except Exception as e:
-      return DError( DErrno.EVOMS, "Error in function getUserNickname: %s" % e )
+      return S_ERROR( DErrno.EVOMS, "Error in function getUserNickname: %s" % e )
 
     if result is not None:
       if 'listUserAttributesReturn' in dir( result ):
-        return S_OK( result.listUserAttributesReturn[0].value )
+        return S_OK( str( result.listUserAttributesReturn[0].value ) )
 
-      return S_OK( result[0].value )
+      return S_OK( str( result[0].value ) )
     else:
-      return DError( DErrno.EVOMS )
+      return S_ERROR( DErrno.EVOMS )
 
   def getUsers( self ):
     """ Get all the users of the VOMS VO with their detailed information

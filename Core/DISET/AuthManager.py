@@ -74,7 +74,7 @@ class AuthManager( object ):
     #Check for invalid forwarding
     if self.KW_EXTRA_CREDENTIALS in credDict:
       #Invalid forwarding?
-      if type( credDict[ self.KW_EXTRA_CREDENTIALS ] ) not in  ( types.StringType, types.UnicodeType ):
+      if not isinstance ( credDict[ self.KW_EXTRA_CREDENTIALS ], basestring ):
         self.__authLogger.verbose( "The credentials seem to be forwarded by a host, but it is not a trusted one" )
         return False
     #Is it a host?

@@ -5,7 +5,6 @@
 ########################################################################
 __RCSID__ = "$Id$"
 
-import cmd
 import sys
 import signal
 import types
@@ -13,7 +12,7 @@ import atexit
 import os
 import readline
 
-from DIRAC.Core.Utilities.ColorCLI import colorize
+from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -39,10 +38,10 @@ def _appendExtensionIfMissing( filename ):
   return "%s.cfg" % filename
 
 
-class CSCLI( cmd.Cmd ):
+class CSCLI( CLI ):
 
   def __init__( self ):
-    cmd.Cmd.__init__( self )
+    CLI.__init__( self )
     self.connected = False
     self.masterURL = "unset"
     self.writeEnabled = False
@@ -53,11 +52,8 @@ class CSCLI( cmd.Cmd ):
       self.modificator = Modificator ( self.rpcClient )
     else:
       self.modificator = Modificator()
-    self.identSpace = 20
+    self.indentSpace = 20
     self.backupFilename = "dataChanges"
-    self._initSignals()
-    #User friendly hack
-    self.do_exit = self.do_quit
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
@@ -83,16 +79,6 @@ class CSCLI( cmd.Cmd ):
       gLogger.warn( "Received a keyboard interrupt." )
       self.do_quit( "" )
 
-  def _initSignals( self ):
-    """
-    Registers signal handlers
-    """
-    for sigNum in ( signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM ):
-      try:
-        signal.signal( sigNum, self.do_quit )
-      except:
-        pass
-
   def _setConnected( self, connected, writeEnabled ):
     self.connected = connected
     self.modifiedData = False
@@ -105,57 +91,19 @@ class CSCLI( cmd.Cmd ):
     else:
       self.prompt = "(%s)-%s> " % ( self.masterURL, colorize( "Disconnected", "red" ) )
 
-
-  def _printPair( self, key, value, separator = ":" ):
-    valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.identSpace - len( key ) ), separator, valueList[0].strip() )
-    for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.identSpace, valueLine.strip() )
-
   def do_quit( self, dummy ):
     """
     Exits the application without sending changes to server
 
     Usage: quit
     """
+    print
     if self.modifiedData:
       print "Changes are about to be written to file for later use."
       self.do_writeToFile( self.backupFilename )
       print "Changes written to %s.cfg" % self.backupFilename
     sys.exit( 0 )
 
-  def do_EOF( self, args ):
-    """
-    Accepts ctrl^D to quit CLI
-    """
-    print ""
-    self.do_quit( args )
-
-  def do_help( self, args ):
-    """
-    Shows help information
-
-    Usage: help <command>
-
-    If no command is specified all commands are shown
-
-    """
-    if len( args ) == 0:
-      print "\nAvailable commands:\n"
-      attrList = dir( self )
-      attrList.sort()
-      for attribute in attrList:
-        if attribute.find( "do_" ) == 0:
-          self._printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-          print ""
-    else:
-      command = args.split()[0].strip()
-      try:
-        obj = getattr( self, "do_%s" % command )
-      except:
-        print "There's no such %s command" % command
-        return
-      self._printPair( command, obj.__doc__[1:] )
 
 #  def retrieveData( self ):
 #    if not self.connected:
@@ -189,14 +137,14 @@ class CSCLI( cmd.Cmd ):
     try:
       self.rpcClient = RPCClient( self.masterURL )
       self._setStatus()
-    except Exception, x:
+    except Exception as x:
       gLogger.error( "Couldn't connect to master CS server", "%s (%s)" % ( self.masterURL, str( x ) ) )
       self._setStatus( False )
 
   def do_connect( self, args = '' ):
     """
     Connects to configuration master server (in specified url if provided).
-    
+
     Usage: connect <url>
     """
     if not args or type( args ) not in types.StringTypes:
@@ -236,14 +184,14 @@ class CSCLI( cmd.Cmd ):
         return
       for section in sectionList:
         section = "%s/%s" % ( baseSection, section )
-        self._printPair( section, self.modificator.getComment( section ) , "#" )
+        self.printPair( section, self.modificator.getComment( section ) , " #" )
     except:
       _showTraceback()
 
   def do_options( self, args ):
     """
     Shows all options and values of a specified section
-    
+
     Usage: options <section>
     """
     try:
@@ -262,14 +210,14 @@ class CSCLI( cmd.Cmd ):
         return
       for option in optionsList:
         _printComment( self.modificator.getComment( "%s/%s" % ( section, option ) ) )
-        self._printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
+        self.printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
     except:
       _showTraceback()
 
   def do_get( self, args ):
     """
     Shows value and comment for specified option in section
-    
+
     Usage: get <path to option>
     """
     try:
@@ -282,7 +230,7 @@ class CSCLI( cmd.Cmd ):
       if self.modificator.existsOption( optionPath ):
         option = optionPath.split( "/" )[-1]
         _printComment( self.modificator.getComment( optionPath ) )
-        self._printPair( option, self.modificator.getValue( optionPath ), "=" )
+        self.printPair( option, self.modificator.getValue( optionPath ), "=" )
       else:
         print "Option %s does not exist" % optionPath
     except:
@@ -291,7 +239,7 @@ class CSCLI( cmd.Cmd ):
   def do_writeToServer( self, dummy ):
     """
     Sends changes to server.
-    
+
     Usage: writeToServer
     """
     if not self.connected:
@@ -325,14 +273,14 @@ class CSCLI( cmd.Cmd ):
         return
       else:
         print "Commit aborted"
-    except Exception, x:
+    except Exception as x:
       _showTraceback()
       print "Could not upload changes. ", str( x )
 
   def do_set( self, args ):
     """
     Sets option's value
-    
+
     Usage: set <optionPath> <value>...
 
     From second argument until the last one is considered option's value
@@ -348,7 +296,7 @@ class CSCLI( cmd.Cmd ):
       value = " ".join( argsList[1:] ).strip()
       self.modificator.setOptionValue( optionPath, value )
       self.modifiedData = True
-    except Exception, x:
+    except Exception as x:
       print "Cannot insert value: ", str( x )
 
   def do_removeOption( self, args ):
@@ -374,13 +322,13 @@ class CSCLI( cmd.Cmd ):
           print "Can't be deleted"
       else:
         print "Aborting removal."
-    except Exception, x:
+    except Exception as x:
       print "Error removing option, %s" % str( x )
 
   def do_removeSection( self, args ):
     """
     Removes a section.
-    
+
     Usage: removeSection <section>
     """
     try:
@@ -398,7 +346,7 @@ class CSCLI( cmd.Cmd ):
           print "Can't be deleted"
       else:
         print "Aborting removal."
-    except Exception, x:
+    except Exception as x:
       print "Error removing section, %s" % str( x )
 
   def do_setComment( self, args ):
@@ -418,7 +366,7 @@ class CSCLI( cmd.Cmd ):
       value = " ".join( argsList[1:] ).strip()
       self.modificator.setComment( entryPath, value )
       self.modifiedData = True
-    except Exception, x:
+    except Exception as x:
       print "Cannot insert comment: ", str( x )
 
   def do_writeToFile( self, args ):
@@ -437,13 +385,13 @@ class CSCLI( cmd.Cmd ):
       filename = args.split()[0].strip()
       filename = _appendExtensionIfMissing( filename )
       self.modificator.dumpToFile( filename )
-    except Exception, x:
+    except Exception as x:
       print "Couldn't write to file %s: %s" % ( filename, str( x ) )
 
   def do_readFromFile( self, args ):
     """
     Reads data from filename to be used. Actual data will be replaced!
-    
+
     Usage: readFromFile <filename>.cfg
 
     Note that if a file extension is specified, it is replaced by .cfg suffix.
@@ -457,7 +405,7 @@ class CSCLI( cmd.Cmd ):
       filename = _appendExtensionIfMissing( filename )
       self.modificator.loadFromFile( filename )
       self.modifiedData = True
-    except Exception, x:
+    except Exception as x:
       print "Couldn't read from file %s: %s" % ( filename, str( x ) )
 
   def do_mergeFromFile( self, args ):
@@ -466,7 +414,7 @@ class CSCLI( cmd.Cmd ):
     Data read from file has more precedence that current one.
 
     Usage: mergeFromFile <filename>.cfg
-        
+
     Note that if a file extension is specified, it is replaced by .cfg suffix.
     If not it is added automatically
     """
@@ -478,7 +426,7 @@ class CSCLI( cmd.Cmd ):
       filename = _appendExtensionIfMissing( filename )
       self.modificator.mergeFromFile( filename )
       self.modifiedData = True
-    except Exception, x:
+    except Exception as x:
       _showTraceback()
       print "Couldn't read from file %s: %s" % ( filename, str( x ) )
 
@@ -502,7 +450,7 @@ class CSCLI( cmd.Cmd ):
       history = self.modificator.getHistory( limit )
       print "%s recent commits:" % limit
       for entry in history:
-        self._printPair( entry[0], entry[1], "@" )
+        self.printPair( entry[0], entry[1], "@" )
     except:
       _showTraceback()
 
@@ -595,4 +543,3 @@ class CSCLI( cmd.Cmd ):
         print "Merge aborted"
     except:
       _showTraceback()
-

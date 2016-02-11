@@ -3,10 +3,10 @@
 ########################################################################
 """
   Utilities for managing DIRAC configuration:
-  
+
   getCEsFromCS
   getUnusedGridCEs
-  getUnusedGridSEs 
+  getUnusedGridSEs
   getSiteUpdates
   getSEUpdates
 """
@@ -42,7 +42,7 @@ def getGridVOs():
 def getCEsFromCS():
   """ Get all the CEs defined in the CS
   """
-  
+
   knownCEs = []
   result = gConfig.getSections( '/Resources/Sites' )
   if not result['OK']:
@@ -59,7 +59,7 @@ def getCEsFromCS():
       opt = gConfig.getOptionsDict( '/Resources/Sites/%s/%s' % ( grid, site ) )['Value']
       ces = List.fromChar( opt.get( 'CE', '' ) )
       knownCEs += ces
-      
+
   return S_OK( knownCEs )
 
 def getSEsFromCS( protocol = 'srm' ):
@@ -71,7 +71,7 @@ def getSEsFromCS( protocol = 'srm' ):
     return result
   ses = result['Value']
   for se in ses:
-    seSection = '/Resources/StorageElements/%s' % se 
+    seSection = '/Resources/StorageElements/%s' % se
     result = gConfig.getSections( seSection )
     if not result['OK']:
       continue
@@ -83,9 +83,9 @@ def getSEsFromCS( protocol = 'srm' ):
         knownSEs.setdefault( host, [] )
         knownSEs[host].append( se )
       else:
-        continue  
-      
-  return S_OK( knownSEs )    
+        continue
+
+  return S_OK( knownSEs )
 
 def getGridCEs( vo, bdiiInfo = None, ceBlackList = None ):
   """ Get all the CEs available for a given VO and having queues in Production state
@@ -93,14 +93,14 @@ def getGridCEs( vo, bdiiInfo = None, ceBlackList = None ):
   knownCEs = set()
   if ceBlackList is not None:
     knownCEs = knownCEs.union( set( ceBlackList ) )
-  
+
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
     result = getBdiiCEInfo( vo )
     if not result['OK']:
       return result
     ceBdiiDict = result['Value']
-    
+
   siteDict = {}
   for site in ceBdiiDict:
     siteCEs = set( ceBdiiDict[site]['CEs'].keys() )
@@ -108,7 +108,7 @@ def getGridCEs( vo, bdiiInfo = None, ceBlackList = None ):
     if not newCEs:
       continue
 
-    ceFullDict = {} 
+    ceFullDict = {}
     for ce in newCEs:
       ceDict = {}
       ceInfo = ceBdiiDict[site]['CEs'][ce]
@@ -120,39 +120,39 @@ def getGridCEs( vo, bdiiInfo = None, ceBlackList = None ):
           ceType = ceInfo['Queues'][queue].get( 'GlueCEImplementationName', '' )
           ceDict['Queues'].append( queue )
       if not ceDict['Queues']:
-        continue  
-      
-      ceDict['CEType'] = ceType               
+        continue
+
+      ceDict['CEType'] = ceType
       ceDict['GOCSite'] = site
-      ceDict['CEID'] = ce 
+      ceDict['CEID'] = ce
       systemName = ceInfo.get( 'GlueHostOperatingSystemName', 'Unknown' )
       systemVersion = ceInfo.get( 'GlueHostOperatingSystemVersion', 'Unknown' )
       systemRelease = ceInfo.get( 'GlueHostOperatingSystemRelease', 'Unknown' )
       ceDict['System'] = ( systemName, systemVersion, systemRelease )
-      
+
       ceFullDict[ce] = ceDict
-      
-    siteDict[site] = ceFullDict  
-      
-  result = S_OK( siteDict )        
+
+    siteDict[site] = ceFullDict
+
+  result = S_OK( siteDict )
   result['BdiiInfo'] = ceBdiiDict
-  return result 
-       
+  return result
+
 def getSiteUpdates( vo, bdiiInfo = None, log = None ):
   """ Get all the necessary updates for the already defined sites and CEs
-  """  
-  
+  """
+
   def addToChangeSet( entry, changeSet ):
     _section, _option, value, new_value = entry
     if new_value and new_value != value:
       changeSet.add( entry )
 
   if log is None:
-    log = gLogger  
-    
+    log = gLogger
+
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
-    result = getBdiiCEInfo( vo )    
+    result = getBdiiCEInfo( vo )
     if not result['OK']:
       return result
     ceBdiiDict = result['Value']
@@ -174,21 +174,23 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
       mail = siteDict.get( 'Mail', 'Unknown' ).replace( ' ','' )
       description = siteDict.get( 'Description', 'Unknown' )
       description = description.replace( ' ,', ',')
-  
+
       longitude = ceBdiiDict[site].get( 'GlueSiteLongitude', '' ).strip()
       latitude = ceBdiiDict[site].get( 'GlueSiteLatitude', '' ).strip()
-  
+
       # Current BDII value
       newcoor = ''
       if longitude and latitude:
         newcoor = "%s:%s" % ( longitude, latitude )
       newmail = ceBdiiDict[site].get( 'GlueSiteSysAdminContact', '' ).replace( 'mailto:', '' ).strip()
       newdescription = ceBdiiDict[site].get( 'GlueSiteDescription', '' ).strip()
+      newdescription = ", ".join( [ line.strip() for line in newdescription.split( "," ) ] )
+
       # Adding site data to the changes list
       addToChangeSet( ( siteSection, 'Coordinates', coor, newcoor ), changeSet )
       addToChangeSet( ( siteSection, 'Mail', mail, newmail ), changeSet )
       addToChangeSet( ( siteSection, 'Description', description, newdescription ), changeSet )
-  
+
       ces = gConfig.getValue( cfgPath( siteSection, 'CE' ), [] )
       for ce in ces:
         ceSection = cfgPath( siteSection, 'CEs', ce )
@@ -203,7 +205,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         if ceInfo is None:
           ceType = ceDict.get( 'CEType', '')
           continue
-  
+
         # Current CS CE info
         arch = ceDict.get( 'architecture', 'Unknown' )
         OS = ceDict.get( 'OS', 'Unknown' )
@@ -211,7 +213,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         ceType = ceDict.get( 'CEType', 'Unknown' )
         ram = ceDict.get( 'MaxRAM', 'Unknown' )
         submissionMode = ceDict.get( 'SubmissionMode', 'Unknown' )
-  
+
         # Current BDII CE info
         newarch = ceBdiiDict[site]['CEs'][ce].get( 'GlueHostArchitecturePlatformType', '' ).strip()
         systemName = ceInfo.get( 'GlueHostOperatingSystemName', '' ).strip()
@@ -232,7 +234,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
 
         newSubmissionMode = None
         if newCEType in ['ARC','CREAM']:
-          newSubmissionMode = "Direct" 
+          newSubmissionMode = "Direct"
         newRAM = ceInfo.get( 'GlueHostMainMemoryRAMSize', '' ).strip()
         # Protect from unreasonable values
         if newRAM and int( newRAM ) > 150000:
@@ -246,7 +248,7 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
         addToChangeSet( ( ceSection, 'MaxRAM', ram, newRAM ), changeSet )
         if submissionMode == "Unknown" and newSubmissionMode:
           addToChangeSet( ( ceSection, 'SubmissionMode', submissionMode, newSubmissionMode ), changeSet )
-  
+
         queues = ceInfo['Queues'].keys()
         for queue in queues:
           queueInfo = ceInfo['Queues'][queue]
@@ -261,24 +263,24 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
               log.notice( "Adding new queue %s to CE %s" % (queue, ce) )
             else:
               continue
-  
+
           # Current CS queue info
           maxCPUTime = queueDict.get( 'maxCPUTime', 'Unknown' )
           si00 = queueDict.get( 'SI00', 'Unknown' )
           maxTotalJobs = queueDict.get( 'MaxTotalJobs', 'Unknown' )
-  
+
           # Current BDII queue info
           newMaxCPUTime = queueInfo.get( 'GlueCEPolicyMaxCPUTime', '' )
           if newMaxCPUTime == "4" * len( newMaxCPUTime ) or newMaxCPUTime == "9" * len( newMaxCPUTime ):
             newMaxCPUTime = ''
           newSI00 = ''
           caps = queueInfo['GlueCECapability']
-          if type( caps ) == type( '' ):
+          if isinstance( caps, basestring ):
             caps = [caps]
           for cap in caps:
             if 'CPUScalingReferenceSI00' in cap:
               newSI00 = cap.split( '=' )[-1]
-  
+
           # Adding queue info to the CS
           addToChangeSet( ( queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime ), changeSet )
           addToChangeSet( ( queueSection, 'SI00', si00, newSI00 ), changeSet )
@@ -289,21 +291,21 @@ def getSiteUpdates( vo, bdiiInfo = None, log = None ):
             newWaitingJobs = str( newWaitingJobs )
             addToChangeSet( ( queueSection, 'MaxTotalJobs', '', newTotalJobs ), changeSet )
             addToChangeSet( ( queueSection, 'MaxWaitingJobs', '', newWaitingJobs ), changeSet )
-            
+
           # Updating eligible VO list
           VOs = set()
           if queueDict.get( 'VO', '' ):
             VOs = set( [ q.strip() for q in queueDict.get( 'VO', '' ).split( ',' ) if q ] )
-          if not vo in VOs:   
+          if not vo in VOs:
             VOs.add( vo )
-            VOs = list( VOs )    
+            VOs = list( VOs )
             newVOs = ','.join( VOs )
-            addToChangeSet( ( queueSection, 'VO', '', newVOs ), changeSet ) 
-    
-  return S_OK( changeSet )  
+            addToChangeSet( ( queueSection, 'VO', '', newVOs ), changeSet )
+
+  return S_OK( changeSet )
 
 def getGridSEs( vo, bdiiInfo = None, seBlackList = None ):
-  """ Get all the SEs available for a given VO 
+  """ Get all the SEs available for a given VO
   """
   seBdiiDict = bdiiInfo
   if bdiiInfo is None:
@@ -315,37 +317,37 @@ def getGridSEs( vo, bdiiInfo = None, seBlackList = None ):
   knownSEs = set()
   if seBlackList is not None:
     knownSEs = knownSEs.union( set( seBlackList ) )
-    
+
   siteDict = {}
   for site in seBdiiDict:
     for gridSE in seBdiiDict[site]['SEs']:
       seDict = seBdiiDict[site]['SEs'][gridSE]
-      
-      #if "lhcb" in seDict['GlueSAName']: 
+
+      #if "lhcb" in seDict['GlueSAName']:
       #  print '+'*80
       #  print gridSE
       #  for k,v in seDict.items():
-      #    print k,'\t',v 
-        
-    
+      #    print k,'\t',v
+
+
       if not gridSE in knownSEs:
         siteDict.setdefault( site, {} )
         if type( seDict['GlueSAAccessControlBaseRule'] ) == types.ListType:
           voList = [ re.sub( '^VO:', '', s ) for s in seDict['GlueSAAccessControlBaseRule'] ]
         else:
-          voList = [ re.sub( '^VO:', '', seDict['GlueSAAccessControlBaseRule'] ) ]  
+          voList = [ re.sub( '^VO:', '', seDict['GlueSAAccessControlBaseRule'] ) ]
         siteDict[site][gridSE] = { 'GridSite': seDict['GlueSiteUniqueID'],
                                    'BackendType': seDict['GlueSEImplementationName'],
                                    'Description': seDict.get( 'GlueSEName', '-' ),
                                    'VOs': voList
-                                 } 
-    
+                                 }
+
   result = S_OK( siteDict )
   result['BdiiInfo'] = seBdiiDict
   return result
-  
+
 def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
-  
+
   result = ldapService( serviceType = 'SRM', vo = vo )
   if not result['OK']:
     return result
@@ -357,17 +359,17 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
 
   siteSRMDict = {}
   for srm in srmBdiiDict:
-    
+    srm = dict(srm)
     endPoint = srm.get( 'GlueServiceEndpoint', '')
     srmHost = ''
     if endPoint:
       srmHost = urlparse( endPoint ).hostname
     if not srmHost:
-      continue  
-    
+      continue
+
     if srmHost in knownSRMs:
       continue
-    
+
     if unUsed:
       result = getDIRACSesForSRM( srmHost )
       if not result['OK']:
@@ -376,19 +378,19 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
       if diracSEs:
         # If it is a known SRM and only new SRMs are requested, continue
         continue
-    site = srm.get( 'GlueForeignKey', '' ).replace( 'GlueSiteUniqueID=', '' )     
+    site = srm.get( 'GlueForeignKey', '' ).replace( 'GlueSiteUniqueID=', '' )
     siteSRMDict.setdefault( site, {} )
     siteSRMDict[site][srmHost] = srm
-      
-  if bdiiInfo is None:    
+
+  if bdiiInfo is None:
     result = getBdiiSEInfo( vo )
     if not result['OK']:
       return result
-    seBdiiDict = result['Value']
+    seBdiiDict = dict( result['Value'] )
   else:
-    seBdiiDict = bdiiInfo  
- 
-  srmSeDict = {}  
+    seBdiiDict = dict( bdiiInfo )
+
+  srmSeDict = {}
   for site in siteSRMDict:
     srms = siteSRMDict[site].keys()
     for srm in srms:
@@ -396,35 +398,35 @@ def getGridSRMs( vo, bdiiInfo = None, srmBlackList = None, unUsed = False ):
         srmSeDict.setdefault( site, {} )
         srmSeDict[site].setdefault( srm, {} )
         srmSeDict[site][srm]['SRM'] = siteSRMDict[site][srm]
-        srmSeDict[site][srm]['SE'] = seBdiiDict[site]['SEs'][srm]    
-      
-  return S_OK( srmSeDict ) 
-  
+        srmSeDict[site][srm]['SE'] = seBdiiDict[site]['SEs'][srm]
+
+  return S_OK( srmSeDict )
+
 def getSRMUpdates( vo, bdiiInfo = None ):
-  
+
   changeSet = set()
-  
+
   def addToChangeSet( entry, changeSet ):
     _section, _option, value, new_value = entry
     if new_value and new_value != value:
       changeSet.add( entry )
-  
-  result = getGridSRMs( vo, bdiiInfo = bdiiInfo ) 
+
+  result = getGridSRMs( vo, bdiiInfo = bdiiInfo )
   if not result['OK']:
     return result
-  srmBdiiDict = result['Value'] 
-    
+  srmBdiiDict = result['Value']
+
   result = getSEsFromCS()
   if not result['OK']:
     return result
   seDict = result['Value']
-  
+
   result = getVOs()
   if result['OK']:
     csVOs = set( result['Value'] )
   else:
-    csVOs = set( [vo] )  
-    
+    csVOs = set( [vo] )
+
   for seHost, diracSE in seDict.items():
     seSection = '/Resources/StorageElements/%s' % diracSE[0]
     # Look up existing values first
@@ -440,33 +442,33 @@ def getSRMUpdates( vo, bdiiInfo = None ):
         srmDict = srmBdiiDict[site][seHost]['SRM']
         seBdiiDict = srmBdiiDict[site][seHost]['SE']
         break
-      
+
     if not srmDict or not seBdiiDict:
-      continue   
-      
+      continue
+
     newDescription = seBdiiDict.get( 'GlueSEName', 'Unknown' )
-    newBackend = seBdiiDict.get( 'GlueSEImplementationName', 'Unknown' ) 
-    newSize = seBdiiDict.get( 'GlueSESizeTotal', 'Unknown' ) 
-    addToChangeSet( ( seSection, 'Description', description, newDescription ), changeSet )  
-    addToChangeSet( ( seSection, 'BackendType', backend, newBackend ), changeSet )    
-    addToChangeSet( ( seSection, 'TotalSize', size, newSize ), changeSet )     
-    
+    newBackend = seBdiiDict.get( 'GlueSEImplementationName', 'Unknown' )
+    newSize = seBdiiDict.get( 'GlueSESizeTotal', 'Unknown' )
+    addToChangeSet( ( seSection, 'Description', description, newDescription ), changeSet )
+    addToChangeSet( ( seSection, 'BackendType', backend, newBackend ), changeSet )
+    addToChangeSet( ( seSection, 'TotalSize', size, newSize ), changeSet )
+
     # Evaluate VOs if no space token defined, otherwise this is VO specific
     spaceToken = ''
     for i in range( 1, 10 ):
-      protocol = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'Protocol' ), '' ) 
+      protocol = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'Protocol' ), '' )
       if protocol.lower() == 'srm':
-        spaceToken = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'SpaceToken' ), '' ) 
+        spaceToken = gConfig.getValue( cfgPath( seSection, 'AccessProtocol.%d' % i, 'SpaceToken' ), '' )
         break
     if not spaceToken:
       bdiiVOs = srmDict.get( 'GlueServiceAccessControlBaseRule', [] )
       bdiiVOs = set( [ re.sub( '^VO:', '', rule ) for rule in bdiiVOs ] )
-      seVOs = csVOs.intersection( bdiiVOs )  
+      seVOs = csVOs.intersection( bdiiVOs )
       newVOs = ','.join( seVOs )
-      addToChangeSet( ( seSection, 'VO', vos, newVOs ), changeSet )    
+      addToChangeSet( ( seSection, 'VO', vos, newVOs ), changeSet )
 
-  return S_OK( changeSet )  
-    
+  return S_OK( changeSet )
+
 def getDBParameters( fullname ):
   """
   Retrieve Database parameters from CS

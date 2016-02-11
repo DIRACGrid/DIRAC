@@ -282,7 +282,7 @@ if not useVersionsDir:
   newUseVersionsDir = DIRAC.gConfig.getValue( cfgInstallPath( 'UseVersionsDir' ), False )
   if newUseVersionsDir:
     setUseVersionsDir( newUseVersionsDir )
-    # Set proper Defaults in configuration (even if they will be properly overwrite by InstallTools
+    # Set proper Defaults in configuration (even if they will be properly overwrite by gComponentInstaller
     instancePath = os.path.dirname( os.path.dirname( DIRAC.rootPath ) )
     rootPath = os.path.join( instancePath, 'pro' )
     DIRAC.gConfig.setOptionValue( cfgInstallPath( 'InstancePath' ), instancePath )
@@ -482,7 +482,7 @@ for vo in vomsDict:
     if not os.path.isdir( path ):
       try:
         os.makedirs( path )
-      except Exception, e:
+      except Exception as e:
         DIRAC.gLogger.error( "Could not create directory", str( e ) )
         sys.exit( 1 )
   vomsesLines = []

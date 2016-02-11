@@ -8,7 +8,6 @@ import datetime
 import math
 from time import sleep
 
-
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
@@ -16,7 +15,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter 
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 
 class ResourceStatus( object ):
   """

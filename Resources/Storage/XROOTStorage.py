@@ -8,10 +8,9 @@ __RCSID__ = "$Id$"
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities          import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
-from DIRAC.Core.Utilities.Pfn                   import pfnparse, pfnunparse
+from DIRAC.Core.Utilities.Pfn                   import pfnparse
 from DIRAC.Core.Utilities.File                  import getSize
 import os
-from types import StringType, ListType, DictType
 
 
 from XRootD import client
@@ -330,14 +329,14 @@ class XROOTStorage( StorageBase ):
                 S_ERROR(errMsg) in case of arguments problems
     """
 
-    if type( path ) is StringType:
+    if isinstance( path, basestring ):
       return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
-    elif type( path ) is ListType:
+    elif isinstance( path, list ):
       if not len( path ):
         return S_OK( { 'Failed' : {}, 'Successful' : {} } )
       else:
         urls = dict( [( url, False ) for url in path] )
-    elif type( path )  is DictType:
+    elif isinstance( path, dict ):
       if len( path ) != 1:
         return S_ERROR ( "XROOTStorage.putFile: path argument must be a dictionary (or a list of dictionary) { url : local path}" )
       urls = path
@@ -405,7 +404,7 @@ class XROOTStorage( StorageBase ):
       gLogger.debug( errStr, res['Message'] )
 
     # This is true only if the file exists. Then we remove it
-    if res['Value']:
+    if res.get('Value'):
       self.log.debug( "XROOTStorage.__putSingleFile: Remote file exists and needs to be removed" )
       res = self.__removeSingleFile( dest_url )
       # Fatal error during removal
@@ -635,6 +634,8 @@ class XROOTStorage( StorageBase ):
       metadataDict['Lost'] = 0
       metadataDict['Cached'] = 1
       metadataDict['Unavailable'] = 0
+
+      metadataDict = self._addCommonMetadata( metadataDict )
       # If we expect a given type, we return a boolean
       if expectedType:
         isExpectedType = metadataDict[expectedType]
@@ -813,10 +814,10 @@ class XROOTStorage( StorageBase ):
     urls = res['Value']
 
     if protocols:
-      if type( protocols ) is StringType:
+      if isinstance( protocols, basestring ):
         if protocols != self.protocol:
           return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
-      elif type( protocols ) is ListType:
+      elif isinstance( protocols, list ):
         if self.protocol not in protocols:
           return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in (%s)." % self.protocol )
 

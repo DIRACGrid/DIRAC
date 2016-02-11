@@ -522,7 +522,7 @@ class ProcessTask( object ):
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
-    except Exception, x:
+    except Exception as x:
       self.__exceptionRaised = True
       if gLogger:
         gLogger.exception( "Exception in process of pool" )

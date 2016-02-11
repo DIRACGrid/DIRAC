@@ -245,7 +245,7 @@ class ServiceInterface( object ):
     """
     try:
       fd = file( "%s/%s" % ( self.plotsPath, filename ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
     data = fd.read()
     fd.close()

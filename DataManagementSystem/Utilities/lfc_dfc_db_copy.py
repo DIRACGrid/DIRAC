@@ -597,7 +597,7 @@ def loadDataInMySQL( queryQueue, workerId ):
     # If it fails gain, we ignore this query
     try:
       cur.execute( next_query )
-    except Exception, e:
+    except Exception as e:
       print "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query )
       print "worker %s trying again " % workerId
 
@@ -673,7 +673,7 @@ def loadTupleDataInMySQL( queryQueue, workerId, querybase ):
       next_query = querybase + ','.join( next_tuple ) + ';'
       cur.execute( next_query )
       con.commit()
-    except Exception, e:
+    except Exception as e:
       print "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query )
       print "worker %s trying again " % workerId
 

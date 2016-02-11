@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import cmd
 import commands
 import os.path
 import time
@@ -11,6 +10,7 @@ import sys
 import getopt
 
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
@@ -19,7 +19,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
-class FileCatalogClientCLI(cmd.Cmd):
+class FileCatalogClientCLI( CLI ):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
 
     The URL should use HTTP protocol, and specify a port.  e.g.::
@@ -44,20 +44,20 @@ class FileCatalogClientCLI(cmd.Cmd):
 File Catalog Client $Revision: 1.17 $Date: 
             """
 
-  def __init__(self, client):
-    cmd.Cmd.__init__(self)
+  def __init__( self, client ):
+    CLI.__init__( self )
     self.fc = client
     self.cwd = '/'
     self.prompt = 'FC:'+self.cwd+'> '
     self.previous_cwd = '/'
 
-    self.dfc_fs = DFCFileSystem(self.fc)
-    self.lfn_dc = DirectoryCompletion(self.dfc_fs)
+    self.dfc_fs = DFCFileSystem( self.fc )
+    self.lfn_dc = DirectoryCompletion( self.dfc_fs )
 
     self.ul_fs = UnixLikeFileSystem()
-    self.ul_dc = DirectoryCompletion(self.ul_fs)
+    self.ul_dc = DirectoryCompletion( self.ul_fs )
 
-  def getPath(self,apath):
+  def getPath( self, apath ):
 
     if apath.find('/') == 0:
       path = apath
@@ -278,7 +278,7 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print "Failed to remove replica at",se
         print result['Message']
-    except Exception, x:
+    except Exception as x:
       print "Error: rmreplica failed with exception: ", x
 
   def complete_rmreplica(self, text, line, begidx, endidx):
@@ -383,7 +383,7 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print "Failed to remove replica at",rmse
         print result['Message']
-    except Exception, x:
+    except Exception as x:
       print "Error: rmpfn failed with exception: ", x
       
   def removeFile(self,args):
@@ -408,7 +408,7 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print "Failed to remove file from the catalog"  
         print result['Message']
-    except Exception, x:
+    except Exception as x:
       print "Error: rm failed with exception: ", x       
       
   def removeDirectory(self,args):
@@ -428,7 +428,7 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print "Failed to remove directory from the catalog"  
         print result['Message']
-    except Exception, x:
+    except Exception as x:
       print "Error: rm failed with exception: ", x            
       
   def do_replicate(self,args):
@@ -456,7 +456,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print "Replica is already present at the target SE"
       else:  
         print "File %s successfully replicated to the %s SE" % (lfn,se)  
-    except Exception, x:
+    except Exception as x:
       print "Error: replicate failed with exception: ", x      
       
   def complete_replicate(self, text, line, begidx, endidx):
@@ -495,7 +495,7 @@ File Catalog Client $Revision: 1.17 $Date:
             print se.ljust(15),entry
       else:
         print "Replicas: ",result['Message']
-    except Exception, x:
+    except Exception as x:
       print "replicas failed: ", x
 
   def complete_replicas(self, text, line, begidx, endidx):
@@ -547,7 +547,7 @@ File Catalog Client $Revision: 1.17 $Date:
       elif result['Value']['Successful']:
         if result['Value']['Successful'].has_key(lfn):
           print "File successfully added to the catalog"    
-    except Exception, x:
+    except Exception as x:
       print "add file failed: ", str(x)    
     
   def registerReplica(self,args):
@@ -575,7 +575,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print 'Failed to add replica:',result['Value']['Failed'][lfn]   
       else:
         print "Replica added successfully:", result['Value']['Successful'][lfn]    
-    except Exception, x:
+    except Exception as x:
       print "add pfn failed: ", str(x)    
       
   def do_ancestorset(self,args):
@@ -609,7 +609,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print result['Value']['Failed'][lfn]
       else:
         print "Added %d ancestors to file %s" % (len(ancestors),lfn)
-    except Exception, x:
+    except Exception as x:
       print "Exception while adding ancestors: ", str(x)                
                          
   def complete_ancestorset(self, text, line, begidx, endidx):
@@ -670,7 +670,7 @@ File Catalog Client $Revision: 1.17 $Date:
         for dep in depList:
           for lfn in depthDict[dep]:      
             print dep,' '*dep*5, lfn
-    except Exception, x:
+    except Exception as x:
       print "Exception while getting ancestors: ", str(x)    
 
   def complete_ancestor(self, text, line, begidx, endidx):
@@ -729,7 +729,7 @@ File Catalog Client $Revision: 1.17 $Date:
         for dep in depList:
           for lfn in depthDict[dep]:      
             print dep,' '*dep*5, lfn
-    except Exception, x:
+    except Exception as x:
       print "Exception while getting descendents: ", str(x)              
 
   def complete_descendent(self, text, line, begidx, endidx):
@@ -1197,7 +1197,7 @@ File Catalog Client $Revision: 1.17 $Date:
             dList.printOrdered()
       else:
         print "Error:",result['Message']
-    except Exception, x:
+    except Exception as x:
       print "Error:", str(x)
 
   def complete_ls(self, text, line, begidx, endidx):
@@ -1253,7 +1253,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if lfn in result['Value']['Failed']:
         print "Error:",result['Value']['Failed'][lfn]
         return  
-    except Exception, x:
+    except Exception as x:
       print "Exception:", str(x)         
 
   def complete_chown(self, text, line, begidx, endidx):
@@ -1308,7 +1308,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if lfn in result['Value']['Failed']:
         print "Error:",result['Value']['Failed'][lfn]
         return  
-    except Exception, x:
+    except Exception as x:
       print "Exception:", str(x)    
 
   def complete_chgrp(self, text, line, begidx, endidx):
@@ -1360,7 +1360,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if lfn in result['Value']['Failed']:
         print "Error:",result['Value']['Failed'][lfn]
         return  
-    except Exception, x:
+    except Exception as x:
       print "Exception:", str(x)       
       
   def complete_chmod(self, text, line, begidx, endidx):
@@ -1463,7 +1463,7 @@ File Catalog Client $Revision: 1.17 $Date:
             print "Directory size failed:",result['Message']  
       else:
         print "Failed to determine path type"        
-    except Exception, x:
+    except Exception as x:
       print "Size failed: ", x
 
   def complete_size(self, text, line, begidx, endidx):
@@ -1508,7 +1508,7 @@ File Catalog Client $Revision: 1.17 $Date:
           print "ERROR: getting guid failed"  
       else:
         print "ERROR:",result['Message']
-    except Exception, x:
+    except Exception as x:
       print "guid failed: ", x   
 
   def complete_guid(self, text, line, begidx, endidx):
@@ -1652,7 +1652,7 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     meta = argss[::2]
     value = argss[1::2]
-    metadict = {meta[n]:value[n] for n in range(len(meta))}
+    metadict = { meta[n]:value[n] for n in range(len(meta)) }
     print path,metadict
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
@@ -2224,17 +2224,7 @@ File Catalog Client $Revision: 1.17 $Date:
       return 
       
     total = time.time() - start
-    print "Catalog repaired in %.2f sec", total      
-      
-  def do_exit(self, args):
-    """ Exit the shell.
-
-    usage: exit
-    """
-    sys.exit(0)
-
-  def emptyline(self): 
-    pass      
+    print "Catalog repaired in %.2f sec" % total
       
 if __name__ == "__main__":
   

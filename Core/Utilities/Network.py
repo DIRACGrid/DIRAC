@@ -87,14 +87,13 @@ def splitURL( url ):
   if o.scheme == "":
     return S_ERROR( "'%s' URL is missing protocol" % url )
   path = o.path
-  while path[0] == '/':
-    path = path[1:]
+  path = path.lstrip("/")
   return S_OK( ( o.scheme, o.hostname or "", o.port or 0, path ) )
 
 def getIPsForHostName( hostName ):
   try:
     ips = [ t[4][0] for t in socket.getaddrinfo( hostName, 0 ) ]
-  except Exception, e:
+  except Exception as e:
     return S_ERROR( "Can't get info for host %s: %s" % ( hostName, str( e ) ) )
   uniqueIPs = []
   for ip in ips:

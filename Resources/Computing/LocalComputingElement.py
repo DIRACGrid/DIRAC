@@ -243,7 +243,7 @@ class LocalComputingElement( ComputingElement ):
         shutil.copy( outputFile, localOut )
       if os.path.exists( errorFile ):
         shutil.copy( errorFile, localErr )
-    except Exception, x:
+    except Exception as x:
       return S_ERROR( 'Failed to get output files: %s' % str( x ) )
 
     open( localOut, 'a' ).close()

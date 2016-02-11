@@ -40,7 +40,7 @@ class SocketInfoFactory:
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( "Error while creating SSL context: %s" % str( e ) )
 
   def generateServerInfo( self, kwargs ):
@@ -49,7 +49,7 @@ class SocketInfoFactory:
       infoDict[ key ] = kwargs[ key ]
     try:
       return S_OK( SocketInfo( infoDict ) )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( str( e ) )
 
   def __socketConnect( self, hostAddress, timeout, retries = 2 ):
@@ -72,7 +72,7 @@ class SocketInfoFactory:
     # osSocket.setblocking( 0 )
     if timeout:
       tsocket = self.getSocketTimeout()
-      gLogger.info( "Connection timeout set to: ", tsocket )
+      gLogger.verbose( "Connection timeout set to: ", tsocket )
       osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )

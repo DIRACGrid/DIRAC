@@ -8,7 +8,7 @@ from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB      import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-from types import StringType, ListType, DictType, IntType, LongType, StringTypes, TupleType
+from types import ListType, DictType, IntType, LongType, StringTypes, TupleType
 
 transTypes = list( StringTypes ) + [IntType, LongType]
 
@@ -23,7 +23,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     global database
     database = oDatabase
 
-  types_getCounters = [StringType, ListType, DictType]
+  types_getCounters = [StringTypes, ListType, DictType]
   def export_getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None ):
     res = database.getCounters( table, attrList, condDict, older = older, newer = newer, timeStamp = timeStamp )
     return self._parseRes( res )
@@ -33,7 +33,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods to manipulate the transformations table
   #
 
-  types_addTransformation = [ StringType, StringType, StringType, StringType, StringType, StringType, StringType]
+  types_addTransformation = [ StringTypes, StringTypes, StringTypes, StringTypes, StringTypes, StringTypes, StringTypes]
   def export_addTransformation( self, transName, description, longDescription, transType, plugin, agentType, fileMask,
                                     transformationGroup = 'General',
                                     groupSize = 1,
@@ -135,7 +135,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.addTaskForTransformation( transName, lfns = lfns, se = se )
     return self._parseRes( res )
 
-  types_setFileStatusForTransformation = [transTypes, [StringType, DictType]]
+  types_setFileStatusForTransformation = [transTypes, list( StringTypes ) + [DictType]]
   def export_setFileStatusForTransformation( self, transName, dictOfNewFilesStatus, lfns = [], force = False ):
     """ Sets the file status for the transformation.
 
@@ -207,7 +207,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.setTaskStatus( transName, taskID, status )
     return self._parseRes( res )
 
-  types_setTaskStatusAndWmsID = [ transTypes, [LongType, IntType], StringType, StringType]
+  types_setTaskStatusAndWmsID = [ transTypes, [LongType, IntType], StringTypes, StringTypes]
   def export_setTaskStatusAndWmsID( self, transName, taskID, status, taskWmsID ):
     res = database.setTaskStatusAndWmsID( transName, taskID, status, taskWmsID )
     return self._parseRes( res )
@@ -259,7 +259,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
   # These are the methods for TransformationInputDataQuery table
   #
 
-  types_createTransformationInputDataQuery = [ [LongType, IntType, StringType], DictType ]
+  types_createTransformationInputDataQuery = [ list( StringTypes ) + [LongType, IntType], DictType ]
   def export_createTransformationInputDataQuery( self, transName, queryDict ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -267,7 +267,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.createTransformationInputDataQuery( transName, queryDict, author = authorDN )
     return self._parseRes( res )
 
-  types_deleteTransformationInputDataQuery = [ [LongType, IntType, StringType] ]
+  types_deleteTransformationInputDataQuery = [ list( StringTypes ) + [LongType, IntType] ]
   def export_deleteTransformationInputDataQuery( self, transName ):
     credDict = self.getRemoteCredentials()
     authorDN = credDict[ 'DN' ]
@@ -275,7 +275,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.deleteTransformationInputDataQuery( transName, author = authorDN )
     return self._parseRes( res )
 
-  types_getTransformationInputDataQuery = [ [LongType, IntType, StringType] ]
+  types_getTransformationInputDataQuery = [ list( StringTypes ) + [LongType, IntType] ]
   def export_getTransformationInputDataQuery( self, transName ):
     res = database.getTransformationInputDataQuery( transName )
     return self._parseRes( res )
@@ -310,7 +310,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     res = database.getFileSummary( lfns )
     return self._parseRes( res )
 
-  types_addDirectory = [StringType]
+  types_addDirectory = [StringTypes]
   def export_addDirectory( self, path, force = False ):
     res = database.addDirectory( path, force = force )
     return self._parseRes( res )

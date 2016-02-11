@@ -1,4 +1,12 @@
-*.py[co]
+# Python
+*.py[cod]
+
+# C extensions
+*.so
+var
+sdist
+lib
+lib64
 
 # Packages
 *.egg
@@ -10,6 +18,12 @@ parts
 bin
 develop-eggs
 .installed.cfg
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
 
 # Installer logs
 pip-log.txt
@@ -30,5 +44,13 @@ pip-log.txt
 *.un~
 Session.vim
 
-# Python
-.pyo
+# Intellij
+.idea/
+DIRAC.iml
+
+# test stuff
+.cache
+__pycache__
+pytests.xml
+nosetests.xml
+coverage.xml

@@ -140,13 +140,23 @@ class FileCatalogHandler( RequestHandler ):
     return gFileCatalogDB.getPathPermissions( lfns, self.getRemoteCredentials() )
   
   
-  types_hasAccess = [ dict, basestring ]
+  types_hasAccess = [ [basestring, dict], [basestring, list, dict] ]
   def export_hasAccess( self, paths, opType ):
     """ Determine if the given op can be performed on the paths
         The OpType is all the operations exported
+
+        The reason for the param types is backward compatibility. Between v6r14 and v6r15,
+        the signature of hasAccess has changed, and the two parameters were swapped.
     """
-    lfns = paths.keys()
-    return gFileCatalogDB.hasAccess( opType, lfns, self.getRemoteCredentials() )
+
+    # The signature of v6r15 is (dict, str)
+    # The signature of v6r14 is (str, [dict, str, list])
+    # We swap the two params if the first attribute is a string
+    if isinstance( paths, basestring ):
+      paths, opType = opType, paths
+
+    return gFileCatalogDB.hasAccess( opType, paths, self.getRemoteCredentials() )
+
   
 
   ###################################################################

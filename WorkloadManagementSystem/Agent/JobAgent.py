@@ -508,7 +508,7 @@ class JobAgent( AgentModule ):
           parameters[param] = value.replace( '"', '' ).replace( '{', '"{' ).replace( '}', '}"' )
           self.log.debug( 'Found standard parameter %s: %s' % ( param, parameters[param] ) )
       return S_OK( parameters )
-    except Exception, x:
+    except Exception as x:
       self.log.exception( lException = x )
       return S_ERROR( 'Exception while extracting JDL parameters for job' )
 

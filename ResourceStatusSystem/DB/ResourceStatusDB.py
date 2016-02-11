@@ -5,9 +5,9 @@
 
 '''
 
-from datetime                                              import datetime 
+from datetime                                              import datetime
 
-from DIRAC                                                 import S_OK, S_ERROR 
+from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                    import DB
 from DIRAC.ResourceStatusSystem.Utilities                  import MySQLWrapper
 
@@ -17,12 +17,12 @@ class ResourceStatusDB( object ):
   '''
     Class that defines the tables for the ResourceStatusDB on a python dictionary.
   '''
-  
+
   # Written PrimaryKey as list on purpose !!
   _tablesDB = {}
-  
+
   _tablesLike = {}
-  _tablesLike[ 'ElementStatus' ]    = { 'Fields' : 
+  _tablesLike[ 'ElementStatus' ]    = { 'Fields' :
                     {
                      'Name'            : 'VARCHAR(64) NOT NULL',
                      'StatusType'      : 'VARCHAR(128) NOT NULL DEFAULT "all"',
@@ -35,10 +35,10 @@ class ResourceStatusDB( object ):
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
                     #FIXME: elementType is needed to be part of the key ??
-                    'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ]              
+                    'PrimaryKey' : [ 'Name', 'StatusType' ]#, 'ElementType' ]
                                     }
-    
-  _tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
+
+  _tablesLike[ 'ElementWithID' ]       = { 'Fields' :
                     {
                      'ID'              : 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
@@ -51,10 +51,10 @@ class ResourceStatusDB( object ):
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
-                    'PrimaryKey' : [ 'ID' ]                
+                    'PrimaryKey' : [ 'ID' ]
                                     }
 
-  _likeToTable = { 
+  _likeToTable = {
                     'SiteStatus'        : 'ElementStatus',
                     'SiteLog'           : 'ElementWithID',
                     'SiteHistory'       : 'ElementWithID',
@@ -66,10 +66,10 @@ class ResourceStatusDB( object ):
                     'NodeHistory'       : 'ElementWithID',
                     'ComponentStatus'   : 'ElementStatus',
                     'ComponentLog'      : 'ElementWithID',
-                    'ComponentHistory'  : 'ElementWithID',           
+                    'ComponentHistory'  : 'ElementWithID',
                    }
-  
-  
+
+
   def __init__( self, mySQL = None ):
     '''
       Constructor, accepts any DB or mySQL connection, mostly used for testing
@@ -77,11 +77,11 @@ class ResourceStatusDB( object ):
     '''
 
     self._tableDict = self.__generateTables()
-    
+
     if mySQL is not None:
       self.database = mySQL
     else:
-      self.database = DB( 'ResourceStatusDB', 
+      self.database = DB( 'ResourceStatusDB',
                           'ResourceStatus/ResourceStatusDB' )
 
   ## SQL Methods ###############################################################
@@ -89,8 +89,8 @@ class ResourceStatusDB( object ):
   def insert( self, params, meta ):
     '''
     Inserts args in the DB making use of kwargs where parameters such as
-    the 'table' are specified ( filled automatically by the Client). Typically you 
-    will not pass kwargs to this function, unless you know what are you doing 
+    the 'table' are specified ( filled automatically by the Client). Typically you
+    will not pass kwargs to this function, unless you know what are you doing
     and you have a very special use case.
 
     :Parameters:
@@ -103,28 +103,28 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-   
-    
+
+
     utcnow = datetime.utcnow().replace( microsecond = 0 )
     # We force lastCheckTime to utcnow if it is not present on the params
     #if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
-    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:  
+    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:
       params[ 'lastCheckTime' ] = utcnow
-    
+
     # If it is a XStatus table, we force dateEffective to now.
     if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
       if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-        params[ 'dateEffective' ] = utcnow      
-        
+        params[ 'dateEffective' ] = utcnow
+
     return MySQLWrapper.insert( self, params, meta )
 
   def update( self, params, meta ):
     '''
     Updates row with values given on args. The row selection is done using the
     default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
-    modified using kwargs. The 'table' keyword argument is mandatory, and 
-    filled automatically by the Client. Typically you will not pass kwargs to 
-    this function, unless you know what are you doing and you have a very 
+    modified using kwargs. The 'table' keyword argument is mandatory, and
+    filled automatically by the Client. Typically you will not pass kwargs to
+    this function, unless you know what are you doing and you have a very
     special use case.
 
     :Parameters:
@@ -138,9 +138,9 @@ class ResourceStatusDB( object ):
     :return: S_OK() || S_ERROR()
     '''
     # We force lastCheckTime to utcnow if it is not present on the params
-    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
-      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )    
-    
+    if not( 'lastCheckTime' in params and not params[ 'lastCheckTime' ] is None ):
+      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
+
     return MySQLWrapper.update( self, params, meta )
 
   def select( self, params, meta ):
@@ -165,9 +165,9 @@ class ResourceStatusDB( object ):
     '''
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
-    the MySQL buildCondition parser and generate a more sophisticated query. 
-    There is only one forbidden query, with all parameters None ( this would 
-    mean a query of the type `DELETE * from TableName` ). The usage of kwargs 
+    the MySQL buildCondition parser and generate a more sophisticated query.
+    There is only one forbidden query, with all parameters None ( this would
+    mean a query of the type `DELETE * from TableName` ). The usage of kwargs
     is the same as in the get function.
 
     :Parameters:
@@ -183,12 +183,12 @@ class ResourceStatusDB( object ):
     return MySQLWrapper.delete( self, params, meta )
 
   ## Extended SQL methods ######################################################
-  
+
   def addOrModify( self, params, meta ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is there, it is updated, if not, it is inserted as a new entry. 
-    
+    If it is there, it is updated, if not, it is inserted as a new entry.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
@@ -199,55 +199,55 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-        
+
     selectQuery = self.select( params, meta )
     if not selectQuery[ 'OK' ]:
-      return selectQuery 
-       
+      return selectQuery
+
     isUpdate = False
-       
-    if selectQuery[ 'Value' ]:      
-      
+
+    if selectQuery[ 'Value' ]:
+
       columns = selectQuery[ 'Columns' ]
       values  = selectQuery[ 'Value' ]
-      
+
       if len( values ) != 1:
         return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
 
       selectDict = dict( zip( columns, values[ 0 ] ) )
-      
+
       newDateEffective = None
-      
+
       for key, value in params.items():
         if key in ( 'lastCheckTime', 'dateEffective' ):
           continue
 
         if value is None:
           continue
-        
+
         if value != selectDict[ key[0].upper() + key[1:] ]:
-          newDateEffective = datetime.utcnow().replace( microsecond = 0 ) 
-          break  
-      
+          newDateEffective = datetime.utcnow().replace( microsecond = 0 )
+          break
+
       if 'dateEffective' in params:
-        params[ 'dateEffective' ] = newDateEffective              
-      
+        params[ 'dateEffective' ] = newDateEffective
+
       userQuery  = self.update( params, meta )
       isUpdate   = True
-    else:      
+    else:
       userQuery = self.insert( params, meta )
-    
+
     logResult = self._logRecord( params, meta, isUpdate )
     if not logResult[ 'OK' ]:
       return logResult
-    
-    return userQuery      
+
+    return userQuery
 
   def modify( self, params, meta ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is there, it is updated, if not, it does nothing. 
-    
+    If it is there, it is updated, if not, it does nothing.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
@@ -258,51 +258,51 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-        
+
     selectQuery = self.select( params, meta )
     if not selectQuery[ 'OK' ]:
-      return selectQuery 
-             
+      return selectQuery
+
     if not selectQuery[ 'Value' ]:
-      return S_ERROR( 'Nothing to update for %s' % str( params ) )      
-      
+      return S_ERROR( 'Nothing to update for %s' % str( params ) )
+
     columns = selectQuery[ 'Columns' ]
     values  = selectQuery[ 'Value' ]
-      
+
     if len( values ) != 1:
       return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
 
     selectDict = dict( zip( columns, values[ 0 ] ) )
-      
+
     newDateEffective = None
-      
+
     for key, value in params.items():
       if key in ( 'lastCheckTime', 'dateEffective' ):
         continue
 
       if value is None:
         continue
-        
+
       if value != selectDict[ key[0].upper() + key[1:] ]:
-        newDateEffective = datetime.utcnow().replace( microsecond = 0 ) 
-        break  
-      
+        newDateEffective = datetime.utcnow().replace( microsecond = 0 )
+        break
+
     if 'dateEffective' in params:
-      params[ 'dateEffective' ] = newDateEffective              
-      
+      params[ 'dateEffective' ] = newDateEffective
+
     userQuery = self.update( params, meta )
-    
+
     logResult = self._logRecord( params, meta, True )
     if not logResult[ 'OK' ]:
       return logResult
-    
+
     return userQuery
 
   def addIfNotThere( self, params, meta ):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
-    If it is not there, it is inserted as a new entry. 
-    
+    If it is not there, it is inserted as a new entry.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
@@ -313,38 +313,38 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-        
+
     selectQuery = self.select( params, meta )
     if not selectQuery[ 'OK' ]:
-      return selectQuery 
-       
-    if selectQuery[ 'Value' ]:      
       return selectQuery
-    
-    insertQuery = self.insert( params, meta )  
-  
-    # Record logs     
+
+    if selectQuery[ 'Value' ]:
+      return selectQuery
+
+    insertQuery = self.insert( params, meta )
+
+    # Record logs
     if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
-                
+
       meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
 
       logRes = self.insert( params, meta )
       if not logRes[ 'OK' ]:
-        return logRes  
-        
-    return insertQuery        
-      
+        return logRes
+
+    return insertQuery
+
   ## Auxiliar methods ##########################################################
 
   def getTable( self, tableName ):
     '''
-      Returns a table dictionary description given its name 
+      Returns a table dictionary description given its name
     '''
     if tableName in self._tableDict:
       return S_OK( self._tableDict[ tableName ] )
-    
+
     return S_ERROR( '%s is not on the schema' % tableName )
-    
+
   def getTablesList( self ):
     '''
       Returns a list of the table names in the schema.
@@ -356,22 +356,22 @@ class ResourceStatusDB( object ):
   def _checkTable( self ):
     '''
       Method used by database tools to write the schema
-    '''  
+    '''
     return self.__createTables()
 
   def _logRecord( self, params, meta, isUpdate ):
     '''
       Method that records every change on a LogTable, if activated on the CS.
     '''
-      
+
     if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):
       return S_OK()
-        
+
     if isUpdate:
       updateRes = self.select( params, meta )
       if not updateRes[ 'OK' ]:
         return updateRes
-          
+
       # If we are updating more that one result at a time, this is most likely
       # going to be a mess. All queries must be one at a time, if need to do
       if len( updateRes[ 'Value' ] ) != 1:
@@ -379,13 +379,13 @@ class ResourceStatusDB( object ):
       if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
         # Uyyy, something went seriously wrong !!
         return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
-                    
-      params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
-                
+
+      params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] ))
+
     meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
 
     logRes = self.insert( params, meta )
-    
+
     return logRes
 
   ## Private methods ###########################################################
@@ -406,43 +406,43 @@ class ResourceStatusDB( object ):
     tables = {}
     if tableName is None:
       tables.update( self._tableDict )
-   
+
     elif tableName in self._tableDict:
       tables = { tableName : self._tableDict[ tableName ] }
-    
+
     else:
-      return S_ERROR( '"%s" is not a known table' % tableName )    
-      
+      return S_ERROR( '"%s" is not a known table' % tableName )
+
     for tableName in tablesCreated:
       if tableName in tables:
-        del tables[ tableName ]  
-              
+        del tables[ tableName ]
+
     res = self.database._createTables( tables )
     if not res[ 'OK' ]:
       return res
-    
+
     # Human readable S_OK message
     if res[ 'Value' ] == 0:
       res[ 'Value' ] = 'No tables created'
     else:
       res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
-    return res       
+    return res
 
   def __generateTables( self ):
     '''
       Method used to transform the class variables into instance variables,
       for safety reasons.
     '''
-  
+
     # Avoids copying object.
     tables = {}
     tables.update( self._tablesDB )
-    
+
     for tableName, tableLike in self._likeToTable.items():
-      
+
       tables[ tableName ] = self._tablesLike[ tableLike ]
-       
+
     return tables
-    
+
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF   
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

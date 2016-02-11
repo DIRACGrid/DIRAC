@@ -241,6 +241,8 @@ class FileStorage( StorageBase ):
       metadataDict['Lost'] = 0
       metadataDict['Unavailable'] = 0
 
+      metadataDict = FileStorage._addCommonMetadata( metadataDict )
+
     except OSError as ose:
       return S_ERROR( str( ose ) )
 

@@ -53,7 +53,7 @@ class WatchdogLinux( Watchdog ):
       if localID['OK']:
         account = localID['Value'][1].strip()
       result["LocalAccount"] = account
-    except Exception, x:
+    except Exception as x:
       self.log.fatal('Watchdog failed to obtain node information with Exception:')
       self.log.fatal(str(x))
       result = S_ERROR()

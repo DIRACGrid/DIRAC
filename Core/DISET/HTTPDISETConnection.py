@@ -57,7 +57,7 @@ class HTTPDISETSocket:
         time.sleep( 0.001 )
       except GSI.SSL.ZeroReturnError:
         return S_OK( "" )
-      except Exception, e:
+      except Exception as e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
   def readline( self, size = 0 ):

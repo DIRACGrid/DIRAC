@@ -477,7 +477,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
                       method = method, transID = transID )
     if active:
-      res = clients['DataManager'].getActiveReplicas( lfns )
+      res = clients['DataManager'].getActiveReplicas( lfns, preferDisk = True )
     else:
       res = clients['DataManager'].getReplicas( lfns )
     if not res['OK']:

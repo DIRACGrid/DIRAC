@@ -253,7 +253,7 @@ class DiracAdmin( API ):
         print '\nAll Site Mask Logging Info\n'
 
       siteDict = result['Value']
-      for site, tupleList in siteDict.items():
+      for site, tupleList in siteDict.iteritems():
         if not site:
           print '\n===> %s\n' % site
         for tup in tupleList:
@@ -448,15 +448,15 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
+    if isinstance( jobID, basestring ):
       try:
         jobID = int( jobID )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
-    elif type( jobID ) == type( [] ):
+    elif isinstance( jobID, list ):
       try:
         jobID = [int( job ) for job in jobID]
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False )
@@ -527,7 +527,7 @@ class DiracAdmin( API ):
        :type job: integer or string
        :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     if not directory:
@@ -585,7 +585,7 @@ class DiracAdmin( API ):
        :type gridReference: string
        :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -602,7 +602,7 @@ class DiracAdmin( API ):
        :param gridReference: Pilot Job Reference
        :return: S_OK,S_ERROR
     """
-    if not type( gridReference ) == type( " " ):
+    if not isinstance( gridReference, basestring ):
       return self._errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -639,10 +639,10 @@ class DiracAdmin( API ):
        :return: S_OK,S_ERROR
 
     """
-    if type( jobID ) == type( " " ):
+    if isinstance( jobID, basestring ):
       try:
         jobID = int( jobID )
-      except Exception, x:
+      except Exception as x:
         return self._errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
@@ -671,7 +671,7 @@ class DiracAdmin( API ):
     ceDict = result['Value']
     headers = 'CE'.ljust( 28 )
     i = 0
-    for ce, summary in ceDict.items():
+    for ce, summary in ceDict.iteritems():
       states = summary.keys()
       if len( states ) > i:
         i = len( states )
@@ -680,7 +680,7 @@ class DiracAdmin( API ):
       headers += 'Status'.ljust( 12 ) + 'Count'.ljust( 12 )
     print headers
 
-    for ce, summary in ceDict.items():
+    for ce, summary in ceDict.iteritems():
       line = ce.ljust( 28 )
       states = summary.keys()
       states.sort()
@@ -714,17 +714,17 @@ class DiracAdmin( API ):
                'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
 
     conditions = {}
-    for key, value in options.items():
+    for key, value in options.iteritems():
       if value:
         try:
           conditions[key] = str( value )
-        except Exception, x:
+        except Exception as x:
           return self._errorReport( str( x ), 'Expected string for %s field' % key )
 
     try:
       requestStart = int( requestStart )
       limit = int( limit )
-    except Exception, x:
+    except Exception as x:
       return self._errorReport( str( x ), 'Expected integer for %s field' % limit )
 
     self.log.verbose( 'Will select requests with the following conditions' )
@@ -737,7 +737,7 @@ class DiracAdmin( API ):
 
     requestIDs = result['Value']
     conds = []
-    for key, value in conditions.items():
+    for key, value in conditions.iteritems():
       if value:
         conds.append( '%s = %s' % ( key, value ) )
     self.log.verbose( '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ),
@@ -788,7 +788,7 @@ class DiracAdmin( API ):
       gLogger.info( infoStr )
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
       gLogger.info( infoStr )
-    except Exception, x:
+    except Exception as x:
       errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % ( x )
       gLogger.exception( errStr )
 
@@ -798,7 +798,7 @@ class DiracAdmin( API ):
       gLogger.info( infoStr )
       infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
       gLogger.info( infoStr )
-    except Exception, x:
+    except Exception as x:
       errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( x )
       gLogger.warn( errStr )
       try:
@@ -807,7 +807,7 @@ class DiracAdmin( API ):
         gLogger.info( infoStr )
         infoStr = "The version of gfal is %s" % gfal.gfal_version()
         gLogger.info( infoStr )
-      except Exception, x:
+      except Exception as x:
         errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % ( x )
         gLogger.exception( errStr )
 
@@ -849,7 +849,7 @@ class DiracAdmin( API ):
     if printOutput:
       print '\nSummary of protocols for StorageElements at site %s' % site
       print '\nStorageElement'.ljust( 30 ) + 'ProtocolsList'.ljust( 30 ) + '\n'
-      for se, protocols in seInfo.items():
+      for se, protocols in seInfo.iteritems():
         print se.ljust( 30 ) + ', '.join( protocols ).ljust( 30 )
 
     return S_OK( seInfo )

@@ -1,7 +1,7 @@
 # $HeadURL $
 ''' ResourceStatusHandler
 
-  Module that allows users to access the ResourceStatusDB remotely.  
+  Module that allows users to access the ResourceStatusDB remotely.
 
 '''
 
@@ -17,12 +17,12 @@ def initializeResourceStatusHandler( _serviceInfo ):
     Handler initialization, where we set the ResourceStatusDB as global db, and
     we instantiate the synchronizer.
   '''
-  
+
   global db
   db = ResourceStatusDB()
   # Regenerates DB tables if needed
   db._checkTable()
-  
+
   return S_OK()
 
 ################################################################################
@@ -57,11 +57,11 @@ class ResourceStatusHandler( RequestHandler ):
   @staticmethod
   def __logResult( methodName, result ):
     '''
-      Method that writes to log error messages 
+      Method that writes to log error messages
     '''
-    
+
     if not result[ 'OK' ]:
-      gLogger.error( '%s%s' % ( methodName, result[ 'Message' ] ) )  
+      gLogger.error( '%s%s' % ( methodName, result[ 'Message' ] ) )
 
   @staticmethod
   def setDatabase( database ):
@@ -97,11 +97,11 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'insert: %s %s' % ( params, meta ) )
-    
+
     res = db.insert( params, meta )
     self.__logResult( 'insert', res )
-    
-    return res   
+
+    return res
 
   types_update = [ dict, dict ]
   def export_update( self, params, meta ):
@@ -122,11 +122,11 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'update: %s %s' % ( params, meta ) )
-    
+
     res = db.update( params, meta )
     self.__logResult( 'update', res )
-    
-    return res   
+
+    return res
 
   types_select = [ dict, dict ]
   def export_select( self, params, meta ):
@@ -147,11 +147,11 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'select: %s %s' % ( params, meta ) )
-    
+
     res = db.select( params, meta )
     self.__logResult( 'select', res )
-    
-    return res   
+
+    return res
 
   types_delete = [ dict, dict ]
   def export_delete( self, params, meta ):
@@ -172,12 +172,12 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'delete: %s %s' % ( params, meta ) )
-    
+
     res = db.delete( params, meta )
     self.__logResult( 'delete', res )
-    
-    return res   
-  
+
+    return res
+
   types_addOrModify = [ dict, dict ]
   def export_addOrModify( self, params, meta ):
     '''
@@ -197,11 +197,11 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'addOrModify: %s %s' % ( params, meta ) )
-    
+
     res = db.addOrModify( params, meta )
     self.__logResult( 'addOrModify', res )
-    
-    return res  
+
+    return res
 
   types_modify = [ dict, dict ]
   def export_modify( self, params, meta ):
@@ -222,12 +222,12 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'modify: %s %s' % ( params, meta ) )
-    
+
     res = db.modify( params, meta )
     self.__logResult( 'modify', res )
-    
-    return res  
-  
+
+    return res
+
   types_addIfNotThere = [ dict, dict ]
   def export_addIfNotThere( self, params, meta ):
     '''
@@ -247,11 +247,11 @@ class ResourceStatusHandler( RequestHandler ):
     '''
 
     gLogger.info( 'addIfNotThere: %s %s' % ( params, meta ) )
-    
+
     res = db.addIfNotThere( params, meta )
     self.__logResult( 'addIfNotThere', res )
-    
-    return res    
+
+    return res
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

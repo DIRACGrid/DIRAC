@@ -1,4 +1,4 @@
-""" 
+"""
 The Grid module contains several utilities for grid operations
 """
 __RCSID__ = "$Id$"
@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.ReturnValues                import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess                  import systemCall, shellCall
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
-  """ 
+  """
   Execute cmd tuple after sourcing GridEnv
   """
   currentEnv = dict( os.environ )
@@ -60,15 +60,15 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
 
 def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   """ Python wrapper for ldapserch at bdii.
-      
+
       :param  filt:    Filter used to search ldap, default = '', means select all
       :param  attr:    Attributes returned by ldapsearch, default = '*', means return all
       :param  host:    Host used for ldapsearch, default = 'lcg-bdii.cern.ch:2170', can be changed by $LCG_GFAL_INFOSYS
-      
+
       :return: standard DIRAC answer with Value equals to list of ldapsearch responses
 
       Each element of list is dictionary with keys:
-      
+
         'dn':                 Distinguished name of ldapsearch response
         'objectClass':        List of classes in response
         'attr':               Dictionary of attributes
@@ -217,7 +217,7 @@ For example result['Value'][0]['GlueCEStateStatus']
   voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
   voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
   filt = '(&(GlueCEUniqueID=%s*)(|%s))' % ( ce, voFilters )
-  
+
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -243,7 +243,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
   voFilters += '(GlueCEAccessControlBaseRule=VOMS:/%s)' % vo
   voFilters += '(GlueCEAccessControlBaseRule=VO:%s)' % vo
   filt = '(&(GlueCEUniqueID=%s*)(|%s))' % ( ce, voFilters )
-  
+
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -341,7 +341,7 @@ def ldapService( serviceID = '*', serviceType = '*', vo = '*', attr = None, host
   voFilters += '(GlueServiceAccessControlBaseRule=VOMS:/%s)' % vo
   voFilters += '(GlueServiceAccessControlBaseRule=VO:%s)' % vo
   filt = '(&(GlueServiceType=%s)(GlueServiceUniqueID=%s)(|%s))' % ( serviceType, serviceID, voFilters )
-  
+
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -352,10 +352,10 @@ def ldapService( serviceID = '*', serviceType = '*', vo = '*', attr = None, host
     services.append( value['attr'] )
 
   return S_OK( services )
-  
+
 def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBaseRule"], host = None ):
   """ VOInfo for a given SE
-  """  
+  """
   filt = '(GlueChunkKey=GlueSEUniqueID=%s)' % seID
   filt += '(GlueVOInfoAccessControlBaseRule=VO:%s*)' % vo
   filt += '(objectClass=GlueVOInfo)'
@@ -368,16 +368,16 @@ def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBas
   voInfo = []
   for value in result['Value']:
     voInfo.append( value['attr'] )
-    
-  return S_OK( voInfo )    
+
+  return S_OK( voInfo )
 
 def getBdiiCEInfo( vo, host = None ):
   """ Get information for all the CEs/queues for a given VO
-  
+
 :param vo: BDII VO name
 :return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
-               each siteID, ceID, queueName all the BDII/Glue parameters are retrieved  
-  """  
+               each siteID, ceID, queueName all the BDII/Glue parameters are retrieved
+  """
   result = ldapCEState( '', vo, host = host )
   if not result['OK']:
     return result
@@ -385,8 +385,9 @@ def getBdiiCEInfo( vo, host = None ):
   siteDict = {}
   ceDict = {}
   queueDict = {}
-  
+
   for queue in result['Value']:
+    queue = dict(queue)
     clusterID = queue.get('GlueForeignKey','').replace('GlueClusterUniqueID=','')
     ceID = queue.get('GlueCEUniqueID','').split(':')[0]
     queueDict[queue['GlueCEUniqueID']] = queue
@@ -455,7 +456,7 @@ def getBdiiSEInfo( vo, host = None ):
     for entry in result['Value']:
       voPath = entry['GlueVOInfoPath']
       seID = ''
-      for en in entry['dn'].split(','):  
+      for en in entry['dn'].split(','):
         if en.startswith( 'GlueSEUniqueID=' ):
           seID = en.replace( 'GlueSEUniqueID=', '' )
           break

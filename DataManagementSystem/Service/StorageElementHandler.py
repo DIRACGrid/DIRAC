@@ -34,12 +34,15 @@ import shutil
 import stat
 import re
 from stat import ST_MODE, ST_SIZE, ST_ATIME, ST_CTIME, ST_MTIME, S_ISDIR, S_IMODE
-from types import StringType, StringTypes, ListType
+from types import  StringTypes, ListType
 ## from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Adler            import fileAdler
+
+from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 BASE_PATH = ""
 MAX_STORAGE_SIZE = 0
@@ -134,8 +137,12 @@ class StorageElementHandler( RequestHandler ):
     resultDict['Exists'] = True
     mode = statTuple[ST_MODE]
     resultDict['Type'] = "File"
+    resultDict['File'] = True
+    resultDict['Directory'] = False
     if S_ISDIR( mode ):
       resultDict['Type'] = "Directory"
+      resultDict['File'] = False
+    resultDict['Directory'] = True
     resultDict['Size'] = statTuple[ST_SIZE]
     resultDict['TimeStamps'] = ( statTuple[ST_ATIME], statTuple[ST_MTIME], statTuple[ST_CTIME] )
     resultDict['Cached'] = 1
@@ -143,6 +150,16 @@ class StorageElementHandler( RequestHandler ):
     resultDict['Lost'] = 0
     resultDict['Unavailable'] = 0
     resultDict['Mode'] = S_IMODE( mode )
+    
+
+    if resultDict['File']:
+      cks = fileAdler( path )
+      resultDict['Checksum'] = cks
+
+    
+    resultDict = StorageBase._addCommonMetadata( resultDict )
+
+
     return S_OK( resultDict )
 
   types_exists = [StringTypes]
@@ -152,13 +169,13 @@ class StorageElementHandler( RequestHandler ):
       return S_OK( True )
     return S_OK( False )
 
-  types_getMetadata = [StringType]
+  types_getMetadata = [StringTypes]
   def export_getMetadata( self, fileID ):
     """ Get metadata for the file or directory specified by fileID
     """
     return self.__getFileStat( self.__resolveFileID( fileID ) )
 
-  types_createDirectory = [StringType]
+  types_createDirectory = [StringTypes]
   def export_createDirectory( self, dir_path ):
     """ Creates the directory on the storage
     """
@@ -176,12 +193,12 @@ class StorageElementHandler( RequestHandler ):
     try:
       os.makedirs( path )
       return S_OK()
-    except Exception, x:
+    except Exception as x:
       errStr = "Exception creating directory."
       gLogger.error( "StorageElementHandler.createDirectory: %s" % errStr, str( x ) )
       return S_ERROR( errStr )
 
-  types_listDirectory = [StringType, StringType]
+  types_listDirectory = [StringTypes, StringTypes]
   def export_listDirectory( self, dir_path, mode ):
     """ Return the dir_path directory listing
     """
@@ -318,7 +335,7 @@ class StorageElementHandler( RequestHandler ):
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
     return res
 
-  types_remove = [StringType, StringType]
+  types_remove = [StringTypes, StringTypes]
   def export_remove( self, fileID, token ):
     """ Remove fileID from the storage. token is used for access rights confirmation. """
     return self.__removeFile( self.__resolveFileID( fileID ), token )
@@ -340,7 +357,7 @@ class StorageElementHandler( RequestHandler ):
     else:
       return S_ERROR( 'File removal %s not authorized' % fileID )
 
-  types_getDirectorySize = [StringType]
+  types_getDirectorySize = [StringTypes]
   def export_getDirectorySize( self, fileID ):
     """ Get the size occupied by the given directory
     """
@@ -355,7 +372,7 @@ class StorageElementHandler( RequestHandler ):
     else:
       return S_ERROR( "Directory does not exists" )
 
-  types_removeDirectory = [StringType, StringType]
+  types_removeDirectory = [StringTypes, StringTypes]
   def export_removeDirectory( self, fileID, token ):
     """ Remove the given directory from the storage
     """
@@ -375,7 +392,7 @@ class StorageElementHandler( RequestHandler ):
           gLogger.error( str( error ) )
           return S_ERROR( "Failed to remove directory %s" % dir_path )
 
-  types_removeFileList = [ ListType, StringType ]
+  types_removeFileList = [ ListType, StringTypes ]
   def export_removeFileList( self, fileList, token ):
     """ Remove files in the given list
     """

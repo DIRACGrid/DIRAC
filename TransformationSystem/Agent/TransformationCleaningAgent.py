@@ -190,16 +190,19 @@ class TransformationCleaningAgent( AgentModule ):
     :param self: self reference
     :param int transID: transformation ID
     """
+    self.log.verbose("Cleaning Transformation directories of transformation %d" %transID)
     directories = []
     if 'TransformationDB' in self.directoryLocations:
       res = self.transClient.getTransformationParameters( transID, ['OutputDirectories'] )
       if not res['OK']:
         self.log.error( "Failed to obtain transformation directories", res['Message'] )
         return res
-      if not isinstance( res['Value'], list ):
-        transDirectories = ast.literal_eval( res['Value'] )
-      else:
-        transDirectories = res['Value']
+      transDirectories = []
+      if res['Value']:
+        if not isinstance( res['Value'], list ):
+          transDirectories = ast.literal_eval( res['Value'] )
+        else:
+          transDirectories = res['Value']
       directories = self._addDirs( transID, transDirectories, directories )
 
     if 'MetadataCatalog' in self.directoryLocations:
@@ -242,6 +245,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param self: self reference
     :param sre directory: folder name
     """
+    self.log.verbose("Cleaning Storage Contents")
     for storageElement in self.activeStorages:
       res = self.__removeStorageDirectory( directory, storageElement )
       if not res['OK']:
@@ -282,6 +286,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param self: self reference
     :params str directory: folder name
     """
+    self.log.verbose("Cleaning Catalog contents")
     res = self.__getCatalogDirectoryContents( [directory] )
     if not res['OK']:
       return res
@@ -345,7 +350,7 @@ class TransformationCleaningAgent( AgentModule ):
     :param self: self reference
     :param str directory: folder name
     """
-    self.log.info( "Removing log files found in the directory %s" % directory )
+    self.log.verbose( "Removing log files found in the directory %s" % directory )
     res = returnSingleResult( StorageElement( self.logSE ).removeDirectory( directory ) )
     if not res['OK']:
       self.log.error( "Failed to remove log files", res['Message'] )
@@ -486,6 +491,7 @@ class TransformationCleaningAgent( AgentModule ):
   def cleanTransformationTasks( self, transID ):
     """ clean tasks from WMS, or from the RMS if it is a DataManipulation transformation
     """
+    self.log.verbose("Cleaning Transformation tasks of transformation %d" %transID)
     res = self.__getTransformationExternalIDs( transID )
     if not res['OK']:
       return res
