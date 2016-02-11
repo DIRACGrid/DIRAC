@@ -9,15 +9,17 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.MonitoringSystem.private.TypeLoader import TypeLoader
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 
 ########################################################################
 class MonitoringDB( ElasticDB ):
 
-  def __init__( self, name = 'Monitoring/MonitoringDB' ):
+  def __init__( self, name = 'Monitoring/MonitoringDB', readOnly = False ):
     ElasticDB.__init__( self, 'MonitoringDB', name )
+    self.__readonly = readOnly
     self.__documents = {}
     self.__loadIndexes()
+    
     
   def __loadIndexes( self ):
     """
@@ -38,7 +40,11 @@ class MonitoringDB( ElasticDB ):
         doc_type =  typeClass().getDocType() 
         mapping = typeClass().getMapping()
         self.__documents[doc_type] = {indexName:mapping}
-        self.registerType( doc_type, indexName, mapping )
+        print "DDDD", self.__documents
+        if self.__readonly:
+          gLogger.info("Read only mode is okay")
+        else:
+          self.registerType( doc_type, indexName, mapping )
   
   def getIndexName(self, typeName):
     
