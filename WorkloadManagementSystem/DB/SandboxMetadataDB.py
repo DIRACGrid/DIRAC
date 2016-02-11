@@ -76,9 +76,9 @@ class SandboxMetadataDB( DB ):
     """
     Get the owner ID and register it if it's not there
     """
-    sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner='%s' AND OwnerDN='%s' AND OwnerGroup='%s'" % ( owner,
-                                                                                                         ownerDN,
-                                                                                                         ownerGroup )
+    sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = %s AND OwnerDN = %s AND OwnerGroup = %s" % ( self._escapeString( owner )[ 'Value' ],
+                                                                                                         self._escapeString( ownerDN )[ 'Value' ],
+                                                                                                         self._escapeString( ownerGroup )[ 'Value' ] )
     result = self._query( sqlCmd )
     if not result[ 'OK' ]:
       return result
@@ -86,9 +86,9 @@ class SandboxMetadataDB( DB ):
     if len( data ) > 0:
       return S_OK( data[0][0] )
     #Its not there, insert it
-    sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, '%s', '%s', '%s' )" % ( owner,
-                                                                                                                  ownerDN,
-                                                                                                                  ownerGroup )
+    sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, %s, %s, %s )" % ( self._escapeString( owner )[ 'Value' ],
+                                                                                                                  self._escapeString( ownerDN )[ 'Value' ],
+                                                                                                                  self._escapeString( ownerGroup )[ 'Value' ] )
     result = self._update( sqlCmd )
     if not result[ 'OK' ]:
       return result
