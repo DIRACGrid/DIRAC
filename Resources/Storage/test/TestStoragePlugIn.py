@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 
 __RCSID__ = "$Id$"
@@ -660,4 +660,3 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DirectoryTestCase ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

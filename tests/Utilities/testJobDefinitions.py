@@ -1,7 +1,7 @@
 """ Collection of user jobs for testing purposes
 """
 
-from TestDIRAC.Utilities.utils import find_all
+from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
 

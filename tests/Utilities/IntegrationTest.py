@@ -1,6 +1,6 @@
 import unittest
 
-from TestDIRAC.Utilities.utils import cleanTestDir
+from DIRAC.tests.Utilities.utils import cleanTestDir
 
 from DIRAC import gLogger
 from DIRAC.Interfaces.API.Dirac import Dirac
@@ -33,4 +33,3 @@ class FailingUserJobTestCase( IntegrationTest ):
     if not res['OK']:
       print "Could not remove files", res['Message']
       exit( 1 )
-

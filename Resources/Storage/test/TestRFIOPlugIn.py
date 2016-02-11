@@ -1,9 +1,9 @@
 __RCSID__ = "$Id$"
 
-# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 
-import unittest, types, time, os, shutil
+import unittest, time, os, shutil
 from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
 from DIRAC.Core.Utilities.File                  import getSize
 
@@ -596,4 +596,3 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCase )
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-
