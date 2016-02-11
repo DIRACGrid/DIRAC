@@ -4,9 +4,9 @@ parseCommandLine()
 
 import unittest, os, shutil
 
-from TestDIRAC.Utilities.utils import find_all
+from DIRAC.tests.Utilities.utils import find_all
 
-from TestDIRAC.Utilities.IntegrationTest import IntegrationTest
+from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac

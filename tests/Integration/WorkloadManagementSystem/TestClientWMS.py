@@ -15,7 +15,7 @@
     - JobStateUpdate
     - WMSAdministrator
     - Matcher
-    
+
     A user proxy is also needed to submit,
     and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
 
@@ -30,7 +30,7 @@ import os, tempfile
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from TestDIRAC.Utilities.utils import find_all
+from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -345,9 +345,9 @@ class JobMonitoringMore( TestWMSTestCase ):
 class WMSAdministrator( TestWMSTestCase ):
   """ testing WMSAdmin - for JobDB
   """
-  
+
   def test_JobDBWMSAdmin(self):
-  
+
     wmsAdministrator = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
     sitesList = ['My.Site.org', 'Your.Site.org']
@@ -440,12 +440,12 @@ class WMSAdministratorPilots( TestWMSTestCase ):
     self.assertEqual( res['Value']['TotalRecords'], 1 )
     res = wmsAdministrator.getPilotMonitorSelectors()
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], {'GridType': ['DIRAC'], 
-                                     'OwnerGroup': ['a/owner/Group'], 
-                                     'DestinationSite': ['NotAssigned'], 
-                                     'Broker': ['Unknown'], 'Status': ['Submitted'], 
-                                     'OwnerDN': ['/a/ownerDN'], 
-                                     'GridSite': ['Unknown'], 
+    self.assertEqual( res['Value'], {'GridType': ['DIRAC'],
+                                     'OwnerGroup': ['a/owner/Group'],
+                                     'DestinationSite': ['NotAssigned'],
+                                     'Broker': ['Unknown'], 'Status': ['Submitted'],
+                                     'OwnerDN': ['/a/ownerDN'],
+                                     'GridSite': ['Unknown'],
                                      'Owner': []} )
     res = wmsAdministrator.getPilotSummaryWeb( {}, [], 0, 100 )
     self.assert_( res['OK'] )

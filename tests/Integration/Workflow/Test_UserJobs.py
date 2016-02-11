@@ -8,8 +8,8 @@ parseCommandLine()
 
 import unittest
 
-from TestDIRAC.Utilities.IntegrationTest import IntegrationTest
-from TestDIRAC.Utilities.utils import find_all
+from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
+from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
@@ -18,7 +18,7 @@ class UserJobTestCase( IntegrationTest ):
   """ Base class for the UserJob test cases
   """
   def setUp( self ):
-    super( IntegrationTest, self ).setUp()
+    super( UserJobTestCase, self ).setUp()
 
     self.d = Dirac()
     self.exeScriptLocation = find_all( 'exe-script.py', '.', 'Integration' )[0]
@@ -47,8 +47,8 @@ class HelloWorldPlusSuccess( UserJobTestCase ):
     job.setExecutable( find_all( "helloWorld.py", '.', 'Integration' )[0],
                        arguments = "This is an argument",
                        logFile = "aLogFileForTest.txt" ,
-                       parameters=[('executable', 'string', '', "Executable Script"), 
-                                   ('arguments', 'string', '', 'Arguments for executable Script'), 
+                       parameters=[('executable', 'string', '', "Executable Script"),
+                                   ('arguments', 'string', '', 'Arguments for executable Script'),
                                    ( 'applicationLog', 'string', '', "Log file name" ),
                                    ( 'someCustomOne', 'string', '', "boh" )],
                        paramValues = [( 'someCustomOne', 'aCustomValue' )] )
@@ -102,4 +102,3 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( LSSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

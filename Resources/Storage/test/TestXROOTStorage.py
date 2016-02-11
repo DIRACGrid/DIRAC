@@ -2,7 +2,7 @@
 
 '''
 
-# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to TestDIRAC
+# FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
 
 # from DIRAC.Core.Base.Script import parseCommandLine
@@ -94,7 +94,7 @@ def enum( **enums ):
 
 class xrootStatInfoMock:
 
-  StatInfoFlags = enum( 
+  StatInfoFlags = enum(
   X_BIT_SET    = 1,
   IS_DIR       = 2,
   OTHER        = 4,
@@ -117,7 +117,7 @@ class xrootStatInfoMock:
     self.ALL = 127
 
     flags = 0
-    
+
     if Executable:
       flags |= xrootStatInfoMock.StatInfoFlags.X_BIT_SET
     if Directory:
@@ -132,15 +132,15 @@ class xrootStatInfoMock:
       flags |= xrootStatInfoMock.StatInfoFlags.IS_READABLE
     if Writable:
       flags |= xrootStatInfoMock.StatInfoFlags.IS_WRITABLE
-    
+
 
     self.flags = flags
-    
+
   def makeDir( self ):
     """ Set the other bit to false, and the dir bit to true """
     self.flags &= ~xrootStatInfoMock.StatInfoFlags.OTHER
     self.flags |= xrootStatInfoMock.StatInfoFlags.IS_DIR
-    
+
   def makeFile( self ):
     """ set the other and dir bits to false"""
     self.flags &= ~xrootStatInfoMock.StatInfoFlags.OTHER
@@ -149,20 +149,20 @@ class xrootStatInfoMock:
 
 
 class xrootListEntryMock:
-  
+
   def __init__(self, name = "name", hostaddr = "hostaddr", statinfo = None):
     self.name = name
     self.hostaddr = hostaddr
     self.statinfo = statinfo
-    
+
 
 class xrootDirectoryListMock:
-  
+
   def __init__(self, parent = "parent", dirlist = []):
     self.size = len(dirlist)
     self.parent= parent
     self.dirlist = dirlist
-    
+
   def __iter__( self ):
     return iter( self.dirlist )
 
@@ -234,22 +234,22 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
   #   self.assertEqual( True, res['OK'] )
   #   res = res[ 'Value' ]
   #   self.assertEqual( "root://host//rootdir/subpath/fileName", res )
-    
-    
+
+
 
   def test_getFileSize( self ):
     ''' tests the output of getFileSize
     '''
 
     resource = self.testClass( 'storageName', self.parameterDict )
-    
+
     statusMock = xrootStatusMock()
     statusMock.makeOk()
-        
+
     statInfoMock = xrootStatInfoMock()
     statInfoMock.makeFile()
     statInfoMock.size = 10
-    
+
     resource.xrootClient.stat.return_value = ( statusMock, statInfoMock )
 
     res = resource.getFileSize( 1 )
@@ -260,7 +260,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
     res = resource.getFileSize( [] )
     self.assertEqual( True, res['OK'] )
-   
+
 
     res = resource.getFileSize( [ 'A', 'B' ] )
     self.assertEqual( True, res['OK'] )
@@ -293,13 +293,13 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"A" : "A"}, res['Value']['Successful'] )
     self.assertEqual( {}, res['Value']['Failed'] )
-     
+
     res = resource.getTransportURL( {"A" : 0}, ["protocol", "other"] )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"A" : "A"}, res['Value']['Successful'] )
     self.assertEqual( {}, res['Value']['Failed'] )
-    
-    
+
+
   def test_createDirectory( self):
     """ Test the create directory  method"""
 
@@ -319,30 +319,30 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"A" : True}, res['Value']['Successful'] )
     self.assertEqual( {}, res['Value']['Failed'] )
-    
-    
-    
+
+
+
   def test_exists( self ):
     """ Test the existance of files and directories"""
-    
+
     resource = self.testClass( 'storageName', self.parameterDict )
-    
+
     statusMock = xrootStatusMock()
     statusMock.makeOk()
-        
+
     statInfoMock = xrootStatInfoMock()
     statInfoMock.makeFile()
     statInfoMock.size = 10
-    
+
     resource.xrootClient.stat.return_value = ( statusMock, statInfoMock )
-    
-    
+
+
     # This test should be successful and True
     res = resource.exists( {"A" : 0} )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {"A" : True}, res['Value']['Successful'] )
     self.assertEqual( {}, res['Value']['Failed'] )
-    
+
 
     # This test should be successful and False (does not exist)
     statusMock.makeError()
@@ -366,14 +366,14 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
   def test_getCurrentURL( self):
     """ Test the current URL of a file"""
-    
+
     resource = self.testClass( 'storageName', self.parameterDict )
-    
+
     res = resource.getCurrentURL( "filename" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( "protocol://host/path/filename", res['Value'] )
 
-    
+
   def test_getDirectoryMetadata( self ):
     "Try to get the metadata of a directory"
 
@@ -396,7 +396,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
 
     metaDict = res['Value']['Successful']["A"]
     self.assertEqual( metaDict["Size"] , 10 )
-    
+
     # We try on a file now, it should fail
     statInfoMock.makeFile()
 
@@ -456,7 +456,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     # Let's try on a File. It should fail
     statInfoMock.makeFile()
 
-    
+
     res = resource.listDirectory( "A" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Successful'] )
@@ -587,21 +587,21 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Failed'] )
     self.assertEqual( {"A" : True}, res['Value']['Successful'] )
-    
+
     # This test should be successful and True
     statusMock.makeError()
     res = resource.isFile( "A" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Successful'] )
     self.assertEqual( "A", res['Value']['Failed'].keys()[0] )
-    
+
 
     # This test should return S_ERROR
     statusMock.makeFatal()
     res = resource.isFile( "A" )
     self.assertEqual( False, res['OK'] )
 
-    
+
     statusMock.makeOk()
     statInfoMock.makeDir()
 
@@ -610,14 +610,14 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Failed'] )
     self.assertEqual( {"A" : False}, res['Value']['Successful'] )
-    
+
     # This test should be successful and True
     statusMock.makeError()
     res = resource.isFile( "A" )
     self.assertEqual( True, res['OK'] )
     self.assertEqual( {}, res['Value']['Successful'] )
     self.assertEqual( "A", res['Value']['Failed'].keys()[0] )
-    
+
 
     # This test should return S_ERROR
     statusMock.makeFatal()
@@ -625,7 +625,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     self.assertEqual( False, res['OK'] )
 
 
-    
+
   def test_removeFile( self ):
     ''' tests the output of removeFile
     '''
@@ -712,7 +712,7 @@ class XROOTStorage_Success( XROOTStorage_TestCase ):
     directoryListMock3 = xrootDirectoryListMock( "dir1", [file3] )
 
 
-    
+
     statusMock = xrootStatusMock()
     statusMock.makeOk()
     resource.xrootClient.rm.return_value = ( statusMock, None )

@@ -1,4 +1,4 @@
-# TO-DO: to be moved to TestDIRAC
+# TO-DO: to be moved to tests directory
 
 ########################################################################
 # $HeadURL$

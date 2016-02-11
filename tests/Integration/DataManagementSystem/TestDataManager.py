@@ -1,5 +1,4 @@
-# FIXME: to bring back to life
-# TO-DO: to be took back to life, and moved to TestDIRAC
+# FIXME: to be took back to life, and moved to tests directory
 
 import unittest, time, os
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -235,4 +234,3 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReplicaManagerTestCase)
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-
