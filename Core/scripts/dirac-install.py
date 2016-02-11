@@ -1325,7 +1325,7 @@ def createBashrc():
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || export LD_LIBRARY_PATH=$DIRACLIB:$LD_LIBRARY_PATH',
-                     '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB:$DIRACLIB/mysql ) || export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
+                     '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export LD_LIBRARY_PATH=$DIRACLIB/mysql:$LD_LIBRARY_PATH',
                      '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
                      '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'] )
@@ -1379,7 +1379,7 @@ def createCshrc():
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
                      '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv LD_LIBRARY_PATH ${DIRACLIB}:$LD_LIBRARY_PATH',
-                     '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB:$DIRACLIB/mysql ) || setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
+                     '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv LD_LIBRARY_PATH ${DIRACLIB}/mysql:$LD_LIBRARY_PATH',
                      '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
                      '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'] )
