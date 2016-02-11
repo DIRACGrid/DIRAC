@@ -8,7 +8,6 @@ from DIRAC                                              import S_OK, S_ERROR, gC
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
 
-
 gBaseResourcesSection = "/Resources"
 
 def getSites():
