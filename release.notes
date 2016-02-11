@@ -1,4 +1,4 @@
-[v6r15-pre14]
+[v6r15-pre15]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -92,6 +92,12 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p20]
+
+*WMS
+FIX: SandboxMetadataDB - escape values in SandboxMetadataDB SQL queries to accommodate
+     DNs containing apostrophe 
 
 [v6r14p19]
 
