@@ -12,6 +12,7 @@ import DIRAC
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
 
@@ -78,6 +79,24 @@ class RequestHandler( object ):
     cls.__monitor = monitor
     cls.log = gLogger
 
+    allNames = dir( cls )
+    exportedMethods = [ name for name in allNames if 'export_' in name ]
+    system, service = cls.__svcName.split( '/' )
+    setup = gConfigurationData.extractOptionFromCFG( 'DIRAC/Setup' )
+    systemSetup = gConfigurationData.extractOptionFromCFG( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
+    result = gConfigurationData.extractOptionFromCFG( '/Systems/%s/%s/Services/%s/ResponseMonitoring/Methods' % ( system, systemSetup, service ) )
+
+    if result:
+      methods = result.split( ', ' )
+      monitoredMethods = [ method for method in methods if 'export_%s' % method in exportedMethods ]
+
+      for method in monitoredMethods:
+        gMonitor.registerActivity( method,
+                                   "Average response time of %s" % method,
+                                   system,
+                                   "seconds",
+                                   gMonitor.OP_MEAN )
+
   def getRemoteAddress( self ):
     """
     Get the address of the remote peer.
@@ -132,7 +151,9 @@ class RequestHandler( object ):
       message = "Method %s for action %s does not return a S_OK/S_ERROR!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
-    self.__logRemoteQueryResponse( retVal, time.time() - startTime )
+    timeElapsed = time.time() - startTime
+    gMonitor.addMark( actionTuple[1], timeElapsed )
+    self.__logRemoteQueryResponse( retVal, timeElapsed )
     result = self.__trPool.send( self.__trid, retVal ) #this will delete the value from the S_OK(value)
     del retVal
     retVal = None
@@ -385,6 +406,8 @@ class RequestHandler( object ):
     if not isReturnStructure( uReturnValue ):
       gLogger.error( "Message does not return a S_OK/S_ERROR", msgName )
       uReturnValue = S_ERROR( "Message %s does not return a S_OK/S_ERROR" % msgName )
+    timeElapsed = time.time() - startTime
+    gMonitor.addMark( methodName.split( '/' )[1], timeElapsed )
     self.__logRemoteQueryResponse( uReturnValue, time.time() - startTime )
     return uReturnValue
 
