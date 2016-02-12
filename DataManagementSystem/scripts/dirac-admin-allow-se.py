@@ -60,9 +60,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 
-# csAPI = CSAPI()
-
+ses = resolveSEGroup( ses )
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
