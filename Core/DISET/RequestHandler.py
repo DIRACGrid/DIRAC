@@ -408,7 +408,7 @@ class RequestHandler( object ):
       uReturnValue = S_ERROR( "Message %s does not return a S_OK/S_ERROR" % msgName )
     timeElapsed = time.time() - startTime
     gMonitor.addMark( methodName.split( '/' )[1], timeElapsed )
-    self.__logRemoteQueryResponse( uReturnValue, time.time() - startTime )
+    self.__logRemoteQueryResponse( uReturnValue, timeElapsed )
     return uReturnValue
 
 ####
