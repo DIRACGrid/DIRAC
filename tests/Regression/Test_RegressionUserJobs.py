@@ -1,3 +1,6 @@
+""" This module will run some job descriptions defined with an older version of DIRAC
+"""
+
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -15,7 +18,7 @@ class RegressionTestCase( IntegrationTest ):
   """ Base class for the Regression test cases
   """
   def setUp( self ):
-    super( IntegrationTest, self ).setUp()
+    super( RegressionTestCase, self ).setUp()
 
     self.dirac = Dirac()
 

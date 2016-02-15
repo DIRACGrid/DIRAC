@@ -1,4 +1,4 @@
-# FIXME: to be took back to life, and moved to tests directory
+# FIXME: to be took back to life
 
 import unittest, time, os
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -142,7 +142,7 @@ class ReplicaManagerTestCase(unittest.TestCase):
     fileGuid = makeGuid()
     fileTuple = (lfn,physicalFile,fileSize,storageElementName,fileGuid)
     registerRes = self.dataManager.registerFile(fileTuple)
-    removeCatalogReplicaRes = self.dataManager.removeCatalogReplica(storageElementName,lfn)
+    # removeCatalogReplicaRes = self.dataManager.removeCatalogReplica(storageElementName,lfn)
     removeFileRes = self.dataManager.removeFile(lfn)
 
     # Check that the file registration was done correctly
@@ -151,10 +151,10 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assert_(registerRes['Value']['Successful'].has_key(lfn))
     self.assert_(registerRes['Value']['Successful'][lfn])
     # Check that the replica removal was successful
-    self.assert_(removeCatalogReplicaRes['OK'])
-    self.assert_(removeCatalogReplicaRes['Value'].has_key('Successful'))
-    self.assert_(removeCatalogReplicaRes['Value']['Successful'].has_key(lfn))
-    self.assert_(removeCatalogReplicaRes['Value']['Successful'][lfn])
+    # self.assert_(removeCatalogReplicaRes['OK'])
+    # self.assert_(removeCatalogReplicaRes['Value'].has_key('Successful'))
+    # self.assert_(removeCatalogReplicaRes['Value']['Successful'].has_key(lfn))
+    # self.assert_(removeCatalogReplicaRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'].has_key('Successful'))
@@ -173,8 +173,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     seName = 'GRIDKA-RAW'
     replicaTuple = (lfn,physicalFile,seName)
     registerReplicaRes = self.dataManager.registerReplica(replicaTuple)
-    removeCatalogReplicaRes1 = self.dataManager.removeCatalogReplica(storageElementName,lfn)
-    removeCatalogReplicaRes2 = self.dataManager.removeCatalogReplica(seName,lfn)
+    # removeCatalogReplicaRes1 = self.dataManager.removeCatalogReplica(storageElementName,lfn)
+    # removeCatalogReplicaRes2 = self.dataManager.removeCatalogReplica(seName,lfn)
     removeFileRes = self.dataManager.removeFile(lfn)
 
     # Check that the file registration was done correctly
@@ -188,15 +188,15 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assert_(registerReplicaRes['Value']['Successful'].has_key(lfn))
     self.assert_(registerReplicaRes['Value']['Successful'][lfn])
     # Check that the replica removal was successful
-    self.assert_(removeCatalogReplicaRes1['OK'])
-    self.assert_(removeCatalogReplicaRes1['Value'].has_key('Successful'))
-    self.assert_(removeCatalogReplicaRes1['Value']['Successful'].has_key(lfn))
-    self.assert_(removeCatalogReplicaRes1['Value']['Successful'][lfn])
+    # self.assert_(removeCatalogReplicaRes1['OK'])
+    # self.assert_(removeCatalogReplicaRes1['Value'].has_key('Successful'))
+    # self.assert_(removeCatalogReplicaRes1['Value']['Successful'].has_key(lfn))
+    # self.assert_(removeCatalogReplicaRes1['Value']['Successful'][lfn])
     # Check that the replica removal was successful
-    self.assert_(removeCatalogReplicaRes2['OK'])
-    self.assert_(removeCatalogReplicaRes2['Value'].has_key('Successful'))
-    self.assert_(removeCatalogReplicaRes2['Value']['Successful'].has_key(lfn))
-    self.assert_(removeCatalogReplicaRes2['Value']['Successful'][lfn])
+    # self.assert_(removeCatalogReplicaRes2['OK'])
+    # self.assert_(removeCatalogReplicaRes2['Value'].has_key('Successful'))
+    # self.assert_(removeCatalogReplicaRes2['Value']['Successful'].has_key(lfn))
+    # self.assert_(removeCatalogReplicaRes2['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assert_(removeFileRes['OK'])
     self.assert_(removeFileRes['Value'].has_key('Successful'))

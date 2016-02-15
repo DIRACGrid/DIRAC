@@ -24,7 +24,7 @@ class FailingUserJobTestCase( IntegrationTest ):
   """ Base class for the faing jobs test cases
   """
   def setUp( self ):
-    super( IntegrationTest, self ).setUp()
+    super( FailingUserJobTestCase, self ).setUp()
 
     dm = DataManager()
     res = dm.removeFile( ['/lhcb/testCfg/testVer/LOG/00012345/0006/00012345_00067890.tar',
