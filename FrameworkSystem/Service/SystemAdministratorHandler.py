@@ -27,6 +27,8 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from DIRAC.Core.Utilities.RabbitMQ import RabbitConnection
+from DIRAC.Core.Utilities import Profiler
 
 class SystemAdministratorHandler( RequestHandler ):
 
@@ -42,6 +44,16 @@ class SystemAdministratorHandler( RequestHandler ):
     if hostMonitoring:
       client = SystemAdministratorClient( 'localhost' )
       gThreadScheduler.addPeriodicTask( 60, client.storeHostInfo )
+
+    # Check the flag for dynamic monitoring
+    dynamicMonitoring = cls.srv_getCSOption( 'DynamicMonitoring', False )
+
+    if dynamicMonitoring:
+      client = SystemAdministratorClient( 'localhost' )
+      result = SystemAdministratorHandler.rabbitMQ.setupConnection( 'Framework', 'ComponentMonitoring', False )
+      if not result[ 'OK' ]:
+        gLogger.error( result[ 'Message' ] )
+      gThreadScheduler.addPeriodicTask( 120, client.storeProfiling )
 
     return S_OK( 'Initialization went well' )
 
@@ -649,5 +661,44 @@ class SystemAdministratorHandler( RequestHandler ):
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return S_ERROR( result[ 'Message' ] )
+
+    return S_OK( 'Profiling information logged correctly' )
+
+  types_storeProfiling = []
+  def export_storeProfiling( self ):
+    """
+    Retrieves and stores into ElasticSearch profiling information about the components on the host
+    """
+    result = ComponentInstaller.getStartupComponentStatus( [] )
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+    startupComps = result[ 'Value' ]
+
+    result = ComponentInstaller.getSetupComponents()
+    if not result[ 'OK' ]:
+      gLogger.error( result[ 'Message' ] )
+      return S_ERROR( result[ 'Message' ] )
+    setupComps = result[ 'Value' ]
+
+    # Get the profiling information for every running component and send it to RabbitMQ
+    for cType in setupComps:
+      for system in setupComps[ cType ]:
+        for comp in setupComps[ cType ][ system ]:
+          pid = startupComps[ '%s_%s' % ( system, comp ) ][ 'PID' ]
+          profiler = Profiler.Profiler( pid )
+          result = profiler.getAllProcessData()
+          if result[ 'OK' ]:
+            log = result[ 'Value' ][ 'stats' ]
+            log[ 'host' ] = socket.getfqdn()
+            log[ 'component' ] = '%s_%s' % ( system, comp )
+            log[ 'timestamp' ] = result[ 'Value' ][ 'datetime' ].isoformat()
+            result = SystemAdministratorHandler.rabbitMQ.put( log )
+            if not result[ 'OK' ]:
+              gLogger.error( result[ 'Message' ] )
+              return result
+          else:
+            gLogger.error( result[ 'Message' ] )
+            return result
 
     return S_OK( 'Profiling information logged correctly' )
