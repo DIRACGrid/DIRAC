@@ -50,8 +50,8 @@ def execute ( arguments ):
   try:
     job = JobWrapper( jobID, gJobReport )
     job.initialize( arguments )
-  except Exception:
-    gLogger.exception( 'JobWrapper failed the initialization phase' )
+  except Exception as e:
+    gLogger.exception( 'JobWrapper failed the initialization phase', lException = e )
     rescheduleResult = rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
     job.sendJobAccounting( rescheduleResult, 'Job Wrapper Initialization' )
     return 1
