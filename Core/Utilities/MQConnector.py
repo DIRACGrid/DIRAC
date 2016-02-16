@@ -35,18 +35,19 @@ class MQConnector( object ):
     'Host', 'Port', 'User', 'VH' and 'Type'. Otherwise, the function will return an error
     """
 
+    if not parameters:
+      return S_ERROR( 'Queue parameters were not provided' )
+
     # Utility function to lowercase the first letter of a string ( to create valid variable names )
     toLowerFirst = lambda s: s[:1].lower() + s[1:] if s else ''
 
     self.queueName = queueName
 
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-
     # Read and set the parameters
     for parameter in [ 'Host', 'Port', 'User', 'VH', 'Type' ]:
       if not parameter in parameters:
         return S_ERROR( 'The parameter \'%s\' for the queue was not provided' % parameter )
-      setattr( self, toLowerFirst( parameter ), result[ 'Value' ] )
+      setattr( self, toLowerFirst( parameter ), parameters[ parameter ] )
 
     result = gConfig.getOption( '/LocalInstallation/MessageQueueing/Password' )
     if not result[ 'OK' ]:

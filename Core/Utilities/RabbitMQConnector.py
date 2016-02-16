@@ -43,13 +43,14 @@ class RabbitConnection( MQConnector ):
 
   # Rest of functions
 
-  def setupConnection( self, system, queueName, receive = False, messageCallback = None ):
+  def setupConnection( self, system, queueName, parameters, receive = False, messageCallback = None ):
     """
     Establishes a new connection to RabbitMQ
     system indicates in which System the queue works
     queueName is the name of the queue to read from/write to
+    parameters is a dictionary with the parameters for the queue. It should include the following parameters:
+    'Host', 'Port', 'User', 'VH' and 'Type'. Otherwise, the function will return an error
     receive indicates whether this object will read from the queue or read from it
-    exchange indicates whether the destination will be a exchange (True) or a queue (False). Only taken into account if receive = True
     messageCallback is the function to be called when a new message is received from the queue ( only receiver mode ).
     If None, the defaultCallback method is used instead
     """
@@ -62,7 +63,7 @@ class RabbitConnection( MQConnector ):
         self.on_message = self.defaultCallback
 
     # Read parameters from CS
-    result = self.setQueueParameters( system, queueName )
+    result = self.setQueueParameters( system, queueName, parameters )
     if not result[ 'OK' ]:
       return result
 
