@@ -5,6 +5,7 @@ Class and utilities for managing dynamic monitoring logs in Elasticsearch
 __RCSID__ = "$Id$"
 
 import datetime
+from dateutil import parser
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
@@ -34,7 +35,11 @@ class DynamicMonitoringDB( ElasticDB ):
     Creates a new log entry in ElasticSearch
     :param dict log: Should be a dictionary containing the logging information to be stored
     """
-    return self.addToIndex( '%s_index' % self.docType.lower(), self.docType, log )
+    if not 'timestamp' in log:
+      return S_ERROR( 'Log does not contain timestamp field' )
+    indexName = '%s_index-%s' % ( self.docType.lower(), parser.parse( log[ 'timestamp' ] ).strftime( "%Y-%m-%d" ) )
+
+    return self.addToIndex( indexName, self.docType, log )
 
   def getLastLog( self, host, component, maxAge = 10 ):
     """
