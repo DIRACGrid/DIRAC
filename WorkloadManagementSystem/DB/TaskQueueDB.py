@@ -1071,7 +1071,11 @@ class TaskQueueDB( DB ):
     tqCond = [ "t.OwnerGroup='%s'" % userGroup ]
     allowBgTQs = gConfig.getValue( "/Registry/Groups/%s/AllowBackgroundTQs" % userGroup, False )
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
-      tqCond.append( "t.OwnerDN='%s'" % userDN )
+      res = self._escapeString( userDN )
+      if not res['OK']:
+        return res
+      userDN = res['Value']
+      tqCond.append( "t.OwnerDN= %s " % userDN )
     tqCond.append( "t.TQId = j.TQId" )
     if consolidationFunc == 'AVG':
       selectSQL = "SELECT j.TQId, SUM( j.RealPriority )/COUNT(j.RealPriority) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
