@@ -25,7 +25,22 @@ class DynamicMonitoringConsumer ( object ):
     """
     Reads messages from RabbitMQ and sends them to ElasticSearch
     """
-    result = self.rabbitMQ.setupConnection( 'Framework', 'ComponentMonitoring', True )
+
+    # Read RabbitMQ parameters
+    result = gConfig.getOption( 'DIRAC/Setup' )
+    if not result[ 'OK' ]:
+      return result
+    setup = result[ 'Value' ]
+    result = gConfig.getOption( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
+    if not result[ 'OK' ]:
+      return result
+    sysSetup = result[ 'Value' ]
+    result = gConfig.getOptionsDict( 'Systems/%s/%s/MessageQueueing/%s' % ( system, sysSetup, queueName ) )
+    if not result[ 'OK' ]:
+      return result
+    parameters = result[ 'Value' ]
+
+    result = self.rabbitMQ.setupConnection( 'Framework', 'ComponentMonitoring', parameters, True )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
       return result
