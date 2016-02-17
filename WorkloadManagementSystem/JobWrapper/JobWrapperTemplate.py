@@ -25,7 +25,7 @@ class JobWrapperError( Exception ):
 
 gJobReport = None
 
-def execute ( arguments ):
+def execute( arguments ):
 
   global gJobReport
 
@@ -142,11 +142,15 @@ try:
   jsonFileName = os.path.realpath( __file__ ) + '.json'
   with open( jsonFileName, 'r' ) as f:
     jobArgs = json.loads( f.readlines()[0] )
+  if not isinstance(jobArgs, dict):
+    raise TypeError, "jobArgs is of type %s" %type(jobArgs)
+  if 'Job' not in jobArgs:
+    raise ValueError, "jobArgs does not contain 'Job' key: %s" %str(jobArgs)
   ret = execute( jobArgs )
   gJobReport.commit()
-except Exception:
+except Exception as e:
   try:
-    gLogger.exception()
+    gLogger.exception("JobWrapperTemplate exception", lException = e)
     gJobReport.commit()
     ret = -1
   except Exception:
