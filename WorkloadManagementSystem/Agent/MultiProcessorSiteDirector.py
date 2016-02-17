@@ -230,7 +230,7 @@ class MultiProcessorSiteDirector( SiteDirector ):
       queueSubmittedPilots = 0
       for tag in tqIDListByProcessors.keys():
 
-        self.log.verbose("Try to submit pilots for Tag=%s (TQs=%s)" % (tag, tqIDListByProcessors[tag]))
+        self.log.verbose( "Try to submit pilots for Tag=%s (TQs=%s)" % ( tag, tqIDListByProcessors[tag] ) )
 
         processors = 1
 
