@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import sys
+import json
+
 sitePython = "@SITEPYTHON@"
 if sitePython:
   sys.path.insert( 0, "@SITEPYTHON@" )
@@ -136,7 +138,10 @@ def execute ( arguments ):
 ##########################################################
 ret = -3
 try:
-  jobArgs = eval( """@JOBARGS@""" )
+  jobArgs = None
+  jsonFileName = os.path.realpath( __file__ ) + '.json'
+  with open( jsonFileName, 'r' ) as f:
+    jobArgs = json.loads( f.readlines()[0] )
   ret = execute( jobArgs )
   gJobReport.commit()
 except Exception:
