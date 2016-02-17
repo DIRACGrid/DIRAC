@@ -1,6 +1,7 @@
 """ Utilities for WMS
 """
 
+import io
 import os
 import sys
 import json
@@ -56,10 +57,10 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", str( siteRoot ) )
 
   jobWrapperJsonFile = jobWrapperFile + '.json'
-  with open( jobWrapperJsonFile, 'w' ) as jsonFile:
-    jsonFile.write( json.dumps( arguments ) )
+  with io.open( jobWrapperJsonFile, 'w', encoding = 'utf8' ) as jsonFile:
+    json.dump( unicode(arguments), jsonFile, ensure_ascii=False )
 
-  wrapper = open ( jobWrapperFile, "w" )
+  wrapper = open( jobWrapperFile, "w" )
   wrapper.write( wrapperTemplate )
   wrapper.close ()
   jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
@@ -72,4 +73,3 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   jobFile.close()
 
   return S_OK( jobExeFile )
-
