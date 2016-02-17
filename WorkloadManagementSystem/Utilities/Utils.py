@@ -1,7 +1,9 @@
 """ Utilities for WMS
 """
 
-import os, sys
+import os
+import sys
+import json
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
@@ -50,8 +52,12 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   dPython = realPythonPath
 
   # Making real substitutions
-  wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
+  # wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
   wrapperTemplate = wrapperTemplate.replace( "@SITEPYTHON@", str( siteRoot ) )
+
+  jobWrapperJsonFile = jobWrapperFile + '.json'
+  with open( jobWrapperJsonFile, 'w' ) as jsonFile:
+    jsonFile.write( json.dumps( arguments ) )
 
   wrapper = open ( jobWrapperFile, "w" )
   wrapper.write( wrapperTemplate )
