@@ -160,7 +160,7 @@ import warnings
 with warnings.catch_warnings():
   warnings.simplefilter( 'ignore', DeprecationWarning )
   import MySQLdb
-  
+
 # This is for proper initialization of embedded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
@@ -376,7 +376,7 @@ class MySQL( object ):
 
   __connectionPools = {}
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, debug = False ):
+  def __init__( self, hostName = 'localhost', userName = 'dirac', passwd = 'dirac', dbName = '', port = 3306, debug = False ):
     """
     set MySQL connection parameters and try to connect
     """
@@ -545,13 +545,13 @@ class MySQL( object ):
           return retDict
         inEscapeValues.append( retDict['Value'] )
       elif type( value ) == TupleType or type( value ) == ListType:
-        tupleValues = []  
+        tupleValues = []
         for v in list( value ):
           retDict = self.__escapeString( v )
           if not retDict['OK']:
             return retDict
           tupleValues.append( retDict['Value'] )
-        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' ) 
+        inEscapeValues.append( '(' + ', '.join( tupleValues ) + ')' )
       elif type( value ) == BooleanType:
         inEscapeValues = [str( value )]
       else:
@@ -924,7 +924,7 @@ class MySQL( object ):
         else:
           charset = 'latin1'
 
-        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( 
+        cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % (
                table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )
         if not retDict['OK']:
@@ -1141,7 +1141,7 @@ class MySQL( object ):
         if type( aName ) in StringTypes:
           attrName = _quotedList( [aName] )
         elif type( aName ) == TupleType:
-          attrName = '('+_quotedList( list( aName ) )+')'   
+          attrName = '('+_quotedList( list( aName ) )+')'
         if not attrName:
           error = 'Invalid condDict argument'
           self.log.warn( 'buildCondition:', error )
