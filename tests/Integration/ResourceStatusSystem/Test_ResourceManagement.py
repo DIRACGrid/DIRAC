@@ -28,16 +28,15 @@ def test_addAndRemove():
   #check if the name that we got is equal to the previously added 'TestName1234'
   assert res['Value'][0][0] == 'TestName1234'
 
-  #TODO: delete the inserted AccountingCache
 
-  #***************************************************
+  # TEST deleteAccountingCache
+  # ...............................................................................
   res = rsClient.deleteAccountingCache('TestName1234')
   assert res['OK'] == True
 
   res = rsClient.selectAccountingCache('TestName1234')
   assert res['OK'] == True
   assert not res['Value']
-  #***************************************************
 
 
 
@@ -282,5 +281,6 @@ def test_addAndRemove():
   assert res['OK'] == True
   assert not res['Value']
 
-  # ...............................................................................
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+
 
