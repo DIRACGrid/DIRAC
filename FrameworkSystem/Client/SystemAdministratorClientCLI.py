@@ -17,6 +17,7 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdminis
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+from DIRAC.FrameworkSystem.Client import DynamicMonitoringClient
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.Core.Utilities import List
@@ -142,6 +143,9 @@ class SystemAdministratorClientCLI( CLI ):
           show installations [ list | current | -n <Name> | -h <Host> | -s <System> | -m <Module> | -t <Type> | -itb <InstallationTime before>
                               | -ita <InstallationTime after> | -utb <UnInstallationTime before> | -uta <UnInstallationTime after> ]*
                              - show all the installations of components that match the given parameters
+          show profile <system> <component> [ -s <size> | -h <host> | -id <initial date DD/MM/YYYY> | -it <initial time hh:mm>
+                              | -ed <end date DD/MM/YYYY | -et <end time hh:mm> ]*
+                             - show <size> log lines of profiling information for a component in the machine <host>
           show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
@@ -344,6 +348,58 @@ class SystemAdministratorClientCLI( CLI ):
             self._errMsg( result[ 'Message' ] )
         else:
           gLogger.notice( self.do_show.__doc__ )
+      else:
+        gLogger.notice( self.do_show.__doc__ )
+    elif option == "profile":
+      if len( argss ) > 1:
+        system = argss[0]
+        del argss[0]
+        component = argss[0]
+        del argss[0]
+
+        component = '%s_%s' % ( system, component )
+
+        argDict = { '-s': None, '-h': self.host, '-id': None, '-it': '00:00', '-ed': None, '-et': '00:00' }
+        key = None
+        for arg in argss:
+          if not key:
+            key = arg
+          else:
+            argDict[ key ] = arg
+            key = None
+
+        size = None
+        try:
+          if argDict[ '-s' ]:
+            size = int( argDict[ '-s' ] )
+        except Exception, e:
+          self.__errMsg( 'Argument \'size\' must be an integer' )
+          return
+        host = argDict[ '-h' ]
+        initialDate = argDict[ '-id' ]
+        initialTime = argDict[ '-it' ]
+        endingDate = argDict[ '-ed' ]
+        endingTime = argDict[ '-et' ]
+
+        if initialDate:
+          initialDate = '%s %s' % ( initialDate, initialTime )
+        else:
+          initialDate = ''
+        if endingDate:
+          endingDate = '%s %s' % ( endingDate, endingTime )
+        else:
+          endingDate = ''
+
+        client = DynamicMonitoringClient()
+        if size:
+          result = client.getLogHistory( host, component, size )
+        else:
+          result = client.getLogsPeriod( host, component, initialDate, endingDate )
+
+        if result[ 'OK' ]:
+          self.displayLogs( result[ 'Value' ] )
+        else:
+          self.__errMsg( result[ 'Message' ] )
       else:
         gLogger.notice( self.do_show.__doc__ )
     else:
