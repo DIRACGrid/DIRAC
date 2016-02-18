@@ -99,7 +99,14 @@ class RequestPreparationAgent( AgentModule ):
     # Check the replicas exist at the requested site
     replicaMetadata = []
     for lfn, requestedSEs in replicas.items():
-      lfnReplicas = fileReplicas[lfn]
+      lfnReplicas = fileReplicas.get( lfn )
+
+      # This should not happen in principle, but it was seen
+      # after a corrupted staging request has entered the DB
+      if not lfnReplicas:
+        gLogger.error( "Missing replicas information", "%s %s" % ( lfn, requestedSEs ) )
+        continue
+
       for requestedSE, replicaID in requestedSEs.items():
         if not requestedSE in lfnReplicas.keys():
           terminalReplicaIDs[replicaID] = "LFN not registered at requested SE"

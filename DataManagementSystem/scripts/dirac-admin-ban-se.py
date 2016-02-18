@@ -53,14 +53,15 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-#from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+# from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-#csAPI = CSAPI()
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 
+ses = resolveSEGroup( ses )
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
@@ -118,7 +119,7 @@ for se, seOptions in res[ 'Value' ].items():
     else:
 
       resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Banned', reason, userName )
-      #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
+      # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
       if not resR['OK']:
         gLogger.error( 'Failed to update %s read access to Banned' % se )
       else:
@@ -134,7 +135,7 @@ for se, seOptions in res[ 'Value' ].items():
     else:
 
       resW = resourceStatus.setStorageElementStatus( se, 'WriteAccess', 'Banned', reason, userName )
-      #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
+      # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
       if not resW['OK']:
         gLogger.error( "Failed to update %s write access to Banned" % se )
       else:
@@ -150,7 +151,7 @@ for se, seOptions in res[ 'Value' ].items():
     else:
 
       resC = resourceStatus.setStorageElementStatus( se, 'CheckAccess', 'Banned', reason, userName )
-      #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
+      # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
       if not resC['OK']:
         gLogger.error( "Failed to update %s check access to Banned" % se )
       else:

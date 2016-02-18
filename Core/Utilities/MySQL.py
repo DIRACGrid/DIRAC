@@ -155,7 +155,6 @@ from DIRAC                      import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time  import fromString
 from DIRAC.Core.Utilities       import DErrno
 
-# Get rid of the annoying Deprecation warning of the current MySQLdb
 import MySQLdb
 
 # This is for proper initialization of embedded server, it should only be called once
@@ -377,7 +376,7 @@ class MySQL( object ):
 
   __connectionPools = {}
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, debug = False ):
+  def __init__( self, hostName = 'localhost', userName = 'dirac', passwd = 'dirac', dbName = '', port = 3306, debug = False ):
     """
     set MySQL connection parameters and try to connect
     """

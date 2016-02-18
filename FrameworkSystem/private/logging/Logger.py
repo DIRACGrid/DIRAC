@@ -280,6 +280,8 @@ class Logger:
       stack = traceback.format_tb( lExcInfo[2] )[-1]
     else:
       if lExcInfo:
+        if isinstance(lExcInfo, bool):
+          lExcInfo = sys.exc_info()
         # Get full traceback
         stack = "".join( traceback.format_tb( lExcInfo[2] ) )
       else:

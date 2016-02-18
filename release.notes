@@ -94,6 +94,23 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p21]
+
+*DMS
+CHANGE: dirac-admin-allow(ban)-se - allow an SE group to be banned/allowed
+
+*SMS
+FIX: RequestPreparationAgent - fix crash in execute() in case no replica information
+     available
+
+*WMS
+FIX: TaskQueueDB, PilotAgentsDB - escape DN strings to avoid potential SQL injection
+FIX: JobWrapperTemplate - pass JobArguments through a json file to fix the case
+     of having apostrophes in the values
+
+*TMS
+FIX: TransformationAgent - in processTransformation() fix reduction of number of files
+
 [v6r14p20]
 
 *WMS
