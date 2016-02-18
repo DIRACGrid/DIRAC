@@ -118,6 +118,38 @@ class ResourceManagementClient( object ):
     return self._query( 'addOrModify', 'AccountingCache', locals() )
 
 
+
+  def deleteAccountingCache( self, name = None, plotType = None,
+                                  plotName = None, result = None,
+                                  dateEffective = None, lastCheckTime = None,
+                                  meta = None ):
+    '''
+    Deletes from AccountingCache all rows that match the parameters given.
+
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology
+      **plotType** - `string`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `string`
+        the plot name
+      **result** - `string`
+        command result
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument
+    # pylint: disable=W0613
+    return self._query( 'delete', 'AccountingCache', locals() )
+
+
   # GGUSTicketsCache Methods ...................................................
   #FIXME: only one method
 
