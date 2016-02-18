@@ -55,10 +55,15 @@ class PilotAgentsDB( DB ):
       if ref in pilotStampDict:
         stamp = pilotStampDict[ref]
 
+      res = self._escapeString( ownerDN )
+      if not res['OK']:
+        return res
+      escapedOwnerDN = res['Value']
+
       req = "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, " + \
             "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) " + \
-            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
-            ( ref, int( taskQueueID ), ownerDN, ownerGroup, broker, gridType, stamp )
+            "VALUES ('%s',%d,%s,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
+            ( ref, int( taskQueueID ), escapedOwnerDN, ownerGroup, broker, gridType, stamp )
 
       result = self._update( req )
       if not result['OK']:
@@ -181,6 +186,7 @@ class PilotAgentsDB( DB ):
     for cond in condDict:
       condList.append( '%s in ( "%s" )' % ( cond, '", "'.join( [ str( y ) for y in condDict[cond]] ) ) )
 
+    # the conditions should be escaped before hand, so it is not really nice to expose it this way...
     if condList:
       cmd += ' WHERE %s ' % ' AND '.join( condList )
 
