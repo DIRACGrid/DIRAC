@@ -113,7 +113,7 @@ class DirectoryClosure( DirectoryTreeBase ):
       :param path : directory path
 
       :returns  S_OK( { 'Exists' : False } ) if the directory does not exist
-                S_OK( { 'Exists' : False, 'DirID' : directory id  } ) if the directory exists
+                S_OK( { 'Exists' : True, 'DirID' : directory id  } ) if the directory exists
     """
 
     result = self.findDir( path )
@@ -525,7 +525,11 @@ class DirectoryClosure( DirectoryTreeBase ):
         return S_ERROR( errMsg )
 
       if not affected:
-        return S_ERROR( 'Directory does not exist: %s' % path )
+        # Either there were no changes, or the directory does not exist
+        exists = self.existsDir( path ).get( 'Value', {} ).get( 'Exists' )
+        if not exists:
+          return S_ERROR( 'Directory does not exist: %s' % path )
+        affected = 1
 
       return S_OK( affected )
 
