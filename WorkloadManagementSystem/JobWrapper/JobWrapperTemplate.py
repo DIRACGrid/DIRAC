@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import sys
+import json
+
 sitePython = "@SITEPYTHON@"
 if sitePython:
   sys.path.insert( 0, "@SITEPYTHON@" )
@@ -23,7 +25,7 @@ class JobWrapperError( Exception ):
 
 gJobReport = None
 
-def execute ( arguments ):
+def execute( arguments ):
 
   global gJobReport
 
@@ -50,8 +52,8 @@ def execute ( arguments ):
   try:
     job = JobWrapper( jobID, gJobReport )
     job.initialize( arguments )
-  except Exception:
-    gLogger.exception( 'JobWrapper failed the initialization phase' )
+  except Exception as e:
+    gLogger.exception( 'JobWrapper failed the initialization phase', lException = e )
     rescheduleResult = rescheduleFailedJob( jobID, 'Job Wrapper Initialization', gJobReport )
     job.sendJobAccounting( rescheduleResult, 'Job Wrapper Initialization' )
     return 1
@@ -136,12 +138,19 @@ def execute ( arguments ):
 ##########################################################
 ret = -3
 try:
-  jobArgs = eval( """@JOBARGS@""" )
+  jobArgs = None
+  jsonFileName = os.path.realpath( __file__ ) + '.json'
+  with open( jsonFileName, 'r' ) as f:
+    jobArgs = json.loads( f.readlines()[0] )
+  if not isinstance(jobArgs, dict):
+    raise TypeError, "jobArgs is of type %s" %type(jobArgs)
+  if 'Job' not in jobArgs:
+    raise ValueError, "jobArgs does not contain 'Job' key: %s" %str(jobArgs)
   ret = execute( jobArgs )
   gJobReport.commit()
-except Exception:
+except Exception as e:
   try:
-    gLogger.exception()
+    gLogger.exception("JobWrapperTemplate exception", lException = e)
     gJobReport.commit()
     ret = -1
   except Exception:

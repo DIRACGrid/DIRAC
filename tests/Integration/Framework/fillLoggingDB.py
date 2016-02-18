@@ -20,7 +20,7 @@ class MessageLoggingDB_fill(SystemLoggingDB):
   clientIPs = []
   sites = []
   users = []
-    
+
   def __CreateAuxiliaryLists(self):
     """ This function is used to fill with template values the auxiliary list
     """
@@ -40,7 +40,7 @@ class MessageLoggingDB_fill(SystemLoggingDB):
                                                randrange(2,255) ) )
     for i in xrange(1,6):
       self.sites.append( 'site %s' % i )
-      
+
     groups={0:'lhcbsgm',1:'lhcbprod',2:'lhcb'}
 
     for i in xrange(0,3):
@@ -67,11 +67,6 @@ class MessageLoggingDB_fill(SystemLoggingDB):
                           self.subSystemNames[ randrange( 0, 5 ) ],
                           self.sites[ randrange( 0, 5 ) ] ] )
       userId = randrange( 0, 12 )
-      result = self.insertMessageIntoDB( message, self.users[ userId ][ 0 ],
-                                         self.users[ userId ][ 1 ],
-                                         self.clientIPs[ randrange( 0, 20 ) ] )
-      if not result['OK']:
-        print result['Value']
-        
+
 DBfill=MessageLoggingDB_fill()
 DBfill.FillMessageRepository()

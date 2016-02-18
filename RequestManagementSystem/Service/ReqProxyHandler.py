@@ -40,6 +40,8 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+
 
 def initializeReqProxyHandler( serviceInfo ):
   """ init RequestProxy handler
@@ -67,6 +69,12 @@ class ReqProxyHandler( RequestHandler ):
     :param self: self reference
     """
     gLogger.notice( "CacheDirectory: %s" % self.cacheDir() )
+    gMonitor.registerActivity( "reqSwept", "Request successfully swept",
+                               "ReqProxy", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "reqFailed", "Request forward failed",
+                               "ReqProxy", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "reqReceived", "Request received",
+                               "ReqProxy", "Requests/min", gMonitor.OP_SUM )
     return S_OK()
 
   @classmethod
@@ -92,6 +100,8 @@ class ReqProxyHandler( RequestHandler ):
     :param self: self reference
     """
     cacheDir = cls.cacheDir()
+
+
     # # cache dir empty?
     if not os.listdir( cacheDir ):
       gLogger.always( "sweeper: CacheDir %s is empty, nothing to do" % cacheDir )
@@ -114,11 +124,17 @@ class ReqProxyHandler( RequestHandler ):
           if not putRequest["OK"]:
             gLogger.error( "sweeper: unable to set request %s @ ReqManager: %s" % ( cachedName,
                                                                                     putRequest["Message"] ) )
+            gMonitor.addMark( "reqFailed", 1 )
+
             continue
           gLogger.info( "sweeper: successfully put request '%s' @ ReqManager" % cachedName )
+          gMonitor.addMark( "reqSwept", 1 )
           os.unlink( cachedFile )
         except Exception as error:
+          gMonitor.addMark( "reqFailed", 1 )
           gLogger.exception( "sweeper: hit by exception", lException = error )
+
+
       return S_OK()
 
   def __saveRequest( self, requestName, requestJSON ):
@@ -157,6 +173,9 @@ class ReqProxyHandler( RequestHandler ):
     :param self: self reference
     :param str requestType: request type
     """
+
+    gMonitor.addMark( 'reqReceived', 1 )
+
     requestDict = json.loads( requestJSON )
     requestName = requestDict.get( "RequestID", requestDict.get( 'RequestName', "***UNKNOWN***" ) )
     gLogger.info( "putRequest: got request '%s'" % requestName )

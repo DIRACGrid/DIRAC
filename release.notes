@@ -1,4 +1,4 @@
-[v6r15-pre15]
+[v6r15-pre16]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -84,6 +84,7 @@ CHANGE: SiteDirector - flag to always download pilot output is set to False by d
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
      the requests could not be swiped
 FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request is buggy     
+CHANGE: ReqProxyHandler - added monitoring counters
 
 *Resources
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
@@ -92,6 +93,23 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p21]
+
+*DMS
+CHANGE: dirac-admin-allow(ban)-se - allow an SE group to be banned/allowed
+
+*SMS
+FIX: RequestPreparationAgent - fix crash in execute() in case no replica information
+     available
+
+*WMS
+FIX: TaskQueueDB, PilotAgentsDB - escape DN strings to avoid potential SQL injection
+FIX: JobWrapperTemplate - pass JobArguments through a json file to fix the case
+     of having apostrophes in the values
+
+*TMS
+FIX: TransformationAgent - in processTransformation() fix reduction of number of files
 
 [v6r14p20]
 
