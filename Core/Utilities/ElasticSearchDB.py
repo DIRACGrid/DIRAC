@@ -92,12 +92,14 @@ class ElasticSearchDB( object ):
     try:
       result = self.__client.indices.get_mapping( indexes )
     except Exception as e:
-      print e
+      gLogger.error(e)
     doctype = ''
     for i in result:
-      doctype = result[i]['mappings'].keys()[0]
+      if len(result[i].get('mappings', {})) == 0:
+        return S_ERROR("%s does not exists!" % indexes)
+      doctype = result[i]['mappings']
       break
-    return doctype 
+    return S_OK(doctype) 
   
   ########################################################################
   def checkIndex( self, indexName ):
