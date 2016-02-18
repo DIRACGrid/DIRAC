@@ -14,7 +14,9 @@ from DIRAC.Core.DISET.RequestHandler              import RequestHandler
 from DIRAC                                        import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.MonitoringSystem.DB.MonitoringDB       import MonitoringDB
 from DIRAC.Core.Utilities                         import Time
+
 import types
+
 
 class ReportGeneratorHandler( RequestHandler ):
   
@@ -41,15 +43,9 @@ class ReportGeneratorHandler( RequestHandler ):
     Arguments:
       - none
     """
-    dbUtils = DBUtils( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
-    credDict = self.getRemoteCredentials()
-    if typeName in gPoliciesList:
-      policyFilter = gPoliciesList[ typeName ]
-      filterCond = policyFilter.getListingConditions( credDict )
-    else:
-      policyFilter = gPoliciesList[ 'Null' ]
-      filterCond = {}
-    retVal = dbUtils.getKeyValues( typeName, filterCond )
-    if not policyFilter or not retVal[ 'OK' ]:
-      return retVal
-    return policyFilter.filterListingValues( credDict, retVal[ 'Value' ] )
+    setup = self.serviceInfoDict.get('clientSetup', None)
+    if not setup:
+      return S_ERROR("FATAL ERROR:  Problem with the service configuration!")
+        #we can apply some policies if it will be needed!
+    return self.__db.getKeyValues( typeName, setup)
+    

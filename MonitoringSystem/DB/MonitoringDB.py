@@ -39,7 +39,8 @@ class MonitoringDB( ElasticDB ):
         indexName = "%s_%s" % ( setup.lower(), typeClass().getIndex() )
         doc_type =  typeClass().getDocType() 
         mapping = typeClass().getMapping()
-        self.__documents[doc_type] = {indexName:mapping}
+        monfields = typeClass().getMonitoringFields()
+        self.__documents[doc_type] = {indexName:mapping,'monitoringFields':monfields}
         print "DDDD", self.__documents
         if self.__readonly:
           gLogger.info("Read only mode is okay")
@@ -80,14 +81,20 @@ class MonitoringDB( ElasticDB ):
       if not result['OK']:
         self.log.error( result['Message'] )
       
-  def getKeyValues( self, typeName ):
+  def getKeyValues( self, typeName, setup ):
     """
     Get all values for a given key field in a type
     """
     keyValuesDict = {}
     
-    indexName = self.getIndexName(typeName)
-
-    
-    return S_OK( keyValuesDict )                                            
+    indexName = "%s*" % (self.getIndexName( typeName ) )
+    retVal = self.getDocTypes( indexName )
+    if not retVal['OK']:
+      return retVal
+    docs = retVal['Value']
+    monfields =  self.__documents[typeName]['monitoringFields']
+    print 'docs', docs
+    keys =  docs[typeName]['properties'].keys() 
+    print 'dsdsds', keys 
+    return S_OK( keys )                                            
     
