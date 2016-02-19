@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities                         import Time
 import types
 
 
-class ReportGeneratorHandler( RequestHandler ):
+class MonitoringHandler( RequestHandler ):
   
   __reportRequestDict = { 'typeName' : types.StringType,
                         'reportName' : types.StringType,
