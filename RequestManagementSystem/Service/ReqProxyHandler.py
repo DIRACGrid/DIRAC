@@ -214,3 +214,28 @@ class ReqProxyHandler( RequestHandler ):
       if operationDict.get( "Type", "" ) in ( "PutAndRegister", "PhysicalRemoval", "ReTransfer" ):
         return S_ERROR( "found operation '%s' that cannot be forwarded" % operationDict.get( "Type", "" ) )
     return S_OK()
+
+  types_listCacheDir = []
+  def export_listCacheDir(self):
+    """List the content of the Cache directory
+        :returns: list of file
+    """
+    cacheDir = self.cacheDir()
+    try:
+      dirContent = os.listdir(cacheDir)
+      return S_OK(dirContent)
+    except OSError as e:
+      return S_ERROR( "Error listing %s: %s" % ( cacheDir, repr( e ) ) )
+
+  types_showCachedRequest = [ StringTypes ]
+  def export_showCachedRequest(self, filename):
+    """ Show the request cached in the given file """
+    fullPath = None
+    try:
+      fullPath = os.path.join( self.cacheDir(), filename )
+      with open(fullPath, 'r') as cacheFile:
+        requestJSON = "".join( cacheFile.readlines() )
+        return S_OK( requestJSON )
+    except Exception as e:
+      return S_ERROR( "Error showing cached request %s: %s" % ( fullPath, repr( e ) ) )
+
