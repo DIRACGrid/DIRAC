@@ -7,6 +7,8 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient      import RPCClient
+from DIRAC.MonitoringSystem.private.FileCoding import codeRequestInFileId
+import types 
 
 class MonitoringClient( object ):
   """ This class expose the methods of the ReportGenerator Service"""
@@ -22,8 +24,28 @@ class MonitoringClient( object ):
       return RPCClient( 'Monitoring/ReportGenerator', timeout = timeout )
 
   #############################################################################
-  def echo( self, string ):
+  def listUniqueKeyValues( self, typeName ):
     """It print the string"""
     server = self.__getServer()
-    res = server.echo( string )
-    print res
+    return server.listUniqueKeyValues( typeName )
+  
+  #############################################################################
+  def listReports( self, typeName ):
+    """
+    :param str typeName monitoring type for example WMSHistory
+      return the list of available reports
+    """
+    server = self.__getServer()
+    return server.listReports( typeName )
+  
+  def generateDelayedPlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None, compress = True ):
+    if type( extraArgs ) != types.DictType:
+      extraArgs = {}
+    plotRequest = { 'typeName' : typeName,
+                    'reportName' : reportName,
+                    'startTime' : startTime,
+                    'endTime' : endTime,
+                    'condDict' : condDict,
+                    'grouping' : grouping,
+                    'extraArgs' : extraArgs }
+    return codeRequestInFileId( plotRequest, compress )
