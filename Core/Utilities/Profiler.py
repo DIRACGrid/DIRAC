@@ -11,7 +11,8 @@ from DIRAC import S_OK, S_ERROR
 class Profiler:
   """
   Class for profiling both general stats about a machine and individual processes.
-  Every instance of this class is associated to a single process.
+  Every instance of this class is associated to a single process by using its PID.
+  Calls to the different methods of the class will return the current state of the process.
   """
 
   def __init__( self, pid = None ):
@@ -64,6 +65,7 @@ class Profiler:
     Returns the memory usage of the process in MB
     """
     try:
+      # Information is returned in bytes and converted to MB
       result = self.process.get_memory_info()[0] / float( 2 ** 20 )
     except Exception as e:
       return S_ERROR( e )
