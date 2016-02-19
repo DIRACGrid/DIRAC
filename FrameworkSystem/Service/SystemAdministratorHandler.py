@@ -54,21 +54,25 @@ class SystemAdministratorHandler( RequestHandler ):
       # Get the RabbitMQ parameters from the CS
       result = gConfig.getOption( 'DIRAC/Setup' )
       if not result[ 'OK' ]:
+        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
         return result
       setup = result[ 'Value' ]
       result = gConfig.getOption( 'DIRAC/Setups/%s/%s' % ( setup, system ) )
       if not result[ 'OK' ]:
+        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
         return result
       sysSetup = result[ 'Value' ]
       result = gConfig.getOptionsDict( 'Systems/%s/%s/MessageQueueing/%s' % ( system, sysSetup, queueName ) )
       if not result[ 'OK' ]:
+        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
         return result
       parameters = result[ 'Value' ]
 
       # Setup the RabbitMQ connection with the retrieved parameters
       result = SystemAdministratorHandler.rabbitMQ.setupConnection( 'Framework', 'ComponentMonitoring', parameters, False )
       if not result[ 'OK' ]:
-        gLogger.error( result[ 'Message' ] )
+        gLogger.error( 'DynamicMonitoring couldn\'t be enabled: %s' % result[ 'Message' ] )
+        return result
 
       gThreadScheduler.addPeriodicTask( 120, client.storeProfiling )
 
