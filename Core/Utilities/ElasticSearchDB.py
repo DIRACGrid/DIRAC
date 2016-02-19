@@ -12,7 +12,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC                      import gLogger, S_OK, S_ERROR
 from elasticsearch              import Elasticsearch
-from elasticsearch.exceptions   import ConnectionError
+from elasticsearch_dsl          import Search
+from elasticsearch.exceptions   import ConnectionError, TransportError
 from datetime                   import datetime
 
 class ElasticSearchDB( object ):
@@ -60,6 +61,12 @@ class ElasticSearchDB( object ):
      
     """
     return self.__client.search( query )
+  
+  def __search(self, indexname):
+    """
+    it returns the object which can be used for reatriving ceratin value from the DB
+    """
+    return  Search(using = self.__client, index=indexname)
   
   ########################################################################
   def __tryToConnect( self ):
@@ -133,3 +140,26 @@ class ElasticSearchDB( object ):
       result = S_ERROR( e )
     return result
     
+  def getUniqueValue( self, indexName, key, orderBy = False ):
+    """
+    :param str indexName the name of the index which will be used for the query
+    :param dict orderBy it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'} 
+    It returns a list of unique value for a certain key from the dictionary.
+    """
+    
+    s = self.__search( indexName )
+    if orderBy:
+      s.aggs.bucket( key, 'terms', field = key, size = 0, order = orderBy ).metric( key, 'cardinality', field = key )
+    else:
+      s.aggs.bucket( key, 'terms', field = key, size = 0 ).metric( key, 'cardinality', field = key )
+    
+    try:
+      result = s.execute()
+    except TransportError as e:
+      return S_ERROR( e )
+    
+    values = []
+    for i in result.aggregations[key].buckets:
+      values += [i['key']]
+    del s
+    return S_OK( values )

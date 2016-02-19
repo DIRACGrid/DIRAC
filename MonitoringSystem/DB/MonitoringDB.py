@@ -37,23 +37,29 @@ class MonitoringDB( ElasticDB ):
       typeClass = objectsLoaded[ pythonClassName ]
       for setup in setupsList:
         indexName = "%s_%s" % ( setup.lower(), typeClass().getIndex() )
-        doc_type =  typeClass().getDocType() 
+        doc_type = typeClass().getDocType() 
         mapping = typeClass().getMapping()
         monfields = typeClass().getMonitoringFields()
-        self.__documents[doc_type] = {indexName:mapping,'monitoringFields':monfields}
+        self.__documents[doc_type] = {"indexName": indexName, "mapping":mapping, 'monitoringFields':monfields}
         print "DDDD", self.__documents
         if self.__readonly:
-          gLogger.info("Read only mode is okay")
+          gLogger.info( "Read only mode is okay" )
         else:
           self.registerType( doc_type, indexName, mapping )
   
-  def getIndexName(self, typeName):
-    
+  def getIndexName( self, typeName ):
+    """
+    :param tyeName it is a string. doc_type and type name is equivalent
+    """
     indexName = None
     
-    if typeName in self.__documents and len(self.__documents[typeName].keys()) > 0:
-      indexName = self.__documents[typeName].keys()[0]
-    return indexName
+    if typeName in self.__documents:
+      indexName = self.__documents.get( typeName ).get( "indexName", None )
+      
+    if indexName:
+      return S_OK( indexName )
+    else:
+      return S_ERROR( "The index of % not found!" % typeName )
   
   def registerType( self, mtype, index, mapping ):
     """
@@ -66,35 +72,45 @@ class MonitoringDB( ElasticDB ):
     
     if self.checkIndex( all_index ):  
       indexes = self.getIndexes()
-      if len(indexes) > 0:
-        actualindexName = self.createFullIndexName(index)
+      if len( indexes ) > 0:
+        actualindexName = self.createFullIndexName( index )
         if self.checkIndex( actualindexName ):  
-          self.log.info("The index is exists:", actualindexName)
+          self.log.info( "The index is exists:", actualindexName )
         else:
           result = self.createIndex( index, mapping )
           if not result['OK']:
             self.log.error( result['Message'] )
-          self.log.info("The index is created", actualindexName)
+          self.log.info( "The index is created", actualindexName )
     else:
-      #in that case no index exists
+      # in that case no index exists
       result = self.createIndex( index, mapping )
       if not result['OK']:
         self.log.error( result['Message'] )
       
+  
+    
   def getKeyValues( self, typeName, setup ):
     """
     Get all values for a given key field in a type
     """
     keyValuesDict = {}
     
-    indexName = "%s*" % (self.getIndexName( typeName ) )
+    retVal = self.getIndexName( typeName )
+    if not retVal['OK']:
+      return retVal
+    indexName = "%s*" % ( retVal['Value'] )
     retVal = self.getDocTypes( indexName )
     if not retVal['OK']:
       return retVal
     docs = retVal['Value']
-    monfields =  self.__documents[typeName]['monitoringFields']
-    print 'docs', docs
-    keys =  docs[typeName]['properties'].keys() 
-    print 'dsdsds', keys 
-    return S_OK( keys )                                            
+    monfields = self.__documents[typeName]['monitoringFields']
+    
+    keys = docs[typeName]['properties'].keys() 
+    for i in keys:
+      if i not in monfields:
+        retVal = self.getUniqueValue(indexName, i)
+        if not retVal['OK']:
+          return retVal
+        keyValuesDict[i] = retVal['Value']
+    return S_OK( keyValuesDict )                                            
     
