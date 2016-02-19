@@ -190,7 +190,8 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        if not jobDict.get( 'Retrieved' ) :
+        ## Value of 'Retrieved' is a string, e.g. '0' when read from file
+        if not int( jobDict.get( 'Retrieved' ) ) :
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
 
@@ -217,7 +218,8 @@ class Dirac( API ):
     for jobID in sorted( jobs ):
       jobDict = jobs[jobID]
       if jobDict.get( 'State' ) in requestedStates:
-        if not jobDict.get( 'OutputData' ):
+        ## Value of 'OutputData' is a string, e.g. '0' when read from file
+        if not int( jobDict.get( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
             destDir = "%s/%s" % ( destinationDirectory, jobID )
@@ -351,7 +353,7 @@ class Dirac( API ):
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
       jobXMLFile = tmpdir + '/jobDescription.xml'
-      with open( jobXMLFile, os.O_RDWR | os.O_CREAT ) as fd:
+      with open( jobXMLFile, 'w+' ) as fd:
         fd.write( job._toXML() )
       result = self.runLocal( jdlAsString, jobXMLFile, curDir,
                               disableCallback = stopCallback )
@@ -2022,7 +2024,8 @@ class Dirac( API ):
     jobIDs = result['Value']
     self.log.verbose( '%s job(s) selected' % ( len( jobIDs ) ) )
     if not jobIDs:
-      return S_ERROR( 'No jobs selected for conditions: %s' % conditions )
+      self.log.error( "No jobs selected", "with date '%s' for conditions: %s" % (str(date), conditions))
+      return S_ERROR( "No jobs selected" )
     else:
       return result
 

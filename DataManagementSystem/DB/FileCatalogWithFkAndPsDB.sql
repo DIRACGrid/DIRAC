@@ -910,7 +910,7 @@ DELIMITER ;
 
 
 -- ps_delete_files : delete files from file ids and update the DirectoryUsage table. 
---                   CAREFUL : the cascade delete also removes the replicas
+--                   CAREFUL : the cascade delete also removes the replicas but will not update DirectoryUsage
 -- file_ids list of file ids
 -- output 0, 'OK'
 
@@ -920,11 +920,21 @@ CREATE PROCEDURE ps_delete_files
 (IN  file_ids MEDIUMTEXT)
 BEGIN
   START TRANSACTION;
-  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f
-                    SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
-                    WHERE f.DirID = d.DirID 
-                    AND d.SEID = 1
-                    AND f.FileID IN (', file_ids, ')');
+  
+  
+                      
+                        
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
+                                  (SELECT d1.DirID, SUM(f.Size) as t_size, count(*) as t_file
+                                  FROM FC_DirectoryList d1, FC_Files f
+                                  where f.DirID = d1.DirID
+                                  AND f.FileID IN (', file_ids, ')
+                                  GROUP BY d1.DirID ) t
+                     SET d.SESize = d.SESize - t.t_size,
+                         d.SEFiles = d.SEFiles - t.t_file
+                     WHERE d.DirID = t.DirID
+                     AND d.SEID = 1' );
+                     
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -1054,8 +1064,10 @@ BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
 
-  SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
-
+  -- We need to join on the replicas to make sure that there is a replica at the given se
+  -- otherwise the DirectoryUsage will be updated for no good reason
+  SELECT Size, DirID INTO file_size, dir_id from FC_Files f JOIN FC_Replicas r on f.FileID = r.FileID where f.FileID = file_id and r.SEID = se_id;
+  
   START TRANSACTION;
     UPDATE FC_DirectoryUsage SET SESize = SESize - file_size, SEFiles = SEFiles - 1 WHERE DirID = dir_id and SEID = se_id;
     DELETE FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;

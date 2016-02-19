@@ -1,10 +1,10 @@
 # $HeadURL: $
 """ JobRunningMatchedRatioPolicy
-  
+
   Policy that calculates the efficiency following the formula:
     ( running ) / ( running + matched + received + checking )
   if the denominator is smaller than 10, it does not take any decision.
-  
+
 """
 
 from DIRAC                                              import S_OK
@@ -15,23 +15,23 @@ __RCSID__ = '$Id: JobRunningMatchedRatioPolicy.py 60769 2013-01-18 11:50:36Z ube
 
 class JobRunningMatchedRatioPolicy( PolicyBase ):
   """
-  The JobRunningMatchedRatioPolicy class is a policy that checks the efficiency of the 
+  The JobRunningMatchedRatioPolicy class is a policy that checks the efficiency of the
   jobs according to what is on JobDB.
-  
+
     Evaluates the JobRunningMatchedRatioPolicy results given by the JobCommand.JobCommand
   """
-  
-  
+
+
   @staticmethod
   def _evaluate( commandResult ):
     """ _evaluate
-    
+
     efficiency < 0.5 :: Banned
     efficiency < 0.9 :: Degraded
-    
+
     """
 
-    result = { 
+    result = {
               'Status' : None,
               'Reason' : None
               }
@@ -67,16 +67,16 @@ class JobRunningMatchedRatioPolicy( PolicyBase ):
       result[ 'Status' ] = 'Unknown'
       result[ 'Reason' ] = 'Not enough jobs to take a decision'
       return S_OK( result )
-    
+
     efficiency = running / total
 
     if efficiency < 0.5:
       result[ 'Status' ] = 'Banned'
     elif efficiency < 0.9:
-      result[ 'Status' ] = 'Degraded'  
-    else:   
-      result[ 'Status' ] = 'Active'    
-          
+      result[ 'Status' ] = 'Degraded'
+    else:
+      result[ 'Status' ] = 'Active'
+
     result[ 'Reason' ] = 'Job Running / Matched ratio of %.2f' % efficiency
     return S_OK( result )
 

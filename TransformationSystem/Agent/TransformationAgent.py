@@ -245,7 +245,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       if len( lfns ) != totLfns:
         self._logInfo( "Reduced number of files from %d to %d" % ( totLfns, len( lfns ) ),
                        method = "processTransformation", transID = transID )
-
+        transFiles = [f for f in transFiles if f['LFN'] in lfns]
 
     # Check the data is available with replicas
     res = self.__getDataReplicas( transDict, lfns, clients, active = not replicateOrRemove )

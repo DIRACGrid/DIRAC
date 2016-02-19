@@ -16,7 +16,10 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueMatchFields
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, \
+                                                          singleValueDefFields, \
+                                                          multiValueMatchFields, \
+                                                          tagMatchFields
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -184,16 +187,23 @@ class Matcher( object ):
           resourceDict[name] = resourceDescription[name]
 
       for name in multiValueMatchFields:
-        if resourceDescription.has_key( name ):
+        if name in resourceDescription:
           resourceDict[name] = resourceDescription[name]
+
+      for name in tagMatchFields:
+        if name in resourceDescription:
+          resourceDict[name] = resourceDescription[name]
+        rname = 'Required%s' % name
+        if rname in resourceDescription:
+          resourceDict[rname] = resourceDescription[rname]
 
       if 'JobID' in resourceDescription:
         resourceDict['JobID'] = resourceDescription['JobID']
 
-      # Convert MaxRAM and NumberOfCores parameters into a list of tags
+      # Convert MaxRAM and NumberOfProcessors parameters into a list of tags
       maxRAM = resourceDescription.get( 'MaxRAM' )
-      nCores = resourceDescription.get( 'NumberOfProcessors' )
-      for param, key in [ ( maxRAM, 'GB' ), ( nCores, 'Cores' ) ]:
+      nProcessors = resourceDescription.get( 'NumberOfProcessors' )
+      for param, key in [ ( maxRAM, 'GB' ), ( nProcessors, 'Processors' ) ]:
         if param:
           try:
             intValue = int( param )/1000

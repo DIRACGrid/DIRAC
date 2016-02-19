@@ -221,7 +221,7 @@ class FTSAgent( AgentModule ):
   @staticmethod
   def updateFTSFileDict( ftsFilesDict, toUpdateDict ):
     """ update :ftsFilesDict: with FTSFiles in :toUpdateDict: """
-    for category, ftsFileList in ftsFilesDict.items():
+    for category, ftsFileList in ftsFilesDict.iteritems():
       for ftsFile in toUpdateDict.get( category, [] ):
         if ftsFile not in ftsFileList:
           ftsFileList.append( ftsFile )
@@ -480,9 +480,9 @@ class FTSAgent( AgentModule ):
             ftsFilesDict = self.updateFTSFileDict( ftsFilesDict, monitor["Value"] )
 
         log.info( "monitoring of FTSJobs completed" )
-        for key, ftsFiles in ftsFilesDict.items():
+        for key, ftsFiles in ftsFilesDict.iteritems():
           if ftsFiles:
-            log.verbose( " => %s FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
+            log.info( " => %d FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
       if len( ftsJobs ) != len( jobsToMonitor ):
         log.info( "==> found %d FTSJobs that were monitored recently" % ( len( ftsJobs ) - len( jobsToMonitor ) ) )
 
@@ -514,7 +514,7 @@ class FTSAgent( AgentModule ):
                 if opFile.LFN in toSchedule and opFile.Status == 'Scheduled':
                   opFile.Status = 'Waiting'
             # Recover files with target not in FTSDB
-            toSchedule = set( [missing for missing, missingSEs in missingReplicas.items()
+            toSchedule = set( [missing for missing, missingSEs in missingReplicas.iteritems()
                               if not [ftsFile for ftsFile in ftsFiles
                                       if ftsFile.LFN == missing and ftsFile.TargetSE in missingSEs]] )
             if toSchedule:
@@ -564,6 +564,9 @@ class FTSAgent( AgentModule ):
                   if opFile.LFN == lfn:
                     opFile.Status = 'Done'
                     break
+          for key, ftsFiles in ftsFilesDict.iteritems():
+            if ftsFiles:
+              log.info( " => %d FTSFiles to %s" % ( len( ftsFiles ), key[2:].lower() ) )
 
       toFail = ftsFilesDict.get( "toFail", [] )
       toReschedule = ftsFilesDict.get( "toReschedule", [] )
@@ -573,7 +576,7 @@ class FTSAgent( AgentModule ):
 
       # # PHASE TWO = Failed files? -> make request Failed and return
       if toFail:
-        log.error( "==> found %s 'Failed' FTSFiles, but maybe other files can be processed..." % len( toFail ) )
+        log.error( "==> found %d 'Failed' FTSFiles, but maybe other files can be processed..." % len( toFail ) )
         for opFile in operation:
           for ftsFile in toFail:
             if opFile.FileID == ftsFile.FileID:
@@ -593,7 +596,7 @@ class FTSAgent( AgentModule ):
         byTarget = {}
         for ftsFile in toUpdate:
           byTarget.setdefault( ftsFile.TargetSE, [] ).append( ftsFile.FileID )
-        for targetSE, fileIDList in byTarget.items():
+        for targetSE, fileIDList in byTarget.iteritems():
           update = self.ftsClient().setFTSFilesWaiting( operation.OperationID, targetSE, fileIDList )
           if not update["OK"]:
             log.error( "update FTSFiles failed:", update["Message"] )
@@ -782,9 +785,9 @@ class FTSAgent( AgentModule ):
 
     ftsJobs = []
 
-    for source, targetDict in bySourceAndTarget.items():
+    for source, targetDict in bySourceAndTarget.iteritems():
 
-      for target, ftsFileList in targetDict.items():
+      for target, ftsFileList in targetDict.iteritems():
 
         log.info( "found %s files to submit from %s to %s" % ( len( ftsFileList ), source, target ) )
 
@@ -1023,7 +1026,7 @@ class FTSAgent( AgentModule ):
       byTarget[ftsFile.TargetSE].append( ftsFile )
     log.info( "will create %s 'RegisterReplica' operations" % len( byTarget ) )
 
-    for target, ftsFileList in byTarget.items():
+    for target, ftsFileList in byTarget.iteritems():
       log.info( "creating 'RegisterReplica' operation for targetSE %s with %s files..." % ( target,
                                                                                             len( ftsFileList ) ) )
       registerOperation = Operation()
@@ -1119,7 +1122,7 @@ class FTSAgent( AgentModule ):
         log.info( "%d replicas still missing at %s" % ( missingSEs[ses], ses ) )
 
     reMissing = re.compile( "no such file or directory" )
-    for failedLFN, errStr in replicas["Failed"].items():
+    for failedLFN, errStr in replicas["Failed"].iteritems():
       scheduledFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
         log.error( "%s is missing, setting its status to 'Failed'" % failedLFN )

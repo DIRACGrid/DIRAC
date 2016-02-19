@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' AlwaysBannedPolicy module 
+''' AlwaysBannedPolicy module
 '''
 
 from DIRAC                                              import S_OK
@@ -9,8 +9,8 @@ __RCSID__ = '$Id:  $'
 
 class AlwaysBannedPolicy( PolicyBase ):
   '''
-    The AlwaysBannedPolicy is a dummy module that can be used as example, it 
-    always returns Banned status.   
+    The AlwaysBannedPolicy is a dummy module that can be used as example, it
+    always returns Banned status.
   '''
 
   @staticmethod
@@ -20,12 +20,12 @@ class AlwaysBannedPolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = { 
-                     'Status' : 'Banned', 
-                     'Reason' : 'AlwaysBanned' 
+    policyResult = {
+                     'Status' : 'Banned',
+                     'Reason' : 'AlwaysBanned'
                    }
-    
+
     return S_OK( policyResult )
-  
-################################################################################ 
+
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

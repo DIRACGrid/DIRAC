@@ -37,6 +37,8 @@ from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
+from DIRAC.Resources.Storage.StorageBase import StorageBase
+
 from irods import rcConnect , rcDisconnect , clientLoginWithPassword, \
                   irodsCollection, irodsOpen, \
                   getResources , getResource
@@ -200,6 +202,8 @@ class IRODSStorageElementHandler( RequestHandler ):
     irodsFile = irodsOpen( conn , file_path , "r" )
     if irodsFile:
       resultDict['Exists'] = True
+      resultDict['File'] = True
+      resultDict['Directory'] = False
       resultDict['Type'] = "File"
       resultDict['Size'] = irodsFile.getSize()
       resultDict['TimeStamps'] = ( irodsFile.getCreateTs(), irodsFile.getModifyTs(), irodsFile.getCreateTs() )
@@ -208,12 +212,15 @@ class IRODSStorageElementHandler( RequestHandler ):
       resultDict['Lost'] = 0
       resultDict['Unavailable'] = 0
       resultDict['Mode'] = 0o755
+      resultDict = StorageBase._addCommonMetadata( resultDict )
       return S_OK( resultDict )
     else:
       coll = irodsCollection( conn, file_path )
       if coll:
         resultDict['Exists'] = True
         resultDict['Type'] = "Directory"
+        resultDict['File'] = False
+        resultDict['Directory'] = True
         resultDict['Size'] = 0
         resultDict['TimeStamps'] = ( 0,0,0 )
         resultDict['Cached'] = 1
@@ -221,6 +228,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         resultDict['Lost'] = 0
         resultDict['Unavailable'] = 0
         resultDict['Mode'] = 0o755
+        resultDict = StorageBase._addCommonMetadata( resultDict )
         return S_OK( resultDict )
       else:
         return S_ERROR( 'Path does not exist' )

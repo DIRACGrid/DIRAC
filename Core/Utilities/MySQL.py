@@ -155,22 +155,21 @@ from DIRAC                      import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time  import fromString
 from DIRAC.Core.Utilities       import DErrno
 
-# Get rid of the annoying Deprecation warning of the current MySQLdb
-# FIXME: compile a newer MySQLdb version
-import warnings
-with warnings.catch_warnings():
-  warnings.simplefilter( 'ignore', DeprecationWarning )
-  import MySQLdb
+import MySQLdb
 
 # This is for proper initialization of embedded server, it should only be called once
-MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
+try:
+  MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
+except MySQLdb.ProgrammingError:
+  pass
+
 gInstancesCount = 0
 gDebugFile = None
 
 import collections
 import time
 import threading
-from types import StringTypes, DictType, ListType, TupleType, BooleanType
+from types import DictType, ListType
 
 MAXCONNECTRETRY = 10
 
@@ -184,7 +183,7 @@ def _checkFields( inFields, inValues ):
 
   try:
     assert len( inFields ) == len( inValues )
-  except:
+  except AssertionError:
     return S_ERROR( DErrno.EMYSQL, 'Mismatch between inFields and inValues.' )
 
   return S_OK()
@@ -377,7 +376,7 @@ class MySQL( object ):
 
   __connectionPools = {}
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, debug = False ):
+  def __init__( self, hostName = 'localhost', userName = 'dirac', passwd = 'dirac', dbName = '', port = 3306, debug = False ):
     """
     set MySQL connection parameters and try to connect
     """
@@ -1532,7 +1531,7 @@ class MySQL( object ):
     cursor = connection.cursor()
     try:
 #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
-      execStr = "call %s(%s);" % ( packageName, ",".join( ["\"%s\"" % param if type( param ) is ( str ) else str( param ) for param in parameters] ) )
+      execStr = "call %s(%s);" % ( packageName, ",".join( ["\"%s\"" % param if isinstance( param, basestring ) else str( param ) for param in parameters] ) )
       cursor.execute( execStr )
       rows = cursor.fetchall()
       retDict = S_OK( rows )

@@ -80,7 +80,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'AccountingCache', locals() )
 
 
@@ -113,9 +113,41 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'AccountingCache', locals() )
+
+
+
+  def deleteAccountingCache( self, name = None, plotType = None,
+                                  plotName = None, result = None,
+                                  dateEffective = None, lastCheckTime = None,
+                                  meta = None ):
+    '''
+    Deletes from AccountingCache all rows that match the parameters given.
+
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology
+      **plotType** - `string`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `string`
+        the plot name
+      **result** - `string`
+        command result
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument
+    # pylint: disable=W0613
+    return self._query( 'delete', 'AccountingCache', locals() )
 
 
   # GGUSTicketsCache Methods ...................................................
@@ -124,14 +156,14 @@ class ResourceManagementClient( object ):
   def selectGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
                               tickets = None, lastCheckTime = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'GGUSTicketsCache', locals() )
 
 
   def deleteGGUSTicketsCache( self, gocSite = None, link = None, openTickets = None,
                               tickets = None, lastCheckTime = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'GGUSTicketsCache', locals() )
 
 
@@ -139,7 +171,7 @@ class ResourceManagementClient( object ):
                                    openTickets = None, tickets = None,
                                    lastCheckTime = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'GGUSTicketsCache', locals() )
 
@@ -182,8 +214,8 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'select', 'DowntimeCache', locals() )
 
 
@@ -223,8 +255,8 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'delete', 'DowntimeCache', locals() )
 
 
@@ -266,7 +298,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'DowntimeCache', locals() )
 
@@ -295,8 +327,8 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'select', 'JobCache', locals() )
 
 
@@ -322,8 +354,8 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'delete', 'JobCache', locals() )
 
 
@@ -351,7 +383,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'JobCache', locals() )
 
@@ -380,8 +412,8 @@ class ResourceManagementClient( object ):
 #
 #    :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'select', 'TransferCache', locals() )
 
 
@@ -407,8 +439,8 @@ class ResourceManagementClient( object ):
 #
 #    :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'delete', 'TransferCache', locals() )
 
 
@@ -437,7 +469,7 @@ class ResourceManagementClient( object ):
 #    :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'TransferCache', locals() )
 
@@ -469,8 +501,8 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'select', 'PilotCache', locals() )
 
 
@@ -498,8 +530,8 @@ class ResourceManagementClient( object ):
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()    '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
+    # Unused argument
+    # pylint: disable=W0613
     return self._query( 'delete', 'PilotCache', locals() )
 
 
@@ -530,7 +562,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PilotCache', locals() )
 
@@ -567,7 +599,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'PolicyResult', locals() )
 
 
@@ -601,7 +633,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'PolicyResult', locals() )
 
 
@@ -639,7 +671,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PolicyResult', locals() )
 
@@ -647,8 +679,8 @@ class ResourceManagementClient( object ):
   # PolicyResultLog Methods ....................................................
 
   def selectPolicyResultLog( self, element = None, name = None,
-                              policyName = None, statusType = None, status = None,
-                              reason = None, lastCheckTime = None, meta = None ):
+                             policyName = None, statusType = None, status = None,
+                             reason = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResultLog all rows that match the parameters given.
 
@@ -676,7 +708,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'PolicyResultLog', locals() )
 
 
@@ -710,7 +742,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'PolicyResultLog', locals() )
 
 
@@ -746,7 +778,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'PolicyResultLog', locals() )
 
@@ -779,7 +811,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'SpaceTokenOccupancyCache', locals() )
 
 
@@ -809,7 +841,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'SpaceTokenOccupancyCache', locals() )
 
 
@@ -841,7 +873,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'SpaceTokenOccupancyCache', locals() )
 
@@ -869,7 +901,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'UserRegistryCache', locals() )
 
 
@@ -894,7 +926,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'UserRegistryCache', locals() )
 
 
@@ -920,7 +952,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'UserRegistryCache', locals() )
 
@@ -950,7 +982,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'select', 'VOBOXCache', locals() )
 
 
@@ -977,7 +1009,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'delete', 'VOBOXCache', locals() )
 
 
@@ -1005,7 +1037,7 @@ class ResourceManagementClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', 'VOBOXCache', locals() )
 
@@ -1016,7 +1048,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613
+    # pylint: disable=W0613
     return self._query( 'insert', 'ErrorReportBuffer', locals() )
 
 
@@ -1024,7 +1056,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613    
+    # pylint: disable=W0613
     return self._query( 'select', 'ErrorReportBuffer', locals() )
 
 
@@ -1032,7 +1064,7 @@ class ResourceManagementClient( object ):
                                errorMessage = None, operation = None, arguments = None,
                                dateEffective = None, meta = None ):
     # Unused argument
-    # pylint: disable-msg=W0613    
+    # pylint: disable=W0613
     return self._query( 'delete', 'ErrorReportBuffer', locals() )
 
 

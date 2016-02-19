@@ -1,4 +1,4 @@
-[v6r15-pre12]
+[v6r15-pre16]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -17,6 +17,8 @@ CHANGE: removed Core.Utilities.List.sortList (sorted does the job)
 CHANGE: removed unused module Core.Utilities.TimeSeries
 NEW: dirac-install - makes us of the DIRAC tar files in CVMFS if available
 NEW: dirac-install-client - a guiding script to install the DIRAC client from A to Z        
+CHANGE: dirac-install - when generating bashrc and cshrc scripts prepend DIRAC paths
+        to the ones existing in the environment already
 NEW: MJFTimeLeft - using Machine JOb features in the TimeLeft utility
 FIX: BaseClient - only give warning log message "URL banned" when one of the
      service URLs is really banned
@@ -26,6 +28,7 @@ NEW: dirac-rss-policy-manager - allows to interactively modify and test only the
      policy section of Dirac.cfg     
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
 FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
+CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all of them
 
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
@@ -36,7 +39,13 @@ CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in par
         to speed up the operation
 CHANGE: InstalledComponentsDB - table to cache host status information populated
         by a periodic task    
-NEW: ComponentInstaller Client class            
+NEW: ComponentInstaller Client class to encapsulate all the installation utilities
+     from InstallTools module    
+NEW: SystemAdministratorClientCLI - added uninstall host command
+NEW: SystemAdministratorClientCLI - added show ports command
+NEW: SystemAdministratorHandler - added getUsedPorts() interface
+NEW: SystemAdministratorHandler - show host command shows also versions of the Extensions
+NEW: InstalledComponentsDB - added Extension field to the HostLogging table 
 
 *Accounting
 FIX: DataStoreClient - Synchronizer based decorators have been replaced with a simple 
@@ -75,10 +84,83 @@ CHANGE: SiteDirector - flag to always download pilot output is set to False by d
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
      the requests could not be swiped
 FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request is buggy     
+CHANGE: ReqProxyHandler - added monitoring counters
 
 *Resources
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
+CHANGE: Add standard metadata in the output of all the Storage plugins     
+
+*tests
+NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p21]
+
+*DMS
+CHANGE: dirac-admin-allow(ban)-se - allow an SE group to be banned/allowed
+
+*SMS
+FIX: RequestPreparationAgent - fix crash in execute() in case no replica information
+     available
+
+*WMS
+FIX: TaskQueueDB, PilotAgentsDB - escape DN strings to avoid potential SQL injection
+FIX: JobWrapperTemplate - pass JobArguments through a json file to fix the case
+     of having apostrophes in the values
+
+*TMS
+FIX: TransformationAgent - in processTransformation() fix reduction of number of files
+
+[v6r14p20]
+
+*WMS
+FIX: SandboxMetadataDB - escape values in SandboxMetadataDB SQL queries to accommodate
+     DNs containing apostrophe 
+
+[v6r14p19]
+
+*Core
+NEW: CLI base class for all the DIRAC CLI consoles, common methods moved to the new class,
+     XXXCLI classes updated to inherit the base class
+FIX: Network - fix crash when path is empty string, fixes partly #2413     
+     
+*Configuration
+FIX: Utilities.addToChangeSet() - fix the case when comma is in the BDII Site description 
+     followed by a white space, the description string was constantly updated in the CS
+
+*Interfaces
+FIX: Dirac.py - in retrieveRepositorySandboxes/Data - "Retrieved" and "OutputData" key values
+     are strings '0' in the jobDict when a repository file is read, need to cast it to int
+
+*DMS
+FIX: RegisterReplica - if operation fails on a file that no longer exists and has no 
+     replica at that SE, consider the operation as Done.
+
+*Resources
+FIX: ARCComputingElement - bug fix in getJobOutput in using the S_ERROR()
+
+[v6r14p18]
+
+*Core
+FIX: VOMSService - attGetUserNickname() can only return string type values
+FIX: dirac-deploy-scripts - install DIRAC scripts first so that they can be 
+     overwritten by versions from extensions
+
+*Framework
+FIX: dirac-populate-component-db - bug fixed to avoid duplicate entries in the
+     database
+
+*TS
+FIX: TaskManager - do not use ReqProxy when submitting Request for Tasks, otherwise
+     no RequestID can be obtained
+
+*Interfaces
+CHANGE: Dirac.py - increase verbosity of a error log message in selectJobs
+
+*Resources
+FIX: XROOTStorage - fixed KeyError exception while checking file existence
+FIX: ARCComputingElement - in getJobOutput test for existence of an already 
+     downloaded pilot log
 
 [v6r14p17]
 

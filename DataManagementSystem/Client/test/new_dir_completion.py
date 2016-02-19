@@ -1,4 +1,4 @@
-# TO-DO: to be moved to TestDIRAC
+# TO-DO: to be moved to tests directory
 
 import cmd
 import sys
@@ -28,7 +28,7 @@ class DirCompletion(cmd.Cmd):
       return []
 
   def do_ls(self, args):
-    print 
+    print
     print " ".join(self._ls(args))
 
   def complete_ls(self, text, line, begidx, endidx):
@@ -45,7 +45,7 @@ class DirCompletion(cmd.Cmd):
 
     return result
 
-    
+
 
 if __name__ == "__main__":
 

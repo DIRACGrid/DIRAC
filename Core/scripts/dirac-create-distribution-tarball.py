@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########################################################################
-# File :    dirac-distribution-create-tarball
+# $HeadURL$
+# File :    dirac-create-distribution-tarball
 # Author :  Adria Casajus
 ########################################################################
 """
@@ -481,6 +482,8 @@ class TarModuleCreator( object ):
     tarName = "%s-%s.tar.gz" % ( self.params.name, self.params.version )
     tarfilePath = os.path.join( destDir, tarName )
     dirToTar = os.path.join( self.params.destination, self.params.name )
+    if self.params.name in os.listdir( dirToTar ):
+      dirToTar = os.path.join( dirToTar, self.params.name )
     result = Distribution.writeVersionToInit( dirToTar, self.params.version )
     if not result[ 'OK' ]:
       return result
@@ -504,6 +507,8 @@ class TarModuleCreator( object ):
     result = self.__checkoutSource()
     if not result[ 'OK' ]:
       return result
+    shutil.rmtree( "%s/tests" % self.params.destination, ignore_errors=True )
+    shutil.rmtree( "%s/docs" % self.params.destination, ignore_errors=True )
     result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )

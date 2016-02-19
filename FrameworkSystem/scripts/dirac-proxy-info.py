@@ -105,6 +105,8 @@ if not result[ 'OK' ]:
   sys.exit( 1 )
 infoDict = result[ 'Value' ]
 gLogger.notice( formatProxyInfoAsString( infoDict ) )
+if not infoDict['isProxy']:
+  gLogger.error( '==============================\n!!! The proxy is not valid !!!' )
 
 if params.steps:
   gLogger.notice( "== Steps extended info ==" )

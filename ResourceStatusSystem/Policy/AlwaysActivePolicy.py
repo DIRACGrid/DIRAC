@@ -1,5 +1,5 @@
 # $HeadURL:  $
-''' AlwaysActivePolicy module 
+''' AlwaysActivePolicy module
 '''
 
 from DIRAC                                              import S_OK
@@ -9,8 +9,8 @@ __RCSID__ = '$Id:  $'
 
 class AlwaysActivePolicy( PolicyBase ):
   '''
-    The AlwaysActivePolicy is a dummy module that can be used as example, it 
-    always returns Active status.   
+    The AlwaysActivePolicy is a dummy module that can be used as example, it
+    always returns Active status.
   '''
 
   @staticmethod
@@ -20,12 +20,12 @@ class AlwaysActivePolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = { 
-                     'Status' : 'Active', 
-                     'Reason' : 'AlwaysActive' 
+    policyResult = {
+                     'Status' : 'Active',
+                     'Reason' : 'AlwaysActive'
                    }
-    
+
     return S_OK( policyResult )
-  
-################################################################################ 
+
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

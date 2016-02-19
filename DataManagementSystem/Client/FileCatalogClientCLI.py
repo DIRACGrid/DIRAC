@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import cmd
 import commands
 import os.path
 import time
@@ -11,6 +10,7 @@ import sys
 import getopt
 
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
@@ -19,7 +19,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
-class FileCatalogClientCLI(cmd.Cmd):
+class FileCatalogClientCLI( CLI ):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
 
     The URL should use HTTP protocol, and specify a port.  e.g.::
@@ -44,20 +44,20 @@ class FileCatalogClientCLI(cmd.Cmd):
 File Catalog Client $Revision: 1.17 $Date: 
             """
 
-  def __init__(self, client):
-    cmd.Cmd.__init__(self)
+  def __init__( self, client ):
+    CLI.__init__( self )
     self.fc = client
     self.cwd = '/'
     self.prompt = 'FC:'+self.cwd+'> '
     self.previous_cwd = '/'
 
-    self.dfc_fs = DFCFileSystem(self.fc)
-    self.lfn_dc = DirectoryCompletion(self.dfc_fs)
+    self.dfc_fs = DFCFileSystem( self.fc )
+    self.lfn_dc = DirectoryCompletion( self.dfc_fs )
 
     self.ul_fs = UnixLikeFileSystem()
-    self.ul_dc = DirectoryCompletion(self.ul_fs)
+    self.ul_dc = DirectoryCompletion( self.ul_fs )
 
-  def getPath(self,apath):
+  def getPath( self, apath ):
 
     if apath.find('/') == 0:
       path = apath
@@ -1652,7 +1652,7 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     meta = argss[::2]
     value = argss[1::2]
-    metadict = {meta[n]:value[n] for n in range(len(meta))}
+    metadict = { meta[n]:value[n] for n in range(len(meta)) }
     print path,metadict
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
@@ -2224,17 +2224,7 @@ File Catalog Client $Revision: 1.17 $Date:
       return 
       
     total = time.time() - start
-    print "Catalog repaired in %.2f sec", total      
-      
-  def do_exit(self, args):
-    """ Exit the shell.
-
-    usage: exit
-    """
-    sys.exit(0)
-
-  def emptyline(self): 
-    pass      
+    print "Catalog repaired in %.2f sec" % total
       
 if __name__ == "__main__":
   
