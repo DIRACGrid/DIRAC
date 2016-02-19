@@ -2,6 +2,8 @@
 Profiling class for updated information on process status
 """
 
+__RCSID__ = "$Id$"
+
 import psutil
 import datetime
 from DIRAC import S_OK, S_ERROR
@@ -13,11 +15,15 @@ class Profiler:
   """
 
   def __init__( self, pid = None ):
+    """
+    :param str pid: PID of the process to be profiled
+    """
     self.__setProcess( pid )
 
   def __setProcess( self, pid = None ):
     """
     Set the current process
+    :param str pid: PID of the process to be profiled
     """
     if pid:
       self.process = psutil.Process( int( pid ) )
@@ -36,7 +42,7 @@ class Profiler:
     """
     try:
       result = self.process.status()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
 
     return S_OK( result )
@@ -48,7 +54,7 @@ class Profiler:
     try:
       start = datetime.datetime.fromtimestamp( self.process.create_time() )
       result = ( datetime.datetime.now() - start ).total_seconds()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
 
     return S_OK( result )
@@ -59,7 +65,7 @@ class Profiler:
     """
     try:
       result = self.process.get_memory_info()[0] / float( 2 ** 20 )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
 
     return S_OK( result )
@@ -70,7 +76,7 @@ class Profiler:
     """
     try:
       result = self.process.num_threads()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
 
     return S_OK( result )
@@ -81,7 +87,7 @@ class Profiler:
     """
     try:
       result = self.process.cpu_percent()
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( e )
 
     return S_OK( result )
