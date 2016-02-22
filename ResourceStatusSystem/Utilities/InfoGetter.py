@@ -177,7 +177,7 @@ class InfoGetter:
 
 
 
-  def __filterPolicies( self, decissionParams, policyMatchParams):
+  def __filterPolicies( self, decisionParams, policyMatchParams):
     '''
       Method that checks if the given policy doesn't meet certain conditions
     '''
@@ -185,10 +185,10 @@ class InfoGetter:
 
     #some policies may apply or not also depending on the VO's domain
     # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
-    if 'elementType' in decissionParams and 'name' in decissionParams:
-      elementType = decissionParams['elementType']
-      name = decissionParams['name']
-      if elementType.lower() == 'computingelement' and 'domain' in policyMatchParams:
+    if 'elementType' in decisionParams and 'name' in decisionParams:
+      elementType = decisionParams['elementType']
+      name = decisionParams['name']
+      if elementType and elementType.lower() == 'computingelement' and 'domain' in policyMatchParams:
         #WARNING: policyMatchParams['domain'] is a list of domains
         domains = policyMatchParams['domain']
         result = self.__getComputingElementsByDomainName( targetDomain = domains )
@@ -207,7 +207,7 @@ class InfoGetter:
 
 
 
-  def __getPoliciesThatApply( self, decissionParams ):
+  def __getPoliciesThatApply( self, decisionParams ):
     '''
       Method that matches the input dictionary with the policies configuration in
       the CS. It returns a list of policy dictionaries that matched.
@@ -249,8 +249,8 @@ class InfoGetter:
       # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
       policyConfigParams = {}
       #policyConfigParams = policySetup.get( 'configParams', {} )
-      policyMatch = Utils.configMatch( decissionParams, policyMatchParams )
-      policyFilter = self.__filterPolicies( decissionParams, policyMatchParams )
+      policyMatch = Utils.configMatch( decisionParams, policyMatchParams )
+      policyFilter = self.__filterPolicies( decisionParams, policyMatchParams )
 
       #WARNING: we need an additional filtering function when the matching
       #is not straightforward (e.g. when the policy specify a 'domain', while
