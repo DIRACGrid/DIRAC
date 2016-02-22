@@ -191,7 +191,6 @@ class UserProfileDB( DB ):
 
   def __webProfileReadAccessDataCond( self, userIds, ownerIds, sqlProfileName, sqlVarName = False ):
     permCondSQL = []
-    permCondSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ( ownerIds[0], ownerIds[1] ) )
     permCondSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.ReadAccess="GROUP"' % userIds[1] )
     permCondSQL.append( '`up_ProfilesData`.VOId=%s AND `up_ProfilesData`.ReadAccess="VO"' % userIds[2] )
     permCondSQL.append( '`up_ProfilesData`.ReadAccess="ALL"' )
@@ -199,6 +198,8 @@ class UserProfileDB( DB ):
     sqlCond.append( '`up_ProfilesData`.Profile = %s' % sqlProfileName )
     if sqlVarName:
       sqlCond.append( "`up_ProfilesData`.VarName = %s" % ( sqlVarName ) )
+    
+    sqlCond.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ( ownerIds[0], ownerIds[1] ) )
     #Perms
     sqlCond.append( "( ( %s ) )" % " ) OR ( ".join( permCondSQL ) )
     return " AND ".join( sqlCond )
