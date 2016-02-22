@@ -189,17 +189,22 @@ class UserProfileDB( DB ):
       condSQL.append( '`up_ProfilesData`.VarName=%s' % sqlVarName )
     return " AND ".join( condSQL )
 
-  def __webProfileReadAccessDataCond( self, userIds, ownerIds, sqlProfileName, sqlVarName = False ):
+  def __webProfileReadAccessDataCond( self, userIds, ownerIds, sqlProfileName, sqlVarName = False, match = False ):
     permCondSQL = []
+    sqlCond = []
+    
+    if match:
+      sqlCond.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ( ownerIds[0], ownerIds[1] ) )
+    else:
+      permCondSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ( ownerIds[0], ownerIds[1] ) )
+    
     permCondSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.ReadAccess="GROUP"' % userIds[1] )
     permCondSQL.append( '`up_ProfilesData`.VOId=%s AND `up_ProfilesData`.ReadAccess="VO"' % userIds[2] )
     permCondSQL.append( '`up_ProfilesData`.ReadAccess="ALL"' )
-    sqlCond = []
+    
     sqlCond.append( '`up_ProfilesData`.Profile = %s' % sqlProfileName )
     if sqlVarName:
       sqlCond.append( "`up_ProfilesData`.VarName = %s" % ( sqlVarName ) )
-    
-    sqlCond.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ( ownerIds[0], ownerIds[1] ) )
     #Perms
     sqlCond.append( "( ( %s ) )" % " ) OR ( ".join( permCondSQL ) )
     return " AND ".join( sqlCond )
@@ -236,7 +241,8 @@ class UserProfileDB( DB ):
       return result
     sqlVarName = result[ 'Value' ]
 
-    sqlCond = self.__webProfileReadAccessDataCond( userIds, ownerIds, sqlProfileName, sqlVarName )
+    sqlCond = self.__webProfileReadAccessDataCond( userIds, ownerIds, sqlProfileName, sqlVarName, True )
+    #when we retrieve the user profile we have to take into account the user. 
     selectSQL = "SELECT data FROM `up_ProfilesData` WHERE %s" % sqlCond
     result = self._query( selectSQL )
     if not result[ 'OK' ]:
