@@ -2,6 +2,8 @@
 """ Tests the MySQL class
 """
 
+#FIXME: to bring back to life
+
 import time
 import DIRAC
 from DIRAC.Core.Utilities.MySQL              import MySQL
@@ -219,7 +221,5 @@ testlist = [{ 'method'    : DB._connect,
            ]
 
 testdict = { 'DIRAC.MySQL': testlist }
-
-DIRAC.Tests.run( testdict, 'DIRAC.MySQL' )
 
 DIRAC.exit()

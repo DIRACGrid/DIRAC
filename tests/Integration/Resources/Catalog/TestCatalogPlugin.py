@@ -8,7 +8,6 @@ parseCommandLine()
 from DIRAC.Resources.Catalog.FileCatalog                import FileCatalog
 from DIRAC.Core.Utilities.File                          import makeGuid
 from DIRAC.Core.Utilities.Adler                         import stringAdler
-from DIRAC.Core.Utilities.List                          import sortList
 from types                                              import *
 import unittest,time,os,shutil,sys
 
@@ -69,14 +68,14 @@ class CatalogPlugInTestCase(unittest.TestCase):
     self.assert_(res['Value'])
     self.assert_(res['Value']['Failed'])
     self.assert_(res['Value']['Failed'].has_key(path))
-    return res['Value']['Failed'][path]    
+    return res['Value']['Failed'][path]
 
   def cleanDirectory(self):
     res = self.catalog.exists(self.destDir)
     returnValue = self.parseResult(res,self.destDir)
     if not returnValue:
       return
-    res = self.catalog.listDirectory(self.destDir)  
+    res = self.catalog.listDirectory(self.destDir)
     returnValue = self.parseResult(res,self.destDir)
     toRemove = returnValue['Files'].keys()
     if toRemove:
@@ -93,7 +92,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
         repDict = {}
         repDict[lfn] = {'PFN':pfn,'SE':se}
         res = self.catalog.removeReplica(repDict)
-        self.parseResult(res,lfn)   
+        self.parseResult(res,lfn)
       res = self.catalog.removeFile(lfn)
       self.parseResult(res,lfn)
 
@@ -101,7 +100,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
     self.cleanDirectory()
 
 class FileTestCase(CatalogPlugInTestCase):
-  
+
   def test_isFile(self):
     # Test isFile with a file
     res = self.catalog.isFile(self.files[0])
@@ -133,7 +132,7 @@ class FileTestCase(CatalogPlugInTestCase):
     res = self.catalog.getFileMetadata(self.destDir)
     returnValue = self.parseResult(res,self.destDir)
     self.assertEqual(returnValue['Status'],'-')
-    self.assertEqual(returnValue['Size'],0) 
+    self.assertEqual(returnValue['Size'],0)
     self.metadata = ['Status', 'ChecksumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
     for key in self.metadata:
       self.assert_(returnValue.has_key(key))
@@ -149,7 +148,7 @@ class FileTestCase(CatalogPlugInTestCase):
     self.assertEqual(error,"No such file or directory")
     # Test getFileSize with a directory
     res = self.catalog.getFileSize(self.destDir)
-    returnValue = self.parseResult(res,self.destDir)  
+    returnValue = self.parseResult(res,self.destDir)
     self.assertEqual(returnValue,0)
 
   def test_getReplicas(self):
@@ -194,7 +193,7 @@ class FileTestCase(CatalogPlugInTestCase):
   def test_exists(self):
     # Test exists with a file
     res = self.catalog.exists(self.files[0])
-    returnValue = self.parseResult(res,self.files[0]) 
+    returnValue = self.parseResult(res,self.files[0])
     self.assert_(returnValue)
     # Test exists for missing path
     res = self.catalog.exists(self.files[0][:-1])
@@ -207,7 +206,7 @@ class FileTestCase(CatalogPlugInTestCase):
 
   def test_addReplica(self):
     # Test getReplicas with a file
-    res = self.catalog.getReplicas(self.files[0])   
+    res = self.catalog.getReplicas(self.files[0])
     returnValue = self.parseResult(res,self.files[0])
     self.assertEqual(returnValue.keys(),['DIRAC-storage'])
     self.assertEqual(returnValue.values(),['protocol://host:port/storage/path%s' % self.files[0]])
@@ -220,8 +219,8 @@ class FileTestCase(CatalogPlugInTestCase):
     # Check the addReplica worked correctly
     res = self.catalog.getReplicas(self.files[0])
     returnValue = self.parseResult(res,self.files[0])
-    self.assertEqual(sortList(returnValue.keys()),sortList(['DIRAC-storage','DIRAC-storage2']))
-    self.assertEqual(sortList(returnValue.values()),sortList(['protocol://host:port/storage/path%s' % self.files[0], 'protocol2://host:port/storage/path%s' % self.files[0]]))
+    self.assertEqual(sorted(returnValue.keys()),sorted(['DIRAC-storage','DIRAC-storage2']))
+    self.assertEqual(sorted(returnValue.values()),sorted(['protocol://host:port/storage/path%s' % self.files[0], 'protocol2://host:port/storage/path%s' % self.files[0]]))
     # Test the addReplica with a non-existant file
     registrationDict = {}
     registrationDict[self.files[0][:-1]] = {'SE':'DIRAC-storage3','PFN':'protocol3://host:port/storage/path%s' % self.files[0]}
@@ -237,17 +236,17 @@ class FileTestCase(CatalogPlugInTestCase):
     res = self.catalog.setReplicaStatus(lfnDict)
     returnValue = self.parseResult(res,self.files[0])
     self.assert_(returnValue)
-    # Check the setReplicaStatus worked correctly 
+    # Check the setReplicaStatus worked correctly
     res = self.catalog.getReplicas(self.files[0])
     returnValue = self.parseResult(res,self.files[0])
     self.assertFalse(returnValue)
     #time.sleep(2)
     # Test setReplicaStatus with a file
     lfnDict = {}
-    lfnDict[self.files[0]] = {'PFN': 'protocol://host:port/storage/path%s' % self.files[0],'SE':'DIRAC-storage' ,'Status':'U'} 
+    lfnDict[self.files[0]] = {'PFN': 'protocol://host:port/storage/path%s' % self.files[0],'SE':'DIRAC-storage' ,'Status':'U'}
     res = self.catalog.setReplicaStatus(lfnDict)
     returnValue = self.parseResult(res,self.files[0])
-    self.assert_(returnValue)    
+    self.assert_(returnValue)
     # Check the setReplicaStatus worked correctly
     res = self.catalog.getReplicas(self.files[0])
     returnValue = self.parseResult(res,self.files[0])
@@ -257,8 +256,8 @@ class FileTestCase(CatalogPlugInTestCase):
     lfnDict = {}
     lfnDict[self.files[0][:-1]] = {'PFN': 'protocol://host:port/storage/path%s' % self.files[0][:-1],'SE':'DIRAC-storage' ,'Status':'U'}
     res = self.catalog.setReplicaStatus(lfnDict)
-    error = self.parseError(res,self.files[0][:-1])  
-    # TODO When the master fails it should return an error in FileCatalog 
+    error = self.parseError(res,self.files[0][:-1])
+    # TODO When the master fails it should return an error in FileCatalog
     #self.assertEqual(error,"No such file or directory")
 
   def test_setReplicaHost(self):
@@ -299,8 +298,8 @@ class DirectoryTestCase(CatalogPlugInTestCase):
 
   def test_getDirectoryMetadata(self):
     # Test getDirectoryMetadata with a directory
-    res = self.catalog.getDirectoryMetadata(self.destDir)    
-    returnValue = self.parseResult(res,self.destDir) 
+    res = self.catalog.getDirectoryMetadata(self.destDir)
+    returnValue = self.parseResult(res,self.destDir)
     self.assertEqual(returnValue['Status'],'-')
     self.assertEqual(returnValue['Size'],0)
     self.assertEqual(returnValue['NumberOfSubPaths'],self.numberOfFiles)
@@ -312,7 +311,7 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     self.assertEqual(returnValue['Status'],'-')
     self.assertEqual(returnValue['Size'],10000000)
     for key in self.dirMetadata:
-      self.assert_(returnValue.has_key(key))    
+      self.assert_(returnValue.has_key(key))
     # Test getDirectoryMetadata for missing path
     res = self.catalog.getDirectoryMetadata(self.files[0][:-1])
     error = self.parseError(res,self.files[0][:-1])
@@ -325,7 +324,7 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     self.assertEqual(returnValue.keys(),['Files','SubDirs','Links'])
     self.assertFalse(returnValue['SubDirs'])
     self.assertFalse(returnValue['Links'])
-    self.assertEqual(sortList(returnValue['Files'].keys()),sortList(self.files))
+    self.assertEqual(sorted(returnValue['Files'].keys()),sorted(self.files))
     directoryFiles = returnValue['Files']
     for lfn,fileDict in directoryFiles.items():
       self.assert_(fileDict.has_key('Replicas'))
@@ -371,12 +370,12 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     self.assertFalse(returnValue['SubDirs'])
     self.assertFalse(returnValue['ClosedDirs'])
     usage = returnValue['SiteUsage']
-    self.assertEqual(usage.keys(),['DIRAC-storage']) 
+    self.assertEqual(usage.keys(),['DIRAC-storage'])
     self.assertEqual(usage['DIRAC-storage']['Files'],self.numberOfFiles)
     self.assertEqual(usage['DIRAC-storage']['Size'],(self.numberOfFiles*10000000))
     # Test getDirectorySize for a file
     res = self.catalog.getDirectorySize(self.files[0])
-    error = self.parseError(res,self.files[0])  
+    error = self.parseError(res,self.files[0])
     self.assertEqual(error,"Not a directory")
     # Test getDirectorySize for missing path
     res = self.catalog.getDirectorySize(self.files[0][:-1])

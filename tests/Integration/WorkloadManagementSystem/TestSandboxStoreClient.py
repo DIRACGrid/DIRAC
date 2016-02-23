@@ -31,7 +31,7 @@ import unittest
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from TestDIRAC.Utilities.utils import find_all
+from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC import gLogger
 
@@ -85,4 +85,3 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestSSCTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SSC ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

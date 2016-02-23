@@ -3,7 +3,7 @@
 ############################################
 
 # Path to ci config files
-CI_CONFIG=$WORKSPACE/TestDIRAC/Jenkins/config/ci
+CI_CONFIG=$WORKSPACE/DIRAC/tests/Jenkins/config/ci
 
 # default: this function fixes some default values
 
@@ -493,7 +493,7 @@ function diracRefreshCS(){
 	echo '[diracRefreshCS]'
 
 
-	python $WORKSPACE/TestDIRAC/Jenkins/dirac-refresh-cs.py $DEBUG
+	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-refresh-cs.py $DEBUG
 }
 
 
@@ -585,7 +585,7 @@ diracAgents(){
 			echo ''
 		else
 			echo 'calling dirac-cfg-add-option agent' $agent
-			python $WORKSPACE/TestDIRAC/Jenkins/dirac-cfg-add-option.py agent $agent
+			python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py agent $agent
 			echo 'calling dirac-agent' $agent -o MaxCycles=1 $DEBUG
 			dirac-agent $agent  -o MaxCycles=1 $DEBUG
 		fi
@@ -627,7 +627,7 @@ dropDBs(){
 	echo '[dropDBs]'
 
 	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB`
-	python $WORKSPACE/TestDIRAC/Jenkins/dirac-drop-db.py $dbs $DEBUG
+	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-drop-db.py $dbs $DEBUG
 
 }
 
@@ -771,5 +771,5 @@ function prepareForPilot(){
 function downloadProxy(){
 	echo '[downloadProxy]'
 
-	python $WORKSPACE/TestDIRAC/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTCFG $DEBUG
+	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTCFG $DEBUG
 }

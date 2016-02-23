@@ -1,12 +1,15 @@
+""" This module will run some job descriptions defined with an older version of DIRAC
+"""
+
 #!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 import unittest, os, shutil
 
-from TestDIRAC.Utilities.utils import find_all
+from DIRAC.tests.Utilities.utils import find_all
 
-from TestDIRAC.Utilities.IntegrationTest import IntegrationTest
+from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
@@ -15,7 +18,7 @@ class RegressionTestCase( IntegrationTest ):
   """ Base class for the Regression test cases
   """
   def setUp( self ):
-    super( IntegrationTest, self ).setUp()
+    super( RegressionTestCase, self ).setUp()
 
     self.dirac = Dirac()
 
