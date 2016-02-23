@@ -94,6 +94,9 @@ EGFAL = 1602
 EBADCKS = 1603
 EFCERR = 1604
 
+# ## RMS (17XX)
+ERMSUKN = 1700
+
 
 
 # This translates the integer number into the name of the variable
@@ -134,7 +137,10 @@ dErrorCode = {
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
                1603 : 'EBADCKS',
-               1604 : "EFCERR"
+               1604 : "EFCERR",
+
+               # RMS
+               1700 : ERMSUKN,
                }
 
 
@@ -175,7 +181,10 @@ dStrError = {
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",
               EBADCKS : "Bad checksum",
-              EFCERR : "FileCatalog error"
+              EFCERR : "FileCatalog error",
+
+              # RMS
+              ERMSUKN : "Unknown RMS error",
 }
 
 def strerror(code):

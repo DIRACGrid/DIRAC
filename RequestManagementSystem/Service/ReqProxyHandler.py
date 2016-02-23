@@ -37,6 +37,7 @@ except ImportError:
 import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -212,7 +213,7 @@ class ReqProxyHandler( RequestHandler ):
     operations = requestDict.get( "Operations", [] )
     for operationDict in operations:
       if operationDict.get( "Type", "" ) in ( "PutAndRegister", "PhysicalRemoval", "ReTransfer" ):
-        return S_ERROR( "found operation '%s' that cannot be forwarded" % operationDict.get( "Type", "" ) )
+        return S_ERROR( DErrno.ERMSUKN, "found operation '%s' that cannot be forwarded" % operationDict.get( "Type", "" ) )
     return S_OK()
 
   types_listCacheDir = []
@@ -237,5 +238,5 @@ class ReqProxyHandler( RequestHandler ):
         requestJSON = "".join( cacheFile.readlines() )
         return S_OK( requestJSON )
     except Exception as e:
-      return S_ERROR( "Error showing cached request %s: %s" % ( fullPath, repr( e ) ) )
+      return S_ERROR( DErrno.ERMSUKN, "Error showing cached request %s: %s" % ( fullPath, repr( e ) ) )
 
