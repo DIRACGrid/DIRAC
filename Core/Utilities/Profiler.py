@@ -6,9 +6,9 @@ __RCSID__ = "$Id$"
 
 import psutil
 import datetime
-from DIRAC import S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 
-class Profiler:
+class Profiler( object ):
   """
   Class for profiling both general stats about a machine and individual processes.
   Every instance of this class is associated to a single process by using its PID.
@@ -19,80 +19,150 @@ class Profiler:
     """
     :param str pid: PID of the process to be profiled
     """
-    self.__setProcess( pid )
-
-  def __setProcess( self, pid = None ):
-    """
-    Set the current process
-    :param str pid: PID of the process to be profiled
-    """
     if pid:
-      self.process = psutil.Process( int( pid ) )
+      try:
+        self.process = psutil.Process( int( pid ) )
+      except psutil.NoSuchProcess as e:
+        gLogger.error( 'No such process: %s' % e )
     else:
-      self.process = psutil.Process()
+      self.process = None
 
   def pid( self ):
     """
     Returns the process PID
     """
-    return S_OK( self.process.pid )
+    if self.process:
+      return S_OK( self.process.pid )
+    else:
+      gLogger.error( 'No PID of process to profile' )
+      return S_ERROR( 'No PID of process to profile' )
 
   def status( self ):
     """
     Returns the process status
     """
-    try:
-      result = self.process.status()
-    except Exception as e:
-      return S_ERROR( e )
+    if self.process:
+      try:
+        result = self.process.status()
+      except psutil.NoSuchProcess as e:
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( 'No such process: %s' % e )
+      except psutil.ZombieProcess as e:
+        gLogger.error( 'Zombie process: %s' % e )
+        return S_ERROR( 'Zombie process: %s' % e )
+      except psutil.AccessDenied as e:
+        gLogger.error( 'Access denied: %s' % e )
+        return S_ERROR( 'Access denied: %s' % e )
+      except Exception as e:
+        gLogger.error( e )
+        return S_ERROR( e )
 
-    return S_OK( result )
+      return S_OK( result )
+    else:
+      gLogger.error( 'No PID of process to profile' )
+      return S_ERROR( 'No PID of process to profile' )
 
   def runningTime( self ):
     """
     Returns the uptime of the process
     """
-    try:
-      start = datetime.datetime.fromtimestamp( self.process.create_time() )
-      result = ( datetime.datetime.now() - start ).total_seconds()
-    except Exception as e:
-      return S_ERROR( e )
+    if self.process:
+      try:
+        start = datetime.datetime.fromtimestamp( self.process.create_time() )
+        result = ( datetime.datetime.now() - start ).total_seconds()
+      except psutil.NoSuchProcess as e:
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( 'No such process: %s' % e )
+      except psutil.ZombieProcess as e:
+        gLogger.error( 'Zombie process: %s' % e )
+        return S_ERROR( 'Zombie process: %s' % e )
+      except psutil.AccessDenied as e:
+        gLogger.error( 'Access denied: %s' % e )
+        return S_ERROR( 'Access denied: %s' % e )
+      except Exception as e:
+        gLogger.error( e )
+        return S_ERROR( e )
 
-    return S_OK( result )
+      return S_OK( result )
+    else:
+      gLogger.error( 'No PID of process to profile' )
+      return S_ERROR( 'No PID of process to profile' )
 
   def memoryUsage( self ):
     """
     Returns the memory usage of the process in MB
     """
-    try:
-      # Information is returned in bytes and converted to MB
-      result = self.process.get_memory_info()[0] / float( 2 ** 20 )
-    except Exception as e:
-      return S_ERROR( e )
+    if self.process:
+      try:
+        # Information is returned in bytes and converted to MB
+        result = self.process.get_memory_info()[0] / float( 2 ** 20 )
+      except psutil.NoSuchProcess as e:
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( 'No such process: %s' % e )
+      except psutil.ZombieProcess as e:
+        gLogger.error( 'Zombie process: %s' % e )
+        return S_ERROR( 'Zombie process: %s' % e )
+      except psutil.AccessDenied as e:
+        gLogger.error( 'Access denied: %s' % e )
+        return S_ERROR( 'Access denied: %s' % e )
+      except Exception as e:
+        gLogger.error( e )
+        return S_ERROR( e )
 
-    return S_OK( result )
+      return S_OK( result )
+    else:
+      gLogger.error( 'No PID of process to profile' )
+      return S_ERROR( 'No PID of process to profile' )
 
   def numThreads( self ):
     """
     Returns the number of threads the process is using
     """
-    try:
-      result = self.process.num_threads()
-    except Exception as e:
-      return S_ERROR( e )
+    if self.process:
+      try:
+        result = self.process.num_threads()
+      except psutil.NoSuchProcess as e:
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( 'No such process: %s' % e )
+      except psutil.ZombieProcess as e:
+        gLogger.error( 'Zombie process: %s' % e )
+        return S_ERROR( 'Zombie process: %s' % e )
+      except psutil.AccessDenied as e:
+        gLogger.error( 'Access denied: %s' % e )
+        return S_ERROR( 'Access denied: %s' % e )
+      except Exception as e:
+        gLogger.error( e )
+        return S_ERROR( e )
 
-    return S_OK( result )
+      return S_OK( result )
+    else:
+      gLogger.error( 'No PID of process to profile' )
+      return S_ERROR( 'No PID of process to profile' )
 
   def cpuUsage( self ):
     """
     Returns the percentage of cpu used by the process
     """
-    try:
-      result = self.process.cpu_percent()
-    except Exception as e:
-      return S_ERROR( e )
+    if self.process:
+      try:
+        result = self.process.cpu_percent()
+      except psutil.NoSuchProcess as e:
+        gLogger.error( 'No such process: %s' % e )
+        return S_ERROR( 'No such process: %s' % e )
+      except psutil.ZombieProcess as e:
+        gLogger.error( 'Zombie process: %s' % e )
+        return S_ERROR( 'Zombie process: %s' % e )
+      except psutil.AccessDenied as e:
+        gLogger.error( 'Access denied: %s' % e )
+        return S_ERROR( 'Access denied: %s' % e )
+      except Exception as e:
+        gLogger.error( e )
+        return S_ERROR( e )
 
-    return S_OK( result )
+      return S_OK( result )
+    else:
+      gLogger.error( 'No PID of process to profile' )
+      return S_ERROR( 'No PID of process to profile' )
 
   def getAllProcessData( self ):
     """
