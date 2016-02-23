@@ -223,8 +223,8 @@ class SystemAdministratorHandler( RequestHandler ):
     """ Add default component options to the global CS or to the local options
     """
     return gComponentInstaller.addDefaultOptionsToCS( gConfig, componentType, system, component,
-                                               getCSExtensions(),
-                                               overwrite = overwrite )
+                                                      getCSExtensions(),
+                                                      overwrite = overwrite )
 
 #######################################################################################
 # General purpose methods
@@ -277,7 +277,7 @@ class SystemAdministratorHandler( RequestHandler ):
       cmdList.extend( ['-g', gridVersion] )
 
     targetPath = gConfig.getValue( '/LocalInstallation/TargetPath',
-                                  gConfig.getValue( '/LocalInstallation/RootPath', '' ) )
+                                   gConfig.getValue( '/LocalInstallation/RootPath', '' ) )
     if targetPath and os.path.exists( targetPath + '/etc/dirac.cfg' ):
       cmdList.append( targetPath + '/etc/dirac.cfg' )
     else:
@@ -307,7 +307,7 @@ class SystemAdministratorHandler( RequestHandler ):
                                     'mysql', 'share', 'mysql', 'mysql.server' )
       if not os.path.exists( startupScript ):
         startupScript = os.path.join( gComponentInstaller.instancePath, 'pro',
-                                     'mysql', 'share', 'mysql', 'mysql.server' )
+                                      'mysql', 'share', 'mysql', 'mysql.server' )
       if os.path.exists( startupScript ):
         gComponentInstaller.fixMySQLScripts( startupScript )
 
@@ -592,7 +592,7 @@ class SystemAdministratorHandler( RequestHandler ):
     Retrieve the ports in use by services on this host
     :return: Returns a dictionary containing, for each system, which port is being used by which service
     """
-    result = InstallTools.getSetupComponents()
+    result = gComponentInstaller.getSetupComponents()
     if not result[ 'OK' ]:
       return result
 
