@@ -120,18 +120,18 @@ class OperationHandlerBase( object ):
       getattr( self, "initialize" )()
 
   def setOperation( self, operation ):
-      """ operation and request setter
+    """ operation and request setter
 
       :param Operation operation: operation instance
       :raises: TypeError is :operation: in not an instance of Operation
-      """
-      if not isinstance( operation, Operation ):
-        raise TypeError( "expecting Operation instance" )
-      self.operation = operation
-      self.request = operation._parent
-      self.log = gLogger.getSubLogger( "pid_%s/%s/%s/%s" % ( os.getpid(), self.request.RequestName,
-                                                      self.request.Order,
-                                                      self.operation.Type ) )
+    """
+    if not isinstance( operation, Operation ):
+      raise TypeError( "expecting Operation instance" )
+    self.operation = operation
+    self.request = operation._parent
+    self.log = gLogger.getSubLogger( "pid_%s/%s/%s/%s" % ( os.getpid(), self.request.RequestName,
+                                                           self.request.Order,
+                                                           self.operation.Type ) )
 
 
 #   @classmethod

@@ -206,7 +206,7 @@ class SRM2Storage( StorageBase ):
         successful[url] = True
       else:
         self.log.error( "createDirectory: Failed to create directory on storage.",
-                       "\n%s: \n%s" % ( url, res['Message'] ) )
+                        "\n%s: \n%s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
@@ -848,7 +848,7 @@ class SRM2Storage( StorageBase ):
         return S_ERROR( DErrno.EGFAL, "__lcg_cp_wrapper: Returned errCode was not an integer %s" % msg )
       if not isinstance( errStr, basestring ):
         self.log.error( "__lcg_cp_wrapper: Returned errStr was not a string",
-                       "%s %s" % ( errCode, type( errStr ) ) )
+                        "%s %s" % ( errCode, type( errStr ) ) )
         return S_ERROR( DErrno.EGFAL, "__lcg_cp_wrapper: Returned errStr was not a string" )
       return S_OK( ( errCode, errStr ) )
     except Exception, error:
@@ -1461,16 +1461,16 @@ class SRM2Storage( StorageBase ):
           resDict['FilesRemoved'] += removedDict['FilesRemoved']
           resDict['SizeRemoved'] += removedDict['SizeRemoved']
           self.log.debug( "SRM2Storage.__removeSubDirectories:",
-                         "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
-                                                                          removedDict['SizeRemoved'],
-                                                                          removedSubDir ) )
+                          "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
+                                                                           removedDict['SizeRemoved'],
+                                                                           removedSubDir ) )
         for removedSubDir, removedDict in res['Value']['Failed'].items():
           resDict['FilesRemoved'] += removedDict['FilesRemoved']
           resDict['SizeRemoved'] += removedDict['SizeRemoved']
           self.log.debug( "SRM2Storage.__removeSubDirectories:",
-                         "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
-                                                                          removedDict['SizeRemoved'],
-                                                                          removedSubDir ) )
+                          "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
+                                                                           removedDict['SizeRemoved'],
+                                                                           removedSubDir ) )
         if len( res['Value']['Failed'] ) != 0:
           resDict['AllRemoved'] = False
     return resDict
@@ -1520,7 +1520,7 @@ class SRM2Storage( StorageBase ):
         statDict['Unavailable'] = 0
         if re.search( 'UNAVAILABLE', urlLocality ):
           statDict['Unavailable'] = 1
-        
+
         statDict['Accessible'] = not statDict['Lost'] and statDict['Cached'] and not statDict['Unavailable']
       else:
         statDict['Cached'] = 0
@@ -1530,7 +1530,7 @@ class SRM2Storage( StorageBase ):
         statDict['Accessible'] = False
 
 
-    
+
     return self._addCommonMetadata( statDict )
 
 
@@ -2089,4 +2089,3 @@ class SRM2Storage( StorageBase ):
     self.log.debug( "SRM2Storage.__destroy_gfal_object: Performing gfal_internal_free." )
     self.gfal.gfal_internal_free( gfalObject )
     return S_OK()
-
