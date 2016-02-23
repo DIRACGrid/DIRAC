@@ -419,7 +419,7 @@ class SystemAdministratorClientCLI( CLI ):
           key = 'UnInstallationTime.smaller'
         elif arg == '-uta':
           key = 'UnInstallationTime.bigger'
-      elif isinstance(key, str):
+      elif isinstance(key, basestring):
         key = str(key)
         if 'Component.' in key:
           componentFilter[ key.replace( 'Component.', '' ) ] = arg
