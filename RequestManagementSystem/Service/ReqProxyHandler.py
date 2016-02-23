@@ -226,7 +226,7 @@ class ReqProxyHandler( RequestHandler ):
       dirContent = os.listdir(cacheDir)
       return S_OK(dirContent)
     except OSError as e:
-      return S_ERROR( "Error listing %s: %s" % ( cacheDir, repr( e ) ) )
+      return S_ERROR( DErrno.ERMSUKN, "Error listing %s: %s" % ( cacheDir, repr( e ) ) )
 
   types_showCachedRequest = [ StringTypes ]
   def export_showCachedRequest(self, filename):
