@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-""" File Catalog Client Command Line Interface. """
+""" System Administrator Client Command Line Interface """
 
 __RCSID__ = "$Id$"
 
@@ -38,7 +38,7 @@ class SystemAdministratorClientCLI( CLI ):
     self.prompt = '[%s]> ' % colorize( "no host", "yellow" )
     if host:
       self.__setHost( host )
-    self.cwd = ''  
+    self.cwd = ''
     self.previous_cwd = ''
     self.homeDir = ''
     self.runitComponents = [ "service", "agent", "executor", "consumer" ]
@@ -214,8 +214,8 @@ class SystemAdministratorClientCLI( CLI ):
                 record += [str( rDict[compType][system][component]['RunitStatus'] )]
                 record += [str( rDict[compType][system][component]['Timeup'] )]
                 record += [str( rDict[compType][system][component]['PID'] )]
-                records.append(record)  
-        printTable(fields,records)        
+                records.append(record)
+        printTable(fields,records)
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
       if not gComponentInstaller.mysqlPassword:
@@ -271,11 +271,11 @@ class SystemAdministratorClientCLI( CLI ):
       result = client.getHostInfo()
       if not result['OK']:
         self._errMsg( result['Message'] )
-      else:   
+      else:
         gLogger.notice( '' )
         gLogger.notice( "Host info:" )
         gLogger.notice( '' )
-        
+
         fields = ['Parameter','Value']
         records = []
         for parameter in result['Value'].iteritems():
@@ -286,8 +286,8 @@ class SystemAdministratorClientCLI( CLI ):
               records.append( [ '%sVersion' % extensionName, str( extensionVersion ) ] )
           else:
             records.append( [ parameter[0], str( parameter[1] ) ] )
-          
-        printTable( fields, records )  
+
+        printTable( fields, records )
     elif option == "hosts":
       client = ComponentMonitoringClient()
       result = client.getHosts( {}, False, False )
@@ -312,18 +312,18 @@ class SystemAdministratorClientCLI( CLI ):
         client = ComponentMonitoringClient()
         result = client.hostExists( { 'HostName': hostname } )
         if not result[ 'OK' ]:
-          self.__errMsg( result[ 'Message' ] )
+          self._errMsg( result[ 'Message' ] )
           return
         else:
           if not result[ 'Value' ]:
-            self.__errMsg( 'Given host does not exist' )
+            self._errMsg( 'Given host does not exist' )
             return
 
         client = SystemAdministratorClient( hostname )
 
       result = client.getUsedPorts()
       if not result[ 'OK' ]:
-        self.__errMsg( result[ 'Message' ] )
+        self._errMsg( result[ 'Message' ] )
         return
       pprint.pprint( result[ 'Value' ] )
     elif option == "errors":
@@ -396,7 +396,7 @@ class SystemAdministratorClientCLI( CLI ):
 
     key = None
     for arg in argss:
-      if not key:
+      if key is None:
         if arg == 'list':
           display = 'list'
         elif arg == 'current':
@@ -419,7 +419,8 @@ class SystemAdministratorClientCLI( CLI ):
           key = 'UnInstallationTime.smaller'
         elif arg == '-uta':
           key = 'UnInstallationTime.bigger'
-      else:
+      elif isinstance(key, str):
+        key = str(key)
         if 'Component.' in key:
           componentFilter[ key.replace( 'Component.', '' ) ] = arg
         elif 'Host.' in key:
@@ -632,7 +633,7 @@ class SystemAdministratorClientCLI( CLI ):
       del argss[0]
       component = argss[0]
       del argss[0]
-      
+
       specialOptions = {}
       module = ''
       for i in range(len(argss)):
@@ -641,10 +642,10 @@ class SystemAdministratorClientCLI( CLI ):
           module = argss[i+1]
         if argss[i] == "-p":
           opt,value = argss[i+1].split('=')
-          specialOptions[opt] = value           
+          specialOptions[opt] = value
       if module == component:
         module = ''
-      
+
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
@@ -654,20 +655,20 @@ class SystemAdministratorClientCLI( CLI ):
         self._errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-      
+
       # Install Module section if not yet there
       if module:
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, module,
-                                                     getCSExtensions(), hostSetup )
+                                                            getCSExtensions(), hostSetup )
         # Add component section with specific parameters only
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
-                                                     getCSExtensions(), hostSetup, specialOptions, 
-                                                     addDefaultOptions = True )
-      else:  
+                                                            getCSExtensions(), hostSetup, specialOptions,
+                                                            addDefaultOptions = True )
+      else:
         # Install component section
         result = gComponentInstaller.addDefaultOptionsToCS( gConfig, option, system, component,
-                                                     getCSExtensions(), hostSetup, specialOptions )
-    
+                                                            getCSExtensions(), hostSetup, specialOptions )
+
       if not result['OK']:
         self._errMsg( result['Message'] )
         return
@@ -700,7 +701,7 @@ class SystemAdministratorClientCLI( CLI ):
           nTries = nTries + 1
 
         if not result[ 'OK' ]:
-          self.__errMsg( 'ComponentMonitoring service taking too long to start. Installation will not be logged into the database' )
+          self._errMsg( 'ComponentMonitoring service taking too long to start. Installation will not be logged into the database' )
           return
 
         result = MonitoringUtilities.monitorInstallation( 'DB', system, 'InstalledComponentsDB', cpu = cpu, hostname = hostname )
@@ -776,26 +777,26 @@ class SystemAdministratorClientCLI( CLI ):
       client = ComponentMonitoringClient()
       result = client.hostExists( { 'HostName': hostname } )
       if not result[ 'OK' ]:
-        self.__errMsg( result[ 'Message' ] )
+        self._errMsg( result[ 'Message' ] )
       else:
         if not result[ 'Value' ]:
-          self.__errMsg( 'Given host does not exist' )
+          self._errMsg( 'Given host does not exist' )
         else:
           result = client.getHosts( {'HostName': hostname }, True, False )
           if not result[ 'OK' ]:
-            self.__errMsg( result[ 'Message' ] )
+            self._errMsg( result[ 'Message' ] )
           else:
             host = result[ 'Value' ][0]
             # Remove every installation associated with the host
             for installation in host[ 'Installations' ]:
               result = client.removeInstallations( installation, {}, { 'HostName': hostname } )
               if not result[ 'OK' ]:
-                self.__errMsg( result[ 'Message' ] )
+                self._errMsg( result[ 'Message' ] )
                 break
             # Finally remove the host
             result = client.removeHosts( { 'HostName': hostname } )
             if not result[ 'OK' ]:
-              self.__errMsg( result[ 'Message' ] )
+              self._errMsg( result[ 'Message' ] )
             else:
               gLogger.notice( 'Host %s was successfully removed' % hostname )
     else:
@@ -971,7 +972,7 @@ class SystemAdministratorClientCLI( CLI ):
         usage:
 
           update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
-          
+
               where rootPath - path to the DIRAC installation
                     lcgVersion - version of the LCG bindings to install
     """
@@ -988,14 +989,14 @@ class SystemAdministratorClientCLI( CLI ):
           del argss[0]
           del argss[0]
         elif argss[0] == '-g':
-          lcgVersion = argss[1]  
+          lcgVersion = argss[1]
           del argss[0]
           del argss[0]
     except Exception as x:
       gLogger.notice( "ERROR: wrong input:", str( x ) )
       gLogger.notice( self.do_update.__doc__ )
-      return  
-    
+      return
+
     client = SystemAdministratorClient( self.host, self.port )
     gLogger.notice( "Software update can take a while, please wait ..." )
     result = client.updateSoftware( version, rootPath, lcgVersion, timeout = 300 )
@@ -1009,11 +1010,11 @@ class SystemAdministratorClientCLI( CLI ):
 
   def do_revert( self, args ):
     """ Revert the last installed version of software to the previous one
-    
+
         usage:
-        
+
             revert
-    """ 
+    """
     client = SystemAdministratorClient( self.host, self.port )
     result = client.revertSoftware()
     if not result['OK']:
@@ -1080,21 +1081,21 @@ class SystemAdministratorClientCLI( CLI ):
       self._errMsg( status )
       for line in error.split( '\n' ):
         gLogger.notice( line )
-      
-  def do_cd( self, args ):    
+
+  def do_cd( self, args ):
     """ Change the current working directory on the target host
-    
+
         Usage:
           cd <dirpath>
     """
     argss = args.split()
-    
+
     if len( argss ) == 0:
       # Return to $HOME
       if self.homeDir:
         self.previous_cwd = self.cwd
         self.cwd = self.homeDir
-      else:  
+      else:
         client = SystemAdministratorClient( self.host, self.port )
         command = 'echo $HOME'
         result = client.executeCommand( command )
@@ -1106,9 +1107,9 @@ class SystemAdministratorClientCLI( CLI ):
           self.homeDir = output.strip()
           self.previous_cwd = self.cwd
           self.cwd = self.homeDir
-      self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
+      self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )
       return
-        
+
     newPath = argss[0]
     if newPath == '-':
       if self.previous_cwd:
@@ -1121,32 +1122,32 @@ class SystemAdministratorClientCLI( CLI ):
     else:
       newPath = self.cwd + '/' + newPath
       self.previous_cwd = self.cwd
-      self.cwd = os.path.normpath( newPath )  
-    self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )  
+      self.cwd = os.path.normpath( newPath )
+    self.prompt = '[%s:%s]> ' % ( self.host, self.cwd )
 
   def do_showall( self, args ):
     """ Show status of all the components in all the hosts
-    
+
         Usage:
           showall [-snmth] [-ASE] [-N name] [-H host] - show status of components
-                              
+
         Options:
             -d extra debug printout
-          Sorting options:                      
+          Sorting options:
             -s system
             -n component name
             -m component module
             -t component type
-            -h component host  
+            -h component host
           Selection options:
             -A select agents
             -S select services
             -E select executors
-            -N <component pattern> select component with the name containing the pattern 
-            -H <host name> select the given host  
+            -N <component pattern> select component with the name containing the pattern
+            -H <host name> select the given host
             -T <setup name> select the given setup
     """
-    
+
     argss = args.split()
     sortOption = ''
     componentType = ''
@@ -1161,7 +1162,7 @@ class SystemAdministratorClientCLI( CLI ):
       if option == '-s':
         sortOption = "System"
       elif option == '-n':
-        sortOption = "Name" 
+        sortOption = "Name"
       elif option == '-m':
         sortOption = "Module"
       elif option == '-t':
@@ -1175,26 +1176,26 @@ class SystemAdministratorClientCLI( CLI ):
       elif option == "-E":
         componentType = 'Executors'
       elif option == "-d":
-        debug = True  
+        debug = True
       elif option == "-N":
-        componentName = argss[0]        
-        del argss[0]      
+        componentName = argss[0]
+        del argss[0]
       elif option == "-H":
-        hostName = argss[0]        
-        del argss[0]   
+        hostName = argss[0]
+        del argss[0]
       elif option == "-T":
-        setupName = argss[0]        
-        del argss[0]     
+        setupName = argss[0]
+        del argss[0]
       else:
-        self._errMsg( 'Invalid option %s' % option )  
+        self._errMsg( 'Invalid option %s' % option )
         return
-    
+
     client = SystemAdministratorIntegrator()
     silentHosts = client.getSilentHosts()
     respondingHosts = client.getRespondingHosts()
     resultAll = client.getOverallStatus()
     resultInfo = client.getInfo()
-    
+
     if not resultAll['OK']:
       self._errMsg( resultAll['Message'] )
     else:
@@ -1207,7 +1208,7 @@ class SystemAdministratorClientCLI( CLI ):
         if not result['OK']:
           if debug:
             self._errMsg( "Host %s: %s" % (host,result['Message']) )
-          continue  
+          continue
         rDict = result['Value']
         for compType in rDict:
           if componentType and componentType != compType:
@@ -1227,13 +1228,13 @@ class SystemAdministratorClientCLI( CLI ):
                 else:
                   setup = 'Unknown'
                 if setupName and not setupName in setup:
-                  continue  
-                record += [setup]    
-                record += [host]  
+                  continue
+                record += [setup]
+                record += [host]
                 record += [str( rDict[compType][system][component]['RunitStatus'] )]
                 record += [str( rDict[compType][system][component]['Timeup'] )]
-                records.append(record)  
-      printTable( fields, records, sortOption )        
+                records.append(record)
+      printTable( fields, records, sortOption )
       if silentHosts:
         print "\n %d out of %d hosts did not respond" % ( len( silentHosts ), len( respondingHosts ) )
 
@@ -1244,4 +1245,3 @@ class SystemAdministratorClientCLI( CLI ):
     if command in ['ls','cat','pwd','chown','chmod','chgrp',
                    'id','date','uname','cp','mv','scp']:
       self.do_exec( args )
-
