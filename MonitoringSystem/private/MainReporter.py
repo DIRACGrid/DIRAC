@@ -27,7 +27,7 @@ class MainReporter:
   def __init__( self, db, setup ):
     self._db = db
     self.setup = setup
-    self.csSection = getServiceSection( "MonitoringSystem/Monitoring", setup = setup )
+    self.csSection = getServiceSection( "Monitoring/Monitoring", setup = setup )
     self.plotterList = PlottersList()
 
   def __calculateReportHash( self, reportRequest ):
