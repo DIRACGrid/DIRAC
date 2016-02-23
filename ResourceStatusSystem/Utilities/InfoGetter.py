@@ -188,7 +188,7 @@ class InfoGetter:
     if 'elementType' in decisionParams and 'name' in decisionParams:
       elementType = decisionParams['elementType']
       name = decisionParams['name']
-      if elementType and elementType.lower() == 'computingelement' and 'domain' in policyMatchParams:
+      if elementType and elementType.upper() == 'CE' and 'domain' in policyMatchParams:
         #WARNING: policyMatchParams['domain'] is a list of domains
         domains = policyMatchParams['domain']
         result = self.__getComputingElementsByDomainName( targetDomain = domains )
