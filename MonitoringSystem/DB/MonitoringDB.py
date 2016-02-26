@@ -108,9 +108,42 @@ class MonitoringDB( ElasticDB ):
     keys = docs[typeName]['properties'].keys() 
     for i in keys:
       if i not in monfields:
-        retVal = self.getUniqueValue(indexName, i)
+        retVal = self.getUniqueValue( indexName, i )
         if not retVal['OK']:
           return retVal
         keyValuesDict[i] = retVal['Value']
     return S_OK( keyValuesDict )                                            
+    
+  def retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict):
+    """
+    Get data from the DB
+    
+    :param str typeName name of the monitoring type
+    :param int startTime  epoch objects.
+    :param int endtime epoch objects.
+    :param dict condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+     
+    """
+    print 'retrieveBucketedData', typeName, startTime, endTime, selectFields, condDict, interval
+    if typeName not in self.__documents:
+      return S_ERROR( "Type %s is not defined" % typeName )
+    retVal = self.getIndexName( typeName )
+    if not retVal['OK']:
+      return retVal
+    
+    indexName = "%s*" % ( retVal['Value'] )
+    
+    query = {'query': {'filtered': {'filter': {'bool': {'must_not': [], 'must': [{'range': {'time': {'gte': 1455812042936, 'lte': 1456416842936}}}]}}, 'query': {'query_string': {'query': 'Status=Running'}}}}, 'aggs': {'2': {'terms': {'field': 'Site', 'size': 0}, 'aggs': {'end_data': {'date_histogram': {'field': 'time', 'interval': '3h', 'extended_bounds': {'max': 1456416842935, 'min': 1455812042935}, 'min_doc_count': 1}, 'aggs': {'tt': {'terms': {'field': 'time'}, 'aggs': {'total_jobs': {'sum': {'field': 'Jobs'}}}}, 'avg_monthly_sales': {'avg_bucket': {'buckets_path': 'tt>total_jobs'}}}}}}}, 'size': 0}
+    retVal = self.query( indexName, query )
+    # result = []
+    result = {}
+    for i in retVal['aggregations']['2']['buckets']:
+      site = i['key']
+      dp = {}
+      for j in i['end_data']['buckets']:
+        dp[j['key'] / 1000] = j['avg_monthly_sales']['value']
+      result[site] = dp
+    return S_OK( result )
     

@@ -52,7 +52,7 @@ class ElasticSearchDB( object ):
     self.__tryToConnect()
   
   ########################################################################  
-  def query( self, query ):
+  def query( self, index, query ):
     """It exexutes a query and it returns the result
     query is a dictionary. More info: search for elasticsearch dsl
     
@@ -60,7 +60,7 @@ class ElasticSearchDB( object ):
     :param dict query: It is the query in ElasticSerach DSL language
      
     """
-    return self.__client.search( query )
+    return self.__client.search( index= index, body = query )
   
   def __search(self, indexname):
     """
