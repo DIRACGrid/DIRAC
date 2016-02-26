@@ -43,8 +43,11 @@ class DataCache( object ):
     """
     Get report data from cache if exists, else generate it
     """
+    print 'getReportData', reportHash
+    print self.__dataCache.showContentsInString()
     reportData = self.__dataCache.get( reportHash )
-    if reportData is None:
+    print reportData
+    if not reportData:
       retVal = dataFunc( reportRequest )
       if not retVal[ 'OK' ]:
         return retVal
@@ -57,7 +60,7 @@ class DataCache( object ):
     Get report data from cache if exists, else generate it
     """
     plotDict = self.__graphCache.get( reportHash )
-    if plotDict is None:
+    if not plotDict:
       basePlotFileName = "%s/%s" % ( self.graphsLocation, reportHash )
       retVal = plotFunc( reportRequest, reportData, basePlotFileName )
       if not retVal[ 'OK' ]:

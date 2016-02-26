@@ -29,7 +29,8 @@ class MonitoringHandler( RequestHandler ):
                         'startTime' : Time._allDateTypes,
                         'endTime' : Time._allDateTypes,
                         'condDict' : types.DictType,
-                        'grouping' : types.StringType
+                        'grouping' : types.StringType,
+                        'extraArgs' : types.DictType
                       }
   
   __db = None
@@ -119,6 +120,7 @@ class MonitoringHandler( RequestHandler ):
 
   def __checkPlotRequest( self, reportRequest ):
     #If extraArgs is not there add it
+    
     if 'extraArgs' not in reportRequest:
       reportRequest[ 'extraArgs' ] = {}
     if not isinstance( reportRequest[ 'extraArgs' ], self.__reportRequestDict[ 'extraArgs' ] ):
@@ -151,7 +153,7 @@ class MonitoringHandler( RequestHandler ):
                                                                                   str( self.__reportRequestDict[ key ] ) ) )
       if key in ( 'startTime', 'endTime' ):
         reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
-
+    
     return S_OK( reportRequest )
 
   types_generatePlot = [ types.DictType ]

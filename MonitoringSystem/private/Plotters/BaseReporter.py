@@ -77,6 +77,7 @@ class BaseReporter( DBUtils ):
       return ( float( total ) / float( count ) ) * 100.0
 
   def generate( self, reportRequest ):
+    print 'Arrived!!!', reportRequest
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
     reportHash = reportRequest[ 'hash' ]
     reportName = reportRequest[ 'reportName' ]
@@ -111,11 +112,14 @@ class BaseReporter( DBUtils ):
     return sorted( [ k for k in self.__reportNameMapping ] )
 
   def __retrieveReportData( self, reportRequest, reportHash ):
+    
     funcName = "_report%s" % reportRequest[ 'reportName' ]
+    print 'REEEE!!!', funcName
     try:
       funcObj = getattr( self, funcName )
     except:
       return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
+    print 'DDDDVEGE'
     return gDataCache.getReportData( reportRequest, reportHash, funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
@@ -133,45 +137,29 @@ class BaseReporter( DBUtils ):
   def _getTimedData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict ):
     condDict = {}
     #Check params
-    if not self._PARAM_CHECK_FOR_NONE in metadataDict:
-      metadataDict[ self._PARAM_CHECK_FOR_NONE ] = False
-    if not self._PARAM_CONVERT_TO_GRANULARITY in metadataDict:
-      metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] = "sum"
-    elif metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] not in self._VALID_PARAM_CONVERT_TO_GRANULARITY:
-      return S_ERROR( "%s field metadata is invalid" % self._PARAM_CONVERT_TO_GRANULARITY )
-    if not self._PARAM_CALCULATE_PROPORTIONAL_GAUGES in metadataDict:
-      metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ] = False
+    print '_getTimedData', self._typeKeyFields
     #Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
-    #Query!
-    timeGrouping = ( "%%s, %s" % groupingFields[0], [ 'startTime' ] + groupingFields[1] )
+        
+    retVal = self._determineBucketSize(startTime, endTime)
+    if not retVal['OK']:
+      return retVal
+    interval, granularity = retVal['Value']
+       
     retVal = self._retrieveBucketedData( self._typeName,
                                           startTime,
                                           endTime,
+                                          interval,
                                           selectFields,
-                                          condDict,
-                                          timeGrouping,
-                                          ( '%s', [ 'startTime' ] )
-                                          )
+                                          condDict)
     if not retVal[ 'OK' ]:
       return retVal
-    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
-    coarsestGranularity = self._getBucketLengthForTime( self._typeName, startTime )
-    #Transform!
-    for keyField in dataDict:
-      if metadataDict[ self._PARAM_CHECK_FOR_NONE ]:
-        dataDict[ keyField ] = self._convertNoneToZero( dataDict[ keyField ] )
-      if metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] == "average":
-        dataDict[ keyField ] = self._averageToGranularity( coarsestGranularity, dataDict[ keyField ] )
-      if metadataDict[ self._PARAM_CONVERT_TO_GRANULARITY ] == "sum":
-        dataDict[ keyField ] = self._sumToGranularity( coarsestGranularity, dataDict[ keyField ] )
-      if self._PARAM_CONSOLIDATION_FUNCTION in metadataDict:
-        dataDict[ keyField ] = self._executeConsolidation( metadataDict[ self._PARAM_CONSOLIDATION_FUNCTION ], dataDict[ keyField ] )
-    if metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ]:
-      dataDict = self._calculateProportionalGauges( dataDict )
-    return S_OK( ( dataDict, coarsestGranularity ) )
+    dataDict = retVal[ 'Value' ] 
+    
+    print 'coarsestGranularity', granularity
+    return S_OK( ( dataDict, granularity ) )
 
   def _executeConsolidation( self, functor, dataDict ):
     for timeKey in dataDict:
@@ -310,3 +298,16 @@ class BaseReporter( DBUtils ):
 
   def _generateStackedLinePlot( self, filename, dataDict, metadata ):
     return self.__plotData( filename, dataDict, metadata, generateStackedLinePlot )
+  
+  def _fillWithZero( self, granularity, startEpoch, endEpoch, dataDict ):
+    """
+    Fill with zeros missing buckets
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    """
+    startBucketEpoch = startEpoch - startEpoch % granularity
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      for timeEpoch in range( int( startBucketEpoch ), int( endEpoch ), granularity ):
+        if timeEpoch not in currentDict:
+          currentDict[ timeEpoch ] = 0
+    return dataDict

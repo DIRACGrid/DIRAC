@@ -6,7 +6,7 @@ from DIRAC.MonitoringSystem.private.Plotters.BaseReporter import BaseReporter
 class WMSHistoryPlotter( BaseReporter ):
 
   _typeName = "WMSHistory"
-  _typeKeyFields = [ dF[0] for dF in WMSHistory().getKeyFields() ]
+  _typeKeyFields =  WMSHistory().getKeyFields() 
 
   def _translateGrouping( self, grouping ):
     if grouping == "Country":
@@ -18,11 +18,10 @@ class WMSHistoryPlotter( BaseReporter ):
       return ( "%s", [ grouping ] )
 
   def _reportNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)",
-                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
-                                    'Jobs', 'entriesInBucket'
-                                   ]
-                   )
+    print 'Request!!!!!', reportRequest
+    selectFields = ['Jobs']
+    print 'selectFields', selectFields
+    
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
@@ -32,10 +31,11 @@ class WMSHistoryPlotter( BaseReporter ):
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    self.stripDataField( dataDict, 0 )
+    #self.stripDataField( dataDict, 0 )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
+    print 'PLOTTT', reportRequest, filename
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ] ,
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],

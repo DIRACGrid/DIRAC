@@ -78,7 +78,7 @@ def to_timestamp( val ):
 
   try:
     v = float( val )
-    if v > 1000000000 and v < 1900000000:
+    if v > 1000000000000 and v < 1900000000000:
       return v
   except:
     pass
