@@ -94,6 +94,20 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p22]
+
+CHANGE: Multiple commands - permissions bits changed from 644 to 755  
+
+*Framework
+FIX: UserProfileDB - in case of desktop name belonging to two different users we have 
+     to use both desktop name and user id to identify the desktop
+
+*WMS
+BUGFIX: JobWrapperTemplate - bug fixed in evaluation of the job arguments
+
+*TMS
+CHANGE: TaskManager - added TransformationID to the log messages
+
 [v6r14p21]
 
 *DMS
