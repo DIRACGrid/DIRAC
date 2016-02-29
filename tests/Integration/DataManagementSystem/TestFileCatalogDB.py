@@ -1,3 +1,5 @@
+#FIXME: to be bring back to life
+
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
@@ -220,7 +222,7 @@ class FileCase( FileCatalogDBTestCase ):
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
                        testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
-    
+
     result = self.db.exists( {testFile:{'GUID' : '1000', 'PFN' : 'blabla'}} , credDict )
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
@@ -600,7 +602,7 @@ class DirectoryCase( FileCatalogDBTestCase ):
       pathToRemove.append( startDir )
 
     pathToRemove.reverse()
-    
+
     for toRemove in pathToRemove:
       result = self.db.removeDirectory( toRemove, credDict )
       self.assert_( result["OK"], "removeDirectory failed: %s" % result )
@@ -625,7 +627,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
         and return the tuple (files, size) for a given
         directory and a se
     """
-    
+
     val = sizeDict[dirName]['PhysicalSize'][seName]
     files = val['Files']
     size = val['Size']
@@ -647,14 +649,14 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
         and calculate it, compare the results, and then return
         the values
     """
-    
-    
+
+
     retTable = self.db.getDirectorySize( dirList, True, False, credDict )
     retCalc = self.db.getDirectorySize( dirList, True, True, credDict )
 
     self.assert_( retTable["OK"] )
     self.assert_( retCalc["OK"] )
-    
+
 
     succTable = retTable['Value']['Successful']
     succCalc = retCalc['Value']['Successful']
@@ -749,8 +751,8 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     self.assertEqual( d1s2 , ( 2, f1Size + f2Size ), "Unexpected size %s, expected %s" % ( d1s2, ( 2, f1Size + f2Size ) ) )
     self.assertEqual( d1s3 , ( 1, f2Size ), "Unexpected size %s, expected %s" % ( d1s3, ( 1, f2Size ) ) )
     self.assertEqual( d1l , ( 2, f1Size + f2Size ), "Unexpected size %s, expected %s" % ( d1l, ( 2, f1Size + f2Size ) ) )
-    
-    
+
+
     ret = self.db.removeFile( [f1], credDict )
     self.assert_( ret['OK'] )
 
@@ -791,7 +793,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     self.assertEqual( d1s2 , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1s2, ( 0, 0 ) ) )
     self.assertEqual( d1s3 , ( 1, f2Size ), "Unexpected size %s, expected %s" % ( d1s3, ( 1, f2Size ) ) )
     self.assertEqual( d1l , ( 1, f2Size ), "Unexpected size %s, expected %s" % ( d1l, ( 1, f2Size ) ) )
-    
+
 
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
                                          'SE': 'se1' ,
@@ -981,10 +983,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     val = ret['Value']['Successful']
     d1l = self.getLogicalSize( val, d1 )
     self.assertEqual( d1l , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1l, ( 0, 0 ) ) )
-    
-    
+
+
     # Try removing a replica from a non existing SE
-    
+
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
                                          'SE': 'se1' ,
                                          'Size':f1Size,
@@ -1011,7 +1013,7 @@ if __name__ == '__main__':
   managerTypes = MANAGER_TO_TEST.keys()
   all_combinations = list( itertools.product( *MANAGER_TO_TEST.values() ) )
   numberOfManager = len( managerTypes )
-  
+
 
 
   for setup in all_combinations:
@@ -1048,7 +1050,3 @@ if __name__ == '__main__':
 
 
     testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-
-
-
-
