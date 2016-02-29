@@ -151,8 +151,7 @@ function findDatabases(){
 	#
 	# HACK ALERT:
 	#
-	#   We are avoiding TransferDB, which will be deprecated soon..
-	#	and FileCatalogWithFkAndPsDB for the moment which is installed in other ways
+	# We are avoiding, FileCatalogDB FileCatalogWithFkAndPsDB that is installed in other ways
 	#	and InstalledComponentsDB which is installed at the beginning
 	#
 	if [ ! -z "$DBstoExclude" ]
