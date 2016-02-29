@@ -359,33 +359,33 @@ class WorkflowTasks( TaskBase ):
       jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
       paramsDict['JobType'] = jobType
       transID = paramsDict['TransformationID']
-      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ) )
+      self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ), transID = transID )
       oJob.setOwner( owner )
       oJob.setOwnerGroup( ownerGroup )
       oJob.setOwnerDN( ownerDN )
       transGroup = str( transID ).zfill( 8 )
-      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ) )
+      self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ), transID = transID )
       oJob.setJobGroup( transGroup )
       constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
-      self._logVerbose( 'Setting task name to %s' % constructedName )
+      self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
       oJob.setName( constructedName )
       oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
       oJob._setParamValue( 'JOB_ID', str( taskNumber ).zfill( 8 ) )
       inputData = None
 
-      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ) )
+      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ), transID = transID )
 
       # These helper functions do the real job
       sites = self._handleDestination( paramsDict )
       if not sites:
-        self._logError( 'Could not get a list a sites' )
+        self._logError( 'Could not get a list a sites', transID = transID )
         taskDict[taskNumber]['TaskObject'] = ''
         continue
       else:
-        self._logVerbose( 'Setting Site: ', str( sites ) )
+        self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
         res = oJob.setDestination( sites )
         if not res['OK']:
-          self._logError( 'Could not set the site: %s' % res['Message'] )
+          self._logError( 'Could not set the site: %s' % res['Message'], transID = transID )
           continue
 
       self._handleInputs( oJob, paramsDict )
@@ -401,7 +401,7 @@ class WorkflowTasks( TaskBase ):
                                    'TaskID':taskNumber, 'InputData':inputData},
                                   moduleLocation = self.outputDataModule )
         if not res ['OK']:
-          self._logError( "Failed to generate output data", res['Message'] )
+          self._logError( "Failed to generate output data", res['Message'], transID = transID )
           continue
         for name, output in res['Value'].items():
           oJob._addJDLParameter( name, ';'.join( output ) )
@@ -505,7 +505,9 @@ class WorkflowTasks( TaskBase ):
     submitted = 0
     failed = 0
     startTime = time.time()
+    transID = None
     for taskID in sorted( taskDict ):
+      transID = taskDict['TransformationID']
       if not taskDict[taskID]['TaskObject']:
         taskDict[taskID]['Success'] = False
         failed += 1
@@ -516,13 +518,13 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskID]['Success'] = True
         submitted += 1
       else:
-        self._logError( "Failed to submit task to WMS", res['Message'] )
+        self._logError( "Failed to submit task to WMS", res['Message'], transID = transID )
         taskDict[taskID]['Success'] = False
         failed += 1
     self._logInfo( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                            time.time() - startTime ) )
+                                                                                            time.time() - startTime ), transID = transID )
     if failed:
-      self._logError( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
+      self._logError( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ), transID = transID )
     return S_OK( taskDict )
 
   def submitTaskToExternal( self, job ):
@@ -546,6 +548,7 @@ class WorkflowTasks( TaskBase ):
 
   def updateTransformationReservedTasks( self, taskDicts ):
     requestNames = []
+    transID = None
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
@@ -553,14 +556,14 @@ class WorkflowTasks( TaskBase ):
       requestNames.append( requestName )
     res = self.jobMonitoringClient.getJobs( {'JobName':requestNames} )
     if not res['OK']:
-      self._logInfo( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'] )
+      self._logError( "updateTransformationReservedTasks: Failed to get task from WMS", res['Message'], transID = transID )
       return res
     requestNameIDs = {}
     allAccounted = True
     for wmsID in res['Value']:
       res = self.jobMonitoringClient.getJobPrimarySummary( int( wmsID ) )
       if not res['OK']:
-        self._logWarn( "updateTransformationReservedTasks: Failed to get task summary from WMS", res['Message'] )
+        self._logWarn( "updateTransformationReservedTasks: Failed to get task summary from WMS", res['Message'], transID = transID )
         allAccounted = False
         continue
       jobName = res['Value']['JobName']
@@ -570,12 +573,14 @@ class WorkflowTasks( TaskBase ):
 
   def getSubmittedTaskStatus( self, taskDicts ):
     wmsIDs = []
+    transID = None
     for taskDict in taskDicts:
+      transID = taskDict['TransformationID']
       wmsID = int( taskDict['ExternalID'] )
       wmsIDs.append( wmsID )
     res = self.jobMonitoringClient.getJobsStatus( wmsIDs )
     if not res['OK']:
-      self._logWarn( "Failed to get job status from the WMS system" )
+      self._logWarn( "Failed to get job status from the WMS system", transID = transID )
       return res
     updateDict = {}
     statusDict = res['Value']
@@ -593,14 +598,15 @@ class WorkflowTasks( TaskBase ):
         if newStatus == "Removed":
           self._logVerbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID,
                                                                                                  taskID,
-                                                                                                 oldStatus ) )
+                                                                                                 oldStatus ), transID = transID )
           newStatus = "Failed"
-        self._logVerbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ) )
+        self._logVerbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ), transID = transID )
         updateDict.setdefault( newStatus, [] ).append( taskID )
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
     taskFiles = {}
+    transID = None
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
       taskID = fileDict['TaskID']
@@ -608,7 +614,7 @@ class WorkflowTasks( TaskBase ):
       taskFiles.setdefault( requestName, {} )[fileDict['LFN']] = fileDict['Status']
     res = self.updateTransformationReservedTasks( fileDicts )
     if not res['OK']:
-      self._logWarn( "Failed to obtain taskIDs for files" )
+      self._logWarn( "Failed to obtain taskIDs for files", transID = transID )
       return res
     noTasks = res['Value']['NoTasks']
     requestNameIDs = res['Value']['TaskNameIDs']
@@ -619,7 +625,7 @@ class WorkflowTasks( TaskBase ):
           updateDict[lfn] = 'Unused'
     res = self.jobMonitoringClient.getJobsStatus( requestNameIDs.values() )
     if not res['OK']:
-      self._logWarn( "Failed to get job status from the WMS system" )
+      self._logWarn( "Failed to get job status from the WMS system", transID = transID )
       return res
     statusDict = res['Value']
     for requestName, wmsID in requestNameIDs.items():
