@@ -394,9 +394,9 @@ class SystemAdministratorClientCLI( CLI ):
     componentFilter = {}
     hostFilter = {}
 
-    key = None
+    key = ''
     for arg in argss:
-      if key is None:
+      if not key:
         if arg == 'list':
           display = 'list'
         elif arg == 'current':
@@ -419,8 +419,7 @@ class SystemAdministratorClientCLI( CLI ):
           key = 'UnInstallationTime.smaller'
         elif arg == '-uta':
           key = 'UnInstallationTime.bigger'
-      elif isinstance(key, basestring):
-        key = str(key)
+      else:
         if 'Component.' in key:
           componentFilter[ key.replace( 'Component.', '' ) ] = arg
         elif 'Host.' in key:
