@@ -61,9 +61,6 @@ class BaseReporter( DBUtils ):
     for rId in reportsRevMap:
       self.__reportNameMapping[ reportsRevMap[ rId ] ] = rId
 
-  def _translateGrouping( self, grouping ):
-    return ( "%s", [ grouping ] )
-
   def _averageConsolidation( self, total, count ):
     if count == 0:
       return 0
@@ -77,8 +74,7 @@ class BaseReporter( DBUtils ):
       return ( float( total ) / float( count ) ) * 100.0
 
   def generate( self, reportRequest ):
-    print 'Arrived!!!', reportRequest
-    reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
+    
     reportHash = reportRequest[ 'hash' ]
     reportName = reportRequest[ 'reportName' ]
     if reportName in self.__reportNameMapping:
@@ -114,12 +110,10 @@ class BaseReporter( DBUtils ):
   def __retrieveReportData( self, reportRequest, reportHash ):
     
     funcName = "_report%s" % reportRequest[ 'reportName' ]
-    print 'REEEE!!!', funcName
     try:
       funcObj = getattr( self, funcName )
     except:
       return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
-    print 'DDDDVEGE'
     return gDataCache.getReportData( reportRequest, reportHash, funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
@@ -134,10 +128,11 @@ class BaseReporter( DBUtils ):
 # Helper functions for reporters
 ###
 
-  def _getTimedData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict ):
+  def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict):
     condDict = {}
     #Check params
-    print '_getTimedData', self._typeKeyFields
+    
+    grouping = preCondDict['grouping'][0]
     #Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
@@ -153,12 +148,13 @@ class BaseReporter( DBUtils ):
                                           endTime,
                                           interval,
                                           selectFields,
-                                          condDict)
+                                          condDict,
+                                          grouping,
+                                          metadataDict)
     if not retVal[ 'OK' ]:
       return retVal
     dataDict = retVal[ 'Value' ] 
     
-    print 'coarsestGranularity', granularity
     return S_OK( ( dataDict, granularity ) )
 
   def _executeConsolidation( self, functor, dataDict ):
@@ -166,32 +162,32 @@ class BaseReporter( DBUtils ):
       dataDict[ timeKey ] = [ functor( *dataDict[ timeKey ] ) ]
     return dataDict
 
-  def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict = None, reduceFunc = False ):
+  def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None):
+    
+    grouping = preCondDict['grouping'][0]
     condDict = {}
     #Make safe selections
     for keyword in self._typeKeyFields:
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
+    
+    retVal = self._determineBucketSize(startTime, endTime)
+    if not retVal['OK']:
+      return retVal
+    interval, _ = retVal['Value']
+    
     #Query!
     retVal = self._retrieveBucketedData( self._typeName,
                                           startTime,
                                           endTime,
+                                          interval,
                                           selectFields,
                                           condDict,
-                                          groupingFields,
-                                          []
-                                          )
+                                          grouping,
+                                          metadataDict)
     if not retVal[ 'OK' ]:
       return retVal
-    dataDict = self._groupByField( 0, retVal[ 'Value' ] )
-    for key in dataDict:
-      if not reduceFunc:
-        dataDict[ key ] = dataDict[ key ][0][0]
-      else:
-        dataDict[ key ] = reduceFunc( *dataDict[ key ][0] )
-    #HACK to allow serialization of the type because MySQL decides to return data in a non python standard format
-    for key in dataDict:
-      dataDict[ key ] = float( dataDict[ key ] )
+    dataDict = retVal[ 'Value' ]
     return S_OK( dataDict )
 
   def _getSelectStringForGrouping( self, groupingFields ):
