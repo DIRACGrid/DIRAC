@@ -545,6 +545,7 @@ class Job( API ):
 
     description = 'CPU time in secs'
     self._addParameter( self.workflow, 'MaxCPUTime', 'JDL', timeInSecs, description )
+    self._addParameter( self.workflow, 'CPUTime', 'JDL', timeInSecs, description )
     return S_OK()
 
   #############################################################################

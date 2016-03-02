@@ -111,7 +111,7 @@ class JobManagerHandler( RequestHandler ):
     if jobDesc[-1] != "]":
       jobDesc = "%s]" % jobDesc
 
-    # Check if the job is a parameteric one
+    # Check if the job is a parametric one
     jobClassAd = ClassAd( jobDesc )
     parametricJob = False
     if jobClassAd.lookupAttribute( 'Parameters' ):
