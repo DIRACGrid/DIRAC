@@ -20,14 +20,13 @@ class DBUtils ( object ):
     """
     return self.__db.getKeyValues( self.__setup, typeName, condDict )
   
-  def _retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None):
-    return self.__db.retrieveBucketedData( typeName, startTime, endTime, interval, selectFields, condDict )
+  def _retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None, grouping = '', metadataDict = None):
+    return self.__db.retrieveBucketedData( typeName, startTime, endTime, interval, selectFields, condDict, grouping, metadataDict)
   
   def _determineBucketSize( self, start, end ):
     diff = end - start
     unit = ''
     for i in self._units:
-      print diff, self._unitsvalues[i]
       if diff <= self._unitsvalues[i]:
         unit = self._esUnits[self._unitsvalues[i]]
         break

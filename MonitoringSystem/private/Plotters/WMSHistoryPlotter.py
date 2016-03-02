@@ -18,24 +18,18 @@ class WMSHistoryPlotter( BaseReporter ):
       return ( "%s", [ grouping ] )
 
   def _reportNumberOfJobs( self, reportRequest ):
-    print 'Request!!!!!', reportRequest
-    selectFields = ['Jobs']
-    print 'selectFields', selectFields
     
+    selectFields = ['Jobs']
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
-                                reportRequest[ 'condDict' ],
-                                reportRequest[ 'groupingFields' ],
-                                { 'convertToGranularity' : 'average', 'checkNone' : True } )
+                                reportRequest[ 'condDict' ])
     if not retVal[ 'OK' ]:
       return retVal
-    dataDict, granularity = retVal[ 'Value' ]
-    #self.stripDataField( dataDict, 0 )
+    dataDict, granularity = retVal[ 'Value' ]    
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
-    print 'PLOTTT', reportRequest, filename
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ] ,
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
@@ -47,21 +41,15 @@ class WMSHistoryPlotter( BaseReporter ):
 
 
   def _reportNumberOfReschedules( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)",
-                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
-                                    'Reschedules', 'entriesInBucket'
-                                   ]
-                   )
+    selectFields = ['Reschedules']
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
-                                reportRequest[ 'condDict' ],
-                                reportRequest[ 'groupingFields' ],
-                                { 'convertToGranularity' : 'average', 'checkNone' : True } )
+                                reportRequest[ 'condDict' ])
+    
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
-    self.stripDataField( dataDict, 0 )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfReschedules( self, reportRequest, plotInfo, filename ):
@@ -75,23 +63,16 @@ class WMSHistoryPlotter( BaseReporter ):
     return self._generateStackedLinePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportAverageNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s/%s)",
-                     reportRequest[ 'groupingFields' ][1] + [ 'Jobs', 'entriesInBucket'
-                                   ]
-                   )
+    selectFields = ['Jobs']
+                   
     retVal = self._getSummaryData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
                                 selectFields,
                                 reportRequest[ 'condDict' ],
-                                reportRequest[ 'groupingFields' ],
-                                {} )
+                                {"metric": "avg"} )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict = retVal[ 'Value' ]
-    bins = self._getBins( self._typeName, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ] )
-    numBins = len( bins )
-    for key in dataDict:
-      dataDict[ key ] = float( dataDict[ key ] / numBins )
     return S_OK( { 'data' : dataDict  } )
 
   def _plotAverageNumberOfJobs( self, reportRequest, plotInfo, filename ):
