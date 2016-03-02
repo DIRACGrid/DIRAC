@@ -128,7 +128,7 @@ class BaseReporter( DBUtils ):
 # Helper functions for reporters
 ###
 
-  def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict):
+  def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None):
     condDict = {}
     #Check params
     
@@ -214,7 +214,7 @@ class BaseReporter( DBUtils ):
     else:
       unitList = selectedUnits[ unit ]
       unitIndex = -1
-      for unitName, unitDivFactor, unitThreshold in unitList:
+      for _, unitDivFactor, unitThreshold in unitList:
         unitIndex += 1
         if maxValue / unitDivFactor < unitThreshold:
           break
