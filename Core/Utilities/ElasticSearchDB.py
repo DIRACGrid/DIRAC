@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                      import gLogger, S_OK, S_ERROR
 from elasticsearch              import Elasticsearch
-from elasticsearch_dsl          import Search
+from elasticsearch_dsl          import Search, Q, A
 from elasticsearch.exceptions   import ConnectionError, TransportError
 from datetime                   import datetime
 
@@ -60,14 +60,27 @@ class ElasticSearchDB( object ):
     :param dict query: It is the query in ElasticSerach DSL language
      
     """
-    return self.__client.search( index= index, body = query )
+    return self.__client.search( index = index, body = query )
   
-  def __search(self, indexname):
+  def _Search( self, indexname ):
     """
     it returns the object which can be used for reatriving ceratin value from the DB
     """
-    return  Search(using = self.__client, index=indexname)
+    return  Search( using = self.__client, index = indexname )
   
+  ########################################################################
+  def _Q( self, name_or_query = 'match', **params ):
+    """
+    It is a wrapper to ElasticDSL Query module used to create a query object. 
+    :param name_or_query str is the type of the query
+    """
+    return Q( name_or_query, **params )
+  
+  def _A( self, name_or_agg, aggsfilter = None, **params ):
+    """
+    It us a wrapper to ElasticDSL aggregation module, used to create an aggregation
+    """
+    return A( name_or_agg, aggsfilter, **params )
   ########################################################################
   def __tryToConnect( self ):
     """Before we use the database we try to connect and retrive the cluster name
@@ -99,14 +112,14 @@ class ElasticSearchDB( object ):
     try:
       result = self.__client.indices.get_mapping( indexes )
     except Exception as e:
-      gLogger.error(e)
+      gLogger.error( e )
     doctype = ''
     for i in result:
-      if len(result[i].get('mappings', {})) == 0:
-        return S_ERROR("%s does not exists!" % indexes)
+      if len( result[i].get( 'mappings', {} ) ) == 0:
+        return S_ERROR( "%s does not exists!" % indexes )
       doctype = result[i]['mappings']
       break
-    return S_OK(doctype) 
+    return S_OK( doctype ) 
   
   ########################################################################
   def checkIndex( self, indexName ):
@@ -147,7 +160,7 @@ class ElasticSearchDB( object ):
     It returns a list of unique value for a certain key from the dictionary.
     """
     
-    s = self.__search( indexName )
+    s = self._Search( indexName )
     if orderBy:
       s.aggs.bucket( key, 'terms', field = key, size = 0, order = orderBy ).metric( key, 'cardinality', field = key )
     else:
@@ -163,3 +176,14 @@ class ElasticSearchDB( object ):
       values += [i['key']]
     del s
     return S_OK( values )
+  
+  def execSpecific( self, index ):
+    s = Search( using = self.__client, index = index ).filter( 'bool', must = [Q( 'range', time = {'lte':1456757057251, 'gte': 1456670657251} ), Q( 'match', Status = 'Running' )] )
+    # s = Search(using=cl,index=i).filter('bool', must=[Q('range', time={'lte':1456757057251,'gte': 1456670657251}), Q('match',Status='Running')])
+    a = A( 'terms', field = 'Site', size = 0 )
+    aa = A( 'terms', field = 'time' )
+    aa.metric( 'total_jobs', 'sum', field = 'Jobs' )
+    a.bucket( 'end_data', 'date_histogram', field = 'time', interval = '30m' ).metric( 'tt', aa ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs' )
+    s.aggs.bucket( '2', a )
+    s = s.fields( ['Site', 'Jobs', 'time', 'avg_monthly_sales'] )
+    return s.execute()
