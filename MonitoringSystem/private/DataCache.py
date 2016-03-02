@@ -43,10 +43,7 @@ class DataCache( object ):
     """
     Get report data from cache if exists, else generate it
     """
-    print 'getReportData', reportHash
-    print self.__dataCache.showContentsInString()
-    reportData = self.__dataCache.get( reportHash )
-    print reportData
+    reportData = self.__dataCache.get( reportHash )   
     if not reportData:
       retVal = dataFunc( reportRequest )
       if not retVal[ 'OK' ]:
