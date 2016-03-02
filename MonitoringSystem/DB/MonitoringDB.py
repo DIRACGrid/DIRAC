@@ -41,7 +41,6 @@ class MonitoringDB( ElasticDB ):
         mapping = typeClass().getMapping()
         monfields = typeClass().getMonitoringFields()
         self.__documents[doc_type] = {"indexName": indexName, "mapping":mapping, 'monitoringFields':monfields}
-        print "DDDD", self.__documents
         if self.__readonly:
           gLogger.info( "Read only mode is okay" )
         else:
@@ -114,7 +113,7 @@ class MonitoringDB( ElasticDB ):
         keyValuesDict[i] = retVal['Value']
     return S_OK( keyValuesDict )                                            
     
-  def retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict):
+  def retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo ):
     """
     Get data from the DB
     
@@ -126,24 +125,45 @@ class MonitoringDB( ElasticDB ):
                   value -> list of possible values
      
     """
-    print 'retrieveBucketedData', typeName, startTime, endTime, selectFields, condDict, interval
+    
     if typeName not in self.__documents:
       return S_ERROR( "Type %s is not defined" % typeName )
     retVal = self.getIndexName( typeName )
     if not retVal['OK']:
       return retVal
+    isAvgAgg = False
+    #the data is used to fill the pie charts. This aggregation is used to average the buckets.
+    if metainfo and metainfo.get('metric','sum') == 'avg':
+      isAvgAgg = True
     
     indexName = "%s*" % ( retVal['Value'] )
+    q = [self._Q( 'range', time = {'lte':endTime * 1000, 'gte': startTime * 1000} )]
+    for cond in condDict:
+      kwargs = {cond: condDict[cond][0]}
+      query = self._Q( 'match', **kwargs )
+      q += [query] 
     
-    query = {'query': {'filtered': {'filter': {'bool': {'must_not': [], 'must': [{'range': {'time': {'gte': 1455812042936, 'lte': 1456416842936}}}]}}, 'query': {'query_string': {'query': 'Status=Running'}}}}, 'aggs': {'2': {'terms': {'field': 'Site', 'size': 0}, 'aggs': {'end_data': {'date_histogram': {'field': 'time', 'interval': '3h', 'extended_bounds': {'max': 1456416842935, 'min': 1455812042935}, 'min_doc_count': 1}, 'aggs': {'tt': {'terms': {'field': 'time'}, 'aggs': {'total_jobs': {'sum': {'field': 'Jobs'}}}}, 'avg_monthly_sales': {'avg_bucket': {'buckets_path': 'tt>total_jobs'}}}}}}}, 'size': 0}
-    retVal = self.query( indexName, query )
-    # result = []
+    a1 = self._A( 'terms', field = grouping, size = 0 )
+    a2 = self._A( 'terms', field = 'time' )
+    a2.metric( 'total_jobs', 'sum', field = selectFields[0] )
+    a1.bucket( 'end_data', 'date_histogram', field = 'time', interval = interval ).metric( 'tt', a2 ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs' )
+    if isAvgAgg:
+      a1.pipeline('avg_total_jobs', 'avg_bucket', buckets_path='end_data>avg_monthly_sales')
+    s = self._Search( indexName )
+    s = s.filter( 'bool', must = q )
+    s.aggs.bucket( '2', a1 )
+    s.fields( ['time'] + selectFields )
+    retVal = s.execute()
     result = {}
-    for i in retVal['aggregations']['2']['buckets']:
-      site = i['key']
-      dp = {}
-      for j in i['end_data']['buckets']:
-        dp[j['key'] / 1000] = j['avg_monthly_sales']['value']
-      result[site] = dp
+    for i in retVal.aggregations['2'].buckets:
+      if isAvgAgg:
+        result[i.key] = i.avg_total_jobs.value
+      else:
+        site = i.key
+        dp = {}
+        for j in i.end_data.buckets:
+          dp[j.key / 1000] = j.avg_monthly_sales.value
+        result[site] = dp
+    
     return S_OK( result )
     
