@@ -21,7 +21,7 @@ class MonitoringClient( object ):
     if self.rpcClient:
       return self.rpcClient
     else:
-      return RPCClient( 'Monitoring/ReportGenerator', timeout = timeout )
+      return RPCClient( 'Monitoring/Monitoring', timeout = timeout )
 
   #############################################################################
   def listUniqueKeyValues( self, typeName ):

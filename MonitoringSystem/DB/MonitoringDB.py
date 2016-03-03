@@ -146,18 +146,20 @@ class MonitoringDB( ElasticDB ):
     a1 = self._A( 'terms', field = grouping, size = 0 )
     a2 = self._A( 'terms', field = 'time' )
     a2.metric( 'total_jobs', 'sum', field = selectFields[0] )
-    a1.bucket( 'end_data', 'date_histogram', field = 'time', interval = interval ).metric( 'tt', a2 ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs' )
     if isAvgAgg:
-      a1.pipeline('avg_total_jobs', 'avg_bucket', buckets_path='end_data>avg_monthly_sales')
+      a1.metric( 'tt', a2 ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs' )
+    else:
+      a1.bucket( 'end_data', 'date_histogram', field = 'time', interval = interval ).metric( 'tt', a2 ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs' )
     s = self._Search( indexName )
     s = s.filter( 'bool', must = q )
     s.aggs.bucket( '2', a1 )
     s.fields( ['time'] + selectFields )
     retVal = s.execute()
+    print s.to_dict()
     result = {}
     for i in retVal.aggregations['2'].buckets:
       if isAvgAgg:
-        result[i.key] = i.avg_total_jobs.value
+        result[i.key] = i.avg_monthly_sales.value
       else:
         site = i.key
         dp = {}
