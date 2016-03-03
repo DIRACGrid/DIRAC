@@ -3,12 +3,12 @@ Do the initial configuration of a DIRAC component
 """
 __RCSID__ = "$Id$"
 #
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.Core.Utilities import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 #
 from DIRAC import gConfig
 from DIRAC import exit as DIRACexit
-InstallTools.exitOnError = True
+gComponentInstaller.exitOnError = True
 #
 from DIRAC.Core.Base import Script
 
@@ -30,7 +30,7 @@ else:
   system = args[1]
   component = args[2]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, componentType, system, component,
+result = gComponentInstaller.addDefaultOptionsToCS( gConfig, componentType, system, component,
                                              getCSExtensions(),
                                              specialOptions = {},
                                              overwrite = False )
