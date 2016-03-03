@@ -240,7 +240,7 @@ class GOCDB2CSAgent ( AgentModule ):
         if not result['OK']:
           log.error( "createSection() failed with message: %s" % result['Message'] )
       except Exception as e:
-        log.error( "Exception in createSection(): %s" % repr(e) )
+        log.error( "Exception in createSection(): %s" % repr( e ).replace( ',)', ')' ) )
 
       if value is not None:
         try:
@@ -248,7 +248,7 @@ class GOCDB2CSAgent ( AgentModule ):
           if not result['OK']:
             log.error( "setOption() failed with message: %s" % result['Message'] )
         except Exception as e:
-          log.error( "Exception in setOption(): %s" % repr(e) )
+          log.error( "Exception in setOption(): %s" % repr( e ).replace( ',)', ')' ) )
 
     # delete elements in the configuration
     for path in delElements:

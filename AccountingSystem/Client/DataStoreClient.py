@@ -107,7 +107,7 @@ class DataStoreClient(object):
         del registersList[ :self.__maxRecordsInABundle ]
     except Exception as e:
       gLogger.exception( "Error committing", lException = e )
-      return S_ERROR( "Error committing %s" % repr( e ) )    
+      return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )    
     finally:
       # if something is left because of an error return it to the main list
       self.__registersList.extend(registersList)
