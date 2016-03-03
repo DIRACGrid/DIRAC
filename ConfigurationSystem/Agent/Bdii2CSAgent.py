@@ -1,7 +1,3 @@
-#############################################################################
-# $HeadURL$
-#############################################################################
-
 """ The Bdii2CSAgent performs checking BDII for availability of CE and SE
     resources for a given or any configured VO. It detects resources not yet
     present in the CS and notifies the administrators.
@@ -45,7 +41,7 @@ class Bdii2CSAgent( AgentModule ):
     if self.alternativeBDIIs :
       self.log.info( "AlternativeBDII URLs:", self.alternativeBDIIs )
     self.subject = "Bdii2CSAgent"
-    
+
     self.processCEs = self.am_getOption( 'ProcessCEs', True )
     self.processSEs = self.am_getOption( 'ProcessSEs', False )
 
@@ -77,7 +73,7 @@ class Bdii2CSAgent( AgentModule ):
   def execute( self ):
     """ General agent execution method
     """
-   
+
     # Get a "fresh" copy of the CS data
     result = self.csAPI.downloadCSData()
     if not result['OK']:
@@ -89,7 +85,7 @@ class Bdii2CSAgent( AgentModule ):
     if self.processCEs:
       self.__lookForNewCEs()
       self.__updateCEs()
-    if self.processSEs:  
+    if self.processSEs:
       self.__lookForNewSEs()
       self.__updateSEs()
     return S_OK()
@@ -113,13 +109,13 @@ class Bdii2CSAgent( AgentModule ):
       result = getGridCEs( vo, bdiiInfo = bdiiInfo, ceBlackList = knownCEs )
       if not result['OK']:
         self.log.error( 'Failed to get unused CEs', result['Message'] )
-      siteDict = result['Value']  
+      siteDict = result['Value']
       body = ''
       for site in siteDict:
         newCEs = set( siteDict[site].keys() )
         if not newCEs:
           continue
-        
+
         ceString = ''
         for ce in newCEs:
           queueString = ''
@@ -176,7 +172,7 @@ class Bdii2CSAgent( AgentModule ):
     else:
       self.voBdiiCEDict[vo] = result['Value']
     return result
-  
+
   def __getBdiiSEInfo( self, vo ):
 
     if vo in self.voBdiiSEDict:
@@ -214,24 +210,24 @@ class Bdii2CSAgent( AgentModule ):
       if not result['OK']:
         continue
       bdiiChangeSet = bdiiChangeSet.union( result['Value'] )
-      
+
     # We have collected all the changes, consolidate VO settings
     result = self.__updateCS( bdiiChangeSet )
     return result
 
   def __updateCS( self, bdiiChangeSet ):
-    
+
     queueVODict = {}
     changeSet = set()
     for entry in bdiiChangeSet:
       section, option , _value, new_value = entry
       if option == "VO":
         queueVODict.setdefault( section, set() )
-        queueVODict[section] = queueVODict[section].union( set( new_value.split( ',' ) ) )  
+        queueVODict[section] = queueVODict[section].union( set( new_value.split( ',' ) ) )
       else:
-        changeSet.add( entry )  
+        changeSet.add( entry )
     for section, VOs in queueVODict.items():
-      changeSet.add( ( section, 'VO', '', ','.join( VOs ) ) )    
+      changeSet.add( ( section, 'VO', '', ','.join( VOs ) ) )
 
     if changeSet:
       changeList = list( changeSet )
@@ -240,9 +236,9 @@ class Bdii2CSAgent( AgentModule ):
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
-        
-      if body:  
-        self.log.info( 'The following configuration changes were detected:' )  
+
+      if body:
+        self.log.info( 'The following configuration changes were detected:' )
         self.log.info( body )
 
       for section, option, value, new_value in changeSet:
@@ -264,7 +260,7 @@ class Bdii2CSAgent( AgentModule ):
   def __lookForNewSEs( self ):
     """ Look up BDII for SEs not yet present in the DIRAC CS
     """
-    
+
     bannedSEs = self.am_getOption( 'BannedSEs', [] )
     result = getSEsFromCS()
     if not result['OK']:
@@ -280,7 +276,7 @@ class Bdii2CSAgent( AgentModule ):
       result = getGridSRMs( vo, bdiiInfo = bdiiInfo, srmBlackList = knownSEs )
       if not result['OK']:
         continue
-      siteDict = result['Value']  
+      siteDict = result['Value']
       body = ''
       for site in siteDict:
         newSEs = set( siteDict[site].keys() )
@@ -291,7 +287,7 @@ class Bdii2CSAgent( AgentModule ):
           backend = siteDict[site][se]['SE'].get( 'GlueSEImplementationName', 'Unknown' )
           size = siteDict[site][se]['SE'].get( 'GlueSESizeTotal', 'Unknown' )
           body += '  Backend %s, Size %s' % ( backend, size )
-          
+
       if body:
         body = "\nWe are glad to inform You about new SE(s) possibly suitable for %s:\n" % vo + body
         body += "\n\nTo suppress information about an SE add its name to BannedSEs list.\n"
@@ -304,12 +300,12 @@ class Bdii2CSAgent( AgentModule ):
           if not result['OK']:
             self.log.error( 'Can not send new site notification mail', result['Message'] )
 
-    return S_OK()   
-  
+    return S_OK()
+
   def __updateSEs( self ):
     """ Update the Storage Element settings in the CS if they were changed in the BDII
     """
-    
+
     bdiiChangeSet = set()
 
     for vo in self.voName:
@@ -321,7 +317,7 @@ class Bdii2CSAgent( AgentModule ):
       if not result['OK']:
         continue
       bdiiChangeSet = bdiiChangeSet.union( result['Value'] )
-      
+
     # We have collected all the changes, consolidate VO settings
     result = self.__updateCS( bdiiChangeSet )
     return result

@@ -1,6 +1,7 @@
-# $HeadURL$
 """
-Module provides GOCDB2CSAgent functionality.
+This module provides GOCDB2CSAgent code.
+
+The agent is used to synchronize information between GOCDB and DIRAC configuration System (CS)
 """
 
 from DIRAC import S_OK, S_ERROR
@@ -19,8 +20,15 @@ class GOCDB2CSAgent ( AgentModule ):
   from GOCDB and update configuration stored by CS
   """
 
+  def __init__( self, *args, **kwargs ):
+    ''' c'tor
+    '''
+    AgentModule.__init__( self, *args, **kwargs )
+    self.GOCDBClient = None
+    self.csAPI = None
+
   def initialize( self ):
-    
+
     # client to connect to GOCDB
     self.GOCDBClient = GOCDBClient()
 
@@ -145,11 +153,11 @@ class GOCDB2CSAgent ( AgentModule ):
         log.error( "getConfigurationTree() failed with message: %s" % result['Message'] )
         return S_ERROR( 'Unable to fetch perfSONAR endpoints from CS.' )
       currentConfiguration.update(result['Value'])
-    
+
     # disable endpoints that disappeared in GOCDB
     removedElements = set( currentConfiguration ) - set( newConfiguration )
     newElements = set( newConfiguration ) - set( currentConfiguration )
-    
+
     addedEndpoints = len( newElements )/len( options )
     disabledEndpoints = 0
     for path in removedElements:
@@ -164,7 +172,7 @@ class GOCDB2CSAgent ( AgentModule ):
 
     if disabledEndpoints > 0:
       self.log.info( "%s old perfSONAR endpoints will be disable in the configuration" % disabledEndpoints )
-      
+
     if addedEndpoints == 0 and disabledEndpoints == 0:
       self.log.info( "perfSONAR configuration is up-to-date" )
 
@@ -199,21 +207,25 @@ class GOCDB2CSAgent ( AgentModule ):
       try:
         entry['DIRACSITENAME'] = GOCDIRACDict[entry['SITENAME']]
       except KeyError:
-          self.log.warn( "No dictionary entry for %s. " % entry['SITENAME'] )
-          entry['DIRACSITENAME'] = None
+        self.log.warn( "No dictionary entry for %s. " % entry['SITENAME'] )
+        entry['DIRACSITENAME'] = None
       outputList.append( entry )
 
     log.debug( 'End function.' )
     return S_OK( outputList )
 
-  def __updateConfiguration( self, setElements = {}, delElements = [] ):
+  def __updateConfiguration( self, setElements = None, delElements = None ):
     '''
     Update configuration stored by CS.
     '''
+    if setElements is None:
+      setElements = {}
+    if delElements is None:
+      delElements = []
 
     log = self.log.getSubLogger( '__updateConfiguration' )
     log.debug( 'Begin function ...' )
-    
+
     # assure existence and proper value of a section or an option
     for path, value in setElements.iteritems():
 
@@ -222,13 +234,13 @@ class GOCDB2CSAgent ( AgentModule ):
       else:
         split = path.rsplit( '/', 1 )
         section = split[0]
-      
+
       try:
         result = self.csAPI.createSection( section )
         if not result['OK']:
           log.error( "createSection() failed with message: %s" % result['Message'] )
       except Exception as e:
-        log.error( "Exception in createSection(): %s" % str(e) )      
+        log.error( "Exception in createSection(): %s" % repr(e) )
 
       if value is not None:
         try:
@@ -236,7 +248,7 @@ class GOCDB2CSAgent ( AgentModule ):
           if not result['OK']:
             log.error( "setOption() failed with message: %s" % result['Message'] )
         except Exception as e:
-          log.error( "Exception in setOption(): %s" % str(e) )
+          log.error( "Exception in setOption(): %s" % repr(e) )
 
     # delete elements in the configuration
     for path in delElements:
@@ -259,8 +271,5 @@ class GOCDB2CSAgent ( AgentModule ):
 
 
   # define mapping between an agent option in the configuration and a function call
-  __functionMap = {
-                    'UpdatePerfSONARS': updatePerfSONARConfiguration,
-
+  __functionMap = { 'UpdatePerfSONARS': updatePerfSONARConfiguration,
                   }
-

@@ -6,7 +6,8 @@ Use the CS option RefreshOnly (False by default) and set the DateKey (empty by d
 key set in the DIRAC FileCatalog.
 '''
 
-import time, datetime
+import time
+import datetime
 
 from DIRAC                                                   import S_OK, gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient           import gMonitor
@@ -57,7 +58,7 @@ class InputDataAgent( AgentModule ):
         if extendable in self.transformationTypes:
           self.transformationTypes.remove(extendable)
           #This is because the Extendables do not use this Agent (have no Input data query)
-          
+
     return S_OK()
 
   ##############################################################################
@@ -67,7 +68,7 @@ class InputDataAgent( AgentModule ):
 
     gMonitor.addMark( 'Iteration', 1 )
     # Get all the transformations
-    result = self.transClient.getTransformations( {'Status' : 'Active', 
+    result = self.transClient.getTransformations( {'Status' : 'Active',
                                                    'Type' : self.transformationTypes } )
     if not result['OK']:
       gLogger.error( "InputDataAgent.execute: Failed to get transformations.", result['Message'] )
