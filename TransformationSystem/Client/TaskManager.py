@@ -500,7 +500,7 @@ class WorkflowTasks( TaskBase ):
     startTime = time.time()
     transID = None
     for taskID in sorted( taskDict ):
-      transID = taskDict['TransformationID']
+      transID = taskDict[taskID]['TransformationID']
       if not taskDict[taskID]['TaskObject']:
         taskDict[taskID]['Success'] = False
         failed += 1
