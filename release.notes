@@ -1,3 +1,12 @@
+[v6r14p23]
+
+*Interfaces
+FIX: Job.py - setCPUTime() method sets both CPUTime and MaxCPUTime JDL parameters
+     for backward compatibility. Otherwise this setting was ignored by scheduling
+
+*TS
+BUGFIX: TaskManager - bug fixed in submitTransformationTasks in getting the TransformationID 
+
 [v6r14p22]
 
 CHANGE: Multiple commands - permissions bits changed from 644 to 755  
