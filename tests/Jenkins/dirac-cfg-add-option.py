@@ -3,8 +3,8 @@ Do the initial configuration of a DIRAC component
 """
 __RCSID__ = "$Id$"
 #
-from DIRAC.Core.Utilities import gComponentInstaller
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from LHCbDIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
 from DIRAC import gConfig
 from DIRAC import exit as DIRACexit
@@ -31,9 +31,9 @@ else:
   component = args[2]
 
 result = gComponentInstaller.addDefaultOptionsToCS( gConfig, componentType, system, component,
-                                             getCSExtensions(),
-                                             specialOptions = {},
-                                             overwrite = False )
+                                                    getCSExtensions(),
+                                                    specialOptions = {},
+                                                    overwrite = False )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
