@@ -8,18 +8,18 @@ import os
 import datetime
 import errno
 
-from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
-from DIRAC.AccountingSystem.private.DataCache import gDataCache
-from DIRAC.AccountingSystem.private.MainReporter import MainReporter
-from DIRAC.AccountingSystem.private.DBUtils import DBUtils
-from DIRAC.AccountingSystem.private.Policies import gPoliciesList
-from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
-from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+from DIRAC                                          import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC.FrameworkSystem.Client.MonitoringClient  import gMonitor
+from DIRAC.AccountingSystem.DB.MultiAccountingDB    import MultiAccountingDB
+from DIRAC.Core.Utilities.Plotting                  import gDataCache
+from DIRAC.AccountingSystem.private.MainReporter    import MainReporter
+from DIRAC.AccountingSystem.private.DBUtils         import DBUtils
+from DIRAC.AccountingSystem.private.Policies        import gPoliciesList
+from DIRAC.AccountingSystem.private.Plots           import generateErrorMessagePlot
+from DIRAC.AccountingSystem.private.FileCoding      import extractRequestFromFileId
+from DIRAC.ConfigurationSystem.Client               import PathFinder
+from DIRAC.Core.DISET.RequestHandler                import RequestHandler
+from DIRAC.Core.Utilities                           import Time
 
 class ReportGeneratorHandler( RequestHandler ):
   """ DIRAC service class to retrieve information from the AccountingDB
