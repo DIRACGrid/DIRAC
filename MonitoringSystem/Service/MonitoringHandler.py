@@ -174,3 +174,22 @@ class MonitoringHandler( RequestHandler ):
     reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
     reportRequest[ 'generatePlot' ] = True
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
+  
+  types_getReport = [ types.DictType ]
+  def export_getReport( self, reportRequest ):
+    """
+    Plot a accounting
+    Arguments:
+      - viewName : Name of view (easy!)
+      - startTime
+      - endTime
+      - argsDict : Arguments to the view.
+      - grouping
+      - extraArgs
+    """
+    retVal = self.__checkPlotRequest( reportRequest )
+    if not retVal[ 'OK' ]:
+      return retVal
+    reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
+    reportRequest[ 'generatePlot' ] = False
+    return reporter.generate( reportRequest, self.getRemoteCredentials() )
