@@ -1,7 +1,3 @@
-########################################################################
-# $Id: $
-########################################################################
-
 """
 This class is a helper to create the proper index and insert the proper values....
 """
@@ -20,6 +16,10 @@ class WMSHistory( BaseType ):
   ########################################################################
   def __init__( self ):
     BaseType.__init__( self )
+    
+    """ c'tor
+    :param self: self reference
+    """
     
     self.setKeyFields( [ 'Status', 'Site', 'User', 'UserGroup', \
                       'JobGroup', 'MinorStatus', 'ApplicationStatus', \
