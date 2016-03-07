@@ -7,7 +7,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient      import RPCClient
-from DIRAC.MonitoringSystem.private.FileCoding import codeRequestInFileId
+from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 import types 
 
 class MonitoringClient( object ):
