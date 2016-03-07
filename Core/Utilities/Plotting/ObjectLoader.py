@@ -1,9 +1,9 @@
 import re
 import os
 import DIRAC
-from DIRAC import gLogger
-from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC                                       import gLogger
+from DIRAC.Core.Utilities                        import List
+from DIRAC.ConfigurationSystem.Client.Helpers    import CSGlobals
 
 def loadObjects( path, reFilter = None, parentClass = None ):
   if not reFilter:

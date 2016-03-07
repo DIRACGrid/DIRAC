@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities                           import DIRACSingleton
 from DIRAC.MonitoringSystem.Client.Types.BaseType   import BaseType
-from DIRAC.AccountingSystem.private.ObjectLoader    import loadObjects
+from DIRAC.Core.Utilities.Plotting.ObjectLoader     import loadObjects
 
 import re
 

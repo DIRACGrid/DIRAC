@@ -4,7 +4,7 @@ import re
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.MonitoringSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
-from DIRAC.MonitoringSystem.private.ObjectLoader import loadObjects
+from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
 class PlottersList:
 

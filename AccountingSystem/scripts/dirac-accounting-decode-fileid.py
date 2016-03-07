@@ -15,7 +15,7 @@ import urlparse
 import cgi
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
-from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
+from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',

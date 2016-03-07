@@ -3,10 +3,10 @@ __RCSID__ = "$Id$"
 
 import tempfile, types
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.AccountingSystem.private.FileCoding import codeRequestInFileId
+from DIRAC                                     import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                import RPCClient
+from DIRAC.Core.DISET.TransferClient           import TransferClient
+from DIRAC.Core.Utilities.Plotting.FileCoding  import codeRequestInFileId
 
 class ReportsClient:
 
