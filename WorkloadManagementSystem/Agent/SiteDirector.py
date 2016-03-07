@@ -226,6 +226,7 @@ class SiteDirector( AgentModule ):
 
     self.queueDict = {}
     ceFactory = ComputingElementFactory()
+
     for site in resourceDict:
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
@@ -268,7 +269,6 @@ class SiteDirector( AgentModule ):
 
           maxRAM = self.queueDict[queueName]['ParametersDict'].get( 'MaxRAM' )
           maxRAM = ceMaxRAM if not maxRAM else maxRAM
-
           if maxRAM:
             self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
           if pilotRunDirectory:
@@ -294,6 +294,7 @@ class SiteDirector( AgentModule ):
             result = Resources.getDIRACPlatform( platform )
             if result['OK']:
               self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
+
           ceQueueDict = dict( ceDict )
           ceQueueDict.update( self.queueDict[queueName]['ParametersDict'] )
 
@@ -332,6 +333,7 @@ class SiteDirector( AgentModule ):
 
           if site not in self.sites:
             self.sites.append( site )
+            
     return S_OK()
 
   def execute( self ):
