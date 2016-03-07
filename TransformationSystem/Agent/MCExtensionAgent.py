@@ -11,10 +11,10 @@ AGENT_NAME = 'Transformation/MCExtensionAgent'
 
 class MCExtensionAgent( AgentModule ):
 
-  def __init__( self, agentName, loadName, baseAgentName, properties = {} ):
+  def __init__( self,  *args, **kwargs ):
     ''' c'tor
     '''
-    AgentModule.__init__( self, agentName, loadName, baseAgentName, properties )
+    AgentModule.__init__( self,  *args, **kwargs )
 
     self.transClient = TransformationClient()
     agentTSTypes = self.am_getOption( 'TransformationTypes', [] )
