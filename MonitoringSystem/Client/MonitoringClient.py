@@ -49,3 +49,19 @@ class MonitoringClient( object ):
                     'grouping' : grouping,
                     'extraArgs' : extraArgs }
     return codeRequestInFileId( plotRequest, compress )
+  
+  def getReport( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None ):
+    rpcClient = self.__getServer()
+    if type( extraArgs ) != types.DictType:
+      extraArgs = {}
+    plotRequest = { 'typeName' : typeName,
+                    'reportName' : reportName,
+                    'startTime' : startTime,
+                    'endTime' : endTime,
+                    'condDict' : condDict,
+                    'grouping' : grouping,
+                    'extraArgs' : extraArgs }
+    result = rpcClient.getReport( plotRequest )
+    if 'rpcStub' in result:
+      del( result[ 'rpcStub' ] )
+    return result
