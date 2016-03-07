@@ -168,7 +168,6 @@ class RequestTasks( TaskBase ):
       oRequest.OwnerDN = ownerDN
       oRequest.OwnerGroup = ownerGroup
 
-
       isValid = self.requestValidator.validate( oRequest )
       if not isValid['OK']:
         self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
@@ -635,4 +634,3 @@ class WorkflowTasks( TaskBase ):
           if newFileStatus != oldFileStatus:
             updateDict[lfn] = newFileStatus
     return S_OK( updateDict )
-

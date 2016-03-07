@@ -1,6 +1,8 @@
 """ unit tests for Transformation Clients
 """
 
+#pylint: disable=W0212
+
 import unittest, types
 
 from mock import MagicMock
@@ -43,6 +45,9 @@ class ClientsTestCase( unittest.TestCase ):
     self.jobMock.workflow.return_value = ''
     self.jobMock.return_value = self.jobMock2
 
+    self.reqValidatorMock = MagicMock()
+    self.reqValidatorMock.validate.return_value = {'OK':True}
+
     self.taskBase = TaskBase( transClient = self.mockTransClient )
     self.pu = PluginUtilities( transClient = self.mockTransClient )
     self.wfTasks = WorkflowTasks( transClient = self.mockTransClient,
@@ -51,8 +56,8 @@ class ClientsTestCase( unittest.TestCase ):
                                   outputDataModule = "mock" )
 
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
-                                      requestClient = self.mockReqClient
-                                      )
+                                      requestClient = self.mockReqClient,
+                                      requestValidator = self.reqValidatorMock )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -134,13 +139,19 @@ class RequestTasksSuccess( ClientsTestCase ):
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
-    # We should "lose" one of the task in the preparation
-    self.assertEqual( len( taskDict ), 2 )
+    self.assertEqual( len( taskDict ), 3 )
     for task in res['Value'].values():
       self.assert_( isinstance( task['TaskObject'], Request ) )
       self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
-      self.assertEqual( task['TaskObject'][0][0].LFN, '/this/is/a1.lfn' )
-      self.assertEqual( task['TaskObject'][0][1].LFN, '/this/is/a2.lfn' )
+      try:
+        self.assertEqual( task['TaskObject'][0][0].LFN, '/this/is/a1.lfn' )
+      except IndexError:
+        self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
+      try:
+        self.assertEqual( task['TaskObject'][0][1].LFN, '/this/is/a2.lfn' )
+      except IndexError:
+        self.assertEqual( task['TaskObject'][0].Status, 'Waiting' )
+
 
 #############################################################################
 
