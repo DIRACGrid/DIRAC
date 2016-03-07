@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities                         import Time
 from DIRAC.MonitoringSystem.private.MainReporter  import MainReporter
 from DIRAC.Core.Utilities.Plotting                import gMonitoringDataCache
 from DIRAC.MonitoringSystem.private.FileCoding    import extractRequestFromFileId
-from DIRAC.MonitoringSystem.private.Plots         import generateErrorMessagePlot
+from DIRAC.Core.Utilities.Plotting.Plots          import generateErrorMessagePlot
 import types
 import datetime
 

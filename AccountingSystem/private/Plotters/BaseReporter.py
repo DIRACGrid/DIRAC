@@ -3,7 +3,7 @@ from DIRAC                                  import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.Core.Utilities.Plotting          import gDataCache
 from DIRAC.Core.Utilities                   import Time
-from DIRAC.AccountingSystem.private.Plots   import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
+from DIRAC.Core.Utilities.Plotting.Plots    import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
 class BaseReporter( DBUtils ):
 
