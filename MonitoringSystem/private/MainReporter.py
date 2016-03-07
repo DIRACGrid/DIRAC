@@ -1,17 +1,22 @@
-import hashlib
+"""
+"""
 
-import re  
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
-from DIRAC.MonitoringSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
-from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
+__RCSID__ = "$Id$"
+
+from DIRAC                                                import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder          import getServiceSection
+from DIRAC.MonitoringSystem.private.Plotters.BasePlotter  import BasePlotter as myBasePlotter
+from DIRAC.Core.Utilities.Plotting.ObjectLoader           import loadObjects
+
+import hashlib
+import re
 
 class PlottersList:
 
   def __init__( self ):
     objectsLoaded = loadObjects( 'MonitoringSystem/private/Plotters',
                                  re.compile( ".*[a-z1-9]Plotter\.py$" ),
-                                 myBaseReporter )
+                                 myBasePlotter )
     self.__plotters = {}
     for objName in objectsLoaded:
       self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]

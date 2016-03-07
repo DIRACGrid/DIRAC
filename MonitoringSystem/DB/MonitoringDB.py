@@ -106,7 +106,7 @@ class MonitoringDB( ElasticDB ):
     
     keys = docs[typeName]['properties'].keys() 
     for i in keys:
-      if i not in monfields:
+      if i not in monfields and not i.startswith('time'):
         retVal = self.getUniqueValue( indexName, i )
         if not retVal['OK']:
           return retVal
