@@ -13,8 +13,8 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 
 class DataCache( object ):
 
-  def __init__( self ):
-    self.graphsLocation = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data', 'accountingPlots' )
+  def __init__( self, dirName = 'accountingPlots' ):
+    self.graphsLocation = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data', dirName )
     self.cachedGraphs = {}
     self.alive = True
     self.purgeThread = threading.Thread( target = self.purgeExpired )
@@ -96,4 +96,4 @@ class DataCache( object ):
 
 
 
-gDataCache = DataCache()
+
