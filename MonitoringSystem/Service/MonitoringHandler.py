@@ -15,7 +15,7 @@ from DIRAC                                        import gLogger, gConfig, S_OK,
 from DIRAC.MonitoringSystem.DB.MonitoringDB       import MonitoringDB
 from DIRAC.Core.Utilities                         import Time
 from DIRAC.MonitoringSystem.private.MainReporter  import MainReporter
-from DIRAC.AccountingSystem.private.DataCache     import gDataCache
+from DIRAC.Core.Utilities.Plotting                import gMonitoringDataCache
 from DIRAC.MonitoringSystem.private.FileCoding    import extractRequestFromFileId
 from DIRAC.MonitoringSystem.private.Plots         import generateErrorMessagePlot
 import types
@@ -82,7 +82,7 @@ class MonitoringHandler( RequestHandler ):
         fileHelper.sendEOF()
         return result
       fileId = result[ 'Value' ]
-    retVal = gDataCache.getPlotData( fileId )
+    retVal = gMonitoringDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
       self.__sendErrorAsImg( retVal[ 'Message' ], fileHelper )
       return retVal
