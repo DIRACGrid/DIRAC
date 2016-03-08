@@ -25,7 +25,7 @@ class EmailAction( BaseAction ):
 
     self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
     self.dirac_path = os.getenv('DIRAC', self.default_value)
-    self.cacheFile = self.dirac_path + 'cache.json'
+    self.cacheFile = self.dirac_path + 'work/ResourceStatus/' + 'cache.json'
 
   def run( self ):
     ''' Checks it has the parameters it needs and tries to send an email to the users that apply.

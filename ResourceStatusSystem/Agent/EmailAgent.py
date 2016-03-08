@@ -35,7 +35,7 @@ class EmailAgent( AgentModule ):
 
     self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
     self.dirac_path = os.getenv('DIRAC', self.default_value)
-    self.cacheFile = self.dirac_path + 'cache.json'
+    self.cacheFile = self.dirac_path + 'work/ResourceStatus/' + 'cache.json'
 
     return S_OK()
 
