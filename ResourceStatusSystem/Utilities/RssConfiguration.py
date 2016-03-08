@@ -101,6 +101,15 @@ def getPolicyActions():
 
   return Utils.getCSTree( '%s/PolicyActions' % _rssConfigPath )
 
+## RssConfiguration/notificationGroups ##############################################
+
+def getnotificationGroups():
+  '''
+  Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
+  '''
+
+  return Utils.getCSTree( '%s/Config' % _rssConfigPath )
+
 ## RssConfiguration/Notifications ##############################################
 
 def getNotifications():

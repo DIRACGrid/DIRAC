@@ -1,11 +1,14 @@
-''' Action that sends and email
+''' Action that bulk writes data that will be sent by email later using EmailAgent
 
 '''
 
+import os
+import json
+from datetime import datetime
 from DIRAC                                                      import gConfig, S_ERROR, S_OK
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration
+from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
 
 __RCSID__ = '$Id:  $'
 
@@ -20,10 +23,14 @@ class EmailAction( BaseAction ):
                                          singlePolicyResults, clients )
     self.diracAdmin = DiracAdmin()
 
+    self.default_value = '/home/smiras/DIRAC_Development/test_dir/'
+    #self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
+    self.dirac_path = os.getenv('DIRAC', self.default_value)
+    self.cacheFile = self.dirac_path + 'cache.json'
+
   def run( self ):
     ''' Checks it has the parameters it needs and tries to send an email to the users that apply.
     '''
-
     # Minor security checks
 
     element = self.decisionParams[ 'element' ]
@@ -38,6 +45,10 @@ class EmailAction( BaseAction ):
     if statusType is None:
       return S_ERROR( 'statusType should not be None' )
 
+    previousStatus = self.decisionParams[ 'status' ]
+    if previousStatus is None:
+      return S_ERROR( 'status should not be None' )
+
     status = self.enforcementResult[ 'Status' ]
     if status is None:
       return S_ERROR( 'status should not be None' )
@@ -46,86 +57,57 @@ class EmailAction( BaseAction ):
     if reason is None:
       return S_ERROR( 'reason should not be None' )
 
-#    if self.decisionParams[ 'status' ] == status:
-#      # If status has not changed, we skip
-#      return S_OK()
+    siteName = getSitesForSE(name)['Value'][0]
+    time     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    dict    = { 'name': name, 'statusType': statusType, 'status': status, 'time': time, 'previousStatus': previousStatus }
 
-#    if self.decisionParams[ 'reason' ] == reason:
-#      # If reason has not changed, we skip
-#      return S_OK()
+    actionResult = self._addtoJSON(self.cacheFile, siteName, dict)
 
-#    if not set( ( 'Banned', 'Error', 'Unknown' ) ) & set( ( status, self.decisionParams[ 'status' ] ) ):
-#      # if not 'Banned', 'Error', 'Unknown' in ( status, self.decisionParams[ 'status' ] ):
-#      # not really interesting to send an email
-#      return S_OK()
+    #returns S_OK() if the record was added successfully using addtoJSON
+    return actionResult
 
-    setup = gConfig.getValue( 'DIRAC/Setup' )
 
-    #subject2 = '[%s]%s %s %s is on status %s' % ( setup, element, name, statusType, status )
-    subject = '[RSS](%s) %s (%s) %s' % ( setup, name, statusType, self.actionName )
+  def _addtoJSON(self, cache_file, siteName, record):
+    ''' Adds a record of a banned element to a local JSON file grouped by site name.
+    '''
 
-    body = 'ENFORCEMENT RESULT\n\n'
-    body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.enforcementResult.items() ] )
-    body += '\n\n'
-    body += '*' * 80
-    body += '\nORGINAL PARAMETERS\n\n'
-    body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.decisionParams.items() ] )
-    body += '\n\n'
-    body += '*' * 80
-    body += '\nPOLICIES RUN\n\n'
-
-    for policy in self.singlePolicyResults:
-
-      body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in policy.items() if not key == 'Policy' ] )
-      body += '\n'
-      body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in policy[ 'Policy' ].items() ] )
-      body += '\n\n'
-
-    return self._sendMail( subject, body )
-
-  def _getUserEmails( self ):
-
-    policyActions = RssConfiguration.getPolicyActions()
-    if not policyActions[ 'OK' ]:
-      return policyActions
     try:
-      notificationGroups = policyActions[ 'Value' ][ self.actionName ][ 'notificationGroups' ]
-    except KeyError:
-      return S_ERROR( '%s/notificationGroups not found' % self.actionName )
 
-    notifications = RssConfiguration.getNotifications()
-    if not notifications[ 'OK' ]:
-      return notifications
-    notifications = notifications[ 'Value' ]
+      if (not os.path.isfile(cache_file)) or (os.stat(cache_file).st_size == 0):
+        #if the file is empty or it does not exist create it and write the first element of the group
+        with open(cache_file, 'w') as f:
+          json.dump({ siteName: [record] }, f)
 
-    userEmails = []
+      else:
+        #otherwise load the file
+        with open(cache_file) as f:
+          new_dict = json.load(f)
 
-    for notificationGroupName in notificationGroups:
-      try:
-        userEmails.extend( notifications[ notificationGroupName ][ 'users' ] )
-      except KeyError:
-        self.log.error( '%s not present' % notificationGroupName )
+        #if the site's name is in there just append the group
+        if siteName in new_dict:
+          new_dict[siteName].append(record)
+        else:
+          #if it is not there, create a new group
+          new_dict.update( { siteName: [record] } )
 
-    return S_OK( userEmails )
+        #write the file again with the modified contents
+        with open(cache_file, 'w') as f:
+          json.dump(new_dict, f)
 
-  def _sendMail( self, subject, body ):
+      return S_OK()
 
-    userEmails = self._getUserEmails()
-    if not userEmails[ 'OK' ]:
-      return userEmails
+    except:
+      return S_ERROR("Could not add site to cache file")
 
-    # User email address used to send the emails from.
-    fromAddress = RssConfiguration.RssConfiguration().getConfigFromAddress()
+  def _deleteCacheFile(self, cache_file):
+    ''' Deletes the cache file
+    '''
 
-    for user in userEmails[ 'Value' ]:
-
-      #FIXME: should not I get the info from the RSS User cache ?
-
-      resEmail = self.diracAdmin.sendMail( user, subject, body, fromAddress = fromAddress )
-      if not resEmail[ 'OK' ]:
-        return S_ERROR( 'Cannot send email to user "%s"' % user )
-
-    return S_OK()
+    try:
+      os.remove(cache_file)
+      return S_OK()
+    except OSError:
+      return S_ERROR("Could not delete the cache file")
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
