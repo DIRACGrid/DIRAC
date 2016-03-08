@@ -130,7 +130,7 @@ class ElasticSearchDB( object ):
     return self.__client.indices.exists( indexName )
   
   ########################################################################
-  def createFullIndexName( self, indexName ):
+  def generateFullIndexName( self, indexName ):
     """
     Given an index perfix we create the actual index name.
     :param str indexName: it is the name of the index
@@ -145,7 +145,7 @@ class ElasticSearchDB( object ):
     
     """
     result = S_OK( "Index created" )
-    fullIndex = self.createFullIndexName( indexPrefix )  # we have to create the an index in each day...
+    fullIndex = self.generateFullIndexName( indexPrefix )  # we have to create the an index in each day...
     try:
       self.log.info( "Create index: ", fullIndex + str( mapping ) )
       self.__client.indices.create( fullIndex, body = mapping )

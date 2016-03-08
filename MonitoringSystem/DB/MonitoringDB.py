@@ -72,7 +72,7 @@ class MonitoringDB( ElasticDB ):
     if self.checkIndex( all_index ):  
       indexes = self.getIndexes()
       if len( indexes ) > 0:
-        actualindexName = self.createFullIndexName( index )
+        actualindexName = self.generateFullIndexName( index )
         if self.checkIndex( actualindexName ):  
           self.log.info( "The index is exists:", actualindexName )
         else:
