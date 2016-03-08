@@ -23,8 +23,7 @@ class EmailAction( BaseAction ):
                                          singlePolicyResults, clients )
     self.diracAdmin = DiracAdmin()
 
-    self.default_value = '/home/smiras/DIRAC_Development/test_dir/'
-    #self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
+    self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
     self.dirac_path = os.getenv('DIRAC', self.default_value)
     self.cacheFile = self.dirac_path + 'cache.json'
 
@@ -96,8 +95,8 @@ class EmailAction( BaseAction ):
 
       return S_OK()
 
-    except:
-      return S_ERROR("Could not add site to cache file")
+    except ValueError:
+      return S_ERROR("Could not add site to cache file, " + ValueError)
 
   def _deleteCacheFile(self, cache_file):
     ''' Deletes the cache file

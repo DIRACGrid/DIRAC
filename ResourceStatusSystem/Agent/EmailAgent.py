@@ -33,8 +33,7 @@ class EmailAgent( AgentModule ):
     ''' EmailAgent initialization
     '''
 
-    self.default_value = '/home/smiras/DIRAC_Development/test_dir/'
-    #self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
+    self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
     self.dirac_path = os.getenv('DIRAC', self.default_value)
     self.cacheFile = self.dirac_path + 'cache.json'
 
