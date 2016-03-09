@@ -5,9 +5,6 @@
 
 import os
 import json
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
-
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction import EmailAction
 from DIRAC.ResourceStatusSystem.Agent.EmailAgent                 import EmailAgent
