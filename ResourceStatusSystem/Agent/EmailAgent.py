@@ -99,8 +99,8 @@ class EmailAgent( AgentModule ):
 
       return S_OK()
 
-    except:
-      return S_ERROR("Could not remove site from cache file")
+    except OSError as e:
+      return S_ERROR("Error %s" % repr(e))
 
   def _sendMail( self, subject, body ):
 
