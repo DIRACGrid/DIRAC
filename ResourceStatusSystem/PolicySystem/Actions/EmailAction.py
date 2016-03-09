@@ -6,6 +6,7 @@ import os
 import json
 from datetime import datetime
 from DIRAC                                                      import gConfig, S_ERROR, S_OK
+from DIRAC.Core.Utilities                                       import DErrno
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
@@ -95,8 +96,8 @@ class EmailAction( BaseAction ):
 
       return S_OK()
 
-    except ValueError:
-      return S_ERROR("Could not add site to cache file, " + ValueError)
+    except ValueError as e:
+      return S_ERROR(DErrno.EWF, "Error %s" % repr(e))
 
   def _deleteCacheFile(self, cache_file):
     ''' Deletes the cache file
@@ -105,8 +106,8 @@ class EmailAction( BaseAction ):
     try:
       os.remove(cache_file)
       return S_OK()
-    except OSError:
-      return S_ERROR("Could not delete the cache file")
+    except OSError as e:
+      return S_ERROR("Error %s" % repr(e))
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
