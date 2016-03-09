@@ -19,9 +19,9 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
 
   def __init__( self, storageName, parameters ):
     """ """
+    super( GFAL2_SRM2Storage, self ).__init__( storageName, parameters )
     self.log = gLogger.getSubLogger( "GFAL2_SRM2Storage", True )
     self.log.debug( "GFAL2_SRM2Storage.__init__: Initializing object" )
-    super( GFAL2_SRM2Storage, self ).__init__( storageName, parameters )
     self.pluginName = 'GFAL2_SRM2'
 
     # ##
@@ -116,6 +116,9 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     else:
       return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
+
+    # I doubt this can happen... 'srm' is not in the listProtocols,
+    # it is normally, gsiftp, root, etc
     if self.protocolParameters['Protocol'] in listProtocols:
       successful = {}
       failed = {}
@@ -153,7 +156,8 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
     if res['OK']:
       attributeDict = res['Value']
       # 'user.replicas' is the extended attribute we are interested in
-      if 'user.replicas' in attributeDict.keys():
+      # It should always be in it I guess !
+      if 'user.replicas' in attributeDict:
         turl = attributeDict['user.replicas']
         return S_OK( turl )
       else:
@@ -162,7 +166,7 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
         return S_ERROR( errStr )
     else:
       errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: %s' % res['Message']
-      return S_ERROR( errStr )
+      return res
 
 
 

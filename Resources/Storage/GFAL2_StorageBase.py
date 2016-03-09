@@ -133,20 +133,15 @@ class GFAL2_StorageBase( StorageBase ):
       self.gfal2.stat( path )  # If path doesn't exist this will raise an error - otherwise path exists
       self.log.debug( "GFAL2_StorageBase.__singleExists: path exists" )
       return S_OK( True )
-    except gfal2.GError, e:
+    except gfal2.GError as e:
       if e.code == errno.ENOENT:
         errStr = "GFAL2_StorageBase.__singleExists: Path does not exist"
         self.log.debug( errStr )
         return  S_OK( False )
-      if e.code == errno.EPROTONOSUPPORT:
-        errStr = "GFAL2_StorageBase.__singleExists: Protocol not supported"
-        self.log.debug( errStr )
-        return S_ERROR( errStr )
       else:
-        errStr = "GFAL2_StorageBase.__singleExists: Failed to determine existence of path"
-        self.log.debug( errStr, e.message )
-        return S_ERROR( errStr )
-
+        errStr = "GFAL2_StorageBase.__singleExists: Protocol not supported"
+        self.log.debug( "GFAL2_StorageBase.__singleExists: %s" % repr( e ) )
+        return S_ERROR( e.code, e.message )
 
 
 ### methods for manipulating files ###
@@ -203,15 +198,10 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         self.log.debug( "GFAL2_StorageBase.__isSingleFile: Path is not a file" )
         return S_OK( False )
-    except gfal2.GError, e:
-      if e.code == errno.ENOENT:
-        errStr = "GFAL2_StorageBase.__isSingleFile: File does not exist."
-        self.log.debug( errStr, e.message )
-        return S_ERROR( errStr )
-      else:
-        errStr = "GFAL2_StorageBase.__isSingleFile: failed to determine if path %s is a file." % path
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = "GFAL2_StorageBase.__isSingleFile: File does not exist."
+      self.log.debug( "GFAL2_StorageBase.__isSingleFile: %s" % repr( e ) )
+      return S_ERROR( e.code, errStr )
 
 
 
@@ -267,37 +257,37 @@ class GFAL2_StorageBase( StorageBase ):
     if not src_file:
       errStr = 'GFAL2_StorageBase.__putSingleFile: no source defined, please check argument format { destination : localfile }'
       return S_ERROR( errStr )
-    else:
-      # check whether the source is local or on another storage
 
-      # TODO: as soon as self.protocolParameters contains all known protocols to the SE
-      # we wont need this hard coded list below anymore but can implement a function in StorageBase
-      # similar to isNativeURL which returns true if the src_file contains a known protocol.
-      protocols = ['srm', 'root']
-      if any( src_file.startswith( protocol + ':' ) for protocol in protocols ):
-        src_url = src_file
-        if not sourceSize:
-          errStr = "GFAL2_StorageBase.__putFile: For file replication the source file size in bytes must be provided."
-          self.log.error( errStr, src_file )
-          return S_ERROR( errStr )
+    # check whether the source is local or on another storage
+
+    # TODO: as soon as self.protocolParameters contains all known protocols to the SE
+    # we wont need this hard coded list below anymore but can implement a function in StorageBase
+    # similar to isNativeURL which returns true if the src_file contains a known protocol.
+    protocols = ['srm', 'root']
+    if any( src_file.startswith( protocol + ':' ) for protocol in protocols ):
+      src_url = src_file
+      if not sourceSize:
+        errStr = "GFAL2_StorageBase.__putFile: For file replication the source file size in bytes must be provided."
+        self.log.error( errStr, src_file )
+        return S_ERROR( errStr )
 
     # file is local so we can set the protocol and determine source size accordingly
-      else:
-        if not os.path.exists( src_file ) or not os.path.isfile( src_file ):
-          errStr = "GFAL2_StorageBase.__putFile: The local source file does not exist or is a directory"
-          self.log.error( errStr, src_file )
-          return S_ERROR( errStr )
-        if not src_file.startswith( 'file://' ):
-          src_url = 'file://%s' % os.path.abspath( src_file )
-        sourceSize = getSize( src_file )
-        if sourceSize == -1:
-          errStr = "GFAL2_StorageBase.__putFile: Failed to get file size"
-          self.log.error( errStr, src_file )
-          return S_ERROR( errStr )
-        if sourceSize == 0:
-          errStr = "GFAL2_StorageBase.__putFile: Source file size is zero."
-          self.log.error( errStr, src_file )
-          return S_ERROR( errStr )
+    else:
+      if not os.path.isfile( src_file ):
+        errStr = "GFAL2_StorageBase.__putFile: The local source file does not exist or is a directory"
+        self.log.error( errStr, src_file )
+        return S_ERROR( errno.ENOENT, errStr )
+      if not src_file.startswith( 'file://' ):
+        src_url = 'file://%s' % os.path.abspath( src_file )
+      sourceSize = getSize( src_file )
+      if sourceSize == -1:
+        errStr = "GFAL2_StorageBase.__putFile: Failed to get file size"
+        self.log.error( errStr, src_file )
+        return S_ERROR( errStr )
+      if sourceSize == 0:
+        errStr = "GFAL2_StorageBase.__putFile: Source file size is zero."
+        self.log.error( errStr, src_file )
+        return S_ERROR( errStr )
 
 
     # source is OK, creating the destination folder
@@ -306,7 +296,7 @@ class GFAL2_StorageBase( StorageBase ):
     if not res['OK']:
       errStr = "GFAL2_StorageBase.__putSingleFile: Failed to create destination folder %s" % dest_path
       gLogger.error( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      return res
     # folder is created and file exists, setting known copy parameters
     params = self.gfal2.transfer_parameters()
     params.timeout = int( sourceSize / self.MIN_BANDWIDTH + 300 )
@@ -340,12 +330,13 @@ class GFAL2_StorageBase( StorageBase ):
                                                                         Trying to remove destination file" )
           res = self.__removeSingleFile( dest_url )
           if not res['OK']:
-            errStr = 'GFAL2_StorageBase.__putSingleFile: Failed to remove destination file: %s' % res['Message']
-            return S_ERROR( errStr )
+            errStr = "GFAL2_StorageBase.__putSingleFile: Failed to remove destination file"
+            self.log.error( errStr, res['Message'] )
+            return res
           errStr = "GFAL2_StorageBase.__putSingleFile: Source and destination file size don't match. Removed destination file"
           self.log.error( errStr, {sourceSize : destSize} )
-          return S_ERROR( errStr )
-    except gfal2.GError, e:
+          return S_ERROR( "%s srcSize: %s destSize: %s" % ( errStr, sourceSize, destSize ) )
+    except gfal2.GError as e:
       # ##
       # extended error message because otherwise we could only guess what the error could be when we copy
       # from another srm to our srm-SE '''
@@ -406,22 +397,22 @@ class GFAL2_StorageBase( StorageBase ):
     """
     self.log.info( "GFAL2_StorageBase._getSingleFile: Trying to download %s to %s" % ( src_url, dest_file ) )
 
-    if not os.path.exists( os.path.dirname( dest_file ) ):
-      self.log.debug( "GFAL2_StorageBase._getSingleFile: Local directory does not yet exist. Creating it", os.path.dirname( dest_file ) )
+    destDir = os.path.dirname( dest_file )
+
+    if not os.path.exists( destDir ):
+      self.log.debug( "GFAL2_StorageBase._getSingleFile: Local directory does not yet exist. Creating it", destDir )
       try:
-        os.makedirs( os.path.dirname( dest_file ) )
+        os.makedirs( destDir )
       except OSError, error:
         errStr = "GFAL2_StorageBase._getSingleFile: Error while creating the destination folder"
         self.log.exception( errStr, error )
         return S_ERROR( errStr )
 
     res = self.__getSingleFileSize( src_url )
-
-
     if not res['OK']:
       errStr = "GFAL2_StorageBase._getSingleFile: Error while determining file size: %s" % res['Message']
       self.log.error( res['Message'] )
-      return S_ERROR( errStr )
+      return res
 
     remoteSize = res['Value']
 
@@ -458,7 +449,7 @@ class GFAL2_StorageBase( StorageBase ):
           if os.path.exists( dest_file ):
             os.remove( dest_file )
           return S_ERROR( errStr )
-    except gfal2.GError, e:
+    except gfal2.GError as e:
       errStr = 'GFAL2_StorageBase._getSingleFile: Could not copy %s to %s, [%d] %s' % ( src_url, dest, e.code, e.message )
       self.log.error( errStr )
       return S_ERROR( errStr )
@@ -513,20 +504,20 @@ class GFAL2_StorageBase( StorageBase ):
       elif status < 0:
         errStr = 'GFAL2_StorageBase.__removeSingleFile: return status < 0. Error occured.'
         return S_ERROR( errStr )
-    except gfal2.GError, e:
+    except gfal2.GError as e:
       # file doesn't exist so operation was successful
       if e.code == errno.ENOENT:
         errStr = "GFAL2_StorageBase.__removeSingleFile: File does not exist."
-        self.log.debug( "GFAL2_StorageBase.__removeSingleFile: Error while removing file." )
+        self.log.debug( errStr )
         return S_OK( True )
       elif e.code == errno.EISDIR:
         errStr = "GFAL2_StorageBase.__removeSingleFile: path is a directory."
-        self.log.debug( "GFAL2_StorageBase.__removeSingleFile: Path is a directory." )
-        return S_ERROR( errStr )
+        self.log.debug( errStr )
+        return S_ERROR( errno.EISDIR, errStr )
       else:
         errStr = "GFAL2_StorageBase.__removeSingleFile: Failed to remove file."
-        self.log.debug( "GFAL2_StorageBase.__removeSingleFile: Failed to remove file: [%d] %s" % ( e.code, e.message ) )
-        return  S_ERROR( errStr )
+        self.log.debug( "%s: [%d] %s" % ( errStr, e.code, e.message ) )
+        return  S_ERROR( e.code, repr( e ) )
 
 
 
@@ -577,18 +568,18 @@ class GFAL2_StorageBase( StorageBase ):
       return res
 
     if not res['Value']:
-      errStr = 'GFAL2_StorageBase.__getSingleFileSize: path is not a file'
-      self.log.debug( 'GFAL2_StorageBase.__getSingleFileSize: path is not a file' )
+      errStr = "GFAL2_StorageBase.__getSingleFileSize: path is not a file"
+      self.log.debug( errStr )
       return S_ERROR( errStr )
     else:  # if this is true, path is a file
       try:
         statInfo = self.gfal2.stat( path )  # keeps info like size, mode.
         self.log.debug( "GFAL2_StorageBase.__getSingleFileSize: File size successfully determined" )
         return S_OK( long ( statInfo.st_size ) )
-      except gfal2.GError, e:
+      except gfal2.GError as e:
         errStr = "GFAL2_StorageBase.__getSingleFileSize: Failed to determine file size."
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+        self.log.error( errStr, repr( e ) )
+        return S_ERROR( e.code, "%s: %s" % ( errStr, repr( e ) ) )
 
 
 
@@ -636,17 +627,29 @@ class GFAL2_StorageBase( StorageBase ):
     res = self.__getSingleMetadata( path )
 
     if not res['OK']:
-      return res  # res is S_ERROR ( errStr )
+      return res
 
     metaDict = res['Value']
 
     if not metaDict['File']:
       errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
       self.log.error( errStr, path )
-      return S_ERROR( errStr )
+      return S_ERROR( errno.EISDIR, errStr )
 
     return S_OK( metaDict )
 
+
+
+  def _updateMetadataDict( self, _metadataDict, _attributeDict ):
+    """ Updating the metadata dictionary with protocol specific attributes
+      Dummy implementation
+    :param self: self reference
+    :param dict: metadataDict we want add the specific attributes to
+    :param dict: attributeDict contains the special attributes
+
+    """
+
+    return
 
 
   def __getSingleMetadata( self, path ):
@@ -664,33 +667,23 @@ class GFAL2_StorageBase( StorageBase ):
     try:
       statInfo = self.gfal2.stat( path )
 
-    except gfal2.GError, e:
-      if e.code == errno.ENOENT:
-        errStr = "GFAL2_StorageBase.__getSingleMetadata: Path does not exist"
-        self.log.error( errStr, e.message )
-        return S_ERROR ( errStr )
-      else:
-        errStr = "GFAL2_StorageBase.__getSingleMetadata: Failed to retrieve metadata from path."
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = "GFAL2_StorageBase.__getSingleMetadata: Failed to retrieve metadata"
+      self.log.error( errStr, repr( e ) )
+      return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
     metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
 
     if metadataDict['File']:
       if self.checksumType:
         res = self.__getChecksum( path, self.checksumType )
-      if res['OK']:
-        metadataDict['Checksum'] = res['Value']
-      else:
-        metadataDict['Checksum'] = ""
+        metadataDict['Checksum'] = res.get( 'Value', '' )
 
     metadataDict = self._addCommonMetadata( metadataDict )
 
-    res = self._getExtendedAttributes( path )
+    attributeDict = self._getExtendedAttributes( path ).get( 'Value' , {} )
     # add extended attributes to the dict if available
-    if res['OK']:
-      attributeDict = res.get( 'Value', {} )
-      self._updateMetadataDict( metadataDict, attributeDict )
+    self._updateMetadataDict( metadataDict, attributeDict )
 
 
     return S_OK ( metadataDict )
@@ -747,10 +740,10 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         errStr = 'GFAL2_StorageBase.__prestageSingleFile: an error occured while issuing prestaging.'
         return S_ERROR( errStr )
-    except gfal2.GError, e:
-      errStr = "GFAL2_StorageBase.__prestageSingleFile: Error occured while prestaging file %s. [%d] %s" % ( path, e.code, e.message )
-      self.log.error( errStr, e.message )
-      return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = "GFAL2_StorageBase.__prestageSingleFile: Error occured while prestaging file"
+      self.log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+      return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
 
 
@@ -772,7 +765,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     failed = {}
     successful = {}
-    for path, token in urls.items():
+    for path, token in urls.iteritems():
 
       res = self.__prestageSingleFileStatus( path, token )
       if not res['OK']:
@@ -812,19 +805,18 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         errStr = 'GFAL2_StorageBase.__prestageSingleFileStatus: an error occured while checking prestage status.'
         return S_ERROR( errStr )
-    except gfal2.GError, e:
+    except gfal2.GError as e:
       if e.code == errno.EAGAIN:
         self.log.debug( "GFAL2_StorageBase.__prestageSingleFileStatus: File not staged" )
         return S_OK( False )
       elif e.code == errno.ETIMEDOUT:
         errStr = 'GFAL2_StorageBase.__prestageSingleFileStatus: Polling request timed out'
         self.log.debug( errStr )
-        return S_ERROR( errStr )
+        return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
       else:
-        errStr = "GFAL2_StorageBase.__prestageSingleFileStatus: Error occured while polling for prestaging file %s. [%d] %s" \
-                                                                                                % ( path, e.code, e.message )
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+        errStr = "GFAL2_StorageBase.__prestageSingleFileStatus: Error occured while polling for prestaging file"
+        self.log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+        return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
 
 
@@ -880,10 +872,10 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         errStr = 'GFAL2_StorageBase.__pinSingleFile: an error occured while issuing pinning.'
         return S_ERROR( errStr )
-    except gfal2.GError, e:
-      errStr = "GFAL2_StorageBase.__pinSingleFile: Error occured while pinning file %s. [%d] %s" % ( path, e.code, e.message )
-      self.log.error( errStr )
-      return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = "GFAL2_StorageBase.__pinSingleFile: Error occured while pinning file"
+      self.log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+      return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
 
 
@@ -908,7 +900,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     failed = {}
     successful = {}
-    for path, token in urls.items():
+    for path, token in urls.iteritems():
       res = self.__releaseSingleFile( path, token )
 
       if not res['OK']:
@@ -940,10 +932,10 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         errStr = "GFAL2_StorageBase.__releaseSingleFile: Error occured: Return status < 0"
         return S_ERROR( errStr )
-    except gfal2.GError, e:
-      errStr = "GFAL2_StorageBase.__releaseSingleFile: Error occured while releasing file %s. [%d] %s" % ( path, e.code, e.message )
-      self.log.error( errStr )
-      return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = "GFAL2_StorageBase.__releaseSingleFile: Error occured while releasing file"
+      self.log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+      return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
 
 
@@ -965,19 +957,17 @@ class GFAL2_StorageBase( StorageBase ):
     res = self.__isSingleFile( path )
 
     if not res['OK']:
-      errStr = 'GFAL2_StorageBase.__getChecksum: provided path is not a file'
-      self.log.error( errStr, path )
-      return S_ERROR( errStr )
-    else:
-      try:
-        self.log.debug( "GFAL2_StorageBase.__getChecksum: using %s checksum" % checksumType )
-        fileChecksum = self.gfal2.checksum( path, checksumType )
-        return S_OK( fileChecksum )
+      return res
 
-      except gfal2.GError, e:
-        errStr = 'GFAL2_StorageBase.__getChecksum: failed to calculate checksum.'
-        self.log.error( errStr, e.message )
-        return S_ERROR( e.message )
+    try:
+      self.log.debug( "GFAL2_StorageBase.__getChecksum: using %s checksum" % checksumType )
+      fileChecksum = self.gfal2.checksum( path, checksumType )
+      return S_OK( fileChecksum )
+
+    except gfal2.GError as e:
+      errStr = 'GFAL2_StorageBase.__getChecksum: failed to calculate checksum.'
+      self.log.error( errStr, repr( e ) )
+      return S_ERROR( e.code, repr( e ) )
 
 
 
@@ -1088,7 +1078,7 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         errStr = 'GFAL2_StorageBase.__createSingleDirectory: Status return > 0. Error.'
         return S_ERROR( errStr )
-    except gfal2.GError, e:
+    except gfal2.GError as e:
       # error: directory already exists
       if e.code == errno.EEXIST:  # or e.code == errno.EACCES:
         self.log.debug( "GFAL2_StorageBase.__createSingleDirectory: Directory already exists" )
@@ -1096,8 +1086,8 @@ class GFAL2_StorageBase( StorageBase ):
       # any other error: failed to create directory
       else:
         errStr = "GFAL2_StorageBase.__createSingleDirectory: failed to create directory."
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+        self.log.error( errStr, repr( e ) )
+        return S_ERROR( e.code, repr( e ) )
 
 
 
@@ -1151,15 +1141,10 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         self.log.debug( "GFAL2_StorageBase.__isSingleDirectory: Path is not a directory" )
         return S_OK( False )
-    except gfal2.GError, e:
-      if e.code == errno.ENOENT:
-        errStr = "GFAL2_StorageBase.__isSingleDirectory: Directory doesn't exist."
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
-      else:
-        errStr = "GFAL2_StorageBase.__isSingleDirectory: failed to determine if path %s is a directory." % path
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = "GFAL2_StorageBase.__isSingleDirectory: failed to determine if path %s is a directory." % path
+      self.log.error( errStr, repr( e ) )
+      return S_ERROR( e.code, repr( e ) )
 
 
 
@@ -1189,7 +1174,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     directories = []
 
-    for url, isDirectory in res['Value']['Successful'].items():
+    for url, isDirectory in res['Value']['Successful'].iteritems():
       if isDirectory:
         directories.append( url )
       else:
@@ -1227,15 +1212,10 @@ class GFAL2_StorageBase( StorageBase ):
     try:
       listing = self.gfal2.listdir( path )
 
-    except gfal2.GError, e:
-      if e.code == errno.ENOENT:
-        errStr = 'GFAL2_StorageBase.__listSingleDirectory: directory does not exist'
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
-      else:
-        errStr = 'GFAL2_StorageBase.__listSingleDirectory: could not list directory content.'
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = 'GFAL2_StorageBase.__listSingleDirectory: could not list directory content.'
+      self.log.error( errStr, e.message )
+      return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
     files = {}
     subDirs = {}
@@ -1253,6 +1233,8 @@ class GFAL2_StorageBase( StorageBase ):
           files[subPathLFN] = metadataDict
         else:
           self.log.debug( "GFAL2_StorageBase.__listSingleDirectory: found item which is neither file nor directory", fullPath )
+      else:
+        self.log.error( "GFAL2_StorageBase.__listSingleDirectory: could not stat content", "%s %s" % ( fullPath, res['Message'] ) )
 
     return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
 
@@ -1323,13 +1305,13 @@ class GFAL2_StorageBase( StorageBase ):
     if not res['OK']:
       errStr = 'GFAL2_StorageBase.__getSingleDirectory: Failed to find the source directory'
       self.log.debug( res['Message'], src_dir )
-      return S_ERROR( errStr )
+      return res
 
     # res['Value'] is False if it's not a directory
     if not res['Value']:
       errStr = 'GFAL2_StorageBase.__getSingleDirectory: The path provided is not a directory'
       self.log.error( errStr, src_dir )
-      return S_ERROR( errStr )
+      return S_ERROR( errno.ENOTDIR, errStr )
 
     if not os.path.exists( dest_dir ):
       try:
@@ -1342,9 +1324,7 @@ class GFAL2_StorageBase( StorageBase ):
     # Get the remote directory contents
     res = self.__listSingleDirectory( src_dir, internalCall = True )
     if not res['OK']:
-      errStr = 'GFAL2_StorageBase.__getSingleDirectory: Failed to list the source directory.'
-      self.log.error( errStr, src_dir )
-      return S_ERROR( errStr )
+      return res
 
     sFilesDict = res['Value']['Files']
     subDirsDict = res['Value']['SubDirs']
@@ -1354,7 +1334,7 @@ class GFAL2_StorageBase( StorageBase ):
     self.log.debug( 'GFAL2_StorageBase.__getSingleDirectory: Trying to download the %s files' % len( sFilesDict ) )
     for sFile in sFilesDict:
       # Returns S_OK(fileSize) if successful
-      res = self._getSingleFile( sFile, '/'.join( [dest_dir, os.path.basename( sFile ) ] ) )
+      res = self._getSingleFile( sFile, os.path.join( dest_dir, os.path.basename( sFile ) ) )
       if res['OK']:
         filesReceived += 1
         sizeReceived += res['Value']
@@ -1406,7 +1386,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     successful = {}
     failed = {}
-    for destDir, sourceDir in urls.items():
+    for destDir, sourceDir in urls.iteritems():
       if not sourceDir:
         self.log.debug( 'SourceDir: %s' % sourceDir )
         errStr = 'GFAL2_StorageBase.putDirectory: No source directory set, make sure the input format is correct { dest. dir : source dir }'
@@ -1445,7 +1425,7 @@ class GFAL2_StorageBase( StorageBase ):
     if not os.path.isdir( src_directory ):
       errStr = 'GFAL2_StorageBase.__putSingleDirectory: The supplied source directory does not exist or is not a directory.'
       self.log.error( errStr, src_directory )
-      return S_ERROR( errStr )
+      return S_ERROR( errno.ENOENT, errStr )
 
     contents = os.listdir( src_directory )
     allSuccessful = True
@@ -1462,6 +1442,7 @@ class GFAL2_StorageBase( StorageBase ):
         if not res['OK']:
           errStr = 'GFAL2_StorageBase.__putSingleDirectory: Failed to put directory to storage.'
           self.log.error( errStr, res['Message'] )
+          allSuccessful = False
         else:
           if not res['Value']['AllPut']:
             allSuccessful = False
@@ -1539,29 +1520,24 @@ class GFAL2_StorageBase( StorageBase ):
     res = self.__isSingleDirectory( path )
 
     if not res['OK']:
-      errStr = "GFAL2_StorageBase.__removeSingleDirectory: %s" % res['Message']
-      self.log.error( errStr, path )
-      return S_ERROR( errStr )
+      return res
 
     # res['Value'] is True if it is a directory
     if not res['Value']:
       errStr = "GFAL2_StorageBase.__removeSingleDirectory: The supplied path is not a directory."
       self.log.error( errStr, path )
-      return S_ERROR( errStr )
+      return S_ERROR( errno.ENOTDIR, errStr )
 
     # Get the remote directory contents
     res = self.__listSingleDirectory( path, internalCall = True )
     if not res['OK']:
-      errStr = "GFAL2_StorageBase.__removeSingleDirectory: Failed to list the directory."
-      self.log.error( errStr, path )
-      return S_ERROR( errStr )
+      return res
 
     sFilesDict = res['Value']['Files']
     subDirsDict = res['Value']['SubDirs']
 
     removedAllFiles = True
     removedAllDirs = True
-    allRemoved = True
 
     # if recursive, we call ourselves on all the subdirs
     if recursive:
@@ -1574,7 +1550,7 @@ class GFAL2_StorageBase( StorageBase ):
 
         if not res['OK']:
           removedAllDirs = False
-        if res['OK']:
+        else:
           if not res['Value']['AllRemoved']:
             removedAllDirs = False
           filesRemoved += res['Value']['FilesRemoved']
@@ -1593,10 +1569,7 @@ class GFAL2_StorageBase( StorageBase ):
         removedAllFiles = False
 
     # Check whether all the operations were successful
-    if removedAllDirs and removedAllFiles:
-      allRemoved = True
-    else:
-      allRemoved = False
+    allRemoved = removedAllDirs and removedAllFiles
 
 
     # Now we try to remove the directory itself
@@ -1604,14 +1577,15 @@ class GFAL2_StorageBase( StorageBase ):
     # If we wanted to remove recursively and everything was deleted
     # We didn't want to remove recursively but we deleted all the files and there are no subfolders
 
-    if ( recursive and allRemoved ) or ( not recursive and removedAllFiles and ( len( subDirsDict ) == 0 ) ):
+    if ( recursive and allRemoved ) or ( not recursive and removedAllFiles and not subDirsDict ):
       try:
         status = self.gfal2.rmdir( path )
         if status < 0:
           errStr = "GFAL2_StorageBase.__removeSingleDirectory: Error occured while removing directory. Status: %s" % status
           self.log.debug( errStr )
           allRemoved = False
-      except gfal2.GError, e:
+      except gfal2.GError as e:
+        # How would that be possible...
         if e.code == errno.ENOENT:
           errStr = 'GFAL2_StorageBase.__removeSingleDirectory: Files does not exist'
           self.log.debug( errStr )
@@ -1741,7 +1715,7 @@ class GFAL2_StorageBase( StorageBase ):
     if not metadataDict['Directory']:
       errStr = "GFAL2_StorageBase.__getSingleDirectoryMetadata: Provided path is not a directory."
       self.log.error( errStr, path )
-      return S_ERROR( errStr )
+      return S_ERROR( errno.ENOTDIR, errStr )
 
     return S_OK( metadataDict )
 
@@ -1809,13 +1783,8 @@ class GFAL2_StorageBase( StorageBase ):
 
       return S_OK( attributeDict )
     # simple error messages, the method that is calling them adds the source of error.
-    except gfal2.GError, e:
-      if e.code == errno.ENOENT:
-        errStr = 'GFAL2_StorageBase._getExtendedAttributes: Path does not exist.'
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
-      else:
-        errStr = 'GFAL2_StorageBase._getExtendedAttributes: Something went wrong while checking for extended attributes. Please see error log for more information.'
-        self.log.error( errStr, e.message )
-        return S_ERROR( errStr )
+    except gfal2.GError as e:
+      errStr = 'GFAL2_StorageBase._getExtendedAttributes: Something went wrong while checking for extended attributes.'
+      self.log.error( errStr, e.message )
+      return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 

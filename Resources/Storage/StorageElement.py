@@ -30,13 +30,13 @@ class StorageElementCache( object ):
   def __init__( self ):
     self.seCache = DictCache()
 
-  def __call__( self, name, protocols = None, vo = None, hideExceptions = False ):
+  def __call__( self, name, plugins = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
-    argTuple = ( name, protocols, vo )
+    argTuple = ( name, plugins, vo )
     seObj = self.seCache.get( argTuple )
 
     if not seObj:
-      seObj = StorageElementItem( name, protocols, vo, hideExceptions = hideExceptions )
+      seObj = StorageElementItem( name, plugins, vo, hideExceptions = hideExceptions )
       # Add the StorageElement to the cache for 1/2 hour
       self.seCache.add( argTuple, 1800, seObj )
 

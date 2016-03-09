@@ -36,13 +36,14 @@ from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 import os
-PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ] 
 
 class StorageBase( object ):
   """
   .. class:: StorageBase
   
   """
+
+  PROTOCOL_PARAMETERS = [ "Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl" ]
 
   def __init__( self, name, parameterDict ):
         
@@ -69,7 +70,7 @@ class StorageBase( object ):
   def __updateParameters( self, parameterDict ):
     """ setParameters implementation method
     """
-    for item in PROTOCOL_PARAMETERS:
+    for item in self.PROTOCOL_PARAMETERS:
       self.protocolParameters[item] = parameterDict.get( item, '' )
   
   def getParameters( self ):
