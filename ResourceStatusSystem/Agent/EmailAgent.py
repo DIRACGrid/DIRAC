@@ -1,6 +1,8 @@
 ''' EmailAgent
 
-  This agent sends an email every 30 minutes with aggregated actions taken for each site
+  This agent reads a cache file ( cache.json ) which contains the aggregated information
+  of what happened to the elements of each site. After reading the cache file
+  ( by default every 30 minutes ) it sends an email for every site and then clears it.
 
 '''
 
