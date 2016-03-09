@@ -165,7 +165,6 @@ class GFAL2_SRM2Storage( GFAL2_StorageBase ):
         self.log.debug( errStr )
         return S_ERROR( errStr )
     else:
-      errStr = 'GFAL2_SRM2Storage.__getSingleTransportURL: %s' % res['Message']
       return res
 
 

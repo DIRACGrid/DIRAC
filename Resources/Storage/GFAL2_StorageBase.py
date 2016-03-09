@@ -13,6 +13,7 @@ from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -269,7 +270,7 @@ class GFAL2_StorageBase( StorageBase ):
       if not sourceSize:
         errStr = "GFAL2_StorageBase.__putFile: For file replication the source file size in bytes must be provided."
         self.log.error( errStr, src_file )
-        return S_ERROR( errStr )
+        return S_ERROR( errno.EINVAL, errStr )
 
     # file is local so we can set the protocol and determine source size accordingly
     else:
@@ -283,11 +284,11 @@ class GFAL2_StorageBase( StorageBase ):
       if sourceSize == -1:
         errStr = "GFAL2_StorageBase.__putFile: Failed to get file size"
         self.log.error( errStr, src_file )
-        return S_ERROR( errStr )
+        return S_ERROR( DErrno.EFILESIZE, errStr )
       if sourceSize == 0:
         errStr = "GFAL2_StorageBase.__putFile: Source file size is zero."
         self.log.error( errStr, src_file )
-        return S_ERROR( errStr )
+        return S_ERROR( DErrno.EFILESIZE, errStr )
 
 
     # source is OK, creating the destination folder
