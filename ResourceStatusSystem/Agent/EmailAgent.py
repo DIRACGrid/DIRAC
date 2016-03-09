@@ -44,12 +44,10 @@ class EmailAgent( AgentModule ):
   def execute( self ):
 
     #if the file exists and it is not empty
-    if (os.path.isfile(self.cacheFile)) and (os.stat(self.cacheFile).st_size > 0):
-
-      time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if os.path.isfile(self.cacheFile) and (os.stat(self.cacheFile).st_size > 0):
 
       #load the file
-      with open(self.cacheFile) as f:
+      with open(self.cacheFile, 'r') as f:
         new_dict = json.load(f)
 
       #read all the name elements of a site
@@ -66,8 +64,8 @@ class EmailAgent( AgentModule ):
     ''' Returns a string with all the elements that have been banned from a given site.
     '''
 
-    if (os.path.isfile(cache_file)) and (os.stat(cache_file).st_size > 0):
-      with open(cache_file) as f:
+    if os.path.isfile(cache_file) and (os.stat(cache_file).st_size > 0):
+      with open(cache_file, 'r') as f:
         new_dict = json.load(f)
 
       #if the site's name is in the file
@@ -85,8 +83,8 @@ class EmailAgent( AgentModule ):
 
     try:
 
-      if (os.path.isfile(cache_file)) and (os.stat(cache_file).st_size > 0):
-        with open(cache_file) as f:
+      if os.path.isfile(cache_file) and (os.stat(cache_file).st_size > 0):
+        with open(cache_file, 'r') as f:
           new_dict = json.load(f)
 
         #if the site's name is in the file delete it

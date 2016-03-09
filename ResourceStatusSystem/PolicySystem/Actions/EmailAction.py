@@ -74,14 +74,14 @@ class EmailAction( BaseAction ):
 
     try:
 
-      if (not os.path.isfile(cache_file)) or (os.stat(cache_file).st_size == 0):
+      if not os.path.isfile(cache_file) or (os.stat(cache_file).st_size == 0):
         #if the file is empty or it does not exist create it and write the first element of the group
         with open(cache_file, 'w') as f:
           json.dump({ siteName: [record] }, f)
 
       else:
         #otherwise load the file
-        with open(cache_file) as f:
+        with open(cache_file, 'r') as f:
           new_dict = json.load(f)
 
         #if the site's name is in there just append the group
