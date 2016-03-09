@@ -1,4 +1,7 @@
-''' Action that bulk writes data that will be sent by email later using EmailAgent
+''' EmailAction
+
+  This action writes all the necessary data to a cache file ( cache.json ) that
+  will be used later by the EmailAgent in order to send the emails for each site.
 
 '''
 
@@ -14,8 +17,6 @@ from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesF
 __RCSID__ = '$Id:  $'
 
 class EmailAction( BaseAction ):
-  ''' Action that sends an email with the information concerning the status and the policies run.
-  '''
 
   def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
                 clients = None ):
@@ -29,7 +30,7 @@ class EmailAction( BaseAction ):
     self.cacheFile = self.dirac_path + 'work/ResourceStatus/' + 'cache.json'
 
   def run( self ):
-    ''' Checks it has the parameters it needs and tries to send an email to the users that apply.
+    ''' Checks it has the parameters it needs and writes the date to a cache file.
     '''
     # Minor security checks
 
