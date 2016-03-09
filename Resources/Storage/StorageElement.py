@@ -400,28 +400,38 @@ class StorageElementItem( object ):
       return S_ERROR( self.errorReason )
     return S_OK( self.localPlugins )
 
-  def getStorageParameters( self, plugin ):
+  def getStorageParameters( self, plugin = None, protocol = None ):
     """ Get plugin specific options
       :param plugin : plugin we are interested in
+      :param protocol: protocol we are interested in
+
+      Either plugin or protocol can be defined, not both, but at least one of them
     """
 
+    # both set
+    if plugin and protocol:
+      return S_ERROR( errno.EINVAL, "plugin and protocol cannot be set together." )
+    # both None
+    elif not ( plugin or protocol ):
+      return S_ERROR( errno.EINVAL, "plugin and protocol cannot be None together." )
+
     log = self.log.getSubLogger( 'getStorageParameters' )
-    log.verbose( "Obtaining storage parameters for %s plugin %s." % ( self.name,
-                                                                                                                plugin ) )
-    res = self.getPlugins()
-    if not res['OK']:
-      return res
-    availablePlugins = res['Value']
-    if not plugin in availablePlugins:
-      errStr = "Requested plugin not available for SE."
-      log.debug( errStr, '%s for %s' % ( plugin, self.name ) )
-      return S_ERROR( errStr )
+
+    reqStr = "plugin %s" % plugin if plugin else "protocol %s" % protocol
+
+    log.verbose( "Obtaining storage parameters for %s for %s." % ( self.name,
+                                                                   reqStr ) )
+
+
     for storage in self.storages:
       storageParameters = storage.getParameters()
-      if storageParameters['PluginName'] == plugin:
+      if plugin and storageParameters['PluginName'] == plugin:
         return S_OK( storageParameters )
-    errStr = "Requested plugin supported but no object found."
-    log.debug( errStr, "%s for %s" % ( plugin, self.name ) )
+      elif protocol and storageParameters['Protocol'] == protocol:
+        return S_OK( storageParameters )
+
+    errStr = "Requested plugin or protocol not available."
+    log.debug( errStr, "%s for %s" % ( reqStr, self.name ) )
     return S_ERROR( errStr )
 
   def negociateProtocolWithOtherSE( self, sourceSE, protocols = None ):
