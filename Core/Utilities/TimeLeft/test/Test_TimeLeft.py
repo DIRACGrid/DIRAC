@@ -64,7 +64,6 @@ class TimeLeftSuccess( TimeLeftTestCase ):
   def test_getTimeLeft( self ):
 #     for batch, retValue in [( 'LSF', LSF_ReturnValue ), ( 'SGE', SGE_ReturnValue )]:
 
-
     for batch, retValue in [( 'LSF', LSF_ReturnValue )]:
       self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
       rcMock = MagicMock()
@@ -72,8 +71,8 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       self.tl.runCommand = rcMock
 
       tl = TimeLeft()
-#       res = tl.getTimeLeft()
-#       self.assertFalse( res['OK'] )
+      res = tl.getTimeLeft()
+      self.assertEqual( res['OK'], False )
 
       batchSystemName = '%sTimeLeft' % batch
       batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
@@ -89,7 +88,7 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.wallClockLimit = 1000
 
       res = tl.getTimeLeft()
-      self.assertFalse( res['OK'] )
+      self.assertEqual( res['OK'], True )
 
     for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
       self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
