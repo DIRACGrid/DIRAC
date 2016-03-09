@@ -380,7 +380,7 @@ class PluginUtilities( object ):
     for se in ( se1, se2 ):
       if se not in self.seConfig:
         self.seConfig[se] = {}
-        res = StorageElement( se ).getStorageParameters( 'SRM2' )
+        res = StorageElement( se ).getStorageParameters( protocol = 'srm' )
         if res['OK']:
           params = res['Value']
           for item in ( 'Host', 'Path' ):

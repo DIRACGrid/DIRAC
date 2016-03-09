@@ -241,7 +241,7 @@ class FTSRequest( object ):
     :param self: self reference
     :param StorageElement oSE: StorageElement instance
     """
-    res = oSE.getStorageParameters( "SRM2" )
+    res = oSE.getStorageParameters( protocol = 'srm' )
     if not res['OK']:
       return res
     return S_OK( res['Value'].get( 'SpaceToken' ) )

@@ -171,9 +171,12 @@ def _getSEParameters( seName ):
     gLogger.warn( pluginsList['Message'], "SE: %s" % seName )
     return pluginsList
   pluginsList = pluginsList['Value']
-  if 'SRM2' in pluginsList:
-    pluginsList.remove( 'SRM2' )
-    pluginsList.insert( 0, 'SRM2' )
+  # Put the srm capable protocol first, but why doing that is a
+  # mystery that will eventually need to be sorted out...
+  for plugin in ( 'GFAL2_SRM2', 'SRM2' ):
+    if plugin in pluginsList:
+      pluginsList.remove( plugin )
+      pluginsList.insert( 0, plugin )
 
   for plugin in pluginsList:
     seParameters = se.getStorageParameters( plugin )
