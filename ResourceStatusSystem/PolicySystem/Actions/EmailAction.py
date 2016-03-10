@@ -25,8 +25,7 @@ class EmailAction( BaseAction ):
                                          singlePolicyResults, clients )
     self.diracAdmin = DiracAdmin()
 
-    self.default_value = '/opt/dirac/pro/work/ResourceStatus/'
-    self.dirac_path = os.getenv('DIRAC', self.default_value)
+    self.dirac_path = os.getenv('DIRAC')
     self.cacheFile = self.dirac_path + 'work/ResourceStatus/' + 'cache.json'
 
   def run( self ):
