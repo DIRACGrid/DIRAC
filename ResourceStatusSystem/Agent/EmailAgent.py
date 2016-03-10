@@ -56,7 +56,7 @@ class EmailAgent( AgentModule ):
         subject = "RSS actions taken for " + site
         body = self._emailBodyGenerator(new_dict, site)
         self._sendMail(subject, body)
-        self._deleteCacheFile(self.cacheFile)
+        self._deleteCacheFile()
 
     return S_OK()
 
@@ -81,35 +81,12 @@ class EmailAgent( AgentModule ):
     else:
       return S_ERROR("Site dictionary is empty")
 
-  def _removefromJSON(self, cache_file, siteName):
-    ''' Removes a whole site along with its records.
-    '''
-
-    try:
-
-      if os.path.isfile(cache_file) and os.stat(cache_file).st_size:
-        with open(cache_file, 'r') as f:
-          new_dict = json.load(f)
-
-        #if the site's name is in the file delete it
-        if siteName in new_dict:
-          del new_dict[siteName]
-
-          #write the file again with the modified contents
-          with open(cache_file, 'w') as f:
-            json.dump(new_dict, f)
-
-      return S_OK()
-
-    except OSError as e:
-      return S_ERROR("Error %s" % repr(e))
-
-  def _deleteCacheFile(self, cache_file):
+  def _deleteCacheFile(self):
     ''' Deletes the cache file
     '''
 
     try:
-      os.remove(cache_file)
+      os.remove(self.cacheFile)
       return S_OK()
     except OSError as e:
       return S_ERROR("Error %s" % repr(e))

@@ -61,26 +61,26 @@ class EmailAction( BaseAction ):
     time     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     dict    = { 'name': name, 'statusType': statusType, 'status': status, 'time': time, 'previousStatus': previousStatus }
 
-    actionResult = self._addtoJSON(self.cacheFile, siteName, dict)
+    actionResult = self._addtoJSON(siteName, dict)
 
     #returns S_OK() if the record was added successfully using addtoJSON
     return actionResult
 
 
-  def _addtoJSON(self, cache_file, siteName, record):
+  def _addtoJSON(self, siteName, record):
     ''' Adds a record of a banned element to a local JSON file grouped by site name.
     '''
 
     try:
 
-      if not os.path.isfile(cache_file) or (os.stat(cache_file).st_size == 0):
+      if not os.path.isfile(self.cacheFile) or (os.stat(self.cacheFile).st_size == 0):
         #if the file is empty or it does not exist create it and write the first element of the group
-        with open(cache_file, 'w') as f:
+        with open(self.cacheFile, 'w') as f:
           json.dump({ siteName: [record] }, f)
 
       else:
         #otherwise load the file
-        with open(cache_file, 'r') as f:
+        with open(self.cacheFile, 'r') as f:
           new_dict = json.load(f)
 
         #if the site's name is in there just append the group
@@ -91,7 +91,7 @@ class EmailAction( BaseAction ):
           new_dict.update( { siteName: [record] } )
 
         #write the file again with the modified contents
-        with open(cache_file, 'w') as f:
+        with open(self.cacheFile, 'w') as f:
           json.dump(new_dict, f)
 
       return S_OK()
