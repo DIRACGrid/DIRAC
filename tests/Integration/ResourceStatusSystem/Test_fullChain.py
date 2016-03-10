@@ -40,60 +40,27 @@ Script.parseCommandLine()
 import unittest
 
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
 class PDPTestCase( unittest.TestCase ):
   """ PDPTestCase
   """
 
   def setUp( self ):
-    """ test case set up 
+    """ test case set up
     """
 
     gLogger.setLevel( 'DEBUG' )
 
 
   def tearDown( self ):
-    """ clean up 
+    """ clean up
     """
     pass
 
 class PDPDecision_Success( PDPTestCase ):
 
   def test_site( self ):
-
-    pdp = PDP()
-    
-    # empty
-    pdp.setup( None )
-    res = pdp.takeDecision()
-    self.assert_( res['OK'] )
-
-    # site
-    decisionParams = {'element'     : 'Site',
-                      'name'        : 'Site1',
-                      'elementType' : None,
-                      'statusType'  : 'ReadAccess',
-                      'status'      : 'Active',
-                      'reason'      : None,
-                      'tokenOwner'  : None}
-    pdp.setup( decisionParams )
-    res = pdp.takeDecision()
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
-
-    # mySE
-    decisionParams = {'element'     : 'Resource',
-                      'name'        : 'mySE',
-                      'elementType' : 'StorageElement',
-                      'statusType'  : 'ReadAccess',
-                      'status'      : 'Active',
-                      'reason'      : None,
-                      'tokenOwner'  : None}
-    pdp.setup( decisionParams )
-    res = pdp.takeDecision()
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Active' )
 
     # SE1
     decisionParams = {'element'     : 'Resource',
@@ -103,10 +70,13 @@ class PDPDecision_Success( PDPTestCase ):
                       'status'      : 'Active',
                       'reason'      : None,
                       'tokenOwner'  : None}
-    pdp.setup( decisionParams )
-    res = pdp.takeDecision()
-    self.assert_( res['OK'] )
-    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
+
+
+    nn = PEP()
+    ss = nn.enforce(decisionParams)
+    print "---------"
+    print ss
+
 
 ################################################################################
 
