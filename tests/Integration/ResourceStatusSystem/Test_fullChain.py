@@ -40,7 +40,7 @@ Script.parseCommandLine()
 import unittest
 
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 
 class PDPTestCase( unittest.TestCase ):
   """ PDPTestCase
@@ -62,6 +62,39 @@ class PDPDecision_Success( PDPTestCase ):
 
   def test_site( self ):
 
+    pdp = PDP()
+
+    # empty
+    pdp.setup( None )
+    res = pdp.takeDecision()
+    self.assert_( res['OK'] )
+
+    # site
+    decisionParams = {'element'     : 'Site',
+                      'name'        : 'Site1',
+                      'elementType' : None,
+                      'statusType'  : 'ReadAccess',
+                      'status'      : 'Active',
+                      'reason'      : None,
+                      'tokenOwner'  : None}
+    pdp.setup( decisionParams )
+    res = pdp.takeDecision()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
+
+    # mySE
+    decisionParams = {'element'     : 'Resource',
+                      'name'        : 'mySE',
+                      'elementType' : 'StorageElement',
+                      'statusType'  : 'ReadAccess',
+                      'status'      : 'Active',
+                      'reason'      : None,
+                      'tokenOwner'  : None}
+    pdp.setup( decisionParams )
+    res = pdp.takeDecision()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Active' )
+
     # SE1
     decisionParams = {'element'     : 'Resource',
                       'name'        : 'SE1',
@@ -70,13 +103,10 @@ class PDPDecision_Success( PDPTestCase ):
                       'status'      : 'Active',
                       'reason'      : None,
                       'tokenOwner'  : None}
-
-
-    nn = PEP()
-    ss = nn.enforce(decisionParams)
-    print "---------"
-    print ss
-
+    pdp.setup( decisionParams )
+    res = pdp.takeDecision()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
 
 ################################################################################
 
