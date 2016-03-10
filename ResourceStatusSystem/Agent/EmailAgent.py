@@ -52,29 +52,30 @@ class EmailAgent( AgentModule ):
       #read all the name elements of a site
       for site in new_dict:
         subject = "RSS actions taken for " + site
-        body = self._emailBodyGenerator(self.cacheFile, site)
+        body = self._emailBodyGenerator(new_dict, site)
         self._sendMail(subject, body)
         self._removefromJSON(self.cacheFile, site)
 
     return S_OK()
 
 
-  def _emailBodyGenerator(self, cache_file, siteName):
+  def _emailBodyGenerator(self, dict, siteName):
     ''' Returns a string with all the elements that have been banned from a given site.
     '''
 
-    if os.path.isfile(cache_file) and (os.stat(cache_file).st_size > 0):
-      with open(cache_file, 'r') as f:
-        new_dict = json.load(f)
+    if dict:
 
       #if the site's name is in the file
-      if siteName in new_dict:
+      if siteName in dict:
         #read all the name elements of a site
         email_body = ""
-        for data in new_dict[siteName]:
+        for data in dict[siteName]:
           email_body += data['statusType'] + " of " + data['name'] + " has been " + data['status'] + " since " + data['time'] + " (Previous status: " + data['previousStatus'] + ")\n"
 
         return email_body
+
+    else:
+      return S_ERROR("Site dictionary is empty")
 
   def _removefromJSON(self, cache_file, siteName):
     ''' Removes a whole site along with its records.
