@@ -73,7 +73,7 @@ def test_addAndRemove():
   # TEST deleteCacheFile
   # ...............................................................................
 
-  result = action._deleteCacheFile(test_cacheFile)
+  result = agent._deleteCacheFile(test_cacheFile)
   assert result['OK'] == True
   #the file must not be there now
   assert os.path.isfile(test_cacheFile) == False

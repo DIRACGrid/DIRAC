@@ -45,6 +45,10 @@ class EmailAgent( AgentModule ):
     #if the file exists and it is not empty
     if os.path.isfile(self.cacheFile) and (os.stat(self.cacheFile).st_size > 0):
 
+      #rename the file and work with it in order to avoid race condition
+      os.rename(self.cacheFile, self.cacheFile + ".send")
+      self.cacheFile += ".send"
+
       #load the file
       with open(self.cacheFile, 'r') as f:
         new_dict = json.load(f)
@@ -54,7 +58,7 @@ class EmailAgent( AgentModule ):
         subject = "RSS actions taken for " + site
         body = self._emailBodyGenerator(new_dict, site)
         self._sendMail(subject, body)
-        self._removefromJSON(self.cacheFile, site)
+        self._deleteCacheFile(self.cacheFile)
 
     return S_OK()
 
@@ -97,6 +101,16 @@ class EmailAgent( AgentModule ):
 
       return S_OK()
 
+    except OSError as e:
+      return S_ERROR("Error %s" % repr(e))
+
+  def _deleteCacheFile(self, cache_file):
+    ''' Deletes the cache file
+    '''
+
+    try:
+      os.remove(cache_file)
+      return S_OK()
     except OSError as e:
       return S_ERROR("Error %s" % repr(e))
 

@@ -99,15 +99,5 @@ class EmailAction( BaseAction ):
     except ValueError as e:
       return S_ERROR(DErrno.EWF, "Error %s" % repr(e))
 
-  def _deleteCacheFile(self, cache_file):
-    ''' Deletes the cache file
-    '''
-
-    try:
-      os.remove(cache_file)
-      return S_OK()
-    except OSError as e:
-      return S_ERROR("Error %s" % repr(e))
-
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
