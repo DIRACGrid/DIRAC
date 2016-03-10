@@ -9,7 +9,6 @@
 
 import os
 import json
-from datetime import datetime
 from DIRAC                                                       import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                 import AgentModule
 from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration
@@ -28,7 +27,6 @@ class EmailAgent( AgentModule ):
 
     self.default_value = None
     self.dirac_path = None
-    self.dirac_path = None
     self.cacheFile = None
 
   def initialize( self ):
@@ -43,7 +41,7 @@ class EmailAgent( AgentModule ):
   def execute( self ):
 
     #if the file exists and it is not empty
-    if os.path.isfile(self.cacheFile) and (os.stat(self.cacheFile).st_size > 0):
+    if os.path.isfile(self.cacheFile) and os.stat(self.cacheFile).st_size:
 
       #rename the file and work with it in order to avoid race condition
       os.rename(self.cacheFile, self.cacheFile + ".send")
@@ -63,18 +61,20 @@ class EmailAgent( AgentModule ):
     return S_OK()
 
 
-  def _emailBodyGenerator(self, dict, siteName):
+  def _emailBodyGenerator(self, site_dict, siteName):
     ''' Returns a string with all the elements that have been banned from a given site.
     '''
 
-    if dict:
+    if site_dict:
 
       #if the site's name is in the file
-      if siteName in dict:
+      if siteName in site_dict:
         #read all the name elements of a site
         email_body = ""
-        for data in dict[siteName]:
-          email_body += data['statusType'] + " of " + data['name'] + " has been " + data['status'] + " since " + data['time'] + " (Previous status: " + data['previousStatus'] + ")\n"
+        for data in site_dict[siteName]:
+          email_body += data['statusType'] + " of " + data['name'] + " has been " + \
+                        data['status'] + " since " + data['time'] + \
+                        " (Previous status: " + data['previousStatus'] + ")\n"
 
         return email_body
 
@@ -87,7 +87,7 @@ class EmailAgent( AgentModule ):
 
     try:
 
-      if os.path.isfile(cache_file) and (os.stat(cache_file).st_size > 0):
+      if os.path.isfile(cache_file) and os.stat(cache_file).st_size:
         with open(cache_file, 'r') as f:
           new_dict = json.load(f)
 
