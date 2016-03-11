@@ -23,10 +23,8 @@ class EmailAction( BaseAction ):
 
     super( EmailAction, self ).__init__( name, decisionParams, enforcementResult,
                                          singlePolicyResults, clients )
-    self.diracAdmin = DiracAdmin()
 
-    self.dirac_path = os.getenv('DIRAC')
-    self.cacheFile = self.dirac_path + 'work/ResourceStatus/' + 'cache.json'
+    self.cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/' + 'cache.json'
 
   def run( self ):
     ''' Checks it has the parameters it needs and writes the date to a cache file.
