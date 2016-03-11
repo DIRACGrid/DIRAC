@@ -41,11 +41,13 @@ class TestTI(unittest.TestCase):
                            LFN="lfn123",
                            Status="Assigned",
                            FileID=987001,
+                           ErrorCount=9,
                            ),
                       dict(TaskID=124,
                            LFN="lfn124",
                            Status="Processed",
                            FileID=987002,
+                           ErrorCount=8,
                            ),
                       ]
 
@@ -140,6 +142,10 @@ class TestTI(unittest.TestCase):
     self.tri._TransformationInfo__setInputStatus.reset_mock()
     self.tri.setInputDeleted(job)
     self.tri._TransformationInfo__setInputStatus.assert_called_once_with(job, "Deleted")
+
+    self.tri._TransformationInfo__setInputStatus.reset_mock()
+    self.tri.setInputMaxReset(job)
+    self.tri._TransformationInfo__setInputStatus.assert_called_once_with(job, "MaxReset")
 
   def test_setInputStatus(self):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo setInputStatus................."""

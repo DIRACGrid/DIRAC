@@ -40,6 +40,7 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 __RCSID__ = "$Id$"
 
 AGENT_NAME = 'ILCTransformation/DataRecoveryAgent'
+MAXRESET = 10
 
 
 class DataRecoveryAgent(AgentModule):
@@ -142,6 +143,13 @@ class DataRecoveryAgent(AgentModule):
                           Actions=lambda job, tInfo: [job.setInputProcessed(tInfo)]
                           ),
                      ## outputmissing
+                     dict(Message="Output Missing, job Failed, input Assigned, MaxError --> Input MaxReset",
+                          ShortMessage="Max ErrorCount --> Input MaxReset",
+                          Counter=0,
+                          Check=lambda job: job.allFilesMissing(
+                          ) and not job.otherTasks and job.status == 'Failed' and job.fileStatus == "Assigned" and job.inputFileExists and job.errorCount > MAXRESET,
+                          Actions=lambda job, tInfo: [job.setInputMaxReset(tInfo)]
+                          ),
                      dict(Message="Output Missing, job Failed, input Assigned --> Input Unused",
                           ShortMessage="Output Missing --> Input Unused",
                           Counter=0,

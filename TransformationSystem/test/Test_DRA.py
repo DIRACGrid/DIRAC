@@ -431,6 +431,33 @@ class TestDRA(unittest.TestCase):
     testJob.inputFile = "/my/inputfile.lfn"
     testJob.inputFileExists = True
     testJob.fileStatus = "Assigned"
+    testJob.errorCount = 14
+    self.dra.inputFilesProcessed = set()
+    self.dra.checkJob(testJob, tInfoMock)
+    self.assertIn("setInputMaxReset", tInfoMock.method_calls[0])
+    self.assertEqual(self.dra.todo["OtherProductions"][0]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][1]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][2]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][3]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][4]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][5]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][6]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][7]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][8]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 0)
+
+    ### Test MaxReset option for OtherProductions
+    tInfoMock.reset_mock()
+    testJob = JobInfo(jobID=1234567, status="Failed", tID=123, tType="MCSimulation")
+    testJob.outputFiles = ["/my/stupid/file.lfn"]
+    testJob.outputFileStatus = ["Missing"]
+    testJob.otherTasks = False
+    testJob.inputFile = "/my/inputfile.lfn"
+    testJob.inputFileExists = True
+    testJob.fileStatus = "Assigned"
     self.dra.inputFilesProcessed = set()
     self.dra.checkJob(testJob, tInfoMock)
     self.assertIn("setInputUnused", tInfoMock.method_calls[0])
@@ -443,7 +470,7 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][6]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][7]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][8]["Counter"], 1)
-    self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 0)
     self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 0)
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 0)
@@ -471,7 +498,7 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][7]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][8]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 1)
-    self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 0)
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 0)
 
@@ -499,7 +526,7 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][8]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 1)
-    self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 0)
 
     ### Test twelfth option for OtherProductions
@@ -528,7 +555,7 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][9]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
-    self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 0)
+    self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
 
     ### Test thirteenth option for OtherProductions
     tInfoMock.reset_mock()
@@ -555,6 +582,7 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][10]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][13]["Counter"], 1)
 
     ### Test fourteenth option for OtherProductions
     tInfoMock.reset_mock()
@@ -582,6 +610,7 @@ class TestDRA(unittest.TestCase):
     self.assertEqual(self.dra.todo["OtherProductions"][11]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][12]["Counter"], 1)
     self.assertEqual(self.dra.todo["OtherProductions"][13]["Counter"], 1)
+    self.assertEqual(self.dra.todo["OtherProductions"][14]["Counter"], 1)
 
   def test_checkAllJob(self):
     """test for DataRecoveryAgent checkAllJobs ....................................................."""

@@ -39,7 +39,8 @@ class TransformationInfo(object):
       lfn = task['LFN']
       status = task['Status']
       fileID = task['FileID']
-      tasksDict[taskID] = dict(FileID=fileID, LFN=lfn, Status=status)
+      errorCount = task['ErrorCount']
+      tasksDict[taskID] = dict(FileID=fileID, LFN=lfn, Status=status, ErrorCount=errorCount)
 
     return tasksDict
 
@@ -62,6 +63,10 @@ class TransformationInfo(object):
   def setInputUnused(self, job):
     """set the inputfile to unused"""
     self.__setInputStatus(job, "Unused")
+
+  def setInputMaxReset(self, job):
+    """set the inputfile to MaxReset"""
+    self.__setInputStatus(job, "MaxReset")
 
   def setInputProcessed(self, job):
     """set the inputfile to processed"""
