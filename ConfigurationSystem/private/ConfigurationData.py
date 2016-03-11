@@ -20,7 +20,7 @@ class ConfigurationData( object ):
     self.threadingEvent.set()
     self.threadingLock = lr.getLock()
     self.runningThreadsNumber = 0
-    self.compressedConfigurationData = ""
+    self.compressedConfigurationData = None
     self.configurationPath = "/DIRAC/Configuration"
     self.backupsDir = os.path.join( DIRAC.rootPath, "etc", "csbackup" )
     self._isService = False
@@ -54,7 +54,7 @@ class ConfigurationData( object ):
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
-    self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
+    self.compressedConfigurationData = None
 
   def loadFile( self, fileName ):
     try:
@@ -283,6 +283,8 @@ class ConfigurationData( object ):
     self.sync()
 
   def getCompressedData( self ):
+    if self.compressedConfigurationData is None:
+      self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
     return self.compressedConfigurationData
 
   def isMaster( self ):
