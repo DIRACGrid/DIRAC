@@ -11,7 +11,7 @@
 request implementation
 """
 # Disable invalid names warning
-# pylint: disable=C0103
+# pylint: disable=invalid-name
 __RCSID__ = "$Id$"
 
 

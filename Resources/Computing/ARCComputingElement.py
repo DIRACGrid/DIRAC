@@ -225,21 +225,21 @@ class ARCComputingElement( ComputingElement ):
         gLogger.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
         message = "Failed to submit job because "
-        if (result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED) ): #pylint: disable=E1101
+        if (result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED) ): #pylint: disable=no-member
           gLogger.warn( "%s feature not implemented on CE? (weird I know - complain to site admins" % message )
-        if ( result.isSet(arc.SubmissionStatus.NO_SERVICES) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.NO_SERVICES) ): #pylint: disable=no-member
           gLogger.warn( "%s no services are running on CE? (open GGUS ticket to site admins" % message )
-        if ( result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED) ): #pylint: disable=no-member
           gLogger.warn( "%s endpoint was not even queried. (network ..?)" % message )
-        if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED) ): #pylint: disable=no-member
           gLogger.warn( "%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED) ): #pylint: disable=no-member
           gLogger.warn( "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message )
-        if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED) ): #pylint: disable=no-member
           gLogger.warn( "%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message )
-        if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR) ): #pylint: disable=no-member
           gLogger.warn( "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message )
-        if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ): #pylint: disable=E1101
+        if ( result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT) ): #pylint: disable=no-member
           gLogger.warn( "%s some error from the CE - possibly CE problems?" % message )
         gLogger.warn( "%s ... maybe above messages will give a hint." % message )
         break # Boo hoo *sniff*
