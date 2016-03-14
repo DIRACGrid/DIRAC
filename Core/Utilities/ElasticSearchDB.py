@@ -14,6 +14,7 @@ from DIRAC                      import gLogger, S_OK, S_ERROR
 from elasticsearch              import Elasticsearch
 from elasticsearch_dsl          import Search, Q, A
 from elasticsearch.exceptions   import ConnectionError, TransportError
+from elasticsearch              import helpers
 from datetime                   import datetime
 
 class ElasticSearchDB( object ):
@@ -24,7 +25,7 @@ class ElasticSearchDB( object ):
   :param str url: the url to the database for example: el.cern.ch:9200
   :param str gDebugFile: is used to save the debug information to a file
   """
-  
+  __chunk_size = 1000
   __url = ""
   ########################################################################
   def __init__( self, host, port, debug = False ):
@@ -50,6 +51,26 @@ class ElasticSearchDB( object ):
       
     self.__client = Elasticsearch( self.__url )
     self.__tryToConnect()
+  
+  ########################################################################
+  def setClusterName( self, name ):
+    """
+      It is used to set the cluster name
+      
+      :param self: self reference
+      :param str requestName: request name
+    
+    """
+    self.__clusterName = name
+  
+  ########################################################################
+  def getClusterName( self ):
+    """
+    It returns the cluster name
+    
+    :param self: self reference
+    """
+    return self.__clusterName
   
   ########################################################################  
   def query( self, index, query ):
@@ -154,11 +175,28 @@ class ElasticSearchDB( object ):
       result = S_ERROR( e )
     return result
   
-  def deleteIndex(self, indexName):
+  def deleteIndex( self, indexName ):
     """
     :param str indexName the name of the index to be deleted...
     """
-    
+    self.__client.indices.delete( indexName )
+  
+  def index( self, indexName, doc_type, body ):
+    return self.__client.index( index = indexName, doc_type = doc_type, body = body )
+  
+  def bulk_index( self, indexName, doc_type, data ):
+    body = {
+          '_index': indexName,
+          '_type': doc_type,
+          '_source': {}
+      }
+    docs = []
+    for i in data:
+      body['_source'] = i
+      body['_source']['time'] = i['time']
+      docs += [body]
+    return helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
+  
   def getUniqueValue( self, indexName, key, orderBy = False ):
     """
     :param str indexName the name of the index which will be used for the query
