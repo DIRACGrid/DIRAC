@@ -26,12 +26,11 @@ class EmailAgent( AgentModule ):
     self.diracAdmin = DiracAdmin()
     self.default_value = None
     self.cacheFile = None
+    self.cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/cache.json'
 
   def initialize( self ):
     ''' EmailAgent initialization
     '''
-
-    self.cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/' + 'cache.json'
 
     return S_OK()
 
@@ -81,7 +80,6 @@ class EmailAgent( AgentModule ):
   def _deleteCacheFile(self):
     ''' Deletes the cache file
     '''
-
     try:
       os.remove(self.cacheFile)
       return S_OK()

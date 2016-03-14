@@ -1,10 +1,14 @@
 ''' Test_RSS_PolicySystem_EmailAction
 
+    requires a 'work/ResourceStatus/' directory in 'DIRAC' environment variable path
+
     this is pytest!
 '''
 
 import os
+import sys
 import json
+import tempfile
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction import EmailAction
 from DIRAC.ResourceStatusSystem.Agent.EmailAgent                 import EmailAgent
@@ -19,27 +23,35 @@ test_singlePolicyResults = [{'Status': 'Banned', 'Policy': {'command': None, 'na
 action = EmailAction(test_name, test_decisionParams, test_enforcementResult, test_singlePolicyResults)
 agent  = EmailAgent("ResourceStatus/EmailAgent", "ResourceStatus/EmailAgent")
 
-test_cacheFile      = 'test_cache.json'
-test_siteName       = 'LCG.test1234.ch'
-test_status         = 'Banned'
-test_previousStatus = 'Active'
-test_statusType     = 'ReadAccess'
-test_name           = 'SE1'
-test_time           = '2016-03-07 11:28:28'
-test_dict           = {"status": test_status, "previousStatus": test_previousStatus, "statusType": test_statusType, "name": test_name, "time": test_time}
+#The 'DIRAC' path is used by EmailAction's and EmailAgent's functions
+#if 'DIRAC' path does not exists set it to /tmp
+if not os.environ.get('DIRAC'):
+  os.environ['DIRAC'] = tempfile.gettempdir() + "/"
+#if the '/work/ResourceStatus/ subdirectory does not exists create it
+if not os.path.isdir(os.getenv('DIRAC') + 'work/ResourceStatus/'):
+  os.makedirs(os.getenv('DIRAC') + 'work/ResourceStatus/')
+
+test_cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/' + 'cache.json'
+test_siteName                   = 'LCG.test1234.ch'
+test_status                     = 'Banned'
+test_previousStatus             = 'Active'
+test_statusType                 = 'ReadAccess'
+test_name                       = 'SE1'
+test_time                       = '2016-03-07 11:28:28'
+test_dict                       = {"status": test_status, "previousStatus": test_previousStatus, "statusType": test_statusType, "name": test_name, "time": test_time}
 
 def test_addAndRemove():
 
   # TEST addtoJSON
   # ...............................................................................
 
-  result = action._addtoJSON(test_cacheFile, test_siteName, test_dict)
+  result = action._addtoJSON(test_siteName, test_dict)
   #check if there was any errors
   assert result['OK'] == True
   #check if the file is really there
   assert os.path.isfile(test_cacheFile) == True
   #ensure that the file is not empty
-  assert ( os.stat(test_cacheFile).st_size > 0 ) == True
+  assert (os.stat(test_cacheFile).st_size > 0) == True
 
   with open(test_cacheFile) as f:
         loaded_test_dict = json.load(f)
@@ -56,24 +68,13 @@ def test_addAndRemove():
   # TEST emailBodyGenerator
   # ...............................................................................
 
-  result = agent._emailBodyGenerator(test_cacheFile, test_siteName)
+  result = agent._emailBodyGenerator(loaded_test_dict, test_siteName)
   assert result == test_statusType + ' of ' + test_name + ' has been ' + test_status + ' since ' + test_time + ' (Previous status: ' + test_previousStatus + ')\n'
-
-
-  # TEST removefromJSON
-  # ...............................................................................
-
-  result = agent._removefromJSON(test_cacheFile, test_siteName)
-  #check if there was any errors
-  assert result['OK'] == True
-  #ensure that the file now contains only "{}"
-  test_file = open(test_cacheFile, 'r')
-  assert test_file.read() == "{}"
 
   # TEST deleteCacheFile
   # ...............................................................................
 
-  result = agent._deleteCacheFile(test_cacheFile)
+  result = agent._deleteCacheFile()
   assert result['OK'] == True
   #the file must not be there now
   assert os.path.isfile(test_cacheFile) == False
