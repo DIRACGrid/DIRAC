@@ -144,14 +144,20 @@ class ElasticSearchDB( object ):
     :param dict mapping: the configuration of the index.
     
     """
-    result = S_OK( "Index created" )
+    result = None
     fullIndex = self.generateFullIndexName( indexPrefix )  # we have to create the an index in each day...
     try:
       self.log.info( "Create index: ", fullIndex + str( mapping ) )
       self.__client.indices.create( fullIndex, body = mapping )
+      result = S_OK( fullIndex )
     except Exception as e:
       result = S_ERROR( e )
     return result
+  
+  def deleteIndex(self, indexName):
+    """
+    :param str indexName the name of the index to be deleted...
+    """
     
   def getUniqueValue( self, indexName, key, orderBy = False ):
     """
