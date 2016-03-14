@@ -450,50 +450,57 @@ class DirectoryCase( DFCTestCase ):
     self.assert_( nonExistingDir in result["Value"]["Failed"], "listDirectory : %s should be in Failed %s" % ( nonExistingDir, result ) )
 
 
-    # Only admin can change path group
-    resultG = self.dfc.changePathGroup( {parentDir : "toto"} )
-    resultM = self.dfc.changePathMode( {parentDir : 0777} )
-    result = self.dfc.changePathOwner( {parentDir : "toto"} )
+
+    # We do it two times to make sure that
+    # when updating something to the same value
+    # returns a success if it is allowed
+    for attempt in xrange( 2 ):
+      print "Attempt %s" % ( attempt + 1 )
+
+      # Only admin can change path group
+      resultG = self.dfc.changePathGroup( {parentDir : "toto"} )
+      resultM = self.dfc.changePathMode( {parentDir : 0777} )
+      result = self.dfc.changePathOwner( {parentDir : "toto"} )
 
 
-    result2 = self.dfc.getDirectoryMetadata( [parentDir, testDir] )
+      result2 = self.dfc.getDirectoryMetadata( [parentDir, testDir] )
 
-    self.assert_( result["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( resultG["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( resultM["OK"], "changePathMode failed: %s" % result )
-
-
-    self.assert_( result2["OK"], "getDirectoryMetadata failed: %s" % result )
-
-    # Since we were the owner we should have been able to do it in any case, admin or not
-
-    self.assert_( parentDir in resultM["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( parentDir, resultM ) )
-    self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Mode' ), 0777, "parentDir should have mode  %s %s" % ( 0777, result2 ) )
-    self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Mode' ), 0775, "testDir should not have changed %s" % result2 )
+      self.assert_( result["OK"], "changePathOwner failed: %s" % result )
+      self.assert_( resultG["OK"], "changePathOwner failed: %s" % result )
+      self.assert_( resultM["OK"], "changePathMode failed: %s" % result )
 
 
-    if isAdmin:
-      self.assert_( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+      self.assert_( result2["OK"], "getDirectoryMetadata failed: %s" % result )
 
-      self.assert_( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+      # Since we were the owner we should have been able to do it in any case, admin or not
 
-
-    else:
-      self.assert_( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
-
-      self.assert_( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+      self.assert_( parentDir in resultM["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( parentDir, resultM ) )
+      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Mode' ), 0777, "parentDir should have mode  %s %s" % ( 0777, result2 ) )
+      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Mode' ), 0775, "testDir should not have changed %s" % result2 )
 
 
-    # for ROW_COUNT to be okay
-    time.sleep( 1 )
+      if isAdmin:
+        self.assert_( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+
+        self.assert_( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+
+
+      else:
+        self.assert_( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+
+        self.assert_( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+
+
+    # Do it recursively now
+
 
     # Only admin can change path group
     resultM = self.dfc.changePathMode( {parentDir : 0777}, True )

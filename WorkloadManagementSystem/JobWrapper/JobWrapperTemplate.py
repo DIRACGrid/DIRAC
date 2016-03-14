@@ -1,6 +1,11 @@
 #!/usr/bin/env python
+""" This template will become the job wrapper that's actually executed
+"""
+
 import sys
 import json
+import ast
+import os
 
 sitePython = "@SITEPYTHON@"
 if sitePython:
@@ -13,7 +18,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 
 from DIRAC                                                  import gLogger
 
-import os
 
 os.umask( 0o22 )
 
@@ -138,10 +142,10 @@ def execute( arguments ):
 ##########################################################
 ret = -3
 try:
-  jobArgs = None
   jsonFileName = os.path.realpath( __file__ ) + '.json'
   with open( jsonFileName, 'r' ) as f:
-    jobArgs = json.loads( f.readlines()[0] )
+    jobArgsFromJSON = json.loads( f.readlines()[0] )
+  jobArgs = ast.literal_eval(jobArgsFromJSON)
   if not isinstance(jobArgs, dict):
     raise TypeError, "jobArgs is of type %s" %type(jobArgs)
   if 'Job' not in jobArgs:
