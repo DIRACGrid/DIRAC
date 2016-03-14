@@ -57,26 +57,6 @@ class ElasticDB( ElasticSearchDB ):
     self.log.info( "Port:           " + str( self.__dbPort ) )
     self.log.info( "ClusterName:    " + self.__clusterName )
     self.log.info( "==================================================" )
-
-  ########################################################################
-  def setClusterName( self, name ):
-    """
-      It is used to set the cluster name
-      
-      :param self: self reference
-      :param str requestName: request name
-    
-    """
-    self.__clusterName = name
-  
-  ########################################################################
-  def getClusterName( self ):
-    """
-    It returns the cluster name
-    
-    :param self: self reference
-    """
-    return self.__clusterName
   
   ########################################################################
   def setDbHost( self, hostName ):
