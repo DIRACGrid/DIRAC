@@ -74,6 +74,9 @@ if not res['OK']:
   gLogger.error( "Failed to get client proxy information.", res['Message'] )
   DIRAC.exit( 2 )
 proxyInfo = res['Value']
+if proxyInfo['secondsLeft'] == 0:
+  gLogger.error( "Proxy expired" )
+  DIRAC.exit( 2 )
 username = proxyInfo['username']
 vo = ''
 if 'group' in proxyInfo:
