@@ -27,13 +27,10 @@
 
 from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base                           import Script
-from DIRAC.ResourceStatusSystem.Client         import ResourceManagementClient
 from DIRAC.Core.Utilities                      import Time
-from DIRAC.Core.Utilities.PrettyPrint          import printTable 
-import re
-import datetime
+from DIRAC.Core.Utilities.PrettyPrint          import printTable
 from DIRAC.ResourceStatusSystem.Utilities      import Utils
-ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
+import datetime
 
 
 __RCSID__ = '$Id:$'
@@ -47,7 +44,7 @@ def registerSwitches():
     command line interface.
   '''
 
-  switches = ( 
+  switches = (
     ( 'downtimeID=', 'ID of the downtime' ),
     ( 'element=', 'Element (Site, Service) affected by the downtime' ),
     ( 'name=', 'Name of the element' ),
@@ -219,7 +216,7 @@ def confirm( query, matches ):
   subLogger.notice( "\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % ( query, matches ) )
 
 def tabularPrint( table ):
-  
+
   columns_names = table[0].keys()
   records = []
   for row in table:
@@ -230,12 +227,12 @@ def tabularPrint( table ):
       elif v is None:
         record.append( '' )
       else:
-        record.append( v )  
-    records.append( record )    
+        record.append( v )
+    records.append( record )
 
-  output = printTable( columns_names, records, numbering = False, 
+  output = printTable( columns_names, records, numbering = False,
                        columnSeparator = " | ", printOut = False )
-  
+
   subLogger.notice( output )
 
 #...............................................................................
@@ -362,6 +359,7 @@ if __name__ == "__main__":
   registerSwitches()
   registerUsageMessage()
   args, switchDict = parseSwitches()
+  ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ),'ResourceManagementClient')
 
   #Run script
   run( args, switchDict )
