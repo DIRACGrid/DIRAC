@@ -13,6 +13,7 @@ from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+from ordered_set import OrderedSet
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
@@ -299,7 +300,7 @@ class TaskQueueDB( DB ):
     for field in multiValueDefFields:
       if field not in tqDefDict:
         continue
-      values = List.uniqueElements( [ value for value in tqDefDict[ field ] if value.strip() ] )
+      values = list(OrderedSet( [ value for value in tqDefDict[ field ] if value.strip() ] ))
       if not values:
         continue
       cmd = "INSERT INTO `tq_TQTo%s` ( TQId, Value ) VALUES " % field
@@ -438,7 +439,7 @@ class TaskQueueDB( DB ):
       if field in tqDefDict and tqDefDict[ field ]:
         firstQuery = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId" % ( tableName, tableName, tableName )
         grouping = "GROUP BY %s.TQId" % tableName
-        valuesList = List.uniqueElements( [ value.strip() for value in tqDefDict[ field ] if value.strip() ] )
+        valuesList = list(OrderedSet( [ value.strip() for value in tqDefDict[ field ] if value.strip() ] ))
         numValues = len( valuesList )
         secondQuery = "%s AND %s.Value in (%s)" % ( firstQuery, tableName,
                                                         ",".join( [ "%s" % str( value ) for value in valuesList ] ) )

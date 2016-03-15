@@ -6,9 +6,9 @@ __RCSID__ = "$Id$"
 import os, glob, tarfile
 
 from DIRAC.Resources.Catalog.PoolXMLCatalog           import PoolXMLCatalog
-from DIRAC.Core.Utilities.List                        import uniqueElements
 from DIRAC.Core.Utilities.File                        import makeGuid
 from DIRAC                                            import S_OK, S_ERROR, gLogger
+from ordered_set                                      import OrderedSet
 
 #############################################################################
 
@@ -120,12 +120,12 @@ def _getPoolCatalogs( directory = '' ):
             tarFile.extract( member, directory )
             poolCatalogList.append( os.path.join( directory, member.name ) )
         except Exception, x :
-          gLogger.error( 'Could not untar with exception', 
+          gLogger.error( 'Could not untar with exception',
                          ' %s: %s' % ( fname, str( x ) ) )
       else:
         poolCatalogList.append( fname )
 
-  poolCatalogList = uniqueElements( poolCatalogList )
+  poolCatalogList = list(OrderedSet( poolCatalogList ))
 
   #Now have list of all XML files but some may not be Pool XML catalogs...
   finalCatList = []

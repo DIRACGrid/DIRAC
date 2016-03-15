@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from ordered_set import OrderedSet
 
 class ConfigurationData( object ):
 
@@ -53,7 +54,7 @@ class ConfigurationData( object ):
                                         disableDangerZones = True )
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
-    self.remoteServerList = List.uniqueElements( self.remoteServerList )
+    self.remoteServerList = list(OrderedSet( self.remoteServerList ))
     self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
 
   def loadFile( self, fileName ):

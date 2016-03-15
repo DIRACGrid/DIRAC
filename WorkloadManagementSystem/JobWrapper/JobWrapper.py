@@ -36,6 +36,8 @@ from DIRAC.Core.Utilities                                           import DEnco
 from DIRAC.Core.Utilities                                           import Time
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
+from ordered_set                                                    import OrderedSet
+
 import DIRAC
 
 import os
@@ -837,7 +839,7 @@ class JobWrapper( object ):
         nonlfnList.append( out )
 
     # Check whether list of outputData has a globbable pattern
-    globbedOutputList = List.uniqueElements( getGlobbedFiles( nonlfnList ) )
+    globbedOutputList = list(OrderedSet( getGlobbedFiles( nonlfnList ) ))
     if not globbedOutputList == nonlfnList and globbedOutputList:
       self.log.info( 'Found a pattern in the output data file list, files to upload are:',
                      ', '.join( globbedOutputList ) )

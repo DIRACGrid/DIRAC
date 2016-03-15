@@ -3,7 +3,7 @@
 # Date: 2011/01/17 08:17:58
 ########################################################################
 
-""".. module:: ListTestCase 
+""".. module:: ListTestCase
 
 Test cases for DIRAC.Core.Utilities.List module.
 
@@ -19,6 +19,7 @@ import unittest
 
 # sut
 from  DIRAC.Core.Utilities import List
+from ordered_set import OrderedSet
 
 ########################################################################
 class ListTestCase( unittest.TestCase ):
@@ -30,10 +31,10 @@ class ListTestCase( unittest.TestCase ):
     """ uniqueElements tests """
     # empty list
     aList = []
-    self.assertEqual( List.uniqueElements(aList), [])
+    self.assertEqual( list(OrderedSet(aList) ), [])
     # redundant elements
     aList = [1, 1, 2, 3]
-    self.assertEqual( List.uniqueElements( aList ), [1, 2, 3] )
+    self.assertEqual( list(OrderedSet( aList ) ), [1, 2, 3] )
 
   def testAppendUnique( self ):
     """ appendUnique tests """
@@ -56,13 +57,13 @@ class ListTestCase( unittest.TestCase ):
     aList = []
     randList = List.randomize(aList)
     self.assertEqual( randList, [] )
-    # non empty 
+    # non empty
     aList = [1, 2, 3]
     randList = List.randomize( aList )
     self.assertEqual( len(aList), len(randList) )
-    for x in aList: 
+    for x in aList:
       self.assertEqual(x in randList, True)
-    for x in randList: 
+    for x in randList:
       self.assertEqual(x in aList, True)
 
   def testPop( self ):
@@ -104,7 +105,7 @@ class ListTestCase( unittest.TestCase ):
     aStr = List.intListToString( aList )
     self.assertEqual( aStr, "1,2,3")
     # mixture elements (should it raise an exception???)
-    aList = ["1", 2, 3] 
+    aList = ["1", 2, 3]
     aStr = List.intListToString( aList )
     self.assertEqual( aStr, "1,2,3")
 
@@ -135,12 +136,12 @@ class ListTestCase( unittest.TestCase ):
     # negative number of chunks
     try:
       List.breakListIntoChunks([], -2)
-    except Exception, val: 
+    except Exception, val:
       self.assertEqual( isinstance(val, RuntimeError), True )
       self.assertEqual( str(val), "chunkSize cannot be less than 1" )
-      
+
     # normal behaviour
-    aList = range(10) 
+    aList = range(10)
     self.assertEqual( List.breakListIntoChunks(aList, 5), [ [0, 1, 2, 3, 4], [5, 6, 7, 8, 9] ] )
     # and once again this time with a rest
     aList = range(10)
@@ -153,5 +154,5 @@ class ListTestCase( unittest.TestCase ):
 ## test suite execution
 if __name__ == "__main__":
   TESTLOADER = unittest.TestLoader()
-  SUITE = TESTLOADER.loadTestsFromTestCase( ListTestCase )      
+  SUITE = TESTLOADER.loadTestsFromTestCase( ListTestCase )
   unittest.TextTestRunner(verbosity=3).run( SUITE )

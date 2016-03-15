@@ -19,9 +19,9 @@ from DIRAC                                               import gLogger
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
-from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks
+from ordered_set                                         import OrderedSet
 
 
 __RCSID__ = "$Id$"
@@ -321,12 +321,12 @@ class SSHComputingElement( ComputingElement ):
     ssh = SSH( host = host, parameters = self.ceParameters )
 
     # Make remote directories
-    dirTuple = tuple ( uniqueElements( [self.sharedArea,
+    dirTuple = tuple ( list(OrderedSet( [self.sharedArea,
                                         self.executableArea,
                                         self.infoArea,
                                         self.batchOutput,
                                         self.batchError,
-                                        self.workArea] ) )
+                                        self.workArea] ) ))
     nDirs = len( dirTuple )
     cmd = 'mkdir -p %s; '*nDirs % dirTuple
     cmd = "bash -c '%s'" % cmd

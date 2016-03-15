@@ -6,7 +6,8 @@ from distutils.version import LooseVersion
 
 from DIRAC                                              import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
+from DIRAC.Core.Utilities.List                          import fromChar
+from ordered_set                                        import OrderedSet
 
 
 gBaseResourcesSection = "/Resources"
@@ -252,7 +253,7 @@ def getCompatiblePlatforms( originalPlatforms ):
     if tmpList:
       resultList += tmpList
 
-  return S_OK( uniqueElements( resultList ) )
+  return S_OK( list(OrderedSet(resultList) ) )
 
 def getDIRACPlatform( OS ):
   """ Get standard DIRAC platform(s) compatible with the argument.

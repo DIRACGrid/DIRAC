@@ -11,6 +11,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, LockRing
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from ordered_set import OrderedSet
 
 def _updateFromRemoteLocation( serviceClient ):
   gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )
@@ -147,10 +148,10 @@ class Refresher( threading.Thread ):
     else:
       initialServerList = gConfigurationData.getServers()
       gLogger.debug( "Refreshing from list %s" % str( initialServerList ) )
-      
+
     # If no servers in the initial list, we are supposed to use the local configuration only
     if not initialServerList:
-      return S_OK()    
+      return S_OK()
 
     randomServerList = List.randomize( initialServerList )
     gLogger.debug( "Randomized server list is %s" % ", ".join( randomServerList ) )
@@ -168,7 +169,7 @@ class Refresher( threading.Thread ):
         gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
         if dRetVal[ 'Message' ].find( "Insane environment" ) > -1:
           break
-    return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList ) ) )
+    return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( list(OrderedSet( updatingErrorsList ) )) )
 
   def daemonize( self ):
     self.setDaemon( 1 )

@@ -38,12 +38,12 @@ from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
 from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                          import shellCall
-from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
 from DIRAC.Interfaces.API.Dirac                               import Dirac
 from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
+from ordered_set                                              import OrderedSet
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
@@ -1071,7 +1071,7 @@ class Job( API ):
       if paramsDict.has_key( 'InputSandbox' ):
         currentFiles = paramsDict['InputSandbox']['value']
         finalInputSandbox = currentFiles + ';' + extraFiles
-        uniqueInputSandbox = uniqueElements( finalInputSandbox.split( ';' ) )
+        uniqueInputSandbox = list(OrderedSet( finalInputSandbox.split( ';' ) ) )
         paramsDict['InputSandbox']['value'] = ';'.join( uniqueInputSandbox )
         self.log.verbose( 'Final unique Input Sandbox %s' % ( ';'.join( uniqueInputSandbox ) ) )
       else:
@@ -1084,7 +1084,7 @@ class Job( API ):
       if paramsDict.has_key( 'OutputSandbox' ):
         currentFiles = paramsDict['OutputSandbox']['value']
         finalOutputSandbox = currentFiles + ';' + extraFiles
-        uniqueOutputSandbox = uniqueElements( finalOutputSandbox.split( ';' ) )
+        uniqueOutputSandbox = list(OrderedSet( finalOutputSandbox.split( ';' ) ) )
         paramsDict['OutputSandbox']['value'] = ';'.join( uniqueOutputSandbox )
         self.log.verbose( 'Final unique Output Sandbox %s' % ( ';'.join( uniqueOutputSandbox ) ) )
       else:
@@ -1099,7 +1099,7 @@ class Job( API ):
         finalInputData = extraFiles
         if currentFiles:
           finalInputData = currentFiles + ';' + extraFiles
-        uniqueInputData = uniqueElements( finalInputData.split( ';' ) )
+        uniqueInputData = list(OrderedSet( finalInputData.split( ';' ) ) )
         paramsDict['InputData']['value'] = ';'.join( uniqueInputData )
         self.log.verbose( 'Final unique Input Data %s' % ( ';'.join( uniqueInputData ) ) )
       else:
