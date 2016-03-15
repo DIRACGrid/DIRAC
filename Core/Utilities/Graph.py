@@ -21,7 +21,7 @@ __RCSID__ = "$Id$"
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/09/27 07:22:23
 # @brief Definition of Graph class.
-# pylint: disable=E1101
+# pylint: disable=no-member
 
 class DynamicProps( type ):
   """

@@ -1,3 +1,5 @@
+#FIXME: to be bring back to life
+
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
@@ -220,7 +222,7 @@ class FileCase( FileCatalogDBTestCase ):
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
                        testFile, "exists( testFile : 1000) should be the same lfn %s" % result )
-    
+
     result = self.db.exists( {testFile:{'GUID' : '1000', 'PFN' : 'blabla'}} , credDict )
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'].get( 'Successful', {} ).get( testFile ),
@@ -493,48 +495,53 @@ class DirectoryCase( FileCatalogDBTestCase ):
 
 
 
+    # We do it two times to make sure that
+    # when updating something to the same value
+    # returns a success if it is allowed
+    for attempt in xrange( 2 ):
+      print "Attempt %s" % ( attempt + 1 )
 
-    # Only admin can change path group
-    resultM = self.db.changePathMode( {parentDir : 0777}, credDict )
-    result = self.db.changePathOwner( {parentDir : "toto"}, credDict )
-    resultG = self.db.changePathGroup( {parentDir : "toto"}, credDict )
+      # Only admin can change path group
+      resultM = self.db.changePathMode( {parentDir : 0777}, credDict )
+      result = self.db.changePathOwner( {parentDir : "toto"}, credDict )
+      resultG = self.db.changePathGroup( {parentDir : "toto"}, credDict )
 
-    result2 = self.db.getDirectoryMetadata( [parentDir, testDir], credDict )
+      result2 = self.db.getDirectoryMetadata( [parentDir, testDir], credDict )
 
-    self.assert_( result["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( resultG["OK"], "changePathOwner failed: %s" % result )
-    self.assert_( resultM["OK"], "changePathMode failed: %s" % result )
-
-
-    self.assert_( result2["OK"], "getDirectoryMetadata failed: %s" % result )
-
-    # Since we were the owner we should have been able to do it in any case, admin or not
-
-    self.assert_( parentDir in resultM["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( parentDir, resultM ) )
-    self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Mode' ), 0777, "parentDir should have mode  %s %s" % ( 0777, result2 ) )
-    self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Mode' ), 0775, "testDir should not have changed %s" % result2 )
+      self.assert_( result["OK"], "changePathOwner failed: %s" % result )
+      self.assert_( resultG["OK"], "changePathOwner failed: %s" % result )
+      self.assert_( resultM["OK"], "changePathMode failed: %s" % result )
 
 
-    if isAdmin:
-      self.assert_( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+      self.assert_( result2["OK"], "getDirectoryMetadata failed: %s" % result )
 
-      self.assert_( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
-      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+      # Since we were the owner we should have been able to do it in any case, admin or not
+
+      self.assert_( parentDir in resultM["Value"]["Successful"], "changePathMode : %s should be in Successful %s" % ( parentDir, resultM ) )
+      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Mode' ), 0777, "parentDir should have mode  %s %s" % ( 0777, result2 ) )
+      self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Mode' ), 0775, "testDir should not have changed %s" % result2 )
 
 
-    else:
-      # depends on the policy manager so I comment
-#       self.assert_( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
-#       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
-#       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+      if isAdmin:
+        self.assert_( parentDir in result["Value"]["Successful"], "changePathOwner : %s should be in Successful %s" % ( parentDir, result ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
 
-#       self.assert_( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
-#       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
-#       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
-      pass
+        self.assert_( parentDir in resultG["Value"]["Successful"], "changePathGroup : %s should be in Successful %s" % ( parentDir, resultG ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), 'toto', "parentDir should belong to  %s %s" % ( proxyUser, result2 ) )
+        self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+
+
+      else:
+        # depends on the policy manager so I comment
+  #       self.assert_( parentDir in result["Value"]["Failed"], "changePathOwner : %s should be in Failed %s" % ( parentDir, result ) )
+  #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'Owner' ), proxyUser, "parentDir should not have changed %s" % result2 )
+  #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'Owner' ), proxyUser, "testDir should not have changed %s" % result2 )
+
+  #       self.assert_( parentDir in resultG["Value"]["Failed"], "changePathGroup : %s should be in Failed %s" % ( parentDir, resultG ) )
+  #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( parentDir, {} ).get( 'OwnerGroup' ), proxyGroup, "parentDir should not have changed %s" % result2 )
+  #       self.assertEqual( result2['Value'].get( 'Successful', {} ).get( testDir, {} ).get( 'OwnerGroup' ), proxyGroup, "testDir should not have changed %s" % result2 )
+        pass
 
 
     # Only admin can change path group
@@ -600,7 +607,7 @@ class DirectoryCase( FileCatalogDBTestCase ):
       pathToRemove.append( startDir )
 
     pathToRemove.reverse()
-    
+
     for toRemove in pathToRemove:
       result = self.db.removeDirectory( toRemove, credDict )
       self.assert_( result["OK"], "removeDirectory failed: %s" % result )
@@ -625,7 +632,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
         and return the tuple (files, size) for a given
         directory and a se
     """
-    
+
     val = sizeDict[dirName]['PhysicalSize'][seName]
     files = val['Files']
     size = val['Size']
@@ -647,14 +654,14 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
         and calculate it, compare the results, and then return
         the values
     """
-    
-    
+
+
     retTable = self.db.getDirectorySize( dirList, True, False, credDict )
     retCalc = self.db.getDirectorySize( dirList, True, True, credDict )
 
     self.assert_( retTable["OK"] )
     self.assert_( retCalc["OK"] )
-    
+
 
     succTable = retTable['Value']['Successful']
     succCalc = retCalc['Value']['Successful']
@@ -749,8 +756,8 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     self.assertEqual( d1s2 , ( 2, f1Size + f2Size ), "Unexpected size %s, expected %s" % ( d1s2, ( 2, f1Size + f2Size ) ) )
     self.assertEqual( d1s3 , ( 1, f2Size ), "Unexpected size %s, expected %s" % ( d1s3, ( 1, f2Size ) ) )
     self.assertEqual( d1l , ( 2, f1Size + f2Size ), "Unexpected size %s, expected %s" % ( d1l, ( 2, f1Size + f2Size ) ) )
-    
-    
+
+
     ret = self.db.removeFile( [f1], credDict )
     self.assert_( ret['OK'] )
 
@@ -791,7 +798,7 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     self.assertEqual( d1s2 , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1s2, ( 0, 0 ) ) )
     self.assertEqual( d1s3 , ( 1, f2Size ), "Unexpected size %s, expected %s" % ( d1s3, ( 1, f2Size ) ) )
     self.assertEqual( d1l , ( 1, f2Size ), "Unexpected size %s, expected %s" % ( d1l, ( 1, f2Size ) ) )
-    
+
 
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
                                          'SE': 'se1' ,
@@ -981,10 +988,10 @@ class DirectoryUsageCase ( FileCatalogDBTestCase ):
     val = ret['Value']['Successful']
     d1l = self.getLogicalSize( val, d1 )
     self.assertEqual( d1l , ( 0, 0 ), "Unexpected size %s, expected %s" % ( d1l, ( 0, 0 ) ) )
-    
-    
+
+
     # Try removing a replica from a non existing SE
-    
+
     ret = self.db.addFile( { f1: { 'PFN': 'f1se1',
                                          'SE': 'se1' ,
                                          'Size':f1Size,
@@ -1011,7 +1018,7 @@ if __name__ == '__main__':
   managerTypes = MANAGER_TO_TEST.keys()
   all_combinations = list( itertools.product( *MANAGER_TO_TEST.values() ) )
   numberOfManager = len( managerTypes )
-  
+
 
 
   for setup in all_combinations:
@@ -1048,7 +1055,3 @@ if __name__ == '__main__':
 
 
     testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
-
-
-
-

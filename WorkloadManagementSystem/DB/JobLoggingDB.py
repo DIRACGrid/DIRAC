@@ -62,7 +62,7 @@ class JobLoggingDB( DB ):
           time_order = round( epoc, 3 )
         elif isinstance( date, Time._dateTimeType ):
           _date = date
-          epoc = time.mktime( _date.timetuple() ) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER #pylint: disable=E1101
+          epoc = time.mktime( _date.timetuple() ) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER #pylint: disable=no-member
           time_order = round( epoc, 3 )
         else:
           self.gLogger.error( 'Incorrect date for the logging record' )

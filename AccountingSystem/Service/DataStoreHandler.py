@@ -39,7 +39,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.registerType( setup, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ) #pylint: disable=E1121
+      retVal = self.__acDB.registerType( setup, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength ) #pylint: disable=too-many-function-args
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -57,7 +57,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.changeBucketsLength( setup, typeName, bucketsLength ) #pylint: disable=E1121
+      retVal = self.__acDB.changeBucketsLength( setup, typeName, bucketsLength ) #pylint: disable=too-many-function-args
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -75,7 +75,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.regenerateBuckets( setup, typeName ) #pylint: disable=E1121
+      retVal = self.__acDB.regenerateBuckets( setup, typeName ) #pylint: disable=too-many-function-args
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -101,7 +101,7 @@ class DataStoreHandler( RequestHandler ):
       return retVal
     errorsList = []
     for setup in retVal[ 'Value' ]:
-      retVal = self.__acDB.deleteType( setup, typeName ) #pylint: disable=E1121
+      retVal = self.__acDB.deleteType( setup, typeName ) #pylint: disable=too-many-function-args
       if not retVal[ 'OK' ]:
         errorsList.append( retVal[ 'Message' ] )
     if errorsList:
@@ -116,7 +116,7 @@ class DataStoreHandler( RequestHandler ):
     setup = self.serviceInfoDict[ 'clientSetup' ]
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return self.__acDB.insertRecordThroughQueue( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=E1121
+    return self.__acDB.insertRecordThroughQueue( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=too-many-function-args
 
   types_commitRegisters = [ list ]
   def export_commitRegisters( self, entriesList ):
@@ -156,7 +156,7 @@ class DataStoreHandler( RequestHandler ):
     setup = self.serviceInfoDict[ 'clientSetup' ]
     startTime = int( Time.toEpoch( startTime ) )
     endTime = int( Time.toEpoch( endTime ) )
-    return self.__acDB.deleteRecord( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=E1121
+    return self.__acDB.deleteRecord( setup, typeName, startTime, endTime, valuesList ) #pylint: disable=too-many-function-args
 
   types_removeRegisters = [ list ]
   def export_removeRegisters( self, entriesList ):
@@ -176,7 +176,7 @@ class DataStoreHandler( RequestHandler ):
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
       record = entry[3]
-      result = self.__acDB.deleteRecord( setup, entry[0], startTime, endTime, record ) #pylint: disable=E1121
+      result = self.__acDB.deleteRecord( setup, entry[0], startTime, endTime, record ) #pylint: disable=too-many-function-args
       if not result[ 'OK' ]:
         return S_OK( ok )
       ok += 1

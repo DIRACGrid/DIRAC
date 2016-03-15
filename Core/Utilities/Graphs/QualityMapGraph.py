@@ -68,7 +68,7 @@ class QualityMapGraph( PlotBase ):
     #self.cmap = cm.RdYlGn
     self.norms = normalize( 0, 100 )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
-    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=E1101
+    mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
     def get_alpha( *args, **kw ):
       return 1.0
     mapper.get_alpha = get_alpha
@@ -147,7 +147,7 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
-    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=E1101
+    cb = ColorbarBase( cax, cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
     cb.draw_all()
     #cb = self.ax.colorbar( self.mapper, format="%d%%",
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )

@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 """  This constitues the base class for the backends of the logger
 """
 
-class BaseBackend:
+class BaseBackend(object):
 
   _charData = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   _showCallingFrame = True

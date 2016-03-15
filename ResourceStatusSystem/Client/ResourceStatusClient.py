@@ -101,7 +101,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     return self._query( 'insert', locals() )
   def updateStatusElement( self, element, tableType, name, statusType, status,
                            elementType, reason, dateEffective, lastCheckTime,
@@ -142,7 +142,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     return self._query( 'update', locals() )
   def selectStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -184,7 +184,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     return self._query( 'select', locals() )
   def deleteStatusElement( self, element, tableType, name = None, statusType = None,
                            status = None, elementType = None, reason = None,
@@ -226,7 +226,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
 
     result = self._query( 'delete', locals() )
     if result['OK']:
@@ -277,7 +277,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addOrModify', locals() )
 
@@ -321,7 +321,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'modify', locals() )
   def addIfNotThereStatusElement( self, element, tableType, name = None,
@@ -367,7 +367,7 @@ class ResourceStatusClient( object ):
     :return: S_OK() || S_ERROR()
     '''
     # Unused argument
-    # pylint: disable=W0613
+    # pylint: disable=unused-argument
     meta = { 'onlyUniqueKeys' : True }
     return self._query( 'addIfNotThere', locals() )
 

@@ -57,7 +57,7 @@ class VOMS2CSAgent( AgentModule ):
 
       self.log.info( 'Performing VOMS sync for VO %s with credentials %s@%s' % ( vo, voAdminUser, voAdminGroup ) )
 
-      result = self.__syncCSWithVOMS( vo, proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup ) #pylint: disable=E1123
+      result = self.__syncCSWithVOMS( vo, proxyUserName = voAdminUser, proxyUserGroup = voAdminGroup ) #pylint: disable=unexpected-keyword-arg
       if not result['OK']:
         self.log.error( 'Failed to perform VOMS to CS synchronization:', 'VO %s: %s' % ( vo, result["Message"] ) )
         continue

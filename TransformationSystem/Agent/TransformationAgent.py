@@ -1,7 +1,12 @@
 """  TransformationAgent processes transformations found in the transformation database.
 """
 
-import time, Queue, os, datetime, pickle
+import time
+import Queue
+import os
+import datetime
+import pickle
+
 from DIRAC                                                          import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                                import ThreadPool

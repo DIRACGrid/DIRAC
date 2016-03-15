@@ -804,14 +804,14 @@ class FTSAgent( AgentModule ):
           continue
 
         sourceSE = StorageElement( source )
-        sourceToken = sourceSE.getStorageParameters( "SRM2" )
+        sourceToken = sourceSE.getStorageParameters( protocol = 'srm' )
         if not sourceToken["OK"]:
           log.error( "unable to get sourceSE parameters:", "(%s) %s" % ( source, sourceToken["Message"] ) )
           continue
         seStatus = sourceSE.getStatus()['Value']
 
         targetSE = StorageElement( target )
-        targetToken = targetSE.getStorageParameters( "SRM2" )
+        targetToken = targetSE.getStorageParameters( protocol = 'srm' )
         if not targetToken["OK"]:
           log.error( "unable to get targetSE parameters:", "(%s) %s" % ( target, targetToken["Message"] ) )
           continue

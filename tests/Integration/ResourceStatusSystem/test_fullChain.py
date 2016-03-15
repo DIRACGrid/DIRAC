@@ -30,6 +30,24 @@
           }
           policyType = AlwaysBanned
         }
+        AlwaysBannedForSite2
+        {
+          matchParams
+          {
+            element = Site
+            domain = test
+          }
+          policyType = AlwaysBanned
+        }
+      }
+      PolicyActions
+      {
+        LogStatusAction
+        {
+        }
+        LogPolicyResultAction
+        {
+        }
       }
     }
 
@@ -75,6 +93,20 @@ class PDPDecision_Success( PDPTestCase ):
                       'elementType' : None,
                       'statusType'  : 'ReadAccess',
                       'status'      : 'Active',
+                      'reason'      : None,
+                      'tokenOwner'  : None}
+    pdp.setup( decisionParams )
+    res = pdp.takeDecision()
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value']['policyCombinedResult']['Status'], 'Banned' )
+
+    # site2
+    decisionParams = {'element'     : 'Site',
+                      'name'        : 'Site2',
+                      'elementType' : 'CE',
+                      'statusType'  : 'ReadAccess',
+                      'status'      : 'Active',
+                      'domain'      : 'test',
                       'reason'      : None,
                       'tokenOwner'  : None}
     pdp.setup( decisionParams )
