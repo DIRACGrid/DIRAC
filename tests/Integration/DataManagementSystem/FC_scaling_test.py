@@ -1,7 +1,4 @@
-# TO-DO: to be moved to tests directory
-
 ########################################################################
-# $HeadURL$
 # File :    FC_Scaling_test
 # Author :  Andrei Tsaregorodtsev
 ########################################################################

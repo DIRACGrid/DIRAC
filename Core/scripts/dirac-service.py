@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :   dirac-service
 # Author : Adria Casajus
 ########################################################################
 __RCSID__ = "$Id$"
 
 import sys
-import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.ServiceReactor import ServiceReactor

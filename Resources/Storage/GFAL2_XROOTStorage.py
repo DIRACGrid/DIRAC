@@ -7,7 +7,7 @@
 
 
 # from DIRAC
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 
 
@@ -18,6 +18,9 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
 
   Xroot interface to StorageElement using gfal2
   """
+
+
+  PROTOCOL_PARAMETERS = GFAL2_StorageBase.PROTOCOL_PARAMETERS + ['SvcClass']
 
   def __init__( self, storageName, parameters ):
     """ c'tor
@@ -31,19 +34,20 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
     """
-    self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
     # # init base class
     super( GFAL2_XROOTStorage, self ).__init__( storageName, parameters )
 
+    self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
+
     self.pluginName = 'GFAL2_XROOT'
 
-    self.protocolParameters['Port'] = 0
+    # why is this here ?!
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
 
 
 
-  def _getExtendedAttributes( self, path ):
+  def _getExtendedAttributes( self, path, _attributes = None ):
     """ Hard coding list of attributes and then call the base method of GFAL2_StorageBase
 
     :param self: self reference
@@ -57,11 +61,6 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     res = super( GFAL2_XROOTStorage, self )._getExtendedAttributes( path, attributes )
     return res
 
-  def _updateMetadataDict( self, metadataDict, attributeDict = None ):
-    # Add metadata expected in some places if not provided by itself
-    metadataDict['Lost'] = metadataDict.get( 'Lost', 0 )
-    metadataDict['Cached'] = metadataDict.get( 'Cached', 1 )
-    metadataDict['Unavailable'] = metadataDict.get( 'Unavailable', 0 )
 
   def _getSingleFile( self, src_url, dest_file ):
     """ Some XROOT StorageElements have problems with the checksum at the moment so to still be able to copy
@@ -77,3 +76,18 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.log.debug( "GFAL2_XROOTStorage._getSingleFile: Calling base method with checksum disabled" )
     res = super( GFAL2_XROOTStorage, self )._getSingleFile( src_url, dest_file, disableChecksum = True )
     return res
+  
+  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+    """ Extend the method defined in the base class to add the Service Class if defined
+    """
+
+    res = super(GFAL2_XROOTStorage, self).constructURLFromLFN(lfn, withWSUrl = withWSUrl)
+    if not res['OK']:
+      return res
+    url = res['Value']
+    svcClass = self.protocolParameters['SvcClass']
+    if svcClass:
+      url += '?svcClass=%s'%svcClass
+
+    return S_OK(url)
+

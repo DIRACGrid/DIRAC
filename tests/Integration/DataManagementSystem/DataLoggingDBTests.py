@@ -1,7 +1,6 @@
 # FIXME: to bring back to life
 
 # ########################################################################
-# # $HeadURL $
 # # File: DataLoggingDBTests.py
 # # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # # Date: 2012/07/12 13:01:10
