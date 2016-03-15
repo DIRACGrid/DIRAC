@@ -14,12 +14,11 @@ from urlparse import urlparse
 
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import gConfig
-
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle               import bundleProxy, writeScript
-from DIRAC.Core.Utilities.List                           import uniqueElements
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
+from ordered_set                                         import OrderedSet
 
 class LocalComputingElement( ComputingElement ):
 
@@ -76,8 +75,8 @@ class LocalComputingElement( ComputingElement ):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
         self.removeOutput = False
-        
-    return S_OK()    
+
+    return S_OK()
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -113,12 +112,12 @@ class LocalComputingElement( ComputingElement ):
     """
 
     # Make remote directories
-    dirTuple = uniqueElements( [ self.sharedArea,
+    dirTuple = list(OrderedSet( [ self.sharedArea,
                                  self.executableArea,
                                  self.infoArea,
                                  self.batchOutput,
                                  self.batchError,
-                                 self.workArea] )
+                                 self.workArea] ))
     cmdTuple = [ 'mkdir', '-p' ] + dirTuple
     self.log.verbose( 'Creating working directories' )
     result = systemCall( 30, cmdTuple )
@@ -166,7 +165,7 @@ class LocalComputingElement( ComputingElement ):
 
     if resultSubmit['Status'] == 0:
       self.submittedJobs += len( resultSubmit['Jobs'] )
-      jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ]  
+      jobIDs = [ self.ceType.lower()+'://'+self.ceName+'/'+_id for _id in resultSubmit['Jobs'] ]
       result = S_OK( jobIDs )
     else:
       result = S_ERROR( resultSubmit['Message'] )
@@ -273,15 +272,15 @@ class LocalComputingElement( ComputingElement ):
     """
     jobStamp = os.path.basename( urlparse( jobID ).path )
     host = urlparse( jobID ).hostname
-    
+
     if hasattr( self.batch, 'getOutputFiles' ):
-      output, error = self.batch.getOutputFiles( jobStamp, 
+      output, error = self.batch.getOutputFiles( jobStamp,
                                                  self.batchOutput,
                                                  self.batchError )
     else:
       output = '%s/%s.out' % ( self.batchOutput, jobStamp )
       error = '%s/%s.out' % ( self.batchError, jobStamp )
-  
+
     return S_OK( ( jobStamp, host, output, error ) )
 
 

@@ -12,6 +12,7 @@ import distutils.spawn
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
+from ordered_set import OrderedSet
 
 DEBUG = 0
 
@@ -24,7 +25,7 @@ def uniquePath( path = None ):
     return None
 
   try:
-    elements = List.uniqueElements( List.fromChar( path, ":" ) )
+    elements = list(OrderedSet( List.fromChar( path, ":" ) ))
     return ':'.join( elements )
   except Exception:
     return None
@@ -58,7 +59,7 @@ def getDiskSpace( path = '.' ):
       try:
         value = int( fields[3] )
       except Exception, error:
-        print "Exception during disk space evaluation:", str( error )  
+        print "Exception during disk space evaluation:", str( error )
         value = -1
       return value
   else:
@@ -79,7 +80,7 @@ def getDirectorySize( path ):
     return size
 
 def sourceEnv( timeout, cmdTuple, inputEnv = None ):
-  """ Function to source configuration files in a platform dependent way and get 
+  """ Function to source configuration files in a platform dependent way and get
       back the environment
   """
 
@@ -145,7 +146,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
 
 #FIXME: this is not used !
 def unifyLdLibraryPath( path, newpath ):
-  """ for Linux and MacOS link all the files in the path in a single directory 
+  """ for Linux and MacOS link all the files in the path in a single directory
       newpath. For that we go along the path in a reverse order and link all files
       from the path, the latest appearance of a file will take precedence
   """
@@ -194,12 +195,12 @@ def getNumberOfCores():
   try:
     cores = multiprocessing.cpu_count()
   except:
-    return 0  
-      
-  return cores    
-  
+    return 0
+
+  return cores
+
 def which( executable ):
-  
-  return distutils.spawn.find_executable( executable )  
-  
-  
+
+  return distutils.spawn.find_executable( executable )
+
+

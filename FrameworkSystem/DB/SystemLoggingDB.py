@@ -1,5 +1,5 @@
 # $HeadURL$
-# 
+#
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -19,12 +19,13 @@ from types import ListType, StringTypes
 from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Utilities                      import Time, List
+from ordered_set                               import OrderedSet
 
 DEBUG = 0
 
 ###########################################################
 class SystemLoggingDB( DB ):
-  """ .. class:: SystemLoggingDB 
+  """ .. class:: SystemLoggingDB
 
   Python interface to SystemLoggingDB.
 
@@ -53,7 +54,7 @@ CREATE  TABLE IF NOT EXISTS `SubSystems` (
   `SubSystemName` VARCHAR(128) NOT NULL DEFAULT 'Unknown' ,
   `SystemID` INT NOT NULL AUTO_INCREMENT ,
   PRIMARY KEY (`SubSystemID`) ) ENGINE=InnoDB;
-    FOREIGN KEY (`SystemID`) REFERENCES Systems(SystemID) ON UPDATE CASCADE ON DELETE CASCADE) 
+    FOREIGN KEY (`SystemID`) REFERENCES Systems(SystemID) ON UPDATE CASCADE ON DELETE CASCADE)
 
 CREATE  TABLE IF NOT EXISTS `Systems` (
   `SystemID` INT NOT NULL AUTO_INCREMENT ,
@@ -84,7 +85,7 @@ CREATE  TABLE IF NOT EXISTS `MessageRepository` (
   INDEX `UserIDX` (`UserDNID` ASC) ,
   INDEX `IPsIDX` (`ClientIPNumberID` ASC) ,
     FOREIGN KEY (`UserDNID` ) REFERENCES UserDNs(`UserDNID` ) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ) ON UPDATE CASCADE ON DELETE CASCADE, 
+    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (`FixedTextID` ) REFERENCES FixedTextMessages (`FixedTextID` ) ON UPDATE CASCADE ON DELETE CASCADE )
     ENGINE=InnoDB;
 
@@ -213,7 +214,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
       # the table has already the correct schema
       return S_OK()
 
-    # We need to change the SubSystems table definition 
+    # We need to change the SubSystems table definition
     # and change the dependence from Systems pointing to SubSystems
     # to SubSystems pointing to Systems
     # Due to the Cascade Mechanism that was defined this can not be easily done
@@ -264,7 +265,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
       #if re.search( 'MessageTime', ','.join( showFieldList) ):
       #  tableList.append('MessageRepository')
-      tableList = List.uniqueElements( tableList )
+      tableList = list(OrderedSet( tableList ))
 
       tableString = ''
       try:
@@ -296,7 +297,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                  conjunction.join( tableList ) )
 
     else:
-      tableString = conjunction.join( List.uniqueElements( tableDict.values() ) )
+      tableString = conjunction.join( list(OrderedSet( tableDict.values() )) )
 
     self.log.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
     return tableString
@@ -364,12 +365,12 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     #              'MessageRepository':'LogLevel',
     #              'FixedTextMessages':'FixedTextString',
     #              'FixedTextMessages':'ReviewedMessage',
-    #              'Systems':'SystemName', 
+    #              'Systems':'SystemName',
     #              'SubSystems':'SubSystemName',
-    #              'UserDNs':'OwnerDN', 
+    #              'UserDNs':'OwnerDN',
     #              'UserDNs':'OwnerGroup',
     #              'ClientIPs':'ClientIPNumberString',
-    #              'ClientIPs':'ClientFQDN', 
+    #              'ClientIPs':'ClientFQDN',
     #              'Sites':'SiteName'}
 
     # Check if the record is already there and get the rowID
