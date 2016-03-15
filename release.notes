@@ -97,6 +97,14 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p24]
+
+*Accounting
+FIX: Plots, JobPlotter - fix sorting by plot labels in case the enddata != "now"
+
+*DMS
+FIX: dirac-dms-user-lfns - add error message when proxy is expired 
+
 [v6r14p23]
 
 *Interfaces
