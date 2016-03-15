@@ -1,3 +1,11 @@
+[v6r14p24]
+
+*Accounting
+FIX: Plots, JobPlotter - fix sorting by plot labels in case the enddata != "now"
+
+*DMS
+FIX: dirac-dms-user-lfns - add error message when proxy is expired 
+
 [v6r14p23]
 
 *Interfaces
