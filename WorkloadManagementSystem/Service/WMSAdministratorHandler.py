@@ -232,7 +232,7 @@ class WMSAdministratorHandler(RequestHandler):
     group = pilotDict['OwnerGroup']
     gridType = pilotDict['GridType']
 
-    return getPilotLoggingInfo( gridType, pilotReference, #pylint: disable=E1123
+    return getPilotLoggingInfo( gridType, pilotReference, #pylint: disable=unexpected-keyword-arg
                                 proxyUserDN = owner, proxyUserGroup = group )
 
   ##############################################################################
@@ -296,7 +296,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     gridType = pilotDict['GridType']
     if gridType == "gLite":
-      result = getWMSPilotOutput( pilotReference, proxyUserDN = owner, proxyUserGroup = group) #pylint: disable=E1123
+      result = getWMSPilotOutput( pilotReference, proxyUserDN = owner, proxyUserGroup = group) #pylint: disable=unexpected-keyword-arg
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?

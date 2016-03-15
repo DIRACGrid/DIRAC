@@ -58,8 +58,8 @@ class CEAvailabilityCommand( Command ):
     #extracting the list of CE queues and their status
     result = {}
     for element in elements:
-      queue = element.get('GlueCEUniqueID','Unknown') #pylint: disable=E1101
-      statusQueue = element.get('GlueCEStateStatus','Unknown') #pylint: disable=E1101
+      queue = element.get('GlueCEUniqueID','Unknown') #pylint: disable=no-member
+      statusQueue = element.get('GlueCEStateStatus','Unknown') #pylint: disable=no-member
       result[queue] = statusQueue.capitalize()
 
     #establishing the status of the CE itself
