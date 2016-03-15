@@ -48,13 +48,26 @@ class CREAMComputingElement( ComputingElement ):
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
 
-  def __writeJDL( self, executableFile ):
+  def __writeJDL( self, executableFile, processors = 1 ):
     """ Create the JDL for submission
     """
 
     workingDirectory = self.ceParameters['WorkingDirectory']
     fd, name = tempfile.mkstemp( suffix = '.jdl', prefix = 'CREAM_', dir = workingDirectory )
     diracStamp = os.path.basename( name ).replace( '.jdl', '' ).replace( 'CREAM_', '' )
+
+    mp = []
+    if processors != 1:
+      if processors <= 0:
+        mp.append( '  HostNumber = 1;' )
+        mp.append( '  WholeNodes = true;' )
+      else:
+        mp.append( '  SMPGranularity = %d;' % processors )
+        mp.append( '  CPUNumber = %d;' % processors )
+        mp.append( '  WholeNodes = false;' )
+
+    multiProcessorFields = "\n".join( mp )
+
     jdlFile = os.fdopen( fd, 'w' )
 
     jdl = """
@@ -66,12 +79,14 @@ class CREAMComputingElement( ComputingElement ):
   InputSandbox={"%(executableFile)s"};
   OutputSandbox={"%(diracStamp)s.out", "%(diracStamp)s.err"};
   OutputSandboxBaseDestUri="%(outputURL)s";
+  %(multiProcessorFields)s
 ]
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename( executableFile ),
             'outputURL':self.outputURL,
-            'diracStamp':diracStamp
+            'diracStamp':diracStamp,
+            'multiProcessorFields':multiProcessorFields,
            }
 
     jdlFile.write( jdl )
@@ -84,7 +99,7 @@ class CREAMComputingElement( ComputingElement ):
     self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
+  def submitJob( self, executableFile, proxy, numberOfJobs = 1, processors = 1 ):
     """ Method to submit job
     """
 
@@ -95,10 +110,11 @@ class CREAMComputingElement( ComputingElement ):
     batchIDList = []
     stampDict = {}
     if numberOfJobs == 1:
-      jdlName, diracStamp = self.__writeJDL( executableFile )
+      jdlName, diracStamp = self.__writeJDL( executableFile, processors = processors )
       cmd = ['glite-ce-job-submit', '-n', '-a', '-N', '-r',
              '%s/%s' % ( self.ceName, self.queue ),
              '%s' % jdlName ]
+
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
       os.unlink( jdlName )
       if result['OK']:
@@ -120,7 +136,7 @@ class CREAMComputingElement( ComputingElement ):
         self.log.error( 'Failed to delegate proxy', result['Message'] )
         return result
       for _i in range( numberOfJobs ):
-        jdlName, diracStamp = self.__writeJDL( executableFile )
+        jdlName, diracStamp = self.__writeJDL( executableFile, processors = processors )
         cmd = ['glite-ce-job-submit', '-n', '-N', '-r',
                '%s/%s' % ( self.ceName, self.queue ),
                '-D', '%s' % delegationID, '%s' % jdlName ]

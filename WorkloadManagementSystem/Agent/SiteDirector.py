@@ -529,7 +529,7 @@ class SiteDirector( AgentModule ):
       ce.setProxy( self.proxy, cpuTime - 60 )
 
       # Get the number of available slots on the target site/queue
-      totalSlots = self.__getQueueSlots( queue )
+      totalSlots = self.getQueueSlots( queue )
       if totalSlots == 0:
         self.log.debug( '%s: No slots available' % queue )
         continue
@@ -549,7 +549,7 @@ class SiteDirector( AgentModule ):
         jobExecDir = self.queueDict[queue]['ParametersDict'].get( 'JobExecDir', jobExecDir )
         httpProxy = self.queueDict[queue]['ParametersDict'].get( 'HttpProxy', '' )
 
-        result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
+        result = self.getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
           return result
 
@@ -616,7 +616,7 @@ class SiteDirector( AgentModule ):
     self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
 
-  def __getQueueSlots( self, queue ):
+  def getQueueSlots( self, queue ):
     """ Get the number of available slots in the queue
     """
     ce = self.queueDict[queue]['CE']
@@ -654,14 +654,14 @@ class SiteDirector( AgentModule ):
     return totalSlots
 
 #####################################################################################
-  def __getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
+  def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '', processors = 1 ):
     """ Prepare the full executable for queue
     """
 
     proxy = None
     if bundleProxy:
       proxy = self.proxy
-    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit )
+    pilotOptions, pilotsToSubmit = self._getPilotOptions( queue, pilotsToSubmit, processors )
     if pilotOptions is None:
       self.log.error( "Pilot options empty, error in compilation" )
       return S_ERROR( "Errors in compiling pilot options" )
@@ -670,7 +670,7 @@ class SiteDirector( AgentModule ):
     return S_OK( [ executable, pilotsToSubmit ] )
 
 #####################################################################################
-  def _getPilotOptions( self, queue, pilotsToSubmit ):
+  def _getPilotOptions( self, queue, pilotsToSubmit, processors = 1 ):
     """ Prepare pilot options
     """
 
@@ -772,6 +772,14 @@ class SiteDirector( AgentModule ):
     # Hack
     if self.defaultSubmitPools:
       pilotOptions.append( '-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools )
+
+    if processors != 1:
+      if processors > 1:
+        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=%sProcessors' % processors )
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=%sProcessors' % processors )
+      else:
+        pilotOptions.append( '-o /AgentJobRequirements/RequiredTag=WholeNode' )
+        pilotOptions.append( '-o /Resources/Computing/CEDefaults/Tag=WholeNode' )
 
     if self.group:
       pilotOptions.append( '-G %s' % self.group )
