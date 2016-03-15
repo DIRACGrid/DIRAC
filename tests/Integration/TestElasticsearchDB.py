@@ -1,3 +1,7 @@
+"""
+This is used to test the ElasticSearchDB module. It is used to discover all possible changes of Elasticsearch api.
+If you modify the test data, you have to update the test cases...
+"""
 
 from DIRAC.Core.Utilities.ElasticSearchDB        import ElasticSearchDB
 from DIRAC                                       import gLogger
