@@ -1,7 +1,8 @@
-[v6r15-pre16]
+[v6r15-pre17]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
+Added requirements.txt and Makefile in the root of the project to support pip style installation
 
 *Accounting
 CHANGE: INTEGER -> BIGINT for "id" in "in" accountingDB tables
@@ -85,6 +86,7 @@ FIX: Request - fix for the case when one of the request is malformed, the rest o
      the requests could not be swiped
 FIX: ReqProxyHandler - don't block the ReqProxy sweeping if one of the request is buggy     
 CHANGE: ReqProxyHandler - added monitoring counters
+NEW: ReqProxyHandler - added interface methods to list and show requests in a ReqProxy
 
 *Resources
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
