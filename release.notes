@@ -1,4 +1,4 @@
-[v6r15-pre16]
+[v6r15-pre17]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -33,6 +33,7 @@ CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
 NEW: VOMS2CSAgent to synchronize VOMS user data with the DIRAC Registry
+CHANGE: ConfigurationData - lazy config data compression in getCompressedData()
 
 *Framework
 CHANGE: SystemAdministratorIntegrator - make initial pinging of the hosts in parallel
@@ -79,6 +80,8 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
 CHANGE: SiteDirector - flag to always download pilot output is set to False by default
+NEW: MultiProcessorSiteDirector - new director to experiment with the multiprocessor/
+     wholeNode queues
 
 *RMS
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
