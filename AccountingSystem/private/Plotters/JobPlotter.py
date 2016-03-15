@@ -101,7 +101,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportCPUUsageName = "CPU time"
@@ -169,7 +169,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportNormCPUUsageName = "Normalized CPU power"
@@ -332,7 +332,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportTotalWallTimeName = "Pie plot of wall time usage"
@@ -395,7 +395,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
-                 'sort_labels' : 'last_value' }
+                 'sort_labels' : 'max_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
 
