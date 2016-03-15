@@ -23,7 +23,7 @@ class EmailAgent( AgentModule ):
   def __init__( self, *args, **kwargs ):
 
     AgentModule.__init__( self, *args, **kwargs )
-    self.diracAdmin = DiracAdmin()
+    self.diracAdmin = None
     self.default_value = None
     self.cacheFile = None
     self.cacheFile = os.getenv('DIRAC') + 'work/ResourceStatus/cache.json'
@@ -31,6 +31,8 @@ class EmailAgent( AgentModule ):
   def initialize( self ):
     ''' EmailAgent initialization
     '''
+
+    self.diracAdmin = DiracAdmin()
 
     return S_OK()
 
