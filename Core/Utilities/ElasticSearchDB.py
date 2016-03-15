@@ -129,15 +129,19 @@ class ElasticSearchDB( object ):
     return [ index for index in self.__client.indices.get_aliases() ]
   
   ########################################################################
-  def getDocTypes( self, indexes ):
+  def getDocTypes( self, indexName ):
+    """
+    :param str indexName is the number of the index...
+    :return S_OK or S_ERROR 
+    """
     try:
-      result = self.__client.indices.get_mapping( indexes )
+      result = self.__client.indices.get_mapping( indexName )
     except Exception as e:
       gLogger.error( e )
     doctype = ''
     for i in result:
       if len( result[i].get( 'mappings', {} ) ) == 0:
-        return S_ERROR( "%s does not exists!" % indexes )
+        return S_ERROR( "%s does not exists!" % indexName )
       doctype = result[i]['mappings']
       break
     return S_OK( doctype ) 
@@ -186,13 +190,18 @@ class ElasticSearchDB( object ):
     return self.__client.index( index = indexName, doc_type = doc_type, body = body )
   
   def bulk_index( self, indexName, doc_type, data ):
-    body = {
+    """
+    :param str indexName
+    :param str doc_type
+    :param list data contains a list of dictionary 
+    """
+    docs = []
+    for i in data:
+      body = {
           '_index': indexName,
           '_type': doc_type,
           '_source': {}
       }
-    docs = []
-    for i in data:
       body['_source'] = i
       body['_source']['time'] = i['time']
       docs += [body]
