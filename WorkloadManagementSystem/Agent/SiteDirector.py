@@ -117,6 +117,7 @@ class SiteDirector( AgentModule ):
         result = Registry.getGroupsForVO( self.vo )
         if not result['OK']:
           return result
+        self.voGroups = []
         for group in result['Value']:
           if 'NormalUser' in Registry.getPropertiesForGroup( group ):
             self.voGroups.append( group )
