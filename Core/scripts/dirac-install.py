@@ -1331,6 +1331,10 @@ def createBashrc():
                      '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
+      # add DIRACPLAT environment variable for client installations
+      if cliParams.externalsType == 'client':
+        lines.extend( ['# DIRAC platform',
+                       'export DIRACPLAT=%s' % cliParams.platform] )
       # Add the lines required for globus-* tools to use IPv6
       lines.extend( ['# IPv6 support',
                      'export GLOBUS_IO_IPV6=TRUE',
@@ -1388,6 +1392,10 @@ def createCshrc():
       lines.extend( ['# IPv6 support',
                      'setenv GLOBUS_IO_IPV6 TRUE',
                      'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'] )
+      # add DIRACPLAT environment variable for client installations
+      if cliParams.externalsType == 'client':
+        lines.extend( ['# DIRAC platform',
+                       'setenv DIRACPLAT %s' % cliParams.platform] )
       # Add the lines required for ARC CE support
       lines.extend( ['# ARC Computing Element',
                      'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'] )
