@@ -272,12 +272,11 @@ class SiteDirector( AgentModule ):
           if maxRAM:
             self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
           if pilotRunDirectory:
-            self.workingDirectory = pilotRunDirectory
+            self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-
           platform = ''
           if "Platform" in self.queueDict[queueName]['ParametersDict']:
             platform = self.queueDict[queueName]['ParametersDict']['Platform']
