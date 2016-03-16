@@ -1,4 +1,4 @@
-""" DIRAC Workload Management System utility module to get available memory from mjf
+""" DIRAC Workload Management System utility module to get available memory and processors from mjf
 """
 __RCSID__ = "$Id$"
 
@@ -10,8 +10,8 @@ def getJobFeatures():
   features = {}
   if 'JOBFEATURES' not in os.environ:
     return features
-  for item in ( 'cpufactor_lrms', 'cpu_limit_secs_lrms', 'cpu_limit_secs', 'wall_limit_secs_lrms', 'wall_limit_secs', 'disk_limit_GB',
-                'jobstart_secs', 'mem_limit_MB', 'allocated_CPU ', 'shutdowntime_job' ):
+  for item in ( 'allocated_cpu', 'hs06_job', 'shutdowntime_job', 'grace_secs_job', 'jobstart_secs', 'job_id', 'wall_limit_secs',
+                'cpu_limit_secs', 'max_rss_bytes', 'max_swap_bytes', 'scratch_limit_bytes' ):
     fname = os.path.join( os.environ['JOBFEATURES'], item )
     try:
       val = urllib.urlopen( fname ).read()
@@ -20,10 +20,14 @@ def getJobFeatures():
     features[item] = val
   return features
 
+def getProcessorFromMJF():
+  features = getJobFeatures()
+  NumberOfProcessor = features.get( 'allocated_cpu' )
+  return NumberOfProcessor
 
 def getMemoryFromMJF():
   features = getJobFeatures()
-  MaxRAM = features.get( 'mem_limit_MB' )
+  MaxRAM = features.get( 'max_rss_bytes' )
   return MaxRAM
 
 

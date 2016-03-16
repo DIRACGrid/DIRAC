@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities import Os
-from DIRAC.WorkloadManagementSystem.Utilities import JobMemory, WNProcessors
+from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
 Script.setUsageMessage( '\n'.join( ['Get the parameters (Memory and Number of processors) of a worker node',
                                     'Usage:',
@@ -36,7 +36,7 @@ Script.registerSwitch( "Q:", "Queue=", "Queue Name (Mandatory)", setQueue )
 Script.parseCommandLine( ignoreErrors = True )
 
 grid = Site.split( '.' )[0]
-NumberOfProcessor = WNProcessors.getProcessorFromMJF()
+NumberOfProcessor = JobParameters.getProcessorFromMJF()
 if not NumberOfProcessor:
   NumberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessor' % ( grid, Site, ceName, Queue ) )
   if not NumberOfProcessor:
@@ -44,7 +44,7 @@ if not NumberOfProcessor:
     if not NumberOfProcessor:
       NumberOfProcessor = Os.getNumberOfCores()
   
-MaxRAM = JobMemory.getMemoryFromMJF()
+MaxRAM = JobParameters.getMemoryFromMJF()
 if not MaxRAM:
   MaxRAM = JobMemory.getMemoryFromProc()
 gLogger.notice( NumberOfProcessor, MaxRAM )
