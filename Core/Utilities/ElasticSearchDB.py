@@ -13,9 +13,11 @@ __RCSID__ = "$Id$"
 from DIRAC                      import gLogger, S_OK, S_ERROR
 from elasticsearch              import Elasticsearch
 from elasticsearch_dsl          import Search, Q, A
-from elasticsearch.exceptions   import ConnectionError, TransportError
+from elasticsearch.exceptions   import ConnectionError, TransportError, NotFoundError
+from elasticsearch.helpers      import BulkIndexError
 from elasticsearch              import helpers
 from datetime                   import datetime
+from DIRAC.Core.Utilities       import Time
 
 class ElasticSearchDB( object ):
   
@@ -147,7 +149,7 @@ class ElasticSearchDB( object ):
     return S_OK( doctype ) 
   
   ########################################################################
-  def checkIndex( self, indexName ):
+  def isExists( self, indexName ):
     """
     it checks the existance of an index
     :param str indexName: the name of the index
@@ -171,30 +173,46 @@ class ElasticSearchDB( object ):
     """
     result = None
     fullIndex = self.generateFullIndexName( indexPrefix )  # we have to create the an index in each day...
-    try:
-      self.log.info( "Create index: ", fullIndex + str( mapping ) )
-      self.__client.indices.create( fullIndex, body = mapping )
+    if self.isExists( fullIndex ):
       result = S_OK( fullIndex )
-    except Exception as e:
-      self.log.error("Can not create the index:", e)
-      result = S_ERROR( e )
+    else:
+      try:
+        self.log.info( "Create index: ", fullIndex + str( mapping ) )
+        self.__client.indices.create( fullIndex, body = mapping )
+        result = S_OK( fullIndex )
+      except Exception as e:
+        self.log.error( "Can not create the index:", e )
+        result = S_ERROR( e )
     return result
   
   def deleteIndex( self, indexName ):
     """
     :param str indexName the name of the index to be deleted...
     """
-    self.__client.indices.delete( indexName )
+    try:
+      retVal = self.__client.indices.delete( indexName )
+    except NotFoundError as e:
+      return S_ERROR(e)
+    
+    if retVal.get('acknowledged', False): 
+      return S_OK(indexName)
+    else:
+      return S_ERROR(retVal)
   
   def index( self, indexName, doc_type, body ):
     return self.__client.index( index = indexName, doc_type = doc_type, body = body )
   
-  def bulk_index( self, indexName, doc_type, data ):
+  def bulk_index( self, indexprefix, doc_type, data, mapping = {} ):
     """
-    :param str indexName
+    :param str indexPrefix: it is the index name. 
     :param str doc_type
     :param list data contains a list of dictionary 
     """
+    indexName = self.generateFullIndexName( indexprefix )
+    if not self.isExists( indexName ):
+      retVal = self.createIndex( indexprefix, mapping )
+      if not retVal['OK']:
+        return retVal
     docs = []
     for i in data:
       body = {
@@ -203,9 +221,19 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = i
-      body['_source']['time'] = i['time']
+      body['_source']['time'] = i.get( 'time', int( Time.toEpoch() ) )
       docs += [body]
-    return helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
+    try:
+      res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )
+    except BulkIndexError as e:
+      return S_ERROR( e )
+    
+    if res[0] == len( docs ):
+      #we have inserted all documents...
+      return S_OK( len( docs ) )
+    else:
+      return S_ERROR( res )
+    return res
   
   def getUniqueValue( self, indexName, key, orderBy = False ):
     """
@@ -231,13 +259,3 @@ class ElasticSearchDB( object ):
     del s
     return S_OK( values )
   
-  def execSpecific( self, index ):
-    s = Search( using = self.__client, index = index ).filter( 'bool', must = [Q( 'range', time = {'lte':1456757057251, 'gte': 1456670657251} ), Q( 'match', Status = 'Running' )] )
-    # s = Search(using=cl,index=i).filter('bool', must=[Q('range', time={'lte':1456757057251,'gte': 1456670657251}), Q('match',Status='Running')])
-    a = A( 'terms', field = 'Site', size = 0 )
-    aa = A( 'terms', field = 'time' )
-    aa.metric( 'total_jobs', 'sum', field = 'Jobs' )
-    a.bucket( 'end_data', 'date_histogram', field = 'time', interval = '30m' ).metric( 'tt', aa ).pipeline( 'avg_monthly_sales', 'avg_bucket', buckets_path = 'tt>total_jobs' )
-    s.aggs.bucket( '2', a )
-    s = s.fields( ['Site', 'Jobs', 'time', 'avg_monthly_sales'] )
-    return s.execute()

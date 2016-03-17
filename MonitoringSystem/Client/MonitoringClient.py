@@ -98,3 +98,15 @@ class MonitoringClient( object ):
     if 'rpcStub' in result:
       del( result[ 'rpcStub' ] )
     return result
+  
+  def addMonitoringRecords( self, monitoringtype, doc_type, data ):
+    rpcClient = self.__getServer()
+    return rpcClient.addMonitoringRecords( monitoringtype, doc_type, data )
+  
+  def addRecords( self, indexName, doc_type, data ):
+    rpcClient = self.__getServer()
+    return rpcClient.addRecords( indexName, doc_type, data )
+  
+  def deleteIndex(self, indexName):
+    rpcClient = self.__getServer()
+    return rpcClient.deleteIndex(indexName)
