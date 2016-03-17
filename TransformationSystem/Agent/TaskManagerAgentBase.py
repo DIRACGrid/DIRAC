@@ -70,7 +70,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     """
 
     self.moduloNumber = self.am_getOption('moduloNumber',0)
-    self.moduloResidual = self.am_getOption('moduloResidual',0)
+    self.moduloResidual = self.am_getOption('moduloResidual',-1)
     self.log.info('Split agents modulo %d, this agend resdiual %d' % (self.moduloNumber, self.moduloResidual))
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
