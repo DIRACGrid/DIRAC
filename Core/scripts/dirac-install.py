@@ -1334,7 +1334,7 @@ def createBashrc():
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
-                       'export DIRACPLAT=%s' % cliParams.platform] )
+                       '[ -z "$DIRACPLAT" ] && export DIRACPLAT=`$DIRACROOT/scripts/dirac-platform`'] )
       # Add the lines required for globus-* tools to use IPv6
       lines.extend( ['# IPv6 support',
                      'export GLOBUS_IO_IPV6=TRUE',
@@ -1369,7 +1369,7 @@ def createCshrc():
                 'setenv PYTHONUNBUFFERED yes',
                 'setenv PYTHONOPTIMIZE x' ]
       if not 'X509_CERT_DIR' in os.environ and not os.path.isdir( "/etc/grid-security/certificates" ):
-        lines.append( "[ -d '%s/etc/grid-security/certificates' ] && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
+        lines.append( "test -d '%s/etc/grid-security/certificates' && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
       lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'setenv DIRAC %s' % proPath,
@@ -1395,7 +1395,7 @@ def createCshrc():
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
-                       'setenv DIRACPLAT %s' % cliParams.platform] )
+                       'setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'] )
       # Add the lines required for ARC CE support
       lines.extend( ['# ARC Computing Element',
                      'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'] )
