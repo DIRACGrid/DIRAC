@@ -1395,7 +1395,7 @@ def createCshrc():
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
-                       'setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'] )
+                       'test -z "$DIRACPLAT" && setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'] )
       # Add the lines required for ARC CE support
       lines.extend( ['# ARC Computing Element',
                      'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'] )
