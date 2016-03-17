@@ -170,7 +170,7 @@ class AgentModule( object ):
         self.log.error( "Missing property", prop[0] )
         self.__codeProperties[ prop[1] ] = 'unset'
     self.__codeProperties[ 'DIRACVersion' ] = DIRAC.version
-    self.__codeProperties[ 'platform' ] = DIRAC.platform
+    self.__codeProperties[ 'platform' ] = DIRAC.getPlatform()
 
   def am_initialize( self, *initArgs ):
     agentName = self.am_getModuleParam( 'fullName' )
@@ -199,7 +199,7 @@ class AgentModule( object ):
     self.log.notice( " Base Module version: %s " % __RCSID__ )
     self.log.notice( " Agent version: %s" % self.__codeProperties[ 'version' ] )
     self.log.notice( " DIRAC version: %s" % DIRAC.version )
-    self.log.notice( " DIRAC platform: %s" % DIRAC.platform )
+    self.log.notice( " DIRAC platform: %s" % DIRAC.getPlatform() )
     pollingTime = int( self.am_getOption( 'PollingTime' ) )
     if pollingTime > 3600:
       self.log.notice( " Polling time: %s hours" % ( pollingTime / 3600. ) )

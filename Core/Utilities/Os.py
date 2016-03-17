@@ -87,7 +87,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
 
   # 1.- Choose the right version of the configuration file
-  if DIRAC.platformTuple[0] == 'Windows':
+  if DIRAC.getPlatformTuple()[0] == 'Windows':
     cmdTuple[0] += '.bat'
   else:
     cmdTuple[0] += '.sh'
@@ -102,7 +102,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   # Source it in a platform dependent way:
   # On windows the execution makes the environment to be inherit
   # On Linux or Darwin use bash and source the file.
-  if DIRAC.platformTuple[0] == 'Windows':
+  if DIRAC.getPlatformTuple()[0] == 'Windows':
     # this needs to be tested
     cmd = ' '.join( cmdTuple ) + envAsDict
     ret = shellCall( timeout, [ cmd ], env = inputEnv )
@@ -149,7 +149,7 @@ def unifyLdLibraryPath( path, newpath ):
       newpath. For that we go along the path in a reverse order and link all files
       from the path, the latest appearance of a file will take precedence
   """
-  if not DIRAC.platformTuple[0] == 'Windows':
+  if not DIRAC.getPlatformTuple()[0] == 'Windows':
     if os.path.exists( newpath ):
       if not os.path.isdir( newpath ):
         try:

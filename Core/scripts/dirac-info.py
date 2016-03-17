@@ -30,12 +30,12 @@ records.append( ('Setup', gConfig.getValue( '/DIRAC/Setup', 'Unknown' ) ) )
 records.append( ('ConfigurationServer', str( gConfig.getValue( '/DIRAC/Configuration/Servers', [] ) ) ) )
 records.append( ('Installation path', DIRAC.rootPath ) )
 
-if os.path.exists( os.path.join( DIRAC.rootPath, DIRAC.platform, 'bin', 'mysql' ) ):
+if os.path.exists( os.path.join( DIRAC.rootPath, DIRAC.getPlatform(), 'bin', 'mysql' ) ):
   records.append( ('Installation type', 'server' ) )
 else:
   records.append( ('Installation type', 'client' ) )
 
-records.append( ('Platform', DIRAC.platform ) )
+records.append( ( 'Platform', DIRAC.getPlatform() ) )
 
 ret = getProxyInfo( disableVOMS = True )
 if ret['OK']:

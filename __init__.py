@@ -45,9 +45,6 @@
     - pythonPath:    absolute real path to the directory that contains this file
     - rootPath:      absolute real path to the parent of DIRAC.pythonPath
 
-    - platform:      DIRAC platform string for current host
-    - platformTuple: DIRAC platform tuple for current host
-
     It loads Modules from :
     - DIRAC.Core.Utililies
 
@@ -61,6 +58,9 @@
     - abort:          aborts execution
     - exit:           finish execution using callbacks
     - siteName:       returns DIRAC name for current site
+
+    - getPlatform():      DIRAC platform string for current host
+    - getPlatformTuple(): DIRAC platform tuple for current host
 
 """
 __RCSID__ = "$Id$"
@@ -177,10 +177,8 @@ def siteName():
 #Callbacks
 ExitCallback.registerSignals()
 
-#Set the platform
-from DIRAC.Core.Utilities.Platform import getPlatformString
-platform = getPlatformString()
-platformTuple = tuple( platform.split( '_' ) )
+# platform detection
+from DIRAC.Core.Utilities.Platform import getPlatformString, getPlatform, getPlatformTuple
 
 def exit( exitCode = 0 ):
   """
