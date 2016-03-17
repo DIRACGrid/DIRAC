@@ -26,9 +26,14 @@ class DBUtils ( object ):
   # 2592000 seconds -> 1m
   # 525600 minutes -> year
   
-  __units = ['minutes', 'day', 'week', 'month', 'year']
-  __unitvalues = {'minutes': 30, 'day':86400, 'week':604800, 'month':2592000, 'year':86400 * 365}
-  __esunits = {86400:( '30m', 60 * 30 ), 604800:( '3h', 3 * 3600 ), 2592000:( '12h', 12 * 3600 ), 86400 * 365:( '1w', 86400 * 7 ) }
+  __esbucket = {86400:( '30m', 60 * 30 ),
+               604800:( '3h', 3 * 3600 ),
+               30 * 86400:( '12h', 12 * 3600 ),
+               45 * 86400:( '1d', 24 * 3600 ),
+               60 * 86400:( '2d', 2 * 24 * 3600 ),
+               90 * 86400:( '3d', 3 * 24 * 3600 ),
+               120 * 86400:( '4d', 4 * 24 * 3600 ),
+               86400 * 365:( '1w', 86400 * 7 ) }
   
   def __init__( self, db, setup ):
     self.__db = db
@@ -57,16 +62,17 @@ class DBUtils ( object ):
     It is used to determine the bucket size using _esUnits
     """
     diff = end - start
+    
     unit = ''
-    for i in self.__units:
-      if diff <= self.__unitvalues[i]:
-        unit = self.__esunits[self.__unitvalues[i]]
-        break
+    for i in sorted(self.__esbucket.keys()):
+      if diff <= i:
+        unit = self.__esbucket[i]
+        break   
     if unit == '':
       return S_ERROR( "Can not determine the bucket size..." )
     else:
       return S_OK( unit )
-  
+    
   def _divideByFactor( self, dataDict, factor ):
     """
     Divide by factor the values and get the maximum value

@@ -9,7 +9,7 @@ import unittest
 import datetime
 import time
 
-elHost = 'localhost'
+elHost = 'elastic1.cern.ch'  # 'localhost'
 elPort = '9200'
 
 class ElasticTestCase( unittest.TestCase ):
@@ -35,18 +35,17 @@ class ElasticTestCase( unittest.TestCase ):
 class ElasticBulkCreateChain( ElasticTestCase ):
   
   def test_bulkindex( self ):
-    result = self.el.createIndex( 'integrationtest', {} )
+    result = self.el.bulk_index( 'integrationtest', 'test', self.data )
     self.assert_( result['OK'] )
-    self.index_name = result['Value']
-    result = self.el.bulk_index( self.index_name, 'test', self.data )
-    self.assertEqual( result[0], 10 )
+    self.assertEqual( result['Value'], 10 )
     time.sleep( 10 )
     
 class ElasticCreateChain( ElasticTestCase ):
     
   
   def tearDown( self ):
-    self.el.deleteIndex( self.index_name )
+    result = self.el.deleteIndex( self.index_name )
+    self.assert_( result['OK'] )
     
   def test_index( self ):
     result = self.el.createIndex( 'integrationtest', {} )
@@ -60,10 +59,16 @@ class ElasticCreateChain( ElasticTestCase ):
 
 class ElasticDeleteChain( ElasticTestCase ):
   
+  def test_deleteNonExistingIndex(self):
+    result = self.el.deleteIndex( 'dsdssuu' )
+    self.assert_( result['Message'] )
+    
   def test_deleteIndex( self ):
     result = self.el.generateFullIndexName( 'integrationtest' )    
-    self.el.deleteIndex( result )
-  
+    res = self.el.deleteIndex( result )
+    self.assert_( res['OK'] )
+    self.assertEqual( res['Value'], result )
+    
 class ElasticTestChain( ElasticTestCase ):
   
   def setUp( self ):
@@ -81,8 +86,8 @@ class ElasticTestChain( ElasticTestCase ):
     self.assert_( result )
     self.assertDictEqual( result['Value'], {u'test': {u'properties': {u'Color': {u'type': u'string'}, u'Product': {u'type': u'string'}, u'time': {u'type': u'date', u'format': u'strict_date_optional_time||epoch_millis'}, u'quantity': {u'type': u'long'}}}} )
   
-  def test_checkIndex( self ):
-    result = self.el.checkIndex( self.index_name )
+  def test_isExists( self ):
+    result = self.el.isExists( self.index_name )
     self.assert_( result )
   
   def test_generateFullIndexName( self ):

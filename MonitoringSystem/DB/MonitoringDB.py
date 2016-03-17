@@ -69,11 +69,11 @@ class MonitoringDB( ElasticDB ):
     
     all_index = "%s-*" % index
     
-    if self.checkIndex( all_index ):  
+    if self.isExists( all_index ):  
       indexes = self.getIndexes()
       if len( indexes ) > 0:
         actualindexName = self.generateFullIndexName( index )
-        if self.checkIndex( actualindexName ):  
+        if self.isExists( actualindexName ):  
           self.log.info( "The index is exists:", actualindexName )
         else:
           result = self.createIndex( index, mapping )
@@ -154,6 +154,7 @@ class MonitoringDB( ElasticDB ):
     s = s.filter( 'bool', must = q )
     s.aggs.bucket( '2', a1 )
     s.fields( ['time'] + selectFields )
+    gLogger.debug( 'Query:', s.to_dict() )
     retVal = s.execute()
     
     result = {}
