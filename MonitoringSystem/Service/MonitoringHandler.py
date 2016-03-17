@@ -218,3 +218,35 @@ class MonitoringHandler( RequestHandler ):
     reporter = MainReporter( self.__db, self.serviceInfoDict[ 'clientSetup' ] )
     reportRequest[ 'generatePlot' ] = False
     return reporter.generate( reportRequest, self.getRemoteCredentials() )
+  
+  
+  types_addMonitoringRecords = [types.StringTypes, types.StringTypes, types.ListType]
+  def export_addMonitoringRecords( self, monitoringtype, doc_type, data ):
+    """
+    It is used to insert data directly to the given monitoring type
+    :param str monitoringtype 
+    :param list data
+    """
+    retVal = self.__db.getIndexName( monitoringtype )
+    if not retVal['OK']:
+      return retVal 
+    prefix = retVal['Value']
+    return self.__db.bulk_index( prefix, doc_type, data )
+
+  types_addRecords = [types.StringTypes, types.StringTypes, types.ListType]
+  def export_addRecords( self, indexname, doc_type, data ):
+    """
+    It is used to insert data directly to the database... The data will be inserted to the given index.
+    :param str indexname 
+    :param list data
+    """
+    return self.__db.bulk_index( indexname, doc_type, data )
+  
+  types_deleteIndex = [types.StringTypes]  
+  def export_deleteIndex(self, indexName):
+    """
+    It is used to delete an index!
+    Note this is for experinced users!!!
+    :param str indexName 
+    """
+    return self.__db.deleteIndex(indexName)
