@@ -44,16 +44,27 @@ class ElasticCreateChain( ElasticTestCase ):
     
   
   def tearDown( self ):
-    result = self.el.deleteIndex( self.index_name )
-    self.assert_( result['OK'] )
+    self.el.deleteIndex( self.index_name )
     
+  def test_wrongdataindex( self ):
+    result = self.el.createIndex( 'dsh63tsdgad', {} )
+    self.assert_( result['OK'] )
+    index_name = result['Value']
+    result = self.el.index( index_name, 'test', {"Color": "red", "quantity": 1, "Product": "a", "time": 1458226213})
+    self.assert_( result['OK'] )
+    result = self.el.index( index_name, 'test', {"Color": "red", "quantity": 1, "Product": "a", "time": "2015-02-09T16:15:00Z"})
+    self.assert_( result['Message'] )
+    result = self.el.deleteIndex( index_name )
+    self.assert_( result['OK'] )
+
+
   def test_index( self ):
     result = self.el.createIndex( 'integrationtest', {} )
     self.assert_( result['OK'] )
     self.index_name = result['Value']
     for i in self.data:
       result = self.el.index( self.index_name, 'test', i )
-      self.assert_( result['created'] )
+      self.assert_( result['OK'] )
 
 
 
