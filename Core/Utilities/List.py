@@ -21,9 +21,9 @@ def uniqueElements( aList ):
   seen = set()
   try:
     for i in aList:
-        if i not in seen:
-            result.append(i)
-            seen.add(i)
+      if i not in seen:
+        result.append(i)
+        seen.add(i)
     return result
   except:
     return None
