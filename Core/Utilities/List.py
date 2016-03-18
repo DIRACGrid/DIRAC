@@ -17,12 +17,14 @@ def uniqueElements( aList ):
   :param list aList: list of elements
   :return: list of unique elements
   """
-  newList = []
+  result = []
+  seen = set()
   try:
     for i in aList:
-      if i not in newList:
-        newList.append( i )
-    return newList
+        if i not in seen:
+            result.append(i)
+            seen.add(i)
+    return result
   except:
     return None
 
