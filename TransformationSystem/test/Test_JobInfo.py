@@ -735,8 +735,9 @@ class TestJI(unittest.TestCase):
     jbi.otherTasks = False
     jbi.inputFile = "inputFile"
     jbi.outputFiles = ["outputFile"]
+    jbi.errorCount = 3
     info = str(jbi)
-    self.assertIn("123: FailedTaskStatus: Assigned \n---> inputFile: inputFile (False)\n", info)
+    self.assertIn("123: FailedTaskStatus: Assigned ErrorCount: 3\n---> inputFile: inputFile (False)\n", info)
 
     ## pending Requests
     jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")

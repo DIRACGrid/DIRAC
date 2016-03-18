@@ -40,6 +40,7 @@ class JobInfo(object):
       info += "TaskStatus: %s " % self.fileStatus
       if self.otherTasks:
         info += "(Last task %d)" % self.otherTasks
+      info += "ErrorCount: %d" % self.errorCount
     if self.inputFile:
       info += "\n---> inputFile: %s (%s)" % (self.inputFile, self.inputFileExists)
     if self.outputFiles:
