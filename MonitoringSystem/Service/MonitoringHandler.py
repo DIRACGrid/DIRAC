@@ -231,6 +231,7 @@ class MonitoringHandler( RequestHandler ):
     if not retVal['OK']:
       return retVal 
     prefix = retVal['Value']
+    gLogger.debug("addMonitoringRecords : %s", prefix)
     return self.__db.bulk_index( prefix, doc_type, data )
 
   types_addRecords = [types.StringTypes, types.StringTypes, types.ListType]
@@ -240,6 +241,9 @@ class MonitoringHandler( RequestHandler ):
     :param str indexname 
     :param list data
     """
+    setup = self.serviceInfoDict.get( 'clientSetup', '' )
+    indexname = "%s%s" % ( setup.lower(), indexname )
+    gLogger.debug( "Bulk index: %s", indexname )
     return self.__db.bulk_index( indexname, doc_type, data )
   
   types_deleteIndex = [types.StringTypes]  
@@ -249,4 +253,7 @@ class MonitoringHandler( RequestHandler ):
     Note this is for experinced users!!!
     :param str indexName 
     """
+    setup = self.serviceInfoDict.get( 'clientSetup', '' )
+    indexName = "%s%s" % ( setup.lower(), indexName )
+    gLogger.debug( "delete index: %s", indexName )
     return self.__db.deleteIndex(indexName)

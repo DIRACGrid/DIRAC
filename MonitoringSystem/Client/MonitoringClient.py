@@ -44,8 +44,8 @@ class MonitoringClient( object ):
     
     :return S_OK([]) or S_ERROR() the list of available plots
     """
-    server = self.__getServer()
-    return server.listReports( typeName )
+    rpcClient = self.__getServer()
+    return rpcClient.listReports( typeName )
   
   def generateDelayedPlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None, compress = True ):
     """
