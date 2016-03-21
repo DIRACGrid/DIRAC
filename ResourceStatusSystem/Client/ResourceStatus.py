@@ -229,7 +229,7 @@ class ResourceStatus( object ):
           # If there is no status defined in the CS, we add by default Read and
           # Write as Active.
           if elementStatuses == {}:
-            elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
+            elementStatuses = { 'all' : 'Active' }
 
           result[ element ] = elementStatuses
 
