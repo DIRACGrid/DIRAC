@@ -264,8 +264,7 @@ class ResourceStatus( object ):
                                                 tokenExpiration = expiration )
       if res[ 'OK' ]:
         self.seCache.refreshCache()
-
-      if not res[ 'OK' ]:
+      else:
         _msg = 'Error updating ComputingElement (%s,%s,%s)' % ( elementName, statusType, status )
         gLogger.warn( 'RSS: %s' % _msg )
 
