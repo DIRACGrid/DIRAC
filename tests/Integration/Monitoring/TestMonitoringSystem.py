@@ -5,11 +5,12 @@ It is used to test client->db-> service
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.Core.DISET.TransferClient                import TransferClient
-# from DIRAC.MonitoringSystem.DB.MonitoringDB         import MonitoringDB
+
 from DIRAC                                          import gLogger
 from datetime                                       import datetime
 import unittest
 import tempfile
+import time
 
 class MonitoringTestCase( unittest.TestCase ):
   
@@ -64,10 +65,15 @@ class MonitoringTestCase( unittest.TestCase ):
   
 class MonitoringInsertData ( MonitoringTestCase ):
   
+  def test_addMonitoringRecords( self ):
+    result = self.client.addMonitoringRecords( 'moni', 'WMSHistory', self.data )
+    self.assert_( result['Message'] )
+        
   def test_bulkinsert( self ):
     result = self.client.addRecords( "wmshistory_index", "WMSHistory", self.data )
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], len( self.data ) )
+    time.sleep( 10 )
 
 class MonitoringTestChain ( MonitoringTestCase ):
   
@@ -88,6 +94,7 @@ class MonitoringTestChain ( MonitoringTestCase ):
     self.assert_( 'JobGroup' in result['Value'] )
     self.assert_( 'UserGroup' in result['Value'] )
     self.assert_( 'metric' in result['Value'] )
+    self.assertDictEqual( result['Value'], {u'Status': [u'running', u'waiting'], u'JobSplitType': [u'mcsimulation', u'mcreconstruction', u'user', u'mcstripping', u'datastripping'], u'MinorStatus': [u'unset'], u'Site': [u'lcg.cnaf.it', u'lcg.ral.uk', u'lcg.ihep.su', u'lcg.desyzn.de', u'lcg.bari.it', u'lcg.rrcki.ru', u'multiple', u'lcg.bristol.uk', u'lcg.nikhef.nl', u'group.ral.uk', u'lcg.bologna.it', u'lcg.cern.ch', u'lcg.gridka.de', u'lcg.pic.es'], u'ApplicationStatus': [u'unset'], u'User': [u'phicharp', u'olupton', u'clangenb', u'mamartin', u'mrwillia', u'mvesteri'], u'JobGroup': [u'lhcb', u'00050248', u'00050251', u'00049844', u'00049845', u'00049848', u'00050238', u'00050243', u'00050246', u'00049847', u'00050229', u'00050232', u'00050234', u'00050236', u'00050241', u'00050244', u'00050247', u'00050250', u'00050256', u'00050280', u'00050286', u'00050299', u'00050303'], u'UserGroup': [u'lhcb_mc', u'lhcb_user', u'lhcb_data'], u'metric': [u'wmshistory']} )
     
   def test_generatePlot( self ):
     params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
@@ -103,7 +110,13 @@ class MonitoringTestChain ( MonitoringTestCase ):
     self.assert_( result['OK'] )
     result = transferClient.receiveFile( tempFile, result['Value']['plot'] )
     self.assert_( result['OK'] )
-
+  
+  def test_getReport( self ):
+    params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
+    result = self.client.getReport( *params )
+    self.assert_( result['OK'] )
+    self.assertDictEqual( result['Value'], {'data': {u'multiple': {1458194400: 2273.0}, u'lcg.ihep.su': {1458216000: 196.0}, u'lcg.cnaf.it': {1458151200: None, 1458172800: None, 1458162000: None, 1458194400: None, 1458216000: 242.0, 1458140400: 43.0, 1458183600: None, 1458205200: None}, u'lcg.nikhef.nl': {1458216000: 294.0}, u'lcg.bari.it': {1458216000: 351.0}, u'lcg.rrcki.ru': {1458226800: 32.0}, u'group.ral.uk': {1458140400: 374.0}, u'lcg.desyzn.de': {1458226800: 472.0}, u'lcg.ral.uk': {1458129600: 22.0, 1458172800: None, 1458162000: None, 1458194400: None, 1458216000: None, 1458140400: None, 1458183600: None, 1458205200: None, 1458226800: 54.0, 1458151200: None}, u'lcg.pic.es': {1458129600: 11.0}, u'lcg.gridka.de': {1458129600: 22.0}, u'lcg.bristol.uk': {1458216000: 99.0}, u'lcg.cern.ch': {1458140400: 1320.0}, u'lcg.bologna.it': {1458216000: 11.0}}, 'granularity': 10800} )
+    
 class MonitoringDeleteChain( MonitoringTestCase ):
   
   def test_deleteNonExistingIndex( self ): 
@@ -115,12 +128,12 @@ class MonitoringDeleteChain( MonitoringTestCase ):
     result = "%s-%s" % ( 'wmshistory_index', today ) 
     res = self.client.deleteIndex( result )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'test_wmshistory-index-%s' % today )
+    self.assertEqual( res['Value'], 'test_wmshistory_index-%s' % today )
     
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestCase )
-  #testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringInsertData ) )
+  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringInsertData ) )
   testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestChain ) )
-  #testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
+  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
   unittest.TextTestRunner( verbosity = 2 ).run( testSuite )

@@ -9,7 +9,7 @@ import unittest
 import datetime
 import time
 
-elHost = 'elastic1.cern.ch'  # 'localhost'
+elHost = 'localhost'
 elPort = '9200'
 
 class ElasticTestCase( unittest.TestCase ):

@@ -227,6 +227,7 @@ class MonitoringHandler( RequestHandler ):
     :param str monitoringtype 
     :param list data
     """
+    
     retVal = self.__db.getIndexName( monitoringtype )
     if not retVal['OK']:
       return retVal 
@@ -257,3 +258,4 @@ class MonitoringHandler( RequestHandler ):
     indexName = "%s_%s" % ( setup.lower(), indexName )
     gLogger.debug( "delete index:", indexName )
     return self.__db.deleteIndex(indexName)
+  
