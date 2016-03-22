@@ -232,7 +232,7 @@ class ElasticSearchDB( object ):
           '_source': {}
       }
       body['_source'] = i
-      body['_source']['time'] = i.get( 'time', int( Time.toEpoch() ) )
+      body['_source']['time'] = datetime.fromtimestamp( i.get( 'time', int( Time.toEpoch() ) ) )
       docs += [body]
     try:
       res = helpers.bulk( self.__client, docs, chunk_size = self.__chunk_size )

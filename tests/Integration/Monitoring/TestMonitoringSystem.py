@@ -4,16 +4,20 @@ It is used to test client->db-> service
 
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
+from DIRAC.Core.DISET.TransferClient                import TransferClient
 # from DIRAC.MonitoringSystem.DB.MonitoringDB         import MonitoringDB
 from DIRAC                                          import gLogger
 from datetime                                       import datetime
 import unittest
+import tempfile
 
 class MonitoringTestCase( unittest.TestCase ):
   
   def setUp( self ):
     gLogger.setLevel( 'INFO' )
+    
     self.client = MonitoringClient( rpcClient = RPCClient( 'dips://dmonitor.cern.ch:9201/Monitoring/Monitoring' ) )
+    
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'time': 1458130176, u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset', u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
                  {u'Status': u'Waiting', 'Jobs': 1, u'time': 1458130176, u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.RAL.uk', u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton', u'JobGroup': u'lhcb', u'UserGroup': u'lhcb_user', u'metric': u'WMSHistory'},
@@ -61,7 +65,7 @@ class MonitoringTestCase( unittest.TestCase ):
 class MonitoringInsertData ( MonitoringTestCase ):
   
   def test_bulkinsert( self ):
-    result = self.client.addRecords( "monitoring", "test", self.data )
+    result = self.client.addRecords( "wmshistory_index", "WMSHistory", self.data )
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], len( self.data ) )
 
@@ -71,7 +75,35 @@ class MonitoringTestChain ( MonitoringTestCase ):
     result = self.client.listReports( 'WMSHistory' )
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], ['AverageNumberOfJobs', 'NumberOfJobs', 'NumberOfReschedules'] )
+  
+  def test_listUniqueKeyValues( self ):
+    result = self.client.listUniqueKeyValues( 'WMSHistory' )
+    self.assert_( result['OK'] )
+    self.assert_( 'Status' in result['Value'] )
+    self.assert_( 'JobSplitType' in result['Value'] )
+    self.assert_( 'MinorStatus' in result['Value'] )
+    self.assert_( 'Site' in result['Value'] ) 
+    self.assert_( 'ApplicationStatus' in  result['Value'] )
+    self.assert_( 'User' in result['Value'] )
+    self.assert_( 'JobGroup' in result['Value'] )
+    self.assert_( 'UserGroup' in result['Value'] )
+    self.assert_( 'metric' in result['Value'] )
     
+  def test_generatePlot( self ):
+    params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
+    result = self.client.generateDelayedPlot( *params )
+    self.assert_( result['OK'] )
+    self.assertEqual( result['Value'], {'plot': 'Z:eNpljcEKwjAQRH8piWLbvQkeRLAeKnhOm7Us2CTsbsH69UYUFIQZZvawb4LUMKQYdjRoKH3kNGeK403W0JEiolSAMZxpwodXcsZukFZItipukFyxeSmiNIB3Zb_lUQL-wD4ssQYYc2Jt_VQuB-089cin6yH1Ur5FPev_UgnrSjXfpRp0yfjGGLgcuz2JJl7wCYg6Slo=', 'thumbnail': False} )
+  
+  def test_getPlot( self ):
+    tempFile = tempfile.TemporaryFile()
+    transferClient = TransferClient( 'Monitoring/Monitoring' )
+    params = ( 'WMSHistory', 'NumberOfJobs', datetime( 2016, 3, 16, 12, 30, 0, 0 ), datetime( 2016, 3, 17, 19, 29, 0, 0 ), {'grouping': ['Site']}, 'Site', {} )
+    result = self.client.generateDelayedPlot( *params )
+    self.assert_( result['OK'] )
+    result = transferClient.receiveFile( tempFile, result['Value']['plot'] )
+    self.assert_( result['OK'] )
+
 class MonitoringDeleteChain( MonitoringTestCase ):
   
   def test_deleteNonExistingIndex( self ): 
@@ -80,15 +112,15 @@ class MonitoringDeleteChain( MonitoringTestCase ):
     
   def test_deleteIndex( self ):
     today = datetime.today().strftime( "%Y-%m-%d" )
-    result = "%s-%s" % ( 'monitoring', today ) 
+    result = "%s-%s" % ( 'wmshistory_index', today ) 
     res = self.client.deleteIndex( result )
     self.assert_( res['OK'] )
-    self.assertEqual( res['Value'], 'testmonitoring-%s' % today )
+    self.assertEqual( res['Value'], 'test_wmshistory-index-%s' % today )
     
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestCase )
-  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringInsertData ) )
+  #testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringInsertData ) )
   testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringTestChain ) )
-  testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
+  #testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MonitoringDeleteChain ) )
   unittest.TextTestRunner( verbosity = 2 ).run( testSuite )
