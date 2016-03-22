@@ -57,7 +57,7 @@ class MonitoringDB( ElasticDB ):
     if indexName:
       return S_OK( indexName )
     else:
-      return S_ERROR( "The index of % not found!" % typeName )
+      return S_ERROR( "The index of %s not found!" % typeName )
   
   def registerType( self, mtype, index, mapping ):
     """
