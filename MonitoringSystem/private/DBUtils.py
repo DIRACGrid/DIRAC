@@ -68,7 +68,7 @@ class DBUtils ( object ):
       if diff <= i:
         unit = self.__esbucket[i]
         break   
-    if unit == '':
+    if not unit:
       return S_ERROR( "Can not determine the bucket size..." )
     else:
       return S_OK( unit )
