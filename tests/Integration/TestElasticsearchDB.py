@@ -9,7 +9,7 @@ import unittest
 import datetime
 import time
 
-elHost = 'localhost'
+elHost = 'elastic1.cern.ch' #'localhost'
 elPort = '9200'
 
 class ElasticTestCase( unittest.TestCase ):
@@ -36,6 +36,7 @@ class ElasticBulkCreateChain( ElasticTestCase ):
   
   def test_bulkindex( self ):
     result = self.el.bulk_index( 'integrationtest', 'test', self.data )
+    print result
     self.assert_( result['OK'] )
     self.assertEqual( result['Value'], 10 )
     time.sleep( 10 )
@@ -92,8 +93,10 @@ class ElasticTestChain( ElasticTestCase ):
     result = self.el.getIndexes()
     self.assert_( len( result ) > 0 )
   
+  
   def test_getDocTypes( self ):
     result = self.el.getDocTypes( self.index_name )
+    print result
     self.assert_( result )
     self.assertDictEqual( result['Value'], {u'test': {u'properties': {u'Color': {u'type': u'string'}, u'Product': {u'type': u'string'}, u'time': {u'type': u'date', u'format': u'strict_date_optional_time||epoch_millis'}, u'quantity': {u'type': u'long'}}}} )
   
@@ -255,7 +258,7 @@ class ElasticTestChain( ElasticTestCase ):
     self.assertEqual( result.aggregations['2'].buckets[1].key, u'b' )
     self.assertEqual( result.aggregations['2'].buckets[0]['end_data'].buckets[0].avg_buckets, {u'value': 2.5} )
     self.assertEqual( result.aggregations['2'].buckets[1]['end_data'].buckets[0].avg_buckets, {u'value': 4} )
-
+   
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase( ElasticTestCase )
   testSuite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ElasticCreateChain ) )

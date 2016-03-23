@@ -26,7 +26,7 @@ class MonitoringDB( ElasticDB ):
     """
     retVal = gConfig.getSections( "/DIRAC/Setups" )
     if not retVal[ 'OK' ]:
-      return S_ERROR( "Can't get a list of setups: %s" % retVal[ 'Message' ] )
+      return retVal
     
     setupsList = retVal[ 'Value' ]
     objectsLoaded = TypeLoader().getTypes()
@@ -70,7 +70,7 @@ class MonitoringDB( ElasticDB ):
     
     if self.isExists( all_index ):  
       indexes = self.getIndexes()
-      if len( indexes ) > 0:
+      if indexes:
         actualindexName = self.generateFullIndexName( index )
         if self.isExists( actualindexName ):  
           self.log.info( "The index is exists:", actualindexName )
@@ -78,12 +78,15 @@ class MonitoringDB( ElasticDB ):
           result = self.createIndex( index, mapping )
           if not result['OK']:
             self.log.error( result['Message'] )
+            return result
           self.log.info( "The index is created", actualindexName )
     else:
       # in that case no index exists
       result = self.createIndex( index, mapping )
       if not result['OK']:
         self.log.error( result['Message'] )
+      else:
+        return result
       
   
     
