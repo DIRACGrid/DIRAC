@@ -48,9 +48,9 @@ class BaseType( object ):
     """
     The mandatory fields has to be present
     """
-    if len( self.__keyFields ) == 0:
+    if not self.__keyFields:
       raise Exception( "keyFields has to be provided!" )
-    if len( self.__monitoringFields ) == 0:
+    if not self.__monitoringFields:
       raise Exception( "monitoringFields has to be provided!" )
 
   ########################################################################
