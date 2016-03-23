@@ -42,12 +42,12 @@ class BasePlotter( DBUtils ):
   _typeName = ''
 
   def __init__( self, db, setup, extraArgs = None ):
-    DBUtils.__init__( self, db, setup )
+    super( BasePlotter, self ).__init__( db, setup )
     """ c'tor
     :param self: self reference
     """
     
-    if type( extraArgs ) == types.DictType:
+    if isinstance( extraArgs, dict ):
       self._extraArgs = extraArgs
     else:
       self._extraArgs = {}
@@ -101,7 +101,7 @@ class BasePlotter( DBUtils ):
       plotDict[ 'reportData' ] = reportData
     return S_OK( plotDict )
 
-  def plotsList( self ):
+  def _plotsList( self ):
     """
     It returns the list of available plots.
     """
@@ -112,10 +112,11 @@ class BasePlotter( DBUtils ):
     It uses the appropriate Plotter to retrieve the data from the database. 
     """
     funcName = "_report%s" % reportRequest[ 'reportName' ]
-    try:
-      funcObj = getattr( self, funcName )
-    except:
+    if not hasattr( self, funcName ):
       return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
+    else:
+      funcObj = getattr( self, funcName )
+  
     return gMonitoringDataCache.getReportData( reportRequest, reportHash, funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):

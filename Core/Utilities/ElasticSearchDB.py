@@ -144,7 +144,7 @@ class ElasticSearchDB( object ):
       gLogger.error( e )
     doctype = ''
     for i in result:
-      if len( result[i].get( 'mappings', {} ) ) == 0:
+      if not result[i].get( 'mappings' ) :
         return S_ERROR( "%s does not exists!" % indexName )
       doctype = result[i]['mappings']
       break
@@ -159,7 +159,7 @@ class ElasticSearchDB( object ):
     return self.__client.indices.exists( indexName )
   
   ########################################################################
-  def generateFullIndexName( self, indexName ):
+  def _generateFullIndexName( self, indexName ):
     """
     Given an index perfix we create the actual index name.
     :param str indexName: it is the name of the index
@@ -174,7 +174,7 @@ class ElasticSearchDB( object ):
     
     """
     result = None
-    fullIndex = self.generateFullIndexName( indexPrefix )  # we have to create the an index in each day...
+    fullIndex = self._generateFullIndexName( indexPrefix )  # we have to create the an index in each day...
     if self.isExists( fullIndex ):
       result = S_OK( fullIndex )
     else:
@@ -198,7 +198,7 @@ class ElasticSearchDB( object ):
     except ValueError as e:
       return S_ERROR(e)
     
-    if retVal.get('acknowledged', False): 
+    if retVal.get( 'acknowledged' ): 
       return S_OK(indexName)
     else:
       return S_ERROR(retVal)
@@ -209,7 +209,7 @@ class ElasticSearchDB( object ):
     except TransportError as e:
       return S_ERROR(e)
     
-    if res.get('created', False):
+    if res.get( 'created' ):
       return S_OK(indexName)
     else:
       return S_ERROR(res)
@@ -221,7 +221,7 @@ class ElasticSearchDB( object ):
     :param str doc_type
     :param list data contains a list of dictionary 
     """
-    indexName = self.generateFullIndexName( indexprefix )
+    indexName = self._generateFullIndexName( indexprefix )
     if not self.isExists( indexName ):
       retVal = self.createIndex( indexprefix, mapping )
       if not retVal['OK']:

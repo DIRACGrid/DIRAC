@@ -38,7 +38,7 @@ class BaseType( object ):
     """
         
     self.__monitoringFields = ["Value"]
-    self.__index = self.getIndex()
+    self.__index = self._getIndex()
     
     # we only keep the last month of the data.
     self.__dataToKeep = -1 
@@ -54,7 +54,7 @@ class BaseType( object ):
       raise Exception( "monitoringFields has to be provided!" )
 
   ########################################################################
-  def getIndex ( self ):
+  def _getIndex ( self ):
     """It returns and index based on the name of the type.
     For example: WMSMonitorType the type the index will be wmsmonitor
     """
@@ -75,7 +75,7 @@ class BaseType( object ):
     self.__index = name
     
   ########################################################################
-  def getDocType( self ):
+  def _getDocType( self ):
     """
     It returns the corresponding category. The type of a document.
     """
