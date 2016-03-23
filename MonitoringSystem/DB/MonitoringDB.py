@@ -15,7 +15,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 class MonitoringDB( ElasticDB ):
 
   def __init__( self, name = 'Monitoring/MonitoringDB', readOnly = False ):
-    ElasticDB.__init__( self, 'MonitoringDB', name )
+    super( MonitoringDB, self ).__init__( 'MonitoringDB', name )
     self.__readonly = readOnly
     self.__documents = {}
     self.__loadIndexes()
@@ -35,8 +35,8 @@ class MonitoringDB( ElasticDB ):
     for pythonClassName in sorted( objectsLoaded ):
       typeClass = objectsLoaded[ pythonClassName ]
       for setup in setupsList:
-        indexName = "%s_%s" % ( setup.lower(), typeClass().getIndex() )
-        doc_type = typeClass().getDocType() 
+        indexName = "%s_%s" % ( setup.lower(), typeClass()._getIndex() )
+        doc_type = typeClass()._getDocType() 
         mapping = typeClass().getMapping()
         monfields = typeClass().getMonitoringFields()
         self.__documents[doc_type] = {"indexName": indexName, "mapping":mapping, 'monitoringFields':monfields}
@@ -71,7 +71,7 @@ class MonitoringDB( ElasticDB ):
     if self.isExists( all_index ):  
       indexes = self.getIndexes()
       if indexes:
-        actualindexName = self.generateFullIndexName( index )
+        actualindexName = self._generateFullIndexName( index )
         if self.isExists( actualindexName ):  
           self.log.info( "The index is exists:", actualindexName )
         else:
@@ -106,8 +106,7 @@ class MonitoringDB( ElasticDB ):
     docs = retVal['Value']
     monfields = self.__documents[typeName]['monitoringFields']
     
-    keys = docs[typeName]['properties'].keys() 
-    for i in keys:
+    for i in docs[typeName]['properties']:
       if i not in monfields and not i.startswith('time'):
         retVal = self.getUniqueValue( indexName, i )
         if not retVal['OK']:

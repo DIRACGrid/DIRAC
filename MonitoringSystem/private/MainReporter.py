@@ -105,4 +105,4 @@ class MainReporter( object ):
     if not plotterClass:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
     plotter = plotterClass( self.__db, self.__setup )
-    return S_OK( plotter.plotsList() )
+    return S_OK( plotter._plotsList() )

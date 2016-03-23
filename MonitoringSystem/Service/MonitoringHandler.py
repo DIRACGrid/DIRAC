@@ -134,11 +134,13 @@ class MonitoringHandler( RequestHandler ):
     """
     
     retVal = generateErrorMessagePlot( msgText )
-    
-    retVal = fileHelper.sendData( retVal[ 'Value' ] )
-    if not retVal[ 'OK' ]:
-      return retVal
-    fileHelper.sendEOF()
+    if not retVal:
+      retVal = fileHelper.sendData( retVal[ 'Message' ] )
+    else:
+      retVal = fileHelper.sendData( retVal[ 'Value' ] )
+      if not retVal[ 'OK' ]:
+        return retVal
+      fileHelper.sendEOF()
     return S_OK()
 
   def __checkPlotRequest( self, reportRequest ):
