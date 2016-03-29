@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ReturnValues import S_OK
+from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 
 class FileCatalogClientBase( Client ):
   """ Client code to the DIRAC File Catalogue
@@ -49,3 +50,48 @@ class FileCatalogClientBase( Client ):
     :return: boolean Flag True if the method is implemented
     """
     raise AttributeError( "hasCatalogMethod must be implemented in the FC derived class" )
+
+########################################################################################
+#  Some default methods to always return successfully if we do not care
+########################################################################################
+  @checkCatalogArguments
+  def hasAccess( self, paths, _opType ):
+    """ Default method: returns True for all paths and all actions
+
+      :param lfn paths: has to be formatted this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+      :param str _opType: dummy string
+
+      :return: { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
+    """
+    lfns = paths.keys()
+    return S_OK( {'Failed' : {}, 'Successful' : dict.fromkeys( lfns, True )} )
+
+  @checkCatalogArguments
+  def exists( self, lfns ):
+    """ Default method: returns False for all paths
+
+      :param lfn paths: has to be formatted this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+
+      :return: { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
+
+    """
+    return S_OK( {'Failed' : {}, 'Successful' : dict.fromkeys( lfns, False )} )
+
+  @checkCatalogArguments
+  def getPathPermissions( self, lfns ):
+    """ Default method: returns Read & Write permission for all the paths
+
+      :param lfn paths: has to be formatted this way :
+                  { lfn : { se1 : pfn1, se2 : pfn2, ...}, ...}
+
+      :return: { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
+
+    """
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      successful[lfn] = { 'Write': True, "Read": True }
+    resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
