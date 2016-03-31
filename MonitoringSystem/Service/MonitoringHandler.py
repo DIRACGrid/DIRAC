@@ -86,7 +86,7 @@ class MonitoringHandler( RequestHandler ):
       try:
         result = self.__generatePlotFromFileId( fileId )
       except Exception as e:
-        gLogger.exception( "Exception while generating plot", e )
+        gLogger.exception( "Exception while generating plot", str( e ) )
         result = S_ERROR( "Error while generating plot: %s" % str( e ) )
       if not result[ 'OK' ]:
         self.__sendErrorAsImg( result[ 'Message' ], fileHelper )
