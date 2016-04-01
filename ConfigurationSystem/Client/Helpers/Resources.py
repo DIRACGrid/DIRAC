@@ -1,4 +1,6 @@
-# $HeadURL$
+""" Helper for the CS Resources section
+"""
+
 __RCSID__ = "$Id$"
 
 import re
