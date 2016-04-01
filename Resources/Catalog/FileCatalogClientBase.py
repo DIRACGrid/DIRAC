@@ -1,6 +1,15 @@
 """
     FileCatalogClientBase is a base class for the clients of file catalog-like
     services built within the DIRAC framework.
+
+    The class contains variables defining lists of implemented catalog methods
+    READ_METHODS
+    WRITE_METHODS
+    NO_LFN_METHODS
+    ADMIN_METHODS
+
+    Those lists must be complemented in the derived classes to include specific
+    implemented methods.
 """
 
 __RCSID__ = "$Id$"
