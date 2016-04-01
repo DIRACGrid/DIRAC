@@ -232,6 +232,7 @@ class SiteDirector( AgentModule ):
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         ceTags = ceDict.get( 'Tag', [] )
+        pilotRunDirectory = ceDict.get( 'PilotRunDirectory', '' )
         if isinstance( ceTags, basestring ):
           ceTags = fromChar( ceTags )
         ceMaxRAM = ceDict.get( 'MaxRAM', None )
@@ -271,12 +272,12 @@ class SiteDirector( AgentModule ):
           maxRAM = ceMaxRAM if not maxRAM else maxRAM
           if maxRAM:
             self.queueDict[queueName]['ParametersDict']['MaxRAM'] = maxRAM
-
+          if pilotRunDirectory:
+            self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-
           platform = ''
           if "Platform" in self.queueDict[queueName]['ParametersDict']:
             platform = self.queueDict[queueName]['ParametersDict']['Platform']
@@ -332,7 +333,7 @@ class SiteDirector( AgentModule ):
 
           if site not in self.sites:
             self.sites.append( site )
-
+            
     return S_OK()
 
   def execute( self ):
