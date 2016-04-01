@@ -131,3 +131,19 @@ def getPlatformString():
   platformString = "%s_%s_%s" % platformTuple
 
   return platformString
+
+_gPlatform = None
+_gPlatformTuple = None
+
+def getPlatform():
+  global _gPlatform, _gPlatformTuple
+
+  if _gPlatform is None:
+    _gPlatform = getPlatformString()
+    _gPlatformTuple = tuple( _gPlatform.split( '_' ) )
+
+  return _gPlatform
+
+def getPlatformTuple():
+  getPlatform()
+  return _gPlatformTuple
