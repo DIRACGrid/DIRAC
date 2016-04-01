@@ -10,31 +10,17 @@ import re
 import time
 
 import DIRAC
-from DIRAC                                              import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Catalog.Utilities                  import checkCatalogArguments
 from DIRAC.Core.Utilities.Time                          import fromEpoch
 from DIRAC.Core.Utilities.List                          import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getDNForUsername, getVOMSAttributeForGroup, \
                                                                getVOForGroup, getVOOption
+from DIRAC.Resources.Catalog.FileCatalogClientBase      import FileCatalogClientBase
+
 lfc = None
 importedLFC = None
-
-READ_METHODS = ['exists', 'isLink', 'readLink', 'isFile', 'getFileMetadata', 'getReplicas',
-                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'resolveDataset', 'getPathPermissions', 'getLFNForPFN', 'getUserDirectory']
-
-WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'addReplica', 'removeReplica',
-                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory',
-                 'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset',
-                 'changePathOwner', 'changePathMode']
-
-NO_LFN_METHODS = ['getUserDirectory', 'createUserDirectory', 'createUserMapping',
-                 'removeUserDirectory']
-
-ADMIN_METHODS = ['getUserDirectory', 'createUserDirectory', 'createUserMapping',
-                 'removeUserDirectory']
 
 ####################################################################
 #
@@ -174,7 +160,25 @@ def returnCode( error, value = '', errMsg = '' ):
 #
 #####################################################
 
-class LcgFileCatalogClient( object ):
+class LcgFileCatalogClient( FileCatalogClientBase ):
+
+  READ_METHODS = FileCatalogClientBase.READ_METHODS + [ 'isLink', 'readLink', 'isFile', 'getFileMetadata',
+                 'getReplicas', 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                 'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                 'resolveDataset', 'getLFNForPFN', 'getUserDirectory']
+
+  WRITE_METHODS = FileCatalogClientBase.WRITE_METHODS + ['createLink', 'removeLink', 'addFile', 'addReplica',
+                  'removeReplica',
+                  'removeFile', 'setReplicaStatus', 'setReplicaHost', 'createDirectory',
+                  'removeDirectory', 'removeDataset', 'removeFileFromDataset', 'createDataset',
+                  'changePathOwner', 'changePathMode']
+
+  NO_LFN_METHODS = FileCatalogClientBase.NO_LFN_METHODS + ['getUserDirectory', 'createUserDirectory',
+                   'createUserMapping', 'removeUserDirectory']
+
+  ADMIN_METHODS = FileCatalogClientBase.ADMIN_METHODS + ['getUserDirectory', 'createUserDirectory',
+                  'createUserMapping',
+                  'removeUserDirectory']
 
   def __init__( self, **options ):
     global lfc, importedLFC
@@ -226,21 +230,20 @@ class LcgFileCatalogClient( object ):
   # These are the get/set methods for use within the client
   #
 
-  def hasCatalogMethod( self, methodName ):
-    """
-    :param methodName: the name of the method to check
-    :return: bollean if the method is implemented
-    """
-    return hasattr( self, methodName )
-
-  @staticmethod
-  def getInterfaceMethods():
-    """ Get the methods implemented by the File Catalog client
-
-    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
-    """
-    global READ_METHODS, WRITE_METHODS
-    return ( READ_METHODS, WRITE_METHODS, [] )
+  # def hasCatalogMethod( self, methodName ):
+  #   """
+  #   :param methodName: the name of the method to check
+  #   :return: bollean if the method is implemented
+  #   """
+  #   return hasattr( self, methodName )
+  #
+  # @staticmethod
+  # def getInterfaceMethods():
+  #   """ Get the methods implemented by the File Catalog client
+  #
+  #   :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
+  #   """
+  #   return ( LcgFileCatalogClient.READ_METHODS, LcgFileCatalogClient.WRITE_METHODS, [] )
 
   def isOK( self ):
     return self.valid
@@ -354,9 +357,9 @@ class LcgFileCatalogClient( object ):
   @checkCatalogArguments
   def hasAccess(self, lfns, opType ):
 
-    if opType in READ_METHODS:
+    if opType in LcgFileCatalogClient.READ_METHODS:
       opType = 'Read'
-    elif opType in WRITE_METHODS:
+    elif opType in LcgFileCatalogClient.WRITE_METHODS:
       opType = 'Write'
 
     res = self.getPathPermissions( lfns )
