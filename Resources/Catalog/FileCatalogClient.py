@@ -47,21 +47,6 @@ class FileCatalogClient( FileCatalogClientBase ):
     self.serverURL = 'DataManagement/FileCatalog' if not url else url
     super( FileCatalogClient, self ).__init__( self.serverURL, **kwargs )
 
-#  @staticmethod
-#  def getInterfaceMethods():
-#    """ Get the methods implemented by the File Catalog client
-#
-#    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
-#    """
-#    return ( FileCatalogClient.READ_METHODS, FileCatalogClient.WRITE_METHODS, FileCatalogClient.NO_LFN_METHODS )
-#
-#  def hasCatalogMethod( self, methodName ):
-#    """ Check of a method with the given name is implemented
-#    :param str methodName: the name of the method to check
-#    :return: boolean Flag
-#    """
-#    return methodName in ( FileCatalogClient.READ_METHODS + FileCatalogClient.WRITE_METHODS + FileCatalogClient.NO_LFN_METHODS )
-
 ##################################################################################
 #
 ##################################################################################

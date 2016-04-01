@@ -225,26 +225,6 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
     self.session = False
     self.transaction = False
 
-  ####################################################################
-  #
-  # These are the get/set methods for use within the client
-  #
-
-  # def hasCatalogMethod( self, methodName ):
-  #   """
-  #   :param methodName: the name of the method to check
-  #   :return: bollean if the method is implemented
-  #   """
-  #   return hasattr( self, methodName )
-  #
-  # @staticmethod
-  # def getInterfaceMethods():
-  #   """ Get the methods implemented by the File Catalog client
-  #
-  #   :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
-  #   """
-  #   return ( LcgFileCatalogClient.READ_METHODS, LcgFileCatalogClient.WRITE_METHODS, [] )
-
   def isOK( self ):
     return self.valid
 
