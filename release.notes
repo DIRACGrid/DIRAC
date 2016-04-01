@@ -1,3 +1,14 @@
+[v6r14p25]
+
+*DMS
+FIX: DataManager - fix for getActiveReplicas(): first check Active replicas before 
+     selecting disk SEs
+
+*Resources
+FIX: StorageElementCache - fixes to make this class thread safe
+FIX: StorageFactory - fix in getConfigStorageProtocols() to properly get options
+     for inheriting SE definitions
+
 [v6r14p24]
 
 *Accounting
