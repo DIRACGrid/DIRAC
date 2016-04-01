@@ -5,6 +5,7 @@ from types import ListType
 __RCSID__ = "$Id$"
 # # custom duty
 import re
+import threading
 # # from DIRAC
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
@@ -24,7 +25,8 @@ class StorageElementCache( object ):
 
   def __call__( self, name, protocols = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
-    argTuple = ( name, protocols, vo )
+    tId = threading.current_thread().ident
+    argTuple = ( tId, name, protocols, vo )
     seObj = self.seCache.get( argTuple )
 
     if not seObj:
