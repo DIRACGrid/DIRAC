@@ -21,14 +21,11 @@ def getJobFeatures():
   return features
 
 def getProcessorFromMJF():
-  features = getJobFeatures()
-  NumberOfProcessor = features.get( 'allocated_cpu' )
-  return NumberOfProcessor
+  return getJobFeatures().get( 'allocated_cpu' )
+
 
 def getMemoryFromMJF():
-  features = getJobFeatures()
-  MaxRAM = features.get( 'max_rss_bytes' )
-  return MaxRAM
+  return getJobFeatures().get( 'max_rss_bytes' )
 
 
 def getMemoryFromProc():

@@ -36,15 +36,15 @@ Script.registerSwitch( "Q:", "Queue=", "Queue Name (Mandatory)", setQueue )
 Script.parseCommandLine( ignoreErrors = True )
 
 grid = Site.split( '.' )[0]
-NumberOfProcessor = JobParameters.getProcessorFromMJF()
-if not NumberOfProcessor:
-  NumberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessor' % ( grid, Site, ceName, Queue ) )
-  if not NumberOfProcessor:
-    NumberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/NumberOfProcessor' % grid )
-    if not NumberOfProcessor:
-      NumberOfProcessor = Os.getNumberOfCores()
+numberOfProcessor = JobParameters.getProcessorFromMJF()
+if not numberOfProcessor:
+  numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessor' % ( grid, Site, ceName, Queue ) )
+  if not numberOfProcessor:
+    numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/NumberOfProcessor' % grid )
+    if not numberOfProcessor:
+      numberOfProcessor = Os.getNumberOfCores()
   
-MaxRAM = JobParameters.getMemoryFromMJF()
-if not MaxRAM:
-  MaxRAM = JobMemory.getMemoryFromProc()
-gLogger.notice( NumberOfProcessor, MaxRAM )
+maxRAM = JobParameters.getMemoryFromMJF()
+if not maxRAM:
+  maxRAM = JobParameters.getMemoryFromProc()
+gLogger.notice( numberOfProcessor, maxRAM )
