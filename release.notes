@@ -89,6 +89,9 @@ FIX: SiteDirector - using PilotRunDirectory as WorkingDirectory, if available at
      level in the CS. Featire requested in issue #2746
 NEW: MultiProcessorSiteDirector - new director to experiment with the multiprocessor/
      wholeNode queues
+CHANGE: JobMemory utility renamed to JobParameters
+CHANGE: CheckWNCapabilities pilot command changed to get WN parameters from the
+        Machine Job Features (MJF) - NumberOfProcessors, MaxRAM     
 
 *RMS
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
