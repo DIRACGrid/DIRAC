@@ -12,54 +12,40 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeFo
 from DIRAC.Resources.Catalog.Utilities                 import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase     import FileCatalogClientBase
 
-# The list of methods below is defining the client interface
-READ_METHODS = ['exists', 'isFile', 'getFileMetadata', 'getReplicas',
-                'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
-                'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
-                'getPathPermissions', 'hasAccess', 'getLFNForPFN', 'getLFNForGUID',
-                'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
-                'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
-                'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
-                'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
-
-WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
-                 'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
-                 'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
-                 'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
-                 'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
-                 'freezeDataset', 'releaseDataset']
-
-NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
-                  'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
-                  'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
-                  'getCompatibleMetadata','addMetadataSet','getMetadataSet']
-
-ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
-                  'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
-
 class FileCatalogClient( FileCatalogClientBase ):
   """ Client code to the DIRAC File Catalogue
   """
+
+  # The list of methods below is defining the client interface
+  READ_METHODS = FileCatalogClientBase.READ_METHODS + \
+                 [ 'isFile', 'getFileMetadata',
+                   'getReplicas', 'getReplicaStatus', 'getFileSize', 'isDirectory', 'getDirectoryReplicas',
+                   'listDirectory', 'getDirectoryMetadata', 'getDirectorySize', 'getDirectoryContents',
+                   'getLFNForPFN', 'getLFNForGUID', 'findFilesByMetadata','getMetadataFields','getDirectoryUserMetadata',
+                   'findDirectoriesByMetadata','getReplicasByMetadata','findFilesByMetadataDetailed',
+                   'findFilesByMetadataWeb','getCompatibleMetadata','getMetadataSet', 'getDatasets',
+                   'checkDataset', 'getDatasetParameters', 'getDatasetFiles', 'getDatasetAnnotation']
+
+  WRITE_METHODS = ['createLink', 'removeLink', 'addFile', 'setFileStatus', 'addReplica', 'removeReplica',
+                   'removeFile', 'setReplicaStatus', 'setReplicaHost', 'setReplicaProblematic', 'createDirectory',
+                   'setDirectoryStatus', 'removeDirectory', 'changePathMode', 'changePathOwner', 'changePathGroup',
+                   'addMetadataField','deleteMetadataField','setMetadata','setMetadataBulk','removeMetadata',
+                   'addMetadataSet', 'addDataset', 'addDatasetAnnotation', 'removeDataset', 'updateDataset',
+                   'freezeDataset', 'releaseDataset']
+
+  NO_LFN_METHODS = ['findFilesByMetadata','addMetadataField','deleteMetadataField','getMetadataFields','setMetadata',
+                    'setMetadataBulk','removeMetadata','getDirectoryUserMetadata','findDirectoriesByMetadata',
+                    'getReplicasByMetadata','findFilesByMetadataDetailed','findFilesByMetadataWeb',
+                    'getCompatibleMetadata','addMetadataSet','getMetadataSet']
+
+  ADMIN_METHODS = [ 'addUser', 'deleteUser', 'addGroup', 'deleteGroup', 'getUsers', 'getGroups',
+                    'getCatalogCounters', 'repairCatalog', 'rebuildDirectoryUsage' ]
+
   def __init__( self, url = None, **kwargs ):
     """ Constructor function.
     """
     self.serverURL = 'DataManagement/FileCatalog' if not url else url
     super( FileCatalogClient, self ).__init__( self.serverURL, **kwargs )
-
-  @staticmethod
-  def getInterfaceMethods():
-    """ Get the methods implemented by the File Catalog client
-
-    :return tuple: ( read_methods_list, write_methods_list, nolfn_methods_list )
-    """
-    return ( READ_METHODS, WRITE_METHODS, NO_LFN_METHODS )
-
-  def hasCatalogMethod( self, methodName ):
-    """ Check of a method with the given name is implemented
-    :param str methodName: the name of the method to check
-    :return: boolean Flag
-    """
-    return methodName in ( READ_METHODS + WRITE_METHODS + NO_LFN_METHODS )
 
 ##################################################################################
 #
