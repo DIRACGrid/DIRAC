@@ -1,6 +1,7 @@
 GSI>=0.6.4
 MySQL-python>=1.2.5
 jinja2
+funcsigs
 matplotlib>=1.5.0
 numpy>=1.10.1
 pexpect>=4.0.1

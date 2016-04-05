@@ -1,4 +1,4 @@
-[v6r15-pre17]
+[v6r15-pre18]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -30,6 +30,10 @@ NEW: dirac-rss-policy-manager - allows to interactively modify and test only the
 FIX: XXXTimeLeft - do not mix CPU and WallTime values     
 FIX: InstallTools, ComponentInstaller - longer timeout for checking components PID (after restart)
 CHANGE: Proxy - in executeWithUserProxy() when multiple DNs are present, try all of them
+CHANGE: List utility - change uniqueElements() to be much faster
+NEW: Platform - added getPlatform() and getPlatformTuple() utilities to evaluate lazily the
+     DIRAC platform only when it is needed, this accelerates DIRAC commands not needing
+     the platform information. 
 
 *Configuration
 NEW: GOCDB2CSAgent agent to synchronize GOCDB and CS data about perfSONAR services
@@ -56,6 +60,7 @@ FIX: DataStoreClient - Synchronizer based decorators have been replaced with a s
 *RSS
 NEW: CE Availability policy, closing #2373
 CHANGE: Ported setStatus and setToken rpc calls to PublisherHandler from LHCb implementation
+NEW: E-mails generated while RSS actions are now aggregated to avoid avalanches of mails
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
@@ -81,8 +86,13 @@ NEW: TaskQueueDB - possibility to present requirements in a form of tags from th
 FIX: JobWrapper - the InputData optimizer parameters are now DEncoded     
 CHANGE: JobAgent - add Processors and WholeNode tags to the resources description
 CHANGE: SiteDirector - flag to always download pilot output is set to False by default
+FIX: SiteDirector - using PilotRunDirectory as WorkingDirectory, if available at the CE 
+     level in the CS. Featire requested in issue #2746
 NEW: MultiProcessorSiteDirector - new director to experiment with the multiprocessor/
      wholeNode queues
+CHANGE: JobMemory utility renamed to JobParameters
+CHANGE: CheckWNCapabilities pilot command changed to get WN parameters from the
+        Machine Job Features (MJF) - NumberOfProcessors, MaxRAM     
 
 *RMS
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
@@ -98,6 +108,21 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p25]
+
+*Core
+FIX: Subprocess - more detailed error log message in case ov output buffer
+     overflow
+
+*DMS
+FIX: DataManager - fix for getActiveReplicas(): first check Active replicas before 
+     selecting disk SEs
+
+*Resources
+FIX: StorageElementCache - fixes to make this class thread safe
+FIX: StorageFactory - fix in getConfigStorageProtocols() to properly get options
+     for inheriting SE definitions
 
 [v6r14p24]
 

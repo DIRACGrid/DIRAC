@@ -224,7 +224,7 @@ class Service( object ):
     self._monitor.registerActivity( 'MaxFD', "Max File Descriptors", 'Framework', 'fd', MonitoringClient.OP_MEAN )
 
     self._monitor.setComponentExtraParam( 'DIRACVersion', DIRAC.version )
-    self._monitor.setComponentExtraParam( 'platform', DIRAC.platform )
+    self._monitor.setComponentExtraParam( 'platform', DIRAC.getPlatform() )
     self._monitor.setComponentExtraParam( 'startTime', Time.dateTime() )
     for prop in ( ( "__RCSID__", "version" ), ( "__doc__", "description" ) ):
       try:

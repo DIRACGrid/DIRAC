@@ -2,12 +2,15 @@
 """
 
 __RCSID__ = "$Id$"
+
 # # custom duty
 import re
 import time
 import datetime
 import copy
 import errno
+import threading
+
 # # from DIRAC
 from DIRAC import gLogger, gConfig, siteName
 from DIRAC.Core.Utilities import DErrno
@@ -32,7 +35,8 @@ class StorageElementCache( object ):
 
   def __call__( self, name, plugins = None, vo = None, hideExceptions = False ):
     self.seCache.purgeExpired( expiredInSeconds = 60 )
-    argTuple = ( name, plugins, vo )
+    tId = threading.current_thread().ident
+    argTuple = ( tId, name, protocols, vo )
     seObj = self.seCache.get( argTuple )
 
     if not seObj:

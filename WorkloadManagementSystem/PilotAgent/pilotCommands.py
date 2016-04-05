@@ -373,19 +373,16 @@ class CheckCECapabilities( CommandBase ):
     """ Setup CE/Queue Tags
     """
 
-    cfg = []
     if self.pp.useServerCertificate:
-      cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
-      cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
-      cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+      self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
     if self.pp.localConfigFile:
-      cfg.append( self.pp.localConfigFile )  # this file is as input
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
 
     checkCmd = 'dirac-resource-get-parameters -S %s -N %s -Q %s %s' % ( self.pp.site,
                                                                         self.pp.ceName,
                                                                         self.pp.queueName,
-                                                                        " ".join( cfg ) )
+                                                                        " ".join( self.cfg ) )
     retCode, resourceDict = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
 
     import json
@@ -398,8 +395,6 @@ class CheckCECapabilities( CommandBase ):
 
       if self.pp.useServerCertificate:
         self.cfg.append( '-o  /DIRAC/Security/UseServerCertificate=yes' )
-        self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
-        self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
 
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
@@ -429,28 +424,24 @@ class CheckWNCapabilities( CommandBase ):
     """ Discover #Processors and memory
     """
 
-    cfg = []
     if self.pp.useServerCertificate:
-      cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
-      cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
-      cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
+      self.cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
     if self.pp.localConfigFile:
-      cfg.append( self.pp.localConfigFile )  # this file is as input
+      self.cfg.append( self.pp.localConfigFile )  # this file is as input
 
-    checkCmd = "dirac-wms-get-wn-parameters %s" % ' '.join( cfg )
+    checkCmd = 'dirac-wms-get-wn-parameters -S %s -N %s -Q %s %s' % ( self.pp.site, self.pp.ceName, self.pp.queueName,
+                                                                       " ".join( self.cfg ) )
+    retCode, result = self.executeAndGetOutput( checkCmd, self.pp.installEnv )
 
-    retCode, result = self.executeAndGetOutput( checkCmd , self.pp.installEnv )
     result = result.split( ' ' )
-    NumberOfProcessor = int( result[0] )
-    MaxRAM = int( result[1] )
+    numberOfProcessor = int( result[0] )
+    maxRAM = int( result[1] )
 
-    if NumberOfProcessor or MaxRAM:
+    if numberOfProcessor or maxRAM:
       self.cfg.append( '-FDMH' )
 
       if self.pp.useServerCertificate:
         self.cfg.append( '-o /DIRAC/Security/UseServerCertificate=yes' )
-        self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
-        self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
       if self.pp.localConfigFile:
         self.cfg.append( '-O %s' % self.pp.localConfigFile )  # this file is as output
         self.cfg.append( self.pp.localConfigFile )  # this file is as input
@@ -458,18 +449,19 @@ class CheckWNCapabilities( CommandBase ):
       if self.debugFlag:
         self.cfg.append( '-ddd' )
 
-      if NumberOfProcessor:
-        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % NumberOfProcessor )
+      if numberOfProcessor:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/NumberOfProcessors=%d"' % numberOfProcessor )
       else:
         self.log.warn( "Could not retrieve number of processors" )
-      if MaxRAM:
-        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % MaxRAM )
+      if maxRAM:
+        self.cfg.append( '-o "/Resources/Computing/CEDefaults/MaxRAM=%d"' % maxRAM )
       else:
         self.log.warn( "Could not retrieve MaxRAM" )
       configureCmd = "%s %s" % ( self.pp.configureScript, " ".join( self.cfg ) )
       retCode, _configureOutData = self.executeAndGetOutput( configureCmd, self.pp.installEnv )
       if retCode:
         self.log.warn( "Could not configure DIRAC [ERROR %d]" % retCode )
+
 
 
 class ConfigureSite( CommandBase ):
