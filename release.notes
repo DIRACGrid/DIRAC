@@ -1,5 +1,9 @@
 [v6r14p25]
 
+*Core
+FIX: Subprocess - more detailed error log message in case ov output buffer
+     overflow
+
 *DMS
 FIX: DataManager - fix for getActiveReplicas(): first check Active replicas before 
      selecting disk SEs
