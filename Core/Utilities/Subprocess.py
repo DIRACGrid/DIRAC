@@ -27,8 +27,6 @@ set a timeout.
        should be used to wrap third party python functions
 
 """
-__RCSID__ = "$Id$"
-
 from multiprocessing import Process, Manager
 import threading
 import time
@@ -46,6 +44,8 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
+
+__RCSID__ = "$Id$"
 
 USE_WATCHDOG = False
 
@@ -398,9 +398,8 @@ class Subprocess:
     else: # buffer size limit reached killing process (see comment on __readFromFile)
       exitStatus = self.killChild()
 
-      return self.__generateSystemCommandError(
-                  exitStatus,
-                  "%s for '%s' call" % ( retDict['Message'], self.cmdSeq ) )
+      return self.__generateSystemCommandError( exitStatus,
+                                                "%s for '%s' call" % ( retDict['Message'], self.cmdSeq ) )
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     """ system call (no shell) - execute :cmdSeq: """
@@ -452,10 +451,9 @@ class Subprocess:
         if self.timeout and time.time() - initialTime > self.timeout:
           exitStatus = self.killChild()
           self.__readFromCommand()
-          return self.__generateSystemCommandError(
-                      exitStatus,
-                      "Timeout (%d seconds) for '%s' call" %
-                      ( self.timeout, cmdSeq ) )
+          return self.__generateSystemCommandError( exitStatus,
+                                                    "Timeout (%d seconds) for '%s' call" %
+                                                    ( self.timeout, cmdSeq ) )
         time.sleep( 0.01 )
         exitStatus = self.__poll( self.child.pid )
 
@@ -505,16 +503,16 @@ class Subprocess:
     nextLineIndex = self.bufferList[ bufferIndex ][0][ self.bufferList[ bufferIndex ][1]: ].find( "\n" )
     if nextLineIndex > -1:
       try:
-        self.callback( bufferIndex, self.bufferList[ bufferIndex ][0][
-                        self.bufferList[ bufferIndex ][1]:
-                        self.bufferList[ bufferIndex ][1] + nextLineIndex ] )
+        self.callback( bufferIndex,
+                       self.bufferList[ bufferIndex ][0][ self.bufferList[ bufferIndex ][1]:
+                                                          self.bufferList[ bufferIndex ][1] + nextLineIndex ] )
         #Each line processed is taken out of the buffer to prevent the limit from killing us
         nL = self.bufferList[ bufferIndex ][1] + nextLineIndex + 1
         self.bufferList[ bufferIndex ][0] = self.bufferList[ bufferIndex ][0][ nL: ]
         self.bufferList[ bufferIndex ][1] = 0
       except Exception:
         self.log.exception( 'Exception while calling callback function',
-                           '%s' % self.callback.__name__ )
+                            '%s' % self.callback.__name__ )
         self.log.showStack()
 
       return True
@@ -548,8 +546,8 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
   if timeout > 0 and USE_WATCHDOG:
     spObject = Subprocess( timeout=timeout, bufferLimit = bufferLimit )
     shCall = Watchdog( spObject.systemCall, args=( cmdSeq, ), kwargs = { "callbackFunction" : callbackFunction,
-                                                                            "env" : env,
-                                                                            "shell" : True } )
+                                                                         "env" : env,
+                                                                         "shell" : True } )
     spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
     result = shCall(timeout+1)
   else:
