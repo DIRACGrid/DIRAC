@@ -107,6 +107,21 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p25]
+
+*Core
+FIX: Subprocess - more detailed error log message in case ov output buffer
+     overflow
+
+*DMS
+FIX: DataManager - fix for getActiveReplicas(): first check Active replicas before 
+     selecting disk SEs
+
+*Resources
+FIX: StorageElementCache - fixes to make this class thread safe
+FIX: StorageFactory - fix in getConfigStorageProtocols() to properly get options
+     for inheriting SE definitions
+
 [v6r14p24]
 
 *Accounting

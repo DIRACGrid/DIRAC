@@ -263,9 +263,10 @@ class StorageFactory( object ):
         if pluginName:
           for protocolDetail in protocolDetails:
             if protocolDetail.get( 'PluginName' ) == pluginName:
-              protocolDetail.update( detail )
+              for key, val in detail.iteritems():
+                if val:
+                  protocolDetail[key] = val
             break
-
     return S_OK( protocolDetails )
 
   def _getConfigStorageProtocolDetails( self, storageName, protocolSection, checkAccess = True ):
