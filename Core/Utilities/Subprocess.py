@@ -3,7 +3,7 @@
 DIRAC Wrapper to execute python and system commands with a wrapper, that might
 set a timeout.
 3 FUNCTIONS are provided:
-   
+
      - shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
        it uses subprocess.Popen class with "shell = True".
        If cmdSeq is a string, it specifies the command string to execute through
@@ -17,7 +17,7 @@ set a timeout.
        stderr and stdout are piped. callbackFunction( pipeId, line ) can be
        defined to process the stdout (pipeId = 0) and stderr (pipeId = 1) as
        they are produced
-       
+
        They return a DIRAC.ReturnValue dictionary with a tuple in Value
        ( returncode, stdout, stderr ) the tuple will also be available upon
        timeout error or buffer overflow error.
@@ -69,7 +69,7 @@ class Watchdog( object ):
     self.__executor = Process( target = self.run_func, args = (self.s_ok_error, ) )
 
   def run_func( self, s_ok_error ):
-    """ subprocess target 
+    """ subprocess target
 
     :param Pipe pipe: pipe used for communication
     """
@@ -106,7 +106,7 @@ class Watchdog( object ):
       ## SIGKILL
       if self.__executor.is_alive():
         os.kill( self.pid, signal.SIGKILL )
-      
+
   def __call__( self, timeout = 0 ):
     """ decorator execution """
     timeout = int(timeout)
@@ -157,7 +157,7 @@ class Subprocess:
     except Exception, x:
       self.log.exception( 'Failed initialisation of Subprocess object' )
       raise x
-    
+
     self.child = None
     self.childPID = 0
     self.childKilled = False
@@ -166,7 +166,7 @@ class Subprocess:
     self.cmdSeq = []
 
   def changeTimeout( self, timeout ):
-    """ set the time out limit to :timeout: seconds 
+    """ set the time out limit to :timeout: seconds
 
     :param int timeout: time out in seconds
     """
@@ -187,7 +187,8 @@ class Subprocess:
       redBuf = os.read( fd, 8192 )
       dataString += redBuf
       if len( dataString ) + baseLength > self.bufferLimit:
-        self.log.error( 'Maximum output buffer length reached' )
+        self.log.error( 'Maximum output buffer length reached',
+                        "First and last data in buffer: \n%s \n....\n %s " % (dataString[:100], dataString[-100:]) )
         retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) '
                            'for called function return value' % self.bufferLimit )
         retDict[ 'Value' ] = dataString
@@ -257,7 +258,7 @@ class Subprocess:
       return None
 
   def killChild( self, recursive = True ):
-    """ kill child process 
+    """ kill child process
 
     :param boolean recursive: flag to kill all descendants
     """
@@ -293,9 +294,9 @@ class Subprocess:
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     """ call python function :function: with :stArgs: and :stKeyArgs: """
-    
+
     self.log.verbose( 'pythonCall:', function.__name__ )
-    
+
     readFD, writeFD = os.pipe()
     pid = os.fork()
     self.childPID = pid
@@ -339,11 +340,11 @@ class Subprocess:
         os.close( readFD )
 
   def __generateSystemCommandError( self, exitStatus, message ):
-    """ create system command error 
+    """ create system command error
 
     :param int exitStatus: exist status
     :param str message: error message
-    :return: S_ERROR with additional 'Value' tuple ( existStatus, stdoutBuf, stderrBuf ) 
+    :return: S_ERROR with additional 'Value' tuple ( existStatus, stdoutBuf, stderrBuf )
     """
     retDict = S_ERROR( message )
     retDict[ 'Value' ] = ( exitStatus,
@@ -397,18 +398,18 @@ class Subprocess:
     else: # buffer size limit reached killing process (see comment on __readFromFile)
       exitStatus = self.killChild()
 
-      return self.__generateSystemCommandError( 
+      return self.__generateSystemCommandError(
                   exitStatus,
                   "%s for '%s' call" % ( retDict['Message'], self.cmdSeq ) )
 
   def systemCall( self, cmdSeq, callbackFunction = None, shell = False, env = None ):
     """ system call (no shell) - execute :cmdSeq: """
-    
+
     if shell:
       self.log.verbose( 'shellCall:', cmdSeq )
     else:
       self.log.verbose( 'systemCall:', cmdSeq )
-        
+
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
     if sys.platform.find( "win" ) == 0:
@@ -451,7 +452,7 @@ class Subprocess:
         if self.timeout and time.time() - initialTime > self.timeout:
           exitStatus = self.killChild()
           self.__readFromCommand()
-          return self.__generateSystemCommandError( 
+          return self.__generateSystemCommandError(
                       exitStatus,
                       "Timeout (%d seconds) for '%s' call" %
                       ( self.timeout, cmdSeq ) )
@@ -536,7 +537,7 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
     result = spObject.systemCall( cmdSeq,
                                   callbackFunction = callbackFunction,
                                   env = env,
-                                  shell = False )  
+                                  shell = False )
   return result
 
 def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit = 52428800 ):
@@ -567,11 +568,11 @@ def pythonCall( timeout, function, *stArgs, **stKeyArgs ):
   if timeout > 0 and USE_WATCHDOG:
     spObject = Subprocess( timeout=timeout )
     pyCall = Watchdog( spObject.pythonCall, args=( function, ) + stArgs, kwargs=stKeyArgs )
-    spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )  
+    spObject.log.verbose( 'Subprocess Watchdog timeout set to %d' % timeout )
     result = pyCall(timeout+1)
   else:
     spObject = Subprocess( timeout )
-    result = spObject.pythonCall( function, *stArgs, **stKeyArgs )  
+    result = spObject.pythonCall( function, *stArgs, **stKeyArgs )
   return result
 
 def __getChildrenForPID( ppid ):
