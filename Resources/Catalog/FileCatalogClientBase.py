@@ -110,9 +110,5 @@ class FileCatalogClientBase( Client ):
       :return: { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
 
     """
-    failed = {}
-    successful = {}
-    for lfn in lfns.keys():
-      successful[lfn] = { 'Write': True, "Read": True }
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( {'Failed' : {},
+                  'Successful' : dict.fromkeys( lfns, { 'Write': True, "Read": True } )} )
