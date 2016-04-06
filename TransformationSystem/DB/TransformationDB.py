@@ -6,8 +6,6 @@
     databases
 """
 
-__RCSID__ = "$Id$"
-
 import re
 import time
 import threading
@@ -20,6 +18,8 @@ from DIRAC.Core.Utilities.List                            import stringListToStr
 from DIRAC.Core.Utilities.Shifter                         import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations  import Operations
 from DIRAC.Core.Utilities.Subprocess                      import pythonCall
+
+__RCSID__ = "$Id$"
 
 MAX_ERROR_COUNT = 10
 

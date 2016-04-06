@@ -7,8 +7,6 @@
 Utilities for Transformation system
 """
 
-__RCSID__ = "$Id$"
-
 import ast
 import random
 
@@ -23,6 +21,8 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+
+__RCSID__ = "$Id$"
 
 
 class PluginUtilities( object ):
