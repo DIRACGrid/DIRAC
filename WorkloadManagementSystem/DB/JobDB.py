@@ -1311,7 +1311,7 @@ class JobDB( DB ):
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
 
     if not resultDict['VerifiedFlag']:
-      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % ( 
+      return S_ERROR( 'Job %s not Verified: Status = %s, MinorStatus = %s' % (
                                                                              jobID,
                                                                              resultDict['Status'],
                                                                              resultDict['MinorStatus'] ) )
@@ -1419,7 +1419,7 @@ class JobDB( DB ):
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
 
     jobJDL = classAdJob.asJDL()
-    
+
     # Replace the JobID placeholder if any
     if jobJDL.find( '%j' ) != -1:
       jobJDL = jobJDL.replace( '%j', str( jobID ) )
@@ -1476,6 +1476,34 @@ class JobDB( DB ):
     if result['OK']:
       for site, status in result['Value']:
         siteDict[site] = status
+
+    return S_OK( siteDict )
+
+#############################################################################
+  def getAllSiteMaskStatus( self ):
+    """ Get the everything from site mask status
+    """
+    cmd = "SELECT Site,Status,LastUpdateTime,Author,Comment FROM SiteMask"
+
+    result = self._query( cmd )
+    siteDict = {}
+    if result['OK']:
+      for site, status, LastUpdateTime, Author, Comment in result['Value']:
+        siteDict[site] = status, LastUpdateTime, Author, Comment
+
+    return S_OK( siteDict )
+
+  #############################################################################
+  def getAllSiteMaskLoggingStatus( self ):
+    """ Get the everything from site mask logging status
+    """
+    cmd = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
+
+    result = self._query( cmd )
+    siteDict = {}
+    if result['OK']:
+      for site, status, UpdateTime, Author, Comment in result['Value']:
+        siteDict[site] = status, UpdateTime, Author, Comment
 
     return S_OK( siteDict )
 
