@@ -1486,6 +1486,10 @@ class JobDB( DB ):
     cmd = "SELECT Site,Status,LastUpdateTime,Author,Comment FROM SiteMask"
 
     result = self._query( cmd )
+
+    if not result[ 'OK' ]:
+      return result[ 'Message' ]
+
     siteDict = {}
     if result['OK']:
       for site, status, LastUpdateTime, Author, Comment in result['Value']:
@@ -1500,6 +1504,10 @@ class JobDB( DB ):
     cmd = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
 
     result = self._query( cmd )
+
+    if not result[ 'OK' ]:
+      return result[ 'Message' ]
+
     siteDict = {}
     if result['OK']:
       for site, status, UpdateTime, Author, Comment in result['Value']:
