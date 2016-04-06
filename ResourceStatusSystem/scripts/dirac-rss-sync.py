@@ -30,7 +30,7 @@ subLogger  = None
 switchDict = {}
 
 DEFAULT_STATUS = 'Banned'
-Datetime       = datetime.now()
+Datetime       = datetime.utcnow()
 #Add 24 hours to the datetime (it is going to be inserted in the "TokenExpiration" Column of "SiteStatus")
 Datetime       += timedelta(hours=24)
 
@@ -133,6 +133,7 @@ def initSites():
 
   if not sites[ 'OK' ]:
     subLogger.error( sites[ 'Message' ] )
+    DIRACExit( 1 )
 
   for site, elements in sites['Value'].iteritems():
     table  = { 'table': 'SiteStatus' }
@@ -143,7 +144,7 @@ def initSites():
 
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
-      continue
+      DIRACExit( 1 )
 
   return S_OK()
 
