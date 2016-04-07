@@ -16,6 +16,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
+from DIRAC.Core.Utilities                                   import DErrno
 
 class ResourceStatus( object ):
   """
@@ -246,7 +247,7 @@ class ResourceStatus( object ):
       return S_OK( getDictFromList( defList ) )
 
     _msg = "ComputingElement '%s', with statusType '%s' is unknown for CS."
-    return S_ERROR( _msg % ( elementName, statusType ) )
+    return S_ERROR(DErrno.ERESUNK, _msg % ( elementName, statusType ) )
 
 
   def __setRSSComputingElementStatus( self, elementName, statusType, status, reason, tokenOwner ):
@@ -363,7 +364,7 @@ class ResourceStatus( object ):
       return S_OK( getDictFromList( defList ) )
 
     _msg = "StorageElement '%s', with statusType '%s' is unknown for CS."
-    return S_ERROR( _msg % ( elementName, statusType ) )
+    return S_ERROR(DErrno.ERESUNK, _msg % ( elementName, statusType ) )
 
   def __setRSSStorageElementStatus( self, elementName, statusType, status, reason, tokenOwner ):
     """

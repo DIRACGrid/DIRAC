@@ -54,7 +54,7 @@ import sys
 # 1700: RMS
 # 1800: Accounting
 # 1900: TS
-# 2000: RSS
+# 2000: Resources and RSS
 
 # ## Generic (10XX)
 # Python related: 0X
@@ -97,7 +97,10 @@ EFCERR = 1604
 # ## RMS (17XX)
 ERMSUKN = 1700
 
-
+# ## Resources and RSS (20XX)
+ERESGEN = 2000
+ERESUNA = 2001
+ERESUNK = 2002
 
 # This translates the integer number into the name of the variable
 dErrorCode = {
@@ -141,6 +144,11 @@ dErrorCode = {
 
                # RMS
                1700 : ERMSUKN,
+
+               # Resources and RSS
+               2000 : ERESGEN,
+               2001 : ERESUNA,
+               2002 : ERESUNK
                }
 
 
@@ -185,6 +193,11 @@ dStrError = {
 
               # RMS
               ERMSUKN : "Unknown RMS error",
+
+              # Resources and RSS
+              ERESGEN: "Unknown Resource Failure",
+              ERESUNA: "Resource not available",
+              ERESUNK: "Unknown Resource"
 }
 
 def strerror(code):
@@ -196,7 +209,7 @@ def strerror(code):
     return "Undefined error"
 
   errMsg = "Unknown error %s" % code
-  
+
   try:
     errMsg = dStrError[code]
   except KeyError:
@@ -207,7 +220,7 @@ def strerror(code):
       # on others, it returns a message...
     except ValueError:
       pass
-  
+
   return errMsg
 
 def cmpError( inErr, candidate ):
