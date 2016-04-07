@@ -83,7 +83,7 @@ class ResourceStatus( object ):
     if self.__getMode():
       return self.__setRSSComputingElementStatus( elementName, statusType, status, reason, tokenOwner )
     else:
-      return self.__setCSComputingElementStatus( elementName, statusType, status )
+      return S_OK()
 
 
   def getCatalogStatus( self, elementName, statusType = None, default = None ):
@@ -272,28 +272,6 @@ class ResourceStatus( object ):
     finally:
       # Release lock, no matter what.
       self.seCache.releaseLock()
-
-  def __setCSComputingElementStatus( self, elementName, statusType, status ):
-    """
-    Sets on the CS the ComputingElements status
-    """
-
-    statuses = self.rssConfig.getConfigStatusType( 'ComputingElement' )
-    if not statusType in statuses:
-      gLogger.error( "%s is not a valid statusType" % statusType )
-      return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )
-
-    csAPI = CSAPI()
-
-    cs_path = "/Resources/ComputingElements"
-
-    csAPI.setOption( "%s/%s/%s" % ( cs_path, elementName, statusType ), status )
-
-    res = csAPI.commitChanges()
-    if not res[ 'OK' ]:
-      gLogger.warn( 'CS: %s' % res[ 'Message' ] )
-
-    return res
 
   def __getRSSCatalogStatus( self, elementName, statusType ):
     """
