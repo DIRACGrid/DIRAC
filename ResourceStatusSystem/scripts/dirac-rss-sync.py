@@ -23,6 +23,9 @@ from DIRAC                                            import gConfig, gLogger, e
 from DIRAC.Core.Base                                  import Script
 from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.Utilities             import Synchronizer, CSHelpers, RssConfiguration
+from DIRAC.ResourceStatusSystem.Client                import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem          import StateMachine
 
 __RCSID__  = '$Id$'
 
@@ -30,9 +33,8 @@ subLogger  = None
 switchDict = {}
 
 DEFAULT_STATUS = 'Banned'
-Datetime       = datetime.utcnow()
 #Add 24 hours to the datetime (it is going to be inserted in the "TokenExpiration" Column of "SiteStatus")
-Datetime       += timedelta(hours=24)
+Datetime       = datetime.utcnow() + timedelta(hours=24)
 
 def registerSwitches():
   '''
@@ -97,7 +99,6 @@ def synchronize():
     Given the element switch, adds rows to the <element>Status tables with Status
     `Unknown` and Reason `Synchronized`.
   '''
-  from DIRAC.ResourceStatusSystem.Utilities      import Synchronizer
 
   synchronizer = Synchronizer.Synchronizer()
 
@@ -152,9 +153,6 @@ def initSEs():
   '''
     Initializes SEs statuses taking their values from the CS.
   '''
-  from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-  from DIRAC.ResourceStatusSystem.PolicySystem   import StateMachine
-  from DIRAC.ResourceStatusSystem.Utilities      import CSHelpers, RssConfiguration
 
   #WarmUp local copy
   CSHelpers.warmUp()

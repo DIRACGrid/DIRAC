@@ -1497,24 +1497,6 @@ class JobDB( DB ):
 
     return S_OK( siteDict )
 
-  #############################################################################
-  def getAllSiteMaskLoggingStatus( self ):
-    """ Get the everything from site mask logging status
-    """
-    cmd = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
-
-    result = self._query( cmd )
-
-    if not result[ 'OK' ]:
-      return result[ 'Message' ]
-
-    siteDict = {}
-    if result['OK']:
-      for site, status, UpdateTime, Author, Comment in result['Value']:
-        siteDict[site] = status, UpdateTime, Author, Comment
-
-    return S_OK( siteDict )
-
 #############################################################################
   def setSiteMask( self, siteMaskList, authorDN = 'Unknown', comment = 'No comment' ):
     """ Set the Site Mask to the given mask in a form of a list of tuples (site,status)
