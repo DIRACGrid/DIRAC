@@ -71,7 +71,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
 
     self.moduloNumber = self.am_getOption('moduloNumber',0)
     self.moduloResidual = self.am_getOption('moduloResidual',-1)
-    self.log.info('Split agents modulo %d, this agend resdiual %d' % (self.moduloNumber, self.moduloResidual))
+    if self.moduloResidual >= self.moduloNumber :
+      self.log.error("Residual %d is equal or greater than the modulo number %d, this cannot be, check the configuration of this agent" % (self.moduloResidual, self.moduloNumber))
+    self.log.notice('Split agents modulo %d, this agents resdiual %d' % (self.moduloNumber, self.moduloResidual))
 
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks",
                                gMonitor.OP_ACUM )
@@ -217,13 +219,11 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     else:
       self.log.verbose( "Obtained %d transformations" % len( res['Value'] ) )
 
-    if (self.moduloNumber >= 2 and self.moduloResidual >= 0) :
-      if self.moduloResidual >= self.moduloNumber :
-        self.log.error("Residual %d is equal or greater than the modulo number %d, this cannot be, check the configuration of this agent" % (self.moduloResidual, self.moduloNumber))
+    if self.moduloNumber >= 2 and self.moduloResidual >= 0 :
       self.log.info("Retrieving only productions with production number modulo %d and resdidual %d" % (self.moduloNumber, self.moduloResidual))
-      self.log.verbose("Original list of productions is", [ x['TransformationID'] for x in res['Value']])
+      self.log.verbose("Original list of productions is", ', '.join([ x['TransformationID'] for x in res['Value']]))
       res['Value'] = [ x for x in res['Value'] if x['TransformationID']%self.moduloNumber == self.moduloResidual ]
-      self.log.verbose("New list of productions is", [ x['TransformationID'] for x in res['Value']])
+      self.log.verbose("New list of productions is", ', '.join([ x['TransformationID'] for x in res['Value']]))
 
     return res
 
