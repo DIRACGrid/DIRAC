@@ -26,9 +26,11 @@ class ElasticSearchDB( object ):
 
   :param str url: the url to the database for example: el.cern.ch:9200
   :param str gDebugFile: is used to save the debug information to a file
+  :param int timeout the default time out to Elasticsearch
   """
   __chunk_size = 1000
   __url = ""
+  __timeout = 120
   ########################################################################
   def __init__( self, host, port, debug = False ):
     """ c'tor
@@ -51,7 +53,7 @@ class ElasticSearchDB( object ):
       except IOError as e:
         self.log.error( e )
       
-    self.__client = Elasticsearch( self.__url, timeout = 30 )
+    self.__client = Elasticsearch( self.__url, timeout = self.__timeout )
     self.__tryToConnect()
   
   ########################################################################
