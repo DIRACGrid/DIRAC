@@ -95,7 +95,6 @@ class SiteStatus( object ):
     siteStatusDict = {}
 
     for siteName in siteNamesList:
-      print siteName
       result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
 
       if not result['OK']:
