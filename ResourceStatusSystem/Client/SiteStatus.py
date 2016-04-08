@@ -15,6 +15,7 @@ from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread  import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration  import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ConfigurationSystem.Client.Helpers.Path          import cfgPath
+from DIRAC.Core.Utilities                                   import DErrno
 
 __RCSID__ = '$Id: $'
 
@@ -82,13 +83,28 @@ class SiteStatus( object ):
     """
 
     if siteNamesList is None:
-     siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )['Value']
+     siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
+
+     if not siteStatusDict['OK']:
+       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+     else:
+       siteStatusDict = siteStatusDict['Value']
+
      return S_OK( dict(siteStatusDict) )
 
     siteStatusDict = {}
 
     for siteName in siteNamesList:
-      siteStatusDict[siteName] = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
+      print siteName
+      result = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+
+      if not result['OK']:
+        return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+      elif result['Value'] == ():
+        #if one of the listed elements does not exist continue
+        continue
+      else:
+        siteStatusDict[siteName] = result['Value'][0][0]
 
     return S_OK( siteStatusDict )
 
@@ -113,9 +129,14 @@ class SiteStatus( object ):
     """
 
     if siteName is None:
-      return S_ERROR("Site does not exists")
+      return S_ERROR(DErrno.ERESUNK, 'Site does not exists')
 
-    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
+    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+
+    if not siteStatus['OK']:
+      return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+    else:
+      siteStatus = siteStatus['Value'][0][0]
 
     return S_OK( siteStatus )
 
@@ -145,6 +166,9 @@ class SiteStatus( object ):
     """
 
     siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+
+    if not siteStatus['OK']:
+      return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
 
     if siteStatus['Value'] == ():
       #Site does not exist, so it is not usable
@@ -176,10 +200,21 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
+    if siteNamesList is None:
+      return S_ERROR(DErrno.ERESUNK, 'siteNamesList is empty')
+
     siteStatusList = []
 
     for siteName in siteNamesList:
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
+      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+
+      if not siteStatus['OK']:
+        return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
+      elif siteStatus['Value'] == ():
+        #if one of the listed elements does not exist continue
+        continue
+      else:
+        siteStatus = siteStatus['Value'][0][0]
 
       if siteStatus == 'Active' or siteStatus == 'Degraded':
         siteStatusList.append(siteName)
