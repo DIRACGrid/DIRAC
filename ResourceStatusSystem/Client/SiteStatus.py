@@ -26,7 +26,6 @@ class SiteStatus( object ):
 
   It provides four methods to interact with the site statuses:
   * getSiteStatuses
-  * getSiteStatus
   * isUsableSite
   * getUsableSites
   """
@@ -82,7 +81,7 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    if siteNamesList is None:
+    if not siteNamesList:
      siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )
 
      if not siteStatusDict['OK']:
@@ -99,46 +98,13 @@ class SiteStatus( object ):
 
       if not result['OK']:
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
-      elif result['Value'] == ():
+      elif not result['Value']:
         #if one of the listed elements does not exist continue
         continue
       else:
         siteStatusDict[siteName] = result['Value'][0][0]
 
     return S_OK( siteStatusDict )
-
-
-  def getSiteStatus( self, siteName ):
-    """
-    Given a site, it returns its status by querying the database.
-
-    examples
-      >>> siteStatus.getSiteStatus( 'test1.test1.org' )
-          S_OK( 'Active' )
-      >>> siteStatus.getSiteStatus( 'NotExists' )
-          S_ERROR( ... )
-      >>> siteStatus.getSiteStatus( None )
-          S_ERROR( ... )
-
-    :Parameters:
-      **siteName** - `string`
-        name of the site to be matched
-
-    :return: S_OK() || S_ERROR()
-    """
-
-    if siteName is None:
-      return S_ERROR(DErrno.ERESUNK, 'Site does not exists')
-
-    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
-
-    if not siteStatus['OK']:
-      return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
-    else:
-      siteStatus = siteStatus['Value'][0][0]
-
-    return S_OK( siteStatus )
-
 
   def isUsableSite( self, siteName ):
     """
@@ -169,11 +135,11 @@ class SiteStatus( object ):
     if not siteStatus['OK']:
       return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
 
-    if siteStatus['Value'] == ():
+    if not siteStatus['Value']:
       #Site does not exist, so it is not usable
       return S_OK(False)
 
-    if siteStatus['Value'][0][0] == 'Active' or siteStatus['Value'][0][0] == 'Degraded':
+    if siteStatus['Value'][0][0] in ('Active', 'Degraded'):
       return S_OK(True)
     else:
       return S_OK(False)
@@ -199,7 +165,7 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    if siteNamesList is None:
+    if not siteNamesList:
       return S_ERROR(DErrno.ERESUNK, 'siteNamesList is empty')
 
     siteStatusList = []
@@ -209,13 +175,13 @@ class SiteStatus( object ):
 
       if not siteStatus['OK']:
         return S_ERROR(DErrno.ERESGEN, 'selectStatusElement failed')
-      elif siteStatus['Value'] == ():
+      elif not siteStatus['Value']:
         #if one of the listed elements does not exist continue
         continue
       else:
         siteStatus = siteStatus['Value'][0][0]
 
-      if siteStatus == 'Active' or siteStatus == 'Degraded':
+      if siteStatus in ('Active', 'Degraded'):
         siteStatusList.append(siteName)
 
     return S_OK( siteStatusList )
