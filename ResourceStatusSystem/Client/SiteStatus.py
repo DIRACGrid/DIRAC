@@ -6,8 +6,6 @@
 
 import math
 from time import sleep
-from types import ListType
-
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
@@ -83,21 +81,16 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    try:
+    if siteNamesList is None:
+     siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )['Value']
+     return S_OK( dict(siteStatusDict) )
 
-      if siteNamesList is None:
-       siteStatusDict = self.rsClient.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'Name', 'Status' ] } )['Value']
-       return S_OK( dict(siteStatusDict) )
+    siteStatusDict = {}
 
-      siteStatusDict = {}
+    for siteName in siteNamesList:
+      siteStatusDict[siteName] = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
 
-      for siteName in siteNamesList:
-        siteStatusDict[siteName] = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
-
-      return S_OK( siteStatusDict )
-
-    except Exception as e:
-      return S_ERROR(e)
+    return S_OK( siteStatusDict )
 
 
   def getSiteStatus( self, siteName ):
@@ -119,17 +112,12 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    try:
+    if siteName is None:
+      return S_ERROR("Site does not exists")
 
-      if siteName is None:
-        return S_ERROR("Site does not exists")
+    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
 
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
-
-      return S_OK( siteStatus )
-
-    except Exception as e:
-      return S_ERROR(e)
+    return S_OK( siteStatus )
 
 
   def isUsableSite( self, siteName ):
@@ -156,21 +144,16 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    try:
+    siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
 
-      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )
+    if siteStatus['Value'] == ():
+      #Site does not exist, so it is not usable
+      return S_OK(False)
 
-      if siteStatus['Value'] == ():
-        #Site does not exist, so it is not usable
-        return S_OK(False)
-
-      if siteStatus['Value'][0][0] == 'Active' or siteStatus['Value'][0][0] == 'Degraded':
-        return S_OK(True)
-      else:
-        return S_OK(False)
-
-    except Exception as e:
-      return S_ERROR(e)
+    if siteStatus['Value'][0][0] == 'Active' or siteStatus['Value'][0][0] == 'Degraded':
+      return S_OK(True)
+    else:
+      return S_OK(False)
 
 
   def getUsableSites( self, siteNamesList ):
@@ -193,20 +176,16 @@ class SiteStatus( object ):
     :return: S_OK() || S_ERROR()
     """
 
-    try:
+    siteStatusList = []
 
-      siteStatusList = []
+    for siteName in siteNamesList:
+      siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
 
-      for siteName in siteNamesList:
-        siteStatus = self.rsClient.selectStatusElement( 'Site', 'Status', name = siteName, meta = { 'columns' : [ 'Status' ] } )['Value'][0][0]
+      if siteStatus == 'Active' or siteStatus == 'Degraded':
+        siteStatusList.append(siteName)
 
-        if siteStatus == 'Active' or siteStatus == 'Degraded':
-          siteStatusList.append(siteName)
+    return S_OK( siteStatusList )
 
-      return S_OK( siteStatusList )
-
-    except Exception as e:
-      return S_ERROR(e)
 
  ################################################################################
 
