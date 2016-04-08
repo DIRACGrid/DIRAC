@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 from pylab import setp
-from matplotlib.colors import normalize, LinearSegmentedColormap
+from matplotlib.colors import Normalize, LinearSegmentedColormap
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 from matplotlib.dates import date2num
@@ -66,7 +66,7 @@ class QualityMapGraph( PlotBase ):
     # Setup the colormapper to get the right colors
     self.cmap = LinearSegmentedColormap( 'quality_colormap', cdict, 256 )
     #self.cmap = cm.RdYlGn
-    self.norms = normalize( 0, 100 )
+    self.norms = Normalize( 0, 100 )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
     mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
     def get_alpha( *args, **kw ):
