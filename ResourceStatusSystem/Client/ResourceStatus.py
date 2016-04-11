@@ -66,7 +66,8 @@ class ResourceStatus( object ):
       # We do not apply defaults. If is not on the cache, S_ERROR is returned.
       return self.__getRSSComputingElementStatus( elementName, statusType )
     else:
-      return S_OK( { 'all' : 'Active' } )
+      self.log.warn( "Can not get ComputingElement status from CS, returning 'Active' by default")
+      return S_OK( { elementName : {'all':'Active'} } )
 
   def setComputingElementStatus( self, elementName, statusType, status, reason = None,
                                tokenOwner = None ):
@@ -84,6 +85,7 @@ class ResourceStatus( object ):
     if self.__getMode():
       return self.__setRSSComputingElementStatus( elementName, statusType, status, reason, tokenOwner )
     else:
+      self.log.warn( "Can not set ComputingElement status in CS")
       return S_OK()
 
 
@@ -103,7 +105,8 @@ class ResourceStatus( object ):
       # We do not apply defaults. If is not on the cache, S_ERROR is returned.
       return self.__getRSSftsStatus( elementName, statusType )
     else:
-      return S_OK( { 'all' : 'Active' } )
+      self.log.warn( "Can not get FTS status from CS, returning 'Active' by default")
+      return S_OK( { elementName : {'all':'Active'} } )
 
   def setFTSStatus( self, elementName, statusType, status, reason = None,
                                tokenOwner = None ):
@@ -121,6 +124,7 @@ class ResourceStatus( object ):
     if self.__getMode():
       return self.__setRSSftsStatus( elementName, statusType, status, reason, tokenOwner )
     else:
+      self.log.warn( "Can not set FTS status in CS")
       return S_OK()
 
 
