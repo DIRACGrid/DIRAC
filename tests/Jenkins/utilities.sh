@@ -748,8 +748,7 @@ function getCertificate(){
 function prepareForPilot(){
 
 	#Move to a clean directory
-	mkdir pilotInstallDIR
-	cd pilotInstallDIR
+	mkdir -p $WORKSPACE/pilotInstallDIR
 
 	#cert first (host certificate)
 	#getCertificate (no need...)
@@ -760,6 +759,7 @@ function prepareForPilot(){
 	wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
 	wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
 
+	cd $WORKSPACE/pilotInstallDIR
 }
 
 

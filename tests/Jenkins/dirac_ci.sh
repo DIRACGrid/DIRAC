@@ -9,6 +9,28 @@
 # 09/12/2014
 #-------------------------------------------------------------------------------
 
+
+if [ ! -z "$DEBUG" ]
+then
+	echo 'Running in DEBUG mode'
+	DEBUG='-ddd'
+fi
+
+if [ ! -z "$WORKSPACE" ]
+then
+	echo 'We are in Jenkins I guess'
+else:
+  WORKSPACE=$PWD
+fi
+
+if [ ! -z "$DIRACBRANCH" ]
+then
+	echo 'Working on DIRAC branch ' $DIRACBRANCH
+else:
+  DIRACBRANCH='integration'
+fi
+
+
 # first first: sourcing utility file
 source $WORKSPACE/DIRAC/tests/Jenkins/utilities.sh
 
@@ -93,12 +115,6 @@ function fullInstallDIRAC(){
 	echo '[fullInstallDIRAC]'
 
 	finalCleanup
-
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi
 
 	#basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
 	installSite
@@ -218,12 +234,6 @@ function DIRACPilotInstall(){
 
 
 function fullPilot(){
-
-	if [ ! -z "$DEBUG" ]
-	then
-		echo 'Running in DEBUG mode'
-		export DEBUG='-ddd'
-	fi
 
 	#first simply install via the pilot
 	DIRACPilotInstall
