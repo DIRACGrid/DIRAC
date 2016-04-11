@@ -755,24 +755,12 @@ function prepareForPilot(){
 
 	#get the necessary scripts
   cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py .
-	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
-	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py
-	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py .
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py .
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py .
 
 }
 
-function getTests(){
-
-	#Move to TestCode directory
-	cd $TESTCODE
-
-	git clone https://github.com/DIRACGrid/DIRAC.git
-	cd DIRAC
-	git checkout rel-$DIRACBRANCH
-	cd ..
-	source DIRAC/tests/Jenkins/dirac_ci.sh
-
-}
 
 #.............................................................................
 #

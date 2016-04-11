@@ -48,7 +48,7 @@ PILOTINSTALLDIR=$_
 
 
 # Sourcing utility file
-source $WORKSPACE/DIRAC/tests/Jenkins/utilities.sh
+source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 
 
 
@@ -241,8 +241,6 @@ function DIRACPilotInstall(){
 	prepareForPilot
 
 	default
-
-	#run the dirac-pilot script, the JobAgent won't necessarily match a job
 
 	findRelease
 
