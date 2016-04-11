@@ -15,13 +15,15 @@ source $WORKSPACE/DIRAC/tests/Jenkins/utilities.sh
 
 ############################################
 # List URLs where to get scripts
+# NB: Requires DIRACBRANCH variable to be set
 ############################################
-DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py'
-DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
-DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotTools.py'
-DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
-DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
+DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/rel-'$DIRACBRANCH'/Core/scripts/dirac-install.py'
+DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
+DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/pilotTools.py'
+DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
+DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/rel-'$DIRACBRANCH'/Core/scripts/install_site.sh --no-check-certificate'
 
+# This instead is only here
 DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
 ############################################
 

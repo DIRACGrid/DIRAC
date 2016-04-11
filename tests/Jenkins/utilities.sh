@@ -43,7 +43,7 @@ function default(){
 function findRelease(){
 	echo '[findRelease]'
 
-	cd $WORKSPACE
+	currentDir=$PWD
 
 	PRE='p[[:digit:]]*'
 
@@ -93,7 +93,7 @@ function findRelease(){
 	externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
 
 	# Back to $WORKSPACE and clean tmp_dir
-	cd $WORKSPACE
+	cd $currentDir
 	rm -r $tmp_dir
 
 	# PrintOuts
@@ -746,6 +746,10 @@ function getCertificate(){
 }
 
 function prepareForPilot(){
+
+	#Move to a clean directory
+	mkdir pilotInstallDIR
+	cd pilotInstallDIR
 
 	#cert first (host certificate)
 	#getCertificate (no need...)
