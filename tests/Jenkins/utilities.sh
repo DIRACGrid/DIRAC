@@ -761,6 +761,18 @@ function prepareForPilot(){
 
 }
 
+function getTests(){
+
+	#Move to TestCode directory
+	cd $TESTCODE
+
+	git clone https://github.com/DIRACGrid/DIRAC.git
+	cd DIRAC
+	git checkout rel-$DIRACBRANCH
+	cd ..
+	source DIRAC/tests/Jenkins/dirac_ci.sh
+
+}
 
 #.............................................................................
 #
