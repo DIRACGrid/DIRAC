@@ -747,19 +747,18 @@ function getCertificate(){
 
 function prepareForPilot(){
 
-	#Move to a clean directory
-	mkdir -p $WORKSPACE/pilotInstallDIR
+	#Move to pilot directory
+	cd $PILOTINSTALLDIR
 
 	#cert first (host certificate)
 	#getCertificate (no need...)
 
 	#get the necessary scripts
-	wget --no-check-certificate -O dirac-install.py $DIRAC_INSTALL
-	wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
-	wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
-	wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py .
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py
 
-	cd $WORKSPACE/pilotInstallDIR
 }
 
 

@@ -10,6 +10,11 @@
 #-------------------------------------------------------------------------------
 
 
+# Default variables
+# DEBUG
+# WORKSPACE
+# DIRACBRANCH
+
 if [ ! -z "$DEBUG" ]
 then
 	echo 'Running in DEBUG mode'
@@ -33,8 +38,18 @@ else
 fi
 
 
-# first first: sourcing utility file
+# Creating default structure
+mkdir -p $WORKSPACE/TestCode # Where the test code resides
+TESTCODE=$_
+mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
+SERVERINSTALLDIR=$_
+mkdir -p $WORKSPACE/pilotInstallDIR # Where pilots are installed
+PILOTINSTALLDIR=$_
+
+
+# Sourcing utility file
 source $WORKSPACE/DIRAC/tests/Jenkins/utilities.sh
+
 
 
 ############################################
@@ -45,7 +60,8 @@ DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/rel-'$DIRACBRANCH'/Core/sc
 DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
 DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/pilotTools.py'
 DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
-DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/rel-'$DIRACBRANCH'/Core/scripts/install_site.sh --no-check-certificate'
+
+DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
 
 # This instead is only here
 DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
