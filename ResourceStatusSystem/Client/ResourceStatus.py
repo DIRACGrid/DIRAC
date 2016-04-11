@@ -45,8 +45,8 @@ class ResourceStatus( object ):
     # used.
     self.seCache = RSSCache( 'StorageElement', cacheLifeTime, self.__updateSECache )
     self.ceCache = RSSCache( 'ComputingElement', cacheLifeTime, self.__updateCECache )
-    self.ctCache = RSSCache( 'Catalog', cacheLifeTime, self.__updateCECache )
-    self.ftsCache = RSSCache( 'FTS', cacheLifeTime, self.__updateCECache )
+    self.catalogCache = RSSCache( 'Catalog', cacheLifeTime, self.__updateCatalogCache )
+    self.ftsCache = RSSCache( 'FTS', cacheLifeTime, self.__updateFTSCache )
 
   def getComputingElementStatus( self, elementName, statusType = None, default = None ):
     """
@@ -264,6 +264,50 @@ class ResourceStatus( object ):
       return rawCache
     return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
 
+  def __updateCatalogCache( self ):
+    """ Method used to update the catalogCache.
+
+        It will try 5 times to contact the RSS before giving up
+    """
+
+    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
+
+    for ti in range( 5 ):
+      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
+                                                     elementType = 'Catalog',
+                                                     meta = meta )
+      if rawCache['OK']:
+        break
+      self.log.warn( "Can't get catalog status", rawCache['Message'] + "; trial %d" % ti )
+      sleep( math.pow( ti, 2 ) )
+      self.rssClient = ResourceStatusClient()
+
+    if not rawCache[ 'OK' ]:
+      return rawCache
+    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
+
+  def __updateFTSCache( self ):
+    """ Method used to update the FTS.
+
+        It will try 5 times to contact the RSS before giving up
+    """
+
+    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
+
+    for ti in range( 5 ):
+      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
+                                                     elementType = 'FTS',
+                                                     meta = meta )
+      if rawCache['OK']:
+        break
+      self.log.warn( "Can't get FTS status", rawCache['Message'] + "; trial %d" % ti )
+      sleep( math.pow( ti, 2 ) )
+      self.rssClient = ResourceStatusClient()
+
+    if not rawCache[ 'OK' ]:
+      return rawCache
+    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
+
 
 ################################################################################
 
@@ -293,14 +337,14 @@ class ResourceStatus( object ):
 
     expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
 
-    self.seCache.acquireLock()
+    self.ceCache.acquireLock()
     try:
       res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
                                                 statusType = statusType, status = status,
                                                 reason = reason, tokenOwner = tokenOwner,
                                                 tokenExpiration = expiration )
       if res[ 'OK' ]:
-        self.seCache.refreshCache()
+        self.ceCache.refreshCache()
       else:
         _msg = 'Error updating ComputingElement (%s,%s,%s)' % ( elementName, statusType, status )
         gLogger.warn( 'RSS: %s' % _msg )
@@ -309,7 +353,7 @@ class ResourceStatus( object ):
 
     finally:
       # Release lock, no matter what.
-      self.seCache.releaseLock()
+      self.ceCache.releaseLock()
 
   def __getRSSftsStatus( self, elementName, statusType ):
     """
@@ -337,7 +381,7 @@ class ResourceStatus( object ):
 
     expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
 
-    self.seCache.acquireLock()
+    self.ftsCache.acquireLock()
     try:
       res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
                                                 statusType = statusType, status = status,
@@ -353,7 +397,7 @@ class ResourceStatus( object ):
 
     finally:
       # Release lock, no matter what.
-      self.seCache.releaseLock()
+      self.ftsCache.releaseLock()
 
   def __getRSSCatalogStatus( self, elementName, statusType ):
     """
@@ -367,7 +411,7 @@ class ResourceStatus( object ):
     minutes.
     """
 
-    cacheMatch = self.ctCache.match( elementName, statusType )
+    cacheMatch = self.catalogCache.match( elementName, statusType )
 
     self.log.debug( '__getRSSCatalogStatus' )
     self.log.debug( cacheMatch )
@@ -433,14 +477,14 @@ class ResourceStatus( object ):
 
     expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
 
-    self.seCache.acquireLock()
+    self.catalogCache.acquireLock()
     try:
       res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
                                                 statusType = statusType, status = status,
                                                 reason = reason, tokenOwner = tokenOwner,
                                                 tokenExpiration = expiration )
       if res[ 'OK' ]:
-        self.ctCache.refreshCache()
+        self.catalogCache.refreshCache()
 
       if not res[ 'OK' ]:
         _msg = 'Error updating Catalog (%s,%s,%s)' % ( elementName, statusType, status )
@@ -450,7 +494,7 @@ class ResourceStatus( object ):
 
     finally:
       # Release lock, no matter what.
-      self.seCache.releaseLock()
+      self.catalogCache.releaseLock()
 
   def __setCSCatalogStatus( self, elementName, statusType, status ):
     """
