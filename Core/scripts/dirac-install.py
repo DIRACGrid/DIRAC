@@ -2,8 +2,6 @@
 """
 The main DIRAC installer script
 """
-__RCSID__ = "$Id$"
-
 import sys
 import os
 import getopt
@@ -18,6 +16,8 @@ try:
   import hashlib as md5
 except ImportError:
   import md5
+
+__RCSID__ = "$Id$"
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
@@ -1334,7 +1334,7 @@ def createBashrc():
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend( ['# DIRAC platform',
-                       '[ -z "$DIRACPLAT" ] && export DIRACPLAT=`$DIRACROOT/scripts/dirac-platform`'] )
+                       '[ -z "$DIRACPLAT" ] && export DIRACPLAT=`$DIRAC/scripts/dirac-platform`'] )
       # Add the lines required for globus-* tools to use IPv6
       lines.extend( ['# IPv6 support',
                      'export GLOBUS_IO_IPV6=TRUE',
