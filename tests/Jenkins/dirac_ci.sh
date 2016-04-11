@@ -14,7 +14,7 @@ if [ ! -z "$DEBUG" ]
 then
 	echo 'Running in DEBUG mode'
 	DEBUG='-ddd'
-else:
+else
 	echo 'Running in non-DEBUG mode'
 fi
 
