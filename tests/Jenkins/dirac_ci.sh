@@ -14,19 +14,21 @@ if [ ! -z "$DEBUG" ]
 then
 	echo 'Running in DEBUG mode'
 	DEBUG='-ddd'
+else:
+	echo 'Running in non-DEBUG mode'
 fi
 
 if [ ! -z "$WORKSPACE" ]
 then
 	echo 'We are in Jenkins I guess'
-else:
+else
   WORKSPACE=$PWD
 fi
 
 if [ ! -z "$DIRACBRANCH" ]
 then
 	echo 'Working on DIRAC branch ' $DIRACBRANCH
-else:
+else
   DIRACBRANCH='integration'
 fi
 
