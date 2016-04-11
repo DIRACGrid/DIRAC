@@ -45,12 +45,13 @@ class ResourceStatus( object ):
     # used.
     self.seCache = RSSCache( 'StorageElement', cacheLifeTime, self.__updateSECache )
     self.ceCache = RSSCache( 'ComputingElement', cacheLifeTime, self.__updateCECache )
-    self.ceCache = RSSCache( 'Catalog', cacheLifeTime, self.__updateCECache )
+    self.ctCache = RSSCache( 'Catalog', cacheLifeTime, self.__updateCECache )
+    self.ftsCache = RSSCache( 'FTS', cacheLifeTime, self.__updateCECache )
 
   def getComputingElementStatus( self, elementName, statusType = None, default = None ):
     """
     Helper with dual access, tries to get information from the RSS for the given
-    ComputingElement, otherwise, it gets it from the CS.
+    ComputingElement.
 
 
     example:
@@ -71,7 +72,7 @@ class ResourceStatus( object ):
                                tokenOwner = None ):
 
     """
-    Helper with dual access, tries set information in RSS and in CS.
+    Helper with dual access, tries set information in RSS.
 
     example:
       >>> setComputingElementStatus( 'CERN-USER', 'all' )
@@ -82,6 +83,43 @@ class ResourceStatus( object ):
 
     if self.__getMode():
       return self.__setRSSComputingElementStatus( elementName, statusType, status, reason, tokenOwner )
+    else:
+      return S_OK()
+
+
+  def getFTSStatus( self, elementName, statusType = None, default = None ):
+    """
+    Helper with dual access, tries to get information from the RSS for the given FTS.
+
+    example:
+      >>> getFTSStatus( 'CERN-USER' )
+          S_OK( { 'CERN-USER' : { 'all': 'Active' } } )
+      >>> getFTSStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
+          S_ERROR( ... )
+
+    """
+
+    if self.__getMode():
+      # We do not apply defaults. If is not on the cache, S_ERROR is returned.
+      return self.__getRSSftsStatus( elementName, statusType )
+    else:
+      return S_OK( { 'all' : 'Active' } )
+
+  def setFTSStatus( self, elementName, statusType, status, reason = None,
+                               tokenOwner = None ):
+
+    """
+    Helper with dual access, tries set information in RSS.
+
+    example:
+      >>> setFTSStatus( 'CERN-USER', 'all' )
+          S_OK( ... )
+      >>> setFTSStatus( None )
+          S_ERROR( ... )
+    """
+
+    if self.__getMode():
+      return self.__setRSSftsStatus( elementName, statusType, status, reason, tokenOwner )
     else:
       return S_OK()
 
@@ -273,6 +311,50 @@ class ResourceStatus( object ):
       # Release lock, no matter what.
       self.seCache.releaseLock()
 
+  def __getRSSftsStatus( self, elementName, statusType ):
+    """
+    Gets from the cache or the RSS the FTS status. The cache is a
+    copy of the DB table. If it is not on the cache, most likely is not going
+    to be on the DB.
+
+    There is one exception: item just added to the CS, e.g. new FTS.
+    The period between it is added to the DB and the changes are propagated
+    to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
+    minutes.
+    """
+
+    cacheMatch = self.ftsCache.match( elementName, statusType )
+
+    self.log.debug( '__getRSSftsStatus' )
+    self.log.debug( cacheMatch )
+
+    return cacheMatch
+
+  def __setRSSftsStatus( self, elementName, statusType, status, reason, tokenOwner ):
+    """
+    Sets on the RSS the FTS status
+    """
+
+    expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
+
+    self.seCache.acquireLock()
+    try:
+      res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
+                                                statusType = statusType, status = status,
+                                                reason = reason, tokenOwner = tokenOwner,
+                                                tokenExpiration = expiration )
+      if res[ 'OK' ]:
+        self.ftsCache.refreshCache()
+      else:
+        _msg = 'Error updating FTS (%s,%s,%s)' % ( elementName, statusType, status )
+        gLogger.warn( 'RSS: %s' % _msg )
+
+      return res
+
+    finally:
+      # Release lock, no matter what.
+      self.seCache.releaseLock()
+
   def __getRSSCatalogStatus( self, elementName, statusType ):
     """
     Gets from the cache or the RSS the Catalog status. The cache is a
@@ -285,7 +367,7 @@ class ResourceStatus( object ):
     minutes.
     """
 
-    cacheMatch = self.seCache.match( elementName, statusType )
+    cacheMatch = self.ctCache.match( elementName, statusType )
 
     self.log.debug( '__getRSSCatalogStatus' )
     self.log.debug( cacheMatch )
@@ -358,7 +440,7 @@ class ResourceStatus( object ):
                                                 reason = reason, tokenOwner = tokenOwner,
                                                 tokenExpiration = expiration )
       if res[ 'OK' ]:
-        self.seCache.refreshCache()
+        self.ctCache.refreshCache()
 
       if not res[ 'OK' ]:
         _msg = 'Error updating Catalog (%s,%s,%s)' % ( elementName, statusType, status )
