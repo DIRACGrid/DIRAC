@@ -108,6 +108,17 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
 
+[v6r14p26]
+
+NEW: Enabled on-the-fly tests using the Travis-CI service
+
+*Core
+FIX: Subprocess - fix two potential infinite loops which can result in indefinite
+     output buffer overflow
+
+*WMS
+FIX: JobScheduling executor - check properly if staging is allowed, it was always True before
+
 [v6r14p25]
 
 *Core
