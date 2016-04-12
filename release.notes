@@ -1,4 +1,4 @@
-[v6r15-pre18]
+[v6r15-pre19]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
