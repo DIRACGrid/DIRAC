@@ -130,7 +130,10 @@ class JobScheduling( OptimizerExecutor ):
         return self.__holdJob( jobState, res['Message'] )
       stageLFNs = res['Value']['offlineLFNs']
       if stageLFNs:
-        if not self.__checkStageAllowed( jobState ):
+        res = self.__checkStageAllowed( jobState )
+        if not res['OK']:
+          return res
+        if not res['Value']:
           return S_ERROR( "Stage not allowed" )
         self.__requestStaging( jobState, stageLFNs )
         return S_OK()
@@ -191,7 +194,10 @@ class JobScheduling( OptimizerExecutor ):
 
     # Check if the user is allowed to stage
     if self.ex_getOption( "RestrictDataStage", False ):
-      if not self.__checkStageAllowed( jobState ):
+      res = self.__checkStageAllowed( jobState )
+      if not res['OK']:
+        return res
+      if not res['Value']:
         return S_ERROR( "Stage not allowed" )
 
     # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
@@ -566,4 +572,4 @@ class JobScheduling( OptimizerExecutor ):
       self.jobLog.error( "Cannot retrieve OwnerGroup from DB: %s" % result[ 'Message' ] )
       return S_ERROR( "Cannot get OwnerGroup" )
     group = result[ 'Value' ]
-    return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group )
+    return S_OK( Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup( group ) )
