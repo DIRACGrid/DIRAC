@@ -3,7 +3,8 @@
 
 #pylint: disable=protected-access
 
-import unittest, types
+import unittest
+import types
 
 from mock import MagicMock
 from DIRAC import gLogger
@@ -93,6 +94,14 @@ class PluginUtilitiesSuccess( ClientsTestCase ):
     self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at_123', '/this/is/at.12', '/this/is/at.1'] ),
                                      ( 'SE2', ['/this/is/at_23', '/this/is/at.2'] ),
                                      ( 'SE4', ['/this/is/at_4'] )] )
+
+    res = self.pu.groupByReplicas( {'/this/is/at.123': ['SE1', 'SE2', 'SE3'],
+                                    '/this/is/at.12': ['SE1', 'SE2'],
+                                    '/this/is/at.134': ['SE1', 'SE3', 'SE4']},
+                                    'Flush' )
+    self.assert_( res['OK'] )
+    print res['Value']
+    self.assertEqual( res['Value'], [( 'SE1', ['/this/is/at.123', '/this/is/at.134', '/this/is/at.12'] ) ] )
 
 #############################################################################
 

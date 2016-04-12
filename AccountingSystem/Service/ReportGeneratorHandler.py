@@ -1,8 +1,6 @@
 """ Module that holds the ReportGeneratorHandler class
 """
 
-__RCSID__ = "$Id$"
-
 import types
 import os
 import datetime
@@ -20,6 +18,8 @@ from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+
+__RCSID__ = "$Id$"
 
 class ReportGeneratorHandler( RequestHandler ):
   """ DIRAC service class to retrieve information from the AccountingDB

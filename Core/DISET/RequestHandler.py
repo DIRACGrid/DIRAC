@@ -1,8 +1,6 @@
 """ Base class for all services
 """
 
-__RCSID__ = "$Id$"
-
 import os
 import types
 import time
@@ -14,6 +12,8 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
+
+__RCSID__ = "$Id$"
 
 def getServiceOption( serviceInfo, optionName, defaultValue ):
   """ Get service option resolving default values from the master service
@@ -137,7 +137,7 @@ class RequestHandler( object ):
     del retVal
     retVal = None
     return result
-    
+
 #####
 #
 # File to/from Server Methods
@@ -155,7 +155,7 @@ class RequestHandler( object ):
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
       raise RequestHandler.ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                                                retVal[ 'Message' ] ) )
+                                                                                               retVal[ 'Message' ] ) )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
     if "transfer_%s" % sDirection not in dir( self ):
@@ -232,7 +232,7 @@ class RequestHandler( object ):
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
       raise RequestHandler.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                                         retVal[ 'Message' ] ) )
+                                                                                        retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     self.__logRemoteQuery( "RPC/%s" % method, args )
     return self.__RPCCallFunction( method, args )
@@ -324,7 +324,7 @@ class RequestHandler( object ):
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
       raise RequestHandler.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                                         retVal[ 'Message' ] ) )
+                                                                                        retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     return self._rh_executeConnectionCallback( methodName, args )
 
@@ -569,4 +569,3 @@ class RequestHandler( object ):
     if not trid:
       trid = self.srv_getTransportID()
     return self.__msgBroker.removeTransport( trid )
-

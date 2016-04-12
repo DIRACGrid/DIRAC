@@ -1,9 +1,5 @@
 """ TaskManager contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks
 """
-__RCSID__ = "$Id$"
-
-COMPONENT_NAME = 'TaskManager'
-
 import time
 import StringIO
 
@@ -23,6 +19,10 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+
+__RCSID__ = "$Id$"
+
+COMPONENT_NAME = 'TaskManager'
 
 
 def _requestName( transID, taskID ):
@@ -521,7 +521,8 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskID]['Success'] = False
         failed += 1
     self._logInfo( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                            time.time() - startTime ), transID = transID )
+                                                                                              time.time() - startTime ),
+                   transID = transID )
     if failed:
       self._logError( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ), transID = transID )
     return S_OK( taskDict )
