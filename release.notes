@@ -60,6 +60,7 @@ FIX: DataStoreClient - Synchronizer based decorators have been replaced with a s
 NEW: CE Availability policy, closing #2373
 CHANGE: Ported setStatus and setToken rpc calls to PublisherHandler from LHCb implementation
 NEW: E-mails generated while RSS actions are now aggregated to avoid avalanches of mails
+NEW: dirac-rss-sync is also synchronizing Sites now
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
