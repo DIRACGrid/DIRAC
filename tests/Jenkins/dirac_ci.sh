@@ -43,7 +43,7 @@ mkdir -p $WORKSPACE/TestCode # Where the test code resides
 TESTCODE=$_
 mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
 SERVERINSTALLDIR=$_
-mkdir -p $WORKSPACE/pilotInstallDIR # Where pilots are installed
+mkdir -p $WORKSPACE/PilotInstallDIR # Where pilots are installed
 PILOTINSTALLDIR=$_
 
 
