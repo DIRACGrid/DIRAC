@@ -70,6 +70,7 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 # List URLs where to get scripts
 ############################################
 DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
+DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
 ############################################
 
 INSTALL_CFG_FILE='$WORKSPACE/DIRAC/tests/Jenkins/install.cfg'
