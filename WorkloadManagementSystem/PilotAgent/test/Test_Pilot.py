@@ -6,8 +6,8 @@ import unittest
 import json
 import os
 
-from pilotTools import PilotParams
-from pilotCommands import GetPilotVersion
+from DIRAC.WorkloadManagementSystem.PilotAgent.pilotTools import PilotParams
+from DIRAC.WorkloadManagementSystem.PilotAgent.pilotCommands import GetPilotVersion
 
 class PilotTestCase( unittest.TestCase ):
   """ Base class for the Agents test cases
