@@ -38,9 +38,9 @@ Script.parseCommandLine( ignoreErrors = True )
 grid = Site.split( '.' )[0]
 numberOfProcessor = JobParameters.getProcessorFromMJF()
 if not numberOfProcessor:
-  numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessor' % ( grid, Site, ceName, Queue ) )
+  numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors' % ( grid, Site, ceName, Queue ) )
   if not numberOfProcessor:
-    numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/NumberOfProcessor' % grid )
+    numberOfProcessor = gConfig.getValue( '/Resources/Sites/%s/NumberOfProcessors' % grid )
     if not numberOfProcessor:
       numberOfProcessor = Os.getNumberOfCores()
   

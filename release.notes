@@ -1,4 +1,4 @@
-[v6r15-pre18]
+[v6r15-pre19]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -61,6 +61,7 @@ FIX: DataStoreClient - Synchronizer based decorators have been replaced with a s
 NEW: CE Availability policy, closing #2373
 CHANGE: Ported setStatus and setToken rpc calls to PublisherHandler from LHCb implementation
 NEW: E-mails generated while RSS actions are now aggregated to avoid avalanches of mails
+NEW: dirac-rss-sync is also synchronizing Sites now
 
 *DMS
 CHANGE: FileCatalogClient - make explicit methods for all service calls
@@ -108,6 +109,17 @@ CHANGE: Add standard metadata in the output of all the Storage plugins
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
+
+[v6r14p26]
+
+NEW: Enabled on-the-fly tests using the Travis-CI service
+
+*Core
+FIX: Subprocess - fix two potential infinite loops which can result in indefinite
+     output buffer overflow
+
+*WMS
+FIX: JobScheduling executor - check properly if staging is allowed, it was always True before
 
 [v6r14p25]
 

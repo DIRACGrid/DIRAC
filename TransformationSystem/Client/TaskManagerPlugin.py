@@ -1,8 +1,6 @@
 """ Container for TaskManager plug-ins, to handle the destination of the tasks
 """
 
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.List import fromChar
@@ -10,12 +8,14 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 
+__RCSID__ = "$Id$"
+
 
 class TaskManagerPlugin( PluginBase ):
   """ A TaskManagerPlugin object should be instantiated by every TaskManager object.
-  
-      self.params here could be 
-      {'Status': 'Created', 'TargetSE': 'Unknown', 'TransformationID': 1086L, 'RunNumber': 0L, 
+
+      self.params here could be
+      {'Status': 'Created', 'TargetSE': 'Unknown', 'TransformationID': 1086L, 'RunNumber': 0L,
       'Site': 'DIRAC.Test.ch', 'TaskID': 21L, 'InputData': '', 'JobType': 'MCSimulation'}
       which corresponds to paramsDict in TaskManager (which is in fact a tasks dict)
   """
@@ -38,7 +38,7 @@ class TaskManagerPlugin( PluginBase ):
 
     if not seList or seList == ['Unknown']:
       return destSites
-    
+
     for se in seList:
       res = getSitesForSE( se )
       if not res['OK']:
@@ -48,10 +48,10 @@ class TaskManagerPlugin( PluginBase ):
         if thisSESites:
           # We make an OR of the possible sites
           destSites.update( thisSESites )
-    
+
     gLogger.debug( "Destinations: %s" % ','.join ( destSites ) )
     return destSites
-    
+
 
   def _ByJobType( self ):
     """ By default, all sites are allowed to do every job. The actual rules are freely specified in the Operation JobTypeMapping section.
@@ -95,10 +95,10 @@ class TaskManagerPlugin( PluginBase ):
             IN2P3 = IN2P3
           }
         }
-        
+
         The sites in the exclusion list will be removed.
         The allow section says where each site may help another site
-        
+
     """
     # 1. get sites list
     res = getSites()
@@ -150,7 +150,7 @@ class TaskManagerPlugin( PluginBase ):
     if not self.params['TargetSE'] or self.params['TargetSE'] == 'Unknown':
       gLogger.warn( "TargetSE is not set: the destination sites list will be incomplete" )
     taskSiteDestination = self._BySE()
-  
+
     for destSite, fromSites in allowed.iteritems():
       for fromSite in fromSites:
         if taskSiteDestination:

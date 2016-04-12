@@ -4,30 +4,30 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id$"
-
 import datetime
 from pylab import setp
-from matplotlib.colors import normalize, LinearSegmentedColormap
+from matplotlib.colors import Normalize, LinearSegmentedColormap
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 from matplotlib.dates import date2num
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.BarGraph import BarGraph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pixelToPoint, PrettyDateLocator, \
                                                        PrettyDateFormatter, PrettyScalarFormatter
 
+__RCSID__ = "$Id$"
+
+
 cdict = {'red': ( ( 0.0, 1., 1.0 ),
-                 ( 0.5, .0, .0 ),
-                 ( 1.0, 0.0, 0.0 ) ),
+                  ( 0.5, .0, .0 ),
+                  ( 1.0, 0.0, 0.0 ) ),
          'green': ( ( 0.0, 0.1, 0.1 ),
-                   ( 0.5, 0.9, 0.9 ),
-                   ( 1.0, 0.7, 0.7 ) ),
+                    ( 0.5, 0.9, 0.9 ),
+                    ( 1.0, 0.7, 0.7 ) ),
          'blue': ( ( 0.0, 0.1, 0.1 ),
-                  ( 0.5, 0.5, 0.5 ),
-                 ( 1.0, 0.0, 0.0 ) )}
+                   ( 0.5, 0.5, 0.5 ),
+                   ( 1.0, 0.0, 0.0 ) )}
 
 # color blind
 #cdict = {'red': ((0.0, .5, 0.5),
@@ -66,7 +66,7 @@ class QualityMapGraph( PlotBase ):
     # Setup the colormapper to get the right colors
     self.cmap = LinearSegmentedColormap( 'quality_colormap', cdict, 256 )
     #self.cmap = cm.RdYlGn
-    self.norms = normalize( 0, 100 )
+    self.norms = Normalize( 0, 100 )
     mapper = cm.ScalarMappable( cmap = self.cmap, norm = self.norms )
     mapper = cm.ScalarMappable( cmap = cm.RdYlGn, norm = self.norms ) #pylint: disable=no-member
     def get_alpha( *args, **kw ):
@@ -196,7 +196,4 @@ class QualityMapGraph( PlotBase ):
       #labels = ax.get_xticklabels()
 
     else:
-      try:
-        super( QualityMapGraph, self ).x_formatter_cb( ax )
-      except:
-        return None
+      return None

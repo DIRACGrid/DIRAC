@@ -371,6 +371,10 @@ class Subprocess:
         if nB == "":
           break
         dataString += nB
+        #break out of potential infinite loop, indicated by dataString growing beyond reason
+        if len( dataString ) + baseLength > self.bufferLimit:
+          self.log.error( "DataString is getting too long (%s): %s " %( len( dataString ), dataString[-10000:] ) )
+          break
     except Exception as x:
       self.log.exception( "SUBPROCESS: readFromFile exception" )
       try:
@@ -516,6 +520,7 @@ class Subprocess:
         self.log.exception( 'Exception while calling callback function',
                             '%s' % self.callback.__name__ )
         self.log.showStack()
+        return False
 
       return True
     return False
