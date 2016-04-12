@@ -3,7 +3,7 @@
 ############################################
 
 # Path to ci config files
-CI_CONFIG=$WORKSPACE/DIRAC/tests/Jenkins/config/ci
+CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
 
 # default: this function fixes some default values
 
@@ -92,7 +92,7 @@ function findRelease(){
 	# Extract Externals version
 	externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
 
-	# Back to $WORKSPACE and clean tmp_dir
+	# Back to previous directory, and clean tmp_dir
 	cd $currentDir
 	rm -r $tmp_dir
 
@@ -114,7 +114,7 @@ function findRelease(){
 function findSystems(){
 	echo '[findSystems]'
 
-	cd $WORKSPACE
+	cd $TESTCODE
 	find *DIRAC/ -name *System  | cut -d '/' -f 2 | sort | uniq > systems
 
 	echo found `wc -l systems`
@@ -147,7 +147,7 @@ function findDatabases(){
 		DBstoExclude='notExcluding'
 	fi
 
-	cd $WORKSPACE
+	cd $TESTCODE
 	#
 	# HACK ALERT:
 	#
@@ -190,7 +190,7 @@ findServices(){
 		ServicestoExclude='notExcluding'
 	fi
 
-	cd $WORKSPACE
+	cd $TESTCODE
 	if [ ! -z "$ServicestoExclude" ]
 	then
 		find *DIRAC/*/Service/ -name *Handler.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $ServicestoExclude | sort | uniq > services
@@ -218,7 +218,7 @@ findAgents(){
 		AgentstoExclude='notExcluding'
 	fi
 
-	cd $WORKSPACE
+	cd $TESTCODE
 	if [ ! -z "$AgentstoExclude" ]
 	then
 		find *DIRAC/*/Agent/ -name *Agent.py | grep -v test | awk -F "/" '{print $2,$4}' | grep -v $AgentstoExclude | sort | uniq > agents
@@ -282,7 +282,7 @@ finalCleanup(){
 
 function diracReplace(){
 	echo '[diracReplace]'
-	cd $WORKSPACE/
+	cd $SERVERINSTALLDIR/
 	if [[ -z $DIRAC_ALTERNATIVE_SRC_ZIP ]]
 	then
 		echo 'Variable $DIRAC_ALTERNATIVE_SRC_ZIP not defined';
@@ -319,7 +319,7 @@ function diracReplace(){
 function diracInstall(){
 	echo '[diracInstall]'
 
-	cd $WORKSPACE
+	cd $SERVERINSTALLDIR
 
 	wget --no-check-certificate -O dirac-install $DIRAC_INSTALL
 	chmod +x dirac-install
@@ -358,8 +358,8 @@ function diracInstallCommand(){
 function generateCertificates(){
 	echo '[generateCertificates]'
 
-	mkdir -p $WORKSPACE/etc/grid-security/certificates
-	cd $WORKSPACE/etc/grid-security
+	mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
+	cd $SERVERINSTALLDIR/etc/grid-security
 
     # Generate private RSA key
     openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
@@ -387,7 +387,7 @@ function generateCertificates(){
 #   Given we know the "CA" certificates, we can use them to sign a randomly
 #   generated key / host certificate. This function is very similar to
 #   generateCertificates. User credentials will be stored at:
-#     $WORKSPACE/user
+#     $SERVERINSTALLDIR/user
 #   The user will be called "ciuser". Do not confuse with the admin user,
 #   which is "ci".
 #
@@ -400,9 +400,8 @@ function generateUserCredentials(){
     echo '[generateUserCredentials]'
 
     # Generate directory where to store credentials
-    mkdir $WORKSPACE/user
-
-    cd $WORKSPACE/user
+    mkdir -p $SERVERINSTALLDIR/user
+    cd $SERVERINSTALLDIR/user
 
     cp $CI_CONFIG/openssl_config openssl_config
     sed -i 's/#hostname#/ciuser/g' openssl_config
@@ -411,7 +410,7 @@ function generateUserCredentials(){
     # This is a little hack to make OpenSSL happy...
     echo 00 > file.srl
 
-    CA=$WORKSPACE/etc/grid-security/certificates
+    CA=$SERVERINSTALLDIR/etc/grid-security/certificates
 
     openssl x509 -req -in client.req -CA $CA/hostcert.pem -CAkey $CA/hostkey.pem -CAserial file.srl -out client.pem
 }
@@ -429,10 +428,10 @@ function generateUserCredentials(){
 function diracCredentials(){
 	echo '[diracCredentials]'
 
-	cd $WORKSPACE
+	cd $SERVERINSTALLDIR
 
 	sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' etc/Configuration_Server.cfg
-	dirac-proxy-init -g dirac_admin -C $WORKSPACE/user/client.pem -K $WORKSPACE/user/client.key $DEBUG
+	dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 	sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' etc/Configuration_Server.cfg
 
 }
@@ -474,9 +473,9 @@ function diracProxies(){
 	echo '[diracProxies]'
 
 	# User proxy, should be uploaded anyway
-	dirac-proxy-init -U -C $WORKSPACE/user/client.pem -K $WORKSPACE/user/client.key $DEBUG
+	dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 	# group proxy, will be uploaded explicitly
-	dirac-proxy-init -U -g prod -C $WORKSPACE/user/client.pem -K $WORKSPACE/user/client.key $DEBUG
+	dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 
 }
 
@@ -492,7 +491,7 @@ function diracRefreshCS(){
 	echo '[diracRefreshCS]'
 
 
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-refresh-cs.py $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-refresh-cs.py $DEBUG
 }
 
 
@@ -528,7 +527,7 @@ diracServices(){
 
 	# group proxy, will be uploaded explicitly
 	#	echo 'getting/uploading proxy for prod'
-	#	dirac-proxy-init -U -g prod -C $WORKSPACE/user/client.pem -K $WORKSPACE/user/client.key $DEBUG
+	#	dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 
 	for serv in $services
 	do
@@ -553,7 +552,7 @@ diracUninstallServices(){
 
 	# group proxy, will be uploaded explicitly
 	#	echo 'getting/uploading proxy for prod'
-	#	dirac-proxy-init -U -g prod -C $WORKSPACE/user/client.pem -K $WORKSPACE/user/client.key $DEBUG
+	#	dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 
 	for serv in $services
 	do
@@ -584,7 +583,7 @@ diracAgents(){
 			echo ''
 		else
 			echo 'calling dirac-cfg-add-option agent' $agent
-			python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py agent $agent
+			python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py agent $agent
 			echo 'calling dirac-agent' $agent -o MaxCycles=1 $DEBUG
 			dirac-agent $agent  -o MaxCycles=1 $DEBUG
 		fi
@@ -617,7 +616,7 @@ diracDFCDB(){
 	echo '[diracDFCDB]'
 
 	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
-	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT  < $WORKSPACE/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
+	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT  < $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
 }
 
 # drop DBs
@@ -626,7 +625,7 @@ dropDBs(){
 	echo '[dropDBs]'
 
 	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB`
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-drop-db.py $dbs $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py $dbs $DEBUG
 
 }
 
@@ -691,9 +690,9 @@ function stopRunsv(){
 
 	# Let's try to be a bit more delicated than the function above
 
-	source $WORKSPACE/bashrc
-	runsvctrl d $WORKSPACE/startup/*
-	runsvstat $WORKSPACE/startup/*
+	source $SERVERINSTALLDIR/bashrc
+	runsvctrl d $SERVERINSTALLDIR/startup/*
+	runsvstat $SERVERINSTALLDIR/startup/*
 
 	# If does not work, let's kill it.
 	killRunsv
@@ -713,17 +712,17 @@ function startRunsv(){
 
     # Let's try to be a bit more delicated than the function above
 
-    source $WORKSPACE/bashrc
-    runsvdir -P $WORKSPACE/startup &
+    source $SERVERINSTALLDIR/bashrc
+    runsvdir -P $SERVERINSTALLDIR/startup &
 
     # Gives some time to the components to start
     sleep 10
     # Just in case 10 secs are not enough, we disable exit on error for this call.
     set +o errexit
-    runsvctrl u $WORKSPACE/startup/*
+    runsvctrl u $SERVERINSTALLDIR/startup/*
     set -o errexit
 
-    runsvstat $WORKSPACE/startup/*
+    runsvstat $SERVERINSTALLDIR/startup/*
 
 }
 
@@ -738,10 +737,10 @@ function getCertificate(){
 	echo '[getCertificate]'
 	# just gets a host certificate from a known location
 
-	mkdir -p $WORKSPACE/etc/grid-security/
-	cp /root/hostcert.pem $WORKSPACE/etc/grid-security/
-	cp /root/hostkey.pem $WORKSPACE/etc/grid-security/
-	chmod 0600 $WORKSPACE/etc/grid-security/hostkey.pem
+	mkdir -p $PILOTINSTALLDIR/etc/grid-security/
+	cp /root/hostcert.pem $PILOTINSTALLDIR/etc/grid-security/
+	cp /root/hostkey.pem $PILOTINSTALLDIR/etc/grid-security/
+	chmod 0600 $PILOTINSTALLDIR/etc/grid-security/hostkey.pem
 
 }
 
@@ -773,5 +772,5 @@ function prepareForPilot(){
 function downloadProxy(){
 	echo '[downloadProxy]'
 
-	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTCFG $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTCFG $DEBUG
 }
