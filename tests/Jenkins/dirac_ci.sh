@@ -2,18 +2,30 @@
 #-------------------------------------------------------------------------------
 # dirac_ci
 #
-#  Several functions used for Jenkins style jobs
+# Several functions used for Jenkins style jobs
+# They may also work on other CI systems
 #
 #
 # fstagni@cern.ch
 # 09/12/2014
 #-------------------------------------------------------------------------------
 
-
-# Default variables
+# A CI job needs:
+#
+# === environment variables (minimum set):
 # DEBUG
 # WORKSPACE
 # DIRACBRANCH
+#
+# === a default directory structure is created:
+# ~/TestCode
+# ~/ServerInstallDIR
+# ~/PilotInstallDIR
+
+
+
+
+# Def of environment variables:
 
 if [ ! -z "$DEBUG" ]
 then
@@ -37,7 +49,6 @@ else
   DIRACBRANCH='integration'
 fi
 
-
 # Creating default structure
 mkdir -p $WORKSPACE/TestCode # Where the test code resides
 TESTCODE=$_
@@ -52,19 +63,13 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 
 
 
+
+
+
 ############################################
 # List URLs where to get scripts
-# NB: Requires DIRACBRANCH variable to be set
 ############################################
-DIRAC_INSTALL='https://github.com/DIRACGrid/DIRAC/raw/rel-'$DIRACBRANCH'/Core/scripts/dirac-install.py'
-DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
-DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/pilotTools.py'
-DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/rel-'$DIRACBRANCH'/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
-
 DIRAC_INSTALL_SITE='https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate'
-
-# This instead is only here
-DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
 ############################################
 
 INSTALL_CFG_FILE='$WORKSPACE/DIRAC/tests/Jenkins/install.cfg'
