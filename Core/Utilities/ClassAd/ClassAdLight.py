@@ -127,6 +127,14 @@ class ClassAd:
     tmp = map ( lambda x : '"' + x + '"', attributelist )
     tmpstr = ','.join( tmp )
     self.contents[name] = '{' + tmpstr + '}'
+
+  def insertAttributeVectorInt( self, name, attributelist ):
+    """Insert a named string list attribute
+    """
+
+    tmp = map ( lambda x : str( x ), attributelist )
+    tmpstr = ','.join( tmp )
+    self.contents[name] = '{' + tmpstr + '}'
     
   def insertAttributeVectorStringList( self, name, attributelist ):
     """Insert a named list of string lists 
@@ -156,7 +164,7 @@ class ClassAd:
     """
 
     if self.contents.has_key( name ):
-      if type( self.contents[name] ) == type( 1 ):
+      if isinstance( self.contents[name], ( int, long ) ):
         return str( self.contents[name] )
       else :
         return self.contents[name]
@@ -205,7 +213,7 @@ class ClassAd:
           resultList.append( tempString.replace( "\"", "" ).replace( " ", "" ) )
           break
         else:  
-          resultList.append( tempString[:end-1].replace( "\"", "" ).replace( " ", "" ) )
+          resultList.append( tempString[:end].replace( "\"", "" ).replace( " ", "" ) )
           tempString = tempString[end+1:]
 
     return resultList
@@ -312,3 +320,9 @@ class ClassAd:
       except Exception:
         value = 0.0
     return value
+
+  def getAttributes( self ):
+    """ Get the list of all the attribute names
+    :return: list of names as strings
+    """
+    return self.contents.keys()
