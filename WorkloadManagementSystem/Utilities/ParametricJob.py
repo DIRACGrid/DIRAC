@@ -61,7 +61,7 @@ def __updateAttribute( classAd, attribute, parName, parValue ):
   if classAd.isAttributeList( attribute):
     parValue = parValue.strip()
     if parValue.startswith( '{' ):
-      parValue = parValue[1:-1]
+      parValue = parValue[1:-1].strip()
     else:
       # This is mostly for a prettier JDL print-out
       if not parValue.replace( '.', '' ).replace( '-', '' ).isdigit():
