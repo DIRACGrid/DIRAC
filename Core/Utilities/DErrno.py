@@ -88,6 +88,9 @@ EVOMS = 1121
 EDB = 1130
 EMYSQL = 1131
 
+# ## WMS/Workflow
+EWMSJDL = 1501
+
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
 EGFAL = 1602
@@ -132,7 +135,8 @@ dErrorCode = {
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
-
+               # WMS/Workflow
+               1501 : 'EWMSJDL',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
@@ -176,7 +180,8 @@ dStrError = {
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
-
+              # WMS/Workflow
+              EWMSJDL : "Invalid JDL",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",
