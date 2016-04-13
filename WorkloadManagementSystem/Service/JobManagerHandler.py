@@ -18,6 +18,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getNumberOfParameters
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
                                                              RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
@@ -113,68 +114,14 @@ class JobManagerHandler( RequestHandler ):
 
     # Check if the job is a parametric one
     jobClassAd = ClassAd( jobDesc )
+    nParameters = getNumberOfParameters( jobClassAd )
     parametricJob = False
-    if jobClassAd.lookupAttribute( 'Parameters' ):
+    if nParameters > 0:
       parametricJob = True
-      if jobClassAd.isAttributeList( 'Parameters' ):
-        parameterList = jobClassAd.getListFromExpression( 'Parameters' )
-      else:
-        pStep = 0
-        pFactor = 1
-        pStart = 1
-        nParameters = jobClassAd.getAttributeInt( 'Parameters' )
-        if not nParameters:
-          value = jobClassAd.get_expression( 'Parameters' )
-          return S_ERROR( 'Illegal value for Parameters JDL field: %s' % value )
-
-        if jobClassAd.lookupAttribute( 'ParameterStart' ):
-          value = jobClassAd.get_expression( 'ParameterStart' ).replace( '"', '' )
-          try:
-            pStart = int( value )
-          except:
-            try:
-              pStart = float( value )
-            except:
-              return S_ERROR( 'Illegal value for ParameterStart JDL field: %s' % value )
-
-        if jobClassAd.lookupAttribute( 'ParameterStep' ):
-          pStep = jobClassAd.getAttributeInt( 'ParameterStep' )
-          if not pStep:
-            pStep = jobClassAd.getAttributeFloat( 'ParameterStep' )
-            if not pStep:
-              value = jobClassAd.get_expression( 'ParameterStep' )
-              return S_ERROR( 'Illegal value for ParameterStep JDL field: %s' % value )
-        if jobClassAd.lookupAttribute( 'ParameterFactor' ):
-          pFactor = jobClassAd.getAttributeInt( 'ParameterFactor' )
-          if not pFactor:
-            pFactor = jobClassAd.getAttributeFloat( 'ParameterFactor' )
-            if not pFactor:
-              value = jobClassAd.get_expression( 'ParameterFactor' )
-              return S_ERROR( 'Illegal value for ParameterFactor JDL field: %s' % value )
-
-        parameterList = list()
-        parameterList.append( pStart )
-        for i in range( nParameters - 1 ):
-          parameterList.append( parameterList[i] * pFactor + pStep )
-
-
-      if len( parameterList ) > self.maxParametricJobs:
-        return S_ERROR( 'The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs )
-
-      jobDescList = []
-      nParam = len( parameterList ) - 1
-      for n, p in enumerate( parameterList ):
-        newJobDesc = jobDesc.replace( '%s', str( p ) ).replace( '%n', str( n ).zfill( len( str( nParam ) ) ) )
-        newClassAd = ClassAd( newJobDesc )
-        for attr in ['Parameters', 'ParameterStep', 'ParameterFactor']:
-          newClassAd.deleteAttribute( attr )
-        if type( p ) == type ( ' ' ) and p.startswith( '{' ):
-          newClassAd.insertAttributeInt( 'Parameter', str( p ) )
-        else:
-          newClassAd.insertAttributeString( 'Parameter', str( p ) )
-        newClassAd.insertAttributeInt( 'ParameterNumber', n )
-        newJDL = newClassAd.asJDL()
-        jobDescList.append( newJDL )
+      result = generateParametricJobs( jobClassAd )
+      if not result['OK']:
+        return result
+      jobDescList = result['Value']
     else:
       jobDescList = [ jobDesc ]
 
