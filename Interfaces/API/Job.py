@@ -242,7 +242,7 @@ class Job( API ):
 
   #############################################################################
   def setParametricInputSandbox( self, files ):
-    """Helper function.
+    """Helper function. Obsoleted, for backward compatibility only !
 
        Specify input sandbox files to be used as parameters in the Parametric jobs.
        The possibilities are identical to the setInputSandbox.
@@ -329,7 +329,7 @@ class Job( API ):
 
   #############################################################################
   def setParametricInputData( self, lfns ):
-    """Helper function. Obsoleted.
+    """Helper function. Obsoleted, for backward compatibility only !
 
        Specify input data by Logical File Name (LFN) to be used as a parameter in a parametric job
 
