@@ -7,6 +7,7 @@ from DIRAC                                                      import S_OK, S_E
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.Core.Utilities.DErrno                                import ETSDATA
 from DIRAC.Interfaces.API.Job                                   import Job
 from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request               import Request
@@ -19,6 +20,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient     import Transform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry          import getDNForUsername
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+
 
 __RCSID__ = "$Id$"
 
@@ -333,6 +335,116 @@ class WorkflowTasks( TaskBase ):
     self.destinationPlugin_o = None
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+
+    bulkFlag = self.opsH.getValue( "Transformation/BulkSubmission", False )
+    if bulkFlag:
+      result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
+    else:
+      result = self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
+    return result
+
+  def __prepareTransformationTasksBulk( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+
+    if ( not owner ) or ( not ownerGroup ):
+      res = getProxyInfo( False, False )
+      if not res['OK']:
+        return res
+      proxyInfo = res['Value']
+      owner = proxyInfo['username']
+      ownerGroup = proxyInfo['group']
+
+    if not ownerDN:
+      res = getDNForUsername( owner )
+      if not res['OK']:
+        return res
+      ownerDN = res['Value'][0]
+
+    transID = taskDict[taskDict.keys()[0]]['TransformationID']
+
+    # Prepare the bulk Job object with common parameters
+    oJob = self.jobClass( transBody )
+
+    self._logVerbose( 'Setting job owner:group to %s:%s' % ( owner, ownerGroup ), transID = transID )
+    oJob.setOwner( owner )
+    oJob.setOwnerGroup( ownerGroup )
+    oJob.setOwnerDN( ownerDN )
+
+    jobType = oJob.workflow.findParameter( 'JobType' ).getValue()
+    transGroup = str( transID ).zfill( 8 )
+
+    oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
+    oJob.setType( jobType )
+    self._logVerbose( 'Adding default transformation group of %s' % ( transGroup ), transID = transID )
+    oJob.setJobGroup( transGroup )
+
+    if int( transID ) in [int( x ) for x in self.opsH.getValue( "Hospital/Transformations", [] )]:
+      self._handleHospital( oJob )
+
+    # Collect per job parameters sequences
+    paramSeqDict = {}
+    for taskNumber in sorted( taskDict ):
+      seqDict = {}
+      paramsDict = taskDict[taskNumber]
+
+      # Handle destination site
+      site = oJob.workflow.findParameter( 'Site' ).getValue()
+      sites = self._handleDestination( paramsDict )
+      if not sites:
+        self._logError( 'Could not get a list a sites', transID = transID )
+        # Skip this job ?
+        continue
+      else:
+        self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
+        seqDict['Site'] = sites
+        if not res['OK']:
+          self._logError( 'Could not set the site: %s' % res['Message'], transID = transID )
+          continue
+
+      constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
+      self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
+      seqDict['JobName'] = transGroup
+      seqDict['JOB_ID'] = str( taskNumber ).zfill( 8 )
+
+      self._logDebug( 'TransID: %s, TaskID: %s, paramsDict: %s' % ( transID, taskNumber, str( paramsDict ) ), transID = transID )
+
+      # Handle Input Data
+      inputData = paramsDict.get( 'InputData' )
+      if inputData:
+        self._logVerbose( 'Setting input data to %s' % inputData )
+        seqDict['InputData'] = inputData
+      elif paramSeqDict.get( 'InputData' ) is not None:
+        return S_ERROR( ETSDATA, "Invalid mixture of jobs with and without input data" )
+
+      for paramName, paramValue in paramsDict.items():
+        if paramName not in ( 'InputData', 'Site', 'TargetSE' ):
+          if paramValue:
+            self._logVerbose( 'Setting %s to %s' % ( paramName, paramValue ) )
+            seqDict[paramName] = paramValue
+
+      if self.outputDataModule:
+        res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
+                                   'TaskID':taskNumber, 'InputData':inputData},
+                                  moduleLocation = self.outputDataModule )
+        if not res ['OK']:
+          self._logError( "Failed to generate output data", res['Message'], transID = transID )
+          continue
+        for name, output in res['Value'].items():
+          seqDict[name] = ';'.join( output )
+
+      for pName in seqDict:
+        paramSeqDict.setdefault( pName, [] )
+        paramSeqDict[pName].append( seqDict[pName] )
+
+    for paramName, paramSeq in paramSeqDict.items():
+      if paramName in [ 'JOB_ID', 'PRODUCTION_ID', 'InputData' ]:
+        oJob.setParameterSequence( paramName, paramSeq, addToWorkflow=paramName )
+      else:
+        oJob.setParameterSequence( paramName, paramSeq )
+
+    taskDict['BulkJobObject'] = oJob
+    return S_OK( taskDict )
+
+  def __prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
     """
@@ -499,6 +611,40 @@ class WorkflowTasks( TaskBase ):
     return module.execute()
 
   def submitTransformationTasks( self, taskDict ):
+
+    if 'BulkJobObject' in taskDict:
+      result = self.__submitTransformationTasksBulk( taskDict )
+    else:
+      result = self.__submitTransformationTasks( taskDict )
+    return result
+
+  def __submitTransformationTasksBulk( self, taskDict ):
+    """ Submit jobs one by one
+    """
+    startTime = time.time()
+    transID = taskDict[taskDict.keys()[0]]['TransformationID']
+    oJob = taskDict.pop( 'BulkJobObject' )
+    if oJob is None:
+      self._logError( 'submitTransformationTasksBulk: no bulk Job object found', transID = transID )
+
+    result = self.submitTaskToExternal( oJob )
+    if not result['OK']:
+      return result
+
+    jobIDList = result['Value']
+    ind = 0
+    for taskID in sorted( taskDict ):
+      taskDict[taskID]['ExternalID'] = jobIDList[ind]
+      taskDict[taskID]['Success'] = True
+      ind += 1
+
+    submitted = len( jobIDList )
+    self._logInfo( 'submitTransformationTasksBulk: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
+                                                                                              time.time() - startTime ),
+                   transID = transID )
+    return S_OK( taskDict )
+
+  def __submitTransformationTasks( self, taskDict ):
     """ Submit jobs one by one
     """
     submitted = 0
