@@ -100,7 +100,9 @@ EFCERR = 1604
 # ## RMS (17XX)
 ERMSUKN = 1700
 
-
+# ## TS (19XX)
+ETSUNK = 1900
+ETSDATA = 1901
 
 # This translates the integer number into the name of the variable
 dErrorCode = {
@@ -144,7 +146,11 @@ dErrorCode = {
                1604 : "EFCERR",
 
                # RMS
-               1700 : ERMSUKN,
+               1700 : "ERMSUKN",
+
+               # TS
+               1900 : "ETSUNK",
+               1901 : "ETSDATA"
                }
 
 
@@ -187,9 +193,11 @@ dStrError = {
               EGFAL : "Error with the gfal call",
               EBADCKS : "Bad checksum",
               EFCERR : "FileCatalog error",
-
               # RMS
               ERMSUKN : "Unknown RMS error",
+              # TS
+              ETSUNK : "Unknown Transformation System Error",
+              ETSDATA : "Invalid Input Data definition"
 }
 
 def strerror(code):
