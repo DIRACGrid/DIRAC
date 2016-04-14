@@ -349,10 +349,10 @@ class Job( API ):
             lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
         else:
           lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
-      self.setParameterSequence( 'ParametricInputData', lfns, addToWorkflow = 'ParametricInputData' )
+      self.setParameterSequence( 'InputData', lfns, addToWorkflow = 'ParametricInputData' )
     else:
       kwargs = {'lfns':lfns}
-      return self._reportError( 'Expected lfn string or list of lfns for parametric input data', **kwargs )
+      return self._reportError( 'Expected lfn list or list of lists of lfns for parametric input data', **kwargs )
 
     return S_OK()
 
@@ -1102,15 +1102,32 @@ class Job( API ):
     if self.numberOfParameters > 0:
       for pName in self.parameterSeqs:
         if pName in paramsDict:
-          if isinstance( paramsDict[pName]['value'], list ):
-            paramsDict[pName]['value'].append( '%%(%s)s' % pName )
-          elif isinstance( paramsDict[pName]['value'], basestring ):
-            if paramsDict[pName]['value']:
-              paramsDict[pName]['value'] += ';%%(%s)s' % pName
-            elif pName in ['InputSandbox','InputData','OutputSandbox','OutputData']:
-              paramsDict[pName]['value'] = ['%%(%s)s' % pName]
+          if pName == "InputSandbox":
+            if isinstance( paramsDict[pName]['value'], list ):
+              paramsDict[pName]['value'].append( '%%(%s)s' % pName )
+            elif isinstance( paramsDict[pName]['value'], basestring ):
+              if paramsDict[pName]['value']:
+                paramsDict[pName]['value'] += ';%%(%s)s' % pName
+              else:
+                paramsDict[pName]['value'] = '%%(%s)s' % pName
+          else:
+            if isinstance( paramsDict[pName]['value'], list ):
+              currentParams = paramsDict[pName]['value']
+            elif isinstance( paramsDict[pName]['value'], basestring ):
+              if paramsDict[pName]['value']:
+                currentParams = paramsDict[pName]['value'].split( ';' )
+              else:
+                currentParams = []
+            tmpList = []
+            pData = self.parameterSeqs[pName]
+            if isinstance( pData[0], list ):
+              for pElement in pData:
+                tmpList.append( currentParams + pElement )
             else:
-              paramsDict[pName]['value'] = '%%(%s)s' % pName
+              for pElement in pData:
+                tmpList.append( currentParams + [pElement] )
+            self.parameterSeqs[pName] = tmpList
+            paramsDict[pName]['value'] = '%%(%s)s' % pName
         else:
           paramsDict[pName] = {}
           paramsDict[pName]['type'] = 'JDL'
@@ -1125,35 +1142,6 @@ class Job( API ):
         if pName in self.wfArguments:
           arguments.append( ' -p %s=%%(%s)s' % ( self.wfArguments[pName],
                                                  pName ) )
-
-    # Handle here the Parametric values
-    if self.parametric:
-      for pType in ['InputData', 'InputSandbox']:
-        if self.parametric.has_key( pType ):
-          if paramsDict.has_key( pType ) and paramsDict[pType]['value']:
-            pData = self.parametric[pType]
-            # List of lists case
-            currentFiles = paramsDict[pType]['value'].split( ';' )
-            tmpList = []
-            if isinstance( pData[0], list ):
-              for pElement in pData:
-                tmpList.append( currentFiles + pElement )
-            else:
-              for pElement in pData:
-                tmpList.append( currentFiles + [pElement] )
-            self.parametric[pType] = tmpList
-
-          paramsDict[pType] = {}
-          paramsDict[pType]['value'] = "%s"
-          paramsDict[pType]['type'] = 'JDL'
-          self.parametric['files'] = self.parametric[pType]
-          arguments.append( ' -p Parametric' + pType + '=%s' )
-          break
-
-      if self.parametric.has_key( 'files' ):
-        paramsDict['Parameters'] = {}
-        paramsDict['Parameters']['value'] = self.parametric['files']
-        paramsDict['Parameters']['type'] = 'JDL'
 
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
@@ -1176,7 +1164,7 @@ class Job( API ):
         elif value == "%s":
           classadJob.insertAttributeInt( name, value )
         elif not re.search( ';', value ):
-          classadJob.insertAttributeString( name, value )
+          classadJob.insertAttributeInt( name, value )
         else:
           classadJob.insertAttributeVectorInt( name, value.split( ';' ) )
 
