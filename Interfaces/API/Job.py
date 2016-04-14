@@ -329,7 +329,7 @@ class Job( API ):
 
   #############################################################################
   def setParametricInputData( self, lfns ):
-    """Helper function.
+    """Helper function. Obsoleted.
 
        Specify input data by Logical File Name (LFN) to be used as a parameter in a parametric job
 
@@ -356,6 +356,14 @@ class Job( API ):
     return S_OK()
 
   def setParameterSequence( self, name, parameterList, addToWorkflow = False ):
+    """ Function to define a sequence of values for parametric jobs.
+
+    :param str name: sequence parameter name
+    :param list parameterList: list of parameter values
+    :param bool addToWorkflow: flag to add parameter to the workflow on the fly, if str, then
+                               use as the workflow parameter
+    :return:
+    """
 
     if self.numberOfParameters == 0:
       self.numberOfParameters = len( parameterList )
