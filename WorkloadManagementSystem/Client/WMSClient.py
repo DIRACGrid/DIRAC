@@ -61,8 +61,8 @@ class WMSClient( object ):
 
     for isFile in inputSandbox:
       valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):  # in case of parametric input sandbox, there is %s passed, so have to ignore it also
-        if isFile.find( tag ) == 0:
+      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s', '%(' ):  # in case of parametric input sandbox, there is %s passed, so have to ignore it also
+        if isFile.startswith( tag ):
           valid = False
           break
       if valid:

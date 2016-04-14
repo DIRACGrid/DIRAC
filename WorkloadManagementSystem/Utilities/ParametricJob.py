@@ -62,10 +62,10 @@ def __updateAttribute( classAd, attribute, parName, parValue ):
     parValue = parValue.strip()
     if parValue.startswith( '{' ):
       parValue = parValue[1:-1].strip()
-    else:
-      # This is mostly for a prettier JDL print-out
-      if not parValue.replace( '.', '' ).replace( '-', '' ).isdigit():
-        parValue = '"%s"' % parValue
+    #else:
+    #  # This is mostly for a prettier JDL print-out
+    #  if not parValue.replace( '.', '' ).replace( '-', '' ).isdigit():
+    #    parValue = '"%s"' % parValue
 
   expr = classAd.get_expression( attribute )
   newexpr = expr.replace( pattern, str( parValue ) )
