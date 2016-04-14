@@ -336,7 +336,7 @@ class WorkflowTasks( TaskBase ):
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
 
-    bulkFlag = self.opsH.getValue( "Transformation/BulkSubmission", False )
+    bulkFlag = self.opsH.getValue( "Transformations/BulkSubmission", False )
     if bulkFlag:
       result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
     else:
