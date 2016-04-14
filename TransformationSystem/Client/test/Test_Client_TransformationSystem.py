@@ -14,12 +14,6 @@ from DIRAC.TransformationSystem.Client.TransformationClient   import Transformat
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
-def getSitesForSE( ses ):
-  if ses == 'pippo':
-    return {'OK':True, 'Value':['Site2', 'Site3']}
-  else:
-    return {'OK':True, 'Value':['Site3']}
-
 #############################################################################
 
 class ClientsTestCase( unittest.TestCase ):
@@ -113,7 +107,6 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
-
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
