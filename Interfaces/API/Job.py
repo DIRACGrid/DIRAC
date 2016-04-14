@@ -86,7 +86,6 @@ class Job( API ):
     self.addToOutputSandbox = []
     self.addToInputData = []
     ##Add member to handle Parametric jobs
-    self.parametric = {}
     self.numberOfParameters = 0
     self.parameterSeqs = {}
     self.wfArguments = {}
