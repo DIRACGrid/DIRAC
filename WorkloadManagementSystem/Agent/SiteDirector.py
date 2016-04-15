@@ -145,6 +145,7 @@ class SiteDirector( AgentModule ):
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 3600 )
     self.failedQueueCycleFactor = self.am_getOption( 'FailedQueueCycleFactor', 10 )
     self.pilotStatusUpdateCycleFactor = self.am_getOption( 'PilotStatusUpdateCycleFactor', 10 )
+    self.addPilotsToEmptySites = self.am_getOption( 'AddPilotsToEmptySites', False )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -450,7 +451,7 @@ class SiteDirector( AgentModule ):
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
         continue
       if not siteMask and siteName not in testSites:
-        self.log.verbose( "Skipping queue %s at site %s not in the mask" % (queueName, siteName) )
+        self.log.verbose( "Skipping queue %s: site %s not in the mask" % (queueName, siteName) )
         continue
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
@@ -503,6 +504,7 @@ class SiteDirector( AgentModule ):
 
       # Get the number of already waiting pilots for these task queues
       totalWaitingPilots = 0
+      manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
         lastUpdateTime = dateTime() - self.pilotWaitingTime * second
         result = pilotAgentsDB.countPilots( { 'TaskQueueID': tqIDList,
@@ -516,7 +518,9 @@ class SiteDirector( AgentModule ):
           self.log.verbose( 'Waiting Pilots for TaskQueue %s:' % tqIDList, totalWaitingPilots )
       if totalWaitingPilots >= totalTQJobs:
         self.log.verbose( "%d waiting pilots already for all the available jobs" % totalWaitingPilots )
-        continue
+        manyWaitingPilotsFlag = True
+        if not self.addPilotsToEmptySites:
+          continue
 
       self.log.verbose( "%d waiting pilots for the total of %d eligible jobs for %s" % (totalWaitingPilots, totalTQJobs, queue) )
 
@@ -530,14 +534,18 @@ class SiteDirector( AgentModule ):
       ce.setProxy( self.proxy, cpuTime - 60 )
 
       # Get the number of available slots on the target site/queue
-      totalSlots = self.getQueueSlots( queue )
+      totalSlots = self.getQueueSlots( queue, manyWaitingPilotsFlag )
       if totalSlots == 0:
         self.log.debug( '%s: No slots available' % queue )
         continue
 
-      pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
-      self.log.info( '%s: Slots=%d, TQ jobs=%d, Pilots: waiting %d, to submit=%d' % \
-                              ( queue, totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
+      if manyWaitingPilotsFlag:
+        # Throttle submission of extra pilots to empty sites
+        pilotsToSubmit = self.maxPilotsToSubmit/10 + 1
+      else:
+        pilotsToSubmit = max( 0, min( totalSlots, totalTQJobs - totalWaitingPilots ) )
+        self.log.info( '%s: Slots=%d, TQ jobs=%d, Pilots: waiting %d, to submit=%d' % \
+                                ( queue, totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
       # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
       pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
@@ -617,7 +625,7 @@ class SiteDirector( AgentModule ):
     self.log.info( "%d pilots submitted in total in this cycle, %d matched queues" % ( totalSubmittedPilots, matchedQueues ) )
     return S_OK()
 
-  def getQueueSlots( self, queue ):
+  def getQueueSlots( self, queue, manyWaitingPilotsFlag ):
     """ Get the number of available slots in the queue
     """
     ce = self.queueDict[queue]['CE']
@@ -626,7 +634,20 @@ class SiteDirector( AgentModule ):
 
     self.queueSlots.setdefault( queue, {} )
     totalSlots = self.queueSlots[queue].get( 'AvailableSlots', 0 )
+
+    # See if there are waiting pilots for this queue. If not, allow submission
+    if totalSlots and manyWaitingPilotsFlag:
+      result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
+                                            'Queue':queueName,
+                                            'Status': WAITING_PILOT_STATUS } )
+      if result['OK']:
+        jobIDList = result['Value']
+        if len( jobIDList ) == 0:
+          return totalSlots
+      return 0
+
     availableSlotsCount = self.queueSlots[queue].setdefault( 'AvailableSlotsCount', 0 )
+    waitingJobs = 1
     if totalSlots == 0:
       if availableSlotsCount % 10 == 0:
 
@@ -650,9 +671,14 @@ class SiteDirector( AgentModule ):
                            ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs'] ) )
           totalSlots = result['Value']
           self.queueSlots[queue]['AvailableSlots'] = totalSlots
+          waitingJobs = ceInfoDict['WaitingJobs']
 
     self.queueSlots[queue]['AvailableSlotsCount'] += 1
-    return totalSlots
+
+    if manyWaitingPilotsFlag and waitingJobs:
+      return 0
+    else:
+      return totalSlots
 
 #####################################################################################
   def getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '', processors = 1 ):
