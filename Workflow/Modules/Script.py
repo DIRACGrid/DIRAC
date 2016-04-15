@@ -44,6 +44,8 @@ class Script( ModuleBase ):
 
     if self.step_commons.has_key( 'arguments' ):
       self.arguments = self.step_commons['arguments']
+      if not self.arguments.strip() and 'arguments' in self.workflow_commons:
+        self.arguments = self.workflow_commons['arguments']
 
   #############################################################################
 
