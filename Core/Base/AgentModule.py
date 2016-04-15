@@ -5,8 +5,6 @@
 """
   Base class for all agent modules
 """
-__RCSID__ = "$Id$"
-
 import os
 import threading
 import time
@@ -20,13 +18,16 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities import Time, MemStat
 
+__RCSID__ = "$Id$"
+
+
 def _checkDir( path ):
   try:
     os.makedirs( path )
-  except Exception:
+  except OSError:
     pass
   if not os.path.isdir( path ):
-    raise Exception( 'Can not create %s' % path )
+    raise OSError( 'Can not create %s' % path )
 
 class AgentModule( object ):
   """ Base class for all agent modules
@@ -139,7 +140,7 @@ class AgentModule( object ):
                                                              *agentName.split( "/" ) )
     self.__configDefaults[ 'shifterProxy' ] = ''
     self.__configDefaults[ 'shifterProxyLocation' ] = os.path.join( self.__configDefaults[ 'WorkDirectory' ],
-                                                                        '.shifterCred' )
+                                                                    '.shifterCred' )
 
 
     if isinstance( properties, dict):
@@ -393,7 +394,9 @@ class AgentModule( object ):
     wallTime = time.time() - initialWallTime
     stats = os.times()
     cpuTime = stats[0] + stats[2] - initialCPUTime
-    percentage = cpuTime / wallTime * 100.
+    percentage = 0
+    if wallTime:
+      percentage = cpuTime / wallTime * 100.
     if percentage > 0:
       gMonitor.addMark( 'CPU', percentage )
 
