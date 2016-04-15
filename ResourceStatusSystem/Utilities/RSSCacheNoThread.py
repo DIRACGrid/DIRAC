@@ -102,9 +102,10 @@ class Cache( object ):
 
     result = {}
 
-    for cacheKey in cacheKeys:
 
+    for cacheKey in cacheKeys:
       cacheRow = self.__cache.get( cacheKey, validSeconds = self.__validSeconds )
+
       if not cacheRow:
         return S_ERROR( 'Cannot get %s' % str( cacheKey ) )
       result.update( { cacheKey : cacheRow } )
@@ -172,7 +173,7 @@ class RSSCache( Cache ):
   methods are not !!
   """
 
-  def __init__( self, elementType, lifeTime, updateFunc ):
+  def __init__( self, lifeTime, updateFunc ):
     """
     Constructor
 
@@ -192,9 +193,9 @@ class RSSCache( Cache ):
 
     super( RSSCache, self ).__init__( lifeTime, updateFunc )
 
-    self.allStatusTypes = RssConfiguration().getConfigStatusType( elementType = elementType )
+    self.allStatusTypes = RssConfiguration().getConfigStatusType()
 
-  def match( self, elementNames, statusTypes ):
+  def match( self, elementNames, elementType, statusTypes ):
     """
     In first instance, if the cache is invalid, it will request a new one from
     the server.
@@ -217,7 +218,7 @@ class RSSCache( Cache ):
 
     self.acquireLock()
     try:
-      return self._match( elementNames, statusTypes )
+      return self._match( elementNames, elementType, statusTypes )
     finally:
       # Release lock, no matter what !
       self.releaseLock()
@@ -225,7 +226,7 @@ class RSSCache( Cache ):
   #.............................................................................
   # Private methods: NOT THREAD SAFE !!
 
-  def _match( self, elementNames, statusTypes ):
+  def _match( self, elementNames, elementType, statusTypes ):
     """
     Method doing the actual work. It must be wrapped around locks to ensure no
     disaster happens.
@@ -233,6 +234,8 @@ class RSSCache( Cache ):
     :Parameters:
       **elementNames** - [ None, `string`, `list` ]
         name(s) of the elements to be matched
+      **elementType** - [ `string` ]
+        type of the elements to be matched
       **statusTypes** - [ None, `string`, `list` ]
         name(s) of the statusTypes to be matched
 
@@ -246,7 +249,7 @@ class RSSCache( Cache ):
     validCache = validCache[ 'Value' ]
 
     # Gets matched keys
-    matchKeys = self.__match( validCache, elementNames, statusTypes )
+    matchKeys = self.__match( validCache, elementNames, elementType, statusTypes )
 
     if not matchKeys[ 'OK' ]:
       return matchKeys
@@ -261,7 +264,7 @@ class RSSCache( Cache ):
 
     cacheMatches = cacheMatches[ 'Value' ]
     if not cacheMatches:
-      return S_ERROR( 'Empty cache for: %s, %s' % ( elementNames, statusTypes ) )
+      return S_ERROR( 'Empty cache for: %s, %s, %s' % ( elementNames, elementType, statusTypes ) )
 
     # We undo the key into <elementName> and <statusType>
     cacheMatchesDict = self.__getDictFromCacheMatches( cacheMatches )
@@ -285,7 +288,7 @@ class RSSCache( Cache ):
 
     return cache
 
-  def __match( self, validCache, elementNames, statusTypes ):
+  def __match( self, validCache, elementNames, elementType, statusTypes ):
     """
     Obtains all keys on the cache ( should not be empty ! ).
 
@@ -303,6 +306,8 @@ class RSSCache( Cache ):
         cache dictionary
       **elementNames** - [ None, `string`, `list` ]
         name(s) of the elements to be matched
+      **elementType** - [ `string` ]
+        type of the elements to be matched
       **statusTypes** - [ None, `string`, `list` ]
         name(s) of the statusTypes to be matched
 
@@ -318,6 +323,13 @@ class RSSCache( Cache ):
     # Remove duplicates, makes Cartesian product faster
     elementNamesSet = set( elementNames )
 
+    if isinstance( elementType, str ):
+      elementType = [ elementType ]
+    elif elementType is None:
+      elementType = [ cacheKey[1] for cacheKey in cacheKeys ]
+    # Remove duplicates, makes Cartesian product faster
+    elementTypeSet = set( elementType )
+
     if isinstance( statusTypes, str ):
       statusTypes = [ statusTypes ]
     elif statusTypes is None:
@@ -325,7 +337,7 @@ class RSSCache( Cache ):
     # Remove duplicates, makes Cartesian product faster
     statusTypesSet = set( statusTypes )
 
-    cartesianProduct = set( itertools.product( elementNamesSet, statusTypesSet ) )
+    cartesianProduct = set( itertools.product( elementNamesSet, elementTypeSet, statusTypesSet ) )
 
     # Some users find funny sending empty lists, which will make the cartesianProduct
     # be []. Problem: [] is always subset, no matter what !
@@ -348,20 +360,20 @@ class RSSCache( Cache ):
 
     :Parameters:
       **cacheMatches** - `dict`
-        cache dictionary of the form { ( elementName, statusType ) : status, ... }
+        cache dictionary of the form { ( elementName, elementType, statusType ) : status, ... }
 
 
-    :return: dict of the form { elementName : { statusType : status, ... }, ... }
+    :return: dict of the form { elementName : { ( elementType, statusType ) : status, ... }, ... }
     """
 
     result = {}
 
     for cacheKey, cacheValue in cacheMatches.iteritems():
-      elementName, statusType = cacheKey
+      elementName, elementType, statusType = cacheKey
 
       if not result.has_key( elementName ):
         result[ elementName ] = {}
-      result[ elementName ][ statusType ] = cacheValue
+      result[ elementName ][ elementType, statusType ] = cacheValue
 
     return result
 

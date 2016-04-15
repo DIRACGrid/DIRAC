@@ -35,7 +35,7 @@ class ResourceStatus( object ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.rssConfig = RssConfiguration()
     self.__opHelper = Operations()
-    self.rssClient = None
+    self.rssClient = ResourceStatusClient()
     self.infoGetter = InfoGetter()
 
     # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
@@ -43,490 +43,75 @@ class ResourceStatus( object ):
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not
     # used.
-    self.seCache = RSSCache( 'StorageElement', cacheLifeTime, self.__updateSECache )
-    self.ceCache = RSSCache( 'ComputingElement', cacheLifeTime, self.__updateCECache )
-    self.catalogCache = RSSCache( 'Catalog', cacheLifeTime, self.__updateCatalogCache )
-    self.ftsCache = RSSCache( 'FTS', cacheLifeTime, self.__updateFTSCache )
+    self.rssCache = RSSCache( cacheLifeTime, self.__updateRssCache )
 
-  def getComputingElementStatus( self, elementName, statusType = None, default = None ):
+  def getElementStatus( self, elementName, elementType, statusType = None, default = None ):
     """
-    Helper with dual access, tries to get information from the RSS for the given
-    ComputingElement.
-
-
-    example:
-      >>> getComputingElementStatus( 'CERN-USER' )
-          S_OK( { 'CERN-USER' : { 'all': 'Active' } } )
-      >>> getComputingElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
-          S_ERROR( ... )
-
-    """
-
-    if self.__getMode():
-      # We do not apply defaults. If is not on the cache, S_ERROR is returned.
-      return self.__getRSSComputingElementStatus( elementName, statusType )
-    else:
-      self.log.warn( "Can not get ComputingElement status from CS, returning 'Active' by default")
-      return S_OK( { elementName : {'all':'Active'} } )
-
-  def setComputingElementStatus( self, elementName, statusType, status, reason = None,
-                               tokenOwner = None ):
-
-    """
-    Helper with dual access, tries set information in RSS.
-
-    example:
-      >>> setComputingElementStatus( 'CERN-USER', 'all' )
-          S_OK( ... )
-      >>> setComputingElementStatus( None )
-          S_ERROR( ... )
-    """
-
-    if self.__getMode():
-      return self.__setRSSComputingElementStatus( elementName, statusType, status, reason, tokenOwner )
-    else:
-      self.log.warn( "Can not set ComputingElement status in CS")
-      return S_OK()
-
-
-  def getFTSStatus( self, elementName, statusType = None, default = None ):
-    """
-    Helper with dual access, tries to get information from the RSS for the given FTS.
-
-    example:
-      >>> getFTSStatus( 'CERN-USER' )
-          S_OK( { 'CERN-USER' : { 'all': 'Active' } } )
-      >>> getFTSStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
-          S_ERROR( ... )
-
-    """
-
-    if self.__getMode():
-      # We do not apply defaults. If is not on the cache, S_ERROR is returned.
-      return self.__getRSSftsStatus( elementName, statusType )
-    else:
-      self.log.warn( "Can not get FTS status from CS, returning 'Active' by default")
-      return S_OK( { elementName : {'all':'Active'} } )
-
-  def setFTSStatus( self, elementName, statusType, status, reason = None,
-                               tokenOwner = None ):
-
-    """
-    Helper with dual access, tries set information in RSS.
-
-    example:
-      >>> setFTSStatus( 'CERN-USER', 'all' )
-          S_OK( ... )
-      >>> setFTSStatus( None )
-          S_ERROR( ... )
-    """
-
-    if self.__getMode():
-      return self.__setRSSftsStatus( elementName, statusType, status, reason, tokenOwner )
-    else:
-      self.log.warn( "Can not set FTS status in CS")
-      return S_OK()
-
-
-  def getCatalogStatus( self, elementName, statusType = None, default = None ):
-    """
-    Helper with dual access, tries to get information from the RSS for the given
-    Catalog, otherwise, it gets it from the CS.
-
-    example:
-      >>> getStorageElementStatus( 'CERN-USER', 'ReadAccess' )
-          S_OK( { 'CERN-USER' : { 'ReadAccess': 'Active' } } )
-      >>> getStorageElementStatus( 'CERN-USER', 'WriteAccess' )
-          S_OK( { 'CERN-USER' : {'ReadAccess': 'Active', 'WriteAccess': 'Active',
-                                 'CheckAccess': 'Banned', 'RemoveAccess': 'Banned'}} )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
-          S_ERROR( xyz.. )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType', 'Unknown' )
-          S_OK( 'Unknown' )
-
-    """
-
-    if self.__getMode():
-      # We do not apply defaults. If is not on the cache, S_ERROR is returned.
-      return self.__getRSSCatalogStatus( elementName, statusType )
-    else:
-      return self.__getCSCatalogStatus( elementName, statusType, default )
-
-
-  def setCatalogStatus( self, elementName, statusType, status, reason = None,
-                               tokenOwner = None ):
-
-    """
-    Helper with dual access, tries set information in RSS and in CS.
-
-    example:
-      >>> getStorageElementStatus( 'CERN-USER', 'ReadAccess' )
-          S_OK( { 'ReadAccess': 'Active' } )
-      >>> getStorageElementStatus( 'CERN-USER', 'WriteAccess' )
-          S_OK( {'ReadAccess': 'Active', 'WriteAccess': 'Active', 'CheckAccess': 'Banned', 'RemoveAccess': 'Banned'} )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
-          S_ERROR( xyz.. )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType', 'Unknown' )
-          S_OK( 'Unknown' )
-    """
-
-    if self.__getMode():
-      return self.__setRSSCatalogStatus( elementName, statusType, status, reason, tokenOwner )
-    else:
-      return self.__setCSCatalogStatus( elementName, statusType, status )
-
-
-  def getStorageElementStatus( self, elementName, statusType = None, default = None ):
-    """
-    Helper with dual access, tries to get information from the RSS for the given
+    Helper function, tries to get information from the RSS for the given
     StorageElement, otherwise, it gets it from the CS.
 
     example:
-      >>> getStorageElementStatus( 'CERN-USER', 'ReadAccess' )
-          S_OK( { 'CERN-USER' : { 'ReadAccess': 'Active' } } )
-      >>> getStorageElementStatus( 'CERN-USER', 'Write' )
-          S_OK( { 'CERN-USER' : {'ReadAccess': 'Active', 'WriteAccess': 'Active',
-                                 'CheckAccess': 'Banned', 'RemoveAccess': 'Banned'}} )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
+      >>> getElementStatus('CE42', 'ComputingElement')
+          S_OK( { 'CE42': { ('ComputingElement', 'all'): 'Active' } } } )
+      >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
+          S_OK( { 'SE1': { ('StorageElement', 'CheckAccess'): 'Banned' } } } )
+      >>> getElementStatus('SE1', 'ThisIsAWrongElementType', 'ReadAccess')
           S_ERROR( xyz.. )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType', 'Unknown' )
-          S_OK( 'Unknown' )
+      >>> getElementStatus('ThisIsAWrongName', 'StorageElement', 'WriteAccess')
+          S_ERROR( xyz.. )
 
     """
 
     if self.__getMode():
-      # We do not apply defaults. If is not on the cache, S_ERROR is returned.
-      return self.__getRSSStorageElementStatus( elementName, statusType )
+    #We do not apply defaults. If is not on the cache, S_ERROR is returned.
+       return self.__getRSSElementStatus( elementName, elementType, statusType )
     else:
-      return self.__getCSStorageElementStatus( elementName, statusType, default )
+       return self.__getCSElementStatus( elementName, elementType, statusType, default )
 
-  def setStorageElementStatus( self, elementName, statusType, status, reason = None,
-                               tokenOwner = None ):
+  def setElementStatus( self, elementName, elementType, statusType, status, reason = None, tokenOwner = None ):
 
     """
-    Helper with dual access, tries set information in RSS and in CS.
+    Helper function, tries set information in RSS and in CS.
 
     example:
-      >>> getStorageElementStatus( 'CERN-USER', 'ReadAccess' )
-          S_OK( { 'ReadAccess': 'Active' } )
-      >>> getStorageElementStatus( 'CERN-USER', 'Write' )
-          S_OK( {'ReadAccess': 'Active', 'WriteAccess': 'Active', 'CheckAccess': 'Banned', 'RemoveAccess': 'Banned'} )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType' )
-          S_ERROR( xyz.. )
-      >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType', 'Unknown' )
-          S_OK( 'Unknown' )
+      >>> setElementStatus('CE42', 'ComputingElement', 'all', 'Active')
+          S_OK(  xyz.. )
+      >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')
+          S_OK(  xyz.. )
     """
 
-    if self.__getMode():
-      return self.__setRSSStorageElementStatus( elementName, statusType, status, reason, tokenOwner )
-    else:
-      return self.__setCSStorageElementStatus( elementName, statusType, status )
+    # if self.__getMode():
+    #return self.__setRSSElementStatus( elementName, elementType, statusType, status, reason, tokenOwner )
+    # else:
+    return self.__setCSElementStatus( elementName, elementType, statusType, status )
 
 ################################################################################
 
-  def __updateSECache( self ):
-    """ Method used to update the StorageElementCache.
+  def __updateRssCache( self ):
+    """ Method used to update the rssCache.
 
         It will try 5 times to contact the RSS before giving up
     """
 
-    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
+    meta = { 'columns' : [ 'Name', 'ElementType', 'StatusType', 'Status' ] }
 
     for ti in range( 5 ):
-      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
-                                                     elementType = 'StorageElement',
-                                                     meta = meta )
+      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status', meta = meta )
       if rawCache['OK']:
         break
-      self.log.warn( "Can't get SE status", rawCache['Message'] + "; trial %d" % ti )
+      self.log.warn( "Can't get resource's status", rawCache['Message'] + "; trial %d" % ti )
       sleep( math.pow( ti, 2 ) )
       self.rssClient = ResourceStatusClient()
 
     if not rawCache[ 'OK' ]:
       return rawCache
     return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
-
-  def __updateCECache( self ):
-    """ Method used to update the ComputingElementCache.
-
-        It will try 5 times to contact the RSS before giving up
-    """
-
-    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
-
-    for ti in range( 5 ):
-      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
-                                                     elementType = 'ComputingElement',
-                                                     meta = meta )
-      if rawCache['OK']:
-        break
-      self.log.warn( "Can't get CE status", rawCache['Message'] + "; trial %d" % ti )
-      sleep( math.pow( ti, 2 ) )
-      self.rssClient = ResourceStatusClient()
-
-    if not rawCache[ 'OK' ]:
-      return rawCache
-    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
-
-  def __updateCatalogCache( self ):
-    """ Method used to update the catalogCache.
-
-        It will try 5 times to contact the RSS before giving up
-    """
-
-    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
-
-    for ti in range( 5 ):
-      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
-                                                     elementType = 'Catalog',
-                                                     meta = meta )
-      if rawCache['OK']:
-        break
-      self.log.warn( "Can't get catalog status", rawCache['Message'] + "; trial %d" % ti )
-      sleep( math.pow( ti, 2 ) )
-      self.rssClient = ResourceStatusClient()
-
-    if not rawCache[ 'OK' ]:
-      return rawCache
-    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
-
-  def __updateFTSCache( self ):
-    """ Method used to update the FTS.
-
-        It will try 5 times to contact the RSS before giving up
-    """
-
-    meta = { 'columns' : [ 'Name', 'StatusType', 'Status' ] }
-
-    for ti in range( 5 ):
-      rawCache = self.rssClient.selectStatusElement( 'Resource', 'Status',
-                                                     elementType = 'FTS',
-                                                     meta = meta )
-      if rawCache['OK']:
-        break
-      self.log.warn( "Can't get FTS status", rawCache['Message'] + "; trial %d" % ti )
-      sleep( math.pow( ti, 2 ) )
-      self.rssClient = ResourceStatusClient()
-
-    if not rawCache[ 'OK' ]:
-      return rawCache
-    return S_OK( getCacheDictFromRawData( rawCache[ 'Value' ] ) )
-
 
 ################################################################################
 
-  def __getRSSComputingElementStatus( self, elementName, statusType ):
+  def __getRSSElementStatus( self, elementName, elementType, statusType ):
     """
-    Gets from the cache or the RSS the ComputingElements status. The cache is a
-    copy of the DB table. If it is not on the cache, most likely is not going
-    to be on the DB.
-
-    There is one exception: item just added to the CS, e.g. new ComputingElement.
-    The period between it is added to the DB and the changes are propagated
-    to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
-    minutes.
-    """
-
-    cacheMatch = self.ceCache.match( elementName, statusType )
-
-    self.log.debug( '__getRSSComputingElementStatus' )
-    self.log.debug( cacheMatch )
-
-    return cacheMatch
-
-  def __setRSSComputingElementStatus( self, elementName, statusType, status, reason, tokenOwner ):
-    """
-    Sets on the RSS the ComputingElements status
-    """
-
-    expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
-
-    self.ceCache.acquireLock()
-    try:
-      res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
-                                                statusType = statusType, status = status,
-                                                reason = reason, tokenOwner = tokenOwner,
-                                                tokenExpiration = expiration )
-      if res[ 'OK' ]:
-        self.ceCache.refreshCache()
-      else:
-        _msg = 'Error updating ComputingElement (%s,%s,%s)' % ( elementName, statusType, status )
-        gLogger.warn( 'RSS: %s' % _msg )
-
-      return res
-
-    finally:
-      # Release lock, no matter what.
-      self.ceCache.releaseLock()
-
-  def __getRSSftsStatus( self, elementName, statusType ):
-    """
-    Gets from the cache or the RSS the FTS status. The cache is a
-    copy of the DB table. If it is not on the cache, most likely is not going
-    to be on the DB.
-
-    There is one exception: item just added to the CS, e.g. new FTS.
-    The period between it is added to the DB and the changes are propagated
-    to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
-    minutes.
-    """
-
-    cacheMatch = self.ftsCache.match( elementName, statusType )
-
-    self.log.debug( '__getRSSftsStatus' )
-    self.log.debug( cacheMatch )
-
-    return cacheMatch
-
-  def __setRSSftsStatus( self, elementName, statusType, status, reason, tokenOwner ):
-    """
-    Sets on the RSS the FTS status
-    """
-
-    expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
-
-    self.ftsCache.acquireLock()
-    try:
-      res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
-                                                statusType = statusType, status = status,
-                                                reason = reason, tokenOwner = tokenOwner,
-                                                tokenExpiration = expiration )
-      if res[ 'OK' ]:
-        self.ftsCache.refreshCache()
-      else:
-        _msg = 'Error updating FTS (%s,%s,%s)' % ( elementName, statusType, status )
-        gLogger.warn( 'RSS: %s' % _msg )
-
-      return res
-
-    finally:
-      # Release lock, no matter what.
-      self.ftsCache.releaseLock()
-
-  def __getRSSCatalogStatus( self, elementName, statusType ):
-    """
-    Gets from the cache or the RSS the Catalog status. The cache is a
-    copy of the DB table. If it is not on the cache, most likely is not going
-    to be on the DB.
-
-    There is one exception: item just added to the CS, e.g. new Catalog.
-    The period between it is added to the DB and the changes are propagated
-    to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
-    minutes.
-    """
-
-    cacheMatch = self.catalogCache.match( elementName, statusType )
-
-    self.log.debug( '__getRSSCatalogStatus' )
-    self.log.debug( cacheMatch )
-
-    return cacheMatch
-
-
-  def __getCSCatalogStatus( self, elementName, statusType, default ):
-    """
-    Gets from the CS the Catalog status
-    """
-
-    cs_path = "/Resources/FileCatalogs"
-
-    if not isinstance( elementName, list ):
-      elementName = [ elementName ]
-
-    statuses = self.rssConfig.getConfigStatusType( 'Catalog' )
-
-    result = {}
-    for element in elementName:
-
-      if statusType is not None:
-        # Added Active by default
-        res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
-        result[element] = {statusType: res}
-
-      else:
-        res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
-        if res[ 'OK' ] and res[ 'Value' ]:
-          elementStatuses = {}
-          for elementStatusType, value in res[ 'Value' ].items():
-            if elementStatusType in statuses:
-              elementStatuses[ elementStatusType ] = value
-
-          # If there is no status defined in the CS, we add by default Read and
-          # Write as Active.
-          if elementStatuses == {}:
-            elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
-
-          result[ element ] = elementStatuses
-
-    if result:
-      return S_OK( result )
-
-    if default is not None:
-
-      # sec check
-      if statusType is None:
-        statusType = 'none'
-
-      defList = [ [ el, statusType, default ] for el in elementName ]
-      return S_OK( getDictFromList( defList ) )
-
-    _msg = "Catalog '%s', with statusType '%s' is unknown for CS."
-    return S_ERROR(DErrno.ERESUNK, _msg % ( elementName, statusType ) )
-
-
-  def __setRSSCatalogStatus( self, elementName, statusType, status, reason, tokenOwner ):
-    """
-    Sets on the RSS the Catalog status
-    """
-
-    expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
-
-    self.catalogCache.acquireLock()
-    try:
-      res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
-                                                statusType = statusType, status = status,
-                                                reason = reason, tokenOwner = tokenOwner,
-                                                tokenExpiration = expiration )
-      if res[ 'OK' ]:
-        self.catalogCache.refreshCache()
-
-      if not res[ 'OK' ]:
-        _msg = 'Error updating Catalog (%s,%s,%s)' % ( elementName, statusType, status )
-        gLogger.warn( 'RSS: %s' % _msg )
-
-      return res
-
-    finally:
-      # Release lock, no matter what.
-      self.catalogCache.releaseLock()
-
-  def __setCSCatalogStatus( self, elementName, statusType, status ):
-    """
-    Sets on the CS the Catalog status
-    """
-
-    statuses = self.rssConfig.getConfigStatusType( 'Catalog' )
-    if not statusType in statuses:
-      gLogger.error( "%s is not a valid statusType" % statusType )
-      return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )
-
-    csAPI = CSAPI()
-
-    cs_path = "/Resources/FileCatalogs"
-
-    csAPI.setOption( "%s/%s/%s" % ( cs_path, elementName, statusType ), status )
-
-    res = csAPI.commitChanges()
-    if not res[ 'OK' ]:
-      gLogger.warn( 'CS: %s' % res[ 'Message' ] )
-
-    return res
-
-
-
-  def __getRSSStorageElementStatus( self, elementName, statusType ):
-    """
-    Gets from the cache or the RSS the StorageElements status. The cache is a
+    Gets from the cache or the RSS the eElements status. The cache is a
     copy of the DB table. If it is not on the cache, most likely is not going
     to be on the DB.
 
@@ -536,24 +121,27 @@ class ResourceStatus( object ):
     minutes.
     """
 
-    cacheMatch = self.seCache.match( elementName, statusType )
+    cacheMatch = self.rssCache.match( elementName, elementType, statusType )
 
-    self.log.debug( '__getRSSStorageElementStatus' )
+    self.log.debug( '__getRSSElementStatus' )
     self.log.debug( cacheMatch )
 
     return cacheMatch
 
-  def __getCSStorageElementStatus( self, elementName, statusType, default ):
+  def __getCSElementStatus( self, elementName, elementType, statusType, default ):
     """
-    Gets from the CS the StorageElements status
+    Gets from the CS the Element status
     """
 
-    cs_path = "/Resources/StorageElements"
+    if elementType in ('ComputingElement', 'FTS'):
+      return S_OK( { elementName: { (elementType, 'all'): 'Active'} } )
+
+    cs_path = "/Resources/" + elementType
 
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
 
-    statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
+    statuses = self.rssConfig.getConfigStatusType( elementType )
 
     result = {}
     for element in elementName:
@@ -561,7 +149,7 @@ class ResourceStatus( object ):
       if statusType is not None:
         # Added Active by default
         res = gConfig.getValue( "%s/%s/%s" % ( cs_path, element, statusType ), 'Active' )
-        result[element] = {statusType: res}
+        result[element] = {(elementType, statusType): res}
 
       else:
         res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
@@ -572,8 +160,8 @@ class ResourceStatus( object ):
               elementStatuses[ elementStatusType ] = value
 
           # If there is no status defined in the CS, we add by default Read and
-          # Write as Active.
-          if elementStatuses == {}:
+          # Write as Active
+          if not elementStatuses:
             elementStatuses = { 'ReadAccess' : 'Active', 'WriteAccess' : 'Active' }
 
           result[ element ] = elementStatuses
@@ -590,50 +178,51 @@ class ResourceStatus( object ):
       defList = [ [ el, statusType, default ] for el in elementName ]
       return S_OK( getDictFromList( defList ) )
 
-    _msg = "StorageElement '%s', with statusType '%s' is unknown for CS."
+    _msg = "Element '%s', with statusType '%s' is unknown for CS."
     return S_ERROR(DErrno.ERESUNK, _msg % ( elementName, statusType ) )
 
-  def __setRSSStorageElementStatus( self, elementName, statusType, status, reason, tokenOwner ):
+  def __setRSSElementStatus( self, elementName, elementType, statusType, status, reason, tokenOwner ):
     """
-    Sets on the RSS the StorageElements status
+    Sets on the RSS the Elements status
     """
 
     expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
 
-    self.seCache.acquireLock()
+    self.rssCache.acquireLock()
     try:
       res = self.rssClient.modifyStatusElement( 'Resource', 'Status', name = elementName,
-                                                statusType = statusType, status = status,
-                                                reason = reason, tokenOwner = tokenOwner,
-                                                tokenExpiration = expiration )
+                                                elementType = elementType, status = status,
+                                                statusType = statusType, reason = reason,
+                                                tokenOwner = tokenOwner, tokenExpiration = expiration )
+
       if res[ 'OK' ]:
-        self.seCache.refreshCache()
+        self.rssCache.refreshCache()
 
       if not res[ 'OK' ]:
-        _msg = 'Error updating StorageElement (%s,%s,%s)' % ( elementName, statusType, status )
+        _msg = 'Error updating Element (%s,%s,%s)' % ( elementName, statusType, status )
         gLogger.warn( 'RSS: %s' % _msg )
 
       return res
 
     finally:
       # Release lock, no matter what.
-      self.seCache.releaseLock()
+      self.rssCache.releaseLock()
 
-  def __setCSStorageElementStatus( self, elementName, statusType, status ):
+  def __setCSElementStatus( self, elementName, elementType, statusType, status ):
     """
-    Sets on the CS the StorageElements status
+    Sets on the CS the Elements status
     """
 
-    statuses = self.rssConfig.getConfigStatusType( 'StorageElement' )
-    if not statusType in statuses:
+    statuses = self.rssConfig.getConfigStatusType( elementType )
+    if statusType not in statuses:
       gLogger.error( "%s is not a valid statusType" % statusType )
       return S_ERROR( "%s is not a valid statusType: %s" % ( statusType, statuses ) )
 
     csAPI = CSAPI()
 
-    cs_path = "/Resources/StorageElements"
+    cs_path = "/Resources/" + elementType
 
-    csAPI.setOption( "%s/%s/%s" % ( cs_path, elementName, statusType ), status )
+    csAPI.setOption( "%s/%s/%s/%s" % ( cs_path, elementName, elementType, statusType ), status )
 
     res = csAPI.commitChanges()
     if not res[ 'OK' ]:
@@ -710,7 +299,7 @@ def getCacheDictFromRawData( rawList ):
   :return: dict of the form { ( elementName, statusType ) : status, ... }
   """
 
-  res = [ ( ( name, sType ), status ) for name, sType, status in rawList ]
+  res = [ ( ( name, elemType, sType ), status ) for name, elemType, sType, status in rawList ]
   return dict( res )
 
 ################################################################################
