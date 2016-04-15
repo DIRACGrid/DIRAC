@@ -1186,7 +1186,9 @@ class Job( API ):
             classadJob.insertAttributeVectorStringList( name, value )
           else:
             classadJob.insertAttributeVectorInt( name, value )
-        else:
+        elif isinstance( value, basestring ) and value:
+          classadJob.insertAttributeInt( name, value )
+        elif isinstance( value, ( int, long, float ) ):
           classadJob.insertAttributeInt( name, value )
 
     if self.numberOfParameters > 0:
