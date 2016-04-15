@@ -202,7 +202,7 @@ class Workflow( AttributeCollection ):
   def execute( self ):
     self.resolveGlobalVars()
     # define workflow attributes
-    wf_exec_attr = {} # dictianary with the WF attributes, used to resolve links to self.attrname
+    wf_exec_attr = {} # dictionary with the WF attributes, used to resolve links to self.attrname
     for wf_parameter in self.parameters:
       # parameters shall see objects in the current scope order to resolve links
       if wf_parameter.preExecute(): # for parm which not just outputs
