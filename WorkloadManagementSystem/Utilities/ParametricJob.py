@@ -61,11 +61,7 @@ def __updateAttribute( classAd, attribute, parName, parValue ):
   if classAd.isAttributeList( attribute):
     parValue = parValue.strip()
     if parValue.startswith( '{' ):
-      parValue = parValue[1:-1].strip()
-    #else:
-    #  # This is mostly for a prettier JDL print-out
-    #  if not parValue.replace( '.', '' ).replace( '-', '' ).isdigit():
-    #    parValue = '"%s"' % parValue
+      parValue = parValue.lstrip( '{' ).rstrip( '}' ).strip()
 
   expr = classAd.get_expression( attribute )
   newexpr = expr.replace( pattern, str( parValue ) )
@@ -80,7 +76,7 @@ def generateParametricJobs( jobClassAd ):
   :return: list of ClassAd job description objects
   """
   if not jobClassAd.lookupAttribute( 'Parameters' ):
-    return [ jobClassAd ]
+    return S_OK( [ jobClassAd.asJDL() ] )
 
   nParameters = getNumberOfParameters( jobClassAd )
   if nParameters == 0:
@@ -102,6 +98,8 @@ def generateParametricJobs( jobClassAd ):
           else:
             if attribute != "Parameters":
               return S_ERROR( EWMSJDL, 'Inconsistent parametric job description' )
+            nPar = jobClassAd.getAttributeInt( attribute )
+            parameterDict[seqID]['Parameters'] = nPar
         else:
           value = jobClassAd.getAttributeInt( attribute )
           if not value:
