@@ -7,7 +7,7 @@ from DIRAC                                                      import S_OK, S_E
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import fromChar
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
-from DIRAC.Core.Utilities.DErrno                                import ETSDATA, ETSUNK
+from DIRAC.Core.Utilities.DErrno                                import ETSDATA, ETSUKN
 from DIRAC.Interfaces.API.Job                                   import Job
 from DIRAC.RequestManagementSystem.Client.ReqClient             import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request               import Request
@@ -626,7 +626,7 @@ class WorkflowTasks( TaskBase ):
     oJob = taskDict.pop( 'BulkJobObject' )
     if oJob is None:
       self._logError( 'submitTransformationTasksBulk: no bulk Job object found', transID = transID )
-      return S_ERROR( ETSUNK, 'No bulk job object provided for submission' )
+      return S_ERROR( ETSUKN, 'No bulk job object provided for submission' )
 
     result = self.submitTaskToExternal( oJob )
     if not result['OK']:
