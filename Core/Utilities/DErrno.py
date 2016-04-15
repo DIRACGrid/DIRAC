@@ -89,6 +89,7 @@ EDB = 1130
 EMYSQL = 1131
 
 # ## WMS/Workflow
+EWMSUKN = 1500
 EWMSJDL = 1501
 
 # ## DMS/StorageManagement (16XX)
@@ -101,7 +102,7 @@ EFCERR = 1604
 ERMSUKN = 1700
 
 # ## TS (19XX)
-ETSUNK = 1900
+ETSUKN = 1900
 ETSDATA = 1901
 
 # This translates the integer number into the name of the variable
@@ -138,6 +139,7 @@ dErrorCode = {
                1130 : 'EDB',
                1131 : 'EMYSQL',
                # WMS/Workflow
+               1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
@@ -149,8 +151,8 @@ dErrorCode = {
                1700 : "ERMSUKN",
 
                # TS
-               1900 : "ETSUNK",
-               1901 : "ETSDATA"
+               1900 : "ETSUKN",
+               1901 : "ETSDATA",
                }
 
 
@@ -187,6 +189,7 @@ dStrError = {
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
               # WMS/Workflow
+              EWMSUKN : "Unknown WMS error",
               EWMSJDL : "Invalid JDL",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
@@ -196,8 +199,8 @@ dStrError = {
               # RMS
               ERMSUKN : "Unknown RMS error",
               # TS
-              ETSUNK : "Unknown Transformation System Error",
-              ETSDATA : "Invalid Input Data definition"
+              ETSUKN : "Unknown Transformation System Error",
+              ETSDATA : "Invalid Input Data definition",
 }
 
 def strerror(code):
