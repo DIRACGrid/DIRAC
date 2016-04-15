@@ -130,12 +130,9 @@ class FileTestCase(unittest.TestCase):
     # empty list
     self.assertEqual( getCommonPath( [] ), "" )
 
-    # this folder and its parent
-    filesList = [ os.path.abspath("..") + os.sep + x for x in os.listdir("..") ] + self.filesList
-    #FIXME: the following lines are here temporary for debugging
-    print 'self.fileList', self.filesList
-    print 'fileList', filesList
-    self.assertEqual( getCommonPath( filesList ), os.path.abspath("..") )
+    # this folder
+    filesList = [ os.path.abspath(".") + os.sep + x for x in os.listdir(".") ] + self.filesList
+    self.assertEqual( getCommonPath( filesList ), os.path.abspath(".") )
 
 # test case execution
 if __name__ == "__main__":
