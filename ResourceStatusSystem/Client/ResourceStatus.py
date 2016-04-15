@@ -48,7 +48,7 @@ class ResourceStatus( object ):
   def getElementStatus( self, elementName, elementType, statusType = None, default = None ):
     """
     Helper function, tries to get information from the RSS for the given
-    StorageElement, otherwise, it gets it from the CS.
+    Element, otherwise, it gets it from the CS.
 
     example:
       >>> getElementStatus('CE42', 'ComputingElement')
