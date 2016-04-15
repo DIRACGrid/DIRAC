@@ -112,8 +112,9 @@ class Script( ModuleBase ):
   def _finalize( self ):
     """ simply finalize
     """
-    status = "%s (%s %s) Successful" % ( os.path.basename( self.executable ),
-                                         self.applicationName,
-                                         self.applicationVersion )
+    applicationString = os.path.basename( self.executable )
+    if self.applicationName:
+      applicationString += ' (%s %s)' % ( self.applicationName, self.applicationVersion )
+    status = "%s successful" % applicationString
 
     super( Script, self )._finalize( status )
