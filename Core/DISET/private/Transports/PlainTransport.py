@@ -33,7 +33,11 @@ class PlainTransport( BaseTransport ):
   def initAsServer( self ):
     if not self.serverMode():
       raise RuntimeError( "Must be initialized as server mode" )
-    self.oSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+    try:
+      self.oSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+    except socket.error:
+      # IPv6 is probably disabled on this node, try IPv4 only instead
+      self.oSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if self.bAllowReuseAddress:
       self.oSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     self.oSocket.bind( self.stServerAddress )

@@ -160,7 +160,11 @@ class SocketInfoFactory:
     return S_OK( socketInfo )
 
   def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
-    osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+    try:
+      osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
+    except socket.error:
+      # IPv6 is probably disabled on this node, try IPv4 only instead
+      osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
     retVal = self.generateServerInfo( kwargs )
