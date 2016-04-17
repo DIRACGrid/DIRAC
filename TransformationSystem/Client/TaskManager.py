@@ -337,14 +337,6 @@ class WorkflowTasks( TaskBase ):
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '',
                                   ownerDN = '', bulkSubmissionFlag = False ):
 
-    if bulkSubmissionFlag:
-      result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
-    else:
-      result = self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
-    return result
-
-  def __prepareTransformationTasksBulk( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
-
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
@@ -358,6 +350,14 @@ class WorkflowTasks( TaskBase ):
       if not res['OK']:
         return res
       ownerDN = res['Value'][0]
+
+    if bulkSubmissionFlag:
+      result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
+    else:
+      result = self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
+    return result
+
+  def __prepareTransformationTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
 
     transID = taskDict[taskDict.keys()[0]]['TransformationID']
 
@@ -444,23 +444,10 @@ class WorkflowTasks( TaskBase ):
     taskDict['BulkJobObject'] = oJob
     return S_OK( taskDict )
 
-  def __prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def __prepareTransformationTasks( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
     """
-    if ( not owner ) or ( not ownerGroup ):
-      res = getProxyInfo( False, False )
-      if not res['OK']:
-        return res
-      proxyInfo = res['Value']
-      owner = proxyInfo['username']
-      ownerGroup = proxyInfo['group']
-
-    if not ownerDN:
-      res = getDNForUsername( owner )
-      if not res['OK']:
-        return res
-      ownerDN = res['Value'][0]
 
     for taskNumber in sorted( taskDict ):
       oJob = self.jobClass( transBody )
