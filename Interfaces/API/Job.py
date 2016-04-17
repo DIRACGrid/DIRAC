@@ -266,7 +266,7 @@ class Job( API ):
        :type files: Single LFN string or list of LFNs
     """
     kwargs = {'files':files}
-    if isinstance( files, list ) and len( files ):
+    if isinstance( files, list ) and files:
       for fileName in files:
         if not fileName.lower().startswith( "lfn:" ):
           return self._reportError( 'All files should be LFNs', **kwargs )
@@ -355,7 +355,7 @@ class Job( API ):
     """
     if isinstance( lfns, list ) and lfns:
       for i in xrange( len( lfns ) ):
-        if isinstance( lfns[i], list ) and len( lfns[i] ):
+        if isinstance( lfns[i], list ) and lfns[i]:
           for k in xrange( len( lfns[i] ) ):
             lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
         else:
