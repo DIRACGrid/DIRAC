@@ -336,6 +336,16 @@ class WorkflowTasks( TaskBase ):
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '',
                                   ownerDN = '', bulkSubmissionFlag = False ):
+    """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
+        jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
+
+    :param transBody: transformation job template
+    :param taskDict: dictionary of per task parameters
+    :param owner: owner of the transformation
+    :param ownerGroup: group of the owner of the transformation
+    :param ownerDN: DN of the owner of the transformation
+    :return:  S_OK/S_ERROR with updated taskDict
+    """
 
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
@@ -358,6 +368,8 @@ class WorkflowTasks( TaskBase ):
     return result
 
   def __prepareTransformationTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
+    """ Prepare transformation tasks with a single job object for bulk submission
+    """
 
     transID = taskDict[taskDict.keys()[0]]['TransformationID']
 
@@ -445,8 +457,7 @@ class WorkflowTasks( TaskBase ):
     return S_OK( taskDict )
 
   def __prepareTransformationTasks( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
-    """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
-        jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
+    """ Prepare transformation tasks with a job object per task
     """
 
     for taskNumber in sorted( taskDict ):
@@ -606,7 +617,7 @@ class WorkflowTasks( TaskBase ):
     return result
 
   def __submitTransformationTasksBulk( self, taskDict ):
-    """ Submit jobs one by one
+    """ Submit jobs in one go with one parametric job
     """
     startTime = time.time()
     transID = taskDict[taskDict.keys()[0]]['TransformationID']
