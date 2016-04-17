@@ -3,8 +3,8 @@
 
 import unittest
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+#from DIRAC.Core.Base.Script import parseCommandLine
+#parseCommandLine()
 
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, \
                                                                    getNumberOfParameters
