@@ -334,10 +334,10 @@ class WorkflowTasks( TaskBase ):
 
     self.destinationPlugin_o = None
 
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '',
+                                  ownerDN = '', bulkSubmissionFlag = False ):
 
-    bulkFlag = self.opsH.getValue( "Transformations/BulkSubmission", False )
-    if bulkFlag:
+    if bulkSubmissionFlag:
       result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
     else:
       result = self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
