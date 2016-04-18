@@ -29,22 +29,22 @@
 
 if [ ! -z "$DEBUG" ]
 then
-	echo 'Running in DEBUG mode'
+	echo '==> Running in DEBUG mode'
 	DEBUG='-ddd'
 else
-	echo 'Running in non-DEBUG mode'
+	echo '==> Running in non-DEBUG mode'
 fi
 
 if [ ! -z "$WORKSPACE" ]
 then
-	echo 'We are in Jenkins I guess'
+	echo '==> We are in Jenkins I guess'
 else
   WORKSPACE=$PWD
 fi
 
 if [ ! -z "$DIRACBRANCH" ]
 then
-	echo 'Working on DIRAC branch ' $DIRACBRANCH
+	echo '==> Working on DIRAC branch ' $DIRACBRANCH
 else
   DIRACBRANCH='integration'
 fi
@@ -86,7 +86,7 @@ INSTALL_CFG_FILE='$WORKSPACE/DIRAC/tests/Jenkins/install.cfg'
 #...............................................................................
 
 function installSite(){
-	echo '[installSite]'
+	echo '==> [installSite]'
 
 	killRunsv
 	findRelease
@@ -104,7 +104,7 @@ function installSite(){
 	sed -i s/VAR_Release/$projectVersion/g $WORKSPACE/DIRAC/install.cfg
 	if [ ! -z "$LcgVer" ]
 	then
-		echo 'Fixing LcgVer to ' $LcgVer
+		echo '==> Fixing LcgVer to ' $LcgVer
 		sed -i s/VAR_LcgVer/$LcgVer/g $WORKSPACE/DIRAC/install.cfg
 	else
 		sed -i s/VAR_LcgVer/$externalsVersion/g $WORKSPACE/DIRAC/install.cfg
@@ -136,7 +136,7 @@ function installSite(){
 #...............................................................................
 
 function fullInstallDIRAC(){
-	echo '[fullInstallDIRAC]'
+	echo '==> [fullInstallDIRAC]'
 
 	finalCleanup
 
@@ -163,10 +163,10 @@ function fullInstallDIRAC(){
 	#create groups
 	diracUserAndGroup
 
-	echo 'Restarting Framework ProxyManager'
+	echo '==> Restarting Framework ProxyManager'
 	dirac-restart-component Framework ProxyManager $DEBUG
 
-	echo 'Restarting Framework ComponentMonitoring'
+	echo '==> Restarting Framework ComponentMonitoring'
 	dirac-restart-component Framework ComponentMonitoring $DEBUG
 
 	#Now all the rest
@@ -194,13 +194,13 @@ function fullInstallDIRAC(){
 	#fix the SandboxStore and other stuff
 	python $WORKSPACE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py $WORKSPACE $DEBUG
 
-	echo 'Restarting WorkloadManagement SandboxStore'
+	echo '==> Restarting WorkloadManagement SandboxStore'
 	dirac-restart-component WorkloadManagement SandboxStore $DEBUG
 
-	echo 'Restarting DataManagement FileCatalog'
+	echo '==> Restarting DataManagement FileCatalog'
 	dirac-restart-component DataManagement FileCatalog $DEBUG
 
-	echo 'Restarting Configuration Server'
+	echo '==> Restarting Configuration Server'
 	dirac-restart-component Configuration Server $DEBUG
 
 	#agents

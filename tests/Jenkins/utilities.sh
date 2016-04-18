@@ -41,7 +41,7 @@ function default(){
 #.............................................................................
 
 function findRelease(){
-	echo '[findRelease]'
+	echo '==> [findRelease]'
 
 	currentDir=$PWD
 
@@ -49,9 +49,9 @@ function findRelease(){
 
 	if [ ! -z "$DIRACBRANCH" ]
 	then
-		echo 'Looking for DIRAC branch ' $DIRACBRANCH
+		echo '==> Looking for DIRAC branch ' $DIRACBRANCH
 	else
-		echo 'Running on last one'
+		echo '==> Running on last one'
 	fi
 
 	# Create temporary directory where to store releases.cfg (will be deleted then)
@@ -112,7 +112,7 @@ function findRelease(){
 #
 #.............................................................................
 function findSystems(){
-	echo '[findSystems]'
+	echo '==> [findSystems]'
 
 	cd $TESTCODE
 	find *DIRAC/ -name *System  | cut -d '/' -f 2 | sort | uniq > systems
@@ -132,14 +132,14 @@ function findSystems(){
 #.............................................................................
 
 function findDatabases(){
-	echo '[findDatabases]'
+	echo '==> [findDatabases]'
 
 	if [ ! -z "$1" ]
 	then
 		DBstoSearch=$1
 		if [ "$DBstoSearch" = "exclude" ]
 		then
-			echo 'excluding ' $2
+			echo '==> excluding ' $2
 			DBstoExclude=$2
 			DBstoSearch=' '
 		fi
@@ -174,7 +174,7 @@ function findDatabases(){
 #-------------------------------------------------------------------------------
 
 findServices(){
-	echo '[findServices]'
+	echo '==> [findServices]'
 
 
 	if [ ! -z "$1" ]
@@ -182,7 +182,7 @@ findServices(){
 		ServicestoSearch=$1
 		if [ "$ServicestoSearch" = "exclude" ]
 		then
-			echo 'excluding ' $2
+			echo '==> excluding ' $2
 			ServicestoExclude=$2
 			ServicestoSearch=' '
 		fi
@@ -202,7 +202,7 @@ findServices(){
 }
 
 findAgents(){
-	echo '[findAgents]'
+	echo '==> [findAgents]'
 
 
 	if [ ! -z "$1" ]
@@ -210,7 +210,7 @@ findAgents(){
 		ServicestoSearch=$1
 		if [ "$AgentstoSearch" = "exclude" ]
 		then
-			echo 'excluding ' $2
+			echo '==> excluding ' $2
 			AgentstoExclude=$2
 			AgentstoSearch=' '
 		fi
@@ -239,7 +239,7 @@ findAgents(){
 #-------------------------------------------------------------------------------
 
 findExecutors(){
-	echo '[findExecutors]'
+	echo '==> [findExecutors]'
 
 	find *DIRAC/*/Executor/ -name *.py | awk -F "/" '{print $2,$4}' | sort | uniq > executors
 
@@ -255,7 +255,7 @@ findExecutors(){
 #-------------------------------------------------------------------------------
 
 finalCleanup(){
-	echo '[finalCleanup]'
+	echo '==> [finalCleanup]'
 
 	rm -Rf etc/grid-security/certificates
 	rm -f etc/grid-security/host*.pem
@@ -281,11 +281,11 @@ finalCleanup(){
 #-------------------------------------------https://github.com/chaen/DIRAC/archive/rel-v6r12_NEW_PsAndFkDfc.zip------------------------------------
 
 function diracReplace(){
-	echo '[diracReplace]'
+	echo '==> [diracReplace]'
 	cd $SERVERINSTALLDIR/
 	if [[ -z $DIRAC_ALTERNATIVE_SRC_ZIP ]]
 	then
-		echo 'Variable $DIRAC_ALTERNATIVE_SRC_ZIP not defined';
+		echo '==> Variable $DIRAC_ALTERNATIVE_SRC_ZIP not defined';
 		return
 	fi
 
@@ -317,7 +317,7 @@ function diracReplace(){
 #.............................................................................
 
 function diracInstall(){
-	echo '[diracInstall]'
+	echo '==> [diracInstall]'
 
 	cd $SERVERINSTALLDIR
 
@@ -356,7 +356,7 @@ function diracInstallCommand(){
 #.............................................................................
 
 function generateCertificates(){
-	echo '[generateCertificates]'
+	echo '==> [generateCertificates]'
 
 	mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
 	cd $SERVERINSTALLDIR/etc/grid-security
@@ -397,7 +397,7 @@ function generateCertificates(){
 #.............................................................................
 
 function generateUserCredentials(){
-    echo '[generateUserCredentials]'
+    echo '==> [generateUserCredentials]'
 
     # Generate directory where to store credentials
     mkdir -p $SERVERINSTALLDIR/user
@@ -426,7 +426,7 @@ function generateUserCredentials(){
 #.............................................................................
 
 function diracCredentials(){
-	echo '[diracCredentials]'
+	echo '==> [diracCredentials]'
 
 	cd $SERVERINSTALLDIR
 
@@ -447,7 +447,7 @@ function diracCredentials(){
 #.............................................................................
 
 function diracUserAndGroup(){
-	echo '[diracUserAndGroup]'
+	echo '==> [diracUserAndGroup]'
 
 	dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G user $DEBUG
 	dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G user $DEBUG
@@ -470,7 +470,7 @@ function diracUserAndGroup(){
 #.............................................................................
 
 function diracProxies(){
-	echo '[diracProxies]'
+	echo '==> [diracProxies]'
 
 	# User proxy, should be uploaded anyway
 	dirac-proxy-init -U -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
@@ -488,7 +488,7 @@ function diracProxies(){
 #.............................................................................
 
 function diracRefreshCS(){
-	echo '[diracRefreshCS]'
+	echo '==> [diracRefreshCS]'
 
 
 	python $TESTCODE/DIRAC/tests/Jenkins/dirac-refresh-cs.py $DEBUG
@@ -506,7 +506,7 @@ function diracRefreshCS(){
 #.............................................................................
 
 function diracAddSite(){
-	echo '[diracAddSite]'
+	echo '==> [diracAddSite]'
 
 	dirac-admin-add-site DIRAC.Jenkins.org aNameWhatSoEver some.CE.org
 
@@ -520,18 +520,18 @@ function diracAddSite(){
 #-------------------------------------------------------------------------------
 
 diracServices(){
-	echo '[diracServices]'
+	echo '==> [diracServices]'
 
 	#TODO: revise this list
 	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
 	# group proxy, will be uploaded explicitly
-	#	echo 'getting/uploading proxy for prod'
+	#	echo '==> getting/uploading proxy for prod'
 	#	dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 
 	for serv in $services
 	do
-		echo 'calling dirac-install-component' $serv $DEBUG
+		echo '==> calling dirac-install-component' $serv $DEBUG
 		dirac-install-component $serv $DEBUG
 	done
 
@@ -545,18 +545,18 @@ diracServices(){
 #-------------------------------------------------------------------------------
 
 diracUninstallServices(){
-	echo '[diracUninstallServices]'
+	echo '==> [diracUninstallServices]'
 
 	#TODO: revise this list
 	services=`cat services | cut -d '.' -f 1 | grep -v Bookkeeping | grep -v ^ConfigurationSystem | grep -v LcgFileCatalogProxy | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g'`
 
 	# group proxy, will be uploaded explicitly
-	#	echo 'getting/uploading proxy for prod'
+	#	echo '==> getting/uploading proxy for prod'
 	#	dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG
 
 	for serv in $services
 	do
-		echo 'calling dirac-uninstall-component' $serv $DEBUG
+		echo '==> calling dirac-uninstall-component' $serv $DEBUG
 		dirac-uninstall-component -f $serv $DEBUG
 	done
 
@@ -571,7 +571,7 @@ diracUninstallServices(){
 #-------------------------------------------------------------------------------
 
 diracAgents(){
-	echo '[diracAgents]'
+	echo '==> [diracAgents]'
 
 	#TODO: revise this list
 	agents=`cat agents | cut -d '.' -f 1 | grep -v LFC | grep -v MyProxy | grep -v CAUpdate | grep -v CE2CSAgent.py | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent  | grep -v GridSiteMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v SAMAgent | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g'`
@@ -580,11 +580,11 @@ diracAgents(){
 	do
 		if [[ $agent == *" JobAgent"* ]]
 		then
-			echo ''
+			echo '==> '
 		else
-			echo 'calling dirac-cfg-add-option agent' $agent
+			echo '==> calling dirac-cfg-add-option agent' $agent
 			python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py agent $agent
-			echo 'calling dirac-agent' $agent -o MaxCycles=1 $DEBUG
+			echo '==> calling dirac-agent' $agent -o MaxCycles=1 $DEBUG
 			dirac-agent $agent  -o MaxCycles=1 $DEBUG
 		fi
 	done
@@ -601,7 +601,7 @@ diracAgents(){
 #-------------------------------------------------------------------------------
 
 diracDBs(){
-	echo '[diracDBs]'
+	echo '==> [diracDBs]'
 
 	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB`
 	for db in $dbs
@@ -613,7 +613,7 @@ diracDBs(){
 
 # Drop, then Install manually the DFC
 diracDFCDB(){
-	echo '[diracDFCDB]'
+	echo '==> [diracDFCDB]'
 
 	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
 	mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT  < $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql
@@ -622,7 +622,7 @@ diracDFCDB(){
 # drop DBs
 
 dropDBs(){
-	echo '[dropDBs]'
+	echo '==> [dropDBs]'
 
 	dbs=`cat databases | cut -d ' ' -f 2 | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB`
 	python $TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py $dbs $DEBUG
@@ -648,7 +648,7 @@ dropDBs(){
   #.............................................................................
 
 function killRunsv(){
-	echo '[killRunsv]'
+	echo '==> [killRunsv]'
 
     # Bear in mind that we run with 'errexit' mode. This call, if finds nothing
     # will return an error, which will make the whole script exit. However, if
@@ -686,7 +686,7 @@ function killRunsv(){
   #.............................................................................
 
 function stopRunsv(){
-	echo '[stopRunsv]'
+	echo '==> [stopRunsv]'
 
 	# Let's try to be a bit more delicated than the function above
 
@@ -708,7 +708,7 @@ function stopRunsv(){
   #.............................................................................
 
 function startRunsv(){
-    echo '[startRunsv]'
+    echo '==> [startRunsv]'
 
     # Let's try to be a bit more delicated than the function above
 
@@ -734,7 +734,7 @@ function startRunsv(){
 
 
 function getCertificate(){
-	echo '[getCertificate]'
+	echo '==> [getCertificate]'
 	# just gets a host certificate from a known location
 
 	mkdir -p $PILOTINSTALLDIR/etc/grid-security/
@@ -770,7 +770,7 @@ function prepareForPilot(){
 #.............................................................................
 
 function downloadProxy(){
-	echo '[downloadProxy]'
+	echo '==> [downloadProxy]'
 
 	python $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTCFG $DEBUG
 }
