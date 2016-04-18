@@ -344,8 +344,6 @@ class SiteDirector( AgentModule ):
     """ Main execution method
     """
 
-    print "executed"
-
     if not self.queueDict:
       self.log.warn( 'No site defined, exiting the cycle' )
       return S_OK()
