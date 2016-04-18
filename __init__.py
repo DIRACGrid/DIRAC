@@ -63,13 +63,15 @@
     - getPlatformTuple(): DIRAC platform tuple for current host
 
 """
-__RCSID__ = "$Id$"
 
+import sys
+import os
+import platform as pyPlatform
 from pkgutil import extend_path
 __path__ = extend_path( __path__, __name__ )
 
-import platform as pyPlatform
-import sys, os
+
+__RCSID__ = "$Id$"
 
 
 # Define Version
@@ -91,7 +93,7 @@ if preVersion:
 # Check of python version
 
 __pythonMajorVersion = ( "2", )
-__pythonMinorVersion = ( "4", "5", "6", "7" )
+__pythonMinorVersion = ( "6", "7" )
 
 pythonVersion = pyPlatform.python_version_tuple()
 if str( pythonVersion[0] ) not in __pythonMajorVersion or str( pythonVersion[1] ) not in __pythonMinorVersion:
@@ -194,6 +196,6 @@ def abort( exitCode, *args, **kwargs ):
   try:
     gLogger.fatal( *args, **kwargs )
     os._exit( exitCode )
-  except:
+  except OSError:
     gLogger.exception( 'Error while executing DIRAC.abort' )
     os._exit( exitCode )
