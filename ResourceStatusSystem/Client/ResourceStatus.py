@@ -111,11 +111,11 @@ class ResourceStatus( object ):
 
   def __getRSSElementStatus( self, elementName, elementType, statusType ):
     """
-    Gets from the cache or the RSS the eElements status. The cache is a
+    Gets from the cache or the RSS the Elements status. The cache is a
     copy of the DB table. If it is not on the cache, most likely is not going
     to be on the DB.
 
-    There is one exception: item just added to the CS, e.g. new StorageElement.
+    There is one exception: item just added to the CS, e.g. new Element.
     The period between it is added to the DB and the changes are propagated
     to the cache will be inconsistent, but not dangerous. Just wait <cacheLifeTime>
     minutes.
