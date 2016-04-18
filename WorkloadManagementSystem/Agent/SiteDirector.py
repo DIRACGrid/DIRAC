@@ -15,6 +15,8 @@ import hashlib
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus      import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus          import SiteStatus
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
@@ -90,6 +92,8 @@ class SiteDirector( AgentModule ):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
+    self.rssClient = ResourceStatus()
+    self.sstClient = SiteStatus()
 
   def initialize( self ):
     """ Standard constructor
@@ -333,12 +337,14 @@ class SiteDirector( AgentModule ):
 
           if site not in self.sites:
             self.sites.append( site )
-            
+
     return S_OK()
 
   def execute( self ):
     """ Main execution method
     """
+
+    print "executed"
 
     if not self.queueDict:
       self.log.warn( 'No site defined, exiting the cycle' )
@@ -359,7 +365,6 @@ class SiteDirector( AgentModule ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
-
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
     tqDict = { 'Setup':setup,
@@ -369,7 +374,6 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-
     result = Resources.getCompatiblePlatforms( self.platforms )
     if not result['OK']:
       return result
@@ -445,6 +449,24 @@ class SiteDirector( AgentModule ):
       siteName = self.queueDict[queue]['Site']
       platform = self.queueDict[queue]['Platform']
       siteMask = siteName in siteMaskList
+
+      # Check the status of the Site
+      result = self.sstClient.getSiteStatuses({siteName})
+      if result['Value']:
+        result = result['Value'][siteName]   #get the value of the status
+
+      if result not in ('Active', 'Degraded'):
+        self.log.verbose( "Skipping site %s: site not usable" % siteName )
+        continue
+
+      # Check the status of the ComputingElement
+      result = self.rssClient.getElementStatus(ceName, "ComputingElement")
+      if result['Value']:
+        result = result['Value'][ceName]['ComputingElement', 'all']   #get the value of the status
+
+      if result not in ('Active', 'Degraded'):
+        self.log.verbose( "Skipping computing element %s at %s: resource not usable" % (ceName, siteName) )
+        continue
 
       if not anySite and siteName not in jobSites:
         self.log.verbose( "Skipping queue %s at %s: no workload expected" % (queueName, siteName) )
