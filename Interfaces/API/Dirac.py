@@ -13,7 +13,6 @@
     - Local execution of workflows for testing purposes.
 
 """
-__RCSID__ = "$Id$"
 
 import re
 import os
@@ -52,6 +51,7 @@ from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
 from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -184,7 +184,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if requestedStates == None:
+    if requestedStates is None:
       requestedStates = ['Done', 'Failed', 'Completed']  # because users dont care about completed
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
@@ -212,7 +212,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if requestedStates == None:
+    if requestedStates is None:
       requestedStates = ['Done']
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
@@ -266,7 +266,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if jobIDs == None:
+    if jobIDs is None:
       jobIDs = []
     if not isinstance( jobIDs, list ):
       return self._errorReport( 'The jobIDs must be a list of (strings or ints).' )
@@ -2212,7 +2212,7 @@ class Dirac( API ):
       msg.append( 'CPU Profile: Not Available' )
 
     self.log.info( 'Summary of debugging outputs for job %s retrieved in directory:\n%s\n' % ( jobID, debugDir ),
-                  '\n'.join( msg ) )
+                   '\n'.join( msg ) )
     return S_OK( debugDir )
 
   #############################################################################
