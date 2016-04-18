@@ -403,14 +403,13 @@ class WorkflowTasks( TaskBase ):
       sites = self._handleDestination( paramsDict )
       if not sites:
         self._logError( 'Could not get a list a sites', transID = transID )
-        # Skip this job ?
-        continue
+        return S_ERROR( ETSUKN, "Can not evaluate destination site" )
       else:
         self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
         seqDict['Site'] = sites
         if not res['OK']:
           self._logError( 'Could not set the site: %s' % res['Message'], transID = transID )
-          continue
+          return S_ERROR( ETSUKN, "Can not evaluate destination site" )
 
       constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
       self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
@@ -631,11 +630,12 @@ class WorkflowTasks( TaskBase ):
       return result
 
     jobIDList = result['Value']
-    ind = 0
-    for taskID in sorted( taskDict ):
+    if len( jobIDList ) != len( taskDict ):
+      return S_ERROR( ETSUKN, 'Submitted less number of jobs than requested tasks' )
+
+    for ind, taskID in enumerate( sorted( taskDict ) ):
       taskDict[taskID]['ExternalID'] = jobIDList[ind]
       taskDict[taskID]['Success'] = True
-      ind += 1
 
     submitted = len( jobIDList )
     self._logInfo( 'submitTransformationTasksBulk: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
