@@ -16,6 +16,8 @@ __RCSID__ = "$Id$"
 
 def mkDir( path ):
   try:
+    if os.path.isdir:
+      return
     os.makedirs( path )
   except OSError as osError:
     if osError.errno == errno.EEXIST and os.path.isdir( path ):
