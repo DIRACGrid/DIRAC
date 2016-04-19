@@ -8,6 +8,7 @@
 import os
 import threading
 import time
+import errno
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
@@ -24,10 +25,11 @@ __RCSID__ = "$Id$"
 def _checkDir( path ):
   try:
     os.makedirs( path )
-  except OSError:
-    pass
-  if not os.path.isdir( path ):
-    raise OSError( 'Can not create %s' % path )
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.isdir( path ):
+      pass
+    else:
+      raise
 
 class AgentModule( object ):
   """ Base class for all agent modules
