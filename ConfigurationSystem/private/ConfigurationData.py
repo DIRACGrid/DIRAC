@@ -1,4 +1,5 @@
-__RCSID__ = "$Id$"
+""" ConfigurationData module is the base for cfg files management
+"""
 
 import os.path
 import zlib
@@ -6,11 +7,15 @@ import zipfile
 import thread
 import time
 import DIRAC
+
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
+__RCSID__ = "$Id$"
 
 class ConfigurationData( object ):
 
@@ -44,13 +49,13 @@ class ConfigurationData( object ):
     self.mergedCFG = self.remoteCFG.mergeWith( self.localCFG )
     self.remoteServerList = []
     localServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.localCFG,
-                                        disableDangerZones = True )
+                                              self.localCFG,
+                                              disableDangerZones = True )
     if localServers:
       self.remoteServerList.extend( List.fromChar( localServers, "," ) )
     remoteServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.remoteCFG,
-                                        disableDangerZones = True )
+                                               self.remoteCFG,
+                                               disableDangerZones = True )
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
@@ -197,9 +202,7 @@ class ConfigurationData( object ):
   def setVersion( self, version, cfg = False ):
     if not cfg:
       cfg = self.remoteCFG
-    self.setOptionInCFG( "%s/Version" % self.configurationPath,
-                                  version,
-                                  cfg )
+    self.setOptionInCFG( "%s/Version" % self.configurationPath, version, cfg )
 
   def getVersion( self, cfg = False ):
     if not cfg:
@@ -341,10 +344,7 @@ class ConfigurationData( object ):
     configurationFile = os.path.join( DIRAC.rootPath, "etc", configurationFilename )
     today = Time.date()
     backupPath = os.path.join( self.getBackupDir(), str( today.year ), "%02d" % today.month )
-    try:
-      os.makedirs( backupPath )
-    except:
-      pass
+    mkDir(backupPath)
     backupFile = os.path.join( backupPath, configurationFilename.replace( ".cfg", ".%s.zip" % backupName ) )
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )

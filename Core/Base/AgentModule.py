@@ -5,31 +5,22 @@
 """
   Base class for all agent modules
 """
+
 import os
 import threading
 import time
-import errno
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities import Time, MemStat
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
-from DIRAC.Core.Utilities import Time, MemStat
 
 __RCSID__ = "$Id$"
-
-
-def _checkDir( path ):
-  try:
-    os.makedirs( path )
-  except OSError as osError:
-    if osError.errno == errno.EEXIST and os.path.isdir( path ):
-      pass
-    else:
-      raise
 
 class AgentModule( object ):
   """ Base class for all agent modules
@@ -182,9 +173,9 @@ class AgentModule( object ):
       return S_ERROR( "initialize must return S_OK/S_ERROR" )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
-    _checkDir( self.am_getControlDirectory() )
+    mkDir( self.am_getControlDirectory() )
     workDirectory = self.am_getWorkDirectory()
-    _checkDir( workDirectory )
+    mkDir( workDirectory )
     # Set the work directory in an environment variable available to subprocesses if needed
     os.environ['AGENT_WORKDIRECTORY'] = workDirectory
 

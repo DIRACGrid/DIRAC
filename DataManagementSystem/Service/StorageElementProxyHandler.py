@@ -1,17 +1,12 @@
-########################################################################
-# File: StorageElementProxyHandler.py
-########################################################################
-""" 
+"""
 :mod: StorageElementProxyHandler
- 
+
 .. module: StorageElementProxyHandler
 
   :synopsis: This is a service which represents a DISET proxy to the Storage Element component.
 
 This is used to get and put files from a remote storage.
 """
-
-__RCSID__ = "$Id$"
 
 import os
 import shutil
@@ -22,15 +17,18 @@ import random
 from types import DictType, ListType, StringTypes
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.Os import getDiskSpace
-from DIRAC.Core.Utilities.DictCache import DictCache    
+from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.DataManagementSystem.private.HttpStorageAccessHandler import HttpStorageAccessHandler
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
+__RCSID__ = "$Id$"
 
 ## globals
 BASE_PATH = ""
@@ -41,9 +39,9 @@ HTTP_PATH = ""
 def purgeCacheDirectory( path ):
   """ del recursively :path: """
   shutil.rmtree( path )
-  
+
 gRegister = DictCache(purgeCacheDirectory)
-    
+
 def initializeStorageElementProxyHandler( serviceInfo ):
   """ handler initialisation """
 
@@ -54,7 +52,7 @@ def initializeStorageElementProxyHandler( serviceInfo ):
   if not BASE_PATH:
     gLogger.error( 'Failed to get the base path' )
     return S_ERROR( 'Failed to get the base path' )
-  
+
   BASE_PATH = os.path.abspath( BASE_PATH )
   gLogger.info('The base path obtained is %s. Checking its existence...' % BASE_PATH)
   if not os.path.exists(BASE_PATH):
@@ -79,7 +77,7 @@ class ThreadedSocketServer( SocketServer.ThreadingMixIn, SocketServer.TCPServer 
   pass
 
 class HttpThread( threading.Thread ):
-  """ 
+  """
   .. class:: HttpThread
 
   Single daemon thread running HttpStorageAccessHandler.
@@ -91,7 +89,7 @@ class HttpThread( threading.Thread ):
     threading.Thread.__init__( self )
     self.setDaemon( 1 )
     self.start()
-  
+
   def run( self ):
     """ thread run """
     global gRegister
@@ -102,7 +100,7 @@ class HttpThread( threading.Thread ):
     httpd.serve_forever()
 
 class StorageElementProxyHandler(RequestHandler):
-  """ 
+  """
   .. class:: StorageElementProxyHandler
   """
 
@@ -112,7 +110,7 @@ class StorageElementProxyHandler(RequestHandler):
     """
     res = pythonCall( 200, self.__proxyWrapper, se, name, args, kargs )
     if res['OK']:
-      return res['Value']   
+      return res['Value']
     return res
 
   def __proxyWrapper( self, se, name, args, kargs ):
@@ -179,19 +177,19 @@ class StorageElementProxyHandler(RequestHandler):
     if res['OK']:
       return res['Value']
     return res
-    
+
   def __prepareFile( self, se, pfn ):
     """ proxied prepare file """
     res = self.__prepareSecurityDetails()
     if not res['OK']:
       return res
-  
+
     # Clear the local cache
     getFileDir = "%s/getFile" % BASE_PATH
     if not os.path.exists(getFileDir):
-      os.mkdir(getFileDir)        
-   
-    # Get the file to the cache 
+      os.mkdir(getFileDir)
+
+    # Get the file to the cache
     try:
       storageElement = StorageElement(se)
     except AttributeError, x:
@@ -226,26 +224,26 @@ class StorageElementProxyHandler(RequestHandler):
         return result
       return result
     return result
-    
+
   def __prepareFileForHTTP( self, lfn, key ):
     """ Prepare proxied file for HTTP """
     global HTTP_PATH
-    
+
     res = self.__prepareSecurityDetails()
     if not res['OK']:
       return res
-  
+
     # Clear the local cache
     getFileDir = "%s/%s" % ( HTTP_PATH, key )
-    os.makedirs(getFileDir)
-   
-    # Get the file to the cache 
+    mkDir(getFileDir)
+
+    # Get the file to the cache
     from DIRAC.DataManagementSystem.Client.DataManager import DataManager
     dataMgr = DataManager()
     result = dataMgr.getFile( lfn, destinationDir = getFileDir )
     result['CachePath'] = getFileDir
-    return result  
-    
+    return result
+
   ############################################################
   #
   # This is the method to setup the proxy and configure the environment with the client credential
@@ -260,13 +258,12 @@ class StorageElementProxyHandler(RequestHandler):
       clientUsername = credDict['username']
       clientGroup = credDict['group']
       gLogger.debug( "Getting proxy for %s@%s (%s)" % ( clientUsername, clientGroup, clientDN ) )
-      res = gProxyManager.downloadVOMSProxy( clientDN, clientGroup ) 
+      res = gProxyManager.downloadVOMSProxy( clientDN, clientGroup )
       if not res['OK']:
         return res
       chain = res['Value']
       proxyBase = "%s/proxies" % BASE_PATH
-      if not os.path.exists(proxyBase):
-        os.makedirs(proxyBase)
+      mkDir(proxyBase)
       proxyLocation = "%s/proxies/%s-%s" % ( BASE_PATH, clientUsername, clientGroup )
       gLogger.debug("Obtained proxy chain, dumping to %s." % proxyLocation)
       res = gProxyManager.dumpProxyToFile( chain, proxyLocation )
@@ -304,10 +301,10 @@ class StorageElementProxyHandler(RequestHandler):
     result = fileHelper.FDToNetwork(fileDescriptor)
     if not result['OK']:
       return S_ERROR('Failed to get file %s' % fileID )
-    
+
     if os.path.exists(file_path):
       os.remove( file_path )
-    
+
     return result
 
   def transfer_fromClient( self, fileID, token, fileSize, fileHelper ):
@@ -320,8 +317,7 @@ class StorageElementProxyHandler(RequestHandler):
       return S_ERROR('Not enough disk space')
 
     file_path = "%s/%s" % ( BASE_PATH, fileID )
-    if not os.path.exists( os.path.dirname( file_path ) ):
-      os.makedirs( os.path.dirname( file_path ) )
+    mkDir(file_path)
     result = fileHelper.getFileDescriptor( file_path, 'w' )
     if not result['OK']:
       return S_ERROR('Failed to get file descriptor')
@@ -339,4 +335,3 @@ class StorageElementProxyHandler(RequestHandler):
     dsize = (getDiskSpace(dpath)-1)*1024*1024
     maxStorageSizeBytes = 1024*1024*1024
     return ( min(dsize, maxStorageSizeBytes) > size )
-

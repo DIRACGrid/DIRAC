@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import types
@@ -971,7 +970,3 @@ class CFG( object ):
       return True
     except Exception:
       return False
-
-
-
-

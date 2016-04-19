@@ -1,20 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########################################################################
-# $HeadURL$
 # File :    dirac-create-distribution-tarball
 # Author :  Adria Casajus
 ########################################################################
 """
   Create tarballs for a given DIRAC release
 """
-__RCSID__ = "$Id$"
+import sys
+import os
+import shutil
+import tempfile
+import subprocess
 
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import Distribution,  Subprocess
 
-import sys, os, shutil, tempfile, subprocess
+
+__RCSID__ = "$Id$"
+
 
 class TarModuleCreator( object ):
 
@@ -92,13 +98,7 @@ class TarModuleCreator( object ):
       self.params.destination = tempfile.mkdtemp( 'DIRACTarball' )
 
     gLogger.notice( "Will generate tarball in %s" % self.params.destination )
-
-    if not os.path.isdir( self.params.destination ):
-      try:
-        os.makedirs( self.params.destination )
-      except Exception as e:
-        return S_ERROR( "Cannot write to destination: %s" % str( e ) )
-
+    mkDir(self.params.destination)
     return S_OK()
 
   def __discoverVCS( self ):
