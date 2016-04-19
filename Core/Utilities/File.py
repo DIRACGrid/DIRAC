@@ -8,7 +8,7 @@ import os
 import hashlib as md5
 import random
 import glob
-import types
+import sys
 import re
 import errno
 
@@ -116,7 +116,7 @@ def getSize( fileName ):
   """
   try:
     return os.stat( fileName )[6]
-  except Exception:
+  except OSError:
     return - 1
 
 def getGlobbedTotalSize( files ):
@@ -126,7 +126,7 @@ def getGlobbedTotalSize( files ):
   :params list files: list or tuple of strings of files
   """
   totalSize = 0
-  if type( files ) in ( types.ListType, types.TupleType ):
+  if isinstance( files, (list, tuple) ):
     for entry in files:
       size = getGlobbedTotalSize( entry )
       if size == -1:
@@ -151,7 +151,7 @@ def getGlobbedFiles( files ):
   :params list files: list or tuple of strings of files
   """
   globbedFiles = []
-  if type( files ) in ( types.ListType, types.TupleType ):
+  if isinstance( files, ( list, tuple ) ):
     for entry in files:
       globbedFiles += getGlobbedFiles( entry )
   else:
@@ -212,6 +212,5 @@ def getMD5ForFiles( fileList ):
   return hashMD5.hexdigest()
 
 if __name__ == "__main__":
-  import sys
   for p in sys.argv[1:]:
     print "%s : %s bytes" % ( p, getGlobbedTotalSize( p ) )
