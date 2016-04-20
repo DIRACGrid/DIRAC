@@ -2,12 +2,12 @@
 """
   Determine number of processors and memory for the worker node
 """
-__RCSID__ = "$Id$"
-
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger
 from DIRAC.Core.Utilities import Os
 from DIRAC.WorkloadManagementSystem.Utilities import JobMemory
+
+__RCSID__ = "$Id$"
 
 Script.setUsageMessage( '\n'.join( ['Get the Tag of a CE',
                                     'Usage:',
