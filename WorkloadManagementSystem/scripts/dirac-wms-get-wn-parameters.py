@@ -2,12 +2,12 @@
 """
   Determine number of processors and memory for the worker node
 """
-__RCSID__ = "$Id$"
-
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities import Os
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
+
+__RCSID__ = "$Id$"
 
 Script.setUsageMessage( '\n'.join( ['Get the parameters (Memory and Number of processors) of a worker node',
                                     'Usage:',

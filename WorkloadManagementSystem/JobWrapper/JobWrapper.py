@@ -1232,7 +1232,7 @@ class JobWrapper( object ):
       # The request is ready, send it now
       isValid = RequestValidator().validate( request )
       if not isValid["OK"]:
-        self.log.error( "Failover request is not valid", isValid["Message"] )
+        self.log.error( "Failover request is not valid", isValid["Message"] )        
       else:
         # We try several times to put the request before failing the job: it's very important that requests go through,
         # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
