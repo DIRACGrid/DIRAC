@@ -95,28 +95,29 @@ function installSite(){
 	generateCertificates
 
 	#Fixing install.cfg file
-	cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/DIRAC/
-	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/DIRAC/install.cfg
+	cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/
+	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
 	if [ ! -z "$LcgVer" ]
 	then
 		echo '==> Fixing LcgVer to ' $LcgVer
-		sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/DIRAC/install.cfg
+		sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
 	else
-		sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/DIRAC/install.cfg
+		sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
 	fi
-	sed -i s,VAR_TargetPath,$SERVERINSTALLDIR,g $SERVERINSTALLDIR/DIRAC/install.cfg
+	sed -i s,VAR_TargetPath,$SERVERINSTALLDIR,g $SERVERINSTALLDIR/install.cfg
 	fqdn=`hostname --fqdn`
-	sed -i s,VAR_HostDN,$fqdn,g $SERVERINSTALLDIR/DIRAC/install.cfg
+	sed -i s,VAR_HostDN,$fqdn,g $SERVERINSTALLDIR/install.cfg
 
-	sed -i s/VAR_DB_User/$DB_USER/g $SERVERINSTALLDIR/DIRAC/install.cfg
-	sed -i s/VAR_DB_Password/$DB_PASSWORD/g $SERVERINSTALLDIR/DIRAC/install.cfg
-	sed -i s/VAR_DB_RootUser/$DB_ROOTUSER/g $SERVERINSTALLDIR/DIRAC/install.cfg
-	sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $SERVERINSTALLDIR/DIRAC/install.cfg
-	sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/DIRAC/install.cfg
-	sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/DIRAC/install.cfg
+	sed -i s/VAR_DB_User/$DB_USER/g $SERVERINSTALLDIR/install.cfg
+	sed -i s/VAR_DB_Password/$DB_PASSWORD/g $SERVERINSTALLDIR/install.cfg
+	sed -i s/VAR_DB_RootUser/$DB_ROOTUSER/g $SERVERINSTALLDIR/install.cfg
+	sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $SERVERINSTALLDIR/install.cfg
+	sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
+	sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
-	#Installing
-	./install_site.sh install.cfg
+	echo '==> Started installing'
+	$SERVERINSTALLDIR/install_site.sh install.cfg
+	echo '==> Completed installation'
 
 	source $SERVERINSTALLDIR/bashrc
 }

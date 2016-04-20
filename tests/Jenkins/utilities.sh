@@ -347,8 +347,6 @@ function prepareForServer(){
 	cd $SERVERINSTALLDIR
 
 	#get the necessary scripts: install_site.sh file
-	mkdir DIRAC
-	cd DIRAC
 	cp $TESTCODE/DIRAC/Core/scripts/install_site.sh .
 	chmod +x install_site.sh
 }
