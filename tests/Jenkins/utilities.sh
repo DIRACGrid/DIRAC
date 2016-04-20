@@ -332,6 +332,26 @@ function diracInstallCommand(){
 	./dirac-install -r `cat dirac.version` -t server -d
 }
 
+#.............................................................................
+#
+# prepareForServer:
+#
+#   This function gets the DIRAC install script
+#
+#.............................................................................
+
+function prepareForServer(){
+	echo '==> [prepareForServer]'
+
+	#Move to server directory
+	cd $SERVERINSTALLDIR
+
+	#get the necessary scripts: install_site.sh file
+	mkdir DIRAC
+	cd DIRAC
+	cp $TESTCODE/DIRAC/Core/scripts/install_site.sh .
+	chmod +x install_site.sh
+}
 
 
 #-------------------------------------------------------------------------------
@@ -745,6 +765,7 @@ function getCertificate(){
 }
 
 function prepareForPilot(){
+	echo '==> [prepareForPilot]'
 
 	#Move to pilot directory
 	cd $PILOTINSTALLDIR
