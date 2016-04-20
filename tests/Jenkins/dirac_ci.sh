@@ -95,7 +95,7 @@ function installSite(){
 	generateCertificates
 
 	#Fixing install.cfg file
-	cp $(eval echo $INSTALL_CFG_FILE) .
+	cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/DIRAC/
 	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/DIRAC/install.cfg
 	if [ ! -z "$LcgVer" ]
 	then
