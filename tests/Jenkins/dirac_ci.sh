@@ -72,9 +72,6 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 DIRAC_RELEASES='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg'
 ############################################
 
-INSTALL_CFG_FILE='$TESTCODE/DIRAC/tests/Jenkins/install.cfg'
-
-
 #...............................................................................
 #
 # installSite:
@@ -96,7 +93,7 @@ function installSite(){
 
 	echo '==> Fixing install.cfg file'
 	#cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/
-	cp $INSTALL_CFG_FILE $SERVERINSTALLDIR/
+	cp $TESTCODE/DIRAC/tests/Jenkins/install.cfg $SERVERINSTALLDIR/
 	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
 	if [ ! -z "$LcgVer" ]
 	then
