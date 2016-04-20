@@ -94,8 +94,9 @@ function installSite(){
 
 	generateCertificates
 
-	#Fixing install.cfg file
-	cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/
+	echo '==> Fixing install.cfg file'
+	#cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/
+	cp $INSTALL_CFG_FILE $SERVERINSTALLDIR/
 	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
 	if [ ! -z "$LcgVer" ]
 	then
@@ -116,7 +117,8 @@ function installSite(){
 	sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
 	echo '==> Started installing'
-	$SERVERINSTALLDIR/install_site.sh install.cfg
+	cd $SERVERINSTALLDIR
+	./install_site.sh install.cfg
 	echo '==> Completed installation'
 
 	source $SERVERINSTALLDIR/bashrc
