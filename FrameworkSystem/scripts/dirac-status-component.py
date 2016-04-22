@@ -7,10 +7,12 @@
 """
 Status of DIRAC components using runsvstat utility
 """
-__RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
+
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
@@ -19,6 +21,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  service|agent: Name of the particular component (default *: all)' ] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+__RCSID__ = "$Id$"
+
 if len( args ) > 2:
   Script.showHelp()
   exit( -1 )
@@ -30,8 +35,6 @@ if len( args ) > 0:
 if system != '*':
   if len( args ) > 1:
     component = args[1]
-#
-from DIRAC.Core.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
 gComponentInstaller.exitOnError = True
 #

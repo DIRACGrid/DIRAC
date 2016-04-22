@@ -1,16 +1,11 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-# File :    dirac-admin-get-proxy
-# Author :  Stuart Paterson
-########################################################################
-__RCSID__ = "$Id$"
-import os
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities import Time
+
+__RCSID__ = "$Id$"
 
 class Params:
 
@@ -45,17 +40,17 @@ records = result[ 'Value' ][ 'Records' ]
 dataDict = {}
 now = Time.dateTime()
 for record in records:
-  expirationDate = record[ 3 ] 
-  dt = expirationDate - now 
+  expirationDate = record[ 3 ]
+  dt = expirationDate - now
   secsLeft = dt.days * 86400 + dt.seconds
   if secsLeft > params.proxyLifeTime:
-    userName = record[ 0 ] 
-    userDN = record[ 1 ] 
-    userGroup = record[ 2 ] 
-    persistent = record[ 4 ] 
+    userName = record[ 0 ]
+    userDN = record[ 1 ]
+    userGroup = record[ 2 ]
+    persistent = record[ 4 ]
     if not userName in dataDict:
       dataDict[ userName ] = []
-    dataDict[ userName ].append( ( userDN, userGroup, expirationDate, persistent ) ) 
+    dataDict[ userName ].append( ( userDN, userGroup, expirationDate, persistent ) )
 
 
 

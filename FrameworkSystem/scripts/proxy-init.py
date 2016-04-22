@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
-""" 
+"""
   This is a command to do all the proxy generation related operations:
     - DIRAC proxy generation
     - proxy upload to the DIRAC ProxyManager
@@ -12,13 +11,7 @@
     - voms proxy extensions generation
 """
 
-__RCSID__ = "$Id$"
-
 import sys
-import os
-import getpass
-import imp
-import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC import gConfig, gLogger
 Script.disableCS()
@@ -29,6 +22,8 @@ from DIRAC.Core.Security import CS, Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
+
+__RCSID__ = "$Id$"
 
 def uploadProxyToMyProxy( params, DNAsUsername ):
   """ Upload proxy to the MyProxy server
@@ -174,11 +169,3 @@ if __name__ == "__main__":
     sys.exit( 1 )
   gLogger.notice( "done" )
   sys.exit( 0 )
-
-
-
-
-
-
-
-
