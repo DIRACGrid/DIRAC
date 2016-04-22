@@ -187,7 +187,7 @@ function fullInstallDIRAC(){
 	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
 	#fix the SandboxStore and other stuff
-	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py $DEBUG
+	python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py JenkinsSetup $DEBUG
 
 	echo '==> Restarting WorkloadManagement SandboxStore'
 	dirac-restart-component WorkloadManagement SandboxStore $DEBUG

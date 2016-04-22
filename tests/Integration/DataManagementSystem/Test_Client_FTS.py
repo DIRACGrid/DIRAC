@@ -7,7 +7,8 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import unittest, mock
+import unittest
+#import mock
 import uuid
 
 from DIRAC import gLogger
@@ -88,19 +89,19 @@ class FTSDBTestCase( unittest.TestCase ):
     self.submitted = len( [ i for i in self.ftsJobs if i.Status == 'Submitted' ] )
 
     self.ftsClient = FTSClient()
-    self.ftsClient.replicaManager = mock.Mock()
-    self.ftsClient.replicaManager.getActiveReplicas.return_value = {'OK': True,
-                                                                    'Value': {'Successful': {'/a/b/c/1':{'CERN-USER':'/aa/a/b/c/1d',
-                                                                                                         'RAL-USER':'/bb/a/b/c/1d'},
-                                                                                             '/a/b/c/2':{'CERN-USER':'/aa/a/b/c/2d',
-                                                                                                         'RAL-USER':'/bb/a/b/c/2d'},
-                                                                                             '/a/b/c/3':{'CERN-USER':'/aa/a/b/c/3d',
-                                                                                                         'RAL-USER':'/bb/a/b/c/3d'}
-                                                                                             },
-                                                                              'Failed': {'/a/b/c/4':'/aa/a/b/c/4d',
-                                                                                         '/a/b/c/5':'/aa/a/b/c/5d'}
-                                                                              }
-                                                                    }
+    # self.ftsClient.replicaManager = mock.Mock()
+    # self.ftsClient.replicaManager.getActiveReplicas.return_value = {'OK': True,
+    #                                                                 'Value': {'Successful': {'/a/b/c/1':{'CERN-USER':'/aa/a/b/c/1d',
+    #                                                                                                      'RAL-USER':'/bb/a/b/c/1d'},
+    #                                                                                          '/a/b/c/2':{'CERN-USER':'/aa/a/b/c/2d',
+    #                                                                                                      'RAL-USER':'/bb/a/b/c/2d'},
+    #                                                                                          '/a/b/c/3':{'CERN-USER':'/aa/a/b/c/3d',
+    #                                                                                                      'RAL-USER':'/bb/a/b/c/3d'}
+    #                                                                                          },
+    #                                                                           'Failed': {'/a/b/c/4':'/aa/a/b/c/4d',
+    #                                                                                      '/a/b/c/5':'/aa/a/b/c/5d'}
+    #                                                                           }
+    #                                                                 }
 
   def tearDown( self ):
     """ clean up """
@@ -221,6 +222,6 @@ class FTSClientMix( FTSDBTestCase ):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( FTSDBTestCase )
-#  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FTSClientChain ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FTSClientChain ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( FTSClientMix ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
