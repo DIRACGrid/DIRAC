@@ -1234,6 +1234,12 @@ class JobWrapper( object ):
       if not isValid["OK"]:
         self.log.error( "Failover request is not valid", isValid["Message"] )
         self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
+        self.log.error( "Job will fail, first trying to print out the content of the request" )
+        reqToJSON = request.toJSON()
+        if reqToJSON['OK']:
+          print str( reqToJSON['Value'] )
+        else:
+          self.log.error( "Something went wrong creating the JSON from request", reqToJSON['Message'] )
       else:
         # We try several times to put the request before failing the job: it's very important that requests go through,
         # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
@@ -1251,6 +1257,7 @@ class JobWrapper( object ):
                             '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
             del requestClient
             time.sleep( counter ** 3 )
+
         if not result['OK']:
           self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
 
