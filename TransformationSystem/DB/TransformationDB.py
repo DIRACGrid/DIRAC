@@ -805,6 +805,8 @@ class TransformationDB( DB ):
         if res['OK']:
           if taskID in res['Value']:
             taskDict['InputVector'] = res['Value'][taskID]
+        else:
+          return res
       resultList.append( taskDict )
     result = S_OK( resultList )
     result['Records'] = webList
@@ -1069,7 +1071,9 @@ class TransformationDB( DB ):
                                                                                                           transID )
     res = self._query( req )
     inputVectorDict = {}
-    if res['OK'] and res['Value']:
+    if not res['OK']:
+      return res
+    elif res['Value']:
       for row in res['Value']:
         inputVectorDict[row[0]] = row[1]
     return S_OK( inputVectorDict )
