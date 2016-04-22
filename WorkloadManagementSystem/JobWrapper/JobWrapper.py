@@ -1085,16 +1085,16 @@ class JobWrapper( object ):
     requestFlag = len( requests ) > 0 or not outputDataRequest.isEmpty()
 
     if self.failedFlag and requestFlag:
-      self.log.info( 'Application finished with errors and there are pending requests for this job.' )
+      self.log.info( 'Job finished with errors and there are pending requests.' )
       self.__report( 'Failed', 'Pending Requests' )
     elif not self.failedFlag and requestFlag:
-      self.log.info( 'Application finished successfully with pending requests for this job.' )
+      self.log.info( 'Job finished successfully with pending requests.' )
       self.__report( 'Completed', 'Pending Requests' )
     elif self.failedFlag and not requestFlag:
-      self.log.info( 'Application finished with errors with no pending requests.' )
+      self.log.info( 'Job finished with errors with no pending requests.' )
       self.__report( 'Failed' )
     elif not self.failedFlag and not requestFlag:
-      self.log.info( 'Application finished successfully with no pending requests for this job.' )
+      self.log.info( 'Job finished successfully with no pending requests.' )
       self.__report( 'Done', 'Execution Complete' )
 
     self.sendFailoverRequest()
@@ -1228,7 +1228,8 @@ class JobWrapper( object ):
       # The request is ready, send it now
       isValid = RequestValidator().validate( request )
       if not isValid["OK"]:
-        self.log.error( "Failover request is not valid", isValid["Message"] )        
+        self.log.error( "Failover request is not valid", isValid["Message"] )
+        self.__report( minorStatus = 'Failover Request Failed' )
       else:
         # We try several times to put the request before failing the job: it's very important that requests go through,
         # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
