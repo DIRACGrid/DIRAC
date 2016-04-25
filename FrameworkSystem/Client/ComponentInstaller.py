@@ -63,7 +63,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
-from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.File import mkDir, mkLink
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
                                                      cfgInstallSection, ResourcesDefaults, CSGlobals
@@ -472,7 +472,7 @@ class ComponentInstaller( object ):
 
     # Website
     websiteCfg = self.__getCfg( cfgPath( 'Website', 'Authorization',
-                                    'systems', 'configuration' ), 'Default', 'all' )
+                                         'systems', 'configuration' ), 'Default', 'all' )
     websiteCfg['Website'].addKey( 'DefaultGroups',
                                   ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
     websiteCfg['Website'].addKey( 'DefaultSetup', self.setup, '' )
@@ -542,8 +542,8 @@ class ComponentInstaller( object ):
       mySetup = self.setup
 
     result = self.monitoringClient.getInstallations( { 'UnInstallationTime': None, 'Instance': component },
-                                                { 'System': system },
-                                                {}, True )
+                                                     { 'System': system },
+                                                     {}, True )
     if not result[ 'OK' ]:
       return result
     installations = result[ 'Value' ]
@@ -567,8 +567,8 @@ class ComponentInstaller( object ):
         isRenamed = True
 
       result = self.monitoringClient.getInstallations( { 'UnInstallationTime': None },
-                                                    { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
-                                                    {}, True )
+                                                       { 'System': system, 'Module': installation[ 'Component' ][ 'Module' ] },
+                                                       {}, True )
       if not result[ 'OK' ]:
         return result
       installations = result[ 'Value' ]
@@ -657,7 +657,7 @@ class ComponentInstaller( object ):
       execList = compCfg.getOption( '%s/Load' % componentSection, [] )
       for element in execList:
         result = self.addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, self.setup,
-                                        {}, overwrite )
+                                             {}, overwrite )
         resultAddToCFG.setdefault( 'Modules', {} )
         resultAddToCFG['Modules'][element] = result['OK']
     return resultAddToCFG
@@ -767,7 +767,7 @@ class ComponentInstaller( object ):
         urlsPath = cfgPath( 'Systems', system, compInstance, 'URLs' )
         cfg.createNewSection( urlsPath )
         cfg.setOption( cfgPath( urlsPath, component ),
-                      'dips://%s:%d/%s/%s' % ( self.host, port, system, component ) )
+                       'dips://%s:%d/%s/%s' % ( self.host, port, system, component ) )
 
     return S_OK( cfg )
 
@@ -816,8 +816,8 @@ class ComponentInstaller( object ):
       mySetup = self.setup
 
     result = self.monitoringClient.installationExists( { 'UnInstallationTime': None },
-                                                  { 'System': system, 'Type': 'DB', 'Module': dbName },
-                                                  {} )
+                                                       { 'System': system, 'Type': 'DB', 'Module': dbName },
+                                                       {} )
     if not result[ 'OK' ]:
       return result
     exists = result[ 'Value' ]
@@ -1492,14 +1492,7 @@ class ComponentInstaller( object ):
       instanceEtcDir = os.path.join( self.instancePath, 'etc' )
       etcDir = os.path.dirname( self.cfgFile )
       if not os.path.exists( instanceEtcDir ):
-        try:
-          os.symlink( etcDir, instanceEtcDir )
-        except Exception:
-          error = 'Can not create link to configuration %s' % instanceEtcDir
-          if self.exitOnError:
-            gLogger.exception( error )
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
+        mkLink( etcDir, instanceEtcDir )
 
       if os.path.realpath( instanceEtcDir ) != os.path.realpath( etcDir ):
         error = 'Instance etc (%s) is not the same as DIRAC etc (%s)' % ( instanceEtcDir, etcDir )
@@ -1783,7 +1776,7 @@ class ComponentInstaller( object ):
     if componentModule:
       specialOptions['Module'] = componentModule
     result = self.getComponentCfg( componentType, system, component, self.instance, extensions,
-                              specialOptions = specialOptions )
+                                   specialOptions = specialOptions )
     if not result[ 'OK' ]:
       return result
     compCfg = result[ 'Value' ]
@@ -1876,7 +1869,7 @@ class ComponentInstaller( object ):
     mkDir(self.startDir)
     if not os.path.lexists( startCompDir ):
       gLogger.notice( 'Creating startup link at', startCompDir )
-      os.symlink( runitCompDir, startCompDir )
+      mkLink( runitCompDir, startCompDir )
       time.sleep( 10 )
 
     # Check the runsv status
@@ -2044,7 +2037,7 @@ class ComponentInstaller( object ):
     for i in range( 2 ):
       if not os.path.lexists( startCompDir[i] ):
         gLogger.notice( 'Creating startup link at', startCompDir[i] )
-        os.symlink( runitCompDir[i], startCompDir[i] )
+        mkLink( runitCompDir[i], startCompDir[i] )
         time.sleep( 1 )
     time.sleep( 5 )
 
@@ -2078,9 +2071,7 @@ class ComponentInstaller( object ):
 
     mkDir( self.startDir )
 
-    if not os.path.lexists( startCompDir ):
-        gLogger.notice( 'Creating startup link at', startCompDir )
-        os.symlink( runitCompDir, startCompDir )
+    mkLink( runitCompDir, startCompDir )
 
     time.sleep( 5 )
 
@@ -2149,8 +2140,8 @@ class ComponentInstaller( object ):
       try:
         self._createRunitLog( runitWebAppDir )
         runFile = os.path.join( runitWebAppDir, 'run' )
-        fd = open( runFile, 'w' )
-        fd.write(
+        with open( runFile, 'w' ) as fd:
+          fd.write(
   """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -2161,7 +2152,6 @@ class ComponentInstaller( object ):
   """ % {'bashrc': os.path.join( self.instancePath, 'bashrc' ),
          'DIRAC': self.linkedRootPath,
          'prodMode':prodMode} )
-        fd.close()
 
         os.chmod( runFile, self.gDefaultPerms )
       except Exception:
