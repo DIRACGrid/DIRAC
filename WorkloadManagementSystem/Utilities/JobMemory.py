@@ -1,9 +1,9 @@
 """ DIRAC Workload Management System Client module to get available memory from mjf
 """
-__RCSID__ = "$Id$"
-
 import os
-import urllib
+import requests
+
+__RCSID__ = "$Id$"
 
 def getJobFeatures():
   features = {}
@@ -13,7 +13,7 @@ def getJobFeatures():
                 'jobstart_secs', 'mem_limit_MB', 'allocated_CPU ', 'shutdowntime_job' ):
     fname = os.path.join( os.environ['JOBFEATURES'], item )
     try:
-      val = urllib.urlopen( fname ).read()
+      val = requests.get( fname ).text
     except:
       val = 0
     features[item] = val
@@ -29,9 +29,9 @@ def getMemoryFromMJF():
     return None
 
 def getMemoryFromProc():
-    meminfo = dict( ( i.split()[0].rstrip( ':' ), int( i.split()[1] ) ) for i in open( '/proc/meminfo' ).readlines() )
-    MaxRAM = meminfo['MemTotal']
-    if MaxRAM:
-      return MaxRAM / 1024
-    else:
-      return None
+  meminfo = dict( ( i.split()[0].rstrip( ':' ), int( i.split()[1] ) ) for i in open( '/proc/meminfo' ).readlines() )
+  MaxRAM = meminfo['MemTotal']
+  if MaxRAM:
+    return MaxRAM / 1024
+  else:
+    return None
