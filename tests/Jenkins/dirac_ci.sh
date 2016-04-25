@@ -114,8 +114,7 @@ function installSite(){
 	sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
 
 	echo '==> Started installing'
-	cd $SERVERINSTALLDIR
-	./install_site.sh install.cfg
+	$SERVERINSTALLDIR/install_site.sh install.cfg
 	echo '==> Completed installation'
 
 	source $SERVERINSTALLDIR/bashrc

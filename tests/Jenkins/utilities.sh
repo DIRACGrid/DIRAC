@@ -43,8 +43,6 @@ function default(){
 function findRelease(){
 	echo '==> [findRelease]'
 
-	currentDir=$PWD
-
 	PRE='p[[:digit:]]*'
 
 	if [ ! -z "$DIRACBRANCH" ]
@@ -56,18 +54,17 @@ function findRelease(){
 
 	# Create temporary directory where to store releases.cfg (will be deleted then)
 	tmp_dir=`mktemp -d -q`
-	cd $tmp_dir
-	wget --no-check-certificate -O releases.cfg $DIRAC_RELEASES
+	wget --no-check-certificate -O $tmp_dir/releases.cfg $DIRAC_RELEASES
 
 	# Match project ( DIRAC ) version from releases.cfg
 
 	# If I don't specify a DIRACBRANCH, it will get the latest "production" release
-    # First, try to find if we are on a production tag
+  # First, try to find if we are on a production tag
 	if [ ! -z "$DIRACBRANCH" ]
 	then
-		projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]* | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+		projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
 	else
-		projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]* | head -1 | sed 's/ //g'`
+		projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
 	fi
 	# projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
 	# In case there are no production tags for the branch, look for pre-releases in that branch
@@ -75,25 +72,24 @@ function findRelease(){
 	then
 		if [ ! -z "$DIRACBRANCH" ]
 		then
-			projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*'-pre' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+			projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
 		else
-			projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]*r[[:digit:]]*'-pre' | head -1 | sed 's/ //g'`
+			projectVersion=`cat $tmp_dir/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
 		fi
 	fi
 
-	projectVersionLine=`cat releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
+	projectVersionLine=`cat $tmp_dir/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
 	# start := line number after "{"
 	start=$(($projectVersionLine+2))
 	# end   := line number after "}"
 	end=$(($start+2))
 	# versions :=
-	versions=`sed -n "$start,$end p" releases.cfg`
+	versions=`sed -n "$start,$end p" $tmp_dir/releases.cfg`
 
 	# Extract Externals version
 	externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
 
 	# Back to previous directory, and clean tmp_dir
-	cd $currentDir
 	rm -r $tmp_dir
 
 	# PrintOuts
@@ -319,17 +315,15 @@ function diracReplace(){
 function diracInstall(){
 	echo '==> [diracInstall]'
 
-	cd $SERVERINSTALLDIR
-
-	wget --no-check-certificate -O dirac-install $DIRAC_INSTALL
-	chmod +x dirac-install
+	wget --no-check-certificate -O $SERVERINSTALLDIR/dirac-install $DIRAC_INSTALL
+	chmod +x $SERVERINSTALLDIR/dirac-install
 
 	diracInstallCommand
 }
 
 #This is what VOs may replace
 function diracInstallCommand(){
-	./dirac-install -r `cat dirac.version` -t server -d
+	$SERVERINSTALLDIR/dirac-install -r `cat dirac.version` -t server -d
 }
 
 #.............................................................................
@@ -343,12 +337,9 @@ function diracInstallCommand(){
 function prepareForServer(){
 	echo '==> [prepareForServer]'
 
-	#Move to server directory
-	cd $SERVERINSTALLDIR
-
 	#get the necessary scripts: install_site.sh file
-	cp $TESTCODE/DIRAC/Core/scripts/install_site.sh .
-	chmod +x install_site.sh
+	cp $TESTCODE/DIRAC/Core/scripts/install_site.sh $SERVERINSTALLDIR/
+	chmod +x $SERVERINSTALLDIR/install_site.sh
 }
 
 
@@ -379,21 +370,21 @@ function generateCertificates(){
 	mkdir -p $SERVERINSTALLDIR/etc/grid-security/certificates
 	cd $SERVERINSTALLDIR/etc/grid-security
 
-    # Generate private RSA key
-    openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
+  # Generate private RSA key
+  openssl genrsa -out hostkey.pem 2048 2&>1 /dev/null
 
-    # Prepare OpenSSL config file, it contains extensions to put into place,
-    # DN configuration, etc..
-    cp $CI_CONFIG/openssl_config openssl_config
-    fqdn=`hostname --fqdn`
-    sed -i "s/#hostname#/$fqdn/g" openssl_config
+  # Prepare OpenSSL config file, it contains extensions to put into place,
+  # DN configuration, etc..
+  cp $CI_CONFIG/openssl_config openssl_config
+  fqdn=`hostname --fqdn`
+  sed -i "s/#hostname#/$fqdn/g" openssl_config
 
-    # Generate X509 Certificate based on the private key and the OpenSSL configuration
-    # file, valid for one day.
-    openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days 1 -config openssl_config
+  # Generate X509 Certificate based on the private key and the OpenSSL configuration
+  # file, valid for one day.
+  openssl req -new -x509 -key hostkey.pem -out hostcert.pem -days 1 -config openssl_config
 
-    # Copy hostcert, hostkey to certificates ( CA dir )
-    cp host{cert,key}.pem certificates/
+  # Copy hostcert, hostkey to certificates ( CA dir )
+  cp host{cert,key}.pem certificates/
 
 }
 
@@ -765,17 +756,14 @@ function getCertificate(){
 function prepareForPilot(){
 	echo '==> [prepareForPilot]'
 
-	#Move to pilot directory
-	cd $PILOTINSTALLDIR
-
 	#cert first (host certificate)
 	#getCertificate (no need...)
 
 	#get the necessary scripts
-  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py .
-	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py .
-	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py .
-	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py .
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $PILOTINSTALLDIR/
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py $PILOTINSTALLDIR/
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py $PILOTINSTALLDIR/
+	cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py $PILOTINSTALLDIR/
 
 }
 
