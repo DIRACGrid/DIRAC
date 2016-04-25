@@ -140,16 +140,19 @@ class RequestTasks( TaskBase ):
       except AttributeError:
         pass
 
+    # Do not remove sorted, we might pop elements in the loop
     for taskID in sorted( taskDict ):
       paramDict = taskDict[taskID]
+
+      transID = paramDict['TransformationID']
+
+      oRequest = Request()
+      transfer = Operation()
+      transfer.Type = requestOperation
+      transfer.TargetSE = paramDict['TargetSE']
+
+      # If there are input files
       if paramDict['InputData']:
-        transID = paramDict['TransformationID']
-
-        oRequest = Request()
-        transfer = Operation()
-        transfer.Type = requestOperation
-        transfer.TargetSE = paramDict['TargetSE']
-
         if isinstance( paramDict['InputData'], list ):
           files = paramDict['InputData']
         elif isinstance( paramDict['InputData'], basestring ):
@@ -160,14 +163,18 @@ class RequestTasks( TaskBase ):
 
           transfer.addFile( trFile )
 
-        oRequest.addOperation( transfer )
-        oRequest.RequestName = _requestName( transID, taskID )
-        oRequest.OwnerDN = ownerDN
-        oRequest.OwnerGroup = ownerGroup
+      oRequest.addOperation( transfer )
+      oRequest.RequestName = _requestName( transID, taskID )
+      oRequest.OwnerDN = ownerDN
+      oRequest.OwnerGroup = ownerGroup
+
 
       isValid = self.requestValidator.validate( oRequest )
       if not isValid['OK']:
-        return isValid
+        self.log.error( "Error creating request for task", "%s %s" % ( taskID, isValid ) )
+        # This works because we loop over a copy of the keys !
+        taskDict.pop( taskID )
+        continue
 
       taskDict[taskID]['TaskObject'] = oRequest
 
