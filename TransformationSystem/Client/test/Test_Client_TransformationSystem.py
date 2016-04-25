@@ -53,6 +53,7 @@ class ClientsTestCase( unittest.TestCase ):
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
                                       requestValidator = self.reqValidatorMock )
+
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -125,8 +126,20 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
     self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
-    self.assertEqual( res, ['Site1', 'Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':''} )
+    self.assertEqual( res, ['Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'} )
+    self.assertEqual( res, ['Site1','Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site1','Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site1', 'Site2', 'Site3'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['ANY'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'} )
+    self.assertEqual( res, ['Site1'] )
 
 #############################################################################
 
