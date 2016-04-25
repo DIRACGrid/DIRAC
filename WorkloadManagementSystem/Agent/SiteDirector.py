@@ -642,7 +642,7 @@ class SiteDirector( AgentModule ):
                                             'Status': WAITING_PILOT_STATUS } )
       if result['OK']:
         jobIDList = result['Value']
-        if len( jobIDList ) == 0:
+        if not jobIDList:
           return totalSlots
       return 0
 
