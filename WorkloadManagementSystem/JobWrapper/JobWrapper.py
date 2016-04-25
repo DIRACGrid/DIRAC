@@ -1089,16 +1089,16 @@ class JobWrapper( object ):
     requestFlag = len( requests ) > 0 or not outputDataRequest.isEmpty()
 
     if self.failedFlag and requestFlag:
-      self.log.info( 'Application finished with errors and there are pending requests for this job.' )
+      self.log.info( 'Job finished with errors and there are pending requests.' )
       self.__report( 'Failed', 'Pending Requests' )
     elif not self.failedFlag and requestFlag:
-      self.log.info( 'Application finished successfully with pending requests for this job.' )
+      self.log.info( 'Job finished successfully with pending requests.' )
       self.__report( 'Completed', 'Pending Requests' )
     elif self.failedFlag and not requestFlag:
-      self.log.info( 'Application finished with errors with no pending requests.' )
+      self.log.info( 'Job finished with errors with no pending requests.' )
       self.__report( 'Failed' )
     elif not self.failedFlag and not requestFlag:
-      self.log.info( 'Application finished successfully with no pending requests for this job.' )
+      self.log.info( 'Job finished successfully with no pending requests.' )
       self.__report( 'Done', 'Execution Complete' )
 
     self.sendFailoverRequest()
@@ -1233,6 +1233,13 @@ class JobWrapper( object ):
       isValid = RequestValidator().validate( request )
       if not isValid["OK"]:
         self.log.error( "Failover request is not valid", isValid["Message"] )
+        self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
+        self.log.error( "Job will fail, first trying to print out the content of the request" )
+        reqToJSON = request.toJSON()
+        if reqToJSON['OK']:
+          print str( reqToJSON['Value'] )
+        else:
+          self.log.error( "Something went wrong creating the JSON from request", reqToJSON['Message'] )
       else:
         # We try several times to put the request before failing the job: it's very important that requests go through,
         # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
@@ -1250,11 +1257,9 @@ class JobWrapper( object ):
                             '%d: %s. Re-trying...' % ( counter, result['Message'] ) )
             del requestClient
             time.sleep( counter ** 3 )
-        if not result['OK']:
-          self.__report( 'Failed', 'Failover Request Failed' )
-        return result
 
-    return S_OK()
+        if not result['OK']:
+          self.__report( status = 'Failed', minorStatus = 'Failover Request Failed' )
 
   #############################################################################
   def __getRequestFiles( self ):

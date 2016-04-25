@@ -2429,9 +2429,9 @@ class Dirac( API ):
     return S_OK( stdout )
 
   #############################################################################
-  def ping( self, system, service, printOutput = False ):
-    return self.pingService( system, service, printOutput = printOutput )
-  def pingService( self, system, service, printOutput = False ):
+  def ping( self, system, service, printOutput = False, url = None ):
+    return self.pingService( system, service, printOutput = printOutput, url = url )
+  def pingService( self, system, service, printOutput = False, url = None ):
     """The ping function will attempt to return standard information from a system
        service if this is available.  If the ping() command is unsuccessful it could
        indicate a period of service unavailability.
@@ -2447,19 +2447,26 @@ class Dirac( API ):
        :type service: string
        :param printOutput: Flag to print to stdOut
        :type printOutput: Boolean
+       :param url: url to ping (instad of system & service)
+       :type url: string
        :returns: S_OK,S_ERROR
     """
-    if not isinstance( system, basestring ) and isinstance( service, basestring ):
-      return self._errorReport( 'Expected string for system and service to ping()' )
+
+    if not isinstance( system, basestring ) and isinstance( service, basestring ) and not isinstance( url, basestring ):
+      return self._errorReport( 'Expected string for system and service or a url to ping()' )
     result = S_ERROR()
     try:
-      systemSection = getSystemSection( system + '/' )
-      self.log.verbose( 'System section is: %s' % ( systemSection ) )
-      section = '%s/%s' % ( systemSection, service )
-      self.log.verbose( 'Requested service should have CS path: %s' % ( section ) )
-      serviceURL = getServiceURL( '%s/%s' % ( system, service ) )
-      self.log.verbose( 'Service URL is: %s' % ( serviceURL ) )
-      client = RPCClient( '%s/%s' % ( system, service ) )
+      if not url:
+        systemSection = getSystemSection( system + '/' )
+        self.log.verbose( 'System section is: %s' % ( systemSection ) )
+        section = '%s/%s' % ( systemSection, service )
+        self.log.verbose( 'Requested service should have CS path: %s' % ( section ) )
+        serviceURL = getServiceURL( '%s/%s' % ( system, service ) )
+        self.log.verbose( 'Service URL is: %s' % ( serviceURL ) )
+        client = RPCClient( '%s/%s' % ( system, service ) )
+      else:
+        serviceURL = url
+        client = RPCClient( url )
       result = client.ping()
       if result['OK']:
         result['Value']['service url'] = serviceURL
