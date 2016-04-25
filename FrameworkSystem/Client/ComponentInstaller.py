@@ -46,9 +46,13 @@ If a Master Configuration Server is being installed the following Options can be
 
 """
 
-__RCSID__ = "$Id$"
-
-import os, re, glob, stat, time, shutil, socket
+import os
+import re
+import glob
+import stat
+import time
+import shutil
+import socket
 
 import DIRAC
 from DIRAC import rootPath
@@ -59,6 +63,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, \
                                                      cfgInstallSection, ResourcesDefaults, CSGlobals
@@ -76,6 +81,8 @@ from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.Platform import getPlatformString
+
+__RCSID__ = "$Id$"
 
 
 class ComponentInstaller( object ):
@@ -1480,21 +1487,7 @@ class ComponentInstaller( object ):
 
     # Make sure the necessary directories are there
     if self.basePath != self.instancePath:
-      if not os.path.exists( self.instancePath ):
-        try:
-          os.makedirs( self.instancePath )
-        except Exception:
-          error = 'Can not create directory for self.instance %s' % self.instancePath
-          if self.exitOnError:
-            gLogger.exception( error )
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
-      if not os.path.isdir( self.instancePath ):
-        error = 'Instance directory %s is not valid' % self.instancePath
-        if self.exitOnError:
-          gLogger.error( error )
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
+      mkDir(self.instancePath)
 
       instanceEtcDir = os.path.join( self.instancePath, 'etc' )
       etcDir = os.path.dirname( self.cfgFile )
@@ -1518,14 +1511,7 @@ class ComponentInstaller( object ):
     # if any server or agent needs to be install we need the startup directory and runsvdir running
     if setupServices or setupAgents or setupExecutors or setupWeb:
       if not os.path.exists( self.startDir ):
-        try:
-          os.makedirs( self.startDir )
-        except Exception:
-          error = 'Can not create %s' % self.startDir
-          if self.exitOnError:
-            gLogger.exception( error )
-            DIRAC.exit( -1 )
-          return S_ERROR( error )
+        mkDir(self.startDir)
       # And need to make sure runsvdir is running
       result = self.execCommand( 0, ['ps', '-ef'] )
       if not result['OK']:
@@ -1732,22 +1718,21 @@ class ComponentInstaller( object ):
 
   def _createRunitLog( self, runitCompDir ):
     self.controlDir = os.path.join( runitCompDir, 'control' )
-    os.makedirs( self.controlDir )
+    mkDir( self.controlDir )
 
     logDir = os.path.join( runitCompDir, 'log' )
-    os.makedirs( logDir )
+    mkDir( logDir )
 
     logConfigFile = os.path.join( logDir, 'config' )
-    fd = open( logConfigFile, 'w' )
-    fd.write(
+    with open( logConfigFile, 'w' ) as fd:
+      fd.write(
   """s10000000
   n20
   """ )
-    fd.close()
 
     logRunFile = os.path.join( logDir, 'run' )
-    fd = open( logRunFile, 'w' )
-    fd.write(
+    with open( logRunFile, 'w' ) as fd:
+      fd.write(
   """#!/bin/bash
   #
   rcfile=%(bashrc)s
@@ -1756,7 +1741,6 @@ class ComponentInstaller( object ):
   exec svlogd .
 
   """ % { 'bashrc' : os.path.join( self.instancePath, 'bashrc' ) } )
-    fd.close()
 
     os.chmod( logRunFile, self.gDefaultPerms )
 
@@ -1889,8 +1873,7 @@ class ComponentInstaller( object ):
     # Create the startup entry now
     runitCompDir = result['Value']
     startCompDir = os.path.join( self.startDir, '%s_%s' % ( system, component ) )
-    if not os.path.exists( self.startDir ):
-      os.makedirs( self.startDir )
+    mkDir(self.startDir)
     if not os.path.lexists( startCompDir ):
       gLogger.notice( 'Creating startup link at', startCompDir )
       os.symlink( runitCompDir, startCompDir )
@@ -2056,8 +2039,7 @@ class ComponentInstaller( object ):
     startCompDir = [ os.path.join( self.startDir, 'Web_httpd' ),
                      os.path.join( self.startDir, 'Web_paster' ) ]
 
-    if not os.path.exists( self.startDir ):
-      os.makedirs( self.startDir )
+    mkDir( self.startDir )
 
     for i in range( 2 ):
       if not os.path.lexists( startCompDir[i] ):
@@ -2094,8 +2076,7 @@ class ComponentInstaller( object ):
     startCompDir = os.path.join( self.startDir, 'Web_WebApp' )
 
 
-    if not os.path.exists( self.startDir ):
-      os.makedirs( self.startDir )
+    mkDir( self.startDir )
 
     if not os.path.lexists( startCompDir ):
         gLogger.notice( 'Creating startup link at', startCompDir )
@@ -2325,59 +2306,50 @@ class ComponentInstaller( object ):
     if self.mysqlMode:
       gLogger.notice( 'This is a MySQl %s server' % self.mysqlMode )
 
-    try:
-      os.makedirs( self.mysqlDbDir )
-      os.makedirs( self.mysqlLogDir )
-    except Exception:
-      error = 'Can not create MySQL dirs'
-      gLogger.exception( error )
-      if self.exitOnError:
-        DIRAC.exit( -1 )
-      return S_ERROR( error )
+    mkDir( self.mysqlDbDir )
+    mkDir( self.mysqlLogDir )
 
     try:
-      fd = open( self.mysqlMyOrg, 'r' )
-      myOrg = fd.readlines()
-      fd.close()
+      with open( self.mysqlMyOrg, 'r' ) as fd:
+        myOrg = fd.readlines()
 
-      fd = open( self.mysqlMyCnf, 'w' )
-      for line in myOrg:
-        if line.find( '[mysqld]' ) == 0:
-          line += '\n'.join( [ 'innodb_file_per_table', '' ] )
-        elif line.find( 'innodb_log_arch_dir' ) == 0:
-          line = ''
-        elif line.find( 'innodb_data_file_path' ) == 0:
-          line = line.replace( '2000M', '200M' )
-        elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'master':
-          # MySQL Configuration for Master Server
-          line = '\n'.join( ['server-id = 1',
-                             '# DIRAC Master-Server',
-                             'sync-binlog = 1',
-                             'replicate-ignore-table = mysql.MonitorData',
-                             '# replicate-ignore-db=db_name',
-                             'log-bin = mysql-bin',
-                             'log-slave-updates', '' ] )
-        elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'slave':
-          # MySQL Configuration for Slave Server
-          line = '\n'.join( ['server-id = %s' % int( time.time() ),
-                             '# DIRAC Slave-Server',
-                             'sync-binlog = 1',
-                             'replicate-ignore-table = mysql.MonitorData',
-                             '# replicate-ignore-db=db_name',
-                             'log-bin = mysql-bin',
-                             'log-slave-updates', '' ] )
-        elif line.find( '/opt/dirac/mysql' ) > -1:
-          line = line.replace( '/opt/dirac/mysql', self.mysqlDir )
+      with open( self.mysqlMyCnf, 'w' ) as fd:
+        for line in myOrg:
+          if line.find( '[mysqld]' ) == 0:
+            line += '\n'.join( [ 'innodb_file_per_table', '' ] )
+          elif line.find( 'innodb_log_arch_dir' ) == 0:
+            line = ''
+          elif line.find( 'innodb_data_file_path' ) == 0:
+            line = line.replace( '2000M', '200M' )
+          elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'master':
+            # MySQL Configuration for Master Server
+            line = '\n'.join( ['server-id = 1',
+                               '# DIRAC Master-Server',
+                               'sync-binlog = 1',
+                               'replicate-ignore-table = mysql.MonitorData',
+                               '# replicate-ignore-db=db_name',
+                               'log-bin = mysql-bin',
+                               'log-slave-updates', '' ] )
+          elif line.find( 'server-id' ) == 0 and self.mysqlMode.lower() == 'slave':
+            # MySQL Configuration for Slave Server
+            line = '\n'.join( ['server-id = %s' % int( time.time() ),
+                               '# DIRAC Slave-Server',
+                               'sync-binlog = 1',
+                               'replicate-ignore-table = mysql.MonitorData',
+                               '# replicate-ignore-db=db_name',
+                               'log-bin = mysql-bin',
+                               'log-slave-updates', '' ] )
+          elif line.find( '/opt/dirac/mysql' ) > -1:
+            line = line.replace( '/opt/dirac/mysql', self.mysqlDir )
 
-        if self.mysqlSmallMem:
-          if line.find( 'innodb_buffer_pool_size' ) == 0:
-            line = 'innodb_buffer_pool_size = 200M\n'
-        elif self.mysqlLargeMem:
-          if line.find( 'innodb_buffer_pool_size' ) == 0:
-            line = 'innodb_buffer_pool_size = 10G\n'
+          if self.mysqlSmallMem:
+            if line.find( 'innodb_buffer_pool_size' ) == 0:
+              line = 'innodb_buffer_pool_size = 200M\n'
+          elif self.mysqlLargeMem:
+            if line.find( 'innodb_buffer_pool_size' ) == 0:
+              line = 'innodb_buffer_pool_size = 10G\n'
 
-        fd.write( line )
-      fd.close()
+          fd.write( line )
     except Exception:
       error = 'Can not create my.cnf'
       gLogger.exception( error )

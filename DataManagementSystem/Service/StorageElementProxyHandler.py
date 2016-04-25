@@ -55,17 +55,13 @@ def initializeStorageElementProxyHandler( serviceInfo ):
 
   BASE_PATH = os.path.abspath( BASE_PATH )
   gLogger.info('The base path obtained is %s. Checking its existence...' % BASE_PATH)
-  if not os.path.exists(BASE_PATH):
-    gLogger.info('%s did not exist. Creating....' % BASE_PATH)
-    os.makedirs(BASE_PATH)
+  mkDir(BASE_PATH)
 
   HTTP_FLAG = gConfig.getValue( "%s/HttpAccess" % cfgPath, False )
   if HTTP_FLAG:
     HTTP_PATH = '%s/httpCache' % BASE_PATH
     HTTP_PATH = gConfig.getValue( "%s/HttpCache" % cfgPath, HTTP_PATH )
-    if not os.path.exists( HTTP_PATH ):
-      gLogger.info('Creating HTTP cache directory %s' % (HTTP_PATH) )
-      os.makedirs( HTTP_PATH )
+    mkDir( HTTP_PATH )
     HTTP_PORT = gConfig.getValue( "%s/HttpPort" % cfgPath, 9180 )
     gLogger.info('Creating HTTP server thread, port:%d, path:%s' % ( HTTP_PORT, HTTP_PATH ) )
     _httpThread = HttpThread( HTTP_PORT, HTTP_PATH )
