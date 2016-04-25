@@ -1,4 +1,4 @@
-[v6r15-pre19]
+[v6r15-pre20]
 
 Removed general "from DIRAC.Core.Utilities import *" in the top-level __init__.py
 Made service handlers systematically working with unicode string arguments
@@ -79,6 +79,7 @@ NEW: FileCatalog - conditional FileCatalog instantiation based on the configured
 CHANGE: TransformationDB table TaskInputs: InputVector column from BLOB to MEDIUMTEXT
 FIX: TaskManager - fix bug in case there is no InputData for a task, the Request created 
      for the previous task was reassigned
+NEW: TaskManager - possibility to submit one bulk job for a series of tasks     
 
 *WMS
 NEW: TaskQueueDB - possibility to present requirements in a form of tags from the 
@@ -92,7 +93,12 @@ NEW: MultiProcessorSiteDirector - new director to experiment with the multiproce
      wholeNode queues
 CHANGE: JobMemory utility renamed to JobParameters
 CHANGE: CheckWNCapabilities pilot command changed to get WN parameters from the
-        Machine Job Features (MJF) - NumberOfProcessors, MaxRAM     
+        Machine Job Features (MJF) - NumberOfProcessors, MaxRAM    
+NEW: JobManager, ParametricJob - utilities and support for parametric jobs with multiple
+     parameter sequences      
+NEW: SiteDirector - added logic to send pilots to sites with no waiting pilots even if
+     the number of already sent pilots exceeds the number of waiting jobs. The functionality
+     is switched on/off by the AddPilotsToEmptySites option.        
 
 *RMS
 FIX: Request - fix for the case when one of the request is malformed, the rest of 
@@ -104,6 +110,10 @@ CHANGE: ReqProxyHandler - added monitoring counters
 FIX: SRM2Storage - do not add accounting to the output structure as it is done in 
      the container StorageElement class
 CHANGE: Add standard metadata in the output of all the Storage plugins     
+
+*Interfaces
+NEW: Job API - added setParameterSequence() to add an arbitrary number of parameter
+     sequences for parametric jobs, generate the corresponding JDL
 
 *tests
 NEW: The contents of the TestDIRAC package is moved into the tests directory here
