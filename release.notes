@@ -1,3 +1,23 @@
+[v6r14p27]
+
+*Interfaces
+NEW: Dirac.py - in ping()/pingService() allow to ping a specific URL
+
+*Resources
+FIX: LcgFileCatalogClient - convert LFN into str in __fullLfn to allow LFNs
+     in a unicode encoding
+
+*WMS
+FIX: JobWrapper - set the job minor status to 'Failover Request Failed' 
+     if the failover request fails sending
+
+*TS
+FIX: TransformationDB - in getTransformationTasks(),getTaskInputVector 
+     forward error result to the callers 
+
+*tests
+FIX: several fixes to satisfy on-the-fly unit tests with teh Travis CI service 
+
 [v6r14p26]
 
 NEW: Enabled on-the-fly tests using the Travis-CI service
