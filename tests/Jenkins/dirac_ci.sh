@@ -93,9 +93,9 @@ function installSite(){
 
 	generateCertificates
 
+	getCFGFile
+
 	echo '==> Fixing install.cfg file'
-	cp $TESTCODE/DIRAC/tests/Jenkins/install.cfg $SERVERINSTALLDIR/
-	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
 	if [ ! -z "$LcgVer" ]
 	then
 		echo '==> Fixing LcgVer to ' $LcgVer

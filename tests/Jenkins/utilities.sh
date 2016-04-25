@@ -300,6 +300,14 @@ function diracReplace(){
 
 }
 
+# Getting a CFG file for the installation: this may be replaced by VOs
+function getCFGFile(){
+	echo '==> [getCFGFile]'
+
+	cp $TESTCODE/DIRAC/tests/Jenkins/install.cfg $SERVERINSTALLDIR/
+	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
+}
+
 
 #.............................................................................
 #
