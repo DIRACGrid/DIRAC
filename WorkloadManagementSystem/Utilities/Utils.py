@@ -6,7 +6,7 @@ import os
 import sys
 import json
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.File import mkDir
 
 
@@ -26,11 +26,7 @@ def createJobWrapper( jobID, jobParams, resourceParams, optimizerParams,
   siteRoot = gConfig.getValue( '/LocalSite/Root', os.getcwd() )
   log.debug( 'SiteRootPythonDir is:\n%s' % siteRoot )
   workingDir = gConfig.getValue( '/LocalSite/WorkingDirectory', siteRoot )
-  try:
-    mkDir('%s/job/Wrapper' % ( workingDir ))
-  except Exception as e:
-    log.exception(e)
-    return S_ERROR( 'Could not create directory for wrapper script' )
+  mkDir('%s/job/Wrapper' % ( workingDir ))
 
   diracRoot = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( __file__ ) ) ) )
 
