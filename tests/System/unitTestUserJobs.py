@@ -32,11 +32,11 @@ class submitSuccess( GridSubmissionTestCase ):
   def test_submit( self ):
 
     res = helloWorld()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
     jobsSubmittedList.append( res['Value'] )
 
     res = mpJob()
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
     jobsSubmittedList.append( res['Value'] )
 
 
@@ -75,7 +75,7 @@ class submitSuccess( GridSubmissionTestCase ):
 #
 #     # removing produced files
 #     res = self.dirac.removeFile( toRemove )
-#     self.assert_( res['OK'] )
+#     self.assertTrue( res['OK'] )
 #
 #     if fail:
 #       self.assertFalse( True )
