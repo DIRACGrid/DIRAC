@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities import Time
 
 __RCSID__ = "$Id$"
 
-class Params:
+class Params(object):
 
   limited = False
   proxyPath = False
@@ -44,10 +44,7 @@ for record in records:
   dt = expirationDate - now
   secsLeft = dt.days * 86400 + dt.seconds
   if secsLeft > params.proxyLifeTime:
-    userName = record[ 0 ]
-    userDN = record[ 1 ]
-    userGroup = record[ 2 ]
-    persistent = record[ 4 ]
+    userName, userDN, userGroup, _, persistent = record
     if not userName in dataDict:
       dataDict[ userName ] = []
     dataDict[ userName ].append( ( userDN, userGroup, expirationDate, persistent ) )
