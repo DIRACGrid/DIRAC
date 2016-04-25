@@ -93,8 +93,8 @@ function findRelease(){
 	rm -r $tmp_dir
 
 	# PrintOuts
-	echo DIRAC:$projectVersion && echo $projectVersion > dirac.version
-	echo EXTERNALS:$externalsVersion && echo $externalsVersion > externals.version
+	echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
+	echo EXTERNALS:$externalsVersion && echo $externalsVersion > $SERVERINSTALLDIR/externals.version
 
 }
 
@@ -315,7 +315,7 @@ function diracReplace(){
 function diracInstall(){
 	echo '==> [diracInstall]'
 
-	wget --no-check-certificate -O $SERVERINSTALLDIR/dirac-install $DIRAC_INSTALL
+	cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $SERVERINSTALLDIR/dirac-install
 	chmod +x $SERVERINSTALLDIR/dirac-install
 
 	diracInstallCommand
@@ -323,7 +323,7 @@ function diracInstall(){
 
 #This is what VOs may replace
 function diracInstallCommand(){
-	$SERVERINSTALLDIR/dirac-install -r `cat dirac.version` -t server -d
+	$SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t server -d
 }
 
 #.............................................................................

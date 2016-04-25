@@ -54,6 +54,8 @@ mkdir -p $WORKSPACE/TestCode # Where the test code resides
 TESTCODE=$_
 mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
 SERVERINSTALLDIR=$_
+mkdir -p $WORKSPACE/ClientInstallDIR # Where clients are installed
+CLIENTINSTALLDIR=$_
 mkdir -p $WORKSPACE/PilotInstallDIR # Where pilots are installed
 PILOTINSTALLDIR=$_
 
@@ -92,7 +94,6 @@ function installSite(){
 	generateCertificates
 
 	echo '==> Fixing install.cfg file'
-	#cp $(eval echo $INSTALL_CFG_FILE) $SERVERINSTALLDIR/
 	cp $TESTCODE/DIRAC/tests/Jenkins/install.cfg $SERVERINSTALLDIR/
 	sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
 	if [ ! -z "$LcgVer" ]
