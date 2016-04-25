@@ -1,5 +1,9 @@
 [v6r14p27]
 
+*Core
+FIX: PlainTransport,SocketInfoFactory - fix for the IPv6 "Address family not supported 
+     by protocol" problems
+
 *Interfaces
 NEW: Dirac.py - in ping()/pingService() allow to ping a specific URL
 
@@ -13,7 +17,9 @@ FIX: JobWrapper - set the job minor status to 'Failover Request Failed'
 
 *TS
 FIX: TransformationDB - in getTransformationTasks(),getTaskInputVector 
-     forward error result to the callers 
+     forward error result to the callers
+FIX: TaskManager - in case there is no InputData for a task, the Request created 
+     for the previous task was reassigned. This fixes this bug.      
 
 *tests
 FIX: several fixes to satisfy on-the-fly unit tests with teh Travis CI service 
