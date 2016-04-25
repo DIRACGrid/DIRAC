@@ -15,12 +15,25 @@ import errno
 __RCSID__ = "$Id$"
 
 def mkDir( path ):
+  """ Emulate 'mkdir -p path' (if path exists already, don't raise an exception)
+  """
   try:
-    if os.path.isdir:
+    if os.path.isdir(path):
       return
     os.makedirs( path )
   except OSError as osError:
     if osError.errno == errno.EEXIST and os.path.isdir( path ):
+      pass
+    else:
+      raise
+
+def mkLink( src, dst ):
+  """ Protected creation of simbolic link
+  """
+  try:
+    os.symlink(src, dst)
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.islink(dst) and os.path.realpath(dst) == src:
       pass
     else:
       raise
