@@ -44,6 +44,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers                 import Resources
 from DIRAC.Interfaces.API.Dirac                               import Dirac
 from DIRAC.Workflow.Utilities.Utils                           import getStepDefinition, addStepToWorkflow
+from DIRAC.Core.Utilities.DErrno                              import EWMSJDL
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
@@ -85,7 +86,11 @@ class Job( API ):
     self.addToOutputSandbox = []
     self.addToInputData = []
     ##Add member to handle Parametric jobs
-    self.parametric = {}
+    self.numberOfParameters = 0
+    self.parameterSeqs = {}
+    self.wfArguments = {}
+    self.parametricWFArguments = {}
+
     self.script = script
     if not script:
       self.workflow = Workflow()
@@ -163,7 +168,12 @@ class Job( API ):
     stepInstance.setValue( 'applicationLog', logName )
     stepInstance.setValue( 'executable', executable )
     if arguments:
-      stepInstance.setValue( 'arguments', arguments )
+      # If arguments are expressed in terms of parameters, pass them to Workflow
+      # These arguments will be resolved on the server side for each parametric job
+      if re.search( '%\(.*\)s', arguments ) or re.search( '%n', arguments ):
+        self.parametricWFArguments['arguments'] = arguments
+      else:
+        stepInstance.setValue( 'arguments', arguments )
     if paramValues:
       for param, value in paramValues:
         stepInstance.setValue( param, value )
@@ -240,7 +250,11 @@ class Job( API ):
   def setParametricInputSandbox( self, files ):
     """Helper function.
 
-       Specify input sandbox files to used as parameters in the Parametric jobs. The possibilities are identical to the setInputSandbox.
+       .. deprecated:: v6r15
+            Use :func:`setParameterSequence` instead.
+
+       Specify input sandbox files to be used as parameters in the Parametric jobs.
+       The possibilities are identical to the setInputSandbox.
 
 
        Example usage:
@@ -252,19 +266,11 @@ class Job( API ):
        :type files: Single LFN string or list of LFNs
     """
     kwargs = {'files':files}
-    if type( files ) == list and len( files ):
+    if isinstance( files, list ) and files:
       for fileName in files:
-        if not fileName.lower().count( "lfn:" ):
+        if not fileName.lower().startswith( "lfn:" ):
           return self._reportError( 'All files should be LFNs', **kwargs )
-      resolvedFiles = self._resolveInputSandbox( files )
-      self.parametric['InputSandbox'] = resolvedFiles
-      #self.sandboxFiles=resolvedFiles
-    elif isinstance( files, basestring ):
-      if not files.lower().count( "lfn:" ):
-        return self._reportError( 'All files should be LFNs', **kwargs )
-      resolvedFiles = self._resolveInputSandbox( [files] )
-      self.parametric['InputSandbox'] = resolvedFiles
-      #self.sandboxFiles = [files]
+      self.setParameterSequence( 'InputSandbox', files, addToWorkflow = 'ParametricInputSandbox' )
     else:
       return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
 
@@ -334,6 +340,9 @@ class Job( API ):
   def setParametricInputData( self, lfns ):
     """Helper function.
 
+       .. deprecated:: v6r15
+            Use :func:`setParameterSequence` instead.
+
        Specify input data by Logical File Name (LFN) to be used as a parameter in a parametric job
 
        Example usage:
@@ -342,40 +351,43 @@ class Job( API ):
        >>> job.setParametricInputData(['/lhcb/production/DC04/v2/DST/00000742_00003493_10.dst'])
 
        :param lfns: Logical File Names
-       :type lfns: Single LFN string or list of LFNs
+       :type lfns: list of LFNs or list of lists of LFNs
     """
     if isinstance( lfns, list ) and lfns:
       for i in xrange( len( lfns ) ):
-        if type( lfns[i] ) == list and len( lfns[i] ):
+        if isinstance( lfns[i], list ) and lfns[i]:
           for k in xrange( len( lfns[i] ) ):
             lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
         else:
           lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
-      self.parametric['InputData'] = lfns
-    elif isinstance( lfns, basestring ):  # single LFN
-      self.parametric['InputData'] = lfns
+      self.setParameterSequence( 'InputData', lfns, addToWorkflow = 'ParametricInputData' )
     else:
       kwargs = {'lfns':lfns}
-      return self._reportError( 'Expected lfn string or list of lfns for parametric input data', **kwargs )
+      return self._reportError( 'Expected lfn list or list of lists of lfns for parametric input data', **kwargs )
 
     return S_OK()
 
-  #############################################################################
-  def setGenericParametricInput( self, inputlist ):
-    """ Helper function
+  def setParameterSequence( self, name, parameterList, addToWorkflow = False ):
+    """ Function to define a sequence of values for parametric jobs.
 
-       Define a generic parametric job with this function. Should not be used when
-       the ParametricInputData of ParametricInputSandbox are used.
-
-       :param inputlist: Input list of parameters to build the parametric job
-       :type inputlist: list
-
+    :param str name: sequence parameter name
+    :param list parameterList: list of parameter values
+    :param bool addToWorkflow: flag to add parameter to the workflow on the fly, if str, then
+                               use as the workflow parameter
+    :return:
     """
-    kwargs = {'inputlist':inputlist}
-    if not type( inputlist ) == type( [] ):
-      return self._reportError( 'Expected list for parameters', **kwargs )
-    self.parametric['GenericParameters'] = inputlist
-    return S_OK()
+
+    if self.numberOfParameters == 0:
+      self.numberOfParameters = len( parameterList )
+    elif self.numberOfParameters != len( parameterList ):
+      return S_ERROR( EWMSJDL, 'Parameter sequences of different length' )
+
+    self.parameterSeqs[name] = parameterList
+    if addToWorkflow:
+      if isinstance( addToWorkflow, basestring ):
+        self.wfArguments[name] = addToWorkflow
+      else:
+        self.wfArguments[name] = name
 
   #############################################################################
   def setInputDataPolicy( self, policy, dataScheduling = True ):
@@ -902,13 +914,12 @@ class Job( API ):
     self._addParameter( self.workflow, 'StdError', 'JDL', self.stderr, 'Standard error file' )
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
+    self._addParameter( self.workflow, 'arguments', 'string', '', 'Arguments to executable Step' )
     #Those 2 below are need for on-site resolution
     self._addParameter( self.workflow, 'ParametricInputData', 'string', '',
                         'Default null parametric input data value' )
     self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
                         'Default null parametric input sandbox value' )
-    self._addParameter( self.workflow, 'ParametricParameters', 'string', '',
-                        'Default null parametric input parameters value' )
 
   #############################################################################
 
@@ -960,35 +971,35 @@ class Job( API ):
             if os.path.isdir( check ):
               if re.search( '/$', check ): #users can specify e.g. /my/dir/lib/
                 check = check[:-1]
-              tarname = os.path.basename( check )
+              tarName = os.path.basename( check )
               directory = os.path.dirname( check ) #if just the directory this is null
               if directory:
-                cmd = 'tar cfz ' + tarname + '.tar.gz ' + ' -C ' + directory + ' ' + tarname
+                cmd = 'tar cfz ' + tarName + '.tar.gz ' + ' -C ' + directory + ' ' + tarName
               else:
-                cmd = 'tar cfz ' + tarname + '.tar.gz ' + tarname
+                cmd = 'tar cfz ' + tarName + '.tar.gz ' + tarName
 
               output = shellCall( 60, cmd )
               if not output['OK']:
                 self.log.error( 'Could not perform: %s' % ( cmd ) )
-              resolvedIS.append( tarname + '.tar.gz' )
+              resolvedIS.append( tarName + '.tar.gz' )
               self.log.verbose( 'Found directory ' + check + ', appending ' + check + '.tar.gz to Input Sandbox' )
 
       if os.path.isdir( name ):
         self.log.verbose( 'Found specified directory ' + name + ', appending ' + name + '.tar.gz to Input Sandbox' )
         if re.search( '/$', name ): #users can specify e.g. /my/dir/lib/
           name = name[:-1]
-        tarname = os.path.basename( name )
+        tarName = os.path.basename( name )
         directory = os.path.dirname( name ) #if just the directory this is null
         if directory:
-          cmd = 'tar cfz ' + tarname + '.tar.gz ' + ' -C ' + directory + ' ' + tarname
+          cmd = 'tar cfz ' + tarName + '.tar.gz ' + ' -C ' + directory + ' ' + tarName
         else:
-          cmd = 'tar cfz ' + tarname + '.tar.gz ' + tarname
+          cmd = 'tar cfz ' + tarName + '.tar.gz ' + tarName
 
         output = shellCall( 60, cmd )
         if not output['OK']:
           self.log.error( 'Could not perform: %s' % ( cmd ) )
         else:
-          resolvedIS.append( tarname + '.tar.gz' )
+          resolvedIS.append( tarName + '.tar.gz' )
 
     return resolvedIS
 
@@ -998,6 +1009,50 @@ class Job( API ):
     """Creates an XML representation of itself as a Job.
     """
     return self.workflow.toXML()
+
+  def _handleParameterSequences( self, paramsDict, arguments ):
+
+    for pName in self.parameterSeqs:
+      if pName in paramsDict:
+        if pName == "InputSandbox":
+          if isinstance( paramsDict[pName]['value'], list ):
+            paramsDict[pName]['value'].append( '%%(%s)s' % pName )
+          elif isinstance( paramsDict[pName]['value'], basestring ):
+            if paramsDict[pName]['value']:
+              paramsDict[pName]['value'] += ';%%(%s)s' % pName
+            else:
+              paramsDict[pName]['value'] = '%%(%s)s' % pName
+        else:
+          if isinstance( paramsDict[pName]['value'], list ):
+            currentParams = paramsDict[pName]['value']
+          elif isinstance( paramsDict[pName]['value'], basestring ):
+            if paramsDict[pName]['value']:
+              currentParams = paramsDict[pName]['value'].split( ';' )
+            else:
+              currentParams = []
+          tmpList = []
+          pData = self.parameterSeqs[pName]
+          if isinstance( pData[0], list ):
+            for pElement in pData:
+              tmpList.append( currentParams + pElement )
+          else:
+            for pElement in pData:
+              tmpList.append( currentParams + [pElement] )
+          self.parameterSeqs[pName] = tmpList
+          paramsDict[pName]['value'] = '%%(%s)s' % pName
+      else:
+        paramsDict[pName] = {}
+        paramsDict[pName]['type'] = 'JDL'
+        paramsDict[pName]['value'] = '%%(%s)s' % pName
+
+      paramsDict['Parameters.%s' % pName] = {}
+      paramsDict['Parameters.%s' % pName]['value'] = self.parameterSeqs[pName]
+      paramsDict['Parameters.%s' % pName]['type'] = 'JDL'
+      if pName in self.wfArguments:
+        arguments.append( ' -p %s=%%(%s)s' % ( self.wfArguments[pName],
+                                               pName ) )
+
+    return paramsDict, arguments
 
   #############################################################################
   def _toJDL( self, xmlFile = '', jobDescriptionObject = None ):  # messy but need to account for xml file being in /tmp/guid dir
@@ -1014,21 +1069,21 @@ class Job( API ):
       paramsDict[param.getName()] = {'type':param.getType(), 'value':param.getValue()}
 
     arguments = []
-    scriptname = 'jobDescription.xml'
+    scriptName = 'jobDescription.xml'
 
     if jobDescriptionObject is None:
       # if we are here it's because there's a real file, on disk, that is named 'jobDescription.xml'
       if self.script:
         if os.path.exists( self.script ):
-          scriptname = os.path.abspath( self.script )
-          self.log.verbose( 'Found script name %s' % scriptname )
+          scriptName = os.path.abspath( self.script )
+          self.log.verbose( 'Found script name %s' % scriptName )
         else:
           self.log.error( "File not found", self.script )
       else:
         if xmlFile:
           self.log.verbose( 'Found XML File %s' % xmlFile )
-          scriptname = xmlFile
-      self.addToInputSandbox.append( scriptname )
+          scriptName = xmlFile
+      self.addToInputSandbox.append( scriptName )
 
     elif isinstance( jobDescriptionObject, StringIO.StringIO ):
       self.log.verbose( "jobDescription is passed in as a StringIO object" )
@@ -1036,7 +1091,7 @@ class Job( API ):
     else:
       self.log.error( "Where's the job description?" )
 
-    arguments.append( os.path.basename( scriptname ) )
+    arguments.append( os.path.basename( scriptName ) )
     if paramsDict.has_key( 'LogLevel' ):
       if paramsDict['LogLevel']['value']:
         arguments.append( '-o LogLevel=%s' % ( paramsDict['LogLevel']['value'] ) )
@@ -1057,6 +1112,9 @@ class Job( API ):
         arguments.append( '%s' % ( paramsDict['JobConfigArgs']['value'] ) )
       else:
         self.log.warn( 'JobConfigArgs defined with null value' )
+    if self.parametricWFArguments:
+      for name, value in self.parametricWFArguments.items():
+        arguments.append( "-p %s='%s'" % ( name, value ) )
 
     classadJob.insertAttributeString( 'Executable', self.executable )
     self.addToOutputSandbox.append( self.stderr )
@@ -1107,63 +1165,36 @@ class Job( API ):
         paramsDict['InputData']['value'] = extraFiles
         paramsDict['InputData']['type'] = 'JDL'
 
-    # Handle here the Parametric values
-    if self.parametric:
-      for pType in ['InputData', 'InputSandbox']:
-        if self.parametric.has_key( pType ):
-          if paramsDict.has_key( pType ) and paramsDict[pType]['value']:
-            pData = self.parametric[pType]
-            # List of lists case
-            currentFiles = paramsDict[pType]['value'].split( ';' )
-            tmpList = []
-            if type( pData[0] ) == list:
-              for pElement in pData:
-                tmpList.append( currentFiles + pElement )
-            else:
-              for pElement in pData:
-                tmpList.append( currentFiles + [pElement] )
-            self.parametric[pType] = tmpList
+    # Handle parameter sequences
+    if self.numberOfParameters > 0:
+      paramsDict, arguments = self._handleParameterSequences( paramsDict, arguments )
 
-          paramsDict[pType] = {}
-          paramsDict[pType]['value'] = "%s"
-          paramsDict[pType]['type'] = 'JDL'
-          self.parametric['files'] = self.parametric[pType]
-          arguments.append( ' -p Parametric' + pType + '=%s' )
-          break
-
-      if self.parametric.has_key( 'files' ):
-        paramsDict['Parameters'] = {}
-        paramsDict['Parameters']['value'] = self.parametric['files']
-        paramsDict['Parameters']['type'] = 'JDL'
-      if self.parametric.has_key( 'GenericParameters' ):
-        paramsDict['Parameters'] = {}
-        paramsDict['Parameters']['value'] = self.parametric['GenericParameters']
-        paramsDict['Parameters']['type'] = 'JDL'
-        arguments.append( ' -p ParametricParameters=%s' )
-    ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     for name, props in paramsDict.iteritems():
       ptype = props['type']
       value = props['value']
+      if isinstance( value, basestring) and re.search( ';', value ):
+        value = value.split( ';' )
       if name.lower() == 'requirements' and ptype == 'JDL':
         self.log.verbose( 'Found existing requirements: %s' % ( value ) )
 
       if re.search( '^JDL', ptype ):
-        if type( value ) == list:
-          if type( value[0] ) == list:
+        if isinstance( value, list ):
+          if isinstance( value[0], list ):
             classadJob.insertAttributeVectorStringList( name, value )
           else:
-            classadJob.insertAttributeVectorString( name, value )
-        elif value == "%s":
+            classadJob.insertAttributeVectorInt( name, value )
+        elif isinstance( value, basestring ) and value:
           classadJob.insertAttributeInt( name, value )
-        elif not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
-          classadJob.insertAttributeString( name, value )
-        else:
-          classadJob.insertAttributeVectorString( name, value.split( ';' ) )
+        elif isinstance( value, ( int, long, float ) ):
+          classadJob.insertAttributeInt( name, value )
 
-    for fToBeRemoved in [scriptname, self.stdout, self.stderr]:
+    if self.numberOfParameters > 0:
+      classadJob.insertAttributeInt( 'Parameters', self.numberOfParameters )
+
+    for fToBeRemoved in [scriptName, self.stdout, self.stderr]:
       try:
         self.addToInputSandbox.remove( fToBeRemoved )
       except ValueError:
