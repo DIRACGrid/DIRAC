@@ -8,8 +8,6 @@
     initialize method and on the _getClients method.
 """
 
-__RCSID__ = "$Id$"
-
 import time
 import datetime
 from Queue import Queue
@@ -25,6 +23,8 @@ from DIRAC.Core.Security.ProxyInfo                                  import getPr
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
@@ -50,6 +50,7 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     self.ownerDN = ''
 
     self.pluginLocation = ''
+    self.bulkSubmissionFlag = False
 
     # for the threading
     self.transQueue = Queue()
