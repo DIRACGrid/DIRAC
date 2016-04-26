@@ -33,6 +33,8 @@ from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
+__RCSID__ = "$Id$"
+
 ########################################################################
 class FTSDB( DB ):
   """
@@ -115,7 +117,7 @@ class FTSDB( DB ):
 
   def _transaction( self, queries, connection = None ):
     """ execute transaction """
-    queries = [ queries ] if type( queries ) == str else queries
+    queries = [ queries ] if isinstance( queries, basestring ) else queries
     # # get cursor and connection
     getCursorAndConnection = self.dictCursor( connection )
     if not getCursorAndConnection['OK']:
@@ -143,7 +145,7 @@ class FTSDB( DB ):
       ret["lastrowid"] = lastrowid
       connection.autocommit( True )
       return ret
-    except MySQLdbError, error:
+    except MySQLdbError as error:
       self.log.exception( error )
       # # roll back
       connection.rollback()

@@ -147,15 +147,13 @@
 
 """
 
-__RCSID__ = "$Id$"
+import MySQLdb
 
 
 from DIRAC                      import gLogger
 from DIRAC                      import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time  import fromString
 from DIRAC.Core.Utilities       import DErrno
-
-import MySQLdb
 
 # This is for proper initialization of embedded server, it should only be called once
 try:
@@ -170,6 +168,9 @@ import collections
 import time
 import threading
 from types import DictType, ListType
+
+__RCSID__ = "$Id$"
+
 
 MAXCONNECTRETRY = 10
 
@@ -578,8 +579,8 @@ class MySQL( object ):
       return S_OK()
 
     self.log.debug( '_connect: Attempting to access DB',
-                       '[%s@%s] by user %s/%s.' %
-                       ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
+                    '[%s@%s] by user %s/%s.' %
+                    ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
     try:
       self.log.verbose( '_connect: Connected.' )
       self._connected = True
