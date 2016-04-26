@@ -217,7 +217,7 @@ class StepInstance( AttributeCollection ):
         filled above in the workflow
     """
     print 'Executing StepInstance', self.getName(), 'of type', self.getType(), definitions.keys()
-    # Report the Application state if the coresponding tool is supplied
+    # Report the Application state if the corresponding tool is supplied
     if self.workflow_commons.has_key( 'JobReport' ):
       if self.parent.workflowStatus['OK']:
         result = self.workflow_commons['JobReport'].setApplicationStatus( 'Executing ' + self.getName() )
