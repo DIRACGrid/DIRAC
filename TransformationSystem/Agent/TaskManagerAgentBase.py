@@ -75,6 +75,9 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
     # Default clients
     self.transClient = TransformationClient()
 
+    # Bulk submission flag
+    self.bulkSubmissionFlag = self.am_getOption( 'BulkSubmission', False )
+
     # setting up the threading
     maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', 15 )
     threadPool = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
@@ -453,8 +456,12 @@ class TaskManagerAgentBase( AgentModule, TransformationAgentsUtilities ):
       self._logVerbose( "No tasks found for submission", transID = transID, method = method )
       return tasksToSubmit
     self._logInfo( "Obtained %d tasks for submission" % len( tasks ), transID = transID, method = method )
-    preparedTransformationTasks = clients['TaskManager'].prepareTransformationTasks( transBody, tasks,
-                                                                                     self.owner, self.ownerGroup, self.ownerDN )
+    preparedTransformationTasks = clients['TaskManager'].prepareTransformationTasks( transBody,
+                                                                                     tasks,
+                                                                                     self.owner,
+                                                                                     self.ownerGroup,
+                                                                                     self.ownerDN,
+                                                                                     self.bulkSubmissionFlag )
     self._logDebug( "prepareTransformationTasks return value: %s" % preparedTransformationTasks,
                     method = method, transID = transID )
     if not preparedTransformationTasks['OK']:

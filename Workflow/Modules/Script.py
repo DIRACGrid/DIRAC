@@ -44,6 +44,8 @@ class Script( ModuleBase ):
 
     if self.step_commons.has_key( 'arguments' ):
       self.arguments = self.step_commons['arguments']
+      if not self.arguments.strip() and 'arguments' in self.workflow_commons:
+        self.arguments = self.workflow_commons['arguments']
 
   #############################################################################
 
@@ -110,8 +112,9 @@ class Script( ModuleBase ):
   def _finalize( self ):
     """ simply finalize
     """
-    status = "%s (%s %s) Successful" % ( os.path.basename( self.executable ),
-                                         self.applicationName,
-                                         self.applicationVersion )
+    applicationString = os.path.basename( self.executable )
+    if self.applicationName:
+      applicationString += ' (%s %s)' % ( self.applicationName, self.applicationVersion )
+    status = "%s successful" % applicationString
 
     super( Script, self )._finalize( status )

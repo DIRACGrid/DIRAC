@@ -14,12 +14,6 @@ from DIRAC.TransformationSystem.Client.TransformationClient   import Transformat
 from DIRAC.TransformationSystem.Client.Transformation         import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
-def getSitesForSE( ses ):
-  if ses == 'pippo':
-    return {'OK':True, 'Value':['Site2', 'Site3']}
-  else:
-    return {'OK':True, 'Value':['Site3']}
-
 #############################################################################
 
 class ClientsTestCase( unittest.TestCase ):
@@ -59,6 +53,7 @@ class ClientsTestCase( unittest.TestCase ):
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
                                       requestValidator = self.reqValidatorMock )
+
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -113,7 +108,6 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
-
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
@@ -132,8 +126,20 @@ class WorkflowTasksSuccess( ClientsTestCase ):
     self.assertEqual( res, ['ANY'] )
     res = self.wfTasks._handleDestination( {'TargetSE':'Unknown'} )
     self.assertEqual( res, ['ANY'] )
-    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':''} )
-    self.assertEqual( res, ['Site1', 'Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':''} )
+    self.assertEqual( res, ['Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo'} )
+    self.assertEqual( res, ['Site1','Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site1','Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1;Site2;Site3', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site1', 'Site2', 'Site3'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site2', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['Site2'] )
+    res = self.wfTasks._handleDestination( {'Site':'ANY', 'TargetSE':'pippo, pluto'} )
+    self.assertEqual( res, ['ANY'] )
+    res = self.wfTasks._handleDestination( {'Site':'Site1', 'TargetSE':'pluto'} )
+    self.assertEqual( res, ['Site1'] )
 
 #############################################################################
 
@@ -148,7 +154,8 @@ class RequestTasksSuccess( ClientsTestCase ):
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )
-    self.assertEqual( len( taskDict ), 3 )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 2 )
     for task in res['Value'].values():
       self.assert_( isinstance( task['TaskObject'], Request ) )
       self.assertEqual( task['TaskObject'][0].Type, 'ReplicateAndRegister' )
