@@ -1,17 +1,10 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-# File :   dirac-status-compoment
-# Author : Ricardo Graciani
-########################################################################
 """
 Status of DIRAC components using runsvstat utility
 """
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -21,6 +14,9 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  service|agent: Name of the particular component (default *: all)' ] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
 
 __RCSID__ = "$Id$"
 

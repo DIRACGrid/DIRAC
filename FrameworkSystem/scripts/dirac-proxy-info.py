@@ -3,22 +3,8 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
-import sys
 
-import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.NTP import getClockDeviation
-from DIRAC import gLogger
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo, formatProxyInfoAsString, formatProxyStepsInfoAsString
-from DIRAC.Core.Security import VOMS
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-
-__RCSID__ = "$Id$"
-
-
-class Params:
+class Params(object):
 
   proxyLoc = False
   checkExists = False
@@ -69,6 +55,9 @@ class Params:
 
 params = Params()
 
+import sys
+
+from DIRAC.Core.Base import Script
 Script.registerSwitch( "f:", "file=", "File to use as user key", params.setProxyLocation )
 Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.registerSwitch( "n", "novoms", "Disable VOMS", params.disableVOMS )
@@ -80,6 +69,18 @@ Script.registerSwitch( "m", "uploadedinto", "Show uploaded proxies info", params
 
 Script.disableCS()
 Script.parseCommandLine()
+
+import DIRAC
+from DIRAC.Core.Utilities.NTP import getClockDeviation
+from DIRAC import gLogger
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo, formatProxyInfoAsString, formatProxyStepsInfoAsString
+from DIRAC.Core.Security import VOMS
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
+
+__RCSID__ = "$Id$"
+
 
 if params.csEnabled:
   retVal = Script.enableCS()

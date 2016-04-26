@@ -49,6 +49,7 @@ from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
+from DIRAC.Core.Utilities.File                           import mkDir
 from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
 __RCSID__ = "$Id$"
@@ -1603,24 +1604,16 @@ class Dirac( API ):
       return ret
     jobID = ret['Value']
 
-    # TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = outputDir
       if not noJobDir:
         dirPath = '%s/%s' % ( outputDir, jobID )
-      # if os.path.exists( dirPath ):
-      #  return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
         return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
-
-    try:
-      if not os.path.exists( dirPath ):
-        os.makedirs( dirPath )
-    except Exception as x:
-      return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
+    mkDir(dirPath)
 
     # New download
     result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )

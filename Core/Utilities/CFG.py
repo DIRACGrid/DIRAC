@@ -1,4 +1,5 @@
-__RCSID__ = "$Id$"
+""" This is the main module that interprets DIRAC cfg format
+"""
 
 import types
 import copy
@@ -9,6 +10,8 @@ try:
   gZipEnabled = True
 except ImportError:
   gZipEnabled = False
+
+  __RCSID__ = "$Id$"
 
 try:
   from DIRAC.Core.Utilities              import List, ThreadSafe
@@ -28,8 +31,8 @@ except Exception:
 
   class ListDummy:
     def fromChar( self, inputString, sepChar = "," ):
-      if not ( type( inputString ) in StringTypes and
-               type( sepChar ) in StringTypes and
+      if not ( isinstance( inputString, basestring) and
+               isinstance( sepChar, basestring) and
                sepChar ): # to prevent getting an empty String as argument
         return None
 
@@ -215,8 +218,8 @@ class CFG( object ):
     end = result[ 'levelsBelow' ]
 
     if end in cfg.__orderedList:
-      del( cfg.__commentDict[ end ] )
-      del( cfg.__dataDict[ end ] )
+      del cfg.__commentDict[ end ]
+      del cfg.__dataDict[ end ]
       cfg.__orderedList.remove( end )
       return True
     return False
@@ -544,8 +547,8 @@ class CFG( object ):
       oldCfg.__orderedList.remove( oldEnd )
       newCfg.__orderedList.insert( refKeyPos, newEnd )
 
-      del( oldCfg.__dataDict[ oldEnd ] )
-      del( oldCfg.__commentDict[ oldEnd ] )
+      del oldCfg.__dataDict[ oldEnd ]
+      del oldCfg.__commentDict[ oldEnd ]
       return True
     else:
       return False
@@ -839,7 +842,7 @@ class CFG( object ):
             return result
         if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
           prevPos = self.__orderedList.index( key )
-          del( self.__orderedList[ prevPos ] )
+          del self.__orderedList[ prevPos ]
           self.__orderedList.insert( iPos, key )
       elif action == "addOpt":
         if key in self.listOptions():
@@ -923,9 +926,7 @@ class CFG( object ):
           currentLevel = levelList.pop()
         elif line[ index ] == "=":
           lFields = line.split( "=" )
-          currentLevel.setOption( lFields[0].strip(),
-           "=".join( lFields[1:] ).strip(),
-           currentComment )
+          currentLevel.setOption( lFields[0].strip(), "=".join( lFields[1:] ).strip(), currentComment )
           currentlyParsedString = ""
           currentComment = ""
           break
@@ -943,10 +944,9 @@ class CFG( object ):
   def loadFromDict( self, data ):
     for k in data:
       value = data[ k ]
-      vType = type( value )
-      if type( value ) == types.DictType:
+      if isinstance( value, dict ):
         self.createNewSection( k , "", CFG().loadFromDict( value ) )
-      elif vType in ( types.ListType, types.TupleType ):
+      elif isinstance( value, (list, tuple) ):
         self.setOption( k , ", ".join( value ), "" )
       else:
         self.setOption( k , str( value ), "" )
