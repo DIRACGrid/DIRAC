@@ -407,9 +407,6 @@ class WorkflowTasks( TaskBase ):
       else:
         self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
         seqDict['Site'] = sites
-        if not res['OK']:
-          self._logError( 'Could not set the site: %s' % res['Message'], transID = transID )
-          return S_ERROR( ETSUKN, "Can not evaluate destination site" )
 
       constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
       self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
@@ -446,7 +443,7 @@ class WorkflowTasks( TaskBase ):
         paramSeqDict.setdefault( pName, [] )
         paramSeqDict[pName].append( seqDict[pName] )
 
-    for paramName, paramSeq in paramSeqDict.items():
+    for paramName, paramSeq in paramSeqDict.iteritems():
       if paramName in [ 'JOB_ID', 'PRODUCTION_ID', 'InputData' ]:
         oJob.setParameterSequence( paramName, paramSeq, addToWorkflow=paramName )
       else:
