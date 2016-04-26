@@ -362,10 +362,9 @@ class WorkflowTasks( TaskBase ):
       ownerDN = res['Value'][0]
 
     if bulkSubmissionFlag:
-      result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
+      return self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
     else:
-      result = self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
-    return result
+      return self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
 
   def __prepareTransformationTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
     """ Prepare transformation tasks with a single job object for bulk submission
@@ -607,10 +606,9 @@ class WorkflowTasks( TaskBase ):
   def submitTransformationTasks( self, taskDict ):
 
     if 'BulkJobObject' in taskDict:
-      result = self.__submitTransformationTasksBulk( taskDict )
+      return self.__submitTransformationTasksBulk( taskDict )
     else:
-      result = self.__submitTransformationTasks( taskDict )
-    return result
+      return self.__submitTransformationTasks( taskDict )
 
   def __submitTransformationTasksBulk( self, taskDict ):
     """ Submit jobs in one go with one parametric job
@@ -636,7 +634,7 @@ class WorkflowTasks( TaskBase ):
 
     submitted = len( jobIDList )
     self._logInfo( 'submitTransformationTasksBulk: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                              time.time() - startTime ),
+                                                                                                  time.time() - startTime ),
                    transID = transID )
     return S_OK( taskDict )
 
