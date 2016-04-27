@@ -1,5 +1,5 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" Threaded implementation of services
+"""
 
 import os
 import time
@@ -7,12 +7,17 @@ import re
 import threading
 import zipfile
 import zlib
+
 import DIRAC
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+
+__RCSID__ = "$Id$"
+
 
 class ServiceInterface( threading.Thread ):
 
@@ -41,10 +46,7 @@ class ServiceInterface( threading.Thread ):
     self.start()
 
   def __loadConfigurationData( self ):
-    try:
-      os.makedirs( os.path.join( DIRAC.rootPath, "etc", "csbackup" ) )
-    except:
-      pass
+    mkDir( os.path.join( DIRAC.rootPath, "etc", "csbackup" ) )
     gConfigurationData.loadConfigurationData()
     if gConfigurationData.isMaster():
       bBuiltNewConfiguration = False
@@ -90,7 +92,7 @@ class ServiceInterface( threading.Thread ):
     self.dAliveSlaveServers[ sSlaveURL ] = time.time()
     if bNewSlave:
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
-                                                    ", ".join( self.dAliveSlaveServers.keys() ) ) )
+                                                  ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
 
   def __checkSlavesStatus( self, forceWriteConfiguration = False ):
@@ -101,11 +103,11 @@ class ServiceInterface( threading.Thread ):
     for sSlaveURL in lSlaveURLs:
       if time.time() - self.dAliveSlaveServers[ sSlaveURL ] > iGraceTime:
         gLogger.info( "Found dead slave", sSlaveURL )
-        del( self.dAliveSlaveServers[ sSlaveURL ] )
+        del self.dAliveSlaveServers[ sSlaveURL ]
         bModifiedSlaveServers = True
     if bModifiedSlaveServers or forceWriteConfiguration:
       gConfigurationData.setServers( "%s, %s" % ( self.sURL,
-                                                    ", ".join( self.dAliveSlaveServers.keys() ) ) )
+                                                  ", ".join( self.dAliveSlaveServers.keys() ) ) )
       self.__generateNewVersion()
 
   def getCompressedConfiguration( self ):
@@ -231,7 +233,7 @@ class ServiceInterface( threading.Thread ):
       elif action == "modSec":
         if objectName in realModifiedSections:
           result = self._checkConflictsInModifications( realModifiedSections[ objectName ],
-                                                         modAc[3], "%s/%s" % ( parentSection, objectName ) )
+                                                        modAc[3], "%s/%s" % ( parentSection, objectName ) )
           if not result[ 'OK' ]:
             return result
     for modAc in realModList:
@@ -255,7 +257,7 @@ class ServiceInterface( threading.Thread ):
     prevCliToCurCliModList = prevCliCFG.getModifications( curCliCFG )
     prevCliToCurSrvModList = prevCliCFG.getModifications( curSrvCFG )
     result = self._checkConflictsInModifications( prevCliToCurSrvModList,
-                                                   prevCliToCurCliModList )
+                                                  prevCliToCurCliModList )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
     #Merge!

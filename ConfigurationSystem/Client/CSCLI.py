@@ -1,22 +1,23 @@
 ########################################################################
-# $HeadURL$
 # File :   CSCLI.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__ = "$Id$"
 
 import sys
-import signal
 import types
 import atexit
 import os
 import readline
 
+from DIRAC import gLogger
+
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import gLogger
+
+__RCSID__ = "$Id$"
 
 def _showTraceback():
   import traceback
@@ -57,8 +58,7 @@ class CSCLI( CLI ):
     # store history
     histfilename = os.path.basename(sys.argv[0])
     historyFile = os.path.expanduser( "~/.dirac/%s.history" % histfilename[0:-3])
-    if not os.path.exists( os.path.dirname(historyFile) ):
-      os.makedirs( os.path.dirname(historyFile) )
+    mkDir(os.path.dirname(historyFile))
     if os.path.isfile( historyFile ):
       readline.read_history_file( historyFile )
     readline.set_history_length(1000)

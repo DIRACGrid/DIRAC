@@ -23,8 +23,10 @@
     and this also means that this test is not easy to set up.
 """
 
-import unittest, datetime
-import os, tempfile
+import unittest
+import datetime
+import os
+import tempfile
 # from mock import Mock
 
 from DIRAC.Core.Base.Script import parseCommandLine

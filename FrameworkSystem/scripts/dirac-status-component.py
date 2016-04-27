@@ -1,16 +1,11 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-# File :   dirac-status-compoment
-# Author : Ricardo Graciani
-########################################################################
 """
 Status of DIRAC components using runsvstat utility
 """
-__RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
+
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
@@ -19,6 +14,12 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  service|agent: Name of the particular component (default *: all)' ] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
+
+__RCSID__ = "$Id$"
+
 if len( args ) > 2:
   Script.showHelp()
   exit( -1 )
@@ -30,8 +31,6 @@ if len( args ) > 0:
 if system != '*':
   if len( args ) > 1:
     component = args[1]
-#
-from DIRAC.Core.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
 gComponentInstaller.exitOnError = True
 #

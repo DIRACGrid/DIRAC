@@ -121,6 +121,9 @@ class RequestTasks( TaskBase ):
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
+    if not taskDict:
+      return S_OK({})
+
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
@@ -362,10 +365,9 @@ class WorkflowTasks( TaskBase ):
       ownerDN = res['Value'][0]
 
     if bulkSubmissionFlag:
-      result = self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
+      return self.__prepareTransformationTasksBulk( transBody, taskDict, owner, ownerGroup, ownerDN )
     else:
-      result = self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
-    return result
+      return self.__prepareTransformationTasks( transBody, taskDict, owner, ownerGroup, ownerDN )
 
   def __prepareTransformationTasksBulk( self, transBody, taskDict, owner, ownerGroup, ownerDN ):
     """ Prepare transformation tasks with a single job object for bulk submission
@@ -407,9 +409,6 @@ class WorkflowTasks( TaskBase ):
       else:
         self._logVerbose( 'Setting Site: ', str( sites ), transID = transID )
         seqDict['Site'] = sites
-        if not res['OK']:
-          self._logError( 'Could not set the site: %s' % res['Message'], transID = transID )
-          return S_ERROR( ETSUKN, "Can not evaluate destination site" )
 
       constructedName = str( transID ).zfill( 8 ) + '_' + str( taskNumber ).zfill( 8 )
       self._logVerbose( 'Setting task name to %s' % constructedName, transID = transID )
@@ -446,7 +445,7 @@ class WorkflowTasks( TaskBase ):
         paramSeqDict.setdefault( pName, [] )
         paramSeqDict[pName].append( seqDict[pName] )
 
-    for paramName, paramSeq in paramSeqDict.items():
+    for paramName, paramSeq in paramSeqDict.iteritems():
       if paramName in [ 'JOB_ID', 'PRODUCTION_ID', 'InputData' ]:
         oJob.setParameterSequence( paramName, paramSeq, addToWorkflow=paramName )
       else:
@@ -610,10 +609,9 @@ class WorkflowTasks( TaskBase ):
   def submitTransformationTasks( self, taskDict ):
 
     if 'BulkJobObject' in taskDict:
-      result = self.__submitTransformationTasksBulk( taskDict )
+      return self.__submitTransformationTasksBulk( taskDict )
     else:
-      result = self.__submitTransformationTasks( taskDict )
-    return result
+      return self.__submitTransformationTasks( taskDict )
 
   def __submitTransformationTasksBulk( self, taskDict ):
     """ Submit jobs in one go with one parametric job
@@ -639,7 +637,7 @@ class WorkflowTasks( TaskBase ):
 
     submitted = len( jobIDList )
     self._logInfo( 'submitTransformationTasksBulk: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
-                                                                                              time.time() - startTime ),
+                                                                                                  time.time() - startTime ),
                    transID = transID )
     return S_OK( taskDict )
 

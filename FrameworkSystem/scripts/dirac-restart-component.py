@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :   dirac-restart-component
-# Author : Ricardo Graciani
-########################################################################
 """
   Restart DIRAC component using runsvctrl utility
 """

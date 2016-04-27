@@ -5,7 +5,6 @@
 """
   Base class for all agent modules
 """
-__RCSID__ = "$Id$"
 
 import os
 import threading
@@ -13,20 +12,15 @@ import time
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities import Time, MemStat
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
-from DIRAC.Core.Utilities import Time, MemStat
 
-def _checkDir( path ):
-  try:
-    os.makedirs( path )
-  except Exception:
-    pass
-  if not os.path.isdir( path ):
-    raise Exception( 'Can not create %s' % path )
+__RCSID__ = "$Id$"
 
 class AgentModule( object ):
   """ Base class for all agent modules
@@ -139,7 +133,7 @@ class AgentModule( object ):
                                                              *agentName.split( "/" ) )
     self.__configDefaults[ 'shifterProxy' ] = ''
     self.__configDefaults[ 'shifterProxyLocation' ] = os.path.join( self.__configDefaults[ 'WorkDirectory' ],
-                                                                        '.shifterCred' )
+                                                                    '.shifterCred' )
 
 
     if isinstance( properties, dict):
@@ -179,9 +173,9 @@ class AgentModule( object ):
       return S_ERROR( "initialize must return S_OK/S_ERROR" )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
-    _checkDir( self.am_getControlDirectory() )
+    mkDir( self.am_getControlDirectory() )
     workDirectory = self.am_getWorkDirectory()
-    _checkDir( workDirectory )
+    mkDir( workDirectory )
     # Set the work directory in an environment variable available to subprocesses if needed
     os.environ['AGENT_WORKDIRECTORY'] = workDirectory
 
@@ -393,7 +387,9 @@ class AgentModule( object ):
     wallTime = time.time() - initialWallTime
     stats = os.times()
     cpuTime = stats[0] + stats[2] - initialCPUTime
-    percentage = cpuTime / wallTime * 100.
+    percentage = 0
+    if wallTime:
+      percentage = cpuTime / wallTime * 100.
     if percentage > 0:
       gMonitor.addMark( 'CPU', percentage )
 

@@ -1,11 +1,8 @@
-########################################################################
-# File: IRODSStorageElementHandler.py
-########################################################################
-""" 
+"""
 :mod: IRODSStorageElementHandler
 
 .. module: IRODSStorageElementHandler
-  :synopsis: IRODSStorageElementHandler is the implementation of a simple StorageElement  
+  :synopsis: IRODSStorageElementHandler is the implementation of a simple StorageElement
   service with the iRods SE as a backend
 
 The following methods are available in the Service interface
@@ -25,8 +22,6 @@ The class can be used as the basis for more advanced StorageElement implementati
 
 """
 
-__RCSID__ = "$Id$"
-
 ## imports
 import os
 import stat
@@ -43,34 +38,37 @@ from irods import rcConnect , rcDisconnect , clientLoginWithPassword, \
                   irodsCollection, irodsOpen, \
                   getResources , getResource
 
+__RCSID__ = "$Id$"
+
+
 """
 iRods Glossary:
 
-Server: An iRODS Server is software that interacts with the access protocol of a 
-specific storage system; enables storing and sharing data distributed geographically 
+Server: An iRODS Server is software that interacts with the access protocol of a
+specific storage system; enables storing and sharing data distributed geographically
 and across administrative domains.
 
-Resource: A resource, or storage resource, is a software/hardware system that stores 
-digital data. Currently iRODS can use a Unix file system as a resource. As other 
-iRODS drivers are written, additional types of resources will be included. iRODS 
-clients can operate on local or remote data stored on different types of resources, 
+Resource: A resource, or storage resource, is a software/hardware system that stores
+digital data. Currently iRODS can use a Unix file system as a resource. As other
+iRODS drivers are written, additional types of resources will be included. iRODS
+clients can operate on local or remote data stored on different types of resources,
 through a common interface.
 
-Zone: An iRODS Zone is an independent iRODS system consisting of an iCAT-enabled server, 
-optional additional distributed iRODS Servers (which can reach hundreds, worldwide) and 
-clients. Each Zone has a unique name. An iRODS Zone can interoperate with other Zones 
+Zone: An iRODS Zone is an independent iRODS system consisting of an iCAT-enabled server,
+optional additional distributed iRODS Servers (which can reach hundreds, worldwide) and
+clients. Each Zone has a unique name. An iRODS Zone can interoperate with other Zones
 in what is called Federation
 
-Collection: All Data Objects stored in an iRODS/iCat system are stored in some Collection, 
-which is a logical name for that set of data objects. A Collection can have sub-collections, 
-and hence provides a hierarchical structure. An iRODS/iCAT Collection is like a directory 
-in a Unix file system (or Folder in Windows), but is not limited to a single device or 
-partition. A Collection is logical or so that the data objects can span separate and 
-heterogeneous storage devices (i.e. is infrastructure and administrative domain independent). 
+Collection: All Data Objects stored in an iRODS/iCat system are stored in some Collection,
+which is a logical name for that set of data objects. A Collection can have sub-collections,
+and hence provides a hierarchical structure. An iRODS/iCAT Collection is like a directory
+in a Unix file system (or Folder in Windows), but is not limited to a single device or
+partition. A Collection is logical or so that the data objects can span separate and
+heterogeneous storage devices (i.e. is infrastructure and administrative domain independent).
 Each Data Object in a Collection or sub-collection must have a unique name in that Collection.
 
-Data Object: A Data Object is a single a "stream-of-bytes" entity that can be uniquely 
-identified, basically a file stored in iRODS. It is given a Unique Internal Identifier in 
+Data Object: A Data Object is a single a "stream-of-bytes" entity that can be uniquely
+identified, basically a file stored in iRODS. It is given a Unique Internal Identifier in
 iRODS (allowing a global name space), and is associated with a Collection.
 
 Collection is a directory
@@ -93,7 +91,7 @@ IRODS_RESOURCE = None
 def initializeIRODSStorageElementHandler( serviceInfo ):
   """ Initialize Storage Element global settings
 """
-  
+
   global IRODS_HOST
   global IRODS_PORT
   global IRODS_ZONE
@@ -191,13 +189,13 @@ class IRODSStorageElementHandler( RequestHandler ):
     conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
-    
+
     file_path = self.__resolveFileID( path, userDict )
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
     file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
-    resultDict = {} 
+    resultDict = {}
 
     irodsFile = irodsOpen( conn , file_path , "r" )
     if irodsFile:
@@ -239,9 +237,9 @@ class IRODSStorageElementHandler( RequestHandler ):
     conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
-    
+
     file_path = self.__resolveFileID( fileID, userDict )
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
     file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
@@ -252,7 +250,7 @@ class IRODSStorageElementHandler( RequestHandler ):
       coll = irodsCollection( conn, file_path )
       if coll:
         return S_OK( True )
-    return S_OK( False )  
+    return S_OK( False )
 
   types_getMetadata = [StringTypes]
   def export_getMetadata( self, fileID ):
@@ -292,7 +290,7 @@ class IRODSStorageElementHandler( RequestHandler ):
       return S_ERROR( error )
 
     file_path = self.__resolveFileID( dir_path, userDict )
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
     irodsPath = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % irodsPath )
 
@@ -307,7 +305,7 @@ class IRODSStorageElementHandler( RequestHandler ):
         return S_ERROR( 'Directory not found' )
       objects = coll.getObjects()
       fileList = [ x[0] for x in objects ]
-      dirList = coll.getSubCollections()  
+      dirList = coll.getSubCollections()
 
     resultDict = {}
     if mode == 'l':
@@ -385,7 +383,7 @@ class IRODSStorageElementHandler( RequestHandler ):
       coll = self.__changeCollection( coll , path )
 
     file_path = irodsHome + file_path
- 
+
     try:
       if IRODS_RESOURCE:
         irodsFile = coll.create( file_ , IRODS_RESOURCE )
@@ -416,7 +414,7 @@ token is used for access rights confirmation.
       return S_ERROR( error )
 
     file_path = self.__resolveFileID( fileID, userDict )
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
     file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
@@ -496,7 +494,7 @@ token is used for access rights confirmation.
       return S_ERROR( error )
 
     file_path = self.__resolveFileID( fileID, userDict )
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
     file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
 
@@ -505,7 +503,7 @@ token is used for access rights confirmation.
       rcDisconnect( conn )
       gLogger.error( "Failed to get file object" )
       return S_ERROR( "Failed to get file object" )
-    
+
     if self.__confirmToken( token, fileID, 'x' ):
       try:
         status = irodsFile.delete()
@@ -545,12 +543,12 @@ token is used for access rights confirmation.
     conn , error, userDict = self.__irodsClient( )
     if not conn:
       return S_ERROR( error )
-    
+
     file_path = self.__resolveFileID( fileID, userDict )
-    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME ) 
+    irodsHome = userDict.get( 'iRodsHome', IRODS_HOME )
     file_path = irodsHome + file_path
     gLogger.debug( "file_path to read: %s" % file_path )
-    
+
     coll = irodsCollection( conn, file_path )
     if not coll:
       return S_ERROR( 'Directory not found' )
@@ -558,7 +556,7 @@ token is used for access rights confirmation.
     if objects:
       return S_ERROR( 'Directory is not empty' )
     coll.delete()
-    
+
     return S_ERROR()
 
   types_removeFileList = [ ListType, StringTypes ]
@@ -618,23 +616,23 @@ token is used for access rights confirmation.
     """ Get details on user account
     """
     credentials = self.getRemoteCredentials()
-    if credentials: 
+    if credentials:
       diracUser = credentials.get( "username" )
       diracGroup = credentials.get( "group" )
     if not ( diracUser and diracGroup ):
       return S_ERROR( 'Failed to get DIRAC user name and/or group' )
     vo = getVOForGroup( diracGroup )
-    
+
     diracHome = ''
     if vo:
       diracHome = '/%s/user/%s/%s' % ( vo, diracUser[0], diracUser )
-    
+
     cfgPath = self.serviceInfoDict[ 'serviceSectionPath' ]
     gLogger.debug( "cfgPath: %s" % cfgPath )
-    irodsUser = gConfig.getValue( "%s/UserCredentials/%s/iRodsUser" % ( cfgPath , diracUser ) , diracUser )  
-    irodsHome = gConfig.getValue( "%s/UserCredentials/%s/iRodsHome" % ( cfgPath , diracUser ) , '' ) 
-    irodsGroup = gConfig.getValue( "%s/UserCredentials/%s/iRodsGroup" % ( cfgPath , diracUser ) , '' ) 
-    irodsPassword = gConfig.getValue( "%s/UserCredentials/%s/iRodsPassword" % ( cfgPath , diracUser ) , '' ) 
+    irodsUser = gConfig.getValue( "%s/UserCredentials/%s/iRodsUser" % ( cfgPath , diracUser ) , diracUser )
+    irodsHome = gConfig.getValue( "%s/UserCredentials/%s/iRodsHome" % ( cfgPath , diracUser ) , '' )
+    irodsGroup = gConfig.getValue( "%s/UserCredentials/%s/iRodsGroup" % ( cfgPath , diracUser ) , '' )
+    irodsPassword = gConfig.getValue( "%s/UserCredentials/%s/iRodsPassword" % ( cfgPath , diracUser ) , '' )
 
     resultDict = {}
     resultDict['DIRACUser'] = diracUser
@@ -644,19 +642,19 @@ token is used for access rights confirmation.
     resultDict['iRodsGroup'] = irodsGroup
     resultDict['iRodsHome'] = irodsHome
     resultDict['iRodsPassword'] = irodsPassword
-    
+
     return S_OK( resultDict )
 
   def __irodsClient( self , user = None ):
     """ Get the iRods client
     """
     global IRODS_USER
-    
+
     userDict = {}
     result = self.__getUserDetails()
     if not result['OK']:
       return False , "Failed to get iRods user info", userDict
-    
+
     userDict = result['Value']
 
     IRODS_USER = userDict['iRodsUser']

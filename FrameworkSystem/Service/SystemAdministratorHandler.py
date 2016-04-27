@@ -18,6 +18,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import CFG, Os
+from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
@@ -348,7 +349,7 @@ class SystemAdministratorHandler( RequestHandler ):
     oldPath = os.readlink( oldLink )
     proLink = os.path.join( gComponentInstaller.instancePath, 'pro' )
     os.remove( proLink )
-    os.symlink( oldPath, proLink )
+    mkLink( oldPath, proLink )
 
     return S_OK( oldPath )
 

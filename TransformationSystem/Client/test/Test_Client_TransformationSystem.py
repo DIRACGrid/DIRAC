@@ -16,6 +16,21 @@ from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
 #############################################################################
 
+
+class reqValFake_C(object):
+  def validate(self, opsInput):
+    for ops in opsInput:
+      if not len(ops):
+        return {'OK': False}
+      for f in ops:
+        try:
+          if not f.LFN:
+            return {'OK': False}
+        except:
+          return {'OK': False}
+    return {'OK': True}
+reqValFake = reqValFake_C()
+
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
   """
@@ -52,8 +67,8 @@ class ClientsTestCase( unittest.TestCase ):
 
     self.requestTasks = RequestTasks( transClient = self.mockTransClient,
                                       requestClient = self.mockReqClient,
-                                      requestValidator = self.reqValidatorMock )
-
+                                      requestValidator = reqValFake
+                                      )
     self.tc = TransformationClient()
     self.transformation = Transformation()
 
@@ -108,6 +123,7 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
+    self.assertTrue(res['OK'])
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
@@ -118,6 +134,21 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                                      }
                             }
                     )
+
+    taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
+                2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
+                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
+
+    res = self.wfTasks.prepareTransformationTasks( '', dict(taskDict), 'test_user', 'test_group', 'test_DN', bulkSubmissionFlag = True )
+    self.assertTrue(res['OK'])
+    self.assertEqual( res['Value'][1],
+                      {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'})
+    self.assertEqual( res['Value'][2],
+                      {'a2': 'aa2', 'TransformationID': 1, 'b2':'bb2', 'InputData':['a1', 'a2']})
+    self.assertEqual( res['Value'][3],
+                      {'TransformationID':2, 'a3':'aa3', 'b3':'bb3'})
+    self.assertTrue('BulkJobObject' in res['Value'])
+
 
   def test__handleDestination( self ):
     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )
@@ -146,11 +177,24 @@ class WorkflowTasksSuccess( ClientsTestCase ):
 class RequestTasksSuccess( ClientsTestCase ):
 
   def test_prepareTranformationTasks( self ):
+
+    #No tasks in input
+    taskDict = {}
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    self.assertEqual( len( taskDict ), 0 )
+
+    #3 tasks, 1 task not OK (in second transformation)
+    taskDict = {123:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
+    res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
+    self.assert_( res['OK'] )
+    # We should "lose" one of the task in the preparation
+    self.assertEqual( len( taskDict ), 0 )
+
     taskDict = {1:{'TransformationID':1, 'TargetSE':'SE1', 'b1':'bb1', 'Site':'MySite',
                    'InputData':['/this/is/a1.lfn', '/this/is/a2.lfn']},
                 2:{'TransformationID':1, 'TargetSE':'SE2', 'b2':'bb2', 'InputData':"/this/is/a1.lfn;/this/is/a2.lfn"},
-                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}
-                }
+                3:{'TransformationID':2, 'TargetSE':'SE3', 'b3':'bb3', 'InputData':''}}
 
     res = self.requestTasks.prepareTransformationTasks( '', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN' )
     self.assert_( res['OK'] )

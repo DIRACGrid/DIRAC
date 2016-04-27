@@ -2,8 +2,6 @@
 """
 Do the initial installation and configuration of the DIRAC MySQL server
 """
-__RCSID__ = "$Id$"
-#
 from DIRAC.Core.Base import Script
 Script.disableCS()
 Script.setUsageMessage( '\n'.join( ['Stop DIRAC component using runsvctrl utility',
@@ -14,6 +12,11 @@ Script.setUsageMessage( '\n'.join( ['Stop DIRAC component using runsvctrl utilit
                                     '  service|agent: Name of the particular component (default *: all)' ] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
+
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
+__RCSID__ = "$Id$"
+
 if len( args ) > 2:
   Script.showHelp()
   exit( -1 )
@@ -26,7 +29,6 @@ if system != '*':
   if len( args ) > 1:
     component = args[1]
 #
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
 gComponentInstaller.exitOnError = True
 #

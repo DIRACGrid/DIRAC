@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-get-proxy
 # Author :  Stuart Paterson
 ########################################################################
 """
   Retrieve a delegated proxy for the given user and group
 """
-__RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
+__RCSID__ = "$Id$"
 
 class Params:
 

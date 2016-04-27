@@ -6,8 +6,19 @@
     a particular job. The JobWrapper starts a thread for execution of the job
     and a Watchdog Agent that can monitor progress.
 """
-__RCSID__ = "$Id: $"
+import os
+import stat
+import re
+import sys
+import time
+import shutil
+import threading
+import tarfile
+import glob
+import urllib
+import json
 
+import DIRAC
 from DIRAC.DataManagementSystem.Client.DataManager                  import DataManager
 from DIRAC.Resources.Catalog.FileCatalog                            import FileCatalog
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
@@ -36,19 +47,8 @@ from DIRAC.Core.Utilities                                           import DEnco
 from DIRAC.Core.Utilities                                           import Time
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-import DIRAC
 
-import os
-import stat
-import re
-import sys
-import time
-import shutil
-import threading
-import tarfile
-import glob
-import urllib
-import json
+__RCSID__ = "$Id: $"
 
 EXECUTION_RESULT = {}
 
@@ -1138,8 +1138,7 @@ class JobWrapper( object ):
     execTime = elapsed
     diskSpaceConsumed = getGlobbedTotalSize( os.path.join( self.root, str( self.jobID ) ) )
     # Fill the data
-    acData = {
-               'User' : self.owner,
+    acData = { 'User' : self.owner,
                'UserGroup' : self.userGroup,
                'JobGroup' : self.jobGroup,
                'JobType' : self.jobType,
@@ -1158,8 +1157,7 @@ class JobWrapper( object ):
                'DiskSpace' : diskSpaceConsumed,
                'InputSandBoxSize' : self.inputSandboxSize,
                'OutputSandBoxSize' : self.outputSandboxSize,
-               'ProcessedEvents' : self.processedEvents
-             }
+               'ProcessedEvents' : self.processedEvents}
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     self.accountingReport.setValuesFromDict( acData )
