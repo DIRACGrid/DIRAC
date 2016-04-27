@@ -1,3 +1,15 @@
+[v6r14p28]
+
+*TS
+FIX: TaskManager - protection against am empty task disctionary in 
+     prepareTransformationTasks()
+FIX: Test_Client_TransformationSystem - fixes ti run in the Travis CI 
+     environment
+     
+*WMS
+FIX: JobMemory - use urllib instead of requests Python module as the latter
+     can be unavailable in pilots.           
+
 [v6r14p27]
 
 *Core
