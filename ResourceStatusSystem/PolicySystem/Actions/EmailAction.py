@@ -59,6 +59,7 @@ class EmailAction( BaseAction ):
 
     if not siteName['OK']:
       siteName = "Unassigned Resources"
+      self.log.error('Resource %s does not exist to any site: %s' % (name, siteName['Message']))
     elif not siteName['Value']:
       siteName = "Unassigned Resources"
     else:
