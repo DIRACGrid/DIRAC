@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/FrameworkSystem/scripts/dirac-proxy-upload.py $
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__ = "$Id: dirac-proxy-upload.py 18161 2009-11-11 12:07:09Z acasajus $"
-
 import sys
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import CS, Properties
-from DIRAC.Core.Security.ProxyInfo import *
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
+__RCSID__ = "$Id:"
 
 userName = False
 
@@ -83,5 +82,3 @@ for row in data[ 'Records' ] :
   lines.append( "-"*tL )
 
 print "\n".join( lines )
-
-

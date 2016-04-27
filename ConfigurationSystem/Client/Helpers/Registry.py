@@ -1,10 +1,13 @@
-# $HeadURL$
-__RCSID__ = "$Id$"
+""" Helper for /Registry section
+"""
 
-import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+
+__RCSID__ = "$Id$"
+
+# pylint: disable=missing-docstring
 
 gBaseRegistrySection = "/Registry"
 
@@ -102,13 +105,13 @@ def getAllGroups():
   return retVal[ 'Value' ]
 
 def getUsersInGroup( groupName, defaultValue = None ):
-  if defaultValue == None:
+  if defaultValue is None:
     defaultValue = []
   option = "%s/Groups/%s/Users" % ( gBaseRegistrySection, groupName )
   return gConfig.getValue( option, defaultValue )
 
 def getUsersInVO( vo, defaultValue = None ):
-  if defaultValue == None:
+  if defaultValue is None:
     defaultValue = []
   result = getGroupsForVO( vo )
   if not result['OK']:
@@ -139,19 +142,19 @@ def getDNsInGroup( groupName ):
   return DNs
 
 def getPropertiesForGroup( groupName, defaultValue = None ):
-  if defaultValue == None:
+  if defaultValue is None:
     defaultValue = []
   option = "%s/Groups/%s/Properties" % ( gBaseRegistrySection, groupName )
   return gConfig.getValue( option, defaultValue )
 
 def getPropertiesForHost( hostName, defaultValue = None ):
-  if defaultValue == None:
+  if defaultValue is None:
     defaultValue = []
   option = "%s/Hosts/%s/Properties" % ( gBaseRegistrySection, hostName )
   return gConfig.getValue( option, defaultValue )
 
 def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
-  if defaultValue == None:
+  if defaultValue is None:
     defaultValue = []
   if group == 'hosts':
     if not name:
@@ -171,12 +174,12 @@ def __matchProps( sProps, rProps ):
   return foundProps
 
 def groupHasProperties( groupName, propList ):
-  if type( propList ) in types.StringTypes:
+  if isinstance( propList, basestring ):
     propList = [ propList ]
   return __matchProps( propList, getPropertiesForGroup( groupName ) )
 
 def hostHasProperties( hostName, propList ):
-  if type( propList ) in types.StringTypes:
+  if isinstance( propList, basestring ):
     propList = [ propList ]
   return __matchProps( propList, getPropertiesForHost( hostName ) )
 
@@ -267,8 +270,8 @@ def getVOMSServerInfo( requestedVO = '' ):
           vomsDict[vo]['Servers'][server]['DN'] = DN
           vomsDict[vo]['Servers'][server]['CA'] = CA
           vomsDict[vo]['Servers'][server]['Port'] = port
-  
-  result = getVOs()         
+
+  result = getVOs()
   if result['OK']:
     voNames = result['Value']
     for vo in voNames:
@@ -290,10 +293,10 @@ def getVOMSServerInfo( requestedVO = '' ):
           port = gConfig.getValue( '%s/VO/%s/VOMSServers/%s/Port' % (gBaseRegistrySection, vo, server), 0 )
           vomsDict[vo]['Servers'][server]['DN'] = DN
           vomsDict[vo]['Servers'][server]['CA'] = CA
-          vomsDict[vo]['Servers'][server]['Port'] = port   
+          vomsDict[vo]['Servers'][server]['Port'] = port
 
-  return S_OK( vomsDict )     
-      
+  return S_OK( vomsDict )
+
 def getVOMSRoleGroupMapping( vo = '' ):
   """ Get mapping of the VOMS role to the DIRAC group
 
@@ -323,5 +326,3 @@ def getVOMSRoleGroupMapping( vo = '' ):
       noVOMSGroupList.append(group)
 
   return S_OK( { "VOMSDIRAC": vomsGroupDict, "DIRACVOMS": groupVomsDict, "NoVOMS": noVOMSGroupList } )
-
-

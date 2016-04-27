@@ -14,9 +14,10 @@ import os
 import tempfile
 import commands
 
+from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Grid                           import executeGridCommand
-from DIRAC                                               import S_OK, S_ERROR
+from DIRAC.Core.Utilities.File                           import mkDir
 
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB     import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector   import WAITING_PILOT_STATUS
@@ -97,10 +98,7 @@ class HTCondorCEComputingElement( ComputingElement ):
     ##We randomize the location of the pilotoutput and log, because there are just too many of them
     pre1 = makeGuid()[:3]
     pre2 = makeGuid()[:3]
-    try:
-      os.makedirs( os.path.join( initialDir, pre1, pre2 ) )
-    except OSError:
-      pass
+    mkDir( os.path.join( initialDir, pre1, pre2 ) )
     initialDirPrefix = "%s/%s" %( pre1, pre2 )
 
     self.log.debug( "InitialDir: %s" % os.path.join(initialDir,initialDirPrefix) )

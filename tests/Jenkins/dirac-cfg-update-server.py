@@ -2,6 +2,8 @@
 """ update local cfg
 """
 
+import os
+
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -12,8 +14,6 @@ Script.parseCommandLine()
 
 args = Script.getPositionalArgs()
 setupName = args[0]
-
-import os
 
 # Where to store outputs
 if not os.path.isdir( '%s/sandboxes' % setupName ):

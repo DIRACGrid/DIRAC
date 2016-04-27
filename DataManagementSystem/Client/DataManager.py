@@ -9,8 +9,6 @@ This module consists of DataManager and related classes.
 
 """
 
-# # RSCID
-__RCSID__ = "$Id$"
 # # imports
 from datetime import datetime, timedelta
 import fnmatch
@@ -22,21 +20,22 @@ import errno
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
+from DIRAC.Core.Utilities.File import makeGuid, getSize
+from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources     import getRegistrationProtocols, getThirdPartyProtocols
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
-from DIRAC.Core.Utilities.File import makeGuid, getSize
-from DIRAC.Core.Utilities.List import randomize
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.Core.Utilities.List                              import breakListIntoChunks
 
+# # RSCID
+__RCSID__ = "$Id$"
 
 def _isOlderThan( stringTime, days ):
   timeDelta = timedelta( days = days )
@@ -219,8 +218,8 @@ class DataManager( object ):
       return res
 
     log.debug( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'],
-                                                                    directory,
-                                                                    storageElement ) )
+                                                                 directory,
+                                                                 storageElement ) )
     return S_OK()
 
   def __getCatalogDirectoryContents( self, directories ):
@@ -491,7 +490,7 @@ class DataManager( object ):
     putTime = time.time() - startTime
     oDataOperation.setValueByKey( 'TransferTime', putTime )
     if not res['OK']:
-      
+
       # We don't consider it a failure if the SE is not valid
       if not DErrno.cmpError( res, errno.EACCES ):
         errStr = "Failed to put file to Storage Element."
@@ -1195,7 +1194,7 @@ class DataManager( object ):
       elif len( repDict ) == 1:
         # The file has only a single replica so don't remove
         log.debug( "The replica you are trying to remove is the only one.", "%s @ %s" % ( lfn,
-                                                                                               storageElementName ) )
+                                                                                          storageElementName ) )
         failed[lfn] = "Failed to remove sole replica"
       else:
         lfnsToRemove.append( lfn )
@@ -1311,7 +1310,7 @@ class DataManager( object ):
       else:
         replicaTuples.append( ( lfn, repDict[storageElementName], storageElementName ) )
     log.debug( "Resolved %s pfns for catalog removal at %s." % ( len( replicaTuples ),
-                                                                                                  storageElementName ) )
+                                                                 storageElementName ) )
     res = self.__removeCatalogReplica( replicaTuples )
     failed.update( res['Value']['Failed'] )
     successful.update( res['Value']['Successful'] )
@@ -1397,7 +1396,7 @@ class DataManager( object ):
      """
     log = self.log.getSubLogger( '__removePhysicalReplica' )
     log.debug( "Attempting to remove %s pfns at %s." % ( len( lfnsToRemove ),
-                                                                                         storageElementName ) )
+                                                         storageElementName ) )
     storageElement = StorageElement( storageElementName, vo = self.vo )
     res = storageElement.isValid()
     if not res['OK']:
@@ -1708,7 +1707,7 @@ class DataManager( object ):
     :param bool singleFile: execute for the first LFN only
     """
     return self.__executeIfReplicaExists( storageElementName, lfn,
-                                                  "prestageFile", lifetime = lifetime )
+                                          "prestageFile", lifetime = lifetime )
 
 
   def pinReplica( self, lfn, storageElementName, lifetime = 86400 ):
@@ -1721,7 +1720,7 @@ class DataManager( object ):
     :param bool singleFile: execute for the first LFN only
     """
     return self.__executeIfReplicaExists( storageElementName, lfn,
-                                                  "pinFile", lifetime = lifetime )
+                                          "pinFile", lifetime = lifetime )
 
   def releaseReplica( self, lfn, storageElementName ):
     """ release pins for the lfns at the supplied StorageElement
@@ -1743,5 +1742,4 @@ class DataManager( object ):
     :param bool singleFile: execute for the first LFN only
     """
     return self.__executeIfReplicaExists( storageElementName, lfn,
-                                                  "getFile", localPath = localPath )
-
+                                          "getFile", localPath = localPath )

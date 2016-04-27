@@ -108,6 +108,7 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                 3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
 
     res = self.wfTasks.prepareTransformationTasks( '', taskDict, 'test_user', 'test_group', 'test_DN' )
+    self.assertTrue(res['OK'])
     self.assertEqual( res, {'OK': True,
                            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
                                           'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
@@ -118,6 +119,21 @@ class WorkflowTasksSuccess( ClientsTestCase ):
                                      }
                             }
                     )
+
+    taskDict = {1:{'TransformationID':1, 'a1':'aa1', 'b1':'bb1', 'Site':'MySite'},
+                2:{'TransformationID':1, 'a2':'aa2', 'b2':'bb2', 'InputData':['a1', 'a2']},
+                3:{'TransformationID':2, 'a3':'aa3', 'b3':'bb3'}, }
+
+    res = self.wfTasks.prepareTransformationTasks( '', dict(taskDict), 'test_user', 'test_group', 'test_DN', bulkSubmissionFlag = True )
+    self.assertTrue(res['OK'])
+    self.assertEqual( res['Value'][1],
+                      {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'})
+    self.assertEqual( res['Value'][2],
+                      {'a2': 'aa2', 'TransformationID': 1, 'b2':'bb2', 'InputData':['a1', 'a2']})
+    self.assertEqual( res['Value'][3],
+                      {'TransformationID':2, 'a3':'aa3', 'b3':'bb3'})
+    self.assertTrue('BulkJobObject' in res['Value'])
+
 
   def test__handleDestination( self ):
     res = self.wfTasks._handleDestination( {'Site':'', 'TargetSE':''} )

@@ -12,9 +12,12 @@ import tempfile
 import random
 import socket
 import hashlib
+from collections import defaultdict
+
 
 import DIRAC
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.File                             import mkDir
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
@@ -29,8 +32,6 @@ from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second
 from DIRAC.Core.Utilities.List                             import fromChar
-
-from collections import defaultdict
 
 __RCSID__ = "$Id$"
 
@@ -276,8 +277,7 @@ class SiteDirector( AgentModule ):
           if pilotRunDirectory:
             self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
           qwDir = os.path.join( self.workingDirectory, queue )
-          if not os.path.exists( qwDir ):
-            os.makedirs( qwDir )
+          mkDir(qwDir)
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
           platform = ''
           if "Platform" in self.queueDict[queueName]['ParametersDict']:
@@ -334,7 +334,7 @@ class SiteDirector( AgentModule ):
 
           if site not in self.sites:
             self.sites.append( site )
-            
+
     return S_OK()
 
   def execute( self ):

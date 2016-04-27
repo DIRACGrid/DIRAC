@@ -8,7 +8,35 @@ import os
 import hashlib as md5
 import random
 import glob
+import sys
 import re
+import errno
+
+__RCSID__ = "$Id$"
+
+def mkDir( path ):
+  """ Emulate 'mkdir -p path' (if path exists already, don't raise an exception)
+  """
+  try:
+    if os.path.isdir(path):
+      return
+    os.makedirs( path )
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.isdir( path ):
+      pass
+    else:
+      raise
+
+def mkLink( src, dst ):
+  """ Protected creation of simbolic link
+  """
+  try:
+    os.symlink(src, dst)
+  except OSError as osError:
+    if osError.errno == errno.EEXIST and os.path.islink(dst) and os.path.realpath(dst) == src:
+      pass
+    else:
+      raise
 
 __RCSID__ = "$Id$"
 
@@ -105,7 +133,7 @@ def getSize( fileName ):
   """
   try:
     return os.stat( fileName )[6]
-  except Exception:
+  except OSError:
     return - 1
 
 def getGlobbedTotalSize( files ):
@@ -140,7 +168,7 @@ def getGlobbedFiles( files ):
   :params list files: list or tuple of strings of files
   """
   globbedFiles = []
-  if isinstance( files, (list, tuple) ):
+  if isinstance( files, ( list, tuple ) ):
     for entry in files:
       globbedFiles += getGlobbedFiles( entry )
   else:

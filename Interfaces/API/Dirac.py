@@ -13,7 +13,6 @@
     - Local execution of workflows for testing purposes.
 
 """
-__RCSID__ = "$Id$"
 
 import re
 import os
@@ -50,8 +49,10 @@ from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Utilities                                import Time
+from DIRAC.Core.Utilities.File                           import mkDir
 from DIRAC.Core.Utilities.PrettyPrint                    import printTable
 
+__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -184,7 +185,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if requestedStates == None:
+    if requestedStates is None:
       requestedStates = ['Done', 'Failed', 'Completed']  # because users dont care about completed
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
@@ -212,7 +213,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if requestedStates == None:
+    if requestedStates is None:
       requestedStates = ['Done']
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sorted( jobs ):
@@ -266,7 +267,7 @@ class Dirac( API ):
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
-    if jobIDs == None:
+    if jobIDs is None:
       jobIDs = []
     if not isinstance( jobIDs, list ):
       return self._errorReport( 'The jobIDs must be a list of (strings or ints).' )
@@ -1603,24 +1604,16 @@ class Dirac( API ):
       return ret
     jobID = ret['Value']
 
-    # TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = outputDir
       if not noJobDir:
         dirPath = '%s/%s' % ( outputDir, jobID )
-      # if os.path.exists( dirPath ):
-      #  return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
     else:
       dirPath = '%s/%s' % ( os.getcwd(), jobID )
       if os.path.exists( dirPath ):
         return self._errorReport( 'Job output directory %s already exists' % ( dirPath ) )
-
-    try:
-      if not os.path.exists( dirPath ):
-        os.makedirs( dirPath )
-    except Exception as x:
-      return self._errorReport( str( x ), 'Could not create directory in %s' % ( dirPath ) )
+    mkDir(dirPath)
 
     # New download
     result = SandboxStoreClient( useCertificates = self.useCertificates ).downloadSandboxForJob( jobID, 'Output', dirPath )
@@ -2212,7 +2205,7 @@ class Dirac( API ):
       msg.append( 'CPU Profile: Not Available' )
 
     self.log.info( 'Summary of debugging outputs for job %s retrieved in directory:\n%s\n' % ( jobID, debugDir ),
-                  '\n'.join( msg ) )
+                   '\n'.join( msg ) )
     return S_OK( debugDir )
 
   #############################################################################
