@@ -210,7 +210,7 @@ class StorageFactory( object ):
 
     # The status is that of the derived SE only
     seName = derivedStorageName if derivedStorageName else storageName
-    res = self.resourceStatus.getStorageElementStatus( seName )
+    res = self.resourceStatus.getElementStatus( seName, "StorageElement" )
     if not res[ 'OK' ]:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
       gLogger.error( errStr, "%s: %s" % ( seName, res['Message'] ) )
