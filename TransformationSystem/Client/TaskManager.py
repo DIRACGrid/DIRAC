@@ -121,6 +121,9 @@ class RequestTasks( TaskBase ):
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', ownerDN = '' ):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
     """
+    if not taskDict:
+      return S_OK({})
+
     if ( not owner ) or ( not ownerGroup ):
       res = getProxyInfo( False, False )
       if not res['OK']:
